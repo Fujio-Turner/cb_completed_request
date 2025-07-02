@@ -7,6 +7,9 @@
 ### Step 3. Then do the below
 
 ```sql
-SELECT *,meta().plan FROM system:completed_requests;
+SELECT * , meta().plan FROM system:completed_requests WHERE node = NODE_NAME();
 ```
+
+-- NOTE: `WHERE node = NODE_NAME()` gets slow queries from a single node. remove it to get all the nodes.
+
 ![alt text](copy_paste_json.png)
