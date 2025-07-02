@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <!-- Include Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Include Chart.js datetime adapter -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <!-- Include Chart.js zoom plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -173,7 +177,23 @@
         </ul>
         <!-- Timeline Tab Content -->  
          <div id="timeline">
-        *Future charts and visualizations will be displayed here.
+            <div style="margin-bottom: 10px;">
+                <button id="reset-zoom-btn" onclick="resetTimelineZoom()">Reset Zoom</button>
+                <span style="margin-left: 20px;">
+                    <label><input type="radio" name="yScale" value="linear" checked onchange="changeYAxisScale()"> Linear</label>
+                    <label style="margin-left: 10px;"><input type="radio" name="yScale" value="logarithmic" onchange="changeYAxisScale()"> Logarithmic</label>
+                </span>
+                <span style="margin-left: 20px; color: #666; font-size: 12px;">
+                    Drag to pan • Scroll to zoom • Drag box to zoom area
+                </span>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <canvas id="operations-chart" width="400" height="200"></canvas>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <canvas id="filter-chart" width="400" height="200"></canvas>
+            </div>
+            <canvas id="timeline-chart" width="400" height="200"></canvas>
         </div> 
         
         <!-- Analysis Tab Content -->
@@ -630,6 +650,550 @@
             });
         }
 
+        // Generate operations chart showing index scan vs fetch operations
+        function generateOperationsChart(requests) {
+            // Destroy existing chart if it exists - do this first
+            if (window.operationsChart) {
+                window.operationsChart.destroy();
+                window.operationsChart = null;
+            }
+            
+            const canvas = document.getElementById('operations-chart');
+            const ctx = canvas.getContext('2d');
+            
+            // Group requests by hour based on requestTime
+            const timeGroups = {};
+            
+            requests.forEach(request => {
+                if (!request.requestTime) return;
+                
+                // Parse requestTime and round to nearest hour
+                const requestDate = new Date(request.requestTime);
+                const timeKey = new Date(requestDate.getTime());
+                timeKey.setMinutes(0, 0, 0); // Round to hour
+                
+                const key = timeKey.toISOString();
+                
+                if (!timeGroups[key]) {
+                    timeGroups[key] = {
+                        timestamp: timeKey,
+                        totalIndexScan: 0,
+                        totalFetch: 0
+                    };
+                }
+                
+                // Sum up index scans (primary + secondary)
+                const phaseCounts = request.phaseCounts || {};
+                const primaryScan = phaseCounts.primaryScan || 0;
+                const indexScan = phaseCounts.indexScan || 0;
+                const fetch = phaseCounts.fetch || 0;
+                
+                timeGroups[key].totalIndexScan += primaryScan + indexScan;
+                timeGroups[key].totalFetch += fetch;
+            });
+            
+            // Convert to sorted array
+            const sortedData = Object.values(timeGroups).sort((a, b) => a.timestamp - b.timestamp);
+            
+            // Prepare chart data
+            const labels = sortedData.map(item => item.timestamp);
+            const indexScanData = sortedData.map(item => item.totalIndexScan);
+            const fetchData = sortedData.map(item => item.totalFetch);
+            
+            // Create new side-by-side bar chart
+            window.operationsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Index Scan Items',
+                            data: indexScanData,
+                            backgroundColor: '#007bff', // Blue
+                            borderColor: '#0056b3',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Fetch Documents',
+                            data: fetchData,
+                            backgroundColor: '#28a745', // Green
+                            borderColor: '#1e7e34',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Database Operations Timeline: Index Scans vs Document Fetches'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        zoom: {
+                            limits: {
+                                x: {min: 'original', max: 'original'},
+                                y: {min: 'original', max: 'original'}
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'xy',
+                                onPan: function({chart}) {
+                                    // Sync pan with other charts
+                                    if (window.filterChart && chart !== window.filterChart) {
+                                        window.filterChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
+                                    }
+                                    if (window.timelineChart && chart !== window.timelineChart) {
+                                        window.timelineChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
+                                    }
+                                }
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: 'rgba(225,225,225,0.3)',
+                                    borderColor: 'rgba(225,225,225)',
+                                    borderWidth: 1
+                                },
+                                mode: 'xy',
+                                onZoom: function({chart}) {
+                                    // Sync zoom with other charts
+                                    if (window.filterChart && chart !== window.filterChart) {
+                                        window.filterChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
+                                    }
+                                    if (window.timelineChart && chart !== window.timelineChart) {
+                                        window.timelineChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'hour',
+                                displayFormats: {
+                                    hour: 'MMM dd HH:mm'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Request Time'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Operation Count'
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        // Generate filter chart showing filter efficiency (IN vs OUT)
+        function generateFilterChart(requests) {
+            // Destroy existing chart if it exists - do this first
+            if (window.filterChart) {
+                window.filterChart.destroy();
+                window.filterChart = null;
+            }
+            
+            const canvas = document.getElementById('filter-chart');
+            const ctx = canvas.getContext('2d');
+            
+            // Group requests by hour based on requestTime
+            const timeGroups = {};
+            
+            requests.forEach(request => {
+                if (!request.requestTime || !request.plan) return;
+                
+                // Parse requestTime and round to nearest hour
+                const requestDate = new Date(request.requestTime);
+                const timeKey = new Date(requestDate.getTime());
+                timeKey.setMinutes(0, 0, 0); // Round to hour
+                
+                const key = timeKey.toISOString();
+                
+                if (!timeGroups[key]) {
+                    timeGroups[key] = {
+                        timestamp: timeKey,
+                        filtersEqual: 0,
+                        filtersNotEqual: 0
+                    };
+                }
+                
+                // Find all Filter operators in the plan
+                const operators = getOperators(request.plan);
+                operators.forEach(operator => {
+                    if (operator['#operator'] === 'Filter') {
+                        const stats = operator['#stats'] || {};
+                        const itemsIn = stats['#itemsIn'];
+                        const itemsOut = stats['#itemsOut'];
+                        
+                        if (itemsIn !== undefined && itemsOut !== undefined) {
+                            if (itemsIn === itemsOut) {
+                                timeGroups[key].filtersEqual++;
+                            } else {
+                                timeGroups[key].filtersNotEqual++;
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // Convert to sorted array
+            const sortedData = Object.values(timeGroups).sort((a, b) => a.timestamp - b.timestamp);
+            
+            // Prepare chart data
+            const labels = sortedData.map(item => item.timestamp);
+            const filtersEqualData = sortedData.map(item => item.filtersEqual);
+            const filtersNotEqualData = sortedData.map(item => item.filtersNotEqual);
+            
+            // Create new stacked bar chart
+            window.filterChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Filters: IN = OUT',
+                            data: filtersEqualData,
+                            backgroundColor: '#007bff', // Blue
+                            borderColor: '#0056b3',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Filters: IN ≠ OUT',
+                            data: filtersNotEqualData,
+                            backgroundColor: '#fd7e14', // Orange
+                            borderColor: '#e8590c',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Filter Operations Timeline: Efficiency Analysis (IN vs OUT)'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        zoom: {
+                            limits: {
+                                x: {min: 'original', max: 'original'},
+                                y: {min: 'original', max: 'original'}
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'xy',
+                                onPan: function({chart}) {
+                                    // Sync pan with other charts
+                                    if (window.operationsChart && chart !== window.operationsChart) {
+                                        window.operationsChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
+                                    }
+                                    if (window.timelineChart && chart !== window.timelineChart) {
+                                        window.timelineChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
+                                    }
+                                }
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: 'rgba(225,225,225,0.3)',
+                                    borderColor: 'rgba(225,225,225)',
+                                    borderWidth: 1
+                                },
+                                mode: 'xy',
+                                onZoom: function({chart}) {
+                                    // Sync zoom with other charts
+                                    if (window.operationsChart && chart !== window.operationsChart) {
+                                        window.operationsChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
+                                    }
+                                    if (window.timelineChart && chart !== window.timelineChart) {
+                                        window.timelineChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'hour',
+                                displayFormats: {
+                                    hour: 'MMM dd HH:mm'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Request Time'
+                            },
+                            stacked: true
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Filter Count'
+                            },
+                            stacked: true,
+                            beginAtZero: true
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        // Generate timeline chart showing kernel time vs execution time performance
+        function generateTimelineChart(requests) {
+            // Destroy existing chart if it exists - do this first
+            if (window.timelineChart) {
+                window.timelineChart.destroy();
+                window.timelineChart = null;
+            }
+            
+            const canvas = document.getElementById('timeline-chart');
+            const ctx = canvas.getContext('2d');
+            
+            // Group requests by second based on requestTime
+            const timeGroups = {};
+            
+            requests.forEach(request => {
+                if (!request.requestTime) return;
+                
+                // Parse requestTime and round to nearest hour
+                const requestDate = new Date(request.requestTime);
+                const timeKey = new Date(requestDate.getTime());
+                timeKey.setMinutes(0, 0, 0); // Round to hour
+                
+                const key = timeKey.toISOString();
+                
+                if (!timeGroups[key]) {
+                    timeGroups[key] = {
+                        timestamp: timeKey,
+                        kernTimeLessOrEqual: 0,
+                        kernTimeGreater: 0
+                    };
+                }
+                
+                // Calculate kernTime and executionTime
+                const totalKernTimeMs = request.plan ? calculateTotalKernTime(request.plan) : 0;
+                const elapsedTimeMs = parseTime(request.elapsedTime);
+                
+                // Compare kernTime vs executionTime
+                if (totalKernTimeMs <= elapsedTimeMs) {
+                    timeGroups[key].kernTimeLessOrEqual++;
+                } else {
+                    timeGroups[key].kernTimeGreater++;
+                }
+            });
+            
+            // Convert to sorted array
+            const sortedData = Object.values(timeGroups).sort((a, b) => a.timestamp - b.timestamp);
+            
+            // Prepare chart data
+            const labels = sortedData.map(item => item.timestamp);
+            const kernTimeLessOrEqualData = sortedData.map(item => item.kernTimeLessOrEqual);
+            const kernTimeGreaterData = sortedData.map(item => item.kernTimeGreater);
+            
+            // Create new stacked bar chart
+            window.timelineChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'KernTime ≤ ExecutionTime',
+                            data: kernTimeLessOrEqualData,
+                            backgroundColor: '#28a745', // Green
+                            borderColor: '#1e7e34',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'KernTime > ExecutionTime',
+                            data: kernTimeGreaterData,
+                            backgroundColor: '#dc3545', // Red
+                            borderColor: '#c82333',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Query Performance Timeline: KernTime vs ExecutionTime'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        zoom: {
+                            limits: {
+                                x: {min: 'original', max: 'original'},
+                                y: {min: 'original', max: 'original'}
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'xy',
+                                onPan: function({chart}) {
+                                    // Sync pan with other charts
+                                    if (window.operationsChart && chart !== window.operationsChart) {
+                                        window.operationsChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
+                                    }
+                                    if (window.filterChart && chart !== window.filterChart) {
+                                        window.filterChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
+                                    }
+                                }
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: 'rgba(225,225,225,0.3)',
+                                    borderColor: 'rgba(225,225,225)',
+                                    borderWidth: 1
+                                },
+                                mode: 'xy',
+                                onZoom: function({chart}) {
+                                    // Sync zoom with other charts
+                                    if (window.operationsChart && chart !== window.operationsChart) {
+                                        window.operationsChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
+                                    }
+                                    if (window.filterChart && chart !== window.filterChart) {
+                                        window.filterChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'hour',
+                                displayFormats: {
+                                    hour: 'MMM dd HH:mm'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Request Time'
+                            },
+                            stacked: true
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Query Count'
+                            },
+                            stacked: true,
+                            beginAtZero: true
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        // Reset timeline chart zoom
+        function resetTimelineZoom() {
+            if (window.timelineChart) {
+                window.timelineChart.resetZoom();
+            }
+            if (window.operationsChart) {
+                window.operationsChart.resetZoom();
+            }
+            if (window.filterChart) {
+                window.filterChart.resetZoom();
+            }
+        }
+
+        // Change Y-axis scale for both charts
+        function changeYAxisScale() {
+            const selectedScale = document.querySelector('input[name="yScale"]:checked').value;
+            const scaleType = selectedScale === 'logarithmic' ? 'logarithmic' : 'linear';
+            
+            // Update operations chart Y-axis scale
+            if (window.operationsChart) {
+                window.operationsChart.options.scales.y.type = scaleType;
+                if (scaleType === 'logarithmic') {
+                    window.operationsChart.options.scales.y.beginAtZero = false;
+                    window.operationsChart.options.scales.y.min = 1; // Avoid log(0)
+                } else {
+                    window.operationsChart.options.scales.y.beginAtZero = true;
+                    delete window.operationsChart.options.scales.y.min;
+                }
+                window.operationsChart.update();
+            }
+            
+            // Update filter chart Y-axis scale
+            if (window.filterChart) {
+                window.filterChart.options.scales.y.type = scaleType;
+                if (scaleType === 'logarithmic') {
+                    window.filterChart.options.scales.y.beginAtZero = false;
+                    window.filterChart.options.scales.y.min = 1; // Avoid log(0)
+                } else {
+                    window.filterChart.options.scales.y.beginAtZero = true;
+                    delete window.filterChart.options.scales.y.min;
+                }
+                window.filterChart.update();
+            }
+            
+            // Update timeline chart Y-axis scale
+            if (window.timelineChart) {
+                window.timelineChart.options.scales.y.type = scaleType;
+                if (scaleType === 'logarithmic') {
+                    window.timelineChart.options.scales.y.beginAtZero = false;
+                    window.timelineChart.options.scales.y.min = 1; // Avoid log(0)
+                } else {
+                    window.timelineChart.options.scales.y.beginAtZero = true;
+                    delete window.timelineChart.options.scales.y.min;
+                }
+                window.timelineChart.update();
+            }
+        }
+
         // Parse JSON input
         function parseJSON() {
             const jsonInput = document.getElementById('json-input').value;
@@ -642,6 +1206,9 @@
                     }));
                     generateTable(requests);
                     generateAnalysisTable(requests);
+                    generateOperationsChart(requests);
+                    generateFilterChart(requests);
+                    generateTimelineChart(requests);
                     document.getElementById('flow-diagram').innerHTML = 'Select a query from the table to view the flow diagram.';
                 } else {
                     alert('Please provide a valid JSON array.');
