@@ -4,6 +4,34 @@ A web-based tool for analyzing Couchbase query performance and execution plans. 
 
 ### (Capella Compatible)
 
+## Quick Start
+
+### Step 1: Download the Tool
+Download or clone this repository to get `index.html`
+
+### Step 2: Open in Browser
+Open `index.html` directly in any modern web browser (Chrome, Firefox, Safari, Edge)
+
+### Step 3: Extract Query Data
+Run this query in Couchbase Query Workbench or cbq:
+
+```sql
+SELECT *, meta().plan FROM system:completed_requests WHERE node = NODE_NAME();
+```
+
+**Note**: `WHERE node = NODE_NAME()` gets queries from a single node. Remove it to analyze all nodes.
+
+### Step 4: Analyze
+Copy the JSON results and paste into the tool's input area, then click "Parse JSON".
+
+![Query input interface](copy_paste_json.png)
+
+### Step 5: Filter by Date Range (Optional)
+- **Auto-population**: Date fields automatically populate with your data's full time range
+- **Custom filtering**: Adjust "From" and "To" dates to focus on specific time periods
+- **Re-analyze**: Click "Parse JSON" again to apply the date filter
+- **Filter status**: See how many queries match your selected range
+
 ## Features
 
 - **Three Analysis Views**:
@@ -39,33 +67,6 @@ A web-based tool for analyzing Couchbase query performance and execution plans. 
   - Pan/zoom flow diagrams
   - Click-to-highlight query selection
 
-## Quick Start
-
-### Step 1: Download the Tool
-Download or clone this repository to get `index.html`
-
-### Step 2: Open in Browser
-Open `index.html` directly in any modern web browser (Chrome, Firefox, Safari, Edge)
-
-### Step 3: Extract Query Data
-Run this query in Couchbase Query Workbench or cbq:
-
-```sql
-SELECT *, meta().plan FROM system:completed_requests WHERE node = NODE_NAME();
-```
-
-**Note**: `WHERE node = NODE_NAME()` gets queries from a single node. Remove it to analyze all nodes.
-
-### Step 4: Analyze
-Copy the JSON results and paste into the tool's input area, then click "Parse JSON".
-
-![Query input interface](copy_paste_json.png)
-
-### Step 5: Filter by Date Range (Optional)
-- **Auto-population**: Date fields automatically populate with your data's full time range
-- **Custom filtering**: Adjust "From" and "To" dates to focus on specific time periods
-- **Re-analyze**: Click "Parse JSON" again to apply the date filter
-- **Filter status**: See how many queries match your selected range
 
 ## Understanding the Analysis
 
