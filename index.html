@@ -304,13 +304,15 @@
             Drag to pan • Scroll to zoom • Drag box to zoom area
           </span>
         </div>
-        <div style="margin-bottom: 20px">
+        <div style="margin-bottom: 20px; min-height: 400px;">
           <canvas id="operations-chart" width="400" height="200"></canvas>
         </div>
-        <div style="margin-bottom: 20px">
+        <div style="margin-bottom: 20px; min-height: 400px;">
           <canvas id="filter-chart" width="400" height="200"></canvas>
         </div>
+        <div style="margin-bottom: 20px; min-height: 400px;">
         <canvas id="timeline-chart" width="400" height="200"></canvas>
+        </div>
       </div>
 
       <!-- Analysis Tab Content -->
@@ -359,23 +361,6 @@
     </div>
 
     <script>
-      /*
-      // Parse time strings to milliseconds
-      function parseTime(timeStr) {
-        if (!timeStr) return 0;
-        const match = timeStr
-          .replace(/(\d+\.?\d*)(\D+)/, "$1 $2")
-          .match(/(\d+\.?\d*)\s*(\D+)/);
-        if (!match) return 0;
-        const value = parseFloat(match[1]);
-        const unit = match[2].toLowerCase().trim();
-        if (unit === "s") return value * 1000;
-        if (unit === "ms") return value;
-        if (unit === "us" || unit === "µs") return value / 1000;
-        if (unit === "ns") return value / 1000000;
-        return value;
-      }
-      */
 
       // Parse time strings to milliseconds
         function parseTime(timeStr) {
@@ -469,37 +454,6 @@
         return operators;
       }
 
-      /*
-        // Calculate total kernel time from the plan
-        function calculateTotalKernTime(plan) {
-            const operators = getOperators(plan);
-            let totalKernTime = 0;
-            operators.forEach(operator => {
-                const stats = operator['#stats'] || {};
-                const kernTime = parseTime(stats.kernTime);
-                console.log('kernTime:', kernTime);
-                if (!isNaN(kernTime)) {
-                    totalKernTime += kernTime;
-                }
-            });
-            console.log('totalKernTime:', totalKernTime);
-            return totalKernTime;
-        }
- 
-
-      function calculateTotalKernTime(plan) {
-        const operators = getOperators(plan);
-        let lastKernTime = 0;
-        operators.forEach((operator) => {
-          const stats = operator["#stats"] || {};
-          const kernTime = parseTime(stats.kernTime);
-          if (!isNaN(kernTime) && kernTime > 0) {
-            lastKernTime = kernTime; // Update to the latest valid kernTime
-          }
-        });
-        return lastKernTime;
-      }
-    */
         // Calculate the maximum of all kernTimes
         function calculateTotalKernTime(plan) {
         const operators = getOperators(plan);
@@ -1477,18 +1431,18 @@
           data: {
             labels: labels,
             datasets: [
+                {
+                label: "Fetch Documents",
+                data: fetchData,
+                backgroundColor: "#28a745", // Green
+                borderColor: "#1e7e34",
+                borderWidth: 1,
+              },
               {
                 label: "Index Scan Items",
                 data: indexScanData,
                 backgroundColor: "#007bff", // Blue
                 borderColor: "#0056b3",
-                borderWidth: 1,
-              },
-              {
-                label: "Fetch Documents",
-                data: fetchData,
-                backgroundColor: "#28a745", // Green
-                borderColor: "#1e7e34",
                 borderWidth: 1,
               },
             ],
