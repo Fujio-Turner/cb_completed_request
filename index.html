@@ -197,6 +197,11 @@
         <input type="datetime-local" id="start-date" title="Start date/time for filtering">
         <label for="end-date">To:</label>
         <input type="datetime-local" id="end-date" title="End date/time for filtering">
+        <div style="display: flex; gap: 5px; align-items: center;">
+          <button onclick="setTimeRange('original')" style="padding: 4px 8px; font-size: 0.8em;">Original</button>
+          <button onclick="setTimeRange('1day')" style="padding: 4px 8px; font-size: 0.8em;">1 Day</button>
+          <button onclick="setTimeRange('1hour')" style="padding: 4px 8px; font-size: 0.8em;">1 Hour</button>
+        </div>
         <span id="filter-info" style="color: #666; font-size: 0.9em;"></span>
       </div>
     </div>
@@ -1909,6 +1914,8 @@
 
       // Global variable to store original unfiltered data
       let originalRequests = [];
+      let originalStartDate = null;
+      let originalEndDate = null;
 
         // Parse Couchbase datetime to JavaScript Date
         function parseCouchbaseDateTime(dateTimeStr) {
@@ -2020,6 +2027,8 @@
               if (dates.length > 0) {
                 const minDate = dates[0];
                 const maxDate = dates[dates.length - 1];
+                originalStartDate = minDate;
+                originalEndDate = maxDate;
                 startDateInput.value = toDateTimeLocal(minDate);
                 endDateInput.value = toDateTimeLocal(maxDate);
               }
@@ -2094,6 +2103,42 @@
           operatorModal.style.display = "none";
         }
       });
+
+      // Function to set time range based on button selection
+      function setTimeRange(type) {
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        
+        if (type === 'original') {
+          if (originalStartDate && originalEndDate) {
+            startDateInput.value = toDateTimeLocal(originalStartDate);
+            endDateInput.value = toDateTimeLocal(originalEndDate);
+          }
+        } else if (type === '1day' || type === '1hour') {
+          const endDate = endDateInput.value ? new Date(endDateInput.value) : new Date();
+          const startDate = new Date(endDate);
+          
+          if (type === '1day') {
+            startDate.setDate(startDate.getDate() - 1);
+          } else if (type === '1hour') {
+            startDate.setHours(startDate.getHours() - 1);
+          }
+          
+          startDateInput.value = toDateTimeLocal(startDate);
+        }
+        
+        // Trigger filtering with new date range
+        if (originalRequests.length > 0) {
+          const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+          const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+          const filteredRequests = filterRequestsByDateRange(originalRequests, startDate, endDate);
+          
+          updateFilterInfo(originalRequests.length, filteredRequests.length);
+          generateTable(filteredRequests);
+          generateTimeline(filteredRequests);
+          generateAnalysis(filteredRequests);
+        }
+      }
 
       // Initialize jQuery UI Tabs
       $(function () {
