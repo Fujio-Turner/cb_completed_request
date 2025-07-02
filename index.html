@@ -97,6 +97,7 @@
       #table-container,
       #analysis-table-container {
         overflow-x: auto;
+        position: relative;
       }
       table {
         width: 100%;
@@ -113,6 +114,19 @@
         background-color: #f2f2f2;
         position: sticky;
         top: 0;
+        cursor: pointer;
+        user-select: none;
+        z-index: 10;
+        border-bottom: 2px solid #ddd;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      th:hover {
+        background-color: #e8e8e8;
+      }
+      .sort-arrow {
+        margin-left: 5px;
+        font-size: 12px;
+        color: #666;
       }
       tr:hover {
         background-color: #f1f1f1;
@@ -402,7 +416,14 @@
 
       // Build operator stats for modal
       function buildOperatorStats(operator) {
-        let html = `<h3>Operator: ${operator["#operator"] || "Unknown"}</h3>`;
+        const operatorType = operator["#operator"] || "Unknown";
+        let html = `<h3>Operator: ${operatorType}</h3>`;
+        
+        // Show index name for specific operators
+        if ((operatorType === "PrimaryScan3" || operatorType === "IndexFtsSearch" || operatorType === "IndexScan3") && operator.index) {
+          html += `<p><strong>Index Used: ${operator.index}</strong></p>`;
+        }
+        
         if (operator["#stats"]) {
           html += "<dl>";
           for (const [key, value] of Object.entries(operator["#stats"])) {
@@ -450,11 +471,18 @@
           bubble.className = "step-bubble";
           const colorClass = getColorClass(parseFloat(percentage));
           bubble.classList.add(colorClass);
-          bubble.innerHTML = `
+          
+          // Build the HTML content
+          let bubbleContent = `
                     <h4>${operatorName}</h4>
-                    <p>${execTime} (${percentage}%)</p>
-                    <p>${itemsIn} in / ${itemsOut} out</p>
-                `;
+                    <p>${execTime} (${percentage}%)</p>`;
+          
+          // Only show in/out line if both values are present and not "-"
+          if (itemsIn !== "-" && itemsOut !== "-") {
+            bubbleContent += `<p>${itemsIn} in / ${itemsOut} out</p>`;
+          }
+          
+          bubble.innerHTML = bubbleContent;
           bubble.addEventListener("click", () => {
             const statsHtml = buildOperatorStats(operator);
             document.getElementById("operator-modal-body").innerHTML =
@@ -512,6 +540,127 @@
         return html;
       }
 
+      // Sorting functionality
+      let currentSortColumn = null;
+      let currentSortDirection = 'asc';
+      let currentTableType = 'every-query'; // 'every-query' or 'analysis'
+      let everyQueryData = [];
+      let analysisData = [];
+
+      // Enhanced time parsing for sorting (handles various units)
+      function parseTimeForSorting(timeStr) {
+        if (!timeStr || timeStr === "N/A" || timeStr === "-") return 0;
+        const match = timeStr
+          .replace(/(\d+\.?\d*)(\D+)/, "$1 $2")
+          .match(/(\d+\.?\d*)\s*(\D+)/);
+        if (!match) return 0;
+        const value = parseFloat(match[1]);
+        const unit = match[2].toLowerCase().trim();
+        // Convert everything to milliseconds for consistent sorting
+        if (unit === "h" || unit === "hour" || unit === "hours") return value * 3600000;
+        if (unit === "m" || unit === "min" || unit === "minute" || unit === "minutes") return value * 60000;
+        if (unit === "s" || unit === "sec" || unit === "second" || unit === "seconds") return value * 1000;
+        if (unit === "ms" || unit === "millisecond" || unit === "milliseconds") return value;
+        if (unit === "us" || unit === "µs" || unit === "microsecond" || unit === "microseconds") return value / 1000;
+        if (unit === "ns" || unit === "nanosecond" || unit === "nanoseconds") return value / 1000000;
+        return value;
+      }
+
+      // Get sortable value for a column
+      function getSortableValue(item, column) {
+        let value = item[column];
+        
+        // Handle special columns for Every Query table
+        if (column === "#") {
+          // "#" column is calculated dynamically, use a default sort order
+          return parseInt(item.rowIndex) || 0;
+        }
+        if (column === "requestTime") {
+          return new Date(value).getTime() || 0;
+        }
+        if (["elapsedTime", "kernTime", "cpuTime", "serviceTime"].includes(column)) {
+          return parseTimeForSorting(value);
+        }
+        if (column === "KernTime %") {
+          const numStr = String(value).replace('%', '');
+          return parseFloat(numStr) || 0;
+        }
+        if (["resultCount", "resultSize", "Items from Index Scan", "Doc Fetch Count"].includes(column)) {
+          return parseInt(value) || 0;
+        }
+        if (column === "Primary Scan Used") {
+          return value === "Yes" ? 1 : 0;
+        }
+        
+        // Handle Analysis table columns
+        if ([
+          "total_count", 
+          "min_duration_in_seconds", 
+          "max_duration_in_seconds", 
+          "avg_duration_in_seconds", 
+          "median_duration_in_seconds", 
+          "avg_fetch", 
+          "avg_primaryScan", 
+          "avg_indexScan"
+        ].includes(column)) {
+          return parseFloat(value) || 0;
+        }
+        
+        // Default: string comparison
+        return String(value || "").toLowerCase();
+      }
+
+      // Sort data
+      function sortData(data, column, direction) {
+        return [...data].sort((a, b) => {
+          const aVal = getSortableValue(a, column);
+          const bVal = getSortableValue(b, column);
+          
+          let comparison = 0;
+          if (aVal < bVal) comparison = -1;
+          else if (aVal > bVal) comparison = 1;
+          
+          return direction === 'asc' ? comparison : -comparison;
+        });
+      }
+
+      // Update sort arrows in headers
+      function updateSortArrows(tableHeaderId, column, direction) {
+        const headers = document.querySelectorAll(`#${tableHeaderId} th`);
+        headers.forEach(th => {
+          const existingArrow = th.querySelector('.sort-arrow');
+          if (existingArrow) existingArrow.remove();
+          
+          if (th.textContent.trim() === column) {
+            const arrow = document.createElement('span');
+            arrow.className = 'sort-arrow';
+            arrow.textContent = direction === 'asc' ? '▲' : '▼';
+            th.appendChild(arrow);
+          }
+        });
+      }
+
+      // Handle column sort click
+      function handleColumnSort(column, tableType) {
+        if (currentSortColumn === column && currentTableType === tableType) {
+          currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSortColumn = column;
+          currentSortDirection = 'asc';
+          currentTableType = tableType;
+        }
+        
+        if (tableType === 'every-query') {
+          const sortedData = sortData(everyQueryData, column, currentSortDirection);
+          populateEveryQueryTable(sortedData);
+          updateSortArrows('table-header', column, currentSortDirection);
+        } else if (tableType === 'analysis') {
+          const sortedData = sortData(analysisData, column, currentSortDirection);
+          populateAnalysisTable(sortedData);
+          updateSortArrows('analysis-table-header', column, currentSortDirection);
+        }
+      }
+
       // Generate main table
       function generateTable(requests) {
         const tableHeader = document.getElementById("table-header");
@@ -543,27 +692,31 @@
         columns.forEach((col) => {
           const th = document.createElement("th");
           th.textContent = col;
+          th.addEventListener('click', () => handleColumnSort(col, 'every-query'));
           headerRow.appendChild(th);
         });
         tableHeader.appendChild(headerRow);
 
-        requests.sort(
-          (a, b) => parseTime(b.elapsedTime) - parseTime(a.elapsedTime)
-        );
-
-        requests.forEach((request, index) => {
-          const row = document.createElement("tr");
+        // Prepare data with calculated values
+        const tableData = requests.map((request, index) => {
           const totalKernTimeMs = request.plan
             ? calculateTotalKernTime(request.plan)
             : 0;
           const elapsedTimeMs = parseTime(request.elapsedTime);
-
-          columns.forEach((col) => {
-            const td = document.createElement("td");
+          
+          // Create row data object
+          const rowData = {
+            rowIndex: index + 1,
+            request: request, // Keep original request for click handler
+          };
+          
+          // Add all column values (skip "#" as it's calculated dynamically)
+          ["requestTime", "statementType", "elapsedTime", "kernTime", "KernTime %", 
+           "cpuTime", "serviceTime", "resultCount", "resultSize", "Index(es) Used", 
+           "Items from Index Scan", "Doc Fetch Count", "Primary Scan Used", "state", 
+           "statement", "users"].forEach(col => {
             let value;
-            if (col === "#") {
-              value = index + 1;
-            } else if (col === "Primary Scan Used") {
+            if (col === "Primary Scan Used") {
               value =
                 request.phaseOperators && request.phaseOperators.primaryScan > 0
                   ? "Yes"
@@ -617,6 +770,43 @@
             } else {
               value = request[col] || "N/A";
             }
+            rowData[col] = value;
+          });
+          
+          return rowData;
+        });
+
+        // Sort by elapsedTime by default
+        const sortedData = sortData(tableData, 'elapsedTime', 'desc');
+        everyQueryData = sortedData;
+        currentSortColumn = 'elapsedTime';
+        currentSortDirection = 'desc';
+        currentTableType = 'every-query';
+        
+        populateEveryQueryTable(sortedData);
+        updateSortArrows('table-header', 'elapsedTime', 'desc');
+      }
+
+      // Populate Every Query table body
+      function populateEveryQueryTable(data) {
+        
+        const tableBody = document.getElementById("table-body");
+        tableBody.innerHTML = "";
+        
+        const columns = [
+          "#", "requestTime", "statementType", "elapsedTime", "kernTime", "KernTime %", 
+          "cpuTime", "serviceTime", "resultCount", "resultSize", "Index(es) Used", 
+          "Items from Index Scan", "Doc Fetch Count", "Primary Scan Used", "state", 
+          "statement", "users"
+        ];
+
+        data.forEach((rowData, index) => {
+          const row = document.createElement("tr");
+
+          columns.forEach((col) => {
+            const td = document.createElement("td");
+            // Recalculate row number based on current sort order
+            const value = col === "#" ? index + 1 : rowData[col];
             td.textContent = value;
             if (col === "Primary Scan Used" && value === "Yes") {
               td.classList.add("primary-scan-yes");
@@ -629,7 +819,7 @@
               .querySelectorAll("tr")
               .forEach((r) => (r.style.backgroundColor = ""));
             row.style.backgroundColor = "#e0e0e0";
-            generateFlowDiagram(request);
+            generateFlowDiagram(rowData.request);
           });
           tableBody.appendChild(row);
         });
@@ -753,19 +943,19 @@
         const headerRow = document.createElement("tr");
         analysisColumns.forEach((col) => {
           const th = document.createElement("th");
-
-          th.textContent = col
+          const displayName = col
             .replace(/_/g, " ")
             .replace("in seconds", " (sec)");
+          th.textContent = displayName;
+          th.addEventListener('click', () => handleColumnSort(col, 'analysis'));
           headerRow.appendChild(th);
         });
         analysisTableHeader.appendChild(headerRow);
 
-        // Create data rows
-        groupData.forEach((group) => {
-          const row = document.createElement("tr");
+        // Prepare table data
+        const analysisTableData = groupData.map((group) => {
+          const rowData = {};
           analysisColumns.forEach((col) => {
-            const td = document.createElement("td");
             let value;
             if (col === "user_query_counts") {
               value = Object.entries(group.user_query_counts)
@@ -788,7 +978,45 @@
             } else {
               value = group[col] || "N/A";
             }
-            td.textContent = value;
+            rowData[col] = value;
+          });
+          return rowData;
+        });
+
+        // Sort by total_count by default
+        const sortedData = sortData(analysisTableData, 'total_count', 'desc');
+        analysisData = sortedData;
+        currentSortColumn = 'total_count';
+        currentSortDirection = 'desc';
+        currentTableType = 'analysis';
+        
+        populateAnalysisTable(sortedData);
+        updateSortArrows('analysis-table-header', 'total_count', 'desc');
+      }
+
+      // Populate Analysis table body
+      function populateAnalysisTable(data) {
+        const analysisTableBody = document.getElementById("analysis-table-body");
+        analysisTableBody.innerHTML = "";
+        
+        const analysisColumns = [
+          "total_count",
+          "min_duration_in_seconds",
+          "max_duration_in_seconds",
+          "avg_duration_in_seconds",
+          "median_duration_in_seconds",
+          "avg_fetch",
+          "avg_primaryScan",
+          "avg_indexScan",
+          "normalized_statement",
+          "user_query_counts",
+        ];
+
+        data.forEach((rowData) => {
+          const row = document.createElement("tr");
+          analysisColumns.forEach((col) => {
+            const td = document.createElement("td");
+            td.textContent = rowData[col];
             row.appendChild(td);
           });
           analysisTableBody.appendChild(row);
