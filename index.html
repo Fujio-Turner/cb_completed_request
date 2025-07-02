@@ -149,6 +149,10 @@
         width: 80%;
         max-height: 80vh;
         overflow-y: auto;
+        user-select: text;
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
       }
       .close {
         color: #aaa;
@@ -177,6 +181,31 @@
       }
       #operator-modal-body dd {
         margin-left: 20px;
+      }
+      #operator-modal-body, #plan-modal-body {
+        user-select: text;
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+      }
+      #operator-modal-body *, #plan-modal-body * {
+        user-select: text;
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+      }
+      .copy-button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 5px 10px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        margin: 5px;
+        font-size: 12px;
+      }
+      .copy-button:hover {
+        background-color: #45a049;
       }
     </style>
     <!-- Include Panzoom, jQuery, and jQuery UI -->
@@ -330,6 +359,7 @@
     </div>
 
     <script>
+      /*
       // Parse time strings to milliseconds
       function parseTime(timeStr) {
         if (!timeStr) return 0;
@@ -345,6 +375,63 @@
         if (unit === "ns") return value / 1000000;
         return value;
       }
+      */
+
+      // Parse time strings to milliseconds
+        function parseTime(timeStr) {
+        if (!timeStr) {
+            return 0;
+        }
+
+        // Handle empty or invalid strings
+        timeStr = timeStr.trim();
+        if (!timeStr) {
+            return 0;
+        }
+
+        // Try different regex patterns for different time formats
+        
+        // Pattern 1: Handle ms, ns, µs, us formats like "681.413039ms", "250ns", "146.266µs"
+        const simplePattern = /^(\d+\.?\d*)(ms|ns|µs|us)$/;
+        let simpleMatch = timeStr.match(simplePattern);
+        
+        if (simpleMatch) {
+            const value = parseFloat(simpleMatch[1]);
+            const unit = simpleMatch[2];
+            
+            let totalMs = 0;
+            if (unit === "ms") {
+                totalMs = value;
+            } else if (unit === "ns") {
+                totalMs = value / 1000000; // nanoseconds to milliseconds
+            } else if (unit === "µs" || unit === "us") {
+                totalMs = value / 1000; // microseconds to milliseconds  
+            }
+            
+            return totalMs;
+        }
+        
+        // Pattern 2: Handle complex formats like "1h4m17.8098098s" or "4m17.8098098s" or "1h"
+        const complexPattern = /(?:(\d+)h)?(?:(\d+)m)?(?:(\d+\.?\d*)s)?/;
+        const complexMatch = timeStr.match(complexPattern);
+        
+        if (!complexMatch || (complexMatch[1] === undefined && complexMatch[2] === undefined && complexMatch[3] === undefined)) {
+            console.log("parseTime: no regex match for", timeStr);
+            return 0;
+        }
+
+        let totalMs = 0;
+        const hours = parseInt(complexMatch[1] || 0); // Hours (optional)
+        const minutes = parseInt(complexMatch[2] || 0); // Minutes (optional)
+        const seconds = parseFloat(complexMatch[3] || 0); // Seconds (optional, including decimals)
+
+        // Convert to milliseconds
+        totalMs += hours * 60 * 60 * 1000; // Hours to milliseconds
+        totalMs += minutes * 60 * 1000; // Minutes to milliseconds
+        totalMs += seconds * 1000; // Seconds to milliseconds
+
+        return totalMs;
+        }
 
       // Normalize statement by replacing literals and numbers with "?"
       function normalizeStatement(statement) {
@@ -398,7 +485,7 @@
             console.log('totalKernTime:', totalKernTime);
             return totalKernTime;
         }
- */
+ 
 
       function calculateTotalKernTime(plan) {
         const operators = getOperators(plan);
@@ -412,11 +499,48 @@
         });
         return lastKernTime;
       }
+    */
+        // Calculate the maximum of all kernTimes
+        function calculateTotalKernTime(plan) {
+        const operators = getOperators(plan);
+        let maxKernTime = 0;
+        console.log("=== Calculating Max KernTime ===");
+        operators.forEach((operator, index) => {
+            const stats = operator["#stats"] || {};
+            const kernTime = parseTime(stats.kernTime);
+            console.log(`Operator ${index} (${operator["#operator"]}): ${stats.kernTime} -> ${kernTime}ms`);
+            if (!isNaN(kernTime)) {
+            maxKernTime = Math.max(maxKernTime, kernTime); // Find the highest kernTime
+            }
+        });
+        console.log(`=== Max kernTime: ${maxKernTime}ms ===`);
+        return maxKernTime;
+        }
+
+        // Calculate the sum of all execution times for percentage calculation
+        function calculateTotalExecTime(plan) {
+        const operators = getOperators(plan);
+        let totalExecTime = 0;
+        console.log("=== Calculating Total ExecTime ===");
+        operators.forEach((operator, index) => {
+            const stats = operator["#stats"] || {};
+            const execTime = parseTime(stats.execTime);
+            console.log(`Operator ${index} (${operator["#operator"]}): ${stats.execTime} -> ${execTime}ms`);
+            if (!isNaN(execTime)) {
+            totalExecTime += execTime; // Sum all valid execTimes
+            }
+        });
+        console.log(`=== Total execTime: ${totalExecTime}ms ===`);
+        return totalExecTime;
+        }
 
       // Build operator stats for modal
       function buildOperatorStats(operator) {
         const operatorType = operator["#operator"] || "Unknown";
         let html = `<h3>Operator: ${operatorType}</h3>`;
+        
+        // Add copy button
+        html += `<button class="copy-button" onclick="copyOperatorStats(this)">Copy Stats</button>`;
         
         // Show index name for specific operators
         if ((operatorType === "PrimaryScan3" || operatorType === "IndexFtsSearch" || operatorType === "IndexScan3") && operator.index) {
@@ -435,6 +559,52 @@
         return html;
       }
 
+      // Function to copy operator stats to clipboard
+      function copyOperatorStats(button) {
+        const modalBody = document.getElementById("operator-modal-body");
+        const text = modalBody.innerText || modalBody.textContent;
+        
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => {
+            button.textContent = "Copied!";
+            setTimeout(() => {
+              button.textContent = "Copy Stats";
+            }, 2000);
+          }).catch(err => {
+            console.error('Failed to copy: ', err);
+            fallbackCopyTextToClipboard(text, button);
+          });
+        } else {
+          fallbackCopyTextToClipboard(text, button);
+        }
+      }
+
+      // Fallback copy function for older browsers
+      function fallbackCopyTextToClipboard(text, button) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.top = "-1000px";
+        textArea.style.left = "-1000px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          const successful = document.execCommand('copy');
+          if (successful) {
+            button.textContent = "Copied!";
+            setTimeout(() => {
+              button.textContent = "Copy Stats";
+            }, 2000);
+          }
+        } catch (err) {
+          console.error('Fallback: Oops, unable to copy', err);
+        }
+        
+        document.body.removeChild(textArea);
+      }
+
       // Generate flow diagram
       function generateFlowDiagram(request) {
         const flowDiagram = document.getElementById("flow-diagram");
@@ -444,7 +614,8 @@
           return;
         }
 
-        const elapsedTimeMs = parseTime(request.elapsedTime);
+        const totalKernTime = calculateTotalKernTime(request.plan);
+        const totalExecTime = calculateTotalExecTime(request.plan);
         const operators = getOperators(request.plan);
 
         if (operators.length === 0) {
@@ -455,16 +626,30 @@
         operators.forEach((operator, index) => {
           const operatorName = operator["#operator"] || "Unknown Operator";
           const stats = operator["#stats"] || {};
+          const kernTime = stats.kernTime || "N/A";
           const execTime = stats.execTime || "N/A";
+          const servTime = stats.servTime || "N/A";
           const itemsIn =
             stats["#itemsIn"] !== undefined ? stats["#itemsIn"] : "-";
           const itemsOut =
             stats["#itemsOut"] !== undefined ? stats["#itemsOut"] : "-";
+          
+          console.log(`=== Flow Diagram Operator ${index}: ${operatorName} ===`);
+          console.log(`Raw times - kernTime: ${kernTime}, execTime: ${execTime}, servTime: ${servTime}`);
+          
+          const kernTimeMs = parseTime(kernTime);
           const execTimeMs = parseTime(execTime);
+          const servTimeMs = parseTime(servTime);
+          
+          console.log(`Parsed times - kernTime: ${kernTimeMs}ms, execTime: ${execTimeMs}ms, servTime: ${servTimeMs}ms`);
+          console.log(`Total execTime used for percentage: ${totalExecTime}ms`);
+          
           const percentage =
-            elapsedTimeMs > 0 && !isNaN(execTimeMs)
-              ? ((execTimeMs / elapsedTimeMs) * 100).toFixed(2)
+            totalExecTime > 0 && !isNaN(execTimeMs)
+              ? ((execTimeMs / totalExecTime) * 100).toFixed(2)
               : "N/A";
+
+          console.log(`Final percentage for ${operatorName}: execTime ${execTimeMs}ms / totalExecTime ${totalExecTime}ms = ${percentage}%`);
 
           const bubble = document.createElement("div");
           bubble.className = "step-bubble";
@@ -701,6 +886,7 @@
           const totalKernTimeMs = request.plan
             ? calculateTotalKernTime(request.plan)
             : 0;
+
           const elapsedTimeMs = parseTime(request.elapsedTime);
           
           // Create row data object
