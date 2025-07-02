@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Query Analyzer</title>
     <!-- Include jQuery UI CSS -->
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link
+      rel="stylesheet"
+      href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"
+    />
     <!-- Include Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Include Chart.js datetime adapter -->
@@ -12,288 +15,361 @@
     <!-- Include Chart.js zoom plugin -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        #input-section {
-            margin-bottom: 20px;
-        }
-        textarea {
-            width: 100%;
-            height: 50px;
-            margin-bottom: 10px;
-        }
-        #tabs {
-            flex: 1;
-            overflow: auto;
-        }
-        #every-query, #analysis {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        #flow-diagram-section, #charts-placeholder {
-            flex: 0 0 250px; /* Fixed height for charts and flow diagram */
-            overflow: auto;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            padding: 10px;
-            background-color: #fff;
-        }
-        #flow-diagram {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-        .step-bubble {
-            border: 1px solid #000;
-            border-radius: 10px;
-            padding: 10px;
-            /*min-width: 110px;*/
-            text-align: center;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-            cursor: pointer;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      #input-section {
+        margin-bottom: 20px;
+      }
+      textarea {
+        width: 100%;
+        height: 50px;
+        margin-bottom: 10px;
+      }
+      #tabs {
+        flex: 1;
+        overflow: auto;
+      }
+      #every-query,
+      #analysis {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      #flow-diagram-section,
+      #charts-placeholder {
+        flex: 0 0 250px; /* Fixed height for charts and flow diagram */
+        overflow: auto;
+        margin-bottom: 20px;
+        border: 1px solid #ccc;
+        padding: 10px;
+        background-color: #fff;
+      }
+      #flow-diagram {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+      .step-bubble {
+        border: 1px solid #000;
+        border-radius: 10px;
+        padding: 10px;
+        /*min-width: 110px;*/
+        text-align: center;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+      }
 
-        .step-bubble p {
+      .step-bubble p {
         margin: 5px 0;
-        line-height: 1.0; /* Default is around 1.4–1.6, so this tightens the text */
-        }
+        line-height: 1; /* Default is around 1.4–1.6, so this tightens the text */
+      }
 
-        .green { background-color: #d4edda; }
-        .yellow { background-color: #fff3cd; }
-        .orange { background-color: #ffe5d0; }
-        .red { background-color: #f8d7da; }
-        .connector {
-            width: 20px;
-            height: 2px;
-            background-color: #000;
-        }
-        #table-section, #analysis-table-section {
-            flex: 1;
-            overflow-y: auto;
-        }
-        #table-container, #analysis-table-container {
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: #fff;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-        th {
-            background-color: #f2f2f2;
-            position: sticky;
-            top: 0;
-        }
-        tr:hover {
-            background-color: #f1f1f1;
-            cursor: pointer;
-        }
-        .primary-scan-yes {
-            font-weight: bold;
-            color: red;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        #plan-modal-body ul {
-            list-style-type: none;
-            padding-left: 20px;
-        }
-        #plan-modal-body li {
-            margin-bottom: 5px;
-        }
-        #operator-modal-body dl {
-            margin: 0;
-        }
-        #operator-modal-body dt {
-            font-weight: bold;
-        }
-        #operator-modal-body dd {
-            margin-left: 20px;
-        }
+      .green {
+        background-color: #d4edda;
+      }
+      .yellow {
+        background-color: #fff3cd;
+      }
+      .orange {
+        background-color: #ffe5d0;
+      }
+      .red {
+        background-color: #f8d7da;
+      }
+      .connector {
+        width: 20px;
+        height: 2px;
+        background-color: #000;
+      }
+      #table-section,
+      #analysis-table-section {
+        flex: 1;
+        overflow-y: auto;
+      }
+      #table-container,
+      #analysis-table-container {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #fff;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+      }
+      th {
+        background-color: #f2f2f2;
+        position: sticky;
+        top: 0;
+      }
+      tr:hover {
+        background-color: #f1f1f1;
+        cursor: pointer;
+      }
+      .primary-scan-yes {
+        font-weight: bold;
+        color: red;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+      }
+      .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+      }
+      .close:hover,
+      .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      #plan-modal-body ul {
+        list-style-type: none;
+        padding-left: 20px;
+      }
+      #plan-modal-body li {
+        margin-bottom: 5px;
+      }
+      #operator-modal-body dl {
+        margin: 0;
+      }
+      #operator-modal-body dt {
+        font-weight: bold;
+      }
+      #operator-modal-body dd {
+        margin-left: 20px;
+      }
     </style>
     <!-- Include Panzoom, jQuery, and jQuery UI -->
     <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.2/dist/panzoom.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <!-- Input Section (outside tabs) -->
     <div id="input-section">
-        <textarea id="json-input" placeholder="Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests;"></textarea>
+      <textarea
+        id="json-input"
+        placeholder="Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests;"
+      ></textarea>
+      <div style="margin: 10px 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
         <button onclick="parseJSON()">Parse JSON</button>
+        <label for="start-date">From:</label>
+        <input type="datetime-local" id="start-date" title="Start date/time for filtering">
+        <label for="end-date">To:</label>
+        <input type="datetime-local" id="end-date" title="End date/time for filtering">
+        <span id="filter-info" style="color: #666; font-size: 0.9em;"></span>
+      </div>
     </div>
 
     <!-- Tabs Container -->
     <div id="tabs">
-        <!-- Tab Headers -->
-        <ul>
-            <li><a href="#timeline">Timeline</a></li>
-            <li><a href="#analysis">Analysis</a></li>
-            <li><a href="#every-query">Every Query</a></li>
-        </ul>
-        <!-- Timeline Tab Content -->  
-         <div id="timeline">
-            <div style="margin-bottom: 10px;">
-                <button id="reset-zoom-btn" onclick="resetTimelineZoom()">Reset Zoom</button>
-                <span style="margin-left: 20px;">
-                    <label><input type="radio" name="yScale" value="linear" checked onchange="changeYAxisScale()"> Linear</label>
-                    <label style="margin-left: 10px;"><input type="radio" name="yScale" value="logarithmic" onchange="changeYAxisScale()"> Logarithmic</label>
-                </span>
-                <span style="margin-left: 20px; color: #666; font-size: 12px;">
-                    Drag to pan • Scroll to zoom • Drag box to zoom area
-                </span>
-            </div>
-            <div style="margin-bottom: 20px;">
-                <canvas id="operations-chart" width="400" height="200"></canvas>
-            </div>
-            <div style="margin-bottom: 20px;">
-                <canvas id="filter-chart" width="400" height="200"></canvas>
-            </div>
-            <canvas id="timeline-chart" width="400" height="200"></canvas>
-        </div> 
-        
-        <!-- Analysis Tab Content -->
-        <div id="analysis">
-            <div id="charts-placeholder">
-                *Future charts and visualizations will be displayed here.
-                <canvas id="analysis-chart" width="400" height="200"></canvas>
-            </div>
-            <div id="analysis-table-section">
-                <div id="analysis-table-container">
-                    <table id="analysis-table">
-                        <thead id="analysis-table-header"></thead>
-                        <tbody id="analysis-table-body"></tbody>
-                    </table>
-                </div>
-            </div>
+      <!-- Tab Headers -->
+      <ul>
+        <li><a href="#timeline">Timeline</a></li>
+        <li><a href="#analysis">Analysis</a></li>
+        <li><a href="#every-query">Every Query</a></li>
+      </ul>
+      <!-- Timeline Tab Content -->
+      <div id="timeline">
+        <div style="margin-bottom: 10px">
+          <button id="reset-zoom-btn" onclick="resetTimelineZoom()">
+            Reset Zoom
+          </button>
+          <span style="margin-left: 20px">
+            <label
+              ><input
+                type="radio"
+                name="yScale"
+                value="linear"
+                checked
+                onchange="changeYAxisScale()"
+              />
+              Linear</label
+            >
+            <label style="margin-left: 10px"
+              ><input
+                type="radio"
+                name="yScale"
+                value="logarithmic"
+                onchange="changeYAxisScale()"
+              />
+              Logarithmic</label
+            >
+          </span>
+          <span style="margin-left: 30px">
+            <label
+              ><input
+                type="radio"
+                name="timeGrouping"
+                value="optimizer"
+                checked
+                onchange="changeTimeGrouping()"
+              />
+              <span id="optimizer-label">By Optimizer</span></label
+            >
+            <label style="margin-left: 10px"
+              ><input
+                type="radio"
+                name="timeGrouping"
+                value="minute"
+                onchange="changeTimeGrouping()"
+              />
+              By Minute</label
+            >
+            <label style="margin-left: 10px"
+              ><input
+                type="radio"
+                name="timeGrouping"
+                value="second"
+                onchange="changeTimeGrouping()"
+              />
+              By Second</label
+            >
+          </span>
+          <span style="margin-left: 20px; color: #666; font-size: 12px">
+            Drag to pan • Scroll to zoom • Drag box to zoom area
+          </span>
         </div>
+        <div style="margin-bottom: 20px">
+          <canvas id="operations-chart" width="400" height="200"></canvas>
+        </div>
+        <div style="margin-bottom: 20px">
+          <canvas id="filter-chart" width="400" height="200"></canvas>
+        </div>
+        <canvas id="timeline-chart" width="400" height="200"></canvas>
+      </div>
 
-        <!-- Every Query Tab Content -->
-        <div id="every-query">
-            <div id="flow-diagram-section">
-                <div id="flow-diagram"></div>
-            </div>
-            <div id="table-section">
-                <div id="table-container">
-                    <table id="query-table">
-                        <thead id="table-header"></thead>
-                        <tbody id="table-body"></tbody>
-                    </table>
-                </div>
-            </div>
+      <!-- Analysis Tab Content -->
+      <div id="analysis">
+        <div id="charts-placeholder">
+          *Future charts and visualizations will be displayed here.
+          <canvas id="analysis-chart" width="400" height="200"></canvas>
         </div>
+        <div id="analysis-table-section">
+          <div id="analysis-table-container">
+            <table id="analysis-table">
+              <thead id="analysis-table-header"></thead>
+              <tbody id="analysis-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Every Query Tab Content -->
+      <div id="every-query">
+        <div id="flow-diagram-section">
+          <div id="flow-diagram"></div>
+        </div>
+        <div id="table-section">
+          <div id="table-container">
+            <table id="query-table">
+              <thead id="table-header"></thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
     <!-- Modals (outside tabs) -->
     <div id="plan-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">×</span>
-            <div id="plan-modal-body"></div>
-        </div>
+      <div class="modal-content">
+        <span class="close">×</span>
+        <div id="plan-modal-body"></div>
+      </div>
     </div>
     <div id="operator-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">×</span>
-            <div id="operator-modal-body"></div>
-        </div>
+      <div class="modal-content">
+        <span class="close">×</span>
+        <div id="operator-modal-body"></div>
+      </div>
     </div>
 
     <script>
-        // Parse time strings to milliseconds
-        function parseTime(timeStr) {
-            if (!timeStr) return 0;
-            const match = timeStr
-                .replace(/(\d+\.?\d*)(\D+)/, '$1 $2')
-                .match(/(\d+\.?\d*)\s*(\D+)/);
-            if (!match) return 0;
-            const value = parseFloat(match[1]);
-            const unit = match[2].toLowerCase().trim();
-            if (unit === 's') return value * 1000;
-            if (unit === 'ms') return value;
-            if (unit === 'us' || unit === 'µs') return value / 1000;
-            if (unit === 'ns') return value / 1000000;
-            return value;
+      // Parse time strings to milliseconds
+      function parseTime(timeStr) {
+        if (!timeStr) return 0;
+        const match = timeStr
+          .replace(/(\d+\.?\d*)(\D+)/, "$1 $2")
+          .match(/(\d+\.?\d*)\s*(\D+)/);
+        if (!match) return 0;
+        const value = parseFloat(match[1]);
+        const unit = match[2].toLowerCase().trim();
+        if (unit === "s") return value * 1000;
+        if (unit === "ms") return value;
+        if (unit === "us" || unit === "µs") return value / 1000;
+        if (unit === "ns") return value / 1000000;
+        return value;
+      }
+
+      // Normalize statement by replacing literals and numbers with "?"
+      function normalizeStatement(statement) {
+        if (!statement) return "";
+        let normalized = statement
+          .replace(/"(?:[^"\\]|\\.)*"/g, "?")
+          .replace(/'(?:[^'\\]|\\.)*'/g, "?")
+          .replace(/\b\d+\.?\d*\b/g, "?");
+        return normalized;
+      }
+
+      // Get color class based on percentage
+      function getColorClass(percentage) {
+        if (percentage === "N/A" || isNaN(percentage)) return "green";
+        if (percentage < 25) return "green";
+        if (percentage < 50) return "yellow";
+        if (percentage < 75) return "orange";
+        return "red";
+      }
+
+      // Recursively extract operators from the plan
+      function getOperators(operator, operators = []) {
+        if (operator) {
+          if (operator["#operator"]) {
+            operators.push(operator);
+          }
+          if (operator["~child"]) {
+            getOperators(operator["~child"], operators);
+          } else if (operator["~children"]) {
+            operator["~children"].forEach((child) =>
+              getOperators(child, operators)
+            );
+          }
         }
+        return operators;
+      }
 
-        // Normalize statement by replacing literals and numbers with "?"
-        function normalizeStatement(statement) {
-            if (!statement) return '';
-            let normalized = statement
-                .replace(/"(?:[^"\\]|\\.)*"/g, '?')
-                .replace(/'(?:[^'\\]|\\.)*'/g, '?')
-                .replace(/\b\d+\.?\d*\b/g, '?');
-            return normalized;
-        }
-
-        // Get color class based on percentage
-        function getColorClass(percentage) {
-            if (percentage === 'N/A' || isNaN(percentage)) return 'green';
-            if (percentage < 25) return 'green';
-            if (percentage < 50) return 'yellow';
-            if (percentage < 75) return 'orange';
-            return 'red';
-        }
-
-        // Recursively extract operators from the plan
-        function getOperators(operator, operators = []) {
-            if (operator) {
-                if (operator['#operator']) {
-                    operators.push(operator);
-                }
-                if (operator['~child']) {
-                    getOperators(operator['~child'], operators);
-                } else if (operator['~children']) {
-                    operator['~children'].forEach(child => getOperators(child, operators));
-                }
-            }
-            return operators;
-        }
-
-
-   /*
+      /*
         // Calculate total kernel time from the plan
         function calculateTotalKernTime(plan) {
             const operators = getOperators(plan);
@@ -310,941 +386,1497 @@
             return totalKernTime;
         }
  */
-     
-        function calculateTotalKernTime(plan) {
-            const operators = getOperators(plan);
-            let lastKernTime = 0;
-            operators.forEach(operator => {
-                const stats = operator['#stats'] || {};
-                const kernTime = parseTime(stats.kernTime);
-                console.log('kernTime:', kernTime);
-                if (!isNaN(kernTime) && kernTime > 0) {
-                    lastKernTime = kernTime; // Update to the latest valid kernTime
-                }
-            });
-            console.log('lastKernTime:', lastKernTime);
-            return lastKernTime;
+
+      function calculateTotalKernTime(plan) {
+        const operators = getOperators(plan);
+        let lastKernTime = 0;
+        operators.forEach((operator) => {
+          const stats = operator["#stats"] || {};
+          const kernTime = parseTime(stats.kernTime);
+          if (!isNaN(kernTime) && kernTime > 0) {
+            lastKernTime = kernTime; // Update to the latest valid kernTime
+          }
+        });
+        return lastKernTime;
+      }
+
+      // Build operator stats for modal
+      function buildOperatorStats(operator) {
+        let html = `<h3>Operator: ${operator["#operator"] || "Unknown"}</h3>`;
+        if (operator["#stats"]) {
+          html += "<dl>";
+          for (const [key, value] of Object.entries(operator["#stats"])) {
+            html += `<dt>${key}</dt><dd>${value}</dd>`;
+          }
+          html += "</dl>";
+        } else {
+          html += "<p>No stats available.</p>";
         }
-       
+        return html;
+      }
 
-
-        // Build operator stats for modal
-        function buildOperatorStats(operator) {
-            let html = `<h3>Operator: ${operator['#operator'] || 'Unknown'}</h3>`;
-            if (operator['#stats']) {
-                html += '<dl>';
-                for (const [key, value] of Object.entries(operator['#stats'])) {
-                    html += `<dt>${key}</dt><dd>${value}</dd>`;
-                }
-                html += '</dl>';
-            } else {
-                html += '<p>No stats available.</p>';
-            }
-            return html;
+      // Generate flow diagram
+      function generateFlowDiagram(request) {
+        const flowDiagram = document.getElementById("flow-diagram");
+        flowDiagram.innerHTML = "";
+        if (!request || !request.plan) {
+          flowDiagram.textContent = "No execution plan available.";
+          return;
         }
 
-        // Generate flow diagram
-        function generateFlowDiagram(request) {
-            const flowDiagram = document.getElementById('flow-diagram');
-            flowDiagram.innerHTML = '';
-            if (!request || !request.plan) {
-                flowDiagram.textContent = 'No execution plan available.';
-                return;
-            }
+        const elapsedTimeMs = parseTime(request.elapsedTime);
+        const operators = getOperators(request.plan);
 
-            const elapsedTimeMs = parseTime(request.elapsedTime);
-            const operators = getOperators(request.plan);
+        if (operators.length === 0) {
+          flowDiagram.textContent = "No operators found in the execution plan.";
+          return;
+        }
 
-            if (operators.length === 0) {
-                flowDiagram.textContent = 'No operators found in the execution plan.';
-                return;
-            }
+        operators.forEach((operator, index) => {
+          const operatorName = operator["#operator"] || "Unknown Operator";
+          const stats = operator["#stats"] || {};
+          const execTime = stats.execTime || "N/A";
+          const itemsIn =
+            stats["#itemsIn"] !== undefined ? stats["#itemsIn"] : "-";
+          const itemsOut =
+            stats["#itemsOut"] !== undefined ? stats["#itemsOut"] : "-";
+          const execTimeMs = parseTime(execTime);
+          const percentage =
+            elapsedTimeMs > 0 && !isNaN(execTimeMs)
+              ? ((execTimeMs / elapsedTimeMs) * 100).toFixed(2)
+              : "N/A";
 
-            operators.forEach((operator, index) => {
-                const operatorName = operator['#operator'] || 'Unknown Operator';
-                const stats = operator['#stats'] || {};
-                const execTime = stats.execTime || 'N/A';
-                const itemsIn = stats['#itemsIn'] !== undefined ? stats['#itemsIn'] : '-';
-                const itemsOut = stats['#itemsOut'] !== undefined ? stats['#itemsOut'] : '-';
-                const execTimeMs = parseTime(execTime);
-                const percentage = elapsedTimeMs > 0 && !isNaN(execTimeMs) 
-                    ? (execTimeMs / elapsedTimeMs * 100).toFixed(2) 
-                    : 'N/A';
-
-                const bubble = document.createElement('div');
-                bubble.className = 'step-bubble';
-                const colorClass = getColorClass(parseFloat(percentage));
-                bubble.classList.add(colorClass);
-                bubble.innerHTML = `
+          const bubble = document.createElement("div");
+          bubble.className = "step-bubble";
+          const colorClass = getColorClass(parseFloat(percentage));
+          bubble.classList.add(colorClass);
+          bubble.innerHTML = `
                     <h4>${operatorName}</h4>
                     <p>${execTime} (${percentage}%)</p>
                     <p>${itemsIn} in / ${itemsOut} out</p>
                 `;
-                bubble.addEventListener('click', () => {
-                    const statsHtml = buildOperatorStats(operator);
-                    document.getElementById('operator-modal-body').innerHTML = statsHtml;
-                    document.getElementById('operator-modal').style.display = 'block';
-                });
-                flowDiagram.appendChild(bubble);
+          bubble.addEventListener("click", () => {
+            const statsHtml = buildOperatorStats(operator);
+            document.getElementById("operator-modal-body").innerHTML =
+              statsHtml;
+            document.getElementById("operator-modal").style.display = "block";
+          });
+          flowDiagram.appendChild(bubble);
 
-                if (index < operators.length - 1) {
-                    const connector = document.createElement('div');
-                    connector.className = 'connector';
-                    flowDiagram.appendChild(connector);
-                }
-            });
+          if (index < operators.length - 1) {
+            const connector = document.createElement("div");
+            connector.className = "connector";
+            flowDiagram.appendChild(connector);
+          }
+        });
 
-            if (request.plan) {
-                const viewPlanButton = document.createElement('button');
-                viewPlanButton.textContent = 'View Detailed Execution Plan';
-                viewPlanButton.style.marginTop = '10px';
-                viewPlanButton.addEventListener('click', () => {
-                    const planTreeHtml = '<ul>' + buildPlanTree(request.plan) + '</ul>';
-                    document.getElementById('plan-modal-body').innerHTML = planTreeHtml;
-                    document.getElementById('plan-modal').style.display = 'block';
-                });
-                flowDiagram.appendChild(viewPlanButton);
-            }
-
-            panzoom(flowDiagram, { smoothScroll: false });
+        if (request.plan) {
+          const viewPlanButton = document.createElement("button");
+          viewPlanButton.textContent = "View Detailed Execution Plan";
+          viewPlanButton.style.marginTop = "10px";
+          viewPlanButton.addEventListener("click", () => {
+            const planTreeHtml = "<ul>" + buildPlanTree(request.plan) + "</ul>";
+            document.getElementById("plan-modal-body").innerHTML = planTreeHtml;
+            document.getElementById("plan-modal").style.display = "block";
+          });
+          flowDiagram.appendChild(viewPlanButton);
         }
 
-        // Build plan tree for modal
-        function buildPlanTree(operator) {
-            if (!operator) return '';
-            let html = `<li>${operator['#operator'] || 'Unknown Operator'}`;
-            if (operator['#stats']) {
-                const stats = operator['#stats'];
-                html += ` - itemsIn: ${stats['#itemsIn'] !== undefined ? stats['#itemsIn'] : 'N/A'}, itemsOut: ${stats['#itemsOut'] !== undefined ? stats['#itemsOut'] : 'N/A'}, execTime: ${stats.execTime || 'N/A'}, kernTime: ${stats.kernTime || 'N/A'}`;
+        panzoom(flowDiagram, { smoothScroll: false });
+      }
+
+      // Build plan tree for modal
+      function buildPlanTree(operator) {
+        if (!operator) return "";
+        let html = `<li>${operator["#operator"] || "Unknown Operator"}`;
+        if (operator["#stats"]) {
+          const stats = operator["#stats"];
+          html += ` - itemsIn: ${
+            stats["#itemsIn"] !== undefined ? stats["#itemsIn"] : "N/A"
+          }, itemsOut: ${
+            stats["#itemsOut"] !== undefined ? stats["#itemsOut"] : "N/A"
+          }, execTime: ${stats.execTime || "N/A"}, kernTime: ${
+            stats.kernTime || "N/A"
+          }`;
+        }
+        if (operator["~child"]) {
+          html += "<ul>" + buildPlanTree(operator["~child"]) + "</ul>";
+        } else if (operator["~children"]) {
+          html += "<ul>";
+          operator["~children"].forEach((child) => {
+            html += buildPlanTree(child);
+          });
+          html += "</ul>";
+        }
+        html += "</li>";
+        return html;
+      }
+
+      // Generate main table
+      function generateTable(requests) {
+        const tableHeader = document.getElementById("table-header");
+        const tableBody = document.getElementById("table-body");
+        tableHeader.innerHTML = "";
+        tableBody.innerHTML = "";
+
+        const columns = [
+          "#",
+          "requestTime",
+          "statementType",
+          "elapsedTime",
+          "kernTime",
+          "KernTime %",
+          "cpuTime",
+          "serviceTime",
+          "resultCount",
+          "resultSize",
+          "Index(es) Used",
+          "Items from Index Scan",
+          "Doc Fetch Count",
+          "Primary Scan Used",
+          "state",
+          "statement",
+          "users",
+        ];
+
+        const headerRow = document.createElement("tr");
+        columns.forEach((col) => {
+          const th = document.createElement("th");
+          th.textContent = col;
+          headerRow.appendChild(th);
+        });
+        tableHeader.appendChild(headerRow);
+
+        requests.sort(
+          (a, b) => parseTime(b.elapsedTime) - parseTime(a.elapsedTime)
+        );
+
+        requests.forEach((request, index) => {
+          const row = document.createElement("tr");
+          const totalKernTimeMs = request.plan
+            ? calculateTotalKernTime(request.plan)
+            : 0;
+          const elapsedTimeMs = parseTime(request.elapsedTime);
+
+          columns.forEach((col) => {
+            const td = document.createElement("td");
+            let value;
+            if (col === "#") {
+              value = index + 1;
+            } else if (col === "Primary Scan Used") {
+              value =
+                request.phaseOperators && request.phaseOperators.primaryScan > 0
+                  ? "Yes"
+                  : "No";
+            } else if (col === "Index(es) Used") {
+              const indexes = [];
+              if (
+                request.phaseOperators &&
+                request.phaseOperators.primaryScan > 0
+              )
+                indexes.push("Primary");
+              if (
+                request.phaseOperators &&
+                request.phaseOperators.indexScan > 0
+              )
+                indexes.push("Secondary");
+              value = indexes.length > 0 ? indexes.join(", ") : "None";
+            } else if (col === "Items from Index Scan") {
+              if (
+                request.phaseOperators &&
+                request.phaseOperators.primaryScan > 0
+              ) {
+                value =
+                  request.phaseCounts && request.phaseCounts.primaryScan
+                    ? request.phaseCounts.primaryScan
+                    : "N/A";
+              } else if (
+                request.phaseOperators &&
+                request.phaseOperators.indexScan > 0
+              ) {
+                value =
+                  request.phaseCounts && request.phaseCounts.indexScan
+                    ? request.phaseCounts.indexScan
+                    : "N/A";
+              } else {
+                value = "N/A";
+              }
+            } else if (col === "Doc Fetch Count") {
+              value =
+                request.phaseCounts && request.phaseCounts.fetch
+                  ? request.phaseCounts.fetch
+                  : "N/A";
+            } else if (col === "kernTime") {
+              value =
+                totalKernTimeMs > 0 ? `${totalKernTimeMs.toFixed(2)}ms` : "N/A";
+            } else if (col === "KernTime %") {
+              value =
+                elapsedTimeMs > 0 && totalKernTimeMs > 0
+                  ? ((totalKernTimeMs / elapsedTimeMs) * 100).toFixed(2) + "%"
+                  : "N/A";
+            } else {
+              value = request[col] || "N/A";
             }
-            if (operator['~child']) {
-                html += '<ul>' + buildPlanTree(operator['~child']) + '</ul>';
-            } else if (operator['~children']) {
-                html += '<ul>';
-                operator['~children'].forEach(child => {
-                    html += buildPlanTree(child);
-                });
-                html += '</ul>';
+            td.textContent = value;
+            if (col === "Primary Scan Used" && value === "Yes") {
+              td.classList.add("primary-scan-yes");
             }
-            html += '</li>';
-            return html;
+            row.appendChild(td);
+          });
+
+          row.addEventListener("click", () => {
+            document
+              .querySelectorAll("tr")
+              .forEach((r) => (r.style.backgroundColor = ""));
+            row.style.backgroundColor = "#e0e0e0";
+            generateFlowDiagram(request);
+          });
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Calculate statistics for a group of requests based on SQL++ query logic
+      function calculateGroupStats(normalized_statement, groupedRequests) {
+        const users_agg = groupedRequests.map((r) => r.users).filter((u) => u);
+        const durations = groupedRequests
+          .map((r) => {
+            const ms = parseTime(r.serviceTime);
+            return isNaN(ms) ? NaN : ms / 1000; // Convert ms to seconds
+          })
+          .filter((d) => !isNaN(d));
+        const total_count = durations.length;
+        if (total_count === 0) return null;
+
+        const min_duration = Math.min(...durations);
+        const max_duration = Math.max(...durations);
+        const avg_duration =
+          durations.reduce((sum, d) => sum + d, 0) / total_count;
+        const sorted_durations = [...durations].sort((a, b) => a - b);
+        const midFloor = Math.floor(total_count / 2);
+        const midCeil = Math.ceil(total_count / 2) - 1;
+        const median_duration =
+          (sorted_durations[midFloor] + sorted_durations[midCeil]) / 2;
+
+        const fetchValues = groupedRequests.map(
+          (r) => r.phaseCounts?.fetch || 0
+        );
+        const primaryScanValues = groupedRequests.map(
+          (r) => r.phaseCounts?.primaryScan || 0
+        );
+        const indexScanValues = groupedRequests.map(
+          (r) => r.phaseCounts?.indexScan || 0
+        );
+        const avg_fetch =
+          fetchValues.reduce((sum, v) => sum + v, 0) / total_count;
+        const avg_primaryScan =
+          primaryScanValues.reduce((sum, v) => sum + v, 0) / total_count;
+        const avg_indexScan =
+          indexScanValues.reduce((sum, v) => sum + v, 0) / total_count;
+
+        // Compute user_query_counts as an object: { user: count }
+        const uniqueUsers = [...new Set(users_agg)];
+        const user_query_counts = {};
+        uniqueUsers.forEach((user) => {
+          user_query_counts[user] = users_agg.filter((v) => v === user).length;
+        });
+
+        return {
+          normalized_statement,
+          user_query_counts,
+          total_count,
+          min_duration_in_seconds: min_duration,
+          max_duration_in_seconds: max_duration,
+          avg_duration_in_seconds: avg_duration,
+          median_duration_in_seconds: median_duration,
+          avg_fetch,
+          avg_primaryScan,
+          avg_indexScan,
+        };
+      }
+
+      // Generate analysis table based on SQL++ query logic
+      function generateAnalysisTable(requests) {
+        const analysisTableHeader = document.getElementById(
+          "analysis-table-header"
+        );
+        const analysisTableBody = document.getElementById(
+          "analysis-table-body"
+        );
+        analysisTableHeader.innerHTML = "";
+        analysisTableBody.innerHTML = "";
+
+        // Group requests by normalized_statement
+        const groups = {};
+        requests.forEach((request) => {
+          const stmt = request.preparedText || request.statement;
+          if (!stmt) return;
+          const upperStmt = stmt.toUpperCase();
+          // Apply SQL++ WHERE clause filters
+          if (
+            upperStmt.startsWith("INFER ") ||
+            upperStmt.startsWith("ADVISE ") ||
+            upperStmt.startsWith("CREATE ") ||
+            upperStmt.startsWith("CREATE INDEX") ||
+            upperStmt.startsWith("ALTER INDEX") ||
+            upperStmt.includes(" SYSTEM:")
+          ) {
+            return;
+          }
+          const normalized = normalizeStatement(stmt);
+          if (!groups[normalized]) {
+            groups[normalized] = [];
+          }
+          groups[normalized].push(request);
+        });
+
+        // Calculate stats for each group
+        const groupData = Object.keys(groups)
+          .map((key) => calculateGroupStats(key, groups[key]))
+          .filter((data) => data !== null);
+        groupData.sort((a, b) => b.total_count - a.total_count);
+
+        // Define table columns
+        const analysisColumns = [
+          "total_count",
+          "min_duration_in_seconds",
+          "max_duration_in_seconds",
+          "avg_duration_in_seconds",
+          "median_duration_in_seconds",
+          "avg_fetch",
+          "avg_primaryScan",
+          "avg_indexScan",
+          "normalized_statement",
+          "user_query_counts",
+        ];
+
+        // Create header row
+        const headerRow = document.createElement("tr");
+        analysisColumns.forEach((col) => {
+          const th = document.createElement("th");
+
+          th.textContent = col
+            .replace(/_/g, " ")
+            .replace("in seconds", " (sec)");
+          headerRow.appendChild(th);
+        });
+        analysisTableHeader.appendChild(headerRow);
+
+        // Create data rows
+        groupData.forEach((group) => {
+          const row = document.createElement("tr");
+          analysisColumns.forEach((col) => {
+            const td = document.createElement("td");
+            let value;
+            if (col === "user_query_counts") {
+              value = Object.entries(group.user_query_counts)
+                .map(([user, count]) => `${user}: ${count}`)
+                .join(", ");
+            } else if (col === "total_count") {
+              value = group.total_count;
+            } else if (
+              [
+                "min_duration_in_seconds",
+                "max_duration_in_seconds",
+                "avg_duration_in_seconds",
+                "median_duration_in_seconds",
+                "avg_fetch",
+                "avg_primaryScan",
+                "avg_indexScan",
+              ].includes(col)
+            ) {
+              value = isNaN(group[col]) ? "N/A" : Number(group[col]).toFixed(3);
+            } else {
+              value = group[col] || "N/A";
+            }
+            td.textContent = value;
+            row.appendChild(td);
+          });
+          analysisTableBody.appendChild(row);
+        });
+      }
+
+      // Helper function to get time grouping settings
+      function getTimeGrouping() {
+        const selectedGrouping =
+          document.querySelector('input[name="timeGrouping"]:checked')?.value ||
+          "optimizer";
+        return selectedGrouping;
+      }
+
+      // Helper function to round timestamp based on grouping and optimal unit
+      function roundTimestamp(timestamp, grouping, requests) {
+        const date = new Date(timestamp);
+        
+        // Determine actual unit to use
+        let actualUnit;
+        if (grouping === "optimizer") {
+          actualUnit = getOptimalTimeUnit(requests);
+        } else {
+          // Use exactly what the user selected
+          actualUnit = grouping;
         }
 
-        // Generate main table
-        function generateTable(requests) {
-            const tableHeader = document.getElementById('table-header');
-            const tableBody = document.getElementById('table-body');
-            tableHeader.innerHTML = '';
-            tableBody.innerHTML = '';
+        // Round based on actual unit
+        switch (actualUnit) {
+          case "second":
+            date.setMilliseconds(0);
+            break;
+          case "minute":
+            date.setSeconds(0, 0);
+            break;
+          case "hour":
+            date.setMinutes(0, 0, 0);
+            break;
+          case "day":
+            date.setHours(0, 0, 0, 0);
+            break;
+          case "week":
+            const dayOfWeek = date.getDay();
+            date.setDate(date.getDate() - dayOfWeek);
+            date.setHours(0, 0, 0, 0);
+            break;
+          case "month":
+            date.setDate(1);
+            date.setHours(0, 0, 0, 0);
+            break;
+          case "year":
+            date.setMonth(0, 1);
+            date.setHours(0, 0, 0, 0);
+            break;
+          default:
+            date.setSeconds(0, 0);
+        }
+        return date;
+      }
 
-            const columns = [
-                '#',
-                'requestTime',
-                'statementType',
-                'elapsedTime',
-                'kernTime',
-                'KernTime %',
-                'cpuTime',
-                'serviceTime',
-                'resultCount',
-                'resultSize',
-                'Index(es) Used',
-                'Items from Index Scan',
-                'Doc Fetch Count',
-                'Primary Scan Used',
-                'state',
-                'statement',
-                'users'
-            ];
+      // Helper function to automatically determine optimal time unit based on data span
+      function getOptimalTimeUnit(requests) {
+        if (!requests || requests.length === 0) return "minute";
 
-            const headerRow = document.createElement('tr');
-            columns.forEach(col => {
-                const th = document.createElement('th');
-                th.textContent = col;
-                headerRow.appendChild(th);
-            });
-            tableHeader.appendChild(headerRow);
+        const times = requests
+          .map((r) => new Date(r.requestTime))
+          .filter((t) => !isNaN(t));
+        if (times.length === 0) return "minute";
 
-            requests.sort((a, b) => parseTime(b.elapsedTime) - parseTime(a.elapsedTime));
+        const minTime = Math.min(...times);
+        const maxTime = Math.max(...times);
+        const timeSpanMs = maxTime - minTime;
+        const timeSpanHours = timeSpanMs / (1000 * 60 * 60);
+        const timeSpanDays = timeSpanHours / 24;
 
-            requests.forEach((request, index) => {
-                const row = document.createElement('tr');
-                const totalKernTimeMs = request.plan ? calculateTotalKernTime(request.plan) : 0;
-                const elapsedTimeMs = parseTime(request.elapsedTime);
+        // Choose time unit based on span to keep Chart.js happy
+        if (timeSpanDays > 365) {
+          return "year";
+        } else if (timeSpanDays > 60) {
+          return "month";
+        } else if (timeSpanDays > 14) {
+          return "week";
+        } else if (timeSpanDays > 2) {
+          return "day";
+        } else if (timeSpanHours > 2) {
+          return "hour";
+        } else if (timeSpanHours > 0.1) {
+          return "minute";
+        } else {
+          return "second";
+        }
+      }
 
-                columns.forEach(col => {
-                    const td = document.createElement('td');
-                    let value;
-                    if (col === '#') {
-                        value = index + 1;
-                    } else if (col === 'Primary Scan Used') {
-                        value = (request.phaseOperators && request.phaseOperators.primaryScan > 0) ? 'Yes' : 'No';
-                    } else if (col === 'Index(es) Used') {
-                        const indexes = [];
-                        if (request.phaseOperators && request.phaseOperators.primaryScan > 0) indexes.push('Primary');
-                        if (request.phaseOperators && request.phaseOperators.indexScan > 0) indexes.push('Secondary');
-                        value = indexes.length > 0 ? indexes.join(', ') : 'None';
-                    } else if (col === 'Items from Index Scan') {
-                        if (request.phaseOperators && request.phaseOperators.primaryScan > 0) {
-                            value = request.phaseCounts && request.phaseCounts.primaryScan ? request.phaseCounts.primaryScan : 'N/A';
-                        } else if (request.phaseOperators && request.phaseOperators.indexScan > 0) {
-                            value = request.phaseCounts && request.phaseCounts.indexScan ? request.phaseCounts.indexScan : 'N/A';
-                        } else {
-                            value = 'N/A';
-                        }
-                    } else if (col === 'Doc Fetch Count') {
-                        value = request.phaseCounts && request.phaseCounts.fetch ? request.phaseCounts.fetch : 'N/A';
-                    } else if (col === 'kernTime') {
-                        value = totalKernTimeMs > 0 ? `${totalKernTimeMs.toFixed(2)}ms` : 'N/A';
-                    } else if (col === 'KernTime %') {
-                        value = elapsedTimeMs > 0 && totalKernTimeMs > 0 
-                            ? ((totalKernTimeMs / elapsedTimeMs) * 100).toFixed(2) + '%' 
-                            : 'N/A';
-                    } else {
-                        value = request[col] || 'N/A';
-                    }
-                    td.textContent = value;
-                    if (col === 'Primary Scan Used' && value === 'Yes') {
-                        td.classList.add('primary-scan-yes');
-                    }
-                    row.appendChild(td);
-                });
+      // Helper function to get Chart.js time configuration with auto-adjustment
+      function getTimeConfig(requestedGrouping, requests) {
+        // Use exactly the unit that was requested
+        let actualUnit = requestedGrouping;
 
-                row.addEventListener('click', () => {
-                    document.querySelectorAll('tr').forEach(r => r.style.backgroundColor = '');
-                    row.style.backgroundColor = '#e0e0e0';
-                    generateFlowDiagram(request);
-                });
-                tableBody.appendChild(row);
-            });
+        // Calculate appropriate stepSize based on data span to prevent Chart.js errors
+        let stepSize = 1;
+        if (requests && requests.length > 0) {
+          const times = requests
+            .map((r) => new Date(r.requestTime))
+            .filter((t) => !isNaN(t));
+          if (times.length > 0) {
+            const minTime = Math.min(...times);
+            const maxTime = Math.max(...times);
+            const timeSpanMs = maxTime - minTime;
+
+            // Calculate stepSize to keep data points reasonable (max ~1000 points)
+            switch (actualUnit) {
+              case "second":
+                stepSize = Math.max(1, Math.ceil(timeSpanMs / (1000 * 1000))); // timeSpanMs / (1000ms * 1000 points)
+                break;
+              case "minute":
+                stepSize = Math.max(
+                  1,
+                  Math.ceil(timeSpanMs / (60 * 1000 * 1000))
+                ); // timeSpanMs / (60s * 1000ms * 1000 points)
+                break;
+              case "hour":
+                stepSize = Math.max(
+                  1,
+                  Math.ceil(timeSpanMs / (60 * 60 * 1000 * 1000))
+                ); // timeSpanMs / (3600s * 1000ms * 1000 points)
+                break;
+              case "day":
+                stepSize = Math.max(
+                  1,
+                  Math.ceil(timeSpanMs / (24 * 60 * 60 * 1000 * 1000))
+                ); // timeSpanMs / (86400s * 1000ms * 1000 points)
+                break;
+              case "week":
+                stepSize = Math.max(
+                  1,
+                  Math.ceil(timeSpanMs / (7 * 24 * 60 * 60 * 1000 * 1000))
+                ); // timeSpanMs / (604800s * 1000ms * 1000 points)
+                break;
+              case "month":
+                stepSize = Math.max(
+                  1,
+                  Math.ceil(timeSpanMs / (30 * 24 * 60 * 60 * 1000 * 1000))
+                ); // timeSpanMs / (~2592000s * 1000ms * 1000 points)
+                break;
+              case "year":
+                stepSize = Math.max(
+                  1,
+                  Math.ceil(timeSpanMs / (365 * 24 * 60 * 60 * 1000 * 1000))
+                ); // timeSpanMs / (~31536000s * 1000ms * 1000 points)
+                break;
+            }
+          }
         }
 
-        // Calculate statistics for a group of requests based on SQL++ query logic
-        function calculateGroupStats(normalized_statement, groupedRequests) {
-            const users_agg = groupedRequests.map(r => r.users).filter(u => u);
-            const durations = groupedRequests.map(r => {
-                const ms = parseTime(r.serviceTime);
-                return isNaN(ms) ? NaN : ms / 1000; // Convert ms to seconds
-            }).filter(d => !isNaN(d));
-            const total_count = durations.length;
-            if (total_count === 0) return null;
+        // Return appropriate config based on actual unit
+        const configs = {
+          second: {
+            unit: "second",
+            stepSize: stepSize,
+            displayFormats: { second: "HH:mm:ss" },
+          },
+          minute: {
+            unit: "minute",
+            stepSize: stepSize,
+            displayFormats: { minute: "MMM dd HH:mm" },
+          },
+          hour: {
+            unit: "hour",
+            stepSize: stepSize,
+            displayFormats: { hour: "MMM dd HH:mm" },
+          },
+          day: {
+            unit: "day",
+            stepSize: stepSize,
+            displayFormats: { day: "MMM dd" },
+          },
+          week: {
+            unit: "week",
+            stepSize: stepSize,
+            displayFormats: { week: "MMM dd" },
+          },
+          month: {
+            unit: "month",
+            stepSize: stepSize,
+            displayFormats: { month: "MMM yyyy" },
+          },
+          year: {
+            unit: "year",
+            stepSize: stepSize,
+            displayFormats: { year: "yyyy" },
+          },
+        };
 
-            const min_duration = Math.min(...durations);
-            const max_duration = Math.max(...durations);
-            const avg_duration = durations.reduce((sum, d) => sum + d, 0) / total_count;
-            const sorted_durations = [...durations].sort((a, b) => a - b);
-            const midFloor = Math.floor(total_count / 2);
-            const midCeil = Math.ceil(total_count / 2) - 1;
-            const median_duration = (sorted_durations[midFloor] + sorted_durations[midCeil]) / 2;
+        return configs[actualUnit] || configs["minute"];
+      }
 
-            const fetchValues = groupedRequests.map(r => r.phaseCounts?.fetch || 0);
-            const primaryScanValues = groupedRequests.map(r => r.phaseCounts?.primaryScan || 0);
-            const indexScanValues = groupedRequests.map(r => r.phaseCounts?.indexScan || 0);
-            const avg_fetch = fetchValues.reduce((sum, v) => sum + v, 0) / total_count;
-            const avg_primaryScan = primaryScanValues.reduce((sum, v) => sum + v, 0) / total_count;
-            const avg_indexScan = indexScanValues.reduce((sum, v) => sum + v, 0) / total_count;
+      // Helper function to get current time config with requests data
+      function getCurrentTimeConfig(requests) {
+        const grouping = getTimeGrouping();
+        let actualUnit;
+        if (grouping === "optimizer") {
+          actualUnit = getOptimalTimeUnit(requests);
+        } else {
+          actualUnit = grouping;
+        }
+        return getTimeConfig(actualUnit, requests);
+      }
 
-            // Compute user_query_counts as an object: { user: count }
-            const uniqueUsers = [...new Set(users_agg)];
-            const user_query_counts = {};
-            uniqueUsers.forEach(user => {
-                user_query_counts[user] = users_agg.filter(v => v === user).length;
-            });
+      // Helper function to update the optimizer label
+      function updateOptimizerLabel(requests) {
+        const optimizedUnit = getOptimalTimeUnit(requests);
+        const label = document.getElementById("optimizer-label");
+        if (label) {
+          label.textContent = `By Optimizer (${optimizedUnit})`;
+        }
+      }
 
-            return {
-                normalized_statement,
-                user_query_counts,
-                total_count,
-                min_duration_in_seconds: min_duration,
-                max_duration_in_seconds: max_duration,
-                avg_duration_in_seconds: avg_duration,
-                median_duration_in_seconds: median_duration,
-                avg_fetch,
-                avg_primaryScan,
-                avg_indexScan
+      // Generate operations chart showing index scan vs fetch operations
+      function generateOperationsChart(requests) {
+        // Destroy existing chart if it exists - do this first
+        if (window.operationsChart) {
+          window.operationsChart.destroy();
+          window.operationsChart = null;
+        }
+
+        const canvas = document.getElementById("operations-chart");
+        const ctx = canvas.getContext("2d");
+
+        // Group requests by selected time unit
+        const timeGroups = {};
+        const grouping = getTimeGrouping();
+
+        requests.forEach((request) => {
+          if (!request.requestTime) return;
+
+          // Parse requestTime and round based on selected grouping
+          const requestDate = new Date(request.requestTime);
+          const timeKey = roundTimestamp(requestDate, grouping, requests);
+
+          const key = timeKey.toISOString();
+
+          if (!timeGroups[key]) {
+            timeGroups[key] = {
+              timestamp: timeKey,
+              totalIndexScan: 0,
+              totalFetch: 0,
             };
-        }
+          }
 
-        // Generate analysis table based on SQL++ query logic
-        function generateAnalysisTable(requests) {
-            const analysisTableHeader = document.getElementById('analysis-table-header');
-            const analysisTableBody = document.getElementById('analysis-table-body');
-            analysisTableHeader.innerHTML = '';
-            analysisTableBody.innerHTML = '';
+          // Sum up index scans (primary + secondary)
+          const phaseCounts = request.phaseCounts || {};
+          const primaryScan = phaseCounts.primaryScan || 0;
+          const indexScan = phaseCounts.indexScan || 0;
+          const fetch = phaseCounts.fetch || 0;
 
-            // Group requests by normalized_statement
-            const groups = {};
-            requests.forEach(request => {
-                const stmt = request.preparedText || request.statement;
-                if (!stmt) return;
-                const upperStmt = stmt.toUpperCase();
-                // Apply SQL++ WHERE clause filters
-                if (
-                    upperStmt.startsWith('INFER ') ||
-                    upperStmt.startsWith('ADVISE ') ||
-                    upperStmt.startsWith('CREATE ') ||
-                    upperStmt.startsWith('CREATE INDEX') ||
-                    upperStmt.startsWith('ALTER INDEX') ||
-                    upperStmt.includes(' SYSTEM:')
-                ) {
-                    return;
-                }
-                const normalized = normalizeStatement(stmt);
-                if (!groups[normalized]) {
-                    groups[normalized] = [];
-                }
-                groups[normalized].push(request);
-            });
+          timeGroups[key].totalIndexScan += primaryScan + indexScan;
+          timeGroups[key].totalFetch += fetch;
+        });
 
-            // Calculate stats for each group
-            const groupData = Object.keys(groups)
-                .map(key => calculateGroupStats(key, groups[key]))
-                .filter(data => data !== null);
-            groupData.sort((a, b) => b.total_count - a.total_count);
+        // Convert to sorted array
+        const sortedData = Object.values(timeGroups).sort(
+          (a, b) => a.timestamp - b.timestamp
+        );
 
-            // Define table columns
-            const analysisColumns = [
-                'total_count',
-                'min_duration_in_seconds',
-                'max_duration_in_seconds',
-                'avg_duration_in_seconds',
-                'median_duration_in_seconds',
-                'avg_fetch',
-                'avg_primaryScan',
-                'avg_indexScan',
-                'normalized_statement',
-                'user_query_counts'
-            ];
+        // Prepare chart data
+        const labels = sortedData.map((item) => item.timestamp);
+        const indexScanData = sortedData.map((item) => item.totalIndexScan);
+        const fetchData = sortedData.map((item) => item.totalFetch);
 
-            // Create header row
-            const headerRow = document.createElement('tr');
-            analysisColumns.forEach(col => {
-                const th = document.createElement('th');
-
-                th.textContent = col.replace(/_/g, ' ').replace("in seconds", " (sec)");
-                headerRow.appendChild(th);
-            });
-            analysisTableHeader.appendChild(headerRow);
-
-            // Create data rows
-            groupData.forEach(group => {
-                const row = document.createElement('tr');
-                analysisColumns.forEach(col => {
-                    const td = document.createElement('td');
-                    let value;
-                    if (col === 'user_query_counts') {
-                        value = Object.entries(group.user_query_counts)
-                            .map(([user, count]) => `${user}: ${count}`)
-                            .join(', ');
-                    } else if (col === 'total_count') {
-                        value = group.total_count;
-                    } else if (['min_duration_in_seconds', 'max_duration_in_seconds', 'avg_duration_in_seconds', 'median_duration_in_seconds', 'avg_fetch', 'avg_primaryScan', 'avg_indexScan'].includes(col)) {
-                        value = isNaN(group[col]) ? 'N/A' : Number(group[col]).toFixed(3);
-                    } else {
-                        value = group[col] || 'N/A';
-                    }
-                    td.textContent = value;
-                    row.appendChild(td);
-                });
-                analysisTableBody.appendChild(row);
-            });
-        }
-
-        // Generate operations chart showing index scan vs fetch operations
-        function generateOperationsChart(requests) {
-            // Destroy existing chart if it exists - do this first
-            if (window.operationsChart) {
-                window.operationsChart.destroy();
-                window.operationsChart = null;
-            }
-            
-            const canvas = document.getElementById('operations-chart');
-            const ctx = canvas.getContext('2d');
-            
-            // Group requests by hour based on requestTime
-            const timeGroups = {};
-            
-            requests.forEach(request => {
-                if (!request.requestTime) return;
-                
-                // Parse requestTime and round to nearest hour
-                const requestDate = new Date(request.requestTime);
-                const timeKey = new Date(requestDate.getTime());
-                timeKey.setMinutes(0, 0, 0); // Round to hour
-                
-                const key = timeKey.toISOString();
-                
-                if (!timeGroups[key]) {
-                    timeGroups[key] = {
-                        timestamp: timeKey,
-                        totalIndexScan: 0,
-                        totalFetch: 0
-                    };
-                }
-                
-                // Sum up index scans (primary + secondary)
-                const phaseCounts = request.phaseCounts || {};
-                const primaryScan = phaseCounts.primaryScan || 0;
-                const indexScan = phaseCounts.indexScan || 0;
-                const fetch = phaseCounts.fetch || 0;
-                
-                timeGroups[key].totalIndexScan += primaryScan + indexScan;
-                timeGroups[key].totalFetch += fetch;
-            });
-            
-            // Convert to sorted array
-            const sortedData = Object.values(timeGroups).sort((a, b) => a.timestamp - b.timestamp);
-            
-            // Prepare chart data
-            const labels = sortedData.map(item => item.timestamp);
-            const indexScanData = sortedData.map(item => item.totalIndexScan);
-            const fetchData = sortedData.map(item => item.totalFetch);
-            
-            // Create new side-by-side bar chart
-            window.operationsChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Index Scan Items',
-                            data: indexScanData,
-                            backgroundColor: '#007bff', // Blue
-                            borderColor: '#0056b3',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Fetch Documents',
-                            data: fetchData,
-                            backgroundColor: '#28a745', // Green
-                            borderColor: '#1e7e34',
-                            borderWidth: 1
-                        }
-                    ]
+        // Create new side-by-side bar chart
+        window.operationsChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Index Scan Items",
+                data: indexScanData,
+                backgroundColor: "#007bff", // Blue
+                borderColor: "#0056b3",
+                borderWidth: 1,
+              },
+              {
+                label: "Fetch Documents",
+                data: fetchData,
+                backgroundColor: "#28a745", // Green
+                borderColor: "#1e7e34",
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: "Database Operations Timeline: Index Scans vs Document Fetches",
+              },
+              legend: {
+                display: true,
+                position: "top",
+              },
+              zoom: {
+                limits: {
+                  x: { min: "original", max: "original" },
+                  y: { min: "original", max: "original" },
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Database Operations Timeline: Index Scans vs Document Fetches'
-                        },
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        },
-                        zoom: {
-                            limits: {
-                                x: {min: 'original', max: 'original'},
-                                y: {min: 'original', max: 'original'}
-                            },
-                            pan: {
-                                enabled: true,
-                                mode: 'xy',
-                                onPan: function({chart}) {
-                                    // Sync pan with other charts
-                                    if (window.filterChart && chart !== window.filterChart) {
-                                        window.filterChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
-                                    }
-                                    if (window.timelineChart && chart !== window.timelineChart) {
-                                        window.timelineChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
-                                    }
-                                }
-                            },
-                            zoom: {
-                                wheel: {
-                                    enabled: true,
-                                },
-                                pinch: {
-                                    enabled: true
-                                },
-                                drag: {
-                                    enabled: true,
-                                    backgroundColor: 'rgba(225,225,225,0.3)',
-                                    borderColor: 'rgba(225,225,225)',
-                                    borderWidth: 1
-                                },
-                                mode: 'xy',
-                                onZoom: function({chart}) {
-                                    // Sync zoom with other charts
-                                    if (window.filterChart && chart !== window.filterChart) {
-                                        window.filterChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
-                                    }
-                                    if (window.timelineChart && chart !== window.timelineChart) {
-                                        window.timelineChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'hour',
-                                displayFormats: {
-                                    hour: 'MMM dd HH:mm'
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'Request Time'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Operation Count'
-                            },
-                            beginAtZero: true
-                        }
-                    },
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
+                pan: {
+                  enabled: true,
+                  mode: "xy",
+                  onPan: function ({ chart }) {
+                    // Sync pan with other charts
+                    if (window.filterChart && chart !== window.filterChart) {
+                      window.filterChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
                     }
-                }
-            });
-        }
-
-        // Generate filter chart showing filter efficiency (IN vs OUT)
-        function generateFilterChart(requests) {
-            // Destroy existing chart if it exists - do this first
-            if (window.filterChart) {
-                window.filterChart.destroy();
-                window.filterChart = null;
-            }
-            
-            const canvas = document.getElementById('filter-chart');
-            const ctx = canvas.getContext('2d');
-            
-            // Group requests by hour based on requestTime
-            const timeGroups = {};
-            
-            requests.forEach(request => {
-                if (!request.requestTime || !request.plan) return;
-                
-                // Parse requestTime and round to nearest hour
-                const requestDate = new Date(request.requestTime);
-                const timeKey = new Date(requestDate.getTime());
-                timeKey.setMinutes(0, 0, 0); // Round to hour
-                
-                const key = timeKey.toISOString();
-                
-                if (!timeGroups[key]) {
-                    timeGroups[key] = {
-                        timestamp: timeKey,
-                        filtersEqual: 0,
-                        filtersNotEqual: 0
-                    };
-                }
-                
-                // Find all Filter operators in the plan
-                const operators = getOperators(request.plan);
-                operators.forEach(operator => {
-                    if (operator['#operator'] === 'Filter') {
-                        const stats = operator['#stats'] || {};
-                        const itemsIn = stats['#itemsIn'];
-                        const itemsOut = stats['#itemsOut'];
-                        
-                        if (itemsIn !== undefined && itemsOut !== undefined) {
-                            if (itemsIn === itemsOut) {
-                                timeGroups[key].filtersEqual++;
-                            } else {
-                                timeGroups[key].filtersNotEqual++;
-                            }
-                        }
+                    if (
+                      window.timelineChart &&
+                      chart !== window.timelineChart
+                    ) {
+                      window.timelineChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
                     }
-                });
-            });
-            
-            // Convert to sorted array
-            const sortedData = Object.values(timeGroups).sort((a, b) => a.timestamp - b.timestamp);
-            
-            // Prepare chart data
-            const labels = sortedData.map(item => item.timestamp);
-            const filtersEqualData = sortedData.map(item => item.filtersEqual);
-            const filtersNotEqualData = sortedData.map(item => item.filtersNotEqual);
-            
-            // Create new stacked bar chart
-            window.filterChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Filters: IN = OUT',
-                            data: filtersEqualData,
-                            backgroundColor: '#007bff', // Blue
-                            borderColor: '#0056b3',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Filters: IN ≠ OUT',
-                            data: filtersNotEqualData,
-                            backgroundColor: '#fd7e14', // Orange
-                            borderColor: '#e8590c',
-                            borderWidth: 1
-                        }
-                    ]
+                  },
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Filter Operations Timeline: Efficiency Analysis (IN vs OUT)'
-                        },
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        },
-                        zoom: {
-                            limits: {
-                                x: {min: 'original', max: 'original'},
-                                y: {min: 'original', max: 'original'}
-                            },
-                            pan: {
-                                enabled: true,
-                                mode: 'xy',
-                                onPan: function({chart}) {
-                                    // Sync pan with other charts
-                                    if (window.operationsChart && chart !== window.operationsChart) {
-                                        window.operationsChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
-                                    }
-                                    if (window.timelineChart && chart !== window.timelineChart) {
-                                        window.timelineChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
-                                    }
-                                }
-                            },
-                            zoom: {
-                                wheel: {
-                                    enabled: true,
-                                },
-                                pinch: {
-                                    enabled: true
-                                },
-                                drag: {
-                                    enabled: true,
-                                    backgroundColor: 'rgba(225,225,225,0.3)',
-                                    borderColor: 'rgba(225,225,225)',
-                                    borderWidth: 1
-                                },
-                                mode: 'xy',
-                                onZoom: function({chart}) {
-                                    // Sync zoom with other charts
-                                    if (window.operationsChart && chart !== window.operationsChart) {
-                                        window.operationsChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
-                                    }
-                                    if (window.timelineChart && chart !== window.timelineChart) {
-                                        window.timelineChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'hour',
-                                displayFormats: {
-                                    hour: 'MMM dd HH:mm'
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'Request Time'
-                            },
-                            stacked: true
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Filter Count'
-                            },
-                            stacked: true,
-                            beginAtZero: true
-                        }
-                    },
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
+                zoom: {
+                  wheel: {
+                    enabled: true,
+                  },
+                  pinch: {
+                    enabled: true,
+                  },
+                  drag: {
+                    enabled: true,
+                    backgroundColor: "rgba(225,225,225,0.3)",
+                    borderColor: "rgba(225,225,225)",
+                    borderWidth: 1,
+                  },
+                  mode: "xy",
+                  onZoom: function ({ chart }) {
+                    // Sync zoom with other charts
+                    if (window.filterChart && chart !== window.filterChart) {
+                      window.filterChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
                     }
-                }
-            });
-        }
-
-        // Generate timeline chart showing kernel time vs execution time performance
-        function generateTimelineChart(requests) {
-            // Destroy existing chart if it exists - do this first
-            if (window.timelineChart) {
-                window.timelineChart.destroy();
-                window.timelineChart = null;
-            }
-            
-            const canvas = document.getElementById('timeline-chart');
-            const ctx = canvas.getContext('2d');
-            
-            // Group requests by second based on requestTime
-            const timeGroups = {};
-            
-            requests.forEach(request => {
-                if (!request.requestTime) return;
-                
-                // Parse requestTime and round to nearest hour
-                const requestDate = new Date(request.requestTime);
-                const timeKey = new Date(requestDate.getTime());
-                timeKey.setMinutes(0, 0, 0); // Round to hour
-                
-                const key = timeKey.toISOString();
-                
-                if (!timeGroups[key]) {
-                    timeGroups[key] = {
-                        timestamp: timeKey,
-                        kernTimeLessOrEqual: 0,
-                        kernTimeGreater: 0
-                    };
-                }
-                
-                // Calculate kernTime and executionTime
-                const totalKernTimeMs = request.plan ? calculateTotalKernTime(request.plan) : 0;
-                const elapsedTimeMs = parseTime(request.elapsedTime);
-                
-                // Compare kernTime vs executionTime
-                if (totalKernTimeMs <= elapsedTimeMs) {
-                    timeGroups[key].kernTimeLessOrEqual++;
-                } else {
-                    timeGroups[key].kernTimeGreater++;
-                }
-            });
-            
-            // Convert to sorted array
-            const sortedData = Object.values(timeGroups).sort((a, b) => a.timestamp - b.timestamp);
-            
-            // Prepare chart data
-            const labels = sortedData.map(item => item.timestamp);
-            const kernTimeLessOrEqualData = sortedData.map(item => item.kernTimeLessOrEqual);
-            const kernTimeGreaterData = sortedData.map(item => item.kernTimeGreater);
-            
-            // Create new stacked bar chart
-            window.timelineChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'KernTime ≤ ExecutionTime',
-                            data: kernTimeLessOrEqualData,
-                            backgroundColor: '#28a745', // Green
-                            borderColor: '#1e7e34',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'KernTime > ExecutionTime',
-                            data: kernTimeGreaterData,
-                            backgroundColor: '#dc3545', // Red
-                            borderColor: '#c82333',
-                            borderWidth: 1
-                        }
-                    ]
+                    if (
+                      window.timelineChart &&
+                      chart !== window.timelineChart
+                    ) {
+                      window.timelineChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                  },
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Query Performance Timeline: KernTime vs ExecutionTime'
-                        },
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        },
-                        zoom: {
-                            limits: {
-                                x: {min: 'original', max: 'original'},
-                                y: {min: 'original', max: 'original'}
-                            },
-                            pan: {
-                                enabled: true,
-                                mode: 'xy',
-                                onPan: function({chart}) {
-                                    // Sync pan with other charts
-                                    if (window.operationsChart && chart !== window.operationsChart) {
-                                        window.operationsChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
-                                    }
-                                    if (window.filterChart && chart !== window.filterChart) {
-                                        window.filterChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
-                                    }
-                                }
-                            },
-                            zoom: {
-                                wheel: {
-                                    enabled: true,
-                                },
-                                pinch: {
-                                    enabled: true
-                                },
-                                drag: {
-                                    enabled: true,
-                                    backgroundColor: 'rgba(225,225,225,0.3)',
-                                    borderColor: 'rgba(225,225,225)',
-                                    borderWidth: 1
-                                },
-                                mode: 'xy',
-                                onZoom: function({chart}) {
-                                    // Sync zoom with other charts
-                                    if (window.operationsChart && chart !== window.operationsChart) {
-                                        window.operationsChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
-                                    }
-                                    if (window.filterChart && chart !== window.filterChart) {
-                                        window.filterChart.zoomScale('x', {min: chart.scales.x.min, max: chart.scales.x.max}, 'none');
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'hour',
-                                displayFormats: {
-                                    hour: 'MMM dd HH:mm'
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'Request Time'
-                            },
-                            stacked: true
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Query Count'
-                            },
-                            stacked: true,
-                            beginAtZero: true
-                        }
-                    },
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    }
+              },
+            },
+            scales: {
+              x: {
+                type: "time",
+                time: getCurrentTimeConfig(requests),
+                title: {
+                  display: true,
+                  text: "Request Time",
+                },
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: "Operation Count",
+                },
+                beginAtZero: true,
+              },
+            },
+            interaction: {
+              mode: "index",
+              intersect: false,
+            },
+          },
+        });
+      }
+
+      // Generate filter chart showing filter efficiency (IN vs OUT)
+      function generateFilterChart(requests) {
+        // Destroy existing chart if it exists - do this first
+        if (window.filterChart) {
+          window.filterChart.destroy();
+          window.filterChart = null;
+        }
+
+        const canvas = document.getElementById("filter-chart");
+        const ctx = canvas.getContext("2d");
+
+        // Group requests by selected time unit
+        const timeGroups = {};
+        const grouping = getTimeGrouping();
+
+        requests.forEach((request) => {
+          if (!request.requestTime || !request.plan) return;
+
+          // Parse requestTime and round based on selected grouping
+          const requestDate = new Date(request.requestTime);
+          const timeKey = roundTimestamp(requestDate, grouping, requests);
+
+          const key = timeKey.toISOString();
+
+          if (!timeGroups[key]) {
+            timeGroups[key] = {
+              timestamp: timeKey,
+              filtersEqual: 0,
+              filtersNotEqual: 0,
+            };
+          }
+
+          // Find all Filter operators in the plan
+          const operators = getOperators(request.plan);
+          operators.forEach((operator) => {
+            if (operator["#operator"] === "Filter") {
+              const stats = operator["#stats"] || {};
+              const itemsIn = stats["#itemsIn"];
+              const itemsOut = stats["#itemsOut"];
+
+              if (itemsIn !== undefined && itemsOut !== undefined) {
+                if (itemsIn === itemsOut) {
+                  timeGroups[key].filtersEqual++;
+                } else {
+                  timeGroups[key].filtersNotEqual++;
                 }
+              }
+            }
+          });
+        });
+
+        // Convert to sorted array
+        const sortedData = Object.values(timeGroups).sort(
+          (a, b) => a.timestamp - b.timestamp
+        );
+
+        // Prepare chart data
+        const labels = sortedData.map((item) => item.timestamp);
+        const filtersEqualData = sortedData.map((item) => item.filtersEqual);
+        const filtersNotEqualData = sortedData.map(
+          (item) => item.filtersNotEqual
+        );
+
+        // Create new stacked bar chart
+        window.filterChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Filters: IN = OUT",
+                data: filtersEqualData,
+                backgroundColor: "#007bff", // Blue
+                borderColor: "#0056b3",
+                borderWidth: 1,
+              },
+              {
+                label: "Filters: IN ≠ OUT",
+                data: filtersNotEqualData,
+                backgroundColor: "#fd7e14", // Orange
+                borderColor: "#e8590c",
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: "Filter Operations Timeline: Efficiency Analysis (IN vs OUT)",
+              },
+              legend: {
+                display: true,
+                position: "top",
+              },
+              zoom: {
+                limits: {
+                  x: { min: "original", max: "original" },
+                  y: { min: "original", max: "original" },
+                },
+                pan: {
+                  enabled: true,
+                  mode: "xy",
+                  onPan: function ({ chart }) {
+                    // Sync pan with other charts
+                    if (
+                      window.operationsChart &&
+                      chart !== window.operationsChart
+                    ) {
+                      window.operationsChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (
+                      window.timelineChart &&
+                      chart !== window.timelineChart
+                    ) {
+                      window.timelineChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                  },
+                },
+                zoom: {
+                  wheel: {
+                    enabled: true,
+                  },
+                  pinch: {
+                    enabled: true,
+                  },
+                  drag: {
+                    enabled: true,
+                    backgroundColor: "rgba(225,225,225,0.3)",
+                    borderColor: "rgba(225,225,225)",
+                    borderWidth: 1,
+                  },
+                  mode: "xy",
+                  onZoom: function ({ chart }) {
+                    // Sync zoom with other charts
+                    if (
+                      window.operationsChart &&
+                      chart !== window.operationsChart
+                    ) {
+                      window.operationsChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (
+                      window.timelineChart &&
+                      chart !== window.timelineChart
+                    ) {
+                      window.timelineChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                  },
+                },
+              },
+            },
+            scales: {
+              x: {
+                type: "time",
+                time: getCurrentTimeConfig(requests),
+                title: {
+                  display: true,
+                  text: "Request Time",
+                },
+                stacked: true,
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: "Filter Count",
+                },
+                stacked: true,
+                beginAtZero: true,
+              },
+            },
+            interaction: {
+              mode: "index",
+              intersect: false,
+            },
+          },
+        });
+      }
+
+      // Generate timeline chart showing kernel time vs execution time performance
+      function generateTimelineChart(requests) {
+        // Destroy existing chart if it exists - do this first
+        if (window.timelineChart) {
+          window.timelineChart.destroy();
+          window.timelineChart = null;
+        }
+
+        const canvas = document.getElementById("timeline-chart");
+        const ctx = canvas.getContext("2d");
+
+        // Group requests by selected time unit
+        const timeGroups = {};
+        const grouping = getTimeGrouping();
+
+        requests.forEach((request) => {
+          if (!request.requestTime) return;
+
+          // Parse requestTime and round based on selected grouping
+          const requestDate = new Date(request.requestTime);
+          const timeKey = roundTimestamp(requestDate, grouping, requests);
+
+          const key = timeKey.toISOString();
+
+          if (!timeGroups[key]) {
+            timeGroups[key] = {
+              timestamp: timeKey,
+              kernTimeLessOrEqual: 0,
+              kernTimeGreater: 0,
+            };
+          }
+
+          // Calculate kernTime and executionTime
+          const totalKernTimeMs = request.plan
+            ? calculateTotalKernTime(request.plan)
+            : 0;
+          const elapsedTimeMs = parseTime(request.elapsedTime);
+
+          // Compare kernTime vs executionTime
+          if (totalKernTimeMs <= elapsedTimeMs) {
+            timeGroups[key].kernTimeLessOrEqual++;
+          } else {
+            timeGroups[key].kernTimeGreater++;
+          }
+        });
+
+        // Convert to sorted array
+        const sortedData = Object.values(timeGroups).sort(
+          (a, b) => a.timestamp - b.timestamp
+        );
+
+        // Prepare chart data
+        const labels = sortedData.map((item) => item.timestamp);
+        const kernTimeLessOrEqualData = sortedData.map(
+          (item) => item.kernTimeLessOrEqual
+        );
+        const kernTimeGreaterData = sortedData.map(
+          (item) => item.kernTimeGreater
+        );
+
+        // Create new stacked bar chart
+        window.timelineChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "KernTime ≤ ExecutionTime",
+                data: kernTimeLessOrEqualData,
+                backgroundColor: "#28a745", // Green
+                borderColor: "#1e7e34",
+                borderWidth: 1,
+              },
+              {
+                label: "KernTime > ExecutionTime",
+                data: kernTimeGreaterData,
+                backgroundColor: "#dc3545", // Red
+                borderColor: "#c82333",
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: "Query Performance Timeline: KernTime vs ExecutionTime",
+              },
+              legend: {
+                display: true,
+                position: "top",
+              },
+              zoom: {
+                limits: {
+                  x: { min: "original", max: "original" },
+                  y: { min: "original", max: "original" },
+                },
+                pan: {
+                  enabled: true,
+                  mode: "xy",
+                  onPan: function ({ chart }) {
+                    // Sync pan with other charts
+                    if (
+                      window.operationsChart &&
+                      chart !== window.operationsChart
+                    ) {
+                      window.operationsChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.filterChart && chart !== window.filterChart) {
+                      window.filterChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                  },
+                },
+                zoom: {
+                  wheel: {
+                    enabled: true,
+                  },
+                  pinch: {
+                    enabled: true,
+                  },
+                  drag: {
+                    enabled: true,
+                    backgroundColor: "rgba(225,225,225,0.3)",
+                    borderColor: "rgba(225,225,225)",
+                    borderWidth: 1,
+                  },
+                  mode: "xy",
+                  onZoom: function ({ chart }) {
+                    // Sync zoom with other charts
+                    if (
+                      window.operationsChart &&
+                      chart !== window.operationsChart
+                    ) {
+                      window.operationsChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.filterChart && chart !== window.filterChart) {
+                      window.filterChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                  },
+                },
+              },
+            },
+            scales: {
+              x: {
+                type: "time",
+                time: getCurrentTimeConfig(requests),
+                title: {
+                  display: true,
+                  text: "Request Time",
+                },
+                stacked: true,
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: "Query Count",
+                },
+                stacked: true,
+                beginAtZero: true,
+              },
+            },
+            interaction: {
+              mode: "index",
+              intersect: false,
+            },
+          },
+        });
+      }
+
+      // Reset timeline chart zoom
+      function resetTimelineZoom() {
+        if (window.timelineChart) {
+          window.timelineChart.resetZoom();
+        }
+        if (window.operationsChart) {
+          window.operationsChart.resetZoom();
+        }
+        if (window.filterChart) {
+          window.filterChart.resetZoom();
+        }
+      }
+
+      // Change Y-axis scale for both charts
+      function changeYAxisScale() {
+        const selectedScale = document.querySelector(
+          'input[name="yScale"]:checked'
+        ).value;
+        const scaleType =
+          selectedScale === "logarithmic" ? "logarithmic" : "linear";
+
+        // Update operations chart Y-axis scale
+        if (window.operationsChart) {
+          window.operationsChart.options.scales.y.type = scaleType;
+          if (scaleType === "logarithmic") {
+            window.operationsChart.options.scales.y.beginAtZero = false;
+            window.operationsChart.options.scales.y.min = 1; // Avoid log(0)
+          } else {
+            window.operationsChart.options.scales.y.beginAtZero = true;
+            delete window.operationsChart.options.scales.y.min;
+          }
+          window.operationsChart.update();
+        }
+
+        // Update filter chart Y-axis scale
+        if (window.filterChart) {
+          window.filterChart.options.scales.y.type = scaleType;
+          if (scaleType === "logarithmic") {
+            window.filterChart.options.scales.y.beginAtZero = false;
+            window.filterChart.options.scales.y.min = 1; // Avoid log(0)
+          } else {
+            window.filterChart.options.scales.y.beginAtZero = true;
+            delete window.filterChart.options.scales.y.min;
+          }
+          window.filterChart.update();
+        }
+
+        // Update timeline chart Y-axis scale
+        if (window.timelineChart) {
+          window.timelineChart.options.scales.y.type = scaleType;
+          if (scaleType === "logarithmic") {
+            window.timelineChart.options.scales.y.beginAtZero = false;
+            window.timelineChart.options.scales.y.min = 1; // Avoid log(0)
+          } else {
+            window.timelineChart.options.scales.y.beginAtZero = true;
+            delete window.timelineChart.options.scales.y.min;
+          }
+          window.timelineChart.update();
+        }
+      }
+
+      // Change time grouping for all charts
+      function changeTimeGrouping() {
+        // Use the filtered data if available, otherwise fall back to parsing JSON
+        let requests = [];
+        if (originalRequests.length > 0) {
+          // Apply current date filtering to original data
+          const startDateInput = document.getElementById('start-date');
+          const endDateInput = document.getElementById('end-date');
+          const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+          const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+          requests = filterRequestsByDateRange(originalRequests, startDate, endDate);
+        } else {
+          // Fallback to parsing JSON if no original data
+          const jsonInput = document.getElementById("json-input").value;
+          if (!jsonInput.trim()) return;
+          
+          try {
+            const data = JSON.parse(jsonInput);
+            if (Array.isArray(data)) {
+              requests = data.map((item) => ({
+                ...item.completed_requests,
+                plan: item.plan
+                  ? typeof item.plan === "string"
+                    ? JSON.parse(item.plan)
+                    : item.plan
+                  : null,
+              }));
+            }
+          } catch (e) {
+            console.error("Error parsing JSON for time grouping change:", e);
+            return;
+          }
+        }
+
+        // Validate date range for the selected grouping
+        const grouping = getTimeGrouping();
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+        const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+        
+        const validation = validateDateRangeForGrouping(startDate, endDate, grouping);
+        if (!validation.valid) {
+          alert(validation.message);
+          return;
+        }
+
+        try {
+          // Update the optimizer label to show current optimization
+          updateOptimizerLabel(requests);
+
+          // Regenerate all charts with new time grouping
+          generateOperationsChart(requests);
+          generateFilterChart(requests);
+          generateTimelineChart(requests);
+        } catch (e) {
+          console.error("Error regenerating charts:", e);
+          alert("Error generating charts. Try reducing the date range or selecting a coarser time grouping.");
+        }
+      }
+
+      // Global variable to store original unfiltered data
+      let originalRequests = [];
+
+        // Parse Couchbase datetime to JavaScript Date
+        function parseCouchbaseDateTime(dateTimeStr) {
+            if (!dateTimeStr) return null;
+            // Handle various Couchbase datetime formats
+            const isoString = dateTimeStr.replace(' ', 'T');
+            return new Date(isoString);
+        }
+
+        // Convert Date to datetime-local input format
+        function toDateTimeLocal(date) {
+            if (!date || isNaN(date.getTime())) return '';
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // Filter requests by date range
+        function filterRequestsByDateRange(requests, startDate, endDate) {
+            if (!startDate && !endDate) return requests;
+            
+            return requests.filter(request => {
+                const requestDate = parseCouchbaseDateTime(request.requestTime);
+                if (!requestDate) return true; // Include requests with invalid dates
+                
+                if (startDate && requestDate < startDate) return false;
+                if (endDate && requestDate > endDate) return false;
+                return true;
             });
         }
 
-        // Reset timeline chart zoom
-        function resetTimelineZoom() {
-            if (window.timelineChart) {
-                window.timelineChart.resetZoom();
-            }
-            if (window.operationsChart) {
-                window.operationsChart.resetZoom();
-            }
-            if (window.filterChart) {
-                window.filterChart.resetZoom();
+        // Update filter info display
+        function updateFilterInfo(originalCount, filteredCount) {
+            const filterInfo = document.getElementById('filter-info');
+            if (originalCount === filteredCount) {
+                filterInfo.textContent = `Showing all ${originalCount} queries`;
+            } else {
+                filterInfo.textContent = `Showing ${filteredCount} of ${originalCount} queries`;
             }
         }
 
-        // Change Y-axis scale for both charts
-        function changeYAxisScale() {
-            const selectedScale = document.querySelector('input[name="yScale"]:checked').value;
-            const scaleType = selectedScale === 'logarithmic' ? 'logarithmic' : 'linear';
+        // Validate date range for time grouping
+        function validateDateRangeForGrouping(startDate, endDate, grouping) {
+            if (!startDate || !endDate || grouping === 'optimizer') return { valid: true };
             
-            // Update operations chart Y-axis scale
-            if (window.operationsChart) {
-                window.operationsChart.options.scales.y.type = scaleType;
-                if (scaleType === 'logarithmic') {
-                    window.operationsChart.options.scales.y.beginAtZero = false;
-                    window.operationsChart.options.scales.y.min = 1; // Avoid log(0)
-                } else {
-                    window.operationsChart.options.scales.y.beginAtZero = true;
-                    delete window.operationsChart.options.scales.y.min;
-                }
-                window.operationsChart.update();
+            const diffMs = endDate.getTime() - startDate.getTime();
+            const diffHours = diffMs / (1000 * 60 * 60);
+            const diffDays = diffMs / (1000 * 60 * 60 * 24);
+            
+            switch (grouping) {
+                case 'second':
+                    if (diffHours > 1) {
+                        return {
+                            valid: false,
+                            message: 'For "by Second" grouping, please restrict the date range to 1 hour or less to avoid chart rendering issues.'
+                        };
+                    }
+                    break;
+                case 'minute':
+                    if (diffDays > 1) {
+                        return {
+                            valid: false,
+                            message: 'For "by Minute" grouping, please restrict the date range to 1 day or less to avoid chart rendering issues.'
+                        };
+                    }
+                    break;
+                case 'hour':
+                    if (diffDays > 31) {
+                        return {
+                            valid: false,
+                            message: 'For "by Hour" grouping, please restrict the date range to 1 month or less for optimal performance.'
+                        };
+                    }
+                    break;
             }
             
-            // Update filter chart Y-axis scale
-            if (window.filterChart) {
-                window.filterChart.options.scales.y.type = scaleType;
-                if (scaleType === 'logarithmic') {
-                    window.filterChart.options.scales.y.beginAtZero = false;
-                    window.filterChart.options.scales.y.min = 1; // Avoid log(0)
-                } else {
-                    window.filterChart.options.scales.y.beginAtZero = true;
-                    delete window.filterChart.options.scales.y.min;
-                }
-                window.filterChart.update();
-            }
-            
-            // Update timeline chart Y-axis scale
-            if (window.timelineChart) {
-                window.timelineChart.options.scales.y.type = scaleType;
-                if (scaleType === 'logarithmic') {
-                    window.timelineChart.options.scales.y.beginAtZero = false;
-                    window.timelineChart.options.scales.y.min = 1; // Avoid log(0)
-                } else {
-                    window.timelineChart.options.scales.y.beginAtZero = true;
-                    delete window.timelineChart.options.scales.y.min;
-                }
-                window.timelineChart.update();
-            }
+            return { valid: true };
         }
 
         // Parse JSON input
         function parseJSON() {
-            const jsonInput = document.getElementById('json-input').value;
+        const jsonInput = document.getElementById("json-input").value;
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        
+        try {
+          const data = JSON.parse(jsonInput);
+          if (Array.isArray(data)) {
+            const allRequests = data.map((item) => ({
+              ...item.completed_requests,
+              plan: item.plan
+                ? typeof item.plan === "string"
+                  ? JSON.parse(item.plan)
+                  : item.plan
+                : null,
+            }));
+
+            // If this is the first parse (no date filters set), populate date range
+            if (!startDateInput.value && !endDateInput.value && allRequests.length > 0) {
+              originalRequests = allRequests;
+              const dates = allRequests
+                .map(r => parseCouchbaseDateTime(r.requestTime))
+                .filter(d => d && !isNaN(d.getTime()))
+                .sort((a, b) => a - b);
+              
+              if (dates.length > 0) {
+                const minDate = dates[0];
+                const maxDate = dates[dates.length - 1];
+                startDateInput.value = toDateTimeLocal(minDate);
+                endDateInput.value = toDateTimeLocal(maxDate);
+              }
+            } else {
+              // Use existing originalRequests if available, otherwise use current data
+              if (originalRequests.length === 0) {
+                originalRequests = allRequests;
+              }
+            }
+
+            // Apply date filtering
+            const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+            const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+            const filteredRequests = filterRequestsByDateRange(originalRequests, startDate, endDate);
+
+            // Validate date range for current time grouping
+            const grouping = getTimeGrouping();
+            const validation = validateDateRangeForGrouping(startDate, endDate, grouping);
+            if (!validation.valid) {
+              alert(validation.message);
+              // Still continue with table generation, just skip charts
+              updateFilterInfo(originalRequests.length, filteredRequests.length);
+              generateTable(filteredRequests);
+              generateAnalysisTable(filteredRequests);
+              document.getElementById("flow-diagram").innerHTML =
+                "Select a query from the table to view the flow diagram.";
+              return;
+            }
+
+            // Update UI with filtered data
+            updateFilterInfo(originalRequests.length, filteredRequests.length);
             try {
-                const data = JSON.parse(jsonInput);
-                if (Array.isArray(data)) {
-                    const requests = data.map(item => ({
-                        ...item.completed_requests,
-                        plan: item.plan ? (typeof item.plan === 'string' ? JSON.parse(item.plan) : item.plan) : null
-                    }));
-                    generateTable(requests);
-                    generateAnalysisTable(requests);
-                    generateOperationsChart(requests);
-                    generateFilterChart(requests);
-                    generateTimelineChart(requests);
-                    document.getElementById('flow-diagram').innerHTML = 'Select a query from the table to view the flow diagram.';
-                } else {
-                    alert('Please provide a valid JSON array.');
-                }
+              generateTable(filteredRequests);
+              generateAnalysisTable(filteredRequests);
+              updateOptimizerLabel(filteredRequests);
+              generateOperationsChart(filteredRequests);
+              generateFilterChart(filteredRequests);
+              generateTimelineChart(filteredRequests);
             } catch (e) {
-                alert('Invalid JSON: ' + e.message);
+              console.error("Error generating charts:", e);
+              alert("Error generating charts. Try reducing the date range or selecting a coarser time grouping.");
             }
+            document.getElementById("flow-diagram").innerHTML =
+              "Select a query from the table to view the flow diagram.";
+          } else {
+            alert("Please provide a valid JSON array.");
+          }
+        } catch (e) {
+          alert("Invalid JSON: " + e.message);
         }
+      }
 
-        // Modal event listeners
-        const planModal = document.getElementById('plan-modal');
-        const planCloseBtn = planModal.querySelector('.close');
-        planCloseBtn.addEventListener('click', () => {
-            planModal.style.display = 'none';
-        });
-        planModal.addEventListener('click', (event) => {
-            if (event.target === planModal) {
-                planModal.style.display = 'none';
-            }
-        });
+      // Modal event listeners
+      const planModal = document.getElementById("plan-modal");
+      const planCloseBtn = planModal.querySelector(".close");
+      planCloseBtn.addEventListener("click", () => {
+        planModal.style.display = "none";
+      });
+      planModal.addEventListener("click", (event) => {
+        if (event.target === planModal) {
+          planModal.style.display = "none";
+        }
+      });
 
-        const operatorModal = document.getElementById('operator-modal');
-        const operatorCloseBtn = operatorModal.querySelector('.close');
-        operatorCloseBtn.addEventListener('click', () => {
-            operatorModal.style.display = 'none';
-        });
-        operatorModal.addEventListener('click', (event) => {
-            if (event.target === operatorModal) {
-                operatorModal.style.display = 'none';
-            }
-        });
+      const operatorModal = document.getElementById("operator-modal");
+      const operatorCloseBtn = operatorModal.querySelector(".close");
+      operatorCloseBtn.addEventListener("click", () => {
+        operatorModal.style.display = "none";
+      });
+      operatorModal.addEventListener("click", (event) => {
+        if (event.target === operatorModal) {
+          operatorModal.style.display = "none";
+        }
+      });
 
-        // Initialize jQuery UI Tabs
-        $(function() {
-            $("#tabs").tabs();
-        });
+      // Initialize jQuery UI Tabs
+      $(function () {
+        $("#tabs").tabs();
+      });
     </script>
-</body>
+  </body>
 </html>
