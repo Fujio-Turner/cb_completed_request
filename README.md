@@ -16,10 +16,13 @@ Open `index.html` directly in any modern web browser (Chrome, Firefox, Safari, E
 Run this query in Couchbase Query Workbench or cbq:
 
 ```sql
-SELECT *, meta().plan FROM system:completed_requests WHERE node = NODE_NAME();
+SELECT *, meta().plan FROM system:completed_requests LIMIT 4000;
 ```
 
-**Note**: `WHERE node = NODE_NAME()` gets queries from a single node. Remove it to analyze all nodes.
+**Note**: 
+`... LIMIT 4000; ` This should return back a JSON of about 36MB~ish. Anything bigger will crash the browser.
+`... WHERE node = NODE_NAME()` gets queries from a single node. Remove it to analyze all nodes.
+
 
 ### Step 4: Analyze
 Copy the JSON results and paste into the tool's input area, then click "Parse JSON".
