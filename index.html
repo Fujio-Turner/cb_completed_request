@@ -419,6 +419,25 @@
         return totalMs;
         }
 
+        // Format time in standardized mm:ss.sss format
+        function formatTime(milliseconds) {
+          if (!milliseconds || isNaN(milliseconds) || milliseconds <= 0) {
+            return "00:00.000";
+          }
+          
+          const totalSeconds = Math.floor(milliseconds / 1000);
+          const ms = Math.floor(milliseconds % 1000);
+          const minutes = Math.floor(totalSeconds / 60);
+          const seconds = totalSeconds % 60;
+          
+          // Format with leading zeros
+          const formattedMinutes = minutes.toString().padStart(2, '0');
+          const formattedSeconds = seconds.toString().padStart(2, '0');
+          const formattedMs = ms.toString().padStart(3, '0');
+          
+          return `${formattedMinutes}:${formattedSeconds}.${formattedMs}`;
+        }
+
       // Normalize statement by replacing literals and numbers with "?"
       function normalizeStatement(statement) {
         if (!statement) return "";
@@ -522,7 +541,13 @@
         if (operator["#stats"]) {
           html += "<dl>";
           for (const [key, value] of Object.entries(operator["#stats"])) {
-            html += `<dt>${key}</dt><dd>${value}</dd>`;
+            let formattedValue = value;
+            // Format time fields
+            if (key === "execTime" || key === "kernTime" || key === "servTime") {
+              const timeMs = parseTime(value);
+              formattedValue = timeMs > 0 ? formatTime(timeMs) : value;
+            }
+            html += `<dt>${key}</dt><dd>${formattedValue}</dd>`;
           }
           html += "</dl>";
         } else {
@@ -631,7 +656,7 @@
           // Build the HTML content
           let bubbleContent = `
                     <h4>${operatorName}</h4>
-                    <p>${execTime} (${percentage}%)</p>`;
+                    <p>${formatTime(execTimeMs)} (${percentage}%)</p>`;
           
           // Only show in/out line if both values are present and not "-"
           if (itemsIn !== "-" && itemsOut !== "-") {
@@ -703,9 +728,20 @@
       let everyQueryData = [];
       let analysisData = [];
 
-      // Enhanced time parsing for sorting (handles various units)
+      // Enhanced time parsing for sorting (handles various units and mm:ss.sss format)
       function parseTimeForSorting(timeStr) {
         if (!timeStr || timeStr === "N/A" || timeStr === "-") return 0;
+        
+        // Check if it's in mm:ss.sss format
+        const mmssMatch = timeStr.match(/^(\d+):(\d{2})\.(\d{3})$/);
+        if (mmssMatch) {
+          const minutes = parseInt(mmssMatch[1]);
+          const seconds = parseInt(mmssMatch[2]);
+          const milliseconds = parseInt(mmssMatch[3]);
+          return minutes * 60000 + seconds * 1000 + milliseconds;
+        }
+        
+        // Handle legacy formats
         const match = timeStr
           .replace(/(\d+\.?\d*)(\D+)/, "$1 $2")
           .match(/(\d+\.?\d*)\s*(\D+)/);
@@ -750,11 +786,15 @@
         
         // Handle Analysis table columns
         if ([
-          "total_count", 
           "min_duration_in_seconds", 
           "max_duration_in_seconds", 
           "avg_duration_in_seconds", 
-          "median_duration_in_seconds", 
+          "median_duration_in_seconds"
+        ].includes(column)) {
+          return parseTimeForSorting(value);
+        }
+        if ([
+          "total_count", 
           "avg_fetch", 
           "avg_primaryScan", 
           "avg_indexScan"
@@ -923,7 +963,7 @@
                   : "N/A";
             } else if (col === "kernTime") {
               value =
-                totalKernTimeMs > 0 ? `${totalKernTimeMs.toFixed(2)}ms` : "N/A";
+                totalKernTimeMs > 0 ? formatTime(totalKernTimeMs) : "N/A";
             } else if (col === "KernTime %") {
               value =
                 elapsedTimeMs > 0 && totalKernTimeMs > 0
@@ -931,6 +971,12 @@
                   : "N/A";
             } else if (col === "memory (MB)") {
               value = totalMemoryBytes > 0 ? (totalMemoryBytes / 1024 / 1024).toFixed(2) : "0.00";
+            } else if (col === "elapsedTime") {
+              value = formatTime(parseTime(request[col]));
+            } else if (col === "cpuTime") {
+              value = formatTime(parseTime(request[col]));
+            } else if (col === "serviceTime") {
+              value = formatTime(parseTime(request[col]));
             } else {
               value = request[col] || "N/A";
             }
@@ -1109,7 +1155,7 @@
           const th = document.createElement("th");
           const displayName = col
             .replace(/_/g, " ")
-            .replace("in seconds", " (sec)");
+            .replace("in seconds", " (mm:ss.sss)");
           th.textContent = displayName;
           th.addEventListener('click', () => handleColumnSort(col, 'analysis'));
           headerRow.appendChild(th);
@@ -1133,6 +1179,11 @@
                 "max_duration_in_seconds",
                 "avg_duration_in_seconds",
                 "median_duration_in_seconds",
+              ].includes(col)
+            ) {
+              value = isNaN(group[col]) ? "N/A" : formatTime(Number(group[col]) * 1000);
+            } else if (
+              [
                 "avg_fetch",
                 "avg_primaryScan",
                 "avg_indexScan",
