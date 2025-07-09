@@ -472,6 +472,23 @@
         return maxKernTime;
         }
 
+        // Calculate the total memory usage from all operators in the plan
+        function calculateTotalMemoryUsage(plan) {
+          const operators = getOperators(plan);
+          let totalMemory = 0;
+          console.log("=== Calculating Total Memory Usage ===");
+          operators.forEach((operator, index) => {
+            const stats = operator["#stats"] || {};
+            const usedMemory = stats.usedMemory || 0;
+            console.log(`Operator ${index} (${operator["#operator"]}): ${usedMemory} bytes`);
+            if (!isNaN(usedMemory)) {
+              totalMemory += usedMemory;
+            }
+          });
+          console.log(`=== Total memory usage: ${totalMemory} bytes ===`);
+          return totalMemory;
+        }
+
         // Calculate the sum of all execution times for percentage calculation
         function calculateTotalExecTime(plan) {
         const operators = getOperators(plan);
@@ -815,6 +832,7 @@
           "kernTime",
           "KernTime %",
           "cpuTime",
+          "memory (MB)",
           "serviceTime",
           "resultCount",
           "resultSize",
@@ -842,6 +860,10 @@
             ? calculateTotalKernTime(request.plan)
             : 0;
 
+          const totalMemoryBytes = request.plan
+            ? calculateTotalMemoryUsage(request.plan)
+            : 0;
+
           const elapsedTimeMs = parseTime(request.elapsedTime);
           
           // Create row data object
@@ -852,7 +874,7 @@
           
           // Add all column values (skip "#" as it's calculated dynamically)
           ["requestTime", "statementType", "elapsedTime", "kernTime", "KernTime %", 
-           "cpuTime", "serviceTime", "resultCount", "resultSize", "Index(es) Used", 
+           "cpuTime", "memory (MB)", "serviceTime", "resultCount", "resultSize", "Index(es) Used", 
            "Items from Index Scan", "Doc Fetch Count", "Primary Scan Used", "state", 
            "statement", "users"].forEach(col => {
             let value;
@@ -907,6 +929,8 @@
                 elapsedTimeMs > 0 && totalKernTimeMs > 0
                   ? ((totalKernTimeMs / elapsedTimeMs) * 100).toFixed(2) + "%"
                   : "N/A";
+            } else if (col === "memory (MB)") {
+              value = totalMemoryBytes > 0 ? (totalMemoryBytes / 1024 / 1024).toFixed(2) : "0.00";
             } else {
               value = request[col] || "N/A";
             }
@@ -935,7 +959,7 @@
         
         const columns = [
           "#", "requestTime", "statementType", "elapsedTime", "kernTime", "KernTime %", 
-          "cpuTime", "serviceTime", "resultCount", "resultSize", "Index(es) Used", 
+          "cpuTime", "memory (MB)", "serviceTime", "resultCount", "resultSize", "Index(es) Used", 
           "Items from Index Scan", "Doc Fetch Count", "Primary Scan Used", "state", 
           "statement", "users"
         ];
