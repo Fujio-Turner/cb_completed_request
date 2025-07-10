@@ -292,8 +292,8 @@
               <table id="user-count-table" style="width: 100%; border-collapse: collapse;">
                 <thead style="position: sticky; top: 0; background: #f5f5f5;">
                   <tr>
-                    <th style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd; width: 80px;">Count</th>
-                    <th style="padding: 8px; text-align: left; border-bottom: 1px solid #ddd;">User</th>
+                    <th style="padding: 8px; text-align: center; border-bottom: 1px solid #ddd; width: 80px;">Count</th>
+                    <th style="padding: 8px; text-align: center; border-bottom: 1px solid #ddd;">User</th>
                   </tr>
                 </thead>
                 <tbody id="user-count-body">
@@ -309,8 +309,8 @@
               <table id="index-count-table" style="width: 100%; border-collapse: collapse;">
                 <thead style="position: sticky; top: 0; background: #f5f5f5;">
                   <tr>
-                    <th style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd; width: 80px;">Count</th>
-                    <th style="padding: 8px; text-align: left; border-bottom: 1px solid #ddd;">Index Name</th>
+                    <th style="padding: 8px; text-align: center; border-bottom: 1px solid #ddd; width: 80px;">Count</th>
+                    <th style="padding: 8px; text-align: center; border-bottom: 1px solid #ddd;">Index Name</th>
                   </tr>
                 </thead>
                 <tbody id="index-count-body">
@@ -480,7 +480,6 @@
         const complexMatch = timeStr.match(complexPattern);
         
         if (!complexMatch || (complexMatch[1] === undefined && complexMatch[2] === undefined && complexMatch[3] === undefined)) {
-            console.log("parseTime: no regex match for", timeStr);
             return 0;
         }
 
@@ -951,6 +950,7 @@
         columns.forEach((col) => {
           const th = document.createElement("th");
           th.textContent = col;
+          th.style.textAlign = "center";
           th.addEventListener('click', () => handleColumnSort(col, 'every-query'));
           headerRow.appendChild(th);
         });
@@ -1176,6 +1176,45 @@
         });
       }
 
+      // Toggle analysis statement display between truncated and full view
+      function toggleAnalysisStatement(statementId, showFull) {
+        const truncatedDiv = document.getElementById(statementId + '-truncated');
+        const fullDiv = document.getElementById(statementId + '-full');
+        
+        if (showFull) {
+          truncatedDiv.style.display = 'none';
+          fullDiv.style.display = 'block';
+        } else {
+          truncatedDiv.style.display = 'block';
+          fullDiv.style.display = 'none';
+        }
+      }
+
+      // Copy analysis statement to clipboard
+      function copyAnalysisStatement(statementId) {
+        const statement = analysisStatementStore[statementId];
+        if (!statement) {
+          console.error('Statement not found in store:', statementId);
+          alert('Statement not found');
+          return;
+        }
+        
+        navigator.clipboard.writeText(statement).then(() => {
+          // Show brief feedback
+          const button = event.target;
+          const originalText = button.textContent;
+          button.textContent = 'copied!';
+          button.style.backgroundColor = '#4CAF50';
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.style.backgroundColor = '';
+          }, 1000);
+        }).catch(err => {
+          console.error('Failed to copy statement:', err);
+          alert('Failed to copy to clipboard');
+        });
+      }
+
       // Calculate statistics for a group of requests based on SQL++ query logic
       function calculateGroupStats(normalized_statement, groupedRequests) {
         const users_agg = groupedRequests.map((r) => r.users).filter((u) => u);
@@ -1294,10 +1333,14 @@
         const headerRow = document.createElement("tr");
         analysisColumns.forEach((col) => {
           const th = document.createElement("th");
-          const displayName = col
+          let displayName = col
             .replace(/_/g, " ")
             .replace("in seconds", " (mm:ss.sss)");
+          if (col === "user_query_counts") {
+            displayName = "user: (count)";
+          }
           th.textContent = displayName;
+          th.style.textAlign = "center";
           th.addEventListener('click', () => handleColumnSort(col, 'analysis'));
           headerRow.appendChild(th);
         });
@@ -1310,7 +1353,7 @@
             let value;
             if (col === "user_query_counts") {
               value = Object.entries(group.user_query_counts)
-                .map(([user, count]) => `${user}: ${count}`)
+                .map(([user, count]) => `${user}: (${count})`)
                 .join(", ");
             } else if (col === "total_count") {
               value = group.total_count;
@@ -1355,6 +1398,9 @@
         const analysisTableBody = document.getElementById("analysis-table-body");
         analysisTableBody.innerHTML = "";
         
+        // Clear statement store for new data
+        analysisStatementStore = {};
+        
         const analysisColumns = [
           "total_count",
           "min_duration_in_seconds",
@@ -1368,11 +1414,61 @@
           "user_query_counts",
         ];
 
-        data.forEach((rowData) => {
+        data.forEach((rowData, index) => {
           const row = document.createElement("tr");
           analysisColumns.forEach((col) => {
             const td = document.createElement("td");
-            td.textContent = rowData[col];
+            const value = rowData[col];
+            
+            if (col === "normalized_statement") {
+              // Handle normalized_statement column with truncation and controls
+              const statement = value || "";
+              const statementId = `analysis-statement-${index}`;
+              
+              // Store the statement safely
+              analysisStatementStore[statementId] = statement;
+              
+              if (statement.length > 500) {
+                // Create truncated version
+                const truncated = statement.substring(0, 500);
+                
+                td.innerHTML = `
+                  <div id="${statementId}-truncated">
+                    <span>${truncated}...</span>
+                    <br>
+                    <button onclick="toggleAnalysisStatement('${statementId}', true)" 
+                            style="font-size: 12px; margin-top: 5px; margin-right: 5px;">show more</button>
+                    <button onclick="copyAnalysisStatement('${statementId}')" 
+                            style="font-size: 12px; margin-top: 5px;">copy</button>
+                  </div>
+                  <div id="${statementId}-full" style="display: none;">
+                    <span>${statement}</span>
+                    <br>
+                    <button onclick="toggleAnalysisStatement('${statementId}', false)" 
+                            style="font-size: 12px; margin-top: 5px; margin-right: 5px;">hide</button>
+                    <button onclick="copyAnalysisStatement('${statementId}')" 
+                            style="font-size: 12px; margin-top: 5px;">copy</button>
+                  </div>
+                `;
+              } else {
+                // Short statement - just show it with copy button
+                td.innerHTML = `
+                  <div>
+                    <span>${statement}</span>
+                    <br>
+                    <button onclick="copyAnalysisStatement('${statementId}')" 
+                            style="font-size: 12px; margin-top: 5px;">copy</button>
+                  </div>
+                `;
+              }
+            } else if (col === "user_query_counts") {
+              // Bold the counts in parentheses
+              const formattedValue = value.replace(/\((\d+)\)/g, '<b>($1)</b>');
+              td.innerHTML = formattedValue;
+            } else {
+              td.textContent = value;
+            }
+            
             row.appendChild(td);
           });
           analysisTableBody.appendChild(row);
@@ -2276,6 +2372,7 @@
       
       // Store statements for safe access without HTML escaping issues
       let statementStore = {};
+      let analysisStatementStore = {};
 
         // Parse Couchbase datetime to JavaScript Date
         function parseCouchbaseDateTime(dateTimeStr) {
@@ -2701,8 +2798,6 @@
             userCounts[user] = (userCounts[user] || 0) + 1;
           });
 
-          console.log('User counts:', userCounts);
-
           const sortedUsers = Object.entries(userCounts)
             .sort(([,a], [,b]) => b - a);
 
@@ -2717,8 +2812,8 @@
               <td style="padding: 8px; word-break: break-word;">
                 ${user}
                 <button onclick="copyToClipboard('${user.replace(/'/g, "\\'")}', this)" 
-                        style="margin-left: 8px; padding: 1px 6px; font-size: 10px; background: #6c757d; color: white; border: none; border-radius: 2px; cursor: pointer;">
-                  📋
+                        style="margin-left: 8px; padding: 2px 8px; font-size: 12px; background: #6c757d; color: white; border: none; border-radius: 2px; cursor: pointer;">
+                  copy
                 </button>
               </td>
             `;
@@ -2731,13 +2826,10 @@
           const indexCounts = {};
           
           requests.forEach(request => {
-            console.log('Processing request:', request.requestId, 'plan:', request.plan);
-            
             if (request.plan) {
               try {
                 // Parse the plan JSON string
                 const planObj = typeof request.plan === 'string' ? JSON.parse(request.plan) : request.plan;
-                console.log('Parsed plan object:', planObj);
                 
                 if (planObj && planObj['#operator']) {
                   extractIndexNames(planObj, indexCounts);
@@ -2747,8 +2839,6 @@
               }
             }
           });
-
-          console.log('Index counts:', indexCounts);
 
           const sortedIndexes = Object.entries(indexCounts)
             .sort(([,a], [,b]) => b - a);
@@ -2764,8 +2854,8 @@
               <td style="padding: 8px; word-break: break-word;">
                 ${indexName}
                 <button onclick="copyToClipboard('${indexName.replace(/'/g, "\\'")}', this)" 
-                        style="margin-left: 8px; padding: 1px 6px; font-size: 10px; background: #6c757d; color: white; border: none; border-radius: 2px; cursor: pointer;">
-                  📋
+                        style="margin-left: 8px; padding: 2px 8px; font-size: 12px; background: #6c757d; color: white; border: none; border-radius: 2px; cursor: pointer;">
+                  copy
                 </button>
               </td>
             `;
@@ -2777,15 +2867,11 @@
         function extractIndexNames(operator, indexCounts) {
           if (!operator) return;
           
-          console.log('Extracting from operator:', operator['#operator'], 'index:', operator.index);
-          
           // Check for index name in various operator properties
           if (operator.index) {
-            console.log('Found index:', operator.index);
             indexCounts[operator.index] = (indexCounts[operator.index] || 0) + 1;
           }
           if (operator.indexName) {
-            console.log('Found indexName:', operator.indexName);
             indexCounts[operator.indexName] = (indexCounts[operator.indexName] || 0) + 1;
           }
           
@@ -2794,7 +2880,6 @@
               operator['#operator'] === 'PrimaryScan3' ||
               operator.index === '#primary' ||
               operator.using === 'sequentialScan') {
-            console.log('Found primary scan');
             indexCounts['#primary'] = (indexCounts['#primary'] || 0) + 1;
           }
           
