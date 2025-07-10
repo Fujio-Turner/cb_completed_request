@@ -132,6 +132,10 @@
         font-weight: bold;
         color: red;
       }
+      .fatal-state {
+        font-weight: bold;
+        color: red;
+      }
       .modal {
         display: none;
         position: fixed;
@@ -1152,6 +1156,10 @@
             
             if (col === "Primary Scan Used" && value === "Yes") {
               td.classList.add("primary-scan-yes");
+            }
+            
+            if (col === "state" && value === "fatal") {
+              td.classList.add("fatal-state");
             }
             row.appendChild(td);
           });
