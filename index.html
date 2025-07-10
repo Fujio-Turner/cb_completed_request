@@ -406,24 +406,31 @@
             Use Time Range
           </button>
         </div>
-        <div style="margin-bottom: 20px; height: 400px; position: relative;">
-          <canvas id="query-types-chart"></canvas>
+        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+          <div style="flex: 1; height: 400px; position: relative;">
+            <canvas id="duration-buckets-chart"></canvas>
+          </div>
+          <div style="flex: 1; height: 400px; position: relative;">
+            <canvas id="query-types-chart"></canvas>
+          </div>
         </div>
         
-        <div style="margin-bottom: 20px; height: 400px; position: relative;">
-          <canvas id="operations-chart"></canvas>
+        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+          <div style="flex: 1; height: 400px; position: relative;">
+            <canvas id="operations-chart"></canvas>
+          </div>
+          <div style="flex: 1; height: 400px; position: relative;">
+            <canvas id="filter-chart"></canvas>
+          </div>
         </div>
         
-        <div style="margin-bottom: 20px; height: 400px; position: relative;">
-          <canvas id="filter-chart"></canvas>
-        </div>
-        
-        <div style="margin-bottom: 20px; height: 400px; position: relative;">
-          <canvas id="memory-chart"></canvas>
-        </div>
-        
-        <div style="margin-bottom: 20px; height: 400px; position: relative;">
-          <canvas id="timeline-chart"></canvas>
+        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+          <div style="flex: 1; height: 400px; position: relative;">
+            <canvas id="timeline-chart"></canvas>
+          </div>
+          <div style="flex: 1; height: 400px; position: relative;">
+            <canvas id="memory-chart"></canvas>
+          </div>
         </div>
       </div>
 
@@ -1858,13 +1865,20 @@
                   "none"
                   );
                   }
-                   if (window.memoryChart && chart !== window.memoryChart) {
-                   window.memoryChart.zoomScale(
-                   "x",
-                   { min: chart.scales.x.min, max: chart.scales.x.max },
-                   "none"
-                   );
-                   }
+                  if (window.durationBucketsChart && chart !== window.durationBucketsChart) {
+                  window.durationBucketsChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                       if (window.memoryChart && chart !== window.memoryChart) {
+                       window.memoryChart.zoomScale(
+                       "x",
+                       { min: chart.scales.x.min, max: chart.scales.x.max },
+                       "none"
+                       );
+                       }
                    
                      },
                 },
@@ -2197,8 +2211,17 @@
           if (!timeGroups[key]) {
             timeGroups[key] = {
               timestamp: timeKey,
-              kernTimeLessOrEqual: 0,
-              kernTimeGreater: 0,
+              percent0to10: 0,
+              percent10to20: 0,
+              percent20to30: 0,
+              percent30to40: 0,
+              percent40to50: 0,
+              percent50to60: 0,
+              percent60to70: 0,
+              percent70to80: 0,
+              percent80to90: 0,
+              percent90to100: 0,
+              percentOver100: 0,
             };
           }
 
@@ -2208,11 +2231,32 @@
             : 0;
           const elapsedTimeMs = parseTime(request.elapsedTime);
 
-          // Compare kernTime vs executionTime
-          if (totalKernTimeMs <= elapsedTimeMs) {
-            timeGroups[key].kernTimeLessOrEqual++;
+          // Calculate percentage of kernTime vs executionTime
+          const kernTimePercentage = elapsedTimeMs > 0 ? (totalKernTimeMs / elapsedTimeMs) * 100 : 0;
+
+          // Group by percentage ranges
+          if (kernTimePercentage < 10) {
+            timeGroups[key].percent0to10++;
+          } else if (kernTimePercentage < 20) {
+            timeGroups[key].percent10to20++;
+          } else if (kernTimePercentage < 30) {
+            timeGroups[key].percent20to30++;
+          } else if (kernTimePercentage < 40) {
+            timeGroups[key].percent30to40++;
+          } else if (kernTimePercentage < 50) {
+            timeGroups[key].percent40to50++;
+          } else if (kernTimePercentage < 60) {
+            timeGroups[key].percent50to60++;
+          } else if (kernTimePercentage < 70) {
+            timeGroups[key].percent60to70++;
+          } else if (kernTimePercentage < 80) {
+            timeGroups[key].percent70to80++;
+          } else if (kernTimePercentage < 90) {
+            timeGroups[key].percent80to90++;
+          } else if (kernTimePercentage <= 100) {
+            timeGroups[key].percent90to100++;
           } else {
-            timeGroups[key].kernTimeGreater++;
+            timeGroups[key].percentOver100++;
           }
         });
 
@@ -2231,12 +2275,17 @@
 
         // Prepare chart data
         const labels = sortedData.map((item) => item.timestamp);
-        const kernTimeLessOrEqualData = sortedData.map(
-          (item) => item.kernTimeLessOrEqual
-        );
-        const kernTimeGreaterData = sortedData.map(
-          (item) => item.kernTimeGreater
-        );
+        const percent0to10Data = sortedData.map((item) => item.percent0to10);
+        const percent10to20Data = sortedData.map((item) => item.percent10to20);
+        const percent20to30Data = sortedData.map((item) => item.percent20to30);
+        const percent30to40Data = sortedData.map((item) => item.percent30to40);
+        const percent40to50Data = sortedData.map((item) => item.percent40to50);
+        const percent50to60Data = sortedData.map((item) => item.percent50to60);
+        const percent60to70Data = sortedData.map((item) => item.percent60to70);
+        const percent70to80Data = sortedData.map((item) => item.percent70to80);
+        const percent80to90Data = sortedData.map((item) => item.percent80to90);
+        const percent90to100Data = sortedData.map((item) => item.percent90to100);
+        const percentOver100Data = sortedData.map((item) => item.percentOver100);
 
         // Create new stacked bar chart
         window.timelineChart = new Chart(ctx, {
@@ -2245,27 +2294,94 @@
             labels: labels,
             datasets: [
               {
-                label: "KernTime ≤ ExecutionTime",
-                data: kernTimeLessOrEqualData,
+                label: "0-10%",
+                data: percent0to10Data,
                 backgroundColor: "#28a745", // Green
                 borderColor: "#1e7e34",
                 borderWidth: 1,
               },
               {
-                label: "KernTime > ExecutionTime",
-                data: kernTimeGreaterData,
-                backgroundColor: "#dc3545", // Red
-                borderColor: "#c82333",
+                label: "10-20%",
+                data: percent10to20Data,
+                backgroundColor: "#6cb2eb", // Light blue
+                borderColor: "#3490dc",
+                borderWidth: 1,
+              },
+              {
+                label: "20-30%",
+                data: percent20to30Data,
+                backgroundColor: "#a78bfa", // Light purple
+                borderColor: "#8b5cf6",
+                borderWidth: 1,
+              },
+              {
+                label: "30-40%",
+                data: percent30to40Data,
+                backgroundColor: "#34d399", // Light green
+                borderColor: "#10b981",
+                borderWidth: 1,
+              },
+              {
+                label: "40-50%",
+                data: percent40to50Data,
+                backgroundColor: "#fbbf24", // Yellow
+                borderColor: "#f59e0b",
+                borderWidth: 1,
+              },
+              {
+                label: "50-60%",
+                data: percent50to60Data,
+                backgroundColor: "#fb923c", // Orange
+                borderColor: "#ea580c",
+                borderWidth: 1,
+              },
+              {
+                label: "60-70%",
+                data: percent60to70Data,
+                backgroundColor: "#f472b6", // Pink
+                borderColor: "#ec4899",
+                borderWidth: 1,
+              },
+              {
+                label: "70-80%",
+                data: percent70to80Data,
+                backgroundColor: "#a855f7", // Purple
+                borderColor: "#9333ea",
+                borderWidth: 1,
+              },
+              {
+                label: "80-90%",
+                data: percent80to90Data,
+                backgroundColor: "#ef4444", // Red
+                borderColor: "#dc2626",
+                borderWidth: 1,
+              },
+              {
+                label: "90-100%",
+                data: percent90to100Data,
+                backgroundColor: "#991b1b", // Dark red
+                borderColor: "#7f1d1d",
+                borderWidth: 1,
+              },
+              {
+                label: "100%+",
+                data: percentOver100Data,
+                backgroundColor: "#450a0a", // Very dark red
+                borderColor: "#1c0a0a",
                 borderWidth: 1,
               },
             ],
           },
           options: {
             responsive: true,
+            scales: {
+              x: { stacked: true },
+              y: { stacked: true }
+            },
             plugins: {
               title: {
                 display: true,
-                text: "Query Performance Timeline: KernTime vs ExecutionTime",
+                text: "Query Performance Timeline: KernTime % of ExecutionTime",
               },
               legend: {
                 display: true,
@@ -2405,6 +2521,9 @@
         
         // Create Query Types Scatter Plot Chart
         createQueryTypesChart(requests, grouping);
+        
+        // Create Duration Buckets Chart
+        createDurationBucketsChart(requests, grouping);
         
         // Create Memory Usage Chart
         createMemoryChart(requests, grouping);
@@ -2712,7 +2831,351 @@
         });
       }
 
+      // Create Duration Buckets Chart
+      function createDurationBucketsChart(requests, grouping) {
+        const canvas = document.getElementById("duration-buckets-chart");
+        if (!canvas) return;
 
+        const ctx = canvas.getContext("2d");
+
+        // Destroy existing chart if it exists
+        if (window.durationBucketsChart) {
+          window.durationBucketsChart.destroy();
+        }
+
+        // Group requests by time and duration buckets
+        const timeGroups = {};
+        
+        console.log('Duration buckets chart - processing requests:', requests.length);
+        
+        requests.forEach((request) => {
+          const requestDate = new Date(request.requestTime);
+          const timeKey = roundTimestamp(requestDate, grouping, requests);
+          const key = timeKey.toISOString();
+          
+          if (!timeGroups[key]) {
+            timeGroups[key] = {
+              timestamp: timeKey,
+              durationBuckets: {
+                '0-1s': 0,
+                '1-2s': 0,
+                '2-3s': 0,
+                '3-4s': 0,
+                '4-5s': 0,
+                '5-10s': 0,
+                '10-30s': 0,
+                '30-60s': 0,
+                '60-120s': 0,
+                '120-240s': 0,
+                '240-500s': 0,
+                '500-900s': 0,
+                '900s+': 0
+              }
+            };
+          }
+
+          // Get duration in seconds
+          const durationMs = parseTime(request.elapsedTime);
+          const durationSeconds = durationMs / 1000;
+
+          // Categorize into duration buckets
+          if (durationSeconds < 1) {
+            timeGroups[key].durationBuckets['0-1s']++;
+          } else if (durationSeconds < 2) {
+            timeGroups[key].durationBuckets['1-2s']++;
+          } else if (durationSeconds < 3) {
+            timeGroups[key].durationBuckets['2-3s']++;
+          } else if (durationSeconds < 4) {
+            timeGroups[key].durationBuckets['3-4s']++;
+          } else if (durationSeconds < 5) {
+            timeGroups[key].durationBuckets['4-5s']++;
+          } else if (durationSeconds < 10) {
+            timeGroups[key].durationBuckets['5-10s']++;
+          } else if (durationSeconds < 30) {
+            timeGroups[key].durationBuckets['10-30s']++;
+          } else if (durationSeconds < 60) {
+            timeGroups[key].durationBuckets['30-60s']++;
+          } else if (durationSeconds < 120) {
+            timeGroups[key].durationBuckets['60-120s']++;
+          } else if (durationSeconds < 240) {
+            timeGroups[key].durationBuckets['120-240s']++;
+          } else if (durationSeconds < 500) {
+            timeGroups[key].durationBuckets['240-500s']++;
+          } else if (durationSeconds < 900) {
+            timeGroups[key].durationBuckets['500-900s']++;
+          } else {
+            timeGroups[key].durationBuckets['900s+']++;
+          }
+        });
+
+        console.log('Duration buckets chart - timeGroups count:', Object.keys(timeGroups).length);
+        if (Object.keys(timeGroups).length > 0) {
+          console.log('First timeGroup sample:', Object.values(timeGroups)[0]);
+        }
+
+        // Calculate min/max counts for circle sizing
+        let minCount = Infinity;
+        let maxCount = 0;
+        Object.values(timeGroups).forEach(group => {
+          Object.values(group.durationBuckets).forEach(count => {
+            if (count > 0) {
+              minCount = Math.min(minCount, count);
+              maxCount = Math.max(maxCount, count);
+            }
+          });
+        });
+
+        // Color mapping for duration buckets - progressive darkness
+        const bucketColors = {
+          '0-1s': '#28a745',     // Green - fast
+          '1-2s': '#6cb2eb',     // Light blue
+          '2-3s': '#ffc107',     // Yellow
+          '3-4s': '#fd7e14',     // Orange
+          '4-5s': '#dc3545',     // Red
+          '5-10s': '#6f42c1',    // Purple
+          '10-30s': '#495057',   // Dark gray
+          '30-60s': '#343a40',   // Darker gray
+          '60-120s': '#721c24',  // Dark red
+          '120-240s': '#5a1a1a', // Darker red
+          '240-500s': '#450a0a', // Very dark red
+          '500-900s': '#2d0a0a', // Extremely dark red
+          '900s+': '#1a0404'     // Nearly black red
+        };
+
+        // Generate datasets for each duration bucket
+        const datasets = Object.keys(bucketColors).map(bucket => {
+          const data = [];
+          
+          Object.values(timeGroups).forEach(group => {
+            const count = group.durationBuckets[bucket];
+            if (count > 0) {
+              // Calculate circle size based on count (5-20 pixel radius)
+              const sizeRatio = maxCount > minCount ? (count - minCount) / (maxCount - minCount) : 0.5;
+              const circleSize = 5 + (sizeRatio * 15); // Range from 5 to 20 pixels
+              
+              // Use bucket midpoint for y-axis position
+              let yPosition;
+              switch(bucket) {
+                case '0-1s': yPosition = 0.5; break;
+                case '1-2s': yPosition = 1.5; break;
+                case '2-3s': yPosition = 2.5; break;
+                case '3-4s': yPosition = 3.5; break;
+                case '4-5s': yPosition = 4.5; break;
+                case '5-10s': yPosition = 7.5; break;
+                case '10-30s': yPosition = 20; break;
+                case '30-60s': yPosition = 45; break;
+                case '60-120s': yPosition = 90; break;
+                case '120-240s': yPosition = 180; break;
+                case '240-500s': yPosition = 370; break;
+                case '500-900s': yPosition = 700; break;
+                case '900s+': yPosition = 1200; break;
+              }
+              
+              data.push({
+                x: group.timestamp,
+                y: yPosition,
+                r: circleSize,
+                count: count
+              });
+            }
+          });
+
+          return {
+            label: `${bucket} (${data.reduce((sum, point) => sum + point.count, 0)} total)`,
+            data: data,
+            backgroundColor: bucketColors[bucket],
+            borderColor: bucketColors[bucket],
+            borderWidth: 1
+          };
+        });
+
+        // Create bubble chart
+        window.durationBucketsChart = new Chart(ctx, {
+          type: "bubble",
+          data: {
+            datasets: datasets
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: "Query Duration Distribution by Time Buckets (Bubble Size = Query Count)",
+              },
+              legend: {
+                display: true,
+                position: "top",
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const dataPoint = context.raw;
+                    const bucket = context.dataset.label.split(' (')[0];
+                    return [
+                      `Duration: ${bucket}`,
+                      `Count: ${dataPoint.count}`,
+                      `Time: ${new Date(dataPoint.x).toLocaleString()}`
+                    ];
+                  }
+                }
+              },
+              zoom: {
+                limits: {
+                  x: { min: "original", max: "original" },
+                  y: { min: "original", max: "original" },
+                },
+                pan: {
+                  enabled: true,
+                  mode: "xy",
+                  onPan: function ({ chart }) {
+                    // Sync pan with other charts
+                    if (window.timelineChart && chart !== window.timelineChart) {
+                      window.timelineChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.operationsChart && chart !== window.operationsChart) {
+                      window.operationsChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.filterChart && chart !== window.filterChart) {
+                      window.filterChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                      window.queryTypesChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.memoryChart && chart !== window.memoryChart) {
+                      window.memoryChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                  },
+                },
+                zoom: {
+                  wheel: {
+                    enabled: true,
+                  },
+                  pinch: {
+                    enabled: true,
+                  },
+                  drag: {
+                    enabled: true,
+                    backgroundColor: "rgba(225,225,225,0.3)",
+                    borderColor: "rgba(225,225,225)",
+                    borderWidth: 1,
+                  },
+                  mode: "xy",
+                  onZoom: function ({ chart }) {
+                    // Sync zoom with other charts
+                    if (window.timelineChart && chart !== window.timelineChart) {
+                      window.timelineChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.operationsChart && chart !== window.operationsChart) {
+                      window.operationsChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.filterChart && chart !== window.filterChart) {
+                      window.filterChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                      window.queryTypesChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.memoryChart && chart !== window.memoryChart) {
+                      window.memoryChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                  },
+                },
+              },
+            },
+            scales: {
+              x: {
+                type: "time",
+                time: {
+                  displayFormats: {
+                    millisecond: "HH:mm:ss.SSS",
+                    second: "HH:mm:ss",
+                    minute: "HH:mm",
+                    hour: "HH:mm",
+                    day: "MM/dd",
+                    week: "MM/dd",
+                    month: "MM/yy",
+                    quarter: "MM/yy",
+                    year: "yyyy",
+                  },
+                },
+                title: {
+                  display: true,
+                  text: "Request Time",
+                },
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: "Duration Range (seconds)",
+                },
+                beginAtZero: true,
+                type: 'logarithmic',
+                ticks: {
+                  callback: function(value) {
+                    if (value === 0.5) return '0-1s';
+                    if (value === 1.5) return '1-2s';
+                    if (value === 2.5) return '2-3s';
+                    if (value === 3.5) return '3-4s';
+                    if (value === 4.5) return '4-5s';
+                    if (value === 7.5) return '5-10s';
+                    if (value === 20) return '10-30s';
+                    if (value === 45) return '30-60s';
+                    if (value === 90) return '60-120s';
+                    if (value === 180) return '120-240s';
+                    if (value === 370) return '240-500s';
+                    if (value === 700) return '500-900s';
+                    if (value === 1200) return '900s+';
+                    return '';
+                  }
+                }
+              },
+            },
+            interaction: {
+              mode: "point",
+              intersect: false,
+            },
+          },
+        });
+      }
 
       // Create Memory Usage Chart
       function createMemoryChart(requests, grouping) {
