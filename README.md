@@ -37,9 +37,10 @@ Copy the JSON results and paste into the tool's input area, then click "Parse JS
 
 ## Features
 
-- **Three Analysis Views**:
-  - **Timeline**: Query performance trends over time
-  - **Analysis**: Aggregated query statistics grouped by normalized patterns
+- **Four Analysis Views**:
+  - **Dashboard**: High-level overview with visual charts and summary statistics
+  - **Timeline**: Query performance trends over time with advanced grouping options
+  - **Query Groups**: Aggregated query statistics grouped by normalized patterns
   - **Every Query**: Detailed view of individual query executions
 
 - **Interactive Execution Plans**: 
@@ -64,6 +65,21 @@ Copy the JSON results and paste into the tool's input area, then click "Parse JS
   - Smart validation for time grouping selections
   - Real-time filter status display
 
+- **Visual Analytics Dashboard**:
+  - Primary scan usage distribution (pie chart)
+  - Query state breakdown (pie chart)  
+  - Statement type analysis (pie chart)
+  - Query duration distribution (bar chart)
+  - Top users by query count (sortable table)
+  - Index usage statistics (sortable table)
+
+- **Enhanced Timeline Analysis**:
+  - Automatic time grouping optimization
+  - Manual time grouping (by second, minute, hour, day)
+  - Linear and logarithmic Y-axis scaling
+  - Interactive zoom and pan controls
+  - Multiple chart views (operations, filters, timeline)
+
 - **Interactive Features**:
   - Sortable tables with hover effects
   - Modal dialogs for detailed execution plans
@@ -83,11 +99,11 @@ Copy the JSON results and paste into the tool's input area, then click "Parse JS
 
 When analyzing timeline charts, choose appropriate date ranges for each time grouping:
 
+- **By Optimizer**: Automatically selects the best grouping based on your date range (recommended)
 - **By Second**: Best for ranges ≤ 1 hour (detailed analysis)
 - **By Minute**: Best for ranges ≤ 1 day (hourly patterns)  
 - **By Hour**: Best for ranges ≤ 1 month (daily patterns)
 - **By Day**: Best for ranges > 1 month (long-term trends)
-- **Optimizer**: Automatically selects the best grouping (recommended)
 
 **⚠️ Warning**: Large date ranges with fine-grained groupings may cause chart rendering errors. The tool will alert you and suggest better combinations.
 
