@@ -1003,6 +1003,9 @@
         const tableBody = document.getElementById("table-body");
         tableBody.innerHTML = "";
         
+        // Clear statement store for new data
+        statementStore = {};
+        
         const columns = [
           "#", "requestTime", "statementType", "elapsedTime", "kernTime", "KernTime %", 
           "cpuTime", "memory (MB)", "serviceTime", "resultCount", "resultSize", "Index(es) Used", 
@@ -1017,7 +1020,52 @@
             const td = document.createElement("td");
             // Recalculate row number based on current sort order
             const value = col === "#" ? index + 1 : rowData[col];
-            td.textContent = value;
+            
+            if (col === "statement") {
+              // Handle statement column with truncation and controls
+              const statement = value || "";
+              const statementId = `statement-${index}`;
+              
+              // Store the statement safely
+              statementStore[statementId] = statement;
+              
+              if (statement.length > 500) {
+                // Create truncated version
+                const truncated = statement.substring(0, 500);
+                
+                td.innerHTML = `
+                  <div id="${statementId}-truncated">
+                    <span>${truncated}...</span>
+                    <br>
+                    <button onclick="toggleStatement('${statementId}', true)" 
+                            style="font-size: 12px; margin-top: 5px; margin-right: 5px;">show more</button>
+                    <button onclick="copyStatement('${statementId}')" 
+                            style="font-size: 12px; margin-top: 5px;">copy</button>
+                  </div>
+                  <div id="${statementId}-full" style="display: none;">
+                    <span>${statement}</span>
+                    <br>
+                    <button onclick="toggleStatement('${statementId}', false)" 
+                            style="font-size: 12px; margin-top: 5px; margin-right: 5px;">hide</button>
+                    <button onclick="copyStatement('${statementId}')" 
+                            style="font-size: 12px; margin-top: 5px;">copy</button>
+                  </div>
+                `;
+              } else {
+                // Short statement - just show it with copy button
+                td.innerHTML = `
+                  <div>
+                    <span>${statement}</span>
+                    <br>
+                    <button onclick="copyStatement('${statementId}')" 
+                            style="font-size: 12px; margin-top: 5px;">copy</button>
+                  </div>
+                `;
+              }
+            } else {
+              td.textContent = value;
+            }
+            
             if (col === "Primary Scan Used" && value === "Yes") {
               td.classList.add("primary-scan-yes");
             }
@@ -1032,6 +1080,45 @@
             generateFlowDiagram(rowData.request);
           });
           tableBody.appendChild(row);
+        });
+      }
+
+      // Toggle statement display between truncated and full view
+      function toggleStatement(statementId, showFull) {
+        const truncatedDiv = document.getElementById(statementId + '-truncated');
+        const fullDiv = document.getElementById(statementId + '-full');
+        
+        if (showFull) {
+          truncatedDiv.style.display = 'none';
+          fullDiv.style.display = 'block';
+        } else {
+          truncatedDiv.style.display = 'block';
+          fullDiv.style.display = 'none';
+        }
+      }
+
+      // Copy statement to clipboard
+      function copyStatement(statementId) {
+        const statement = statementStore[statementId];
+        if (!statement) {
+          console.error('Statement not found in store:', statementId);
+          alert('Statement not found');
+          return;
+        }
+        
+        navigator.clipboard.writeText(statement).then(() => {
+          // Show brief feedback
+          const button = event.target;
+          const originalText = button.textContent;
+          button.textContent = 'copied!';
+          button.style.backgroundColor = '#4CAF50';
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.style.backgroundColor = '';
+          }, 1000);
+        }).catch(err => {
+          console.error('Failed to copy statement:', err);
+          alert('Failed to copy to clipboard');
         });
       }
 
@@ -2132,6 +2219,9 @@
       let originalRequests = [];
       let originalStartDate = null;
       let originalEndDate = null;
+      
+      // Store statements for safe access without HTML escaping issues
+      let statementStore = {};
 
         // Parse Couchbase datetime to JavaScript Date
         function parseCouchbaseDateTime(dateTimeStr) {
