@@ -25,3 +25,5 @@
 - Interactive flow diagrams showing execution plan operators
 - Statistical analysis with duration calculations and aggregation
 - Modal dialogs for detailed operator stats and execution plans
+
+
