@@ -241,7 +241,7 @@
       <ul>
         <li><a href="#dashboard">Dashboard</a></li>
         <li><a href="#timeline">Timeline</a></li>
-        <li><a href="#analysis">Analysis</a></li>
+        <li><a href="#analysis">Query Groups</a></li>
         <li><a href="#every-query">Every Query</a></li>
       </ul>
       
@@ -279,6 +279,43 @@
             <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center; height: 30px;">Query Duration Distribution</h3>
             <div style="height: 250px; position: relative;">
               <canvas id="elapsed-time-chart"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Data Tables Row -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+          <!-- User Query Count Table -->
+          <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px;">
+            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center;">Users by Query Count</h3>
+            <div style="height: 250px; overflow-y: auto; border: 1px solid #eee;">
+              <table id="user-count-table" style="width: 100%; border-collapse: collapse;">
+                <thead style="position: sticky; top: 0; background: #f5f5f5;">
+                  <tr>
+                    <th style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd; width: 80px;">Count</th>
+                    <th style="padding: 8px; text-align: left; border-bottom: 1px solid #ddd;">User</th>
+                  </tr>
+                </thead>
+                <tbody id="user-count-body">
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <!-- Index Usage Count Table -->
+          <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px;">
+            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center;">Index Usage Count</h3>
+            <div style="height: 250px; overflow-y: auto; border: 1px solid #eee;">
+              <table id="index-count-table" style="width: 100%; border-collapse: collapse;">
+                <thead style="position: sticky; top: 0; background: #f5f5f5;">
+                  <tr>
+                    <th style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd; width: 80px;">Count</th>
+                    <th style="padding: 8px; text-align: left; border-bottom: 1px solid #ddd;">Index Name</th>
+                  </tr>
+                </thead>
+                <tbody id="index-count-body">
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -519,16 +556,13 @@
         function calculateTotalKernTime(plan) {
         const operators = getOperators(plan);
         let maxKernTime = 0;
-        console.log("=== Calculating Max KernTime ===");
         operators.forEach((operator, index) => {
             const stats = operator["#stats"] || {};
             const kernTime = parseTime(stats.kernTime);
-            console.log(`Operator ${index} (${operator["#operator"]}): ${stats.kernTime} -> ${kernTime}ms`);
             if (!isNaN(kernTime)) {
-            maxKernTime = Math.max(maxKernTime, kernTime); // Find the highest kernTime
+            maxKernTime = Math.max(maxKernTime, kernTime);
             }
         });
-        console.log(`=== Max kernTime: ${maxKernTime}ms ===`);
         return maxKernTime;
         }
 
@@ -536,16 +570,14 @@
         function calculateTotalMemoryUsage(plan) {
           const operators = getOperators(plan);
           let totalMemory = 0;
-          console.log("=== Calculating Total Memory Usage ===");
+
           operators.forEach((operator, index) => {
             const stats = operator["#stats"] || {};
             const usedMemory = stats.usedMemory || 0;
-            console.log(`Operator ${index} (${operator["#operator"]}): ${usedMemory} bytes`);
             if (!isNaN(usedMemory)) {
               totalMemory += usedMemory;
             }
           });
-          console.log(`=== Total memory usage: ${totalMemory} bytes ===`);
           return totalMemory;
         }
 
@@ -553,16 +585,13 @@
         function calculateTotalExecTime(plan) {
         const operators = getOperators(plan);
         let totalExecTime = 0;
-        console.log("=== Calculating Total ExecTime ===");
         operators.forEach((operator, index) => {
             const stats = operator["#stats"] || {};
             const execTime = parseTime(stats.execTime);
-            console.log(`Operator ${index} (${operator["#operator"]}): ${stats.execTime} -> ${execTime}ms`);
             if (!isNaN(execTime)) {
-            totalExecTime += execTime; // Sum all valid execTimes
+            totalExecTime += execTime;
             }
         });
-        console.log(`=== Total execTime: ${totalExecTime}ms ===`);
         return totalExecTime;
         }
 
@@ -672,22 +701,14 @@
           const itemsOut =
             stats["#itemsOut"] !== undefined ? stats["#itemsOut"] : "-";
           
-          console.log(`=== Flow Diagram Operator ${index}: ${operatorName} ===`);
-          console.log(`Raw times - kernTime: ${kernTime}, execTime: ${execTime}, servTime: ${servTime}`);
-          
           const kernTimeMs = parseTime(kernTime);
           const execTimeMs = parseTime(execTime);
           const servTimeMs = parseTime(servTime);
-          
-          console.log(`Parsed times - kernTime: ${kernTimeMs}ms, execTime: ${execTimeMs}ms, servTime: ${servTimeMs}ms`);
-          console.log(`Total execTime used for percentage: ${totalExecTime}ms`);
           
           const percentage =
             totalExecTime > 0 && !isNaN(execTimeMs)
               ? ((execTimeMs / totalExecTime) * 100).toFixed(2)
               : "N/A";
-
-          console.log(`Final percentage for ${operatorName}: execTime ${execTimeMs}ms / totalExecTime ${totalExecTime}ms = ${percentage}%`);
 
           const bubble = document.createElement("div");
           bubble.className = "step-bubble";
@@ -960,17 +981,12 @@
            "statement", "users"].forEach(col => {
             let value;
             if (col === "Primary Scan Used") {
-              value =
-                request.phaseOperators && request.phaseOperators.primaryScan > 0
-                  ? "Yes"
-                  : "No";
+              value = usesPrimaryIndex(request) ? "Yes" : "No";
             } else if (col === "Index(es) Used") {
               const indexes = [];
-              if (
-                request.phaseOperators &&
-                request.phaseOperators.primaryScan > 0
-              )
+              if (usesPrimaryIndex(request)) {
                 indexes.push("Primary");
+              }
               if (
                 request.phaseOperators &&
                 request.phaseOperators.indexScan > 0
@@ -978,10 +994,7 @@
                 indexes.push("Secondary");
               value = indexes.length > 0 ? indexes.join(", ") : "None";
             } else if (col === "Items from Index Scan") {
-              if (
-                request.phaseOperators &&
-                request.phaseOperators.primaryScan > 0
-              ) {
+              if (usesPrimaryIndex(request)) {
                 value =
                   request.phaseCounts && request.phaseCounts.primaryScan
                     ? request.phaseCounts.primaryScan
@@ -2313,6 +2326,52 @@
           generateStateChart(requests);
           generateStatementTypeChart(requests);
           generateElapsedTimeChart(requests);
+          generateUserCountTable(requests);
+          generateIndexCountTable(requests);
+        }
+
+        // Check if a query uses primary index by analyzing the plan
+        function usesPrimaryIndex(request) {
+          if (!request.plan) return false;
+          
+          try {
+            const planObj = typeof request.plan === 'string' ? JSON.parse(request.plan) : request.plan;
+            return checkOperatorForPrimary(planObj);
+          } catch (e) {
+            return false;
+          }
+        }
+
+        // Recursively check operators for primary index usage
+        function checkOperatorForPrimary(operator) {
+          if (!operator) return false;
+          
+          // Check for primary index indicators
+          if (operator['#operator'] === 'PrimaryScan' || 
+              operator['#operator'] === 'PrimaryScan3' ||
+              operator.index === '#primary' ||
+              operator.using === 'sequentialScan' ||
+              (operator.spans && operator.spans.length === 0)) {
+            return true;
+          }
+          
+          // Recursively check child operators
+          if (operator['~child'] && checkOperatorForPrimary(operator['~child'])) return true;
+          if (operator['~children'] && Array.isArray(operator['~children'])) {
+            for (const child of operator['~children']) {
+              if (checkOperatorForPrimary(child)) return true;
+            }
+          }
+          if (operator.input && checkOperatorForPrimary(operator.input)) return true;
+          if (operator.inputs && Array.isArray(operator.inputs)) {
+            for (const input of operator.inputs) {
+              if (checkOperatorForPrimary(input)) return true;
+            }
+          }
+          if (operator.left && checkOperatorForPrimary(operator.left)) return true;
+          if (operator.right && checkOperatorForPrimary(operator.right)) return true;
+          
+          return false;
         }
 
         // Primary Scan Used Pie Chart
@@ -2320,7 +2379,7 @@
           const scanCounts = { 'Yes': 0, 'No': 0 };
           
           requests.forEach(request => {
-            const primaryScan = request.primaryScanUsed === true || request.primaryScanUsed === 'true' ? 'Yes' : 'No';
+            const primaryScan = usesPrimaryIndex(request) ? 'Yes' : 'No';
             scanCounts[primaryScan]++;
           });
 
@@ -2630,6 +2689,154 @@
                 }
               }
             }
+          });
+        }
+
+        // Generate User Count Table
+        function generateUserCountTable(requests) {
+          const userCounts = {};
+          
+          requests.forEach(request => {
+            const user = request.users || 'Unknown';
+            userCounts[user] = (userCounts[user] || 0) + 1;
+          });
+
+          console.log('User counts:', userCounts);
+
+          const sortedUsers = Object.entries(userCounts)
+            .sort(([,a], [,b]) => b - a);
+
+          const tbody = document.getElementById('user-count-body');
+          tbody.innerHTML = '';
+
+          sortedUsers.forEach(([user, count]) => {
+            const row = document.createElement('tr');
+            row.style.borderBottom = '1px solid #eee';
+            row.innerHTML = `
+              <td style="padding: 8px; text-align: right; font-weight: bold;">${count}</td>
+              <td style="padding: 8px; word-break: break-word;">
+                ${user}
+                <button onclick="copyToClipboard('${user.replace(/'/g, "\\'")}', this)" 
+                        style="margin-left: 8px; padding: 1px 6px; font-size: 10px; background: #6c757d; color: white; border: none; border-radius: 2px; cursor: pointer;">
+                  📋
+                </button>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        }
+
+        // Generate Index Count Table
+        function generateIndexCountTable(requests) {
+          const indexCounts = {};
+          
+          requests.forEach(request => {
+            console.log('Processing request:', request.requestId, 'plan:', request.plan);
+            
+            if (request.plan) {
+              try {
+                // Parse the plan JSON string
+                const planObj = typeof request.plan === 'string' ? JSON.parse(request.plan) : request.plan;
+                console.log('Parsed plan object:', planObj);
+                
+                if (planObj && planObj['#operator']) {
+                  extractIndexNames(planObj, indexCounts);
+                }
+              } catch (e) {
+                console.error('Error parsing plan JSON:', e, request.plan);
+              }
+            }
+          });
+
+          console.log('Index counts:', indexCounts);
+
+          const sortedIndexes = Object.entries(indexCounts)
+            .sort(([,a], [,b]) => b - a);
+
+          const tbody = document.getElementById('index-count-body');
+          tbody.innerHTML = '';
+
+          sortedIndexes.forEach(([indexName, count]) => {
+            const row = document.createElement('tr');
+            row.style.borderBottom = '1px solid #eee';
+            row.innerHTML = `
+              <td style="padding: 8px; text-align: right; font-weight: bold;">${count}</td>
+              <td style="padding: 8px; word-break: break-word;">
+                ${indexName}
+                <button onclick="copyToClipboard('${indexName.replace(/'/g, "\\'")}', this)" 
+                        style="margin-left: 8px; padding: 1px 6px; font-size: 10px; background: #6c757d; color: white; border: none; border-radius: 2px; cursor: pointer;">
+                  📋
+                </button>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        }
+
+        // Recursively extract index names from plan operators
+        function extractIndexNames(operator, indexCounts) {
+          if (!operator) return;
+          
+          console.log('Extracting from operator:', operator['#operator'], 'index:', operator.index);
+          
+          // Check for index name in various operator properties
+          if (operator.index) {
+            console.log('Found index:', operator.index);
+            indexCounts[operator.index] = (indexCounts[operator.index] || 0) + 1;
+          }
+          if (operator.indexName) {
+            console.log('Found indexName:', operator.indexName);
+            indexCounts[operator.indexName] = (indexCounts[operator.indexName] || 0) + 1;
+          }
+          
+          // Check for primary scan operators
+          if (operator['#operator'] === 'PrimaryScan' || 
+              operator['#operator'] === 'PrimaryScan3' ||
+              operator.index === '#primary' ||
+              operator.using === 'sequentialScan') {
+            console.log('Found primary scan');
+            indexCounts['#primary'] = (indexCounts['#primary'] || 0) + 1;
+          }
+          
+          // Recursively check child operators
+          if (operator['~child']) {
+            extractIndexNames(operator['~child'], indexCounts);
+          }
+          if (operator['~children'] && Array.isArray(operator['~children'])) {
+            operator['~children'].forEach(child => extractIndexNames(child, indexCounts));
+          }
+          if (operator.input) {
+            extractIndexNames(operator.input, indexCounts);
+          }
+          if (operator.inputs && Array.isArray(operator.inputs)) {
+            operator.inputs.forEach(input => extractIndexNames(input, indexCounts));
+          }
+          if (operator.left) {
+            extractIndexNames(operator.left, indexCounts);
+          }
+          if (operator.right) {
+            extractIndexNames(operator.right, indexCounts);
+          }
+        }
+
+        // Copy to clipboard function
+        function copyToClipboard(text, button) {
+          navigator.clipboard.writeText(text).then(() => {
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            button.style.background = '#28a745';
+            setTimeout(() => {
+              button.textContent = originalText;
+              button.style.background = '#007bff';
+            }, 1000);
+          }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            button.textContent = 'Error';
+            button.style.background = '#dc3545';
+            setTimeout(() => {
+              button.textContent = 'Copy';
+              button.style.background = '#007bff';
+            }, 1000);
           });
         }
 
