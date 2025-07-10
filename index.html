@@ -239,10 +239,51 @@
     <div id="tabs">
       <!-- Tab Headers -->
       <ul>
+        <li><a href="#dashboard">Dashboard</a></li>
         <li><a href="#timeline">Timeline</a></li>
         <li><a href="#analysis">Analysis</a></li>
         <li><a href="#every-query">Every Query</a></li>
       </ul>
+      
+      <!-- Dashboard Tab Content -->
+      <div id="dashboard">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; grid-template-rows: 300px;">
+          <!-- Primary Scan Used Pie Chart -->
+          <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px; height: 300px; overflow: hidden;">
+            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center; height: 30px;">Primary Scan Used</h3>
+            <div style="height: 250px; position: relative;">
+              <canvas id="primary-scan-chart"></canvas>
+            </div>
+          </div>
+          
+          <!-- Query State Pie Chart -->
+          <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px; height: 300px; overflow: hidden;">
+            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center; height: 30px;">Query State</h3>
+            <div style="height: 250px; position: relative;">
+              <canvas id="state-chart"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; grid-template-rows: 300px;">
+          <!-- Statement Type Pie Chart -->
+          <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px; height: 300px; overflow: hidden;">
+            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center; height: 30px;">Statement Type</h3>
+            <div style="height: 250px; position: relative;">
+              <canvas id="statement-type-chart"></canvas>
+            </div>
+          </div>
+          
+          <!-- Elapsed Time Distribution Bar Chart -->
+          <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px; height: 300px; overflow: hidden;">
+            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center; height: 30px;">Query Duration Distribution</h3>
+            <div style="height: 250px; position: relative;">
+              <canvas id="elapsed-time-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- Timeline Tab Content -->
       <div id="timeline">
         <div style="margin-bottom: 10px">
@@ -2266,6 +2307,332 @@
             }
         }
 
+        // Generate Dashboard Charts
+        function generateDashboardCharts(requests) {
+          generatePrimaryScanChart(requests);
+          generateStateChart(requests);
+          generateStatementTypeChart(requests);
+          generateElapsedTimeChart(requests);
+        }
+
+        // Primary Scan Used Pie Chart
+        function generatePrimaryScanChart(requests) {
+          const scanCounts = { 'Yes': 0, 'No': 0 };
+          
+          requests.forEach(request => {
+            const primaryScan = request.primaryScanUsed === true || request.primaryScanUsed === 'true' ? 'Yes' : 'No';
+            scanCounts[primaryScan]++;
+          });
+
+          const total = scanCounts.Yes + scanCounts.No;
+          const yesPercent = total > 0 ? ((scanCounts.Yes / total) * 100).toFixed(1) : 0;
+          const noPercent = total > 0 ? ((scanCounts.No / total) * 100).toFixed(1) : 0;
+
+          const ctx = document.getElementById('primary-scan-chart').getContext('2d');
+          if (window.primaryScanChart) {
+            window.primaryScanChart.destroy();
+          }
+          
+          window.primaryScanChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: ['Yes', 'No'],
+              datasets: [{
+                data: [scanCounts.Yes, scanCounts.No],
+                backgroundColor: ['#ff6384', '#36a2eb'],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom'
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                      return context.label + ': ' + context.parsed + ' (' + percent + '%)';
+                    }
+                  }
+                },
+                datalabels: {
+                  display: true,
+                  color: 'white',
+                  font: {
+                    weight: 'bold',
+                    size: 14
+                  },
+                  formatter: function(value, context) {
+                    const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                    return percent + '%';
+                  }
+                }
+              }
+            },
+            plugins: [{
+              beforeDraw: function(chart) {
+                const ctx = chart.ctx;
+                ctx.save();
+                chart.data.datasets[0].data.forEach((value, index) => {
+                  const meta = chart.getDatasetMeta(0);
+                  const arc = meta.data[index];
+                  const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                  
+                  if (value > 0) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(percent + '%', arc.x, arc.y);
+                  }
+                });
+                ctx.restore();
+              }
+            }]
+          });
+        }
+
+        // Query State Pie Chart
+        function generateStateChart(requests) {
+          const stateCounts = {};
+          
+          requests.forEach(request => {
+            const state = request.state || 'Unknown';
+            stateCounts[state] = (stateCounts[state] || 0) + 1;
+          });
+
+          const total = Object.values(stateCounts).reduce((sum, count) => sum + count, 0);
+          const labels = Object.keys(stateCounts);
+          const data = Object.values(stateCounts);
+          const colors = ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'];
+
+          const ctx = document.getElementById('state-chart').getContext('2d');
+          if (window.stateChart) {
+            window.stateChart.destroy();
+          }
+          
+          window.stateChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: labels,
+              datasets: [{
+                data: data,
+                backgroundColor: colors.slice(0, labels.length),
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom'
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                      return context.label + ': ' + context.parsed + ' (' + percent + '%)';
+                    }
+                  }
+                }
+              }
+            },
+            plugins: [{
+              beforeDraw: function(chart) {
+                const ctx = chart.ctx;
+                ctx.save();
+                chart.data.datasets[0].data.forEach((value, index) => {
+                  const meta = chart.getDatasetMeta(0);
+                  const arc = meta.data[index];
+                  const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                  
+                  if (value > 0 && percent >= 5) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(percent + '%', arc.x, arc.y);
+                  }
+                });
+                ctx.restore();
+              }
+            }]
+          });
+        }
+
+        // Statement Type Pie Chart
+        function generateStatementTypeChart(requests) {
+          const typeCounts = {};
+          
+          requests.forEach(request => {
+            const type = request.statementType || 'Unknown';
+            typeCounts[type] = (typeCounts[type] || 0) + 1;
+          });
+
+          const total = Object.values(typeCounts).reduce((sum, count) => sum + count, 0);
+          const labels = Object.keys(typeCounts);
+          const data = Object.values(typeCounts);
+          const colors = ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40', '#c9cbcf', '#4bc0c0'];
+
+          const ctx = document.getElementById('statement-type-chart').getContext('2d');
+          if (window.statementTypeChart) {
+            window.statementTypeChart.destroy();
+          }
+          
+          window.statementTypeChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: labels,
+              datasets: [{
+                data: data,
+                backgroundColor: colors.slice(0, labels.length),
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: {
+                    generateLabels: function(chart) {
+                      const data = chart.data;
+                      return data.labels.map((label, index) => ({
+                        text: label,
+                        fillStyle: data.datasets[0].backgroundColor[index],
+                        strokeStyle: data.datasets[0].backgroundColor[index],
+                        lineWidth: 1,
+                        hidden: false,
+                        index: index
+                      }));
+                    }
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const percent = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                      return context.label + ': ' + context.parsed + ' (' + percent + '%)';
+                    }
+                  }
+                }
+              }
+            },
+            plugins: [{
+              beforeDraw: function(chart) {
+                const ctx = chart.ctx;
+                ctx.save();
+                chart.data.datasets[0].data.forEach((value, index) => {
+                  const meta = chart.getDatasetMeta(0);
+                  const arc = meta.data[index];
+                  const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                  
+                  if (value > 0 && percent >= 5) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(percent + '%', arc.x, arc.y);
+                  }
+                });
+                ctx.restore();
+              }
+            }]
+          });
+        }
+
+        // Elapsed Time Distribution Bar Chart
+        function generateElapsedTimeChart(requests) {
+          const timeBuckets = {
+            '0-1s': 0,
+            '1-2s': 0,
+            '2-5s': 0,
+            '5-10s': 0,
+            '10-20s': 0,
+            '20-40s': 0,
+            '40-60s': 0,
+            '60-90s': 0,
+            '90s-5m': 0,
+            '5-15m': 0,
+            '15-30m': 0,
+            '30-60m': 0,
+            '>60m': 0
+          };
+
+          requests.forEach(request => {
+            const elapsed = parseFloat(request.elapsedTime || 0);
+            
+            if (elapsed <= 1) timeBuckets['0-1s']++;
+            else if (elapsed <= 2) timeBuckets['1-2s']++;
+            else if (elapsed <= 5) timeBuckets['2-5s']++;
+            else if (elapsed <= 10) timeBuckets['5-10s']++;
+            else if (elapsed <= 20) timeBuckets['10-20s']++;
+            else if (elapsed <= 40) timeBuckets['20-40s']++;
+            else if (elapsed <= 60) timeBuckets['40-60s']++;
+            else if (elapsed <= 90) timeBuckets['60-90s']++;
+            else if (elapsed <= 300) timeBuckets['90s-5m']++;
+            else if (elapsed <= 900) timeBuckets['5-15m']++;
+            else if (elapsed <= 1800) timeBuckets['15-30m']++;
+            else if (elapsed <= 3600) timeBuckets['30-60m']++;
+            else timeBuckets['>60m']++;
+          });
+
+          const ctx = document.getElementById('elapsed-time-chart').getContext('2d');
+          if (window.elapsedTimeChart) {
+            window.elapsedTimeChart.destroy();
+          }
+          
+          window.elapsedTimeChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: Object.keys(timeBuckets),
+              datasets: [{
+                label: 'Query Count',
+                data: Object.values(timeBuckets),
+                backgroundColor: '#36a2eb',
+                borderColor: '#36a2eb',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      return 'Queries: ' + context.parsed.y;
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Number of Queries'
+                  }
+                },
+                x: {
+                  title: {
+                    display: true,
+                    text: 'Elapsed Time Range'
+                  }
+                }
+              }
+            }
+          });
+        }
+
         // Validate date range for time grouping
         function validateDateRangeForGrouping(startDate, endDate, grouping) {
             if (!startDate || !endDate || grouping === 'optimizer') return { valid: true };
@@ -2373,6 +2740,7 @@
               generateOperationsChart(filteredRequests);
               generateFilterChart(filteredRequests);
               generateTimelineChart(filteredRequests);
+              generateDashboardCharts(filteredRequests);
             } catch (e) {
               console.error("Error generating charts:", e);
               alert("Error generating charts. Try reducing the date range or selecting a coarser time grouping.");
