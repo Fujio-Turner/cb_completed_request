@@ -400,6 +400,10 @@
         </div>
         
         <div style="margin-bottom: 20px; height: 400px; position: relative;">
+          <canvas id="memory-chart"></canvas>
+        </div>
+        
+        <div style="margin-bottom: 20px; height: 400px; position: relative;">
           <canvas id="timeline-chart"></canvas>
         </div>
       </div>
@@ -1824,14 +1828,21 @@
                   "none"
                   );
                   }
-                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
-                       window.queryTypesChart.zoomScale(
+                  if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                  window.queryTypesChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                   if (window.memoryChart && chart !== window.memoryChart) {
+                       window.memoryChart.zoomScale(
                          "x",
                          { min: chart.scales.x.min, max: chart.scales.x.max },
                          "none"
                        );
                      }
-                   },
+                    },
                 },
                 zoom: {
                   wheel: {
@@ -1866,14 +1877,21 @@
                   "none"
                   );
                   }
-                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
-                       window.queryTypesChart.zoomScale(
+                  if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                  window.queryTypesChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                   if (window.memoryChart && chart !== window.memoryChart) {
+                       window.memoryChart.zoomScale(
                          "x",
                          { min: chart.scales.x.min, max: chart.scales.x.max },
                          "none"
                        );
                      }
-                   },
+                    },
                 },
               },
             },
@@ -2028,14 +2046,21 @@
                   "none"
                   );
                   }
-                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
-                       window.queryTypesChart.zoomScale(
+                  if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                  window.queryTypesChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                   if (window.memoryChart && chart !== window.memoryChart) {
+                       window.memoryChart.zoomScale(
                          "x",
                          { min: chart.scales.x.min, max: chart.scales.x.max },
                          "none"
                        );
                      }
-                   },
+                    },
                 },
                 zoom: {
                   wheel: {
@@ -2073,14 +2098,21 @@
                   "none"
                   );
                   }
-                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
-                       window.queryTypesChart.zoomScale(
+                  if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                  window.queryTypesChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                   if (window.memoryChart && chart !== window.memoryChart) {
+                       window.memoryChart.zoomScale(
                          "x",
                          { min: chart.scales.x.min, max: chart.scales.x.max },
                          "none"
                        );
                      }
-                   },
+                    },
                 },
               },
             },
@@ -2244,14 +2276,21 @@
                     "none"
                     );
                     }
-                     if (window.queryTypesChart && chart !== window.queryTypesChart) {
-                       window.queryTypesChart.zoomScale(
+                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                    window.queryTypesChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
+                    }
+                      if (window.memoryChart && chart !== window.memoryChart) {
+                       window.memoryChart.zoomScale(
                          "x",
                          { min: chart.scales.x.min, max: chart.scales.x.max },
                          "none"
                        );
                      }
-                  },
+                   },
                 },
                 zoom: {
                   wheel: {
@@ -2291,14 +2330,21 @@
                     "none"
                     );
                     }
-                     if (window.queryTypesChart && chart !== window.queryTypesChart) {
-                       window.queryTypesChart.zoomScale(
+                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                    window.queryTypesChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
+                    }
+                      if (window.memoryChart && chart !== window.memoryChart) {
+                       window.memoryChart.zoomScale(
                          "x",
                          { min: chart.scales.x.min, max: chart.scales.x.max },
                          "none"
                        );
                      }
-                  },
+                   },
                 },
               },
             },
@@ -2330,6 +2376,9 @@
         
         // Create Query Types Scatter Plot Chart
         createQueryTypesChart(requests, grouping);
+        
+        // Create Memory Usage Chart
+        createMemoryChart(requests, grouping);
 
       }
 
@@ -2360,9 +2409,17 @@
             };
           }
 
-          const statementType = request.statement && typeof request.statement === 'string' 
-            ? request.statement.trim().split(/\s+/)[0].toUpperCase()
-            : 'UNKNOWN';
+          let statementType = 'UNKNOWN';
+          if (request.statement && typeof request.statement === 'string') {
+            const trimmed = request.statement.trim();
+            if (trimmed) {
+              statementType = trimmed.split(/\s+/)[0].toUpperCase();
+            } else {
+              console.log('Empty statement after trim:', request.statement);
+            }
+          } else {
+            console.log('Non-string or null statement:', request.statement, typeof request.statement);
+          }
 
           if (!timeGroups[key].statementTypes[statementType]) {
             timeGroups[key].statementTypes[statementType] = {
@@ -2402,6 +2459,8 @@
           'ADVISE': '#17a2b8',      // Cyan
           'INFER': '#ffc107',       // Yellow
           'WITH': '#6c757d',        // Gray
+          'PREPARE': '#fd7e14',     // Orange-red
+          'EXECUTE': '#6610f2',     // Indigo
           '--': '#343a40',          // Dark gray (comments)
           'UNKNOWN': '#868e96'      // Light gray
         };
@@ -2518,14 +2577,21 @@
                     "none"
                     );
                     }
-                     if (window.queryTypesChart && chart !== window.queryTypesChart) {
-                       window.queryTypesChart.zoomScale(
+                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                    window.queryTypesChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
+                    }
+                      if (window.memoryChart && chart !== window.memoryChart) {
+                       window.memoryChart.zoomScale(
                          "x",
                          { min: chart.scales.x.min, max: chart.scales.x.max },
                          "none"
                        );
                      }
-                  },
+                   },
                 },
                 zoom: {
                   wheel: {
@@ -2569,14 +2635,21 @@
                     "none"
                     );
                     }
-                     if (window.queryTypesChart && chart !== window.queryTypesChart) {
-                       window.queryTypesChart.zoomScale(
+                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                    window.queryTypesChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
+                    }
+                      if (window.memoryChart && chart !== window.memoryChart) {
+                       window.memoryChart.zoomScale(
                          "x",
                          { min: chart.scales.x.min, max: chart.scales.x.max },
                          "none"
                        );
                      }
-                  },
+                   },
                 },
               },
             },
@@ -2605,6 +2678,216 @@
         });
       }
 
+      // Create Memory Usage Chart
+      function createMemoryChart(requests, grouping) {
+        const canvas = document.getElementById("memory-chart");
+        if (!canvas) return;
+
+        const ctx = canvas.getContext("2d");
+
+        // Destroy existing chart if it exists
+        if (window.memoryChart) {
+          window.memoryChart.destroy();
+        }
+
+        // Group requests by time and sum memory usage
+        const timeGroups = {};
+        
+        requests.forEach((request) => {
+          const requestDate = new Date(request.requestTime);
+          const timeKey = roundTimestamp(requestDate, grouping, requests);
+          const key = timeKey.toISOString();
+          
+          if (!timeGroups[key]) {
+            timeGroups[key] = {
+              timestamp: timeKey,
+              totalMemoryBytes: 0,
+              queryCount: 0
+            };
+          }
+
+          // Get usedMemory value (assuming it's in bytes)
+          const usedMemoryBytes = request.usedMemory || 0;
+          timeGroups[key].totalMemoryBytes += usedMemoryBytes;
+          timeGroups[key].queryCount++;
+        });
+
+        // Convert to sorted array and convert bytes to MB
+        const sortedData = Object.values(timeGroups)
+          .sort((a, b) => a.timestamp - b.timestamp)
+          .map(item => ({
+            timestamp: item.timestamp,
+            totalMemoryMB: item.totalMemoryBytes / (1024 * 1024), // Convert bytes to MB
+            queryCount: item.queryCount
+          }));
+
+        // Prepare chart data
+        const labels = sortedData.map((item) => item.timestamp);
+        const memoryData = sortedData.map((item) => item.totalMemoryMB);
+
+        // Create memory usage bar chart
+        window.memoryChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Memory Usage (MB)",
+                data: memoryData,
+                backgroundColor: "#17a2b8", // Info blue-cyan
+                borderColor: "#138496",
+                borderWidth: 1,
+              }
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: "Total Memory Usage by Time Period",
+              },
+              legend: {
+                display: true,
+                position: "top",
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const dataIndex = context.dataIndex;
+                    const memoryMB = context.parsed.y;
+                    const queryCount = sortedData[dataIndex].queryCount;
+                    return [
+                      `Memory Usage: ${memoryMB.toFixed(2)} MB`,
+                      `Queries: ${queryCount}`,
+                      `Avg per Query: ${(memoryMB / queryCount).toFixed(2)} MB`
+                    ];
+                  }
+                }
+              },
+              zoom: {
+                limits: {
+                  x: { min: "original", max: "original" },
+                  y: { min: "original", max: "original" },
+                },
+                pan: {
+                  enabled: true,
+                  mode: "xy",
+                  onPan: function ({ chart }) {
+                    // Update current time range
+                    currentTimeRange.min = new Date(chart.scales.x.min);
+                    currentTimeRange.max = new Date(chart.scales.x.max);
+                    updateTimeRangeDisplay();
+                    
+                    // Sync pan with other charts
+                    if (window.operationsChart && chart !== window.operationsChart) {
+                      window.operationsChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.filterChart && chart !== window.filterChart) {
+                      window.filterChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.timelineChart && chart !== window.timelineChart) {
+                      window.timelineChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                      window.queryTypesChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                  },
+                },
+                zoom: {
+                  wheel: {
+                    enabled: true,
+                  },
+                  pinch: {
+                    enabled: true,
+                  },
+                  drag: {
+                    enabled: true,
+                    backgroundColor: "rgba(225,225,225,0.3)",
+                    borderColor: "rgba(225,225,225)",
+                    borderWidth: 1,
+                  },
+                  mode: "xy",
+                  onZoom: function ({ chart }) {
+                    // Update current time range
+                    currentTimeRange.min = new Date(chart.scales.x.min);
+                    currentTimeRange.max = new Date(chart.scales.x.max);
+                    updateTimeRangeDisplay();
+                    
+                    // Sync zoom with other charts
+                    if (window.operationsChart && chart !== window.operationsChart) {
+                      window.operationsChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.filterChart && chart !== window.filterChart) {
+                      window.filterChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.timelineChart && chart !== window.timelineChart) {
+                      window.timelineChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                      window.queryTypesChart.zoomScale(
+                        "x",
+                        { min: chart.scales.x.min, max: chart.scales.x.max },
+                        "none"
+                      );
+                    }
+                  },
+                },
+              },
+            },
+            scales: {
+              x: {
+                type: "time",
+                time: getCurrentTimeConfig(requests),
+                title: {
+                  display: true,
+                  text: "Request Time",
+                },
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: "Memory Usage (MB)",
+                },
+                beginAtZero: true,
+              },
+            },
+            interaction: {
+              mode: "index",
+              intersect: false,
+            },
+          },
+        });
+      }
+
       // Reset timeline chart zoom
       function resetTimelineZoom() {
         if (window.timelineChart) {
@@ -2618,6 +2901,9 @@
         }
         if (window.queryTypesChart) {
           window.queryTypesChart.resetZoom();
+        }
+        if (window.memoryChart) {
+          window.memoryChart.resetZoom();
         }
         // Reset to original time range
         currentTimeRange = { ...originalTimeRange };
@@ -2715,6 +3001,19 @@
             delete window.queryTypesChart.options.scales.y.min;
           }
           window.queryTypesChart.update();
+        }
+
+        // Update memory chart Y-axis scale
+        if (window.memoryChart) {
+          window.memoryChart.options.scales.y.type = scaleType;
+          if (scaleType === "logarithmic") {
+            window.memoryChart.options.scales.y.beginAtZero = false;
+            window.memoryChart.options.scales.y.min = 0.001; // Avoid log(0) for small memory values
+          } else {
+            window.memoryChart.options.scales.y.beginAtZero = true;
+            delete window.memoryChart.options.scales.y.min;
+          }
+          window.memoryChart.update();
         }
       }
 
