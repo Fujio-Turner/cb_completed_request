@@ -14,6 +14,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <!-- Include Chart.js zoom plugin -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <!-- Include Hammer.js for touch/gesture support -->
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -381,6 +383,9 @@
           <span style="margin-left: 20px; color: #666; font-size: 12px">
             Drag to pan • Scroll to zoom • Drag box to zoom area
           </span>
+          <button id="use-time-range-btn" onclick="useCurrentTimeRange()" style="margin-left: 20px; padding: 4px 8px; font-size: 0.8em;">
+            Use Time Range
+          </button>
         </div>
         <div style="margin-bottom: 20px; max-height: 400px;">
           <canvas id="operations-chart" width="400" height="200"></canvas>
@@ -440,6 +445,22 @@
     </div>
 
     <script>
+      // Register the zoom plugin
+      try {
+        if (window.ChartZoom) {
+          Chart.register(window.ChartZoom);
+        } else if (window.chartjsPluginZoom) {
+          Chart.register(window.chartjsPluginZoom);
+        } else if (window.zoomPlugin) {
+          Chart.register(window.zoomPlugin);
+        }
+      } catch (error) {
+        // Silent fallback
+      }
+      
+      // Global variables for time range tracking
+      let originalTimeRange = { min: null, max: null };
+      let currentTimeRange = { min: null, max: null };
 
       // Parse time strings to milliseconds
         function parseTime(timeStr) {
@@ -2108,6 +2129,14 @@
           (a, b) => a.timestamp - b.timestamp
         );
 
+        // Set original time range from data
+        if (sortedData.length > 0) {
+          originalTimeRange.min = sortedData[0].timestamp;
+          originalTimeRange.max = sortedData[sortedData.length - 1].timestamp;
+          currentTimeRange = { ...originalTimeRange };
+          updateTimeRangeDisplay();
+        }
+
         // Prepare chart data
         const labels = sortedData.map((item) => item.timestamp);
         const kernTimeLessOrEqualData = sortedData.map(
@@ -2159,6 +2188,11 @@
                   enabled: true,
                   mode: "xy",
                   onPan: function ({ chart }) {
+                    // Update current time range - convert chart scale values to Date objects
+                    currentTimeRange.min = new Date(chart.scales.x.min);
+                    currentTimeRange.max = new Date(chart.scales.x.max);
+                    updateTimeRangeDisplay();
+                    
                     // Sync pan with other charts
                     if (
                       window.operationsChart &&
@@ -2194,6 +2228,11 @@
                   },
                   mode: "xy",
                   onZoom: function ({ chart }) {
+                    // Update current time range - convert chart scale values to Date objects
+                    currentTimeRange.min = new Date(chart.scales.x.min);
+                    currentTimeRange.max = new Date(chart.scales.x.max);
+                    updateTimeRangeDisplay();
+                    
                     // Sync zoom with other charts
                     if (
                       window.operationsChart &&
@@ -2241,6 +2280,8 @@
             },
           },
         });
+        
+
       }
 
       // Reset timeline chart zoom
@@ -2253,6 +2294,42 @@
         }
         if (window.filterChart) {
           window.filterChart.resetZoom();
+        }
+        // Reset to original time range
+        currentTimeRange = { ...originalTimeRange };
+        updateTimeRangeDisplay();
+      }
+
+      // Format date to datetime-local format
+      function formatDateForInput(date) {
+        if (!date) return '';
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      }
+
+      // Update the time range display
+      function updateTimeRangeDisplay() {
+        // Function kept for compatibility but display removed
+      }
+
+      // Use current time range in the date pickers
+      function useCurrentTimeRange() {
+        // Get current x-axis range directly from the chart
+        if (window.timelineChart && window.timelineChart.scales && window.timelineChart.scales.x) {
+          const xScale = window.timelineChart.scales.x;
+          const currentMin = new Date(xScale.min);
+          const currentMax = new Date(xScale.max);
+          
+          const startValue = formatDateForInput(currentMin);
+          const endValue = formatDateForInput(currentMax);
+          
+          document.getElementById('start-date').value = startValue;
+          document.getElementById('end-date').value = endValue;
         }
       }
 
