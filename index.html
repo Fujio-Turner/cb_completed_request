@@ -253,7 +253,15 @@
       
       <!-- Dashboard Tab Content -->
       <div id="dashboard">
+
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; grid-template-rows: 300px;">
+        <!-- Elapsed Time Distribution Bar Chart -->
+          <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px; height: 300px; overflow: hidden;">
+            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center; height: 30px;">Query Duration Distribution</h3>
+            <div style="height: 250px; position: relative;">
+              <canvas id="elapsed-time-chart"></canvas>
+            </div>
+          </div>
           <!-- Primary Scan Used Pie Chart -->
           <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px; height: 300px; overflow: hidden;">
             <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center; height: 30px;">Primary Scan Used</h3>
@@ -262,34 +270,19 @@
             </div>
           </div>
           
-          <!-- Query State Pie Chart -->
-          <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px; height: 300px; overflow: hidden;">
-            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center; height: 30px;">Query State</h3>
-            <div style="height: 250px; position: relative;">
-              <canvas id="state-chart"></canvas>
+        </div>
+
+        <!-- Query Pattern Analysis Row -->
+        <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 20px; grid-template-rows: 400px;">
+          <!-- Query Pattern Features Bar Chart -->
+          <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px; height: 400px; overflow: hidden;">
+            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center; height: 30px;">Query Pattern Features</h3>
+            <div style="height: 350px; position: relative;">
+              <canvas id="query-pattern-chart"></canvas>
             </div>
           </div>
         </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; grid-template-rows: 300px;">
-          <!-- Statement Type Pie Chart -->
-          <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px; height: 300px; overflow: hidden;">
-            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center; height: 30px;">Statement Type</h3>
-            <div style="height: 250px; position: relative;">
-              <canvas id="statement-type-chart"></canvas>
-            </div>
-          </div>
-          
-          <!-- Elapsed Time Distribution Bar Chart -->
-          <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px; height: 300px; overflow: hidden;">
-            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center; height: 30px;">Query Duration Distribution</h3>
-            <div style="height: 250px; position: relative;">
-              <canvas id="elapsed-time-chart"></canvas>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Data Tables Row -->
+                <!-- Data Tables Row -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
           <!-- User Query Count Table -->
           <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px;">
@@ -325,6 +318,27 @@
             </div>
           </div>
         </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; grid-template-rows: 300px;">
+
+          <!-- Statement Type Pie Chart -->
+          <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px; height: 300px; overflow: hidden;">
+            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center; height: 30px;">Statement Type</h3>
+            <div style="height: 250px; position: relative;">
+              <canvas id="statement-type-chart"></canvas>
+            </div>
+          </div>
+          
+            <!-- Query State Pie Chart -->
+          <div style="background: white; padding: 15px; border: 1px solid #ccc; border-radius: 5px; height: 300px; overflow: hidden;">
+            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center; height: 30px;">Query State</h3>
+            <div style="height: 250px; position: relative;">
+              <canvas id="state-chart"></canvas>
+            </div>
+          </div>
+
+        </div>
+        
+
       </div>
       
       <!-- Timeline Tab Content -->
@@ -3144,6 +3158,7 @@
           generateStateChart(requests);
           generateStatementTypeChart(requests);
           generateElapsedTimeChart(requests);
+          generateQueryPatternChart(requests);
           generateUserCountTable(requests);
           generateIndexCountTable(requests);
         }
@@ -3503,6 +3518,158 @@
                   title: {
                     display: true,
                     text: 'Elapsed Time Range'
+                  }
+                }
+              }
+            }
+          });
+        }
+
+        // Generate Query Pattern Chart
+        function generateQueryPatternChart(requests) {
+          const patternCounts = {
+            'No WHERE': 0,
+            'GROUP BY': 0,
+            'ORDER BY': 0,
+            'USE INDEX': 0,
+            'USE KEYS': 0,
+            'JOIN': 0,
+            'NEST': 0,
+            'UNNEST': 0,
+            'OFFSET': 0,
+            'SEARCH': 0,
+            'WITH': 0,
+            'ARRAY QUERY': 0,
+            'SELECT *': 0,
+            'LIKE': 0
+          };
+
+          requests.forEach(request => {
+            const statement = (request.statement || '').toUpperCase();
+            
+            // No WHERE
+            if (!statement.includes(' WHERE ')) {
+              patternCounts['No WHERE']++;
+            }
+            
+            // GROUP BY
+            if (statement.includes(' GROUP BY ')) {
+              patternCounts['GROUP BY']++;
+            }
+            
+            // ORDER BY
+            if (statement.includes(' ORDER BY ')) {
+              patternCounts['ORDER BY']++;
+            }
+            
+            // USE INDEX
+            if (statement.includes('USE INDEX(')) {
+              patternCounts['USE INDEX']++;
+            }
+            
+            // USE KEYS
+            if (statement.includes('USE KEYS')) {
+              patternCounts['USE KEYS']++;
+            }
+            
+            // JOIN
+            if (statement.includes(' JOIN ')) {
+              patternCounts['JOIN']++;
+            }
+            
+            // NEST
+            if (statement.includes(' NEST ')) {
+              patternCounts['NEST']++;
+            }
+            
+            // UNNEST
+            if (statement.includes(' UNNEST ')) {
+              patternCounts['UNNEST']++;
+            }
+            
+            // OFFSET
+            if (statement.includes(' OFFSET ')) {
+              patternCounts['OFFSET']++;
+            }
+            
+            // SEARCH
+            if (statement.includes(' SEARCH(')) {
+              patternCounts['SEARCH']++;
+            }
+            
+            // WITH
+            if (statement.includes('WITH ')) {
+              patternCounts['WITH']++;
+            }
+            
+            // ARRAY QUERY (has both SATISFIES and END)
+            if (statement.includes(' SATISFIES ') && statement.includes(' END ')) {
+              patternCounts['ARRAY QUERY']++;
+            }
+            
+            // SELECT * (between SELECT and FROM)
+            const selectMatch = statement.match(/SELECT\s+(.+?)\s+FROM/);
+            if (selectMatch) {
+              const selectPart = selectMatch[1].trim();
+              if (selectPart === '*' || selectPart.includes('.*')) {
+                patternCounts['SELECT *']++;
+              }
+            }
+            
+            // LIKE
+            if (statement.includes(' LIKE ')) {
+              patternCounts['LIKE']++;
+            }
+          });
+
+          const ctx = document.getElementById('query-pattern-chart').getContext('2d');
+          if (window.queryPatternChart) {
+            window.queryPatternChart.destroy();
+          }
+          
+          window.queryPatternChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: Object.keys(patternCounts),
+              datasets: [{
+                label: 'Query Count',
+                data: Object.values(patternCounts),
+                backgroundColor: '#ff6384',
+                borderColor: '#ff6384',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      return 'Queries: ' + context.parsed.y;
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Number of Queries'
+                  }
+                },
+                x: {
+                  title: {
+                    display: true,
+                    text: 'Query Pattern Features'
+                  },
+                  ticks: {
+                    maxRotation: 45,
+                    minRotation: 45
                   }
                 }
               }
