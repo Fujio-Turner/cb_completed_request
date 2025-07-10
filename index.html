@@ -387,15 +387,20 @@
             Use Time Range
           </button>
         </div>
-        <div style="margin-bottom: 20px; max-height: 400px;">
-          <canvas id="operations-chart" width="400" height="200"></canvas>
-        </div>
-        <div style="margin-bottom: 20px; max-height: 400px;">
-          <canvas id="filter-chart" width="400" height="200"></canvas>
+        <div style="margin-bottom: 20px; height: 400px; position: relative;">
+          <canvas id="query-types-chart"></canvas>
         </div>
         
-        <div style="margin-bottom: 20px; max-height: 400px;">
-        <canvas id="timeline-chart" width="400" height="200"></canvas>
+        <div style="margin-bottom: 20px; height: 400px; position: relative;">
+          <canvas id="operations-chart"></canvas>
+        </div>
+        
+        <div style="margin-bottom: 20px; height: 400px; position: relative;">
+          <canvas id="filter-chart"></canvas>
+        </div>
+        
+        <div style="margin-bottom: 20px; height: 400px; position: relative;">
+          <canvas id="timeline-chart"></canvas>
         </div>
       </div>
 
@@ -1801,25 +1806,32 @@
                   enabled: true,
                   mode: "xy",
                   onPan: function ({ chart }) {
-                    // Sync pan with other charts
-                    if (window.filterChart && chart !== window.filterChart) {
-                      window.filterChart.zoomScale(
-                        "x",
-                        { min: chart.scales.x.min, max: chart.scales.x.max },
-                        "none"
-                      );
-                    }
-                    if (
-                      window.timelineChart &&
-                      chart !== window.timelineChart
-                    ) {
-                      window.timelineChart.zoomScale(
-                        "x",
-                        { min: chart.scales.x.min, max: chart.scales.x.max },
-                        "none"
-                      );
-                    }
-                  },
+                  // Sync pan with other charts
+                  if (window.filterChart && chart !== window.filterChart) {
+                  window.filterChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                  if (
+                  window.timelineChart &&
+                  chart !== window.timelineChart
+                  ) {
+                  window.timelineChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                       window.queryTypesChart.zoomScale(
+                         "x",
+                         { min: chart.scales.x.min, max: chart.scales.x.max },
+                         "none"
+                       );
+                     }
+                   },
                 },
                 zoom: {
                   wheel: {
@@ -1836,25 +1848,32 @@
                   },
                   mode: "xy",
                   onZoom: function ({ chart }) {
-                    // Sync zoom with other charts
-                    if (window.filterChart && chart !== window.filterChart) {
-                      window.filterChart.zoomScale(
-                        "x",
-                        { min: chart.scales.x.min, max: chart.scales.x.max },
-                        "none"
-                      );
-                    }
-                    if (
-                      window.timelineChart &&
-                      chart !== window.timelineChart
-                    ) {
-                      window.timelineChart.zoomScale(
-                        "x",
-                        { min: chart.scales.x.min, max: chart.scales.x.max },
-                        "none"
-                      );
-                    }
-                  },
+                  // Sync zoom with other charts
+                  if (window.filterChart && chart !== window.filterChart) {
+                  window.filterChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                  if (
+                  window.timelineChart &&
+                  chart !== window.timelineChart
+                  ) {
+                  window.timelineChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                       window.queryTypesChart.zoomScale(
+                         "x",
+                         { min: chart.scales.x.min, max: chart.scales.x.max },
+                         "none"
+                       );
+                     }
+                   },
                 },
               },
             },
@@ -1988,28 +2007,35 @@
                   enabled: true,
                   mode: "xy",
                   onPan: function ({ chart }) {
-                    // Sync pan with other charts
-                    if (
-                      window.operationsChart &&
-                      chart !== window.operationsChart
-                    ) {
-                      window.operationsChart.zoomScale(
-                        "x",
-                        { min: chart.scales.x.min, max: chart.scales.x.max },
-                        "none"
-                      );
-                    }
-                    if (
-                      window.timelineChart &&
-                      chart !== window.timelineChart
-                    ) {
-                      window.timelineChart.zoomScale(
-                        "x",
-                        { min: chart.scales.x.min, max: chart.scales.x.max },
-                        "none"
-                      );
-                    }
-                  },
+                  // Sync pan with other charts
+                  if (
+                  window.operationsChart &&
+                  chart !== window.operationsChart
+                  ) {
+                  window.operationsChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                  if (
+                  window.timelineChart &&
+                  chart !== window.timelineChart
+                  ) {
+                  window.timelineChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                       window.queryTypesChart.zoomScale(
+                         "x",
+                         { min: chart.scales.x.min, max: chart.scales.x.max },
+                         "none"
+                       );
+                     }
+                   },
                 },
                 zoom: {
                   wheel: {
@@ -2026,28 +2052,35 @@
                   },
                   mode: "xy",
                   onZoom: function ({ chart }) {
-                    // Sync zoom with other charts
-                    if (
-                      window.operationsChart &&
-                      chart !== window.operationsChart
-                    ) {
-                      window.operationsChart.zoomScale(
-                        "x",
-                        { min: chart.scales.x.min, max: chart.scales.x.max },
-                        "none"
-                      );
-                    }
-                    if (
-                      window.timelineChart &&
-                      chart !== window.timelineChart
-                    ) {
-                      window.timelineChart.zoomScale(
-                        "x",
-                        { min: chart.scales.x.min, max: chart.scales.x.max },
-                        "none"
-                      );
-                    }
-                  },
+                  // Sync zoom with other charts
+                  if (
+                  window.operationsChart &&
+                  chart !== window.operationsChart
+                  ) {
+                  window.operationsChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                  if (
+                  window.timelineChart &&
+                  chart !== window.timelineChart
+                  ) {
+                  window.timelineChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                    if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                       window.queryTypesChart.zoomScale(
+                         "x",
+                         { min: chart.scales.x.min, max: chart.scales.x.max },
+                         "none"
+                       );
+                     }
+                   },
                 },
               },
             },
@@ -2195,22 +2228,29 @@
                     
                     // Sync pan with other charts
                     if (
-                      window.operationsChart &&
-                      chart !== window.operationsChart
+                    window.operationsChart &&
+                    chart !== window.operationsChart
                     ) {
-                      window.operationsChart.zoomScale(
-                        "x",
-                        { min: chart.scales.x.min, max: chart.scales.x.max },
-                        "none"
-                      );
+                    window.operationsChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
                     }
                     if (window.filterChart && chart !== window.filterChart) {
-                      window.filterChart.zoomScale(
-                        "x",
-                        { min: chart.scales.x.min, max: chart.scales.x.max },
-                        "none"
-                      );
+                    window.filterChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
                     }
+                     if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                       window.queryTypesChart.zoomScale(
+                         "x",
+                         { min: chart.scales.x.min, max: chart.scales.x.max },
+                         "none"
+                       );
+                     }
                   },
                 },
                 zoom: {
@@ -2235,22 +2275,29 @@
                     
                     // Sync zoom with other charts
                     if (
-                      window.operationsChart &&
-                      chart !== window.operationsChart
+                    window.operationsChart &&
+                    chart !== window.operationsChart
                     ) {
-                      window.operationsChart.zoomScale(
-                        "x",
-                        { min: chart.scales.x.min, max: chart.scales.x.max },
-                        "none"
-                      );
+                    window.operationsChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
                     }
                     if (window.filterChart && chart !== window.filterChart) {
-                      window.filterChart.zoomScale(
-                        "x",
-                        { min: chart.scales.x.min, max: chart.scales.x.max },
-                        "none"
-                      );
+                    window.filterChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
                     }
+                     if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                       window.queryTypesChart.zoomScale(
+                         "x",
+                         { min: chart.scales.x.min, max: chart.scales.x.max },
+                         "none"
+                       );
+                     }
                   },
                 },
               },
@@ -2281,7 +2328,281 @@
           },
         });
         
+        // Create Query Types Scatter Plot Chart
+        createQueryTypesChart(requests, grouping);
 
+      }
+
+      // Create Query Types Scatter Plot Chart
+      function createQueryTypesChart(requests, grouping) {
+        const canvas = document.getElementById("query-types-chart");
+        if (!canvas) return;
+
+        const ctx = canvas.getContext("2d");
+
+        // Destroy existing chart if it exists
+        if (window.queryTypesChart) {
+          window.queryTypesChart.destroy();
+        }
+
+        // Group requests by time and statement type
+        const timeGroups = {};
+        
+        requests.forEach((request) => {
+          const requestDate = new Date(request.requestTime);
+          const timeKey = roundTimestamp(requestDate, grouping, requests);
+          const key = timeKey.toISOString();
+          
+          if (!timeGroups[key]) {
+            timeGroups[key] = {
+              timestamp: timeKey,
+              statementTypes: {}
+            };
+          }
+
+          const statementType = request.statement && typeof request.statement === 'string' 
+            ? request.statement.trim().split(/\s+/)[0].toUpperCase()
+            : 'UNKNOWN';
+
+          if (!timeGroups[key].statementTypes[statementType]) {
+            timeGroups[key].statementTypes[statementType] = {
+              count: 0,
+              durations: []
+            };
+          }
+          
+          timeGroups[key].statementTypes[statementType].count++;
+          
+          // Get duration in seconds
+          const elapsedTimeMs = parseTime(request.elapsedTime);
+          const durationSeconds = elapsedTimeMs / 1000;
+          timeGroups[key].statementTypes[statementType].durations.push(durationSeconds);
+        });
+
+        // Get all unique statement types
+        const allStatementTypes = new Set();
+        Object.values(timeGroups).forEach(group => {
+          Object.keys(group.statementTypes).forEach(type => {
+            allStatementTypes.add(type);
+          });
+        });
+
+        // Console log all statement types found
+        console.log('Statement types found:', Array.from(allStatementTypes).sort());
+
+        // Predefined colors for all statement types found
+        const colorMap = {
+          'SELECT': '#007bff',      // Blue
+          'INSERT': '#28a745',      // Green
+          'DELETE': '#dc3545',      // Red
+          'UPSERT': '#6f42c1',      // Purple
+          'CREATE': '#fd7e14',      // Orange
+          'DROP': '#e83e8c',        // Pink
+          'EXPLAIN': '#20c997',     // Teal
+          'ADVISE': '#17a2b8',      // Cyan
+          'INFER': '#ffc107',       // Yellow
+          'WITH': '#6c757d',        // Gray
+          '--': '#343a40',          // Dark gray (comments)
+          'UNKNOWN': '#868e96'      // Light gray
+        };
+
+        // Calculate min/max counts for circle sizing
+        let minCount = Infinity;
+        let maxCount = 0;
+        Object.values(timeGroups).forEach(group => {
+          Object.values(group.statementTypes).forEach(typeData => {
+            minCount = Math.min(minCount, typeData.count);
+            maxCount = Math.max(maxCount, typeData.count);
+          });
+        });
+
+        // Generate datasets for each statement type with variable circle sizes
+        const datasets = Array.from(allStatementTypes).map(statementType => {
+          const data = [];
+          
+          Object.values(timeGroups).forEach(group => {
+            if (group.statementTypes[statementType]) {
+              const typeData = group.statementTypes[statementType];
+              // Calculate average duration for this time group and statement type
+              const avgDuration = typeData.durations.reduce((sum, d) => sum + d, 0) / typeData.durations.length;
+              
+              // Calculate circle size based on count (3-15 pixel radius)
+              const sizeRatio = maxCount > minCount ? (typeData.count - minCount) / (maxCount - minCount) : 0.5;
+              const circleSize = 3 + (sizeRatio * 12); // Range from 3 to 15 pixels
+              
+              data.push({
+                x: group.timestamp,
+                y: avgDuration,
+                r: circleSize,
+                count: typeData.count,
+                maxDuration: Math.max(...typeData.durations),
+                minDuration: Math.min(...typeData.durations)
+              });
+            }
+          });
+
+          return {
+            label: `${statementType} (${data.reduce((sum, point) => sum + point.count, 0)} total)`,
+            data: data,
+            backgroundColor: colorMap[statementType] || `hsl(${Array.from(allStatementTypes).indexOf(statementType) * 137.5 % 360}, 70%, 50%)`,
+            borderColor: colorMap[statementType] || `hsl(${Array.from(allStatementTypes).indexOf(statementType) * 137.5 % 360}, 70%, 40%)`,
+            borderWidth: 1
+          };
+        });
+
+        // Create bubble chart
+        window.queryTypesChart = new Chart(ctx, {
+          type: "bubble",
+          data: {
+            datasets: datasets
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: "Query Duration by Statement Type (Bubble Size = Query Count)",
+              },
+              legend: {
+                display: true,
+                position: "top",
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const dataPoint = context.raw;
+                    const statementType = context.dataset.label.split(' (')[0];
+                    return [
+                      `${statementType}`,
+                      `Count: ${dataPoint.count}`,
+                      `Avg Duration: ${dataPoint.y.toFixed(3)}s`,
+                      `Min Duration: ${dataPoint.minDuration.toFixed(3)}s`,
+                      `Max Duration: ${dataPoint.maxDuration.toFixed(3)}s`
+                    ];
+                  }
+                }
+              },
+              zoom: {
+                limits: {
+                  x: { min: "original", max: "original" },
+                  y: { min: "original", max: "original" },
+                },
+                pan: {
+                  enabled: true,
+                  mode: "xy",
+                  onPan: function ({ chart }) {
+                    // Update current time range
+                    currentTimeRange.min = new Date(chart.scales.x.min);
+                    currentTimeRange.max = new Date(chart.scales.x.max);
+                    updateTimeRangeDisplay();
+                    
+                    // Sync pan with other charts
+                    if (window.operationsChart && chart !== window.operationsChart) {
+                    window.operationsChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
+                    }
+                    if (window.filterChart && chart !== window.filterChart) {
+                    window.filterChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
+                    }
+                    if (window.timelineChart && chart !== window.timelineChart) {
+                    window.timelineChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
+                    }
+                     if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                       window.queryTypesChart.zoomScale(
+                         "x",
+                         { min: chart.scales.x.min, max: chart.scales.x.max },
+                         "none"
+                       );
+                     }
+                  },
+                },
+                zoom: {
+                  wheel: {
+                    enabled: true,
+                  },
+                  pinch: {
+                    enabled: true,
+                  },
+                  drag: {
+                    enabled: true,
+                    backgroundColor: "rgba(225,225,225,0.3)",
+                    borderColor: "rgba(225,225,225)",
+                    borderWidth: 1,
+                  },
+                  mode: "xy",
+                  onZoom: function ({ chart }) {
+                    // Update current time range
+                    currentTimeRange.min = new Date(chart.scales.x.min);
+                    currentTimeRange.max = new Date(chart.scales.x.max);
+                    updateTimeRangeDisplay();
+                    
+                    // Sync zoom with other charts
+                    if (window.operationsChart && chart !== window.operationsChart) {
+                    window.operationsChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
+                    }
+                    if (window.filterChart && chart !== window.filterChart) {
+                    window.filterChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
+                    }
+                    if (window.timelineChart && chart !== window.timelineChart) {
+                    window.timelineChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
+                    }
+                     if (window.queryTypesChart && chart !== window.queryTypesChart) {
+                       window.queryTypesChart.zoomScale(
+                         "x",
+                         { min: chart.scales.x.min, max: chart.scales.x.max },
+                         "none"
+                       );
+                     }
+                  },
+                },
+              },
+            },
+            scales: {
+              x: {
+                type: "time",
+                time: getCurrentTimeConfig(requests),
+                title: {
+                  display: true,
+                  text: "Request Time",
+                },
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: "Average Duration (seconds)",
+                },
+                beginAtZero: true,
+              },
+            },
+            interaction: {
+              mode: "point",
+              intersect: false,
+            },
+          },
+        });
       }
 
       // Reset timeline chart zoom
@@ -2294,6 +2615,9 @@
         }
         if (window.filterChart) {
           window.filterChart.resetZoom();
+        }
+        if (window.queryTypesChart) {
+          window.queryTypesChart.resetZoom();
         }
         // Reset to original time range
         currentTimeRange = { ...originalTimeRange };
@@ -2378,6 +2702,19 @@
             delete window.timelineChart.options.scales.y.min;
           }
           window.timelineChart.update();
+        }
+
+        // Update query types chart Y-axis scale
+        if (window.queryTypesChart) {
+          window.queryTypesChart.options.scales.y.type = scaleType;
+          if (scaleType === "logarithmic") {
+            window.queryTypesChart.options.scales.y.beginAtZero = false;
+            window.queryTypesChart.options.scales.y.min = 0.001; // Avoid log(0) for very small durations
+          } else {
+            window.queryTypesChart.options.scales.y.beginAtZero = true;
+            delete window.queryTypesChart.options.scales.y.min;
+          }
+          window.queryTypesChart.update();
         }
       }
 
