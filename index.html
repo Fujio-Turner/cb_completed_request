@@ -777,6 +777,11 @@
                     <h4>${operatorName}</h4>
                     <p>${formatTime(execTimeMs)} (${percentage}%)</p>`;
           
+          // Add servTime if available
+          if (servTime !== "N/A" && !isNaN(servTimeMs) && servTimeMs > 0) {
+            bubbleContent += `<p>${formatTime(servTimeMs)} servTime</p>`;
+          }
+          
           // Only show in/out line if both values are present and not "-"
           if (itemsIn !== "-" && itemsOut !== "-") {
             bubbleContent += `<p>${itemsIn} in / ${itemsOut} out</p>`;
@@ -985,20 +990,19 @@
 
         const columns = [
           "#",
-          "requestTime",
-          "statementType",
-          "elapsedTime",
-          "kernTime",
-          "KernTime %",
-          "cpuTime",
-          "memory (MB)",
-          "serviceTime",
-          "resultCount",
-          "resultSize",
-          "Index(es) Used",
-          "Items from Index Scan",
-          "Doc Fetch Count",
-          "Primary Scan Used",
+          "request\nTime",
+          "statement\nType",
+          "elapsed\nTime",
+          "service\nTime",
+          "kern\nTime",
+          "KernTime\n%",
+          "cpu\nTime",
+          "memory\n(MB)",
+          "result\nCount",
+          "result\nSize",
+          "Items from\nIndex Scan",
+          "Doc Fetch\nCount",
+          "Primary Scan\nUsed",
           "state",
           "statement",
           "users",
@@ -1007,8 +1011,13 @@
         const headerRow = document.createElement("tr");
         columns.forEach((col) => {
           const th = document.createElement("th");
-          th.textContent = col;
+          th.innerHTML = col.replace(/\n/g, '<br>');
           th.style.textAlign = "center";
+          th.style.whiteSpace = "nowrap";
+          if (col === "statement") {
+            th.style.width = "300px";
+            th.style.maxWidth = "300px";
+          }
           th.addEventListener('click', () => handleColumnSort(col, 'every-query'));
           headerRow.appendChild(th);
         });
@@ -1028,22 +1037,13 @@
           };
           
           // Add all column values (skip "#" as it's calculated dynamically)
-          ["requestTime", "statementType", "elapsedTime", "kernTime", "KernTime %", 
-           "cpuTime", "memory (MB)", "serviceTime", "resultCount", "resultSize", "Index(es) Used", 
+          ["requestTime", "statementType", "elapsedTime", "serviceTime", "kernTime", "KernTime %", 
+           "cpuTime", "memory (MB)", "resultCount", "resultSize", 
            "Items from Index Scan", "Doc Fetch Count", "Primary Scan Used", "state", 
            "statement", "users"].forEach(col => {
             let value;
             if (col === "Primary Scan Used") {
               value = request.usesPrimary ? "Yes" : "No";
-            } else if (col === "Index(es) Used") {
-              const indexes = [];
-              if (request.usesPrimary) {
-                indexes.push("Primary");
-              }
-              if (request.indexInfo && request.indexInfo.stats.indexScan > 0) {
-                indexes.push("Secondary");
-              }
-              value = indexes.length > 0 ? indexes.join(", ") : "None";
             } else if (col === "Items from Index Scan") {
               if (request.indexInfo) {
                 const stats = request.indexInfo.stats;
@@ -1104,9 +1104,9 @@
         statementStore = {};
         
         const columns = [
-          "#", "requestTime", "statementType", "elapsedTime", "kernTime", "KernTime %", 
-          "cpuTime", "memory (MB)", "serviceTime", "resultCount", "resultSize", "Index(es) Used", 
-          "Items from Index Scan", "Doc Fetch Count", "Primary Scan Used", "state", 
+          "#", "request\nTime", "statement\nType", "elapsed\nTime", "service\nTime", "kern\nTime", "KernTime\n%", 
+          "cpu\nTime", "memory\n(MB)", "result\nCount", "result\nSize", 
+          "Items from\nIndex Scan", "Doc Fetch\nCount", "Primary Scan\nUsed", "state", 
           "statement", "users"
         ];
 
@@ -1115,10 +1115,31 @@
 
           columns.forEach((col) => {
             const td = document.createElement("td");
+            // Map display names back to data field names
+            let dataField;
+            if (col === "request\nTime") dataField = "requestTime";
+            else if (col === "statement\nType") dataField = "statementType";
+            else if (col === "elapsed\nTime") dataField = "elapsedTime";
+            else if (col === "service\nTime") dataField = "serviceTime";
+            else if (col === "kern\nTime") dataField = "kernTime";
+            else if (col === "KernTime\n%") dataField = "KernTime %";
+            else if (col === "cpu\nTime") dataField = "cpuTime";
+            else if (col === "memory\n(MB)") dataField = "memory (MB)";
+            else if (col === "result\nCount") dataField = "resultCount";
+            else if (col === "result\nSize") dataField = "resultSize";
+            else if (col === "Items from\nIndex Scan") dataField = "Items from Index Scan";
+            else if (col === "Doc Fetch\nCount") dataField = "Doc Fetch Count";
+            else if (col === "Primary Scan\nUsed") dataField = "Primary Scan Used";
+            else dataField = col;
             // Recalculate row number based on current sort order
-            const value = col === "#" ? index + 1 : rowData[col];
+            const value = col === "#" ? index + 1 : rowData[dataField];
             
             if (col === "statement") {
+              // Set fixed width for statement column
+              td.style.width = "300px";
+              td.style.maxWidth = "300px";
+              td.style.overflow = "hidden";
+              td.style.wordWrap = "break-word";
               // Handle statement column with truncation and controls
               const statement = value || "";
               const statementId = `statement-${index}`;
