@@ -4401,7 +4401,7 @@
             // Pre-calculate time values
             elapsedTimeMs: parseTime(request.elapsedTime),
             kernTimeMs: plan ? calculateTotalKernTime(plan) : 0,
-            memoryBytes: plan ? calculateTotalMemoryUsage(plan) : 0,
+            memoryBytes: request.usedMemory || 0,
             // Pre-calculate boolean flags
             usesPrimary: plan ? usesPrimaryIndex({plan: plan}) : false,
             // Pre-extract index information
