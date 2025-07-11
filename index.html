@@ -1865,6 +1865,13 @@
                   "none"
                   );
                   }
+                     if (window.durationBucketsChart && chart !== window.durationBucketsChart) {
+                       window.durationBucketsChart.zoomScale(
+                         "x",
+                         { min: chart.scales.x.min, max: chart.scales.x.max },
+                         "none"
+                       );
+                     }
                   if (window.durationBucketsChart && chart !== window.durationBucketsChart) {
                   window.durationBucketsChart.zoomScale(
                   "x",
@@ -1922,13 +1929,20 @@
                   "none"
                   );
                   }
-                   if (window.memoryChart && chart !== window.memoryChart) {
-                   window.memoryChart.zoomScale(
-                   "x",
-                   { min: chart.scales.x.min, max: chart.scales.x.max },
-                   "none"
-                   );
-                   }
+                  if (window.durationBucketsChart && chart !== window.durationBucketsChart) {
+                  window.durationBucketsChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                    if (window.memoryChart && chart !== window.memoryChart) {
+                    window.memoryChart.zoomScale(
+                    "x",
+                    { min: chart.scales.x.min, max: chart.scales.x.max },
+                    "none"
+                    );
+                    }
                    
                      },
                 },
@@ -2092,13 +2106,20 @@
                   "none"
                   );
                   }
-                   if (window.memoryChart && chart !== window.memoryChart) {
-                   window.memoryChart.zoomScale(
-                   "x",
-                   { min: chart.scales.x.min, max: chart.scales.x.max },
-                   "none"
-                   );
-                   }
+                  if (window.durationBucketsChart && chart !== window.durationBucketsChart) {
+                  window.durationBucketsChart.zoomScale(
+                  "x",
+                  { min: chart.scales.x.min, max: chart.scales.x.max },
+                  "none"
+                  );
+                  }
+                       if (window.memoryChart && chart !== window.memoryChart) {
+                       window.memoryChart.zoomScale(
+                       "x",
+                       { min: chart.scales.x.min, max: chart.scales.x.max },
+                       "none"
+                       );
+                       }
                    
                      },
                 },
@@ -3028,6 +3049,11 @@
                   enabled: true,
                   mode: "xy",
                   onPan: function ({ chart }) {
+                    // Update current time range
+                    currentTimeRange.min = new Date(chart.scales.x.min);
+                    currentTimeRange.max = new Date(chart.scales.x.max);
+                    updateTimeRangeDisplay();
+                    
                     // Sync pan with other charts
                     if (window.timelineChart && chart !== window.timelineChart) {
                       window.timelineChart.zoomScale(
@@ -3081,6 +3107,11 @@
                   },
                   mode: "xy",
                   onZoom: function ({ chart }) {
+                    // Update current time range
+                    currentTimeRange.min = new Date(chart.scales.x.min);
+                    currentTimeRange.max = new Date(chart.scales.x.max);
+                    updateTimeRangeDisplay();
+                    
                     // Sync zoom with other charts
                     if (window.timelineChart && chart !== window.timelineChart) {
                       window.timelineChart.zoomScale(
@@ -3416,6 +3447,9 @@
         }
         if (window.queryTypesChart) {
           window.queryTypesChart.resetZoom();
+        }
+        if (window.durationBucketsChart) {
+          window.durationBucketsChart.resetZoom();
         }
         if (window.memoryChart) {
           window.memoryChart.resetZoom();
