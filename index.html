@@ -1014,17 +1014,12 @@
         });
         tableHeader.appendChild(headerRow);
 
-        // Prepare data with calculated values
+        // Prepare data with pre-calculated values
         const tableData = requests.map((request, index) => {
-          const totalKernTimeMs = request.plan
-            ? calculateTotalKernTime(request.plan)
-            : 0;
-
-          const totalMemoryBytes = request.plan
-            ? calculateTotalMemoryUsage(request.plan)
-            : 0;
-
-          const elapsedTimeMs = parseTime(request.elapsedTime);
+          // Use pre-calculated values from processRequestData
+          const totalKernTimeMs = request.kernTimeMs || 0;
+          const totalMemoryBytes = request.memoryBytes || 0;
+          const elapsedTimeMs = request.elapsedTimeMs || 0;
           
           // Create row data object
           const rowData = {
@@ -1039,43 +1034,33 @@
            "statement", "users"].forEach(col => {
             let value;
             if (col === "Primary Scan Used") {
-              value = usesPrimaryIndex(request) ? "Yes" : "No";
+              value = request.usesPrimary ? "Yes" : "No";
             } else if (col === "Index(es) Used") {
               const indexes = [];
-              if (usesPrimaryIndex(request)) {
+              if (request.usesPrimary) {
                 indexes.push("Primary");
               }
-              if (
-                request.phaseOperators &&
-                request.phaseOperators.indexScan > 0
-              )
+              if (request.indexInfo && request.indexInfo.stats.indexScan > 0) {
                 indexes.push("Secondary");
+              }
               value = indexes.length > 0 ? indexes.join(", ") : "None";
             } else if (col === "Items from Index Scan") {
-              if (usesPrimaryIndex(request)) {
-                value =
-                  request.phaseCounts && request.phaseCounts.primaryScan
-                    ? request.phaseCounts.primaryScan
-                    : "N/A";
-              } else if (
-                request.phaseOperators &&
-                request.phaseOperators.indexScan > 0
-              ) {
-                value =
-                  request.phaseCounts && request.phaseCounts.indexScan
-                    ? request.phaseCounts.indexScan
-                    : "N/A";
+              if (request.indexInfo) {
+                const stats = request.indexInfo.stats;
+                if (stats.primaryScan > 0) {
+                  value = stats.primaryScan;
+                } else if (stats.indexScan > 0) {
+                  value = stats.indexScan;
+                } else {
+                  value = "N/A";
+                }
               } else {
                 value = "N/A";
               }
             } else if (col === "Doc Fetch Count") {
-              value =
-                request.phaseCounts && request.phaseCounts.fetch
-                  ? request.phaseCounts.fetch
-                  : "N/A";
+              value = request.indexInfo ? request.indexInfo.stats.fetch || "N/A" : "N/A";
             } else if (col === "kernTime") {
-              value =
-                totalKernTimeMs > 0 ? formatTime(totalKernTimeMs) : "N/A";
+              value = totalKernTimeMs > 0 ? formatTime(totalKernTimeMs) : "N/A";
             } else if (col === "KernTime %") {
               value =
                 elapsedTimeMs > 0 && totalKernTimeMs > 0
@@ -1084,7 +1069,7 @@
             } else if (col === "memory (MB)") {
               value = totalMemoryBytes > 0 ? (totalMemoryBytes / 1024 / 1024).toFixed(2) : "0.00";
             } else if (col === "elapsedTime") {
-              value = formatTime(parseTime(request[col]));
+              value = formatTime(elapsedTimeMs);
             } else if (col === "cpuTime") {
               value = formatTime(parseTime(request[col]));
             } else if (col === "serviceTime") {
@@ -1780,11 +1765,9 @@
             };
           }
 
-          // Sum up index scans (primary + secondary)
-          const phaseCounts = request.phaseCounts || {};
-          const primaryScan = phaseCounts.primaryScan || 0;
-          const indexScan = phaseCounts.indexScan || 0;
-          const fetch = phaseCounts.fetch || 0;
+          // Use pre-calculated values from indexInfo
+          const indexInfo = request.indexInfo || { stats: { primaryScan: 0, indexScan: 0, fetch: 0 } };
+          const { primaryScan, indexScan, fetch } = indexInfo.stats;
 
           timeGroups[key].totalIndexScan += primaryScan + indexScan;
           timeGroups[key].totalFetch += fetch;
@@ -2248,11 +2231,9 @@
             };
           }
 
-          // Calculate kernTime and executionTime
-          const totalKernTimeMs = request.plan
-            ? calculateTotalKernTime(request.plan)
-            : 0;
-          const elapsedTimeMs = parseTime(request.elapsedTime);
+          // Use pre-calculated values
+          const totalKernTimeMs = request.kernTimeMs || 0;
+          const elapsedTimeMs = request.elapsedTimeMs || 0;
 
           // Calculate percentage of kernTime vs executionTime
           const kernTimePercentage = elapsedTimeMs > 0 ? (totalKernTimeMs / elapsedTimeMs) * 100 : 0;
@@ -3238,8 +3219,8 @@
             };
           }
 
-          // Get usedMemory value (assuming it's in bytes)
-          const usedMemoryBytes = request.usedMemory || 0;
+          // Use pre-calculated memory value
+          const usedMemoryBytes = request.memoryBytes || 0;
           timeGroups[key].totalMemoryBytes += usedMemoryBytes;
           timeGroups[key].queryCount++;
         });
@@ -3744,7 +3725,7 @@
           const scanCounts = { 'Yes': 0, 'No': 0 };
           
           requests.forEach(request => {
-            const primaryScan = usesPrimaryIndex(request) ? 'Yes' : 'No';
+            const primaryScan = request.usesPrimary ? 'Yes' : 'No';
             scanCounts[primaryScan]++;
           });
 
@@ -3989,7 +3970,7 @@
           };
 
           requests.forEach(request => {
-            const elapsed = parseFloat(request.elapsedTime || 0);
+            const elapsed = (request.elapsedTimeMs || 0) / 1000; // Convert ms to seconds
             
             if (elapsed <= 1) timeBuckets['0-1s']++;
             else if (elapsed <= 2) timeBuckets['1-2s']++;
@@ -4404,89 +4385,194 @@
             return { valid: true };
         }
 
-        // Parse JSON input
+        // Optimized request data processor
+        function processRequestData(item) {
+          const request = item.completed_requests || item;
+          
+          // Parse and cache plan data immediately
+          const plan = item.plan ? 
+            (typeof item.plan === "string" ? JSON.parse(item.plan) : item.plan) : 
+            null;
+          
+          // Pre-calculate commonly used values
+          const processedRequest = {
+            ...request,
+            plan: plan,
+            // Pre-calculate time values
+            elapsedTimeMs: parseTime(request.elapsedTime),
+            kernTimeMs: plan ? calculateTotalKernTime(plan) : 0,
+            memoryBytes: plan ? calculateTotalMemoryUsage(plan) : 0,
+            // Pre-calculate boolean flags
+            usesPrimary: plan ? usesPrimaryIndex({plan: plan}) : false,
+            // Pre-extract index information
+            indexInfo: plan ? extractIndexInfo(plan) : null,
+            // Pre-calculate aggregations
+            planStats: plan ? extractPlanStats(plan) : null
+          };
+          
+          return processedRequest;
+        }
+
+        // Fast index information extraction
+        function extractIndexInfo(plan) {
+          const operators = getOperators(plan);
+          const indexes = [];
+          const stats = { primaryScan: 0, indexScan: 0, fetch: 0 };
+          
+          operators.forEach(operator => {
+            const operatorType = operator["#operator"];
+            const operatorStats = operator["#stats"] || {};
+            
+            // Extract index names
+            if (operator.index) {
+              indexes.push(operator.index);
+            }
+            
+            // Aggregate stats
+            if (operatorType === "PrimaryScan" || operatorType === "PrimaryScan3") {
+              stats.primaryScan += operatorStats["#itemsOut"] || 0;
+            } else if (operatorType === "IndexScan" || operatorType === "IndexScan3") {
+              stats.indexScan += operatorStats["#itemsOut"] || 0;
+            } else if (operatorType === "Fetch") {
+              stats.fetch += operatorStats["#itemsOut"] || 0;
+            }
+          });
+          
+          return { indexes, stats };
+        }
+
+        // Fast plan stats extraction
+        function extractPlanStats(plan) {
+          const operators = getOperators(plan);
+          let totalItemsIn = 0;
+          let totalItemsOut = 0;
+          
+          operators.forEach(operator => {
+            const stats = operator["#stats"] || {};
+            totalItemsIn += stats["#itemsIn"] || 0;
+            totalItemsOut += stats["#itemsOut"] || 0;
+          });
+          
+          return { totalItemsIn, totalItemsOut };
+        }
+
+        // Parse JSON input - Optimized
         function parseJSON() {
-        const jsonInput = document.getElementById("json-input").value;
-        const startDateInput = document.getElementById('start-date');
-        const endDateInput = document.getElementById('end-date');
-        
-        try {
-          const data = JSON.parse(jsonInput);
-          if (Array.isArray(data)) {
-            const allRequests = data.map((item) => ({
-              ...item.completed_requests,
-              plan: item.plan
-                ? typeof item.plan === "string"
-                  ? JSON.parse(item.plan)
-                  : item.plan
-                : null,
-            }));
-
-            // If this is the first parse (no date filters set), populate date range
-            if (!startDateInput.value && !endDateInput.value && allRequests.length > 0) {
-              originalRequests = allRequests;
-              const dates = allRequests
-                .map(r => parseCouchbaseDateTime(r.requestTime))
-                .filter(d => d && !isNaN(d.getTime()))
-                .sort((a, b) => a - b);
+          const jsonInput = document.getElementById("json-input").value;
+          const startDateInput = document.getElementById('start-date');
+          const endDateInput = document.getElementById('end-date');
+          
+          try {
+            const data = JSON.parse(jsonInput);
+            if (Array.isArray(data)) {
+              // Process data in batches to avoid blocking UI
+              const batchSize = 1000;
+              const processedRequests = [];
               
-              if (dates.length > 0) {
-                const minDate = dates[0];
-                const maxDate = dates[dates.length - 1];
-                originalStartDate = minDate;
-                originalEndDate = maxDate;
-                startDateInput.value = toDateTimeLocal(minDate);
-                endDateInput.value = toDateTimeLocal(maxDate);
+              console.log(`Processing ${data.length} requests in batches of ${batchSize}...`);
+              
+              function processBatch(startIndex) {
+                const endIndex = Math.min(startIndex + batchSize, data.length);
+                
+                for (let i = startIndex; i < endIndex; i++) {
+                  try {
+                    processedRequests.push(processRequestData(data[i]));
+                  } catch (e) {
+                    console.warn(`Error processing request ${i}:`, e);
+                  }
+                }
+                
+                // Update progress
+                const progress = Math.round((endIndex / data.length) * 100);
+                document.getElementById("json-input").placeholder = `Processing... ${progress}%`;
+                
+                if (endIndex < data.length) {
+                  // Process next batch asynchronously
+                  setTimeout(() => processBatch(endIndex), 10);
+                } else {
+                  // All batches processed
+                  finishProcessing(processedRequests);
+                }
               }
+              
+              // Start processing
+              processBatch(0);
+              
             } else {
-              // Use existing originalRequests if available, otherwise use current data
-              if (originalRequests.length === 0) {
-                originalRequests = allRequests;
-              }
+              alert("Please provide a valid JSON array.");
             }
+          } catch (e) {
+            alert("Invalid JSON: " + e.message);
+          }
+        }
 
-            // Apply date filtering
-            const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
-            const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
-            const filteredRequests = filterRequestsByDateRange(originalRequests, startDate, endDate);
-
-            // Validate date range for current time grouping
-            const grouping = getTimeGrouping();
-            const validation = validateDateRangeForGrouping(startDate, endDate, grouping);
-            if (!validation.valid) {
-              alert(validation.message);
-              // Still continue with table generation, just skip charts
-              updateFilterInfo(originalRequests.length, filteredRequests.length);
-              generateTable(filteredRequests);
-              generateAnalysisTable(filteredRequests);
-              document.getElementById("flow-diagram").innerHTML =
-                "Select a query from the table to view the flow diagram.";
-              return;
+        // Finish processing after all batches are done
+        function finishProcessing(allRequests) {
+          const startDateInput = document.getElementById('start-date');
+          const endDateInput = document.getElementById('end-date');
+          
+          // Reset placeholder
+          document.getElementById("json-input").placeholder = "Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests;";
+          
+          // If this is the first parse (no date filters set), populate date range
+          if (!startDateInput.value && !endDateInput.value && allRequests.length > 0) {
+            originalRequests = allRequests;
+            const dates = allRequests
+              .map(r => parseCouchbaseDateTime(r.requestTime))
+              .filter(d => d && !isNaN(d.getTime()))
+              .sort((a, b) => a - b);
+            
+            if (dates.length > 0) {
+              const minDate = dates[0];
+              const maxDate = dates[dates.length - 1];
+              originalStartDate = minDate;
+              originalEndDate = maxDate;
+              startDateInput.value = toDateTimeLocal(minDate);
+              endDateInput.value = toDateTimeLocal(maxDate);
             }
+          } else {
+            // Use existing originalRequests if available, otherwise use current data
+            if (originalRequests.length === 0) {
+              originalRequests = allRequests;
+            }
+          }
 
-            // Update UI with filtered data
+          // Apply date filtering
+          const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+          const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+          const filteredRequests = filterRequestsByDateRange(originalRequests, startDate, endDate);
+
+          // Validate date range for current time grouping
+          const grouping = getTimeGrouping();
+          const validation = validateDateRangeForGrouping(startDate, endDate, grouping);
+          if (!validation.valid) {
+            alert(validation.message);
+            // Still continue with table generation, just skip charts
             updateFilterInfo(originalRequests.length, filteredRequests.length);
-            try {
-              generateTable(filteredRequests);
-              generateAnalysisTable(filteredRequests);
-              updateOptimizerLabel(filteredRequests);
-              generateOperationsChart(filteredRequests);
-              generateFilterChart(filteredRequests);
-              generateTimelineChart(filteredRequests);
-              generateDashboardCharts(filteredRequests);
-            } catch (e) {
-              console.error("Error generating charts:", e);
-              alert("Error generating charts. Try reducing the date range or selecting a coarser time grouping.");
-            }
+            generateTable(filteredRequests);
+            generateAnalysisTable(filteredRequests);
             document.getElementById("flow-diagram").innerHTML =
               "Select a query from the table to view the flow diagram.";
-          } else {
-            alert("Please provide a valid JSON array.");
+            return;
           }
-        } catch (e) {
-          alert("Invalid JSON: " + e.message);
+
+          // Update UI with filtered data
+          updateFilterInfo(originalRequests.length, filteredRequests.length);
+          try {
+            generateTable(filteredRequests);
+            generateAnalysisTable(filteredRequests);
+            updateOptimizerLabel(filteredRequests);
+            generateOperationsChart(filteredRequests);
+            generateFilterChart(filteredRequests);
+            generateTimelineChart(filteredRequests);
+            generateDashboardCharts(filteredRequests);
+          } catch (e) {
+            console.error("Error generating charts:", e);
+            alert("Error generating charts. Try reducing the date range or selecting a coarser time grouping.");
+          }
+          document.getElementById("flow-diagram").innerHTML =
+            "Select a query from the table to view the flow diagram.";
         }
-      }
 
       // Modal event listeners
       const planModal = document.getElementById("plan-modal");
