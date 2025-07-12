@@ -4807,6 +4807,8 @@
           "ARRAY QUERY": 0,
           "SELECT *": 0,
           LIKE: 0,
+          COUNT: 0,
+          REGEX: 0,
         };
 
         requests.forEach((request) => {
@@ -4828,7 +4830,7 @@
           }
 
           // USE INDEX
-          if (statement.includes("USE INDEX(")) {
+          if (statement.includes("USE INDEX")) {
             patternCounts["USE INDEX"]++;
           }
 
@@ -4890,15 +4892,21 @@
           }
 
           // COUNT
-          if (statement.includes(" COUNT")) {
+          if (statement.includes(" COUNT(")) {
             patternCounts["COUNT"]++;
           }
 
           // REGEX
-          if (statement.includes(" REGEXP_")) {
+          if (statement.includes("REGEXP_") || /REGEX\s*\(/.test(statement)) {
             patternCounts["REGEX"]++;
           }
         });
+
+        console.log("=== Query Pattern Chart Data ===");
+        console.log("Pattern Counts Object:", patternCounts);
+        console.log("Pattern Labels:", Object.keys(patternCounts));
+        console.log("Pattern Values:", Object.values(patternCounts));
+        console.log("Total patterns found:", Object.keys(patternCounts).length);
 
         const ctx = document
           .getElementById("query-pattern-chart")
