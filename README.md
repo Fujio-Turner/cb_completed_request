@@ -19,9 +19,8 @@ Run this query in Couchbase Query Workbench or cbq:
 SELECT *, meta().plan FROM system:completed_requests LIMIT 4000;
 ```
 
-**Note**: 
-`... LIMIT 4000; ` This should return back a JSON of about 36MB~ish. Anything bigger will crash the browser.
-`... WHERE node = NODE_NAME()` gets queries from a single node. Remove it to analyze all nodes.
+**Notes**: 
+This should return back a JSON of about 36MB~ish. Anything bigger will crash the browser.
 
 
 ### Step 4: Analyze
@@ -37,54 +36,85 @@ Copy the JSON results and paste into the tool's input area, then click "Parse JS
 
 ## Features
 
-- **Four Analysis Views**:
-  - **Dashboard**: High-level overview with visual charts and summary statistics
-  - **Timeline**: Query performance trends over time with advanced grouping options
-  - **Query Groups**: Aggregated query statistics grouped by normalized patterns
-  - **Every Query**: Detailed view of individual query executions
+### **Four Analysis Tabs**:
 
-- **Interactive Execution Plans**: 
-  - Color-coded flow diagrams showing operator performance
-  - Click operators for detailed statistics (execTime, itemsIn/Out, kernTime)
-  - Visual percentage indicators relative to total query time
+#### **1. Dashboard Tab**
+- **Query Duration Distribution** bar chart showing performance patterns
+- **Primary Scan Usage** pie chart identifying optimization opportunities
+- **Query Pattern Features** analysis for performance insights
+- **Users by Query Count** sortable table showing top query generators
+- **Index Usage Count** sortable table tracking index utilization
+- **Statement Type** pie chart (SELECT, INSERT, UPDATE, DELETE breakdown)
+- **Query State** pie chart showing completion status
 
-- **Query Pattern Analysis**:
-  - Automatic query normalization (replaces literals with `?` for grouping)
-  - Statistical aggregation: min/max/avg/median duration
-  - User query count analysis per pattern
+#### **2. Timeline Tab**
+- **Six Interactive Visualizations** in 2x3 grid layout:
+  - **Duration Buckets Chart**: Query duration distribution over time
+  - **Query Types Chart**: Query type breakdown by time periods
+  - **Operations Chart**: Index scans vs document fetches comparison
+  - **Filter Chart**: Filter operations efficiency (IN vs OUT ratios)
+  - **Timeline Chart**: Kernel time percentage distribution over time
+  - **Memory Chart**: Memory usage (MB) over time with query count tracking
+- **Interactive Controls**:
+  - Reset Zoom button for chart navigation
+  - Y-axis scaling (Linear/Logarithmic) options
+  - Time grouping options (By Optimizer/By Minute/By Second)
+  - "Use Time Range" filtering button
+  - Pan/zoom capabilities with drag-to-pan, scroll-to-zoom, drag-box selection
 
-- **Performance Insights**:
-  - Primary scan detection and highlighting
-  - Index usage analysis (Primary vs Secondary)
-  - Document fetch count tracking
-  - Kernel time vs elapsed time comparison
+#### **3. Query Groups Tab** (Analysis)
+- **Aggregated Query Analysis** with normalized statement grouping
+- **Statistical Metrics**: total_count, min/max/avg/median duration
+- **Performance Averages**: avg_fetch, avg_primaryScan, avg_indexScan
+- **User Breakdown**: Shows execution count per user for each query pattern
+- **Smart Normalization**: Replaces string literals and numbers with `?` placeholders
+- **Filtered Results**: Excludes INFER, ADVISE, CREATE, ALTER INDEX, and SYSTEM queries
 
-- **Date Range Filtering**:
-  - Auto-populated date fields with full data range
-  - Custom date/time filtering (minute-level precision)
-  - Smart validation for time grouping selections
-  - Real-time filter status display
+#### **4. Every Query Tab**
+- **Comprehensive Query Table** with 17 columns:
+  - Row #, request Time, statement Type, elapsed Time, service Time
+  - kern Time, KernTime %, cpu Time, memory (MB)
+  - result Count, result Size, Items from Index Scan
+  - Doc Fetch Count, Primary Scan Used, state, statement, users
+- **Interactive Flow Diagrams**:
+  - Color-coded execution plan visualization
+  - Operator bubbles showing execTime, servTime, kernTime percentages
+  - Click operators for detailed statistics modal
+  - Visual performance indicators (Green < 25%, Yellow 25-50%, Orange 50-75%, Red > 75%)
+- **Enhanced Table Features**:
+  - Full column sorting (click headers)
+  - Fixed 300px width for statement column with auto-truncation
+  - Statement truncation at 500 characters with "show more/hide" toggles
+  - Copy button for each statement
+  - Row highlighting with click-to-select
+- **Advanced Data Processing**:
+  - Batch processing of large datasets (1000 queries per batch)
+  - Real-time progress indicators
+  - Memory usage tracking from root `usedMemory` field
+  - CPU time extraction from root `cpuTime` field
 
-- **Visual Analytics Dashboard**:
-  - Primary scan usage distribution (pie chart)
-  - Query state breakdown (pie chart)  
-  - Statement type analysis (pie chart)
-  - Query duration distribution (bar chart)
-  - Top users by query count (sortable table)
-  - Index usage statistics (sortable table)
+### **Core Performance Features**:
 
-- **Enhanced Timeline Analysis**:
-  - Automatic time grouping optimization
-  - Manual time grouping (by second, minute, hour, day)
-  - Linear and logarithmic Y-axis scaling
-  - Interactive zoom and pan controls
-  - Multiple chart views (operations, filters, timeline)
+- **Memory Analysis**: Accurate memory usage tracking from Couchbase `usedMemory` field
+- **CPU Time Tracking**: Precise CPU time measurement from `cpuTime` field  
+- **Service Time Analysis**: Service time display in flow diagrams when available
+- **Primary Scan Detection**: Automatic identification of primary index usage
+- **Index Usage Analysis**: Comprehensive primary vs secondary index tracking
+- **Kernel Time Comparison**: Kernel time vs elapsed time performance analysis
 
-- **Interactive Features**:
-  - Sortable tables with hover effects
-  - Modal dialogs for detailed execution plans
-  - Pan/zoom flow diagrams
-  - Click-to-highlight query selection
+### **Data Processing & Filtering**:
+
+- **Batch Processing**: Handles large datasets (4000+ queries) with progress indicators
+- **Date Range Filtering**: Auto-populated date fields with custom filtering
+- **Smart Normalization**: Intelligent query pattern recognition and grouping
+- **Real-time Validation**: Time grouping validation with user-friendly error messages
+
+### **User Interface Features**:
+
+- **Responsive Design**: Optimized for various screen sizes
+- **Interactive Controls**: Pan/zoom, modal dialogs, sortable tables
+- **Visual Feedback**: Color-coded performance indicators and hover effects
+- **Accessibility**: Clear column headers with line breaks for compact display
 
 
 ## Understanding the Analysis
