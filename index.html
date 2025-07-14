@@ -485,6 +485,9 @@
             <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center">
               Index Usage Count
             </h3>
+            <div style="font-size: 12px; color: #666; margin-bottom: 10px; text-align: center; font-style: italic;">
+              Note: #primary count shows total operations, not unique queries
+            </div>
             <div
               style="height: 250px; overflow-y: auto; border: 1px solid #eee"
             >
@@ -505,14 +508,23 @@
                       Count
                     </th>
                     <th
-                      style="
-                        padding: 8px;
-                        text-align: center;
-                        border-bottom: 1px solid #ddd;
-                      "
+                    style="
+                    padding: 8px;
+                    text-align: center;
+                    border-bottom: 1px solid #ddd;
+                    "
                     >
-                      Index Name
+                    Index Name
                     </th>
+                     <th
+                       style="
+                         padding: 8px;
+                         text-align: center;
+                         border-bottom: 1px solid #ddd;
+                       "
+                     >
+                       Bucket.Scope.Collection
+                     </th>
                   </tr>
                 </thead>
                 <tbody id="index-count-body"></tbody>
@@ -688,6 +700,26 @@
         </div>
       -->
         <div id="analysis-table-section">
+          <!-- Search Controls for Analysis Table -->
+          <div id="analysis-search-controls" style="background: #f5f5f5; padding: 15px; border: 1px solid #ddd; margin-bottom: 10px; border-radius: 5px;">
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+              <div>
+                <label for="analysis-statement-search" style="font-weight: bold; margin-right: 5px;">Search Statement:</label>
+                <input type="text" id="analysis-statement-search" placeholder="Search in SQL++ statements..." 
+                       style="width: 250px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+              </div>
+              <div>
+                <label for="analysis-username-search" style="font-weight: bold; margin-right: 5px;">Search Username:</label>
+                <input type="text" id="analysis-username-search" placeholder="Search usernames..." 
+                       style="width: 200px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+              </div>
+              <button id="analysis-clear-search" style="padding: 5px 15px; background: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                Clear All
+              </button>
+              <div id="analysis-search-results-info" style="font-weight: bold; color: #666;">
+              </div>
+            </div>
+          </div>
           <div id="analysis-table-container">
             <table id="analysis-table">
               <thead id="analysis-table-header"></thead>
@@ -703,6 +735,26 @@
           <div id="flow-diagram"></div>
         </div>
         <div id="table-section">
+          <!-- Search Controls -->
+          <div id="search-controls" style="background: #f5f5f5; padding: 15px; border: 1px solid #ddd; margin-bottom: 10px; border-radius: 5px;">
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+              <div>
+                <label for="statement-search" style="font-weight: bold; margin-right: 5px;">Search Statement:</label>
+                <input type="text" id="statement-search" placeholder="Search in SQL++ statements..." 
+                       style="width: 250px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+              </div>
+              <div>
+                <label for="username-search" style="font-weight: bold; margin-right: 5px;">Search Username:</label>
+                <input type="text" id="username-search" placeholder="Search usernames..." 
+                       style="width: 200px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+              </div>
+              <button id="clear-search" style="padding: 5px 15px; background: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                Clear All
+              </button>
+              <div id="search-results-info" style="font-weight: bold; color: #666;">
+              </div>
+            </div>
+          </div>
           <div id="table-container">
             <table id="query-table">
               <thead id="table-header"></thead>
@@ -1138,6 +1190,16 @@
       // Pagination variables
       let currentPage = 1;
       const pageSize = 50; // Records per page
+      
+      // Search/filter variables
+      let filteredEveryQueryData = [];
+      let currentStatementFilter = "";
+      let currentUsernameFilter = "";
+      
+      // Analysis table search/filter variables
+      let filteredAnalysisData = [];
+      let currentAnalysisStatementFilter = "";
+      let currentAnalysisUsernameFilter = "";
 
       // Enhanced time parsing for sorting (handles various units and mm:ss.sss format)
       function parseTimeForSorting(timeStr) {
@@ -1194,35 +1256,63 @@
       function getSortableValue(item, column) {
         let value = item[column];
 
+        // Handle columns with newlines in their names
+        const cleanColumn = column.replace(/\n/g, " ");
+        
         // Handle special columns for Every Query table
         if (column === "#") {
           // "#" column is calculated dynamically, use a default sort order
           return parseInt(item.rowIndex) || 0;
         }
-        if (column === "requestTime") {
+        if (column === "requestTime" || cleanColumn === "request Time") {
           return new Date(value).getTime() || 0;
         }
         if (
-          ["elapsedTime", "kernTime", "cpuTime", "serviceTime"].includes(column)
+          ["elapsedTime", "kernTime", "cpuTime", "serviceTime"].includes(column) ||
+          ["elapsed Time", "kern Time", "cpu Time", "service Time"].includes(cleanColumn)
         ) {
           return parseTimeForSorting(value);
         }
-        if (column === "KernTime %") {
+        if (column === "KernTime %" || cleanColumn === "KernTime %") {
           const numStr = String(value).replace("%", "");
           return parseFloat(numStr) || 0;
+        }
+        if (column === "memory (MB)" || cleanColumn === "memory (MB)") {
+          return parseFloat(value) || 0;
         }
         if (
           [
             "resultCount",
-            "resultSize",
+            "resultSize", 
             "Items from Index Scan",
             "Doc Fetch Count",
-          ].includes(column)
+          ].includes(column) ||
+          [
+            "result Count",
+            "result Size",
+            "Items from Index Scan", 
+            "Doc Fetch Count",
+          ].includes(cleanColumn)
         ) {
           return parseInt(value) || 0;
         }
-        if (column === "Primary Scan Used") {
+        if (column === "Primary Scan Used" || cleanColumn === "Primary Scan Used") {
           return value === "Yes" ? 1 : 0;
+        }
+        if (column === "statementType" || cleanColumn === "statement Type") {
+          return String(value || "").toLowerCase();
+        }
+        if (column === "state") {
+          // Sort fatal states first, then by alphabetical order
+          if (value === "fatal") return "aaa_fatal";
+          if (value === "completed") return "bbb_completed";
+          return String(value || "zzz_unknown").toLowerCase();
+        }
+        if (column === "statement") {
+          return String(value || "").toLowerCase();
+        }
+        if (column === "users") {
+          return String(value || "").toLowerCase();
         }
 
         // Handle Analysis table columns
@@ -1269,20 +1359,84 @@
       function updateSortArrows(tableHeaderId, column, direction) {
         const headers = document.querySelectorAll(`#${tableHeaderId} th`);
         headers.forEach((th) => {
+          // Remove existing sort indicators
           const existingArrow = th.querySelector(".sort-arrow");
+          const existingSortHint = th.querySelector(".sort-hint");
           if (existingArrow) existingArrow.remove();
+          if (existingSortHint) existingSortHint.remove();
 
-          if (th.textContent.trim() === column) {
-            const arrow = document.createElement("span");
+          // Handle multi-line headers by removing newlines for comparison
+          const headerText = th.innerHTML.replace(/<br>/g, " ").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+          const columnText = column.replace(/\n/g, " ").trim();
+          
+          if (headerText.includes(columnText) || columnText.includes(headerText)) {
+            // Remove the old sort hint and add prominent arrow
+            const oldHint = th.querySelector('div');
+            if (oldHint && oldHint.textContent === "↕ Sort") {
+              oldHint.remove();
+            }
+            
+            const arrow = document.createElement("div");
             arrow.className = "sort-arrow";
-            arrow.textContent = direction === "asc" ? "▲" : "▼";
+            arrow.style.fontSize = "14px";
+            arrow.style.color = "#0066cc";
+            arrow.style.fontWeight = "bold";
+            arrow.style.marginTop = "2px";
+            
+            if (direction === "asc") {
+              arrow.textContent = "▲ ASC";
+              arrow.style.color = "#28a745";
+            } else {
+              arrow.textContent = "▼ DESC"; 
+              arrow.style.color = "#dc3545";
+            }
+            
             th.appendChild(arrow);
+          } else {
+            // Add back the sort hint for non-active columns
+            const sortHint = document.createElement("div");
+            sortHint.className = "sort-hint";
+            sortHint.style.fontSize = "10px";
+            sortHint.style.color = "#6c757d";
+            sortHint.style.fontWeight = "normal";
+            sortHint.style.marginTop = "2px";
+            sortHint.textContent = "↕ Sort";
+            th.appendChild(sortHint);
           }
         });
       }
 
+      // Map display column names to data field names
+      function getDataFieldName(displayColumn) {
+        // Map display names back to data field names (same logic as in populateEveryQueryTable)
+        if (displayColumn === "request\nTime") return "requestTime";
+        else if (displayColumn === "statement\nType") return "statementType";
+        else if (displayColumn === "elapsed\nTime") return "elapsedTime";
+        else if (displayColumn === "service\nTime") return "serviceTime";
+        else if (displayColumn === "kern\nTime") return "kernTime";
+        else if (displayColumn === "KernTime\n%") return "KernTime %";
+        else if (displayColumn === "cpu\nTime") return "cpuTime";
+        else if (displayColumn === "memory\n(MB)") return "memory (MB)";
+        else if (displayColumn === "result\nCount") return "resultCount";
+        else if (displayColumn === "result\nSize") return "resultSize";
+        else if (displayColumn === "Items from\nIndex Scan") return "Items from Index Scan";
+        else if (displayColumn === "Doc Fetch\nCount") return "Doc Fetch Count";
+        else if (displayColumn === "Primary Scan\nUsed") return "Primary Scan Used";
+        else return displayColumn; // For columns without newlines like "#", "state", "statement", "users"
+      }
+
       // Handle column sort click
       function handleColumnSort(column, tableType) {
+        console.log("=== handleColumnSort Called ===");
+        console.log("Display Column:", column);
+        
+        // Map display column to data field
+        const dataField = getDataFieldName(column);
+        console.log("Data Field:", dataField);
+        console.log("Table Type:", tableType);
+        console.log("Current Sort Column:", currentSortColumn);
+        console.log("Current Sort Direction:", currentSortDirection);
+        
         if (currentSortColumn === column && currentTableType === tableType) {
           currentSortDirection =
             currentSortDirection === "asc" ? "desc" : "asc";
@@ -1292,22 +1446,43 @@
           currentTableType = tableType;
         }
 
+        console.log("New Sort Direction:", currentSortDirection);
+        console.log("Filtered Data Length:", filteredEveryQueryData.length);
+
         if (tableType === "every-query") {
           currentPage = 1; // Reset to first page after sorting
+          
+          console.log("Before sorting - first 3 items:", filteredEveryQueryData.slice(0, 3).map(item => ({
+            displayValue: item[column],
+            dataFieldValue: item[dataField],
+            sortValue: getSortableValue(item, dataField)
+          })));
+          
+          // Sort using the data field name, not the display name
           const sortedData = sortData(
-            everyQueryData,
-            column,
+            filteredEveryQueryData,
+            dataField,
             currentSortDirection
           );
-          populateEveryQueryTable(sortedData);
+          
+          console.log("After sorting - first 3 items:", sortedData.slice(0, 3).map(item => ({
+            displayValue: item[column],
+            dataFieldValue: item[dataField],
+            sortValue: getSortableValue(item, dataField)
+          })));
+          
+          filteredEveryQueryData = sortedData;
+          populateEveryQueryTable(filteredEveryQueryData);
           updateSortArrows("table-header", column, currentSortDirection);
         } else if (tableType === "analysis") {
+          // Sort the filtered analysis data
           const sortedData = sortData(
-            analysisData,
+            filteredAnalysisData,
             column,
             currentSortDirection
           );
-          populateAnalysisTable(sortedData);
+          filteredAnalysisData = sortedData;
+          populateAnalysisTable(filteredAnalysisData);
           updateSortArrows(
             "analysis-table-header",
             column,
@@ -1338,7 +1513,7 @@
         const prevButton = createButton("◀ Prev", () => {
           if (currentPage > 1) {
             currentPage--;
-            populateEveryQueryTable(everyQueryData);
+            populateEveryQueryTable(filteredEveryQueryData);
           }
         });
         prevButton.disabled = currentPage === 1;
@@ -1347,7 +1522,7 @@
         const nextButton = createButton("Next ▶", () => {
           if (currentPage < totalPages) {
             currentPage++;
-            populateEveryQueryTable(everyQueryData);
+            populateEveryQueryTable(filteredEveryQueryData);
           }
         });
         nextButton.disabled = currentPage === totalPages;
@@ -1371,7 +1546,7 @@
             const newPage = parseInt(pageInput.value);
             if (newPage >= 1 && newPage <= totalPages) {
               currentPage = newPage;
-              populateEveryQueryTable(everyQueryData);
+              populateEveryQueryTable(filteredEveryQueryData);
             }
           }
         });
@@ -1395,6 +1570,154 @@
         btn.style.cursor = "pointer";
         btn.onclick = onClick;
         return btn;
+      }
+
+      // Filter data based on search criteria
+      function filterEveryQueryData(data) {
+        return data.filter(rowData => {
+          // Filter by statement
+          if (currentStatementFilter) {
+            const statement = (rowData.statement || "").toLowerCase();
+            if (!statement.includes(currentStatementFilter.toLowerCase())) {
+              return false;
+            }
+          }
+          
+          // Filter by username
+          if (currentUsernameFilter) {
+            const users = (rowData.users || "").toLowerCase();
+            if (!users.includes(currentUsernameFilter.toLowerCase())) {
+              return false;
+            }
+          }
+          
+          return true;
+        });
+      }
+
+      // Update search results info
+      function updateSearchResultsInfo(filteredCount, totalCount) {
+        const infoDiv = document.getElementById("search-results-info");
+        if (filteredCount === totalCount) {
+          infoDiv.textContent = `Showing all ${totalCount} records`;
+        } else {
+          infoDiv.textContent = `Showing ${filteredCount} of ${totalCount} records`;
+        }
+      }
+
+      // Filter analysis data based on search criteria
+      function filterAnalysisData(data) {
+        return data.filter(rowData => {
+          // Filter by statement
+          if (currentAnalysisStatementFilter) {
+            const statement = (rowData.statement || "").toLowerCase();
+            if (!statement.includes(currentAnalysisStatementFilter.toLowerCase())) {
+              return false;
+            }
+          }
+          
+          // Filter by username
+          if (currentAnalysisUsernameFilter) {
+            const users = (rowData.users || "").toLowerCase();
+            if (!users.includes(currentAnalysisUsernameFilter.toLowerCase())) {
+              return false;
+            }
+          }
+          
+          return true;
+        });
+      }
+
+      // Update analysis search results info
+      function updateAnalysisSearchResultsInfo(filteredCount, totalCount) {
+        const infoDiv = document.getElementById("analysis-search-results-info");
+        if (filteredCount === totalCount) {
+          infoDiv.textContent = `Showing all ${totalCount} groups`;
+        } else {
+          infoDiv.textContent = `Showing ${filteredCount} of ${totalCount} groups`;
+        }
+      }
+
+      // Setup analysis search event listeners
+      function setupAnalysisSearchListeners() {
+        const statementSearch = document.getElementById("analysis-statement-search");
+        const usernameSearch = document.getElementById("analysis-username-search");
+        const clearButton = document.getElementById("analysis-clear-search");
+
+        function performAnalysisSearch() {
+          currentAnalysisStatementFilter = statementSearch.value.trim();
+          currentAnalysisUsernameFilter = usernameSearch.value.trim();
+          
+          // Filter the data
+          filteredAnalysisData = filterAnalysisData(analysisData);
+          
+          // Update display
+          populateAnalysisTable(filteredAnalysisData);
+          updateAnalysisSearchResultsInfo(filteredAnalysisData.length, analysisData.length);
+        }
+
+        // Add debouncing to search inputs
+        let analysisSearchTimeout;
+        function debouncedAnalysisSearch() {
+          clearTimeout(analysisSearchTimeout);
+          analysisSearchTimeout = setTimeout(performAnalysisSearch, 300);
+        }
+
+        statementSearch.addEventListener("input", debouncedAnalysisSearch);
+        usernameSearch.addEventListener("input", debouncedAnalysisSearch);
+
+        clearButton.addEventListener("click", () => {
+          statementSearch.value = "";
+          usernameSearch.value = "";
+          currentAnalysisStatementFilter = "";
+          currentAnalysisUsernameFilter = "";
+          filteredAnalysisData = [...analysisData];
+          populateAnalysisTable(filteredAnalysisData);
+          updateAnalysisSearchResultsInfo(filteredAnalysisData.length, analysisData.length);
+        });
+      }
+
+      // Setup search event listeners
+      function setupSearchListeners() {
+        const statementSearch = document.getElementById("statement-search");
+        const usernameSearch = document.getElementById("username-search");
+        const clearButton = document.getElementById("clear-search");
+
+        function performSearch() {
+          currentStatementFilter = statementSearch.value.trim();
+          currentUsernameFilter = usernameSearch.value.trim();
+          
+          // Filter the data
+          filteredEveryQueryData = filterEveryQueryData(everyQueryData);
+          
+          // Reset to first page
+          currentPage = 1;
+          
+          // Update display
+          populateEveryQueryTable(filteredEveryQueryData);
+          updateSearchResultsInfo(filteredEveryQueryData.length, everyQueryData.length);
+        }
+
+        // Add debouncing to search inputs
+        let searchTimeout;
+        function debouncedSearch() {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(performSearch, 300);
+        }
+
+        statementSearch.addEventListener("input", debouncedSearch);
+        usernameSearch.addEventListener("input", debouncedSearch);
+
+        clearButton.addEventListener("click", () => {
+          statementSearch.value = "";
+          usernameSearch.value = "";
+          currentStatementFilter = "";
+          currentUsernameFilter = "";
+          filteredEveryQueryData = [...everyQueryData];
+          currentPage = 1;
+          populateEveryQueryTable(filteredEveryQueryData);
+          updateSearchResultsInfo(filteredEveryQueryData.length, everyQueryData.length);
+        });
       }
 
       // Generate main table
@@ -1430,13 +1753,40 @@
           th.innerHTML = col.replace(/\n/g, "<br>");
           th.style.textAlign = "center";
           th.style.whiteSpace = "nowrap";
+          th.style.cursor = "pointer";
+          th.style.userSelect = "none";
+          th.style.padding = "8px";
+          th.style.backgroundColor = "#f8f9fa";
+          th.style.border = "1px solid #dee2e6";
+          th.style.fontWeight = "bold";
+          th.style.position = "relative";
+          
+          // Add hover effect
+          th.addEventListener("mouseenter", () => {
+            th.style.backgroundColor = "#e9ecef";
+          });
+          th.addEventListener("mouseleave", () => {
+            th.style.backgroundColor = "#f8f9fa";
+          });
+          
           if (col === "statement") {
             th.style.width = "300px";
             th.style.maxWidth = "300px";
           }
-          th.addEventListener("click", () =>
-            handleColumnSort(col, "every-query")
-          );
+          
+          // Add sorting indicator text
+          const sortHint = document.createElement("div");
+          sortHint.className = "sort-hint";
+          sortHint.style.fontSize = "10px";
+          sortHint.style.color = "#6c757d";
+          sortHint.style.fontWeight = "normal";
+          sortHint.style.marginTop = "2px";
+          sortHint.textContent = "↕ Sort";
+          th.appendChild(sortHint);
+          
+          th.addEventListener("click", () => {
+            handleColumnSort(col, "every-query");
+          });
           headerRow.appendChild(th);
         });
         tableHeader.appendChild(headerRow);
@@ -1523,6 +1873,7 @@
         // Sort by elapsedTime by default
         const sortedData = sortData(tableData, "elapsedTime", "desc");
         everyQueryData = sortedData;
+        filteredEveryQueryData = [...sortedData]; // Initialize filtered data
         currentSortColumn = "elapsedTime";
         currentSortDirection = "desc";
         currentTableType = "every-query";
@@ -1530,8 +1881,15 @@
         // Reset pagination when new data is loaded
         currentPage = 1;
 
-        populateEveryQueryTable(sortedData);
+        // Setup search listeners (only once)
+        if (!document.getElementById("statement-search").hasAttribute("data-listeners-added")) {
+          setupSearchListeners();
+          document.getElementById("statement-search").setAttribute("data-listeners-added", "true");
+        }
+
+        populateEveryQueryTable(filteredEveryQueryData);
         updateSortArrows("table-header", "elapsedTime", "desc");
+        updateSearchResultsInfo(filteredEveryQueryData.length, everyQueryData.length);
       }
 
       // Populate Every Query table body
@@ -1596,7 +1954,12 @@
             else dataField = col;
 
             // Use globalIndex for row number to maintain correct numbering across pages
-            const value = col === "#" ? globalIndex + 1 : rowData[dataField];
+            let value;
+            if (col === "#") {
+              value = globalIndex + 1;
+            } else {
+              value = rowData[dataField];
+            }
 
             if (col === "statement") {
               // Set fixed width for statement column
@@ -1925,18 +2288,31 @@
             }
             rowData[col] = value;
           });
+          
+          // Add fields for search filtering
+          rowData.statement = group.normalized_statement || "";
+          rowData.users = Object.keys(group.user_query_counts || {}).join(", ");
+          
           return rowData;
         });
 
         // Sort by total_count by default
         const sortedData = sortData(analysisTableData, "total_count", "desc");
         analysisData = sortedData;
+        filteredAnalysisData = [...sortedData]; // Initialize filtered data
         currentSortColumn = "total_count";
         currentSortDirection = "desc";
         currentTableType = "analysis";
 
-        populateAnalysisTable(sortedData);
+        // Setup search listeners (only once)
+        if (!document.getElementById("analysis-statement-search").hasAttribute("data-listeners-added")) {
+          setupAnalysisSearchListeners();
+          document.getElementById("analysis-statement-search").setAttribute("data-listeners-added", "true");
+        }
+
+        populateAnalysisTable(filteredAnalysisData);
         updateSortArrows("analysis-table-header", "total_count", "desc");
+        updateAnalysisSearchResultsInfo(filteredAnalysisData.length, analysisData.length);
       }
 
       // Populate Analysis table body
@@ -5018,40 +5394,126 @@
         });
       }
 
+      // Parse FROM clause to extract bucket.scope.collection
+      function parseFromClause(statement) {
+        if (!statement) return "_default._default._default";
+        
+        try {
+          // Remove comments and normalize whitespace
+          let cleanStatement = statement
+            .replace(/--.*$/gm, '') // Remove line comments
+            .replace(/\/\*[\s\S]*?\*\//g, '') // Remove block comments
+            .replace(/\s+/g, ' ') // Normalize whitespace
+            .trim();
+          
+          // Look for the main FROM clause (not subquery FROM)
+          // Use a more specific regex that avoids matching FROM inside parentheses
+          const fromPattern = /\bFROM\s+([`\w]+(?:\.[`\w]+)*(?:\.[`\w]+)*)/i;
+          const fromMatch = cleanStatement.match(fromPattern);
+          
+          if (!fromMatch) {
+            // Fallback: try to find any table-like reference after FROM
+            const fallbackPattern = /\bFROM\s+([`\w]+)/i;
+            const fallbackMatch = cleanStatement.match(fallbackPattern);
+            if (!fallbackMatch) return "_default._default._default";
+            
+            const tableRef = fallbackMatch[1].replace(/`/g, '').trim();
+            return `${tableRef}._default._default`;
+          }
+          
+          const tableRef = fromMatch[1].trim();
+          
+          // Handle backticks and clean the reference
+          const cleanRef = tableRef.replace(/`/g, '');
+          
+          // Skip if it looks like a SQL keyword or function
+          if (/^(SELECT|WITH|CASE|WHEN|IF|EXISTS|NOT|AND|OR)$/i.test(cleanRef)) {
+            return "_default._default._default";
+          }
+          
+          // Split by dots
+          const parts = cleanRef.split('.');
+          
+          if (parts.length === 1) {
+            // Only bucket specified
+            return `${parts[0]}._default._default`;
+          } else if (parts.length === 2) {
+            // Bucket and scope specified
+            return `${parts[0]}.${parts[1]}._default`;
+          } else if (parts.length >= 3) {
+            // Full bucket.scope.collection
+            return `${parts[0]}.${parts[1]}.${parts[2]}`;
+          }
+          
+          return "_default._default._default";
+        } catch (error) {
+          console.warn("Error parsing FROM clause:", error, statement);
+          return "_default._default._default";
+        }
+      }
+
       // Generate Index Count Table
       function generateIndexCountTable(requests) {
-        const indexCounts = {};
+        const indexData = {};
 
         requests.forEach((request) => {
-          if (request.plan) {
-            try {
-              // Parse the plan JSON string
-              const planObj =
-                typeof request.plan === "string"
-                  ? JSON.parse(request.plan)
-                  : request.plan;
+          const bucketScopeCollection = parseFromClause(request.statement);
+          
+          // Debug problematic parsing
+          if (bucketScopeCollection.includes('SELECT') || bucketScopeCollection.includes('(')) {
+            console.warn("Potentially incorrect bucket parsing:", {
+              statement: request.statement?.substring(0, 100) + "...",
+              parsed: bucketScopeCollection
+            });
+            // Use default for obviously wrong parsing
+            const correctedBSC = "_default._default._default";
+            
+            if (request.plan) {
+              try {
+                // Parse the plan JSON string
+                const planObj =
+                  typeof request.plan === "string"
+                    ? JSON.parse(request.plan)
+                    : request.plan;
 
-              if (planObj && planObj["#operator"]) {
-                extractIndexNames(planObj, indexCounts);
+                if (planObj && planObj["#operator"]) {
+                  extractIndexNames(planObj, indexData, correctedBSC);
+                }
+              } catch (e) {
+                console.error("Error parsing plan JSON:", e, request.plan);
               }
-            } catch (e) {
-              console.error("Error parsing plan JSON:", e, request.plan);
+            }
+          } else {
+            if (request.plan) {
+              try {
+                // Parse the plan JSON string
+                const planObj =
+                  typeof request.plan === "string"
+                    ? JSON.parse(request.plan)
+                    : request.plan;
+
+                if (planObj && planObj["#operator"]) {
+                  extractIndexNames(planObj, indexData, bucketScopeCollection);
+                }
+              } catch (e) {
+                console.error("Error parsing plan JSON:", e, request.plan);
+              }
             }
           }
         });
 
-        const sortedIndexes = Object.entries(indexCounts).sort(
-          ([, a], [, b]) => b - a
+        const sortedIndexes = Object.entries(indexData).sort(
+          ([, a], [, b]) => b.count - a.count
         );
 
         const tbody = document.getElementById("index-count-body");
         tbody.innerHTML = "";
 
-        sortedIndexes.forEach(([indexName, count]) => {
+        sortedIndexes.forEach(([indexName, data]) => {
           const row = document.createElement("tr");
           row.style.borderBottom = "1px solid #eee";
           row.innerHTML = `
-              <td style="padding: 8px; text-align: right; font-weight: bold;">${count}</td>
+              <td style="padding: 8px; text-align: right; font-weight: bold;">${data.count}</td>
               <td style="padding: 8px; word-break: break-word;">
                 ${indexName}
                 <button onclick="copyToClipboard('${indexName.replace(
@@ -5062,56 +5524,68 @@
                   copy
                 </button>
               </td>
+              <td style="padding: 8px; word-break: break-word; font-family: monospace; font-size: 12px;">
+                ${data.bucketScopeCollection}
+              </td>
             `;
           tbody.appendChild(row);
         });
       }
 
       // Recursively extract index names from plan operators
-      function extractIndexNames(operator, indexCounts) {
+      function extractIndexNames(operator, indexData, bucketScopeCollection) {
         if (!operator) return;
 
         // Check for index name in various operator properties
         if (operator.index) {
-          indexCounts[operator.index] = (indexCounts[operator.index] || 0) + 1;
+          if (!indexData[operator.index]) {
+            indexData[operator.index] = { count: 0, bucketScopeCollection: bucketScopeCollection };
+          }
+          indexData[operator.index].count++;
         }
         if (operator.indexName) {
-          indexCounts[operator.indexName] =
-            (indexCounts[operator.indexName] || 0) + 1;
+          if (!indexData[operator.indexName]) {
+            indexData[operator.indexName] = { count: 0, bucketScopeCollection: bucketScopeCollection };
+          }
+          indexData[operator.indexName].count++;
         }
 
-        // Check for primary scan operators
+        // Check for primary scan operators (align with usesPrimaryIndex logic)
         if (
           operator["#operator"] === "PrimaryScan" ||
           operator["#operator"] === "PrimaryScan3" ||
           operator.index === "#primary" ||
-          operator.using === "sequentialScan"
+          operator.using === "sequentialScan" ||
+          (operator.spans && operator.spans.length === 0)
         ) {
-          indexCounts["#primary"] = (indexCounts["#primary"] || 0) + 1;
+          if (!indexData["#primary"]) {
+            indexData["#primary"] = { count: 0, bucketScopeCollection: bucketScopeCollection };
+          }
+          indexData["#primary"].count++;
         }
 
         // Recursively check child operators
         if (operator["~child"]) {
-          extractIndexNames(operator["~child"], indexCounts);
+          extractIndexNames(operator["~child"], indexData, bucketScopeCollection);
         }
         if (operator["~children"] && Array.isArray(operator["~children"])) {
           operator["~children"].forEach((child) =>
-            extractIndexNames(child, indexCounts)
+            extractIndexNames(child, indexData, bucketScopeCollection)
           );
         }
         if (operator.input) {
-          extractIndexNames(operator.input, indexCounts);
+          extractIndexNames(operator.input, indexData, bucketScopeCollection);
         }
         if (operator.inputs && Array.isArray(operator.inputs)) {
           operator.inputs.forEach((input) =>
-            extractIndexNames(input, indexCounts)
+            extractIndexNames(input, indexData, bucketScopeCollection)
           );
         }
         if (operator.left) {
-          extractIndexNames(operator.left, indexCounts);
+          extractIndexNames(operator.left, indexData, bucketScopeCollection);
         }
         if (operator.right) {
-          extractIndexNames(operator.right, indexCounts);
+          extractIndexNames(operator.right, indexData, bucketScopeCollection);
         }
       }
 
@@ -5500,10 +5974,10 @@
 
               if (tabId === "timeline" && originalRequests.length > 0) {
                 // Generate timeline charts only when tab is activated
-                generateTimelineCharts();
+                generateTimelineChart(originalRequests);
               } else if (tabId === "dashboard" && originalRequests.length > 0) {
                 // Generate dashboard charts only when tab is activated
-                generateDashboardCharts();
+                generateDashboardCharts(originalRequests);
               }
             }
           },
