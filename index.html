@@ -91,6 +91,83 @@
         height: 2px;
         background-color: #000;
       }
+      
+      /* Index/Query Flow Tab Styles */
+      .index-item, .query-item {
+        border: 2px solid #007bff;
+        border-radius: 12px;
+        padding: 12px;
+        margin: 10px 0;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        cursor: move;
+        position: relative;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      
+      .index-item:hover, .query-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+      
+      .index-item.primary {
+        background-color: #ffebee;
+        border-color: #f44336;
+      }
+      
+      .index-stats {
+        font-size: 11px;
+        color: #666;
+        margin-top: 8px;
+        line-height: 1.3;
+      }
+      
+      .query-text {
+        font-family: monospace;
+        font-size: 12px;
+        background: #f8f9fa;
+        padding: 8px;
+        border-radius: 4px;
+        margin: 8px 0;
+        max-height: 60px;
+        overflow: hidden;
+        position: relative;
+      }
+      
+      .query-text.expanded {
+        max-height: none;
+      }
+      
+      .query-controls {
+        margin-top: 8px;
+        display: flex;
+        gap: 8px;
+      }
+      
+      .query-controls button {
+        padding: 4px 8px;
+        border: 1px solid #ddd;
+        background: white;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 11px;
+      }
+      
+      .query-controls button:hover {
+        background: #f0f0f0;
+      }
+      
+      .usage-count {
+        background: white;
+        border: 1px solid #333;
+        padding: 2px 6px;
+        font-size: 11px;
+        font-weight: bold;
+        border-radius: 3px;
+        position: absolute;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+      }
       #table-section,
       #analysis-table-section {
         flex: 1;
@@ -315,6 +392,7 @@
         <li><a href="#timeline">Timeline</a></li>
         <li><a href="#analysis">Query Groups</a></li>
         <li><a href="#every-query">Every Query</a></li>
+        <li><a href="#index-query-flow">Index/Query Flow</a></li>
       </ul>
 
       <!-- Dashboard Tab Content -->
@@ -760,6 +838,16 @@
               <thead id="table-header"></thead>
               <tbody id="table-body"></tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Index/Query Flow Tab Content -->
+      <div id="index-query-flow">
+        <div style="height: 100%; position: relative; background: #f8f9fa; border-radius: 8px; overflow: hidden;">
+          <div id="flow-canvas" style="width: 100%; height: 100%; position: relative; overflow: auto;">
+            <svg id="flow-svg" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1;"></svg>
+            <div id="flow-elements" style="position: relative; z-index: 2; padding: 20px;"></div>
           </div>
         </div>
       </div>
@@ -5865,6 +5953,7 @@
           updateFilterInfo(originalRequests.length, filteredRequests.length);
           generateTable(filteredRequests);
           generateAnalysisTable(filteredRequests);
+          buildIndexQueryFlow();
           document.getElementById("flow-diagram").innerHTML =
             "Select a query from the table to view the flow diagram.";
           return;
@@ -5880,6 +5969,7 @@
           generateFilterChart(filteredRequests);
           generateTimelineChart(filteredRequests);
           generateDashboardCharts(filteredRequests);
+          buildIndexQueryFlow();
         } catch (e) {
           console.error("Error generating charts:", e);
           alert(
@@ -5983,6 +6073,650 @@
           },
         });
       });
+
+      // Index/Query Flow functionality
+      let indexQueryFlowData = {
+        indexes: new Map(),
+        queries: new Map(),
+        connections: new Map()
+      };
+
+      function buildIndexQueryFlow() {
+        console.log('buildIndexQueryFlow called', originalRequests?.length);
+        if (!originalRequests || originalRequests.length === 0) {
+          console.log('No originalRequests data available');
+          return;
+        }
+
+        // Clear previous data
+        indexQueryFlowData.indexes.clear();
+        indexQueryFlowData.queries.clear();
+        indexQueryFlowData.connections.clear();
+
+        // Step 1: Track which indexes each request uses (by request index)
+        const requestIndexMap = new Map(); // requestIndex -> Set of index names
+        console.log('Processing requests for index usage');
+        let requestsWithPlans = 0;
+        let requestsWithOperators = 0;
+        originalRequests.forEach((request, requestIndex) => {
+          requestIndexMap.set(requestIndex, new Set());
+          if (request.plan) {
+            requestsWithPlans++;
+            
+            // Debug: Show the actual plan structure
+            if (requestIndex < 3) {
+              console.log(`Request ${requestIndex} plan structure:`, request.plan);
+              console.log(`Request ${requestIndex} plan keys:`, Object.keys(request.plan));
+              if (typeof request.plan === 'string') {
+                console.log(`Request ${requestIndex} plan is a string, parsing...`);
+                try {
+                  const parsedPlan = JSON.parse(request.plan);
+                  console.log(`Request ${requestIndex} parsed plan:`, parsedPlan);
+                } catch (e) {
+                  console.log(`Request ${requestIndex} failed to parse plan:`, e);
+                }
+              }
+            }
+            
+            // Parse the plan JSON string if needed (same as Dashboard logic)
+            const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
+            
+            if (planObj && planObj["#operator"]) {
+              requestsWithOperators++;
+              console.log(`Processing request ${requestIndex} with plan:`, planObj);
+              extractIndexUsage(planObj, requestIndex, requestIndexMap);
+            }
+          }
+        });
+        console.log(`Found ${requestsWithPlans} requests with plans, ${requestsWithOperators} with operators`);
+        
+        // Debug: Show what's in requestIndexMap
+        console.log('=== REQUEST INDEX MAP DEBUG ===');
+        let totalIndexUsages = 0;
+        requestIndexMap.forEach((indexSet, requestIndex) => {
+          if (indexSet.size > 0) {
+            console.log(`Request ${requestIndex} uses indexes:`, Array.from(indexSet));
+            totalIndexUsages += indexSet.size;
+          }
+        });
+        console.log(`Total index usages across all requests: ${totalIndexUsages}`);
+        console.log('Found indexes across all requests:', new Set([].concat(...Array.from(requestIndexMap.values()).map(s => Array.from(s)))).size);
+
+        // Step 2: Build query groups and track which request indices belong to each group
+        const queryGroups = new Map();
+        originalRequests.forEach((request, requestIndex) => {
+          const stmt = request.preparedText || request.statement;
+          const normalizedStatement = normalizeStatement(stmt);
+          if (!queryGroups.has(normalizedStatement)) {
+            queryGroups.set(normalizedStatement, {
+              statement: stmt,
+              normalizedStatement,
+              count: 0,
+              totalDuration: 0,
+              requestIndices: []
+            });
+          }
+          const group = queryGroups.get(normalizedStatement);
+          group.count++;
+          group.totalDuration += parseTime(request.elapsedTime);
+          group.requestIndices.push(requestIndex);
+        });
+        
+        // Debug: Show what's in queryGroups
+        console.log('=== QUERY GROUPS DEBUG ===');
+        queryGroups.forEach((group, normalizedStmt) => {
+          console.log(`Query group "${normalizedStmt.substring(0, 50)}..." has ${group.requestIndices.length} request indices:`, group.requestIndices.slice(0, 5));
+        });
+
+        // Step 3: Build final index data and connections using request indices
+        console.log('=== BUILDING FINAL INDEX DATA ===');
+        const allIndexes = new Map();
+        let connectionCount = 0;
+        
+        queryGroups.forEach((queryGroup, queryKey) => {
+          console.log(`Processing query group: "${queryKey.substring(0, 50)}..." with ${queryGroup.requestIndices.length} requests`);
+          
+          queryGroup.requestIndices.forEach(requestIndex => {
+            const indexesForRequest = requestIndexMap.get(requestIndex);
+            console.log(`  Request ${requestIndex} has indexes:`, indexesForRequest ? Array.from(indexesForRequest) : 'none');
+            
+            if (indexesForRequest && indexesForRequest.size > 0) {
+              indexesForRequest.forEach(indexName => {
+                console.log(`    Processing index: ${indexName}`);
+                
+                // Track index usage
+                if (!allIndexes.has(indexName)) {
+                  allIndexes.set(indexName, {
+                    name: indexName,
+                    totalUsage: 0,
+                    isPrimary: indexName === '#primary' || indexName.includes('#primary'),
+                    scanTimes: [],
+                    itemsScanned: [],
+                    itemsFetched: []
+                  });
+                  console.log(`    Created new index entry for: ${indexName}`);
+                }
+                
+                const indexObj = allIndexes.get(indexName);
+                indexObj.totalUsage++;
+                
+                // Collect statistics from the request
+                const request = originalRequests[requestIndex];
+                if (request) {
+                  // Add execution time as scan time
+                  const executionTime = parseTime(request.elapsedTime);
+                  if (!isNaN(executionTime)) {
+                    indexObj.scanTimes.push(executionTime);
+                  }
+                  
+                  // Add phase counts as items scanned/fetched
+                  if (request.phaseCounts) {
+                    if (request.phaseCounts.indexScan) {
+                      indexObj.itemsScanned.push(request.phaseCounts.indexScan);
+                    }
+                    if (request.phaseCounts.fetch) {
+                      indexObj.itemsFetched.push(request.phaseCounts.fetch);
+                    }
+                  }
+                }
+
+                // Track connection
+                const connectionKey = `${queryGroup.normalizedStatement}::${indexName}`;
+                if (!indexQueryFlowData.connections.has(connectionKey)) {
+                  indexQueryFlowData.connections.set(connectionKey, {
+                    queryStatement: queryGroup.normalizedStatement,
+                    indexName: indexName,
+                    count: 0
+                  });
+                  console.log(`    Created new connection: ${connectionKey}`);
+                }
+                indexQueryFlowData.connections.get(connectionKey).count++;
+                connectionCount++;
+              });
+            }
+          });
+        });
+        
+        console.log(`=== FINAL RESULTS ===`);
+        console.log(`Found ${allIndexes.size} unique indexes`);
+        console.log(`Created ${connectionCount} total connections`);
+        console.log('All indexes:', Array.from(allIndexes.keys()));
+
+        // Convert to sorted arrays
+        const sortedIndexes = Array.from(allIndexes.values())
+          .sort((a, b) => b.totalUsage - a.totalUsage);
+        const sortedQueries = Array.from(queryGroups.values())
+          .sort((a, b) => b.count - a.count);
+
+        indexQueryFlowData.queries = new Map(sortedQueries.map(q => [q.normalizedStatement, q]));
+
+        console.log('About to render:', sortedIndexes.length, 'indexes and', sortedQueries.length, 'queries');
+        renderIndexQueryFlow(sortedIndexes, sortedQueries);
+      }
+
+      function extractIndexUsage(operator, requestIndex, requestIndexMap) {
+        if (!operator) {
+          console.log(`Request ${requestIndex}: operator is null/undefined`);
+          return;
+        }
+
+        console.log(`Request ${requestIndex}: checking operator`, operator['#operator'], operator);
+
+        // Function to record index usage for this request
+        function recordIndexUsage(indexName) {
+          console.log('Recording index usage for request', requestIndex, ':', indexName);
+          requestIndexMap.get(requestIndex).add(indexName);
+        }
+
+        // Check for index name in various operator properties (same as Dashboard logic)
+        if (operator.index) {
+          console.log(`Request ${requestIndex}: Found operator.index:`, operator.index);
+          recordIndexUsage(operator.index);
+        }
+        if (operator.indexName) {
+          console.log(`Request ${requestIndex}: Found operator.indexName:`, operator.indexName);
+          recordIndexUsage(operator.indexName);
+        }
+
+        // Check for primary scan operators (same as Dashboard logic)
+        const isPrimaryScan = (
+          operator["#operator"] === "PrimaryScan" ||
+          operator["#operator"] === "PrimaryScan3" ||
+          operator.index === "#primary" ||
+          operator.using === "sequentialScan" ||
+          (operator.spans && operator.spans.length === 0)
+        );
+        
+        if (isPrimaryScan) {
+          console.log(`Request ${requestIndex}: Found primary scan operator:`, operator["#operator"], 'using:', operator.using, 'spans:', operator.spans);
+          
+          // Record as #sequentialscan if it's explicitly a sequential scan
+          if (operator.using === "sequentialScan") {
+            recordIndexUsage("#sequentialscan");
+          } else {
+            recordIndexUsage("#primary");
+          }
+        }
+
+        // Recursively check child operators (same as Dashboard logic)
+        if (operator["~child"]) {
+          extractIndexUsage(operator["~child"], requestIndex, requestIndexMap);
+        }
+        if (operator["~children"] && Array.isArray(operator["~children"])) {
+          operator["~children"].forEach((child) =>
+            extractIndexUsage(child, requestIndex, requestIndexMap)
+          );
+        }
+        if (operator.input) {
+          extractIndexUsage(operator.input, requestIndex, requestIndexMap);
+        }
+        if (operator.inputs && Array.isArray(operator.inputs)) {
+          operator.inputs.forEach((input) =>
+            extractIndexUsage(input, requestIndex, requestIndexMap)
+          );
+        }
+      }
+
+      function renderIndexQueryFlow(indexes, queries) {
+        console.log('renderIndexQueryFlow called with', indexes.length, 'indexes and', queries.length, 'queries');
+        const flowElements = document.getElementById('flow-elements');
+        
+        if (!flowElements) {
+          console.error('flow-elements container not found');
+          return;
+        }
+        
+        // Clear container
+        flowElements.innerHTML = '';
+
+        if (indexes.length === 0) {
+          flowElements.innerHTML = '<div style="padding: 20px; text-align: center; color: #666; font-style: italic;">No index usage found in the queries.<br><br>This could mean:<br>• Queries use sequential scans<br>• Index information not in execution plans<br>• All queries are prepared statements without index details</div>';
+          return;
+        }
+
+        // Generate colors for indexes
+        const colors = generateColors(indexes.length);
+
+        // Calculate layout - indexes on left, queries on right
+        const canvasWidth = flowElements.offsetWidth || 1200;
+        const indexItemHeight = 144; // Index spacing
+        const queryItemHeight = 173; // Query spacing with additional 20% (144 * 1.2)
+        const canvasHeight = Math.max(indexes.length * indexItemHeight, queries.length * queryItemHeight, 400);
+        
+        console.log('Canvas dimensions:', canvasWidth, 'x', canvasHeight);
+        
+        // Set container height
+        flowElements.style.height = canvasHeight + 'px';
+
+        // Position indexes on the left
+        const indexPositions = [];
+        indexes.forEach((index, i) => {
+          const x = 50;
+          const y = 50 + (i * indexItemHeight);
+          const indexDiv = createIndexDiv(index, colors[i], x, y);
+          flowElements.appendChild(indexDiv);
+          indexPositions.push({ element: indexDiv, x: x + 150, y: y + 40, index: index }); // right edge + center
+        });
+
+        // Position queries on the right
+        const queryPositions = [];
+        queries.forEach((query, queryIndex) => {
+          const x = canvasWidth - 350;
+          const y = 50 + (queryIndex * queryItemHeight);
+          console.log(`Positioning query ${queryIndex} at x: ${x}, y: ${y}`);
+          const queryDiv = createQueryDiv(query, queryIndex, x, y);
+          flowElements.appendChild(queryDiv);
+          queryPositions.push({ element: queryDiv, x: x, y: y + 40, query: query }); // left edge + center
+        });
+
+        // Draw connections after elements are positioned
+        setTimeout(() => {
+          drawSimpleConnections(indexPositions, queryPositions, colors);
+        }, 50);
+      }
+
+      function createIndexDiv(index, color, x, y) {
+        const div = document.createElement('div');
+        let className = 'index-item';
+        if (index.isPrimary) className += ' primary';
+        if (index.name === '#sequentialscan') className += ' sequential-scan';
+        
+        div.className = className;
+        div.style.borderColor = color;
+        div.style.position = 'absolute';
+        div.style.left = x + 'px';
+        div.style.top = y + 'px';
+        div.style.width = '280px';
+        div.style.margin = '0'; // Override CSS margin for absolute positioning
+        
+        // Add orange background for sequential scan
+        if (index.name === '#sequentialscan') {
+          div.style.backgroundColor = '#fff3cd';
+          div.style.borderColor = '#ff9800';
+        }
+        
+        div.draggable = true;
+        div.dataset.indexName = index.name;
+
+        const stats = calculateIndexStats(index);
+        
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight: bold; font-size: 14px; color: #333;">${index.name}</div>
+            <button onclick="copyIndexName('${index.name.replace(/'/g, "\\'")}', event)" style="padding: 2px 8px; font-size: 11px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">Copy</button>
+          </div>
+          <div style="font-size: 12px; color: #666; margin: 4px 0;">Usage: ${index.totalUsage}</div>
+          <div class="index-stats">
+            Avg Scan Time: ${stats.avgScanTime}<br>
+            Avg Items Scanned: ${stats.avgItemsScanned}<br>
+            Avg Items Fetched: ${stats.avgItemsFetched}<br>
+            Min/Max Scan Time: ${stats.minScanTime} / ${stats.maxScanTime}<br>
+            Min/Max Items: ${stats.minItems} / ${stats.maxItems}
+          </div>
+        `;
+
+        makeDraggable(div);
+        return div;
+      }
+
+      function createQueryDiv(query, queryIndex, x, y) {
+        const div = document.createElement('div');
+        div.className = 'query-item';
+        div.style.position = 'absolute';
+        div.style.left = x + 'px';
+        div.style.top = y + 'px';
+        div.style.width = '320px';
+        div.style.margin = '0'; // Override CSS margin for absolute positioning
+        div.draggable = true;
+        div.dataset.queryId = `query-${queryIndex}`;
+        div.dataset.queryStatement = query.normalizedStatement;
+
+        const avgDuration = query.totalDuration / query.count;
+        
+        div.innerHTML = `
+          <div style="font-weight: bold; font-size: 14px; color: #333;">Executions: ${query.count}</div>
+          <div style="font-size: 12px; color: #666; margin: 4px 0;">Avg Duration: ${formatTime(avgDuration)}</div>
+          <div class="query-text" id="query-text-${query.normalizedStatement.replace(/[^a-zA-Z0-9]/g, '')}">
+            ${query.statement}
+          </div>
+          <div class="query-controls">
+            <button onclick="toggleQueryText('${query.normalizedStatement.replace(/[^a-zA-Z0-9]/g, '')}')">Show More</button>
+            <button class="query-copy-btn" data-query-statement="${encodeURIComponent(query.statement)}">Copy</button>
+          </div>
+        `;
+
+        // Add event listener for copy button
+        const copyBtn = div.querySelector('.query-copy-btn');
+        if (copyBtn) {
+          copyBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent drag from starting
+            const statement = decodeURIComponent(this.dataset.queryStatement);
+            copyQueryText(statement, e);
+          });
+        }
+
+        makeDraggable(div);
+        return div;
+      }
+
+      function calculateIndexStats(index) {
+        const scanTimes = index.scanTimes || [];
+        const itemsScanned = index.itemsScanned || [];
+        const itemsFetched = index.itemsFetched || [];
+        
+        return {
+          avgScanTime: scanTimes.length ? formatTime(scanTimes.reduce((a, b) => a + b, 0) / scanTimes.length) : 'N/A',
+          minScanTime: scanTimes.length ? formatTime(Math.min(...scanTimes)) : 'N/A',
+          maxScanTime: scanTimes.length ? formatTime(Math.max(...scanTimes)) : 'N/A',
+          avgItemsScanned: itemsScanned.length ? Math.round(itemsScanned.reduce((a, b) => a + b, 0) / itemsScanned.length) : 'N/A',
+          avgItemsFetched: itemsFetched.length ? Math.round(itemsFetched.reduce((a, b) => a + b, 0) / itemsFetched.length) : 'N/A',
+          minItems: itemsScanned.length ? Math.min(...itemsScanned) : 'N/A',
+          maxItems: itemsScanned.length ? Math.max(...itemsScanned) : 'N/A'
+        };
+      }
+
+      function generateColors(count) {
+        const colors = [];
+        for (let i = 0; i < count; i++) {
+          const hue = (i * 360 / count) % 360;
+          colors.push(`hsl(${hue}, 70%, 50%)`);
+        }
+        return colors;
+      }
+
+      function drawSimpleConnections(indexPositions, queryPositions, colors) {
+        console.log('drawSimpleConnections called');
+        const svg = document.getElementById('flow-svg');
+        if (!svg) {
+          console.error('SVG element not found');
+          return;
+        }
+        
+        svg.innerHTML = '';
+        
+        // Create maps for easy lookup
+        const indexMap = new Map();
+        indexPositions.forEach((pos, i) => {
+          indexMap.set(pos.index.name, { ...pos, color: colors[i] });
+        });
+        
+        const queryMap = new Map();
+        queryPositions.forEach(pos => {
+          queryMap.set(pos.query.normalizedStatement, pos);
+        });
+
+        let connectionsDrawn = 0;
+        
+        indexQueryFlowData.connections.forEach(connection => {
+          const indexPos = indexMap.get(connection.indexName);
+          const queryPos = queryMap.get(connection.queryStatement);
+          
+          if (indexPos && queryPos) {
+            console.log(`Drawing connection: ${connection.indexName} -> query (${connection.count} times)`);
+            drawSimpleConnection(svg, indexPos, queryPos, connection.count);
+            connectionsDrawn++;
+          }
+        });
+        
+        console.log(`Drew ${connectionsDrawn} connections`);
+      }
+
+      function drawSimpleConnection(svg, indexPos, queryPos, count) {
+        const startX = indexPos.x;
+        const startY = indexPos.y;
+        const endX = queryPos.x;
+        const endY = queryPos.y;
+
+        console.log(`Drawing line from (${startX}, ${startY}) to (${endX}, ${endY}) with count ${count}`);
+
+        // Calculate line thickness (scale between 2 and 12 pixels)
+        const maxCount = Math.max(...Array.from(indexQueryFlowData.connections.values()).map(c => c.count));
+        const thickness = Math.max(2, Math.min(12, (count / maxCount) * 10 + 2));
+
+        // Create curved path instead of straight line
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        
+        // Calculate control points for the curve
+        const curveAmount = Math.abs(endX - startX) * 0.4; // Curve intensity based on distance
+        
+        // Create a smooth S-curve
+        const d = `M ${startX} ${startY} C ${startX + curveAmount} ${startY}, ${endX - curveAmount} ${endY}, ${endX} ${endY}`;
+        
+        path.setAttribute('d', d);
+        path.setAttribute('stroke', indexPos.color);
+        path.setAttribute('stroke-width', thickness);
+        path.setAttribute('opacity', '0.7');
+        path.setAttribute('fill', 'none');
+
+        // Create usage count label
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2;
+        
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        
+        text.setAttribute('x', midX);
+        text.setAttribute('y', midY + 4);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('font-size', '11');
+        text.setAttribute('font-weight', 'bold');
+        text.setAttribute('fill', '#333');
+        text.textContent = count;
+
+        // Estimate text dimensions
+        const textWidth = count.toString().length * 7;
+        rect.setAttribute('x', midX - textWidth / 2 - 3);
+        rect.setAttribute('y', midY - 7);
+        rect.setAttribute('width', textWidth + 6);
+        rect.setAttribute('height', 14);
+        rect.setAttribute('fill', 'white');
+        rect.setAttribute('stroke', '#333');
+        rect.setAttribute('stroke-width', '1');
+        rect.setAttribute('rx', '3');
+
+        svg.appendChild(path);
+        svg.appendChild(rect);
+        svg.appendChild(text);
+      }
+
+      function makeDraggable(element) {
+        let isDragging = false;
+        let startX, startY, startLeft, startTop;
+
+        element.addEventListener('mousedown', function(e) {
+          isDragging = true;
+          startX = e.clientX;
+          startY = e.clientY;
+          
+          // Get current position relative to the container, not viewport
+          const container = document.getElementById('flow-elements');
+          const containerRect = container.getBoundingClientRect();
+          const elementRect = element.getBoundingClientRect();
+          
+          startLeft = elementRect.left - containerRect.left;
+          startTop = elementRect.top - containerRect.top;
+          
+          element.style.position = 'absolute';
+          element.style.zIndex = '1000';
+          e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', function(e) {
+          if (!isDragging) return;
+          const deltaX = e.clientX - startX;
+          const deltaY = e.clientY - startY;
+          element.style.left = (startLeft + deltaX) + 'px';
+          element.style.top = (startTop + deltaY) + 'px';
+          
+          // Redraw connections during drag for smooth following
+          if (document.getElementById('index-query-flow').style.display !== 'none') {
+            redrawConnectionsAfterDrag();
+          }
+        });
+
+        document.addEventListener('mouseup', function() {
+          if (isDragging) {
+            isDragging = false;
+            element.style.zIndex = '';
+            // Redraw connections after drag
+            setTimeout(() => {
+              if (document.getElementById('index-query-flow').style.display !== 'none') {
+                redrawConnectionsAfterDrag();
+              }
+            }, 50);
+          }
+        });
+      }
+
+      function redrawConnectionsAfterDrag() {
+        // Get current positions of all elements
+        const indexElements = document.querySelectorAll('[data-index-name]');
+        const queryElements = document.querySelectorAll('[data-query-id]');
+        
+        const indexPositions = [];
+        const queryPositions = [];
+        const colors = generateColors(indexElements.length);
+        
+        // Build current index positions
+        indexElements.forEach((element, i) => {
+          const rect = element.getBoundingClientRect();
+          const containerRect = document.getElementById('flow-elements').getBoundingClientRect();
+          const indexName = element.dataset.indexName;
+          
+          // Create a minimal index object with just the name
+          const indexObj = { name: indexName };
+          
+          indexPositions.push({
+            element: element,
+            x: rect.right - containerRect.left,  // right edge
+            y: rect.top - containerRect.top + (rect.height / 2), // center
+            index: indexObj
+          });
+        });
+        
+        // Build current query positions  
+        queryElements.forEach((element) => {
+          const rect = element.getBoundingClientRect();
+          const containerRect = document.getElementById('flow-elements').getBoundingClientRect();
+          const queryStatement = element.dataset.queryStatement;
+          
+          // Create a minimal query object with just the normalized statement
+          const queryObj = { normalizedStatement: queryStatement };
+          
+          queryPositions.push({
+            element: element,
+            x: rect.left - containerRect.left, // left edge
+            y: rect.top - containerRect.top + (rect.height / 2), // center
+            query: queryObj
+          });
+        });
+        
+        // Redraw connections with current positions
+        drawSimpleConnections(indexPositions, queryPositions, colors);
+      }
+
+      function toggleQueryText(id) {
+        const element = document.getElementById(`query-text-${id}`);
+        const button = element.nextElementSibling.firstElementChild;
+        
+        if (element.classList.contains('expanded')) {
+          element.classList.remove('expanded');
+          button.textContent = 'Show More';
+        } else {
+          element.classList.add('expanded');
+          button.textContent = 'Hide';
+        }
+      }
+
+      function copyQueryText(text, event) {
+        navigator.clipboard.writeText(text).then(() => {
+          // Brief visual feedback
+          const button = event ? event.target : window.event.target;
+          const originalText = button.textContent;
+          button.textContent = 'Copied!';
+          button.style.backgroundColor = '#4CAF50';
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.style.backgroundColor = '';
+          }, 1000);
+        });
+      }
+
+      function copyIndexName(indexName, event) {
+        navigator.clipboard.writeText(indexName).then(() => {
+          // Brief visual feedback
+          const button = event.target;
+          const originalText = button.textContent;
+          button.textContent = 'Copied!';
+          button.style.backgroundColor = '#4CAF50';
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.style.backgroundColor = '#f0f0f0';
+          }, 1000);
+        });
+      }
+
+      // Hook removed - buildIndexQueryFlow will be called directly after data processing
     </script>
   </body>
 </html>
