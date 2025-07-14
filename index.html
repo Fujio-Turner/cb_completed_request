@@ -1016,6 +1016,47 @@
               getOperators(child, operators)
             );
           }
+          // Check for input/inputs
+          if (operator.input) {
+            getOperators(operator.input, operators);
+          }
+          if (operator.inputs && Array.isArray(operator.inputs)) {
+            operator.inputs.forEach((input) =>
+              getOperators(input, operators)
+            );
+          }
+          // Check for left/right (binary operations)
+          if (operator.left) {
+            getOperators(operator.left, operators);
+          }
+          if (operator.right) {
+            getOperators(operator.right, operators);
+          }
+          // Check for first and second properties (used in set operations like ExceptAll)
+          if (operator.first) {
+            getOperators(operator.first, operators);
+          }
+          if (operator.second) {
+            getOperators(operator.second, operators);
+          }
+          // Check for scans array (used in UnionScan, IntersectScan, etc.)
+          if (operator.scans && Array.isArray(operator.scans)) {
+            operator.scans.forEach((scan) =>
+              getOperators(scan, operators)
+            );
+          }
+          // Check for scan property (used in DistinctScan)
+          if (operator.scan) {
+            getOperators(operator.scan, operators);
+          }
+          // Check for subqueries array
+          if (operator["~subqueries"] && Array.isArray(operator["~subqueries"])) {
+            operator["~subqueries"].forEach((subquery) => {
+              if (subquery.executionTimings) {
+                getOperators(subquery.executionTimings, operators);
+              }
+            });
+          }
         }
         return operators;
       }
@@ -1261,6 +1302,53 @@
           html += "<ul>";
           operator["~children"].forEach((child) => {
             html += buildPlanTree(child);
+          });
+          html += "</ul>";
+        }
+        // Check for input/inputs
+        if (operator.input) {
+          html += "<ul>" + buildPlanTree(operator.input) + "</ul>";
+        }
+        if (operator.inputs && Array.isArray(operator.inputs)) {
+          html += "<ul>";
+          operator.inputs.forEach((input) => {
+            html += buildPlanTree(input);
+          });
+          html += "</ul>";
+        }
+        // Check for left/right (binary operations)
+        if (operator.left) {
+          html += "<ul>" + buildPlanTree(operator.left) + "</ul>";
+        }
+        if (operator.right) {
+          html += "<ul>" + buildPlanTree(operator.right) + "</ul>";
+        }
+        // Check for first and second properties (used in set operations like ExceptAll)
+        if (operator.first) {
+          html += "<ul>" + buildPlanTree(operator.first) + "</ul>";
+        }
+        if (operator.second) {
+          html += "<ul>" + buildPlanTree(operator.second) + "</ul>";
+        }
+        // Check for scans array (used in UnionScan, IntersectScan, etc.)
+        if (operator.scans && Array.isArray(operator.scans)) {
+          html += "<ul>";
+          operator.scans.forEach((scan) => {
+            html += buildPlanTree(scan);
+          });
+          html += "</ul>";
+        }
+        // Check for scan property (used in DistinctScan)
+        if (operator.scan) {
+          html += "<ul>" + buildPlanTree(operator.scan) + "</ul>";
+        }
+        // Check for subqueries array
+        if (operator["~subqueries"] && Array.isArray(operator["~subqueries"])) {
+          html += "<ul>";
+          operator["~subqueries"].forEach((subquery) => {
+            if (subquery.executionTimings) {
+              html += buildPlanTree(subquery.executionTimings);
+            }
           });
           html += "</ul>";
         }
@@ -4854,6 +4942,27 @@
           return true;
         if (operator.right && checkOperatorForPrimary(operator.right))
           return true;
+        // Check for first and second properties (used in set operations like ExceptAll)
+        if (operator.first && checkOperatorForPrimary(operator.first))
+          return true;
+        if (operator.second && checkOperatorForPrimary(operator.second))
+          return true;
+        // Check for scans array (used in UnionScan, IntersectScan, etc.)
+        if (operator.scans && Array.isArray(operator.scans)) {
+          for (const scan of operator.scans) {
+            if (checkOperatorForPrimary(scan)) return true;
+          }
+        }
+        // Check for scan property (used in DistinctScan)
+        if (operator.scan && checkOperatorForPrimary(operator.scan))
+          return true;
+        // Check for subqueries array
+        if (operator["~subqueries"] && Array.isArray(operator["~subqueries"])) {
+          for (const subquery of operator["~subqueries"]) {
+            if (subquery.executionTimings && checkOperatorForPrimary(subquery.executionTimings)) 
+              return true;
+          }
+        }
 
         return false;
       }
@@ -5675,6 +5784,31 @@
         if (operator.right) {
           extractIndexNames(operator.right, indexData, bucketScopeCollection);
         }
+        // Check for first and second properties (used in set operations like ExceptAll)
+        if (operator.first) {
+          extractIndexNames(operator.first, indexData, bucketScopeCollection);
+        }
+        if (operator.second) {
+          extractIndexNames(operator.second, indexData, bucketScopeCollection);
+        }
+        // Check for scans array (used in UnionScan, IntersectScan, etc.)
+        if (operator.scans && Array.isArray(operator.scans)) {
+          operator.scans.forEach((scan) =>
+            extractIndexNames(scan, indexData, bucketScopeCollection)
+          );
+        }
+        // Check for scan property (used in DistinctScan)
+        if (operator.scan) {
+          extractIndexNames(operator.scan, indexData, bucketScopeCollection);
+        }
+        // Check for subqueries array
+        if (operator["~subqueries"] && Array.isArray(operator["~subqueries"])) {
+          operator["~subqueries"].forEach((subquery) => {
+            if (subquery.executionTimings) {
+              extractIndexNames(subquery.executionTimings, indexData, bucketScopeCollection);
+            }
+          });
+        }
       }
 
       // Copy to clipboard function
@@ -6082,9 +6216,8 @@
       };
 
       function buildIndexQueryFlow() {
-        console.log('buildIndexQueryFlow called', originalRequests?.length);
+
         if (!originalRequests || originalRequests.length === 0) {
-          console.log('No originalRequests data available');
           return;
         }
 
@@ -6095,7 +6228,7 @@
 
         // Step 1: Track which indexes each request uses (by request index)
         const requestIndexMap = new Map(); // requestIndex -> Set of index names
-        console.log('Processing requests for index usage');
+
         let requestsWithPlans = 0;
         let requestsWithOperators = 0;
         originalRequests.forEach((request, requestIndex) => {
@@ -6105,15 +6238,11 @@
             
             // Debug: Show the actual plan structure
             if (requestIndex < 3) {
-              console.log(`Request ${requestIndex} plan structure:`, request.plan);
-              console.log(`Request ${requestIndex} plan keys:`, Object.keys(request.plan));
+              
               if (typeof request.plan === 'string') {
-                console.log(`Request ${requestIndex} plan is a string, parsing...`);
                 try {
                   const parsedPlan = JSON.parse(request.plan);
-                  console.log(`Request ${requestIndex} parsed plan:`, parsedPlan);
                 } catch (e) {
-                  console.log(`Request ${requestIndex} failed to parse plan:`, e);
                 }
               }
             }
@@ -6123,24 +6252,12 @@
             
             if (planObj && planObj["#operator"]) {
               requestsWithOperators++;
-              console.log(`Processing request ${requestIndex} with plan:`, planObj);
+  
               extractIndexUsage(planObj, requestIndex, requestIndexMap);
             }
           }
         });
-        console.log(`Found ${requestsWithPlans} requests with plans, ${requestsWithOperators} with operators`);
-        
-        // Debug: Show what's in requestIndexMap
-        console.log('=== REQUEST INDEX MAP DEBUG ===');
-        let totalIndexUsages = 0;
-        requestIndexMap.forEach((indexSet, requestIndex) => {
-          if (indexSet.size > 0) {
-            console.log(`Request ${requestIndex} uses indexes:`, Array.from(indexSet));
-            totalIndexUsages += indexSet.size;
-          }
-        });
-        console.log(`Total index usages across all requests: ${totalIndexUsages}`);
-        console.log('Found indexes across all requests:', new Set([].concat(...Array.from(requestIndexMap.values()).map(s => Array.from(s)))).size);
+
 
         // Step 2: Build query groups and track which request indices belong to each group
         const queryGroups = new Map();
@@ -6162,27 +6279,20 @@
           group.requestIndices.push(requestIndex);
         });
         
-        // Debug: Show what's in queryGroups
-        console.log('=== QUERY GROUPS DEBUG ===');
-        queryGroups.forEach((group, normalizedStmt) => {
-          console.log(`Query group "${normalizedStmt.substring(0, 50)}..." has ${group.requestIndices.length} request indices:`, group.requestIndices.slice(0, 5));
-        });
-
         // Step 3: Build final index data and connections using request indices
-        console.log('=== BUILDING FINAL INDEX DATA ===');
         const allIndexes = new Map();
         let connectionCount = 0;
         
         queryGroups.forEach((queryGroup, queryKey) => {
-          console.log(`Processing query group: "${queryKey.substring(0, 50)}..." with ${queryGroup.requestIndices.length} requests`);
+
           
           queryGroup.requestIndices.forEach(requestIndex => {
             const indexesForRequest = requestIndexMap.get(requestIndex);
-            console.log(`  Request ${requestIndex} has indexes:`, indexesForRequest ? Array.from(indexesForRequest) : 'none');
+  
             
             if (indexesForRequest && indexesForRequest.size > 0) {
               indexesForRequest.forEach(indexName => {
-                console.log(`    Processing index: ${indexName}`);
+
                 
                 // Track index usage
                 if (!allIndexes.has(indexName)) {
@@ -6237,10 +6347,7 @@
           });
         });
         
-        console.log(`=== FINAL RESULTS ===`);
-        console.log(`Found ${allIndexes.size} unique indexes`);
-        console.log(`Created ${connectionCount} total connections`);
-        console.log('All indexes:', Array.from(allIndexes.keys()));
+
 
         // Convert to sorted arrays
         const sortedIndexes = Array.from(allIndexes.values())
@@ -6250,31 +6357,25 @@
 
         indexQueryFlowData.queries = new Map(sortedQueries.map(q => [q.normalizedStatement, q]));
 
-        console.log('About to render:', sortedIndexes.length, 'indexes and', sortedQueries.length, 'queries');
+
         renderIndexQueryFlow(sortedIndexes, sortedQueries);
       }
 
       function extractIndexUsage(operator, requestIndex, requestIndexMap) {
         if (!operator) {
-          console.log(`Request ${requestIndex}: operator is null/undefined`);
           return;
         }
 
-        console.log(`Request ${requestIndex}: checking operator`, operator['#operator'], operator);
-
         // Function to record index usage for this request
         function recordIndexUsage(indexName) {
-          console.log('Recording index usage for request', requestIndex, ':', indexName);
           requestIndexMap.get(requestIndex).add(indexName);
         }
 
         // Check for index name in various operator properties (same as Dashboard logic)
         if (operator.index) {
-          console.log(`Request ${requestIndex}: Found operator.index:`, operator.index);
           recordIndexUsage(operator.index);
         }
         if (operator.indexName) {
-          console.log(`Request ${requestIndex}: Found operator.indexName:`, operator.indexName);
           recordIndexUsage(operator.indexName);
         }
 
@@ -6288,8 +6389,6 @@
         );
         
         if (isPrimaryScan) {
-          console.log(`Request ${requestIndex}: Found primary scan operator:`, operator["#operator"], 'using:', operator.using, 'spans:', operator.spans);
-          
           // Record as #sequentialscan if it's explicitly a sequential scan
           if (operator.using === "sequentialScan") {
             recordIndexUsage("#sequentialscan");
@@ -6315,10 +6414,40 @@
             extractIndexUsage(input, requestIndex, requestIndexMap)
           );
         }
+        if (operator.left) {
+          extractIndexUsage(operator.left, requestIndex, requestIndexMap);
+        }
+        if (operator.right) {
+          extractIndexUsage(operator.right, requestIndex, requestIndexMap);
+        }
+        // Check for first and second properties (used in set operations like ExceptAll)
+        if (operator.first) {
+          extractIndexUsage(operator.first, requestIndex, requestIndexMap);
+        }
+        if (operator.second) {
+          extractIndexUsage(operator.second, requestIndex, requestIndexMap);
+        }
+        // Check for scans array (used in UnionScan, IntersectScan, etc.)
+        if (operator.scans && Array.isArray(operator.scans)) {
+          operator.scans.forEach((scan) =>
+            extractIndexUsage(scan, requestIndex, requestIndexMap)
+          );
+        }
+        // Check for scan property (used in DistinctScan)
+        if (operator.scan) {
+          extractIndexUsage(operator.scan, requestIndex, requestIndexMap);
+        }
+        // Check for subqueries array
+        if (operator["~subqueries"] && Array.isArray(operator["~subqueries"])) {
+          operator["~subqueries"].forEach((subquery) => {
+            if (subquery.executionTimings) {
+              extractIndexUsage(subquery.executionTimings, requestIndex, requestIndexMap);
+            }
+          });
+        }
       }
 
       function renderIndexQueryFlow(indexes, queries) {
-        console.log('renderIndexQueryFlow called with', indexes.length, 'indexes and', queries.length, 'queries');
         const flowElements = document.getElementById('flow-elements');
         
         if (!flowElements) {
@@ -6343,8 +6472,6 @@
         const queryItemHeight = 173; // Query spacing with additional 20% (144 * 1.2)
         const canvasHeight = Math.max(indexes.length * indexItemHeight, queries.length * queryItemHeight, 400);
         
-        console.log('Canvas dimensions:', canvasWidth, 'x', canvasHeight);
-        
         // Set container height
         flowElements.style.height = canvasHeight + 'px';
 
@@ -6363,7 +6490,6 @@
         queries.forEach((query, queryIndex) => {
           const x = canvasWidth - 350;
           const y = 50 + (queryIndex * queryItemHeight);
-          console.log(`Positioning query ${queryIndex} at x: ${x}, y: ${y}`);
           const queryDiv = createQueryDiv(query, queryIndex, x, y);
           flowElements.appendChild(queryDiv);
           queryPositions.push({ element: queryDiv, x: x, y: y + 40, query: query }); // left edge + center

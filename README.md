@@ -1,6 +1,6 @@
 # Couchbase Slow Query Analysis Tool
 
-A web-based tool for analyzing Couchbase query performance and execution plans. Visualize query patterns, identify bottlenecks, and optimize database performance.
+A web-based tool for analyzing Couchbase query performance and execution plans. Visualize query patterns, identify bottlenecks, and optimize database performance with advanced index usage tracking and execution plan analysis.
 
 ### (Capella Compatible)
 
@@ -36,7 +36,7 @@ Copy the JSON results and paste into the tool's input area, then click "Parse JS
 
 ## Features
 
-### **Four Analysis Tabs**:
+### **Five Analysis Tabs**:
 
 #### **1. Dashboard Tab**
 - **Query Duration Distribution** bar chart showing performance patterns
@@ -81,6 +81,11 @@ Copy the JSON results and paste into the tool's input area, then click "Parse JS
   - Operator bubbles showing execTime, servTime, kernTime percentages
   - Click operators for detailed statistics modal
   - Visual performance indicators (Green < 25%, Yellow 25-50%, Orange 50-75%, Red > 75%)
+  - **Enhanced execution plan parsing** with support for complex nested operators:
+    - UnionScan and IntersectScan with nested scans arrays
+    - DistinctScan with embedded IndexScan3 operators
+    - ExceptAll with first/second properties for set operations
+    - Subquery execution timings with complete operator trees
 - **Enhanced Table Features**:
   - Full column sorting (click headers)
   - Fixed 300px width for statement column with auto-truncation
@@ -93,13 +98,34 @@ Copy the JSON results and paste into the tool's input area, then click "Parse JS
   - Memory usage tracking from root `usedMemory` field
   - CPU time extraction from root `cpuTime` field
 
+#### **5. Index Query Flow Tab** (NEW)
+- **Visual Index-Query Relationships**:
+  - Interactive flow diagram connecting indexes to queries that use them
+  - Index usage statistics with scan counts and execution timings
+  - Query pattern analysis with normalized statement grouping
+  - Color-coded connections showing usage frequency
+- **Comprehensive Index Detection**:
+  - Captures indexes from all operator types (IndexScan3, PrimaryScan3, etc.)
+  - Handles complex nested structures in execution plans
+  - Tracks primary index usage and sequential scans
+  - Supports all Couchbase query execution patterns
+- **Performance Insights**:
+  - Index scan timing analysis (min/max/average execution times)
+  - Query pattern optimization opportunities
+  - Index usage frequency tracking
+  - Cross-query index sharing analysis
+
 ### **Core Performance Features**:
 
 - **Memory Analysis**: Accurate memory usage tracking from Couchbase `usedMemory` field
 - **CPU Time Tracking**: Precise CPU time measurement from `cpuTime` field  
 - **Service Time Analysis**: Service time display in flow diagrams when available
 - **Primary Scan Detection**: Automatic identification of primary index usage
-- **Index Usage Analysis**: Comprehensive primary vs secondary index tracking
+- **Advanced Index Usage Analysis**: 
+  - Comprehensive primary vs secondary index tracking
+  - Support for complex execution plans with nested operators
+  - Handles all Couchbase operator types (UnionScan, IntersectScan, DistinctScan, ExceptAll)
+  - Tracks index usage across subqueries and complex query structures
 - **Kernel Time Comparison**: Kernel time vs elapsed time performance analysis
 
 ### **Data Processing & Filtering**:
