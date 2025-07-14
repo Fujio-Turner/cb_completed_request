@@ -3085,11 +3085,13 @@
         // Prepare chart data
         const labels = sortedData.map((item) => item.timestamp);
         const filtersEqualData = sortedData.map((item) => item.filtersEqual);
-        const filtersNotEqualData = sortedData.map(
-          (item) => item.filtersNotEqual
-        );
+        const filtersNotEqualData = sortedData.map((item) => item.filtersNotEqual);
+        const percentageData = sortedData.map((item) => {
+          const total = item.filtersEqual + item.filtersNotEqual;
+          return total > 0 ? (item.filtersNotEqual / total) * 100 : 0;
+        });
 
-        // Create new stacked bar chart
+        // Create new mixed chart with bars and line
         window.filterChart = new Chart(ctx, {
           type: "bar",
           data: {
@@ -3101,13 +3103,28 @@
                 backgroundColor: "#007bff", // Blue
                 borderColor: "#0056b3",
                 borderWidth: 1,
+                yAxisID: "y",
+                stack: "stack1",
               },
               {
                 label: "Filters: IN ≠ OUT",
                 data: filtersNotEqualData,
-                backgroundColor: "#fd7e14", // Orange
-                borderColor: "#e8590c",
+                backgroundColor: "#dc3545", // Red
+                borderColor: "#b02a37",
                 borderWidth: 1,
+                yAxisID: "y",
+                stack: "stack1",
+              },
+              {
+                label: "Efficiency %",
+                data: percentageData,
+                type: "line",
+                backgroundColor: "#fd7e14", // Orange
+                borderColor: "#fd7e14",
+                borderWidth: 2,
+                fill: false,
+                yAxisID: "y1",
+                tension: 0.1,
               },
             ],
           },
@@ -3246,15 +3263,29 @@
                   display: true,
                   text: "Request Time",
                 },
-                stacked: true,
               },
               y: {
+                type: "linear",
+                position: "left",
                 title: {
                   display: true,
                   text: "Filter Count",
                 },
-                stacked: true,
                 beginAtZero: true,
+                stacked: true,
+              },
+              y1: {
+                type: "linear",
+                position: "right",
+                title: {
+                  display: true,
+                  text: "Efficiency %",
+                },
+                beginAtZero: true,
+                max: 100,
+                grid: {
+                  drawOnChartArea: false,
+                },
               },
             },
             interaction: {
@@ -4419,7 +4450,10 @@
         const labels = sortedData.map((item) => item.timestamp);
         const memoryData = sortedData.map((item) => item.totalMemoryMB);
 
-        // Create memory usage bar chart
+        // Calculate average memory per query for line chart
+        const avgMemoryData = sortedData.map((item) => item.totalMemoryMB / item.queryCount);
+
+        // Create memory usage bar chart with line overlay
         window.memoryChart = new Chart(ctx, {
           type: "bar",
           data: {
@@ -4431,6 +4465,20 @@
                 backgroundColor: "#17a2b8", // Info blue-cyan
                 borderColor: "#138496",
                 borderWidth: 1,
+                yAxisID: "y",
+                order: 2,
+              },
+              {
+                label: "Avg per Query (MB)",
+                data: avgMemoryData,
+                type: "line",
+                backgroundColor: "#fd7e14", // Orange
+                borderColor: "#fd7e14",
+                borderWidth: 2,
+                fill: false,
+                yAxisID: "y1",
+                tension: 0.1,
+                order: 1,
               },
             ],
           },
@@ -4439,7 +4487,7 @@
             plugins: {
               title: {
                 display: true,
-                text: "Total Memory Usage by Time Period",
+                text: "Total Query Process Memory Usage",
               },
               legend: {
                 display: true,
@@ -4599,11 +4647,25 @@
                 },
               },
               y: {
+                type: "linear",
+                position: "left",
                 title: {
                   display: true,
                   text: "Memory Usage (MB)",
                 },
                 beginAtZero: true,
+              },
+              y1: {
+                type: "linear",
+                position: "right",
+                title: {
+                  display: true,
+                  text: "Avg per Query (MB)",
+                },
+                beginAtZero: true,
+                grid: {
+                  drawOnChartArea: false,
+                },
               },
             },
             interaction: {
