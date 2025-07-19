@@ -18,6 +18,7 @@ Run this query in Couchbase Query Workbench or cbq:
 ```sql
 SELECT *, meta().plan FROM system:completed_requests LIMIT 4000;
 ```
+[More Query Options](sql_queries.md)
 
 **Notes**: 
 This could return back a JSON of about 36MB~ish. Anything bigger will probably crash the browser. <i>Firefox</i> seems to be the faster browser.
@@ -27,7 +28,7 @@ If the browser slowes to a crawl reduce the data size via `LIMIT 2000`
 
 
 ### Step 4: Analyze
-Select ALL & Copy the full JSON results and paste it into the tool's input area, then click <button>Parse JSON</button> 
+Select ALL & Copy the full JSON results and paste it into the tool's input area up top, then click <button>Parse JSON</button> 
 
 ![Query input interface](copy_paste_json.png)
 
