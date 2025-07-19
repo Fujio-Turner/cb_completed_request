@@ -2,15 +2,15 @@
 
 A web-based tool for analyzing Couchbase query performance and execution plans. Visualize query patterns, identify bottlenecks, and optimize database performance with advanced index usage tracking and execution plan analysis.
 
-### (Capella Compatible)
+##### (Capella Compatible)
 
 ## Quick Start
 
 ### Step 1: Download the Tool
-Download or clone this repository to get `index.html`
+Download or clone the whole repository OR just download the `index.html`
 
 ### Step 2: Open in Browser
-Open `index.html` directly in any modern web browser (Chrome, Firefox, Safari, Edge)
+Go to the folder where you downloaded the `index.html` and open it directly in any modern web browser (Chrome, Firefox, Safari, Edge). <i>Firefox</i> seems to be the faster
 
 ### Step 3: Extract Query Data
 Run this query in Couchbase Query Workbench or cbq:
@@ -20,12 +20,14 @@ SELECT *, meta().plan FROM system:completed_requests LIMIT 4000;
 ```
 
 **Notes**: 
-This should return back a JSON of about 36MB~ish. Anything bigger will crash the browser.
+This could return back a JSON of about 36MB~ish. Anything bigger will probably crash the browser. <i>Firefox</i> seems to be the faster browser.
+
+**Browser is slow/crashes:**
 If the browser slowes to a crawl reduce the data size via `LIMIT 2000`
 
 
 ### Step 4: Analyze
-Copy the JSON results and paste into the tool's input area, then click "Parse JSON".
+Select ALL & Copy the full JSON results and paste it into the tool's input area, then click <button>Parse JSON</button> 
 
 ![Query input interface](copy_paste_json.png)
 
