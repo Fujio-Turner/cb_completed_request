@@ -1,9 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+<!--
+    Couchbase Query Analyzer
+    Version: 2.1.0
+    Last Updated: 2025-01-19
+    
+    🤖 AI AGENT NOTE: When making changes to this file, please update the version number above.
+    Use semantic versioning: MAJOR.MINOR.PATCH
+    - MAJOR: Breaking changes or complete rewrites
+    - MINOR: New features, significant enhancements  
+    - PATCH: Bug fixes, small improvements
+-->
 
 <head>
     <meta charset="UTF-8" />
-    <title>Query Analyzer</title>
+    <meta name="version" content="2.1.0" />
+    <meta name="last-updated" content="2025-01-19" />
+    <title>Query Analyzer v2.1.0</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css" />
     <!-- Include Chart.js -->
@@ -417,6 +430,27 @@
         .toast.error {
             background: #dc3545;
         }
+
+        /* Version display */
+        .version-info {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.1);
+            color: var(--text-color);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-family: monospace;
+            z-index: 999;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .version-info:hover {
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.2);
+        }
     </style>
     <!-- Include Panzoom, jQuery, and jQuery UI -->
     <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.2/dist/panzoom.min.js"></script>
@@ -429,6 +463,11 @@
     <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark/light theme">
         🌙
     </button>
+
+    <!-- Version info -->
+    <div class="version-info" title="Couchbase Query Analyzer Version">
+        v2.1.0
+    </div>
 
     <!-- Input Section (outside tabs) -->
     <div id="input-section">
@@ -1075,7 +1114,7 @@
         function shouldExcludeSystemQuery(request) {
             const excludeCheckbox = document.getElementById('exclude-system-queries');
             const isChecked = excludeCheckbox ? excludeCheckbox.checked : false;
-            
+
             console.log(`Checkbox state: ${isChecked ? 'CHECKED (excluding)' : 'UNCHECKED (including)'}`);
 
             // If checkbox doesn't exist or is unchecked, don't exclude anything
@@ -1088,9 +1127,9 @@
                 console.log('No statement found in request:', Object.keys(request));
                 return false;
             }
-            
+
             console.log(`Checking statement: "${stmt.substring(0, 50)}..." (type: ${request.statementType})`);
-            
+
 
             const upperStmt = stmt.toUpperCase();
 
@@ -1105,11 +1144,11 @@
                 upperStmt.startsWith("EXPLAIN ") ||
                 upperStmt.includes(" SYSTEM:")
             );
-            
+
             if (shouldExclude) {
                 console.log(`Excluding system query: ${stmt.substring(0, 50)}...`);
             }
-            
+
             return shouldExclude;
         }
 
@@ -1117,13 +1156,13 @@
         function filterSystemQueries(requests) {
             const excludeCheckbox = document.getElementById('exclude-system-queries');
             const isExcluding = excludeCheckbox && excludeCheckbox.checked;
-            
+
             console.log(`Filtering system queries: ${isExcluding ? 'ENABLED' : 'DISABLED'}`);
-            
+
             const filtered = requests.filter(request => !shouldExcludeSystemQuery(request));
-            
+
             console.log(`Original: ${requests.length} requests, After filtering: ${filtered.length} requests`);
-            
+
             return filtered;
         }
 
@@ -6502,16 +6541,16 @@
                 if (dates.length > 0) {
                     const minDate = dates[0];
                     const maxDate = dates[dates.length - 1];
-                    
+
                     // Add 1-minute buffer to ensure edge records aren't excluded by minute rounding
                     const startWithBuffer = new Date(minDate.getTime() - 60000); // -1 minute
                     const endWithBuffer = new Date(maxDate.getTime() + 60000);   // +1 minute
-                    
+
                     originalStartDate = minDate;
                     originalEndDate = maxDate;
                     startDateInput.value = toDateTimeLocal(startWithBuffer);
                     endDateInput.value = toDateTimeLocal(endWithBuffer);
-                    
+
                     console.log(`Date range with buffer: ${startWithBuffer} to ${endWithBuffer}`);
                 }
             } else {
@@ -7313,9 +7352,31 @@
 
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
+        // Version management
+        const APP_VERSION = '2.1.0';
+        const LAST_UPDATED = '2025-01-19';
+
+        function getVersionInfo() {
+            return {
+                version: APP_VERSION,
+                lastUpdated: LAST_UPDATED,
+                features: [
+                    'Global system query exclusion',
+                    'Dark/light theme toggle',
+                    'Enhanced accessibility (ARIA)',
+                    'Chart performance optimizations',
+                    'Time range filtering with buffers',
+                    'Index/Query Flow analysis',
+                    'Toast notification system'
+                ]
+            };
+        }
+
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function () {
-            console.log('Initializing Query Analyzer...');
+            console.log('🚀 Initializing Couchbase Query Analyzer...');
+            console.log(`📦 Version: ${APP_VERSION} (Updated: ${LAST_UPDATED})`);
+            console.log('🔧 Features:', getVersionInfo().features.join(', '));
 
             // Initialize theme from localStorage
             initializeTheme();
@@ -7352,7 +7413,27 @@
                 });
             }
 
-            console.log('Query Analyzer initialized successfully');
+            console.log('✅ Query Analyzer initialized successfully');
+
+            // Make version info globally accessible
+            window.QueryAnalyzer = {
+                version: getVersionInfo,
+                about: () => {
+                    const info = getVersionInfo();
+                    console.log(`
+🔍 Couchbase Query Analyzer v${info.version}
+📅 Last Updated: ${info.lastUpdated}
+🎯 Purpose: Analyze Couchbase N1QL query performance from system:completed_requests
+                    
+🚀 Features:
+${info.features.map(f => `   • ${f}`).join('\n')}
+
+💡 Usage: Type QueryAnalyzer.version() for version info
+                    `);
+                }
+            };
+
+            console.log('💡 Tip: Type QueryAnalyzer.about() for full app info');
         });
     </script>
 </body>
