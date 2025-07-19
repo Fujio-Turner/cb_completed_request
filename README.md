@@ -21,6 +21,7 @@ SELECT *, meta().plan FROM system:completed_requests LIMIT 4000;
 
 **Notes**: 
 This should return back a JSON of about 36MB~ish. Anything bigger will crash the browser.
+If the browser slowes to a crawl reduce the data size via `LIMIT 2000`
 
 
 ### Step 4: Analyze

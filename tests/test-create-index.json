@@ -1,0 +1,42 @@
+[
+  {
+    "completed_requests": {
+      "clientContextID": "935ef928-b6b9-4f34-8f2b-476127b9f4e1",
+      "cpuTime": "21.852µs",
+      "elapsedTime": "2.937610465s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseOperators": {
+        "authorize": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "532.551µs",
+        "instantiate": "17.797µs",
+        "parse": "453.847µs",
+        "plan": "39.492µs",
+        "plan.keyspace.metadata": "5.448µs",
+        "run": "2.936993491s",
+        "stream": "15.475µs"
+      },
+      "remoteAddr": "127.0.0.1:43318",
+      "requestId": "4bdf0a08-69f9-4bfb-8aef-edd570b61a4f",
+      "requestTime": "2025-07-13T00:35:07.375Z",
+      "resultCount": 1,
+      "resultSize": 66,
+      "scanConsistency": "unbounded",
+      "serviceTime": "2.937533566s",
+      "state": "completed",
+      "statement": "CREATE INDEX `chatHistory_v1` ON `yama`.`chats`.`usersChats`(`userId`,((`audit`.`up`).`dt`) DESC,`bookmark`,`chatName`)\n",
+      "statementType": "CREATE_INDEX",
+      "useCBO": true,
+      "usedMemory": 599,
+      "userAgent": "couchbase-cloud-proxy",
+      "users": "local:mc336924871a0-464a-4780lrcb-be24-7b0fcaoeu658y48bd",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-13T00:35:07.376Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.06µs\",\"servTime\":\"530.491µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:yama.chats.usersChats\",\"Priv\":12,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"3.438µs\"},\"~children\":[{\"#operator\":\"CreateIndex\",\"#stats\":{\"#itemsOut\":1,\"#phaseSwitches\":3,\"execTime\":\"879ns\",\"servTime\":\"2.936414647s\"},\"bucket\":\"yama\",\"ifNotExists\":false,\"index\":\"chatHistory_v1\",\"keys\":[{\"expr\":\"`userId`\"},{\"desc\":true,\"expr\":\"((`audit`.`up`).`dt`)\"},{\"expr\":\"`bookmark`\"},{\"expr\":\"`chatName`\"}],\"keyspace\":\"usersChats\",\"namespace\":\"default\",\"scope\":\"chats\",\"using\":\"default\",\"vector\":false},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":1,\"#itemsOut\":1,\"#phaseSwitches\":2,\"execTime\":\"15.475µs\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  }
+]
