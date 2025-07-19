@@ -14,9 +14,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="2.1.0" />
+    <meta name="version" content="2.2.0" />
     <meta name="last-updated" content="2025-01-19" />
-    <title>Query Analyzer v2.1.0</title>
+    <title>Query Analyzer v2.2.0</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css" />
     <!-- Include Chart.js -->
@@ -244,8 +244,8 @@
         }
 
         .primary-scan-yes {
-            font-weight: bold;
-            color: red;
+            font-weight: bold !important;
+            color: red !important;
         }
 
         .fatal-state {
@@ -2766,7 +2766,7 @@
                         td.textContent = value;
                     }
 
-                    if (col === "Primary Scan Used" && value === "Yes") {
+                    if (col === "Primary Scan Used" && (value === "Yes" || value === "True" || value === true)) {
                         td.classList.add("primary-scan-yes");
                     }
 
@@ -7708,7 +7708,7 @@
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = '2.1.0';
+        const APP_VERSION = '2.2.0';
         const LAST_UPDATED = '2025-01-19';
 
         function getVersionInfo() {
