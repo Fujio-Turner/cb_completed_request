@@ -483,16 +483,8 @@
         ">
             <button onclick="parseJSON()" aria-label="Parse and analyze JSON data" tabindex="0" role="button">Parse
                 JSON</button>
-            <label style="display: flex; align-items: center; gap: 5px; margin-left: 15px;">
-                <input type="checkbox" id="exclude-system-queries" checked
-                    title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
-                    aria-label="Exclude system queries from analysis">
-                <span style="font-size: 0.9em; user-select: none; cursor: pointer;"
-                    title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces">
-                    Exclude System Queries
-                </span>
-            </label>
-            <div id="progress-container" style="display: none; margin-top: 10px">
+
+            <div id="progress-container" style="display: none; margin: 10px 15px;">
                 <div style="
               background-color: #f0f0f0;
               border-radius: 5px;
@@ -511,11 +503,21 @@
                 left: 50%;
                 top: 50%;
                 transform: translate(-50%, -50%);
-                font-size: 12px;
+                font-size: 16px;
                 font-weight: bold;
               ">0%</span>
                 </div>
             </div>
+                
+            <label style="display: flex; align-items: center; gap: 5px; margin-left: 15px;">
+                <input type="checkbox" id="exclude-system-queries" checked
+                    title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
+                    aria-label="Exclude system queries from analysis">
+                <span style="font-size: 0.9em; user-select: none; cursor: pointer;"
+                    title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces">
+                    Exclude System Queries
+                </span>
+            </label>
             <label for="start-date">From:</label>
             <input type="datetime-local" id="start-date" step="1" title="Start date/time for filtering" />
             <label for="end-date">To:</label>
@@ -919,7 +921,16 @@
         <!-- Index/Query Flow Tab Content -->
         <div id="index-query-flow">
             <div style="height: 100%; position: relative; background: #f8f9fa; border-radius: 8px; overflow: hidden;">
-                <div id="flow-canvas" style="width: 100%; height: 100%; position: relative; overflow: auto;">
+                <!-- Summary counts above the flow chart -->
+                <div id="flow-summary" style="position: relative; z-index: 3; background: #fff; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-weight: bold; color: #333;">
+                        Indexes Used: <span id="index-count">0</span>
+                    </div>
+                    <div style="font-weight: bold; color: #333;">
+                        Queries Executed: <span id="query-count">0</span>
+                    </div>
+                </div>
+                <div id="flow-canvas" style="width: 100%; height: calc(100% - 50px); position: relative; overflow: auto;">
                     <svg id="flow-svg"
                         style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1;"></svg>
                     <div id="flow-elements" style="position: relative; z-index: 2; padding: 20px;"></div>
@@ -1552,10 +1563,11 @@
 
             if (request.plan) {
                 const viewPlanButton = document.createElement("button");
-                viewPlanButton.textContent = "View Detailed Execution Plan";
+                viewPlanButton.textContent = "View Detailed Execution Plan & Indexes/Keys Used";
                 viewPlanButton.style.marginTop = "10px";
                 viewPlanButton.addEventListener("click", () => {
-                    const planTreeHtml = "<ul>" + buildPlanTree(request.plan) + "</ul>";
+                    const indexesAndKeys = extractIndexesAndKeys(request);
+                    const planTreeHtml = buildEnhancedPlanModal(request.plan, indexesAndKeys);
                     document.getElementById("plan-modal-body").innerHTML = planTreeHtml;
                     document.getElementById("plan-modal").style.display = "block";
                 });
@@ -1565,66 +1577,352 @@
             panzoom(flowDiagram, { smoothScroll: false });
         }
 
-        // Build plan tree for modal
+        // Extract indexes and USE KEYS from request
+        function extractIndexesAndKeys(request) {
+            const indexes = new Set();
+            const useKeys = [];
+            let hasUseKeys = false;
+            
+            // Extract indexes from plan
+            if (request.plan) {
+                const operators = getOperators(request.plan);
+                operators.forEach(operator => {
+                    if (operator["#operator"] === "IndexScan" || 
+                        operator["#operator"] === "IndexScan2" || 
+                        operator["#operator"] === "IndexScan3") {
+                        if (operator.index) {
+                            indexes.add(operator.index);
+                        }
+                    }
+                    if (operator["#operator"] === "PrimaryScan") {
+                        indexes.add("#primary");
+                    }
+                });
+            }
+            
+            // Extract USE KEYS from statement
+            const statement = request.preparedText || request.statement || "";
+            if (statement.includes('USE KEYS')) {
+                hasUseKeys = true;
+                
+                // Handle all USE KEYS formats:
+                // USE KEYS(["key1","key2"]) or USE KEYS ["key1","key2"] 
+                // USE KEYS(['key1','key2']) or USE KEYS ['key1','key2']
+                // USE KEYS("key1") or USE KEYS "key1"
+                // USE KEYS('key1') or USE KEYS 'key1'
+                
+                let match;
+                
+                // Extract array format with double quotes: USE KEYS(?)["key1","key2"]
+                const arrayDoubleQuotes = /USE\s+KEYS\s*\(?\s*\[(.*?)\]\s*\)?/gi;
+                while ((match = arrayDoubleQuotes.exec(statement)) !== null) {
+                    // Split by comma and clean up each key, handle both single and double quotes
+                    const keys = match[1].split(',').map(key => {
+                        return key.trim().replace(/^['"]|['"]$/g, ''); // Remove leading/trailing quotes
+                    }).filter(key => key.length > 0);
+                    useKeys.push(...keys);
+                }
+                
+                // Reset regex for single key formats
+                arrayDoubleQuotes.lastIndex = 0;
+                
+                // Extract single key format: USE KEYS(?) "key" or USE KEYS(?) 'key'
+                // This should not match array formats, so we exclude those with brackets
+                const singleKeyRegex = /USE\s+KEYS\s*\(?\s*([^[\],]+?)\s*\)?(?:\s+WHERE|\s*$)/gi;
+                while ((match = singleKeyRegex.exec(statement)) !== null) {
+                    const key = match[1].trim().replace(/^['"]|['"]$/g, ''); // Remove leading/trailing quotes
+                    if (key && !key.includes('[') && !key.includes(']')) {
+                        useKeys.push(key);
+                    }
+                }
+            }
+            
+            return {
+                indexes: Array.from(indexes),
+                useKeys: [...new Set(useKeys)], // Remove duplicates
+                hasUseKeys
+            };
+        }
+        
+        // Build enhanced plan modal with indexes and keys
+        function buildEnhancedPlanModal(plan, indexesAndKeys) {
+            let html = '<div style="margin-bottom: 20px;">';
+            
+            // Indexes section
+            if (indexesAndKeys.indexes.length > 0) {
+                html += '<div style="margin-bottom: 15px;">';
+                html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">';
+                html += '<h3 style="margin: 0; color: #333; font-size: 16px;">📋 Indexes Used:</h3>';
+                const allIndexes = indexesAndKeys.indexes.join(', ');
+                html += `<button onclick="copyToClipboard('${allIndexes.replace(/'/g, "\\'")}', event)" 
+                        style="padding: 4px 12px; font-size: 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Copy All</button>`;
+                html += '</div>';
+                html += '<div style="display: flex; flex-wrap: wrap; gap: 10px;">';
+                indexesAndKeys.indexes.forEach(index => {
+                    html += `<div style="background: #f0f8ff; padding: 5px 10px; border-radius: 4px; border: 1px solid #ddd;">
+                        <code style="font-family: monospace; color: #333;">${index}</code>
+                    </div>`;
+                });
+                html += '</div></div>';
+            }
+            
+            // USE KEYS section
+            if (indexesAndKeys.hasUseKeys) {
+                html += '<div style="margin-bottom: 15px;">';
+                
+                if (indexesAndKeys.useKeys.length > 0) {
+                    // Header with Copy All button
+                    html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">';
+                    html += '<h3 style="margin: 0; color: #333; font-size: 16px;">🔑 USE KEYS:</h3>';
+                    const allKeys = indexesAndKeys.useKeys.join(', ');
+                    html += `<button onclick="copyToClipboard('${allKeys.replace(/'/g, "\\'")}', event)" 
+                            style="padding: 4px 12px; font-size: 12px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Copy All</button>`;
+                    html += '</div>';
+                    
+                    const maxKeysToShow = 15;
+                    const shouldTruncate = indexesAndKeys.useKeys.length > maxKeysToShow;
+                    
+                    // Keys display container
+                    html += '<div id="keys-container" style="display: flex; flex-wrap: wrap; gap: 8px;">';
+                    
+                    // Show initial set of keys
+                    const keysToShow = shouldTruncate ? indexesAndKeys.useKeys.slice(0, maxKeysToShow) : indexesAndKeys.useKeys;
+                    keysToShow.forEach(key => {
+                        html += `<div style="background: #fff3cd; padding: 4px 8px; border-radius: 4px; border: 1px solid #ffeaa7;">
+                            <code style="font-family: monospace; color: #856404; font-size: 12px;">${key}</code>
+                        </div>`;
+                    });
+                    
+                    // Hidden keys (if truncated)
+                    if (shouldTruncate) {
+                        const remainingKeys = indexesAndKeys.useKeys.slice(maxKeysToShow);
+                        remainingKeys.forEach(key => {
+                            html += `<div class="hidden-key" style="display: none; background: #fff3cd; padding: 4px 8px; border-radius: 4px; border: 1px solid #ffeaa7;">
+                                <code style="font-family: monospace; color: #856404; font-size: 12px;">${key}</code>
+                            </div>`;
+                        });
+                    }
+                    
+                    html += '</div>';
+                    
+                    // Show more/hide button
+                    if (shouldTruncate) {
+                        const remainingCount = indexesAndKeys.useKeys.length - maxKeysToShow;
+                        html += `<div style="margin-top: 10px;">`;
+                        html += `<button id="toggle-keys-btn" onclick="toggleUseKeys()" 
+                                style="padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">
+                                Show ${remainingCount} more keys
+                            </button>`;
+                        html += `</div>`;
+                    }
+                    
+                    // Summary info
+                    html += `<div style="margin-top: 8px; font-size: 11px; color: #666; font-style: italic;">
+                        Total: ${indexesAndKeys.useKeys.length} key${indexesAndKeys.useKeys.length !== 1 ? 's' : ''}
+                    </div>`;
+                    
+                } else {
+                    html += '<h3 style="margin: 0 0 10px 0; color: #333; font-size: 16px;">🔑 USE KEYS:</h3>';
+                    html += '<div style="color: #666; font-style: italic;">Keys could not be extracted from the query</div>';
+                }
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            
+            // Execution plan section
+            html += '<div style="border-top: 1px solid #ddd; padding-top: 15px;">';
+            html += '<h3 style="margin: 0 0 10px 0; color: #333; font-size: 16px;">⚙️ Execution Plan:</h3>';
+            html += "<ul>" + buildPlanTree(plan) + "</ul>";
+            html += '</div>';
+            
+            return html;
+        }
+
+        // Get operator icon and color based on type
+        function getOperatorStyle(operatorName) {
+            const styles = {
+                'Authorize': { icon: '🔐', color: '#6f42c1', bg: '#f8f7ff' },
+                'Sequence': { icon: '📋', color: '#495057', bg: '#f8f9fa' },
+                'IndexScan': { icon: '🔍', color: '#007bff', bg: '#e7f3ff' },
+                'IndexScan2': { icon: '🔍', color: '#007bff', bg: '#e7f3ff' },
+                'IndexScan3': { icon: '🔍', color: '#007bff', bg: '#e7f3ff' },
+                'PrimaryScan': { icon: '🔑', color: '#dc3545', bg: '#fff5f5' },
+                'Fetch': { icon: '📥', color: '#28a745', bg: '#f1f8e9' },
+                'Filter': { icon: '🔧', color: '#fd7e14', bg: '#fff4e6' },
+                'InitialGroup': { icon: '📊', color: '#20c997', bg: '#e6fffa' },
+                'IntermediateGroup': { icon: '📈', color: '#20c997', bg: '#e6fffa' },
+                'FinalGroup': { icon: '🎯', color: '#20c997', bg: '#e6fffa' },
+                'InitialProject': { icon: '📋', color: '#6f42c1', bg: '#f8f7ff' },
+                'Stream': { icon: '🌊', color: '#17a2b8', bg: '#e2f7fa' },
+                'Sort': { icon: '🔄', color: '#ffc107', bg: '#fff8e1' },
+                'Limit': { icon: '✂️', color: '#e83e8c', bg: '#fce4ec' },
+                'Offset': { icon: '⏭️', color: '#6c757d', bg: '#f8f9fa' },
+                'Union': { icon: '🔗', color: '#795548', bg: '#f3e5f5' },
+                'Join': { icon: '🤝', color: '#9c27b0', bg: '#f3e5f5' }
+            };
+            
+            return styles[operatorName] || { icon: '⚙️', color: '#6c757d', bg: '#f8f9fa' };
+        }
+
+        // Format time values for better readability
+        function formatTimeValue(timeStr) {
+            if (!timeStr || timeStr === 'N/A') return '<span style="color: #999;">N/A</span>';
+            
+            // Parse time and check if it's a high value (potential bottleneck)
+            const timeMs = parseTime(timeStr);
+            const isBottleneck = timeMs > 60000; // > 1 minute
+            const isWarning = timeMs > 10000; // > 10 seconds
+            
+            let color = '#333';
+            let bgColor = 'transparent';
+            let fontWeight = 'normal';
+            
+            if (isBottleneck) {
+                color = '#dc3545';
+                bgColor = '#fff5f5';
+                fontWeight = 'bold';
+            } else if (isWarning) {
+                color = '#fd7e14';
+                bgColor = '#fff4e6';
+                fontWeight = 'bold';
+            }
+            
+            return `<span style="color: ${color}; background: ${bgColor}; font-weight: ${fontWeight}; padding: 1px 4px; border-radius: 3px;">${timeStr}</span>`;
+        }
+
+        // Format item count with color coding
+        function formatItemCount(count) {
+            if (count === undefined || count === null) return '<span style="color: #999;">N/A</span>';
+            
+            const numCount = typeof count === 'number' ? count : parseInt(count);
+            let color = '#333';
+            let icon = '';
+            
+            if (numCount > 1000000) {
+                color = '#dc3545';
+                icon = '⚠️ ';
+            } else if (numCount > 100000) {
+                color = '#fd7e14';
+                icon = '⚡ ';
+            } else if (numCount > 10000) {
+                color = '#ffc107';
+            }
+            
+            return `<span style="color: ${color};">${icon}${numCount.toLocaleString()}</span>`;
+        }
+
+        // Build plan tree for modal with enhanced formatting
         function buildPlanTree(operator) {
             if (!operator) return "";
-            let html = `<li>${operator["#operator"] || "Unknown Operator"}`;
+            
+            const operatorName = operator["#operator"] || "Unknown Operator";
+            const style = getOperatorStyle(operatorName);
+            
+            let html = `<li style="margin: 8px 0; padding: 12px; border-left: 4px solid ${style.color}; background: ${style.bg}; border-radius: 6px;">`;
+            
+            // Operator header with icon and name
+            html += `<div style="display: flex; align-items: center; margin-bottom: 8px;">`;
+            html += `<span style="font-size: 18px; margin-right: 8px;">${style.icon}</span>`;
+            html += `<strong style="color: ${style.color}; font-size: 16px;">${operatorName}</strong>`;
+            html += `</div>`;
+            
+            // Statistics section
             if (operator["#stats"]) {
                 const stats = operator["#stats"];
-                html += ` - itemsIn: ${stats["#itemsIn"] !== undefined ? stats["#itemsIn"] : "N/A"
-                    }, itemsOut: ${stats["#itemsOut"] !== undefined ? stats["#itemsOut"] : "N/A"
-                    }, execTime: ${stats.execTime || "N/A"}, kernTime: ${stats.kernTime || "N/A"
-                    }`;
+                html += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin: 8px 0; font-size: 13px;">`;
+                
+                // Items In/Out
+                html += `<div style="background: white; padding: 6px 10px; border-radius: 4px; border: 1px solid #e9ecef;">`;
+                html += `<span style="color: #6c757d; font-weight: 500;">📥 Items In:</span> ${formatItemCount(stats["#itemsIn"])}`;
+                html += `</div>`;
+                
+                html += `<div style="background: white; padding: 6px 10px; border-radius: 4px; border: 1px solid #e9ecef;">`;
+                html += `<span style="color: #6c757d; font-weight: 500;">📤 Items Out:</span> ${formatItemCount(stats["#itemsOut"])}`;
+                html += `</div>`;
+                
+                // Execution Time
+                html += `<div style="background: white; padding: 6px 10px; border-radius: 4px; border: 1px solid #e9ecef;">`;
+                html += `<span style="color: #6c757d; font-weight: 500;">⏱️ Exec Time:</span> ${formatTimeValue(stats.execTime)}`;
+                html += `</div>`;
+                
+                // Kernel Time
+                html += `<div style="background: white; padding: 6px 10px; border-radius: 4px; border: 1px solid #e9ecef;">`;
+                html += `<span style="color: #6c757d; font-weight: 500;">🔧 Kern Time:</span> ${formatTimeValue(stats.kernTime)}`;
+                html += `</div>`;
+                
+                html += `</div>`;
+                
+                // Efficiency indicator
+                const itemsIn = stats["#itemsIn"];
+                const itemsOut = stats["#itemsOut"];
+                if (itemsIn !== undefined && itemsOut !== undefined && itemsIn > 0) {
+                    const efficiency = (itemsOut / itemsIn) * 100;
+                    let efficiencyColor = '#28a745';
+                    let efficiencyIcon = '✅';
+                    
+                    if (efficiency < 50) {
+                        efficiencyColor = '#dc3545';
+                        efficiencyIcon = '⚠️';
+                    } else if (efficiency < 80) {
+                        efficiencyColor = '#ffc107';
+                        efficiencyIcon = '⚡';
+                    }
+                    
+                    html += `<div style="margin-top: 6px; font-size: 12px;">`;
+                    html += `<span style="color: ${efficiencyColor};">${efficiencyIcon} Efficiency: ${efficiency.toFixed(1)}%</span>`;
+                    html += `</div>`;
+                }
             }
+            
+            // Child operations
+            const childContainerStyle = 'margin-top: 10px; margin-left: 20px; border-left: 2px dashed #dee2e6; padding-left: 15px;';
+            
             if (operator["~child"]) {
-                html += "<ul>" + buildPlanTree(operator["~child"]) + "</ul>";
+                html += `<ul style="${childContainerStyle}">` + buildPlanTree(operator["~child"]) + "</ul>";
             } else if (operator["~children"]) {
-                html += "<ul>";
+                html += `<ul style="${childContainerStyle}">`;
                 operator["~children"].forEach((child) => {
                     html += buildPlanTree(child);
                 });
                 html += "</ul>";
             }
-            // Check for input/inputs
+            
+            // Handle other child properties
             if (operator.input) {
-                html += "<ul>" + buildPlanTree(operator.input) + "</ul>";
+                html += `<ul style="${childContainerStyle}">` + buildPlanTree(operator.input) + "</ul>";
             }
             if (operator.inputs && Array.isArray(operator.inputs)) {
-                html += "<ul>";
+                html += `<ul style="${childContainerStyle}">`;
                 operator.inputs.forEach((input) => {
                     html += buildPlanTree(input);
                 });
                 html += "</ul>";
             }
-            // Check for left/right (binary operations)
             if (operator.left) {
-                html += "<ul>" + buildPlanTree(operator.left) + "</ul>";
+                html += `<ul style="${childContainerStyle}">` + buildPlanTree(operator.left) + "</ul>";
             }
             if (operator.right) {
-                html += "<ul>" + buildPlanTree(operator.right) + "</ul>";
+                html += `<ul style="${childContainerStyle}">` + buildPlanTree(operator.right) + "</ul>";
             }
-            // Check for first and second properties (used in set operations like ExceptAll)
             if (operator.first) {
-                html += "<ul>" + buildPlanTree(operator.first) + "</ul>";
+                html += `<ul style="${childContainerStyle}">` + buildPlanTree(operator.first) + "</ul>";
             }
             if (operator.second) {
-                html += "<ul>" + buildPlanTree(operator.second) + "</ul>";
+                html += `<ul style="${childContainerStyle}">` + buildPlanTree(operator.second) + "</ul>";
             }
-            // Check for scans array (used in UnionScan, IntersectScan, etc.)
             if (operator.scans && Array.isArray(operator.scans)) {
-                html += "<ul>";
+                html += `<ul style="${childContainerStyle}">`;
                 operator.scans.forEach((scan) => {
                     html += buildPlanTree(scan);
                 });
                 html += "</ul>";
             }
-            // Check for scan property (used in DistinctScan)
             if (operator.scan) {
-                html += "<ul>" + buildPlanTree(operator.scan) + "</ul>";
+                html += `<ul style="${childContainerStyle}">` + buildPlanTree(operator.scan) + "</ul>";
             }
-            // Check for subqueries array
             if (operator["~subqueries"] && Array.isArray(operator["~subqueries"])) {
-                html += "<ul>";
+                html += `<ul style="${childContainerStyle}">`;
                 operator["~subqueries"].forEach((subquery) => {
                     if (subquery.executionTimings) {
                         html += buildPlanTree(subquery.executionTimings);
@@ -1632,6 +1930,7 @@
                 });
                 html += "</ul>";
             }
+            
             html += "</li>";
             return html;
         }
@@ -6963,6 +7262,12 @@
                 return;
             }
 
+            // Update counts in summary
+            const indexCountEl = document.getElementById('index-count');
+            const queryCountEl = document.getElementById('query-count');
+            if (indexCountEl) indexCountEl.textContent = indexes.length;
+            if (queryCountEl) queryCountEl.textContent = queries.length;
+
             // Clear container
             flowElements.innerHTML = '';
 
@@ -7033,6 +7338,12 @@
             div.dataset.indexName = index.name;
 
             const stats = calculateIndexStats(index);
+            
+            // Check if avg scan time >= 10 seconds for red/bold styling
+            const scanTimes = index.scanTimes || [];
+            const avgScanTimeMs = scanTimes.length ? scanTimes.reduce((a, b) => a + b, 0) / scanTimes.length : 0;
+            const avgScanTimeSeconds = avgScanTimeMs / 1000;
+            const avgScanTimeStyle = avgScanTimeSeconds >= 10 ? 'font-weight: bold; color: red;' : '';
 
             div.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -7041,7 +7352,7 @@
           </div>
           <div style="font-size: 12px; color: #666; margin: 4px 0;">Usage: ${index.totalUsage}</div>
           <div class="index-stats">
-            Avg Scan Time: ${stats.avgScanTime}<br>
+            Avg Scan Time: <span style="${avgScanTimeStyle}">${stats.avgScanTime}</span><br>
             Avg Items Scanned: ${stats.avgItemsScanned}<br>
             Avg Items Fetched: ${stats.avgItemsFetched}<br>
             Min/Max Scan Time: ${stats.minScanTime} / ${stats.maxScanTime}<br>
@@ -7066,10 +7377,18 @@
             div.dataset.queryStatement = query.normalizedStatement;
 
             const avgDuration = query.totalDuration / query.count;
+            const avgDurationSeconds = avgDuration / 1000;
+            
+            // Check for USE KEYS in the statement
+            const hasUseKeys = query.statement.includes('USE KEYS');
+            const useKeysIndicator = hasUseKeys ? ' <span style="color: orange; font-weight: bold;">(USE KEYS)</span>' : '';
+            
+            // Check if avg duration >= 60 seconds for red/bold styling
+            const avgDurationStyle = avgDurationSeconds >= 60 ? 'font-weight: bold; color: red;' : '';
 
             div.innerHTML = `
-          <div style="font-weight: bold; font-size: 14px; color: #333;">Executions: ${query.count}</div>
-          <div style="font-size: 12px; color: #666; margin: 4px 0;">Avg Duration: ${formatTime(avgDuration)}</div>
+          <div style="font-weight: bold; font-size: 14px; color: #333;">Executions: ${query.count}${useKeysIndicator}</div>
+          <div style="font-size: 12px; color: #666; margin: 4px 0;">Avg Duration: <span style="${avgDurationStyle}">${formatTime(avgDuration)}</span></div>
           <div class="query-text" id="query-text-${query.normalizedStatement.replace(/[^a-zA-Z0-9]/g, '')}">
             ${query.statement}
           </div>
@@ -7348,6 +7667,42 @@
                     button.style.backgroundColor = '#f0f0f0';
                 }, 1000);
             });
+        }
+
+        // Copy to clipboard function for indexes and keys
+        function copyToClipboard(text, event) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Brief visual feedback
+                const button = event.target;
+                const originalText = button.textContent;
+                const originalBg = button.style.backgroundColor;
+                button.textContent = 'Copied!';
+                button.style.backgroundColor = '#28a745';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.backgroundColor = originalBg;
+                }, 1000);
+            });
+        }
+
+        // Toggle USE KEYS visibility
+        function toggleUseKeys() {
+            const hiddenKeys = document.querySelectorAll('.hidden-key');
+            const toggleBtn = document.getElementById('toggle-keys-btn');
+            
+            if (hiddenKeys.length > 0) {
+                const isHidden = hiddenKeys[0].style.display === 'none';
+                
+                if (isHidden) {
+                    // Show hidden keys
+                    hiddenKeys.forEach(key => key.style.display = 'block');
+                    toggleBtn.textContent = 'Hide keys';
+                } else {
+                    // Hide keys
+                    hiddenKeys.forEach(key => key.style.display = 'none');
+                    toggleBtn.textContent = `Show ${hiddenKeys.length} more keys`;
+                }
+            }
         }
 
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
