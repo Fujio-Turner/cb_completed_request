@@ -2,7 +2,7 @@
 <html lang="en">
 <!--
     Couchbase Query Analyzer
-    Version: 3.0.1
+    Version: 3.1.0
     Last Updated: 2025-01-20
     
     🤖 AI AGENT NOTE: When making changes to this file, please update the version number above.
@@ -14,9 +14,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.0.1" />
+    <meta name="version" content="3.1.0" />
     <meta name="last-updated" content="2025-01-20" />
-    <title>Query Analyzer v3.0.1</title>
+    <title>Query Analyzer v3.1.0</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css" />
     <!-- Include Chart.js -->
@@ -156,14 +156,14 @@
 <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v3.0.1
+        v3.1.0
     </div>
 
     <!-- Input Section (outside tabs) -->
     <div id="input-section">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
             <textarea id="json-input"
-                placeholder="Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests;"
+                placeholder="Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests LIMIT 4000;"
                 aria-label="JSON input field for Couchbase query data" role="textbox"></textarea>
             <textarea id="indexJsonInput"
                 placeholder="Click the 'Indexes' tab below to get the SQL query to run. Paste the results here..."
@@ -276,7 +276,7 @@
                         <canvas id="elapsed-time-chart"></canvas>
                     </div>
                 </div>
-                <!-- Primary Scan Used Pie Chart -->
+                <!-- Primary Index(es) Scan Used Chart -->
                 <div style="
               background: white;
               padding: 15px;
@@ -291,10 +291,54 @@
                 text-align: center;
                 height: 30px;
               ">
-                        Primary Scan Used
+                        Primary Indexes Used
                     </h3>
-                    <div style="height: 250px; position: relative">
-                        <canvas id="primary-scan-chart"></canvas>
+                    <div style="display: flex; height: 250px; gap: 15px;">
+                        <div style="flex: 1; position: relative">
+                            <canvas id="primary-scan-chart"></canvas>
+                        </div>
+                        <div id="primary-scan-warning" style="
+                            flex: 0 0 200px;
+                            background: #fff3cd;
+                            border: 2px solid #ffeaa7;
+                            border-radius: 8px;
+                            padding: 15px;
+                            display: none;
+                            flex-direction: column;
+                            justify-content: center;
+                        ">
+                            <div style="
+                                text-align: center;
+                                color: #ff6b35;
+                                font-weight: bold;
+                                font-size: 16px;
+                                margin-bottom: 10px;
+                            ">⚠️ WARNING ⚠️</div>
+                            <div style="
+                                color: #333;
+                                font-size: 13px;
+                                line-height: 1.4;
+                                text-align: center;
+                            ">
+                                Primary index scans in production can cause full bucket scans leading to 
+                                <span style="color: #dc3545; font-weight: bold;">severe performance issues</span>
+                            </div>
+                            <div style="
+                                margin-top: 10px;
+                                text-align: center;
+                            ">
+                                <a href="https://www.couchbase.com/blog/primary-uses-for-couchbase-primary-index/" 
+                                   target="_blank" 
+                                   style="
+                                       color: #007bff;
+                                       text-decoration: none;
+                                       font-size: 12px;
+                                       font-weight: bold;
+                                   ">
+                                    📖 Learn More
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -641,8 +685,14 @@
         <div id="indexes">
             <!-- Filter Controls -->
             <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
-                <!-- First row: Bucket, Scope, Collection, Sort -->
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px;">
+                <!-- First row: Host, Bucket, Scope, Collection, Sort -->
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label for="hostFilter" style="font-weight: bold; display: block; margin-bottom: 5px;">Host:</label>
+                        <select id="hostFilter" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            <option value="(ALL)">(ALL)</option>
+                        </select>
+                    </div>
                     <div>
                         <label for="bucketFilter" style="font-weight: bold; display: block; margin-bottom: 5px;">Bucket:</label>
                         <select id="bucketFilter" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
@@ -665,6 +715,7 @@
                         <label for="sortBy" style="font-weight: bold; display: block; margin-bottom: 5px;">Sort By:</label>
                         <select id="sortBy" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                             <option value="Name">Name</option>
+                            <option value="Hosts">Hosts</option>
                             <option value="Bucket">Bucket</option>
                             <option value="LastScanned">Last Scanned</option>
                         </select>
@@ -730,22 +781,24 @@
                     </p>
                     <div class="sql-query-box">
                         <button class="sql-copy-btn" onclick="copyIndexQuery(event)">Copy Query</button>
-                        <pre>SELECT 
- s.name,
- s.id,
- s.metadata,
- s.state,
- s.num_replica,
-CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
-FROM system:indexes AS s
-LET bid = CONCAT("", s.bucket_id, ""),
-    sid = CONCAT("", s.scope_id, ""),
-    kid = CONCAT("", s.keyspace_id, ""),
-    k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
-    ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
-    w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
-    p = CASE WHEN s.\`partition\` IS NOT NULL THEN " PARTITION BY " || s.\`partition\` ELSE "" END
-;</pre>
+                        <pre>
+                          SELECT 
+                            s.name,
+                            s.id,
+                            s.metadata,
+                            s.state,
+                            s.num_replica,
+                            s.datastore_id,
+                            CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+                            FROM system:indexes AS s
+                            LET bid = CONCAT("", s.bucket_id, ""),
+                                sid = CONCAT("", s.scope_id, ""),
+                                kid = CONCAT("", s.keyspace_id, ""),
+                                k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
+                                ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
+                                w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
+                                p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;
+                      </pre>
                     </div>
                     <p style="color: #666; font-size: 13px; margin-top: 15px;">
                         <strong>Steps:</strong><br>
@@ -5468,7 +5521,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
             return false;
         }
 
-        // Primary Scan Used Pie Chart
+        // Primary Scan Used Donut Chart
         function generatePrimaryScanChart(requests) {
             const scanCounts = { Yes: 0, No: 0 };
 
@@ -5483,6 +5536,14 @@ LET bid = CONCAT("", s.bucket_id, ""),
             const noPercent =
                 total > 0 ? ((scanCounts.No / total) * 100).toFixed(1) : 0;
 
+            // Show/hide warning div based on whether primary scans are detected
+            const warningDiv = document.getElementById("primary-scan-warning");
+            if (scanCounts.Yes > 0) {
+                warningDiv.style.display = "flex";
+            } else {
+                warningDiv.style.display = "none";
+            }
+
             const ctx = document
                 .getElementById("primary-scan-chart")
                 .getContext("2d");
@@ -5491,20 +5552,22 @@ LET bid = CONCAT("", s.bucket_id, ""),
             }
 
             window.primaryScanChart = new Chart(ctx, {
-                type: "pie",
+                type: "doughnut",
                 data: {
                     labels: ["Yes", "No"],
                     datasets: [
                         {
                             data: [scanCounts.Yes, scanCounts.No],
-                            backgroundColor: ["#ff6384", "#36a2eb"],
-                            borderWidth: 1,
+                            backgroundColor: ["#dc3545", "#f8f9fa"],
+                            borderColor: ["#dc3545", "#dee2e6"],
+                            borderWidth: 2,
                         },
                     ],
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    cutout: "60%",
                     plugins: {
                         legend: {
                             position: "bottom",
@@ -5529,7 +5592,9 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         },
                         datalabels: {
                             display: true,
-                            color: "white",
+                            color: function(context) {
+                                return context.dataIndex === 0 ? "white" : "#6c757d";
+                            },
                             font: {
                                 weight: "bold",
                                 size: 14,
@@ -5547,6 +5612,8 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         beforeDraw: function (chart) {
                             const ctx = chart.ctx;
                             ctx.save();
+                            
+                            // Draw percentage labels on segments
                             chart.data.datasets[0].data.forEach((value, index) => {
                                 const meta = chart.getDatasetMeta(0);
                                 const arc = meta.data[index];
@@ -5554,7 +5621,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                                     total > 0 ? ((value / total) * 100).toFixed(1) : 0;
 
                                 if (value > 0) {
-                                    ctx.fillStyle = "white";
+                                    ctx.fillStyle = index === 0 ? "white" : "#6c757d";
                                     ctx.font = "bold 14px Arial";
                                     ctx.textAlign = "center";
                                     ctx.textBaseline = "middle";
@@ -7619,7 +7686,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = '3.0.1';
+        const APP_VERSION = '3.1.0';
         const LAST_UPDATED = '2025-01-20';
 
         function getVersionInfo() {
@@ -7860,6 +7927,17 @@ LET bid = CONCAT("", s.bucket_id, ""),
             }
         }
 
+        // Extract host from datastore_id
+        function parseHost(datastoreId) {
+            try {
+                const url = new URL(datastoreId);
+                return url.hostname + ':' + url.port;
+            } catch (error) {
+                // Fallback if URL parsing fails
+                return datastoreId.replace(/^https?:\/\//, '').replace(/\/$/, '');
+            }
+        }
+
         // Extract bucket, scope, collection from indexString
         function parseIndexTarget(indexString) {
             const match = indexString.match(/ON\s+([^\s(;]+)/i);
@@ -7882,23 +7960,32 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
         // Update filter dropdowns with available options
         function updateFilterDropdowns() {
+            const hosts = new Set();
             const buckets = new Set();
 
             indexData.forEach(index => {
+                // Extract host from datastore_id
+                if (index.datastore_id) {
+                    const host = parseHost(index.datastore_id);
+                    hosts.add(host);
+                }
+                
                 if (index.indexString) {
                     const target = parseIndexTarget(index.indexString);
                     buckets.add(target.bucket);
                 }
             });
 
+            updateDropdown('hostFilter', Array.from(hosts).sort());
             updateDropdown('bucketFilter', Array.from(buckets).sort());
             
-            // Update scopes and collections based on selected bucket
+            // Update scopes and collections based on selected filters
             updateCascadingDropdowns();
         }
 
-        // Update scopes and collections based on selected bucket/scope
+        // Update scopes and collections based on selected host/bucket/scope
         function updateCascadingDropdowns() {
+            const selectedHost = document.getElementById('hostFilter').value;
             const selectedBucket = document.getElementById('bucketFilter').value;
             const selectedScope = document.getElementById('scopeFilter').value;
             
@@ -7906,7 +7993,11 @@ LET bid = CONCAT("", s.bucket_id, ""),
             const collections = new Set();
 
             indexData.forEach(index => {
-                if (index.indexString) {
+                // Check host filter first
+                const host = index.datastore_id ? parseHost(index.datastore_id) : '';
+                const passesHostFilter = selectedHost === '(ALL)' || host === selectedHost;
+                
+                if (passesHostFilter && index.indexString) {
                     const target = parseIndexTarget(index.indexString);
                     
                     // If bucket is selected, only show scopes for that bucket
@@ -7948,6 +8039,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
         // Apply current filter settings
         function applyIndexFilters() {
+            const hostFilter = document.getElementById('hostFilter').value;
             const bucketFilter = document.getElementById('bucketFilter').value;
             const scopeFilter = document.getElementById('scopeFilter').value;
             const collectionFilter = document.getElementById('collectionFilter').value;
@@ -7963,9 +8055,11 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 if (!index.indexString) return false;
 
                 const target = parseIndexTarget(index.indexString);
+                const host = index.datastore_id ? parseHost(index.datastore_id) : '';
 
                 // Basic dropdown filters
-                const passesDropdownFilters = (bucketFilter === '(ALL)' || target.bucket === bucketFilter) &&
+                const passesDropdownFilters = (hostFilter === '(ALL)' || host === hostFilter) &&
+                    (bucketFilter === '(ALL)' || target.bucket === bucketFilter) &&
                     (scopeFilter === '(ALL)' || target.scope === scopeFilter) &&
                     (collectionFilter === '(ALL)' || target.collection === collectionFilter);
 
@@ -8086,7 +8180,24 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
             let html = '';
 
-            if (sortBy === 'Bucket') {
+            if (sortBy === 'Hosts') {
+                // Group by host
+                const grouped = {};
+                filteredIndexData.forEach(index => {
+                    const host = index.datastore_id ? parseHost(index.datastore_id) : 'unknown';
+                    if (!grouped[host]) grouped[host] = [];
+                    grouped[host].push(index);
+                });
+
+                Object.keys(grouped).sort().forEach(host => {
+                    html += `<div class="bucket-group">`;
+                    html += `<h3 style="font-size: 24px;">${host}</h3>`;
+                    grouped[host].sort((a, b) => a.name.localeCompare(b.name)).forEach(index => {
+                        html += createIndexHTML(index);
+                    });
+                    html += `</div>`;
+                });
+            } else if (sortBy === 'Bucket') {
                 // Group by bucket
                 const grouped = {};
                 filteredIndexData.forEach(index => {
@@ -8133,6 +8244,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
         function createIndexHTML(index) {
             const target = parseIndexTarget(index.indexString);
+            const host = index.datastore_id ? parseHost(index.datastore_id) : 'unknown';
             const isPrimary = index.name.includes('primary') || index.name.includes('#primary');
             const lastScan = index.metadata?.last_scan_time || 'Never';
             const replica = index.metadata?.num_replica || 0;
@@ -8168,7 +8280,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     <h4>${index.name} ${usedBadge}</h4>
                     <div class="index-details">
                         <strong>Target:</strong> ${target.bucket}.${target.scope}.${target.collection}<br>
-                        <strong>State:</strong> ${createStateBadge(state)} | <strong>Replicas:</strong> <span class="${replicaClass}">${replica}</span> | <strong>Last Scan:</strong> ${lastScanFormatted} ${timeSince}
+                        <strong>Host:</strong> ${host} | <strong>State:</strong> ${createStateBadge(state)} | <strong>Replicas:</strong> <span class="${replicaClass}">${replica}</span> | <strong>Last Scan:</strong> ${lastScanFormatted} ${timeSince}
                     </div>
                     <div class="index-statement">
                         ${index.indexString}
@@ -8230,6 +8342,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
         // Initialize index analysis functionality
         function initializeIndexAnalysis() {
             const indexJsonInput = document.getElementById('indexJsonInput');
+            const hostFilter = document.getElementById('hostFilter');
             const bucketFilter = document.getElementById('bucketFilter');
             const scopeFilter = document.getElementById('scopeFilter');
             const collectionFilter = document.getElementById('collectionFilter');
@@ -8237,6 +8350,16 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
             // Add event listeners
             if (indexJsonInput) indexJsonInput.addEventListener('input', parseIndexJSON);
+            if (hostFilter) {
+                hostFilter.addEventListener('change', () => {
+                    // Reset bucket, scope and collection when host changes
+                    document.getElementById('bucketFilter').value = '(ALL)';
+                    document.getElementById('scopeFilter').value = '(ALL)';
+                    document.getElementById('collectionFilter').value = '(ALL)';
+                    updateCascadingDropdowns();
+                    applyIndexFilters();
+                });
+            }
             if (bucketFilter) {
                 bucketFilter.addEventListener('change', () => {
                     // Reset scope and collection when bucket changes
