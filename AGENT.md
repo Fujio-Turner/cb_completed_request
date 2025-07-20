@@ -1,18 +1,18 @@
-# Couchbase Slow Query Analysis Tool v2.2.0
+# Couchbase Slow Query Analysis Tool v3.0.0
 
 ## Version Management
-- **Current Version**: 2.2.0 (Last Updated: 2025-01-19)
+- **Current Version**: 3.0.0 (Last Updated: 2025-01-20)
 - **Title Updates**: When updating versions, remember to update:
-  - `<title>Query Analyzer v2.2.0</title>` in index.html header
-  - `<meta name="version" content="2.2.0" />` in index.html meta tags
-  - `APP_VERSION = '2.2.0';` in JavaScript constants
+  - `<title>Query Analyzer v3.0.0</title>` in index.html header
+  - `<meta name="version" content="3.0.0" />` in index.html meta tags
+  - `APP_VERSION = '3.0.0';` in JavaScript constants
   - Version number in this AGENT.md file header
 
 ## Architecture
 - Single-page HTML application for analyzing Couchbase query performance
 - Frontend-only tool with no build process - just open `index.html` in browser
 - Uses jQuery UI for tabs, Chart.js for visualizations, and Panzoom for flow diagrams
-- Five main sections: Dashboard, Timeline, Analysis (query aggregation), Every Query (detailed view), and Index/Query Flow
+- Six main sections: Dashboard, Timeline, Analysis (query aggregation), Every Query (detailed view), Index/Query Flow, and Indexes (index management)
 
 ## How to Run
 - No build commands - static HTML file

@@ -1,6 +1,6 @@
-# Couchbase Slow Query Analysis Tool
+# Couchbase Slow Query Analysis Tool v3.0.0
 
-A web-based tool for analyzing Couchbase query performance and execution plans. Visualize query patterns, identify bottlenecks, and optimize database performance with advanced index usage tracking and execution plan analysis.
+A comprehensive web-based tool for analyzing Couchbase query performance and execution plans. Visualize query patterns, identify bottlenecks, and optimize database performance with advanced index usage tracking, execution plan analysis, and dedicated index management features.
 
 ##### (Capella Compatible)
 
@@ -19,6 +19,19 @@ Run this query in Couchbase Query Workbench or cbq:
 SELECT *, meta().plan FROM system:completed_requests LIMIT 4000;
 ```
 [More Query Options](sql_queries.md)
+
+**Optional - For Enhanced Index Analysis:**
+To use the new Indexes tab features, also collect index metadata:
+
+```sql
+SELECT name, is_primary, bucket_id, scope_id, keyspace_id, 
+       index_key, condition, state, using, partition,
+       OBJECT_ADD(metadata, "indexString", bucket_id || "." || scope_id || "." || keyspace_id) as metadata,
+       ks = CASE WHEN is_primary THEN "" ELSE "(" || CONCAT2(",", index_key) || ")" END
+FROM system:indexes 
+WHERE state = "online"
+ORDER BY bucket_id, scope_id, keyspace_id, name;
+```
 
 **Notes**: 
 This could return back a JSON of about 36MB~ish. Anything bigger will probably crash the browser. <i>Firefox</i> seems to be the faster browser.
@@ -40,7 +53,7 @@ Select ALL & Copy the full JSON results and paste it into the tool's input area 
 
 ## Features
 
-### **Five Analysis Tabs**:
+### **Six Analysis Tabs**:
 
 #### **1. Dashboard Tab**
 - **Query Duration Distribution** bar chart showing performance patterns
@@ -102,7 +115,7 @@ Select ALL & Copy the full JSON results and paste it into the tool's input area 
   - Memory usage tracking from root `usedMemory` field
   - CPU time extraction from root `cpuTime` field
 
-#### **5. Index Query Flow Tab** (NEW)
+#### **5. Index Query Flow Tab**
 - **Visual Index-Query Relationships**:
   - Interactive flow diagram connecting indexes to queries that use them
   - Index usage statistics with scan counts and execution timings
@@ -118,6 +131,28 @@ Select ALL & Copy the full JSON results and paste it into the tool's input area 
   - Query pattern optimization opportunities
   - Index usage frequency tracking
   - Cross-query index sharing analysis
+
+#### **6. Indexes Tab** (NEW in v3.0.0)
+- **Comprehensive Index Management**:
+  - Complete index catalog with metadata (bucket, scope, collection, state, replicas)
+  - Real-time index usage tracking with "Used" badges for indexes found in query data
+  - Advanced filtering options: bucket, scope, collection dropdown filters
+  - Specialized filters: Primary Only, Used Only, No Replicas Only, Never Scanned Only
+  - Dynamic statistics panel showing index counts and distribution
+- **Index Data Input**:
+  - Dedicated input area for index JSON data from `system:indexes`
+  - Automatic parsing and validation of index metadata
+  - Cascading dropdown filters that update based on available data
+  - Instructions and SQL query helper for easy data collection
+- **Smart Index Consolidation**:
+  - Automatic consolidation of `#primary` references with actual primary index names
+  - Eliminates duplicate entries in index usage counts
+  - Unified display showing only actual index names (e.g., `def_primary` instead of both `#primary` and `def_primary`)
+- **Enhanced Query-Index Matching**:
+  - Cross-references query execution plans with index catalog
+  - Identifies which indexes are actively used vs. never scanned
+  - Performance correlation between index design and query execution
+  - Primary index usage optimization recommendations
 
 ### **Core Performance Features**:
 

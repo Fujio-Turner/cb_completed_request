@@ -44,8 +44,5 @@ LET
   k = NVL2(bid, CONCAT2('.', bid, sid, kid), kid),
   ks = CASE WHEN s.is_primary THEN '' ELSE '(' || CONCAT2(',', s.index_key) || ') ' END,
   w = CASE WHEN s.condition IS NOT NULL THEN ' WHERE ' || REPLACE(s.condition, '"', '''') ELSE '' END,
-  p = CASE WHEN s.`partition` IS NOT NULL THEN ' PARTITION BY ' || s.`partition` ELSE '' END
-WHERE 
-  s.namespace_id = 'default' 
-  AND s.`using` = 'gsi';
+  p = CASE WHEN s.`partition` IS NOT NULL THEN ' PARTITION BY ' || s.`partition` ELSE '' END;
 ```

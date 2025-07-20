@@ -38,5 +38,65 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-13T00:35:07.376Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.06µs\",\"servTime\":\"530.491µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:yama.chats.usersChats\",\"Priv\":12,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"3.438µs\"},\"~children\":[{\"#operator\":\"CreateIndex\",\"#stats\":{\"#itemsOut\":1,\"#phaseSwitches\":3,\"execTime\":\"879ns\",\"servTime\":\"2.936414647s\"},\"bucket\":\"yama\",\"ifNotExists\":false,\"index\":\"chatHistory_v1\",\"keys\":[{\"expr\":\"`userId`\"},{\"desc\":true,\"expr\":\"((`audit`.`up`).`dt`)\"},{\"expr\":\"`bookmark`\"},{\"expr\":\"`chatName`\"}],\"keyspace\":\"usersChats\",\"namespace\":\"default\",\"scope\":\"chats\",\"using\":\"default\",\"vector\":false},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":1,\"#itemsOut\":1,\"#phaseSwitches\":2,\"execTime\":\"15.475µs\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+
+    {
+    "completed_requests": {
+      "clientContextID": "d65a033c-2b7b-44e4-b4b5-5c667f5c6768",
+      "cpuTime": "1.093931508s",
+      "elapsedTime": "1.074099791s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$email": "dude@aol.com",
+        "$pass": "$2b$129$dLGeRftThsbbalxhqexv52tXf20sjecMo8lY8Lgg3i1aou89eaoaegbjn83uevkMqN0S7xzcFxfrse"
+      },
+      "phaseCounts": {
+        "fetch": 31591,
+        "primaryScan": 31591,
+        "primaryScan.GSI": 31591,
+        "sort": 31591
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "fetch": 1,
+        "primaryScan": 1,
+        "primaryScan.GSI": 1,
+        "project": 1,
+        "sort": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "6.876µs",
+        "fetch": "180.144141ms",
+        "instantiate": "47.625µs",
+        "parse": "457.375µs",
+        "plan": "251.875µs",
+        "plan.index.metadata": "16.584µs",
+        "plan.keyspace.metadata": "1.126µs",
+        "primaryScan": "29.869949ms",
+        "primaryScan.GSI": "29.869949ms",
+        "project": "97.112972ms",
+        "run": "1.073235041s",
+        "sort": "123.826422ms",
+        "stream": "824.325018ms"
+      },
+      "remoteAddr": "127.0.0.1:63595",
+      "requestId": "0cbbf859-b5fa-49aa-98c0-6899c7f89b31",
+      "requestTime": "2025-07-19T22:14:27.682-05:00",
+      "resultCount": 31591,
+      "resultSize": 102681004,
+      "scanConsistency": "unbounded",
+      "serviceTime": "1.074012375s",
+      "state": "completed",
+      "statement": "SELECT *,meta() FROM `travel-sample` ORDER BY type",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15",
+      "users": "builtin:Administrator",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\n\t    \"#operator\": \"Authorize\",\n\t    \"#planPreparedTime\": \"2025-07-19T22:14:27.682-05:00\",\n\t    \"#stats\": {\n\t        \"#phaseSwitches\": 4,\n\t        \"execTime\": \"1.001µs\",\n\t        \"servTime\": \"5.875µs\"\n\t    },\n\t    \"privileges\": {\n\t        \"List\": [\n\t            {\n\t                \"Target\": \"default:travel-sample\",\n\t                \"Priv\": 7,\n\t                \"Props\": 0\n\t            }\n\t        ]\n\t    },\n\t    \"~child\": {\n\t        \"#operator\": \"Sequence\",\n\t        \"#stats\": {\n\t            \"#phaseSwitches\": 2,\n\t            \"execTime\": \"9.5µs\"\n\t        },\n\t        \"~children\": [\n\t            {\n\t                \"#operator\": \"PrimaryScan3\",\n\t                \"#stats\": {\n\t                    \"#heartbeatYields\": 1,\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 126367,\n\t                    \"execTime\": \"18.441287ms\",\n\t                    \"kernTime\": \"197.559967ms\",\n\t                    \"servTime\": \"11.428662ms\"\n\t                },\n\t                \"index\": \"def_primary\",\n\t                \"index_projection\": {\n\t                    \"primary_key\": true\n\t                },\n\t                \"keyspace\": \"travel-sample\",\n\t                \"namespace\": \"default\",\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 5402.279801258844,\n\t                    \"fr_cost\": 12.170627071041082,\n\t                    \"size\": 11\n\t                },\n\t                \"using\": \"gsi\"\n\t            },\n\t            {\n\t                \"#operator\": \"Fetch\",\n\t                \"#stats\": {\n\t                    \"#heartbeatYields\": 2,\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 126500,\n\t                    \"execTime\": \"30.215308ms\",\n\t                    \"kernTime\": \"52.428317ms\",\n\t                    \"servTime\": \"149.928833ms\"\n\t                },\n\t                \"keyspace\": \"travel-sample\",\n\t                \"namespace\": \"default\",\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 46269.39474997121,\n\t                    \"fr_cost\": 25.46387878667884,\n\t                    \"size\": 669\n\t                }\n\t            },\n\t            {\n\t                \"#operator\": \"InitialProject\",\n\t                \"#stats\": {\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 126368,\n\t                    \"execTime\": \"97.112972ms\",\n\t                    \"kernTime\": \"138.44757ms\"\n\t                },\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 47903.599347919706,\n\t                    \"fr_cost\": 25.51560885530435,\n\t                    \"size\": 669\n\t                },\n\t                \"preserve_order\": true,\n\t                \"result_terms\": [\n\t                    {\n\t                        \"expr\": \"self\",\n\t                        \"star\": true\n\t                    },\n\t                    {\n\t                        \"expr\": \"meta(`travel-sample`)\"\n\t                    }\n\t                ]\n\t            },\n\t            {\n\t                \"#operator\": \"Order\",\n\t                \"#stats\": {\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 94777,\n\t                    \"execTime\": \"123.826422ms\",\n\t                    \"kernTime\": \"122.265471ms\"\n\t                },\n\t                \"flags\": 6,\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 52136.44564242353,\n\t                    \"fr_cost\": 4258.361903359133,\n\t                    \"size\": 669\n\t                },\n\t                \"sort_terms\": [\n\t                    {\n\t                        \"expr\": \"(`travel-sample`.`type`)\"\n\t                    }\n\t                ]\n\t            },\n\t            {\n\t                \"#operator\": \"Stream\",\n\t                \"#stats\": {\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 31592,\n\t                    \"execTime\": \"824.325018ms\"\n\t                },\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 52136.44564242353,\n\t                    \"fr_cost\": 4258.361903359133,\n\t                    \"size\": 669\n\t                },\n\t                \"serializable\": true\n\t            }\n\t        ]\n\t    },\n\t    \"~versions\": [\n\t        \"7.6.5-N1QL\",\n\t        \"7.6.5-5704-enterprise\"\n\t    ]\n\t}"
   }
 ]

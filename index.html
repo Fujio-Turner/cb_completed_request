@@ -2,8 +2,8 @@
 <html lang="en">
 <!--
     Couchbase Query Analyzer
-    Version: 2.1.0
-    Last Updated: 2025-01-19
+    Version: 3.0.0
+    Last Updated: 2025-01-20
     
     🤖 AI AGENT NOTE: When making changes to this file, please update the version number above.
     Use semantic versioning: MAJOR.MINOR.PATCH
@@ -14,9 +14,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="2.2.0" />
-    <meta name="last-updated" content="2025-01-19" />
-    <title>Query Analyzer v2.2.0</title>
+    <meta name="version" content="3.0.0" />
+    <meta name="last-updated" content="2025-01-20" />
+    <title>Query Analyzer v3.0.0</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css" />
     <!-- Include Chart.js -->
@@ -31,380 +31,75 @@
     <!-- Include DOMPurify for security -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
+        body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100vh;margin:0;padding:20px;background-color:#f5f5f5}
+        #input-section{margin-bottom:20px}
+        textarea{width:100%;height:50px;margin-bottom:10px}
+        #tabs{flex:1;overflow:auto}
+        #every-query,#analysis{display:flex;flex-direction:column;height:100%}
+        #flow-diagram-section,#charts-placeholder{flex:0 0 250px;overflow:auto;margin-bottom:20px;border:1px solid #ccc;padding:10px;background-color:#fff}
+        #flow-diagram{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+        .step-bubble{border:1px solid #000;border-radius:10px;padding:10px;text-align:center;box-shadow:2px 2px 5px rgba(0,0,0,0.1);cursor:pointer}
+        .step-bubble p{margin:5px 0;line-height:1}
+        .index-item{background:#fff;border:1px solid #ddd;border-radius:6px;padding:12px;margin-bottom:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+        .index-item.primary{background:#ffe6e6;border-color:#ff9999}
+        .index-item h4{margin:0 0 8px 0;font-size:14px;font-weight:bold;color:#333}
+        .index-item .index-details{font-size:12px;color:#666;margin-bottom:8px}
+        .index-item .index-statement{font-family:monospace;font-size:11px;background:#f5f5f5;padding:8px;border-radius:4px;border-left:3px solid #007bff;word-wrap:break-word;position:relative}
+        .bucket-group{margin-bottom:20px}
+        .bucket-group h3{background:#e9ecef;padding:8px 12px;margin:0 0 10px 0;border-radius:4px;font-size:16px;font-weight:bold;color:#495057}
+        .state-badge{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold;text-transform:uppercase}
+        .state-online{background:#d4edda;color:#155724}
+        .state-offline{background:#f8d7da;color:#721c24}
+        .state-building{background:#fff3cd;color:#856404}
+        .replica-zero{color:#dc3545;font-weight:bold}
+        .copy-btn{position:absolute;top:4px;right:4px;background:#007bff;color:white;border:none;border-radius:3px;padding:4px 8px;font-size:10px;cursor:pointer}
+        .copy-btn:hover{background:#0056b3}
+        .primary-warning{color:#dc3545;font-weight:bold}
+        .used-badge{background:#28a745;color:white;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:bold;margin-left:8px;text-transform:uppercase}
+        .sql-query-box{background:#f8f9fa;border:1px solid #dee2e6;border-radius:6px;padding:15px;margin:15px 0;position:relative}
+        .sql-query-box pre{background:#ffffff;border:1px solid #e9ecef;border-radius:4px;padding:10px;margin:10px 0;font-family:monospace;font-size:12px;overflow-x:auto}
+        .sql-copy-btn{position:absolute;top:10px;right:10px;background:#007bff;color:white;border:none;border-radius:4px;padding:6px 12px;font-size:11px;cursor:pointer}
+        .sql-copy-btn:hover{background:#0056b3}
+        .green{background-color:#d4edda}
+        .yellow{background-color:#fff3cd}
+        .orange{background-color:#ffe5d0}
+        .red{background-color:#f8d7da}
+        .connector{width:20px;height:2px;background-color:#000}
+        .index-item,.query-item{border:2px solid #007bff;border-radius:12px;padding:12px;margin:10px 0;background:white;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:move;position:relative;transition:transform 0.2s,box-shadow 0.2s}
+        .index-item:hover,.query-item:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+        .index-item.primary{background-color:#ffebee;border-color:#f44336}
+        .index-stats{font-size:11px;color:#666;margin-top:8px;line-height:1.3}
+        .query-text{font-family:monospace;font-size:12px;background:#f8f9fa;padding:8px;border-radius:4px;margin:8px 0;max-height:60px;overflow:hidden;position:relative}
+        .query-text.expanded{max-height:none}
+        .query-controls{margin-top:8px;display:flex;gap:8px}
+        .query-controls button{padding:4px 8px;border:1px solid #ddd;background:white;border-radius:3px;cursor:pointer;font-size:11px}
+        .query-controls button:hover{background:#f0f0f0}
+        .usage-count{background:white;border:1px solid #333;padding:2px 6px;font-size:11px;font-weight:bold;border-radius:3px;position:absolute;transform:translate(-50%,-50%);z-index:10}
+        #table-section,#analysis-table-section{flex:1;overflow-y:auto}
+        #table-container,#analysis-table-container{overflow-x:auto}
+        table{width:100%;border-collapse:collapse;background-color:#fff}
+        th,td{border:1px solid #ddd;padding:8px;text-align:center}
+        th{background-color:#f2f2f2;cursor:pointer;user-select:none}
+        th:hover{background-color:#e8e8e8}
+        .sort-arrow{margin-left:5px;font-size:12px;color:#666}
+        tr:hover{background-color:#f1f1f1;cursor:pointer}
+        .primary-scan-yes{font-weight:bold!important;color:red!important}
+        .fatal-state{font-weight:bold;color:red}
+        .modal{display:none;position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0.4)}
+        .modal-content{background-color:#fefefe;margin:15% auto;padding:20px;border:1px solid #888;width:80%;max-height:80vh;overflow-y:auto;user-select:text;-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text}
+        .close{color:#aaa;float:right;font-size:28px;font-weight:bold}
+        .close:hover,.close:focus{color:black;text-decoration:none;cursor:pointer}
+        #plan-modal-body ul{list-style-type:none;padding-left:20px}
+        #plan-modal-body li{margin-bottom:5px}
+        #operator-modal-body dl{margin:0}
+        #operator-modal-body dt{font-weight:bold}
+        #operator-modal-body dd{margin-left:20px}
+        #operator-modal-body,#plan-modal-body{user-select:text;-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text}
+        #operator-modal-body *,#plan-modal-body *{user-select:text;-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text}
+        .copy-button{background-color:#4caf50;color:white;padding:5px 10px;border:none;border-radius:3px;cursor:pointer;margin:5px;font-size:12px}
+        .copy-button:hover{background-color:#45a049}
 
-        #input-section {
-            margin-bottom: 20px;
-        }
 
-        textarea {
-            width: 100%;
-            height: 50px;
-            margin-bottom: 10px;
-        }
-
-        #tabs {
-            flex: 1;
-            overflow: auto;
-        }
-
-        #every-query,
-        #analysis {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        #flow-diagram-section,
-        #charts-placeholder {
-            flex: 0 0 250px;
-            /* Fixed height for charts and flow diagram */
-            overflow: auto;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            padding: 10px;
-            background-color: #fff;
-        }
-
-        #flow-diagram {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .step-bubble {
-            border: 1px solid #000;
-            border-radius: 10px;
-            padding: 10px;
-            /*min-width: 110px;*/
-            text-align: center;
-            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-        }
-
-        .step-bubble p {
-            margin: 5px 0;
-            line-height: 1;
-            /* Default is around 1.4–1.6, so this tightens the text */
-        }
-
-        .green {
-            background-color: #d4edda;
-        }
-
-        .yellow {
-            background-color: #fff3cd;
-        }
-
-        .orange {
-            background-color: #ffe5d0;
-        }
-
-        .red {
-            background-color: #f8d7da;
-        }
-
-        .connector {
-            width: 20px;
-            height: 2px;
-            background-color: #000;
-        }
-
-        /* Index/Query Flow Tab Styles */
-        .index-item,
-        .query-item {
-            border: 2px solid #007bff;
-            border-radius: 12px;
-            padding: 12px;
-            margin: 10px 0;
-            background: white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            cursor: move;
-            position: relative;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .index-item:hover,
-        .query-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .index-item.primary {
-            background-color: #ffebee;
-            border-color: #f44336;
-        }
-
-        .index-stats {
-            font-size: 11px;
-            color: #666;
-            margin-top: 8px;
-            line-height: 1.3;
-        }
-
-        .query-text {
-            font-family: monospace;
-            font-size: 12px;
-            background: #f8f9fa;
-            padding: 8px;
-            border-radius: 4px;
-            margin: 8px 0;
-            max-height: 60px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .query-text.expanded {
-            max-height: none;
-        }
-
-        .query-controls {
-            margin-top: 8px;
-            display: flex;
-            gap: 8px;
-        }
-
-        .query-controls button {
-            padding: 4px 8px;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 11px;
-        }
-
-        .query-controls button:hover {
-            background: #f0f0f0;
-        }
-
-        .usage-count {
-            background: white;
-            border: 1px solid #333;
-            padding: 2px 6px;
-            font-size: 11px;
-            font-weight: bold;
-            border-radius: 3px;
-            position: absolute;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-        }
-
-        #table-section,
-        #analysis-table-section {
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        #table-container,
-        #analysis-table-container {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: #fff;
-        }
-
-        th,
-        td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-
-        th {
-            background-color: #f2f2f2;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        th:hover {
-            background-color: #e8e8e8;
-        }
-
-        .sort-arrow {
-            margin-left: 5px;
-            font-size: 12px;
-            color: #666;
-        }
-
-        tr:hover {
-            background-color: #f1f1f1;
-            cursor: pointer;
-        }
-
-        .primary-scan-yes {
-            font-weight: bold !important;
-            color: red !important;
-        }
-
-        .fatal-state {
-            font-weight: bold;
-            color: red;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.4);
-        }
-
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-height: 80vh;
-            overflow-y: auto;
-            user-select: text;
-            -webkit-user-select: text;
-            -moz-user-select: text;
-            -ms-user-select: text;
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        #plan-modal-body ul {
-            list-style-type: none;
-            padding-left: 20px;
-        }
-
-        #plan-modal-body li {
-            margin-bottom: 5px;
-        }
-
-        #operator-modal-body dl {
-            margin: 0;
-        }
-
-        #operator-modal-body dt {
-            font-weight: bold;
-        }
-
-        #operator-modal-body dd {
-            margin-left: 20px;
-        }
-
-        #operator-modal-body,
-        #plan-modal-body {
-            user-select: text;
-            -webkit-user-select: text;
-            -moz-user-select: text;
-            -ms-user-select: text;
-        }
-
-        #operator-modal-body *,
-        #plan-modal-body * {
-            user-select: text;
-            -webkit-user-select: text;
-            -moz-user-select: text;
-            -ms-user-select: text;
-        }
-
-        .copy-button {
-            background-color: #4caf50;
-            color: white;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            margin: 5px;
-            font-size: 12px;
-        }
-
-        .copy-button:hover {
-            background-color: #45a049;
-        }
-
-        /* Dark mode styles */
-        :root {
-            --bg-color: #f5f5f5;
-            --text-color: #333;
-            --border-color: #ccc;
-            --input-bg: #fff;
-            --modal-bg: #fff;
-            --button-bg: #007bff;
-            --button-hover-bg: #0056b3;
-        }
-
-        [data-theme="dark"] {
-            --bg-color: #1a1a1a;
-            --text-color: #e0e0e0;
-            --border-color: #555;
-            --input-bg: #2d2d2d;
-            --modal-bg: #2d2d2d;
-            --button-bg: #0d7377;
-            --button-hover-bg: #14a085;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        textarea,
-        #flow-diagram-section,
-        #charts-placeholder,
-        .modal-content {
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            border-color: var(--border-color);
-        }
-
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--button-bg);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            cursor: pointer;
-            font-size: 20px;
-            z-index: 1000;
-            transition: background-color 0.3s ease;
-        }
-
-        .theme-toggle:hover {
-            background: var(--button-hover-bg);
-        }
-
-        .theme-toggle:focus {
-            outline: 2px solid #ff6b35;
-            outline-offset: 2px;
-        }
 
         /* Toast notification styles */
         .toast {
@@ -437,7 +132,7 @@
             bottom: 10px;
             left: 10px;
             background: rgba(0, 0, 0, 0.1);
-            color: var(--text-color);
+            color: #333;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 0.75em;
@@ -470,10 +165,14 @@
     </div>
 
     <!-- Input Section (outside tabs) -->
-    <div id="input-section">
+    <div id="input-section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <textarea id="json-input"
             placeholder="Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests;"
             aria-label="JSON input field for Couchbase query data" role="textbox"></textarea>
+        <textarea id="indexJsonInput"
+            placeholder="Click the 'Indexes' tab below to get the SQL query to run. Paste the results here..."
+            aria-label="Index JSON input field" role="textbox"></textarea>
+        
         <div style="
           margin: 10px 0;
           display: flex;
@@ -508,7 +207,7 @@
               ">0%</span>
                 </div>
             </div>
-                
+
             <label style="display: flex; align-items: center; gap: 5px; margin-left: 15px;">
                 <input type="checkbox" id="exclude-system-queries" checked
                     title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
@@ -547,6 +246,7 @@
             <li role="tab"><a href="#every-query" aria-controls="every-query" tabindex="0">Every Query</a></li>
             <li role="tab"><a href="#index-query-flow" aria-controls="index-query-flow" tabindex="0">Index/Query
                     Flow</a></li>
+            <li role="tab"><a href="#indexes" aria-controls="indexes" tabindex="0">Indexes</a></li>
         </ul>
 
         <!-- Dashboard Tab Content -->
@@ -922,7 +622,8 @@
         <div id="index-query-flow">
             <div style="height: 100%; position: relative; background: #f8f9fa; border-radius: 8px; overflow: hidden;">
                 <!-- Summary counts above the flow chart -->
-                <div id="flow-summary" style="position: relative; z-index: 3; background: #fff; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
+                <div id="flow-summary"
+                    style="position: relative; z-index: 3; background: #fff; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
                     <div style="font-weight: bold; color: #333;">
                         Indexes Used: <span id="index-count">0</span>
                     </div>
@@ -930,10 +631,122 @@
                         Queries Executed: <span id="query-count">0</span>
                     </div>
                 </div>
-                <div id="flow-canvas" style="width: 100%; height: calc(100% - 50px); position: relative; overflow: auto;">
+                <div id="flow-canvas"
+                    style="width: 100%; height: calc(100% - 50px); position: relative; overflow: auto;">
                     <svg id="flow-svg"
                         style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1;"></svg>
                     <div id="flow-elements" style="position: relative; z-index: 2; padding: 20px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Indexes Tab Content -->
+        <div id="indexes">
+            <!-- Filter Controls -->
+            <div style="margin-bottom: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                <div>
+                    <label for="bucketFilter" style="font-weight: bold; display: block; margin-bottom: 5px;">Bucket:</label>
+                    <select id="bucketFilter" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="(ALL)">(ALL)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="scopeFilter" style="font-weight: bold; display: block; margin-bottom: 5px;">Scope:</label>
+                    <select id="scopeFilter" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="(ALL)">(ALL)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="collectionFilter" style="font-weight: bold; display: block; margin-bottom: 5px;">Collection:</label>
+                    <select id="collectionFilter" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="(ALL)">(ALL)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="sortBy" style="font-weight: bold; display: block; margin-bottom: 5px;">Sort By:</label>
+                    <select id="sortBy" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="Name">Name</option>
+                        <option value="Bucket">Bucket</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Stats Panel -->
+            <div id="indexStats" style="margin-bottom: 15px; padding: 12px; background: #e7f3ff; border: 1px solid #b3d7ff; border-radius: 6px; font-size: 13px;">
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                    <div><strong>Indexes:</strong> <span id="stat-indexes">0</span></div>
+                    <div><strong>Buckets:</strong> <span id="stat-buckets">0</span></div>
+                    <div><strong>Scopes:</strong> <span id="stat-scopes">0</span></div>
+                    <div><strong>Collections:</strong> <span id="stat-collections">0</span></div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span><strong>Primary:</strong> <span id="stat-primary">0</span></span>
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px;">
+                            <input type="checkbox" id="filter-primary" style="margin: 0;">
+                            Primary Only
+                        </label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span><strong>Used/Total:</strong> <span id="stat-used-total">0/0</span></span>
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px;">
+                            <input type="checkbox" id="filter-used" style="margin: 0;">
+                            Used Only
+                        </label>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span><strong>Without/With Replica:</strong> <span id="stat-replica-info">0/0</span></span>
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px;">
+                            <input type="checkbox" id="filter-no-replica" style="margin: 0;">
+                            No Replicas Only
+                        </label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span><strong>Never Scanned:</strong> <span id="stat-never-scanned">0</span></span>
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px;">
+                            <input type="checkbox" id="filter-never-scanned" style="margin: 0;">
+                            Never Scanned Only
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div id="indexResults" style="overflow-y: auto; height: calc(100% - 120px); border: 1px solid #ccc; border-radius: 4px; padding: 15px; background: #fff;">
+                <div style="text-align: center; margin-top: 30px;">
+                    <h4 style="color: #495057; margin-bottom: 20px;">No Index Data Loaded</h4>
+                    <p style="color: #666; margin-bottom: 20px;">
+                        To analyze indexes, run this query in your Couchbase Query Workbench and paste the results in the second textarea above:
+                    </p>
+                    <div class="sql-query-box">
+                        <button class="sql-copy-btn" onclick="copyIndexQuery(event)">Copy Query</button>
+                        <pre>SELECT 
+ s.name,
+ s.id,
+ s.metadata,
+ s.state,
+ s.num_replica,
+CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+FROM system:indexes AS s
+LET bid = CONCAT("", s.bucket_id, ""),
+    sid = CONCAT("", s.scope_id, ""),
+    kid = CONCAT("", s.keyspace_id, ""),
+    k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
+    ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
+    w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
+    p = CASE WHEN s.\`partition\` IS NOT NULL THEN " PARTITION BY " || s.\`partition\` ELSE "" END
+;</pre>
+                    </div>
+                    <p style="color: #666; font-size: 13px; margin-top: 15px;">
+                        <strong>Steps:</strong><br>
+                        1. Copy the query above<br>
+                        2. Run it in Couchbase Query Workbench<br>
+                        3. Copy the JSON results<br>
+                        4. Paste into the second textarea at the top<br>
+                        5. Click "Parse JSON" again
+                    </p>
                 </div>
             </div>
         </div>
@@ -976,35 +789,7 @@
         let originalTimeRange = { min: null, max: null };
         let currentTimeRange = { min: null, max: null };
 
-        // Theme management
-        function toggleTheme() {
-            const body = document.body;
-            const toggleButton = document.querySelector('.theme-toggle');
-            const currentTheme = body.getAttribute('data-theme');
 
-            if (currentTheme === 'dark') {
-                body.removeAttribute('data-theme');
-                toggleButton.textContent = '🌙';
-                localStorage.setItem('theme', 'light');
-            } else {
-                body.setAttribute('data-theme', 'dark');
-                toggleButton.textContent = '☀️';
-                localStorage.setItem('theme', 'dark');
-            }
-        }
-
-        // Initialize theme from localStorage
-        function initializeTheme() {
-            const savedTheme = localStorage.getItem('theme');
-            const toggleButton = document.querySelector('.theme-toggle');
-
-            if (savedTheme === 'dark') {
-                document.body.setAttribute('data-theme', 'dark');
-                toggleButton.textContent = '☀️';
-            } else {
-                toggleButton.textContent = '🌙';
-            }
-        }
 
         // Toast notification system
         function showToast(message, type = 'success') {
@@ -1126,7 +911,7 @@
             const excludeCheckbox = document.getElementById('exclude-system-queries');
             const isChecked = excludeCheckbox ? excludeCheckbox.checked : false;
 
-            console.log(`Checkbox state: ${isChecked ? 'CHECKED (excluding)' : 'UNCHECKED (including)'}`);
+
 
             // If checkbox doesn't exist or is unchecked, don't exclude anything
             if (!excludeCheckbox || !excludeCheckbox.checked) {
@@ -1135,12 +920,9 @@
 
             const stmt = request.preparedText || request.statement;
             if (!stmt) {
-                console.log('No statement found in request:', Object.keys(request));
+
                 return false;
             }
-
-            console.log(`Checking statement: "${stmt.substring(0, 50)}..." (type: ${request.statementType})`);
-
 
             const upperStmt = stmt.toUpperCase();
 
@@ -1156,10 +938,6 @@
                 upperStmt.includes(" SYSTEM:")
             );
 
-            if (shouldExclude) {
-                console.log(`Excluding system query: ${stmt.substring(0, 50)}...`);
-            }
-
             return shouldExclude;
         }
 
@@ -1168,11 +946,7 @@
             const excludeCheckbox = document.getElementById('exclude-system-queries');
             const isExcluding = excludeCheckbox && excludeCheckbox.checked;
 
-            console.log(`Filtering system queries: ${isExcluding ? 'ENABLED' : 'DISABLED'}`);
-
             const filtered = requests.filter(request => !shouldExcludeSystemQuery(request));
-
-            console.log(`Original: ${requests.length} requests, After filtering: ${filtered.length} requests`);
 
             return filtered;
         }
@@ -1294,61 +1068,86 @@
             return "red";
         }
 
+        // Cache for operators to avoid reprocessing the same plans
+        const operatorsCache = new WeakMap();
+        
         // Recursively extract operators from the plan
-        function getOperators(operator, operators = []) {
-            if (operator) {
-                if (operator["#operator"]) {
-                    operators.push(operator);
-                }
-                if (operator["~child"]) {
-                    getOperators(operator["~child"], operators);
-                } else if (operator["~children"]) {
-                    operator["~children"].forEach((child) =>
-                        getOperators(child, operators)
-                    );
-                }
-                // Check for input/inputs
-                if (operator.input) {
-                    getOperators(operator.input, operators);
-                }
-                if (operator.inputs && Array.isArray(operator.inputs)) {
-                    operator.inputs.forEach((input) =>
-                        getOperators(input, operators)
-                    );
-                }
-                // Check for left/right (binary operations)
-                if (operator.left) {
-                    getOperators(operator.left, operators);
-                }
-                if (operator.right) {
-                    getOperators(operator.right, operators);
-                }
-                // Check for first and second properties (used in set operations like ExceptAll)
-                if (operator.first) {
-                    getOperators(operator.first, operators);
-                }
-                if (operator.second) {
-                    getOperators(operator.second, operators);
-                }
-                // Check for scans array (used in UnionScan, IntersectScan, etc.)
-                if (operator.scans && Array.isArray(operator.scans)) {
-                    operator.scans.forEach((scan) =>
-                        getOperators(scan, operators)
-                    );
-                }
-                // Check for scan property (used in DistinctScan)
-                if (operator.scan) {
-                    getOperators(operator.scan, operators);
-                }
-                // Check for subqueries array
-                if (operator["~subqueries"] && Array.isArray(operator["~subqueries"])) {
-                    operator["~subqueries"].forEach((subquery) => {
-                        if (subquery.executionTimings) {
-                            getOperators(subquery.executionTimings, operators);
-                        }
-                    });
-                }
+        function getOperators(operator, operators = [], visited = new WeakSet(), depth = 0) {
+            if (!operator) return operators;
+            
+            // Check cache first for the root operator
+            if (depth === 0 && operatorsCache.has(operator)) {
+                return operatorsCache.get(operator);
             }
+            
+            // Prevent infinite recursion by tracking visited objects
+            if (visited.has(operator)) {
+                return operators;
+            }
+            visited.add(operator);
+            
+            // Add depth limit as additional safety
+            if (depth > 50) {
+                return operators;
+            }
+            
+            if (operator["#operator"]) {
+                operators.push(operator);
+            }
+            if (operator["~child"]) {
+                getOperators(operator["~child"], operators, visited, depth + 1);
+            } else if (operator["~children"]) {
+                operator["~children"].forEach((child, i) => {
+                    getOperators(child, operators, visited, depth + 1);
+                });
+            }
+            // Check for input/inputs
+            if (operator.input) {
+                getOperators(operator.input, operators, visited, depth + 1);
+            }
+            if (operator.inputs && Array.isArray(operator.inputs)) {
+                operator.inputs.forEach((input, i) => {
+                    getOperators(input, operators, visited, depth + 1);
+                });
+            }
+            // Check for left/right (binary operations)
+            if (operator.left) {
+                getOperators(operator.left, operators, visited, depth + 1);
+            }
+            if (operator.right) {
+                getOperators(operator.right, operators, visited, depth + 1);
+            }
+            // Check for first and second properties (used in set operations like ExceptAll)
+            if (operator.first) {
+                getOperators(operator.first, operators, visited, depth + 1);
+            }
+            if (operator.second) {
+                getOperators(operator.second, operators, visited, depth + 1);
+            }
+            // Check for scans array (used in UnionScan, IntersectScan, etc.)
+            if (operator.scans && Array.isArray(operator.scans)) {
+                operator.scans.forEach((scan, i) => {
+                    getOperators(scan, operators, visited, depth + 1);
+                });
+            }
+            // Check for scan property (used in DistinctScan)
+            if (operator.scan) {
+                getOperators(operator.scan, operators, visited, depth + 1);
+            }
+            // Check for subqueries array
+            if (operator["~subqueries"] && Array.isArray(operator["~subqueries"])) {
+                operator["~subqueries"].forEach((subquery, i) => {
+                    if (subquery.executionTimings) {
+                        getOperators(subquery.executionTimings, operators, visited, depth + 1);
+                    }
+                });
+            }
+            
+            // Cache the result for root operator
+            if (depth === 0) {
+                operatorsCache.set(operator, operators);
+            }
+            
             return operators;
         }
 
@@ -1582,72 +1381,113 @@
             const indexes = new Set();
             const useKeys = [];
             let hasUseKeys = false;
+
+            // Get bucket.scope.collection from the statement for primary index resolution
+            const requestStatement = request.preparedText || request.statement || "";
+            let bucketScopeCollection = 'unknown.unknown.unknown';
             
+            const fromMatch = requestStatement.match(/FROM\s+([^\s\n\r\t]+)/i);
+            if (fromMatch) {
+                const target = fromMatch[1].replace(/`/g, '').replace(/;$/, '');
+                const parts = target.split('.');
+                if (parts.length === 1) {
+                    bucketScopeCollection = `${parts[0]}._default._default`;
+                } else if (parts.length === 2) {
+                    bucketScopeCollection = `${parts[0]}.${parts[1]}._default`;
+                } else if (parts.length >= 3) {
+                    bucketScopeCollection = `${parts[0]}.${parts[1]}.${parts[2]}`;
+                }
+            }
+
             // Extract indexes from plan
             if (request.plan) {
                 const operators = getOperators(request.plan);
-                operators.forEach(operator => {
-                    if (operator["#operator"] === "IndexScan" || 
-                        operator["#operator"] === "IndexScan2" || 
-                        operator["#operator"] === "IndexScan3") {
+                
+                operators.forEach((operator, opIndex) => {
+                    const opType = operator["#operator"];
+                    
+                    if (opType === "IndexScan" || opType === "IndexScan2" || opType === "IndexScan3") {
                         if (operator.index) {
                             indexes.add(operator.index);
                         }
                     }
-                    if (operator["#operator"] === "PrimaryScan") {
-                        indexes.add("#primary");
+                    
+                    if (opType === "PrimaryScan" || opType === "PrimaryScan2" || opType === "PrimaryScan3") {
+                        try {
+                            // First try to resolve #primary to actual name
+                            let resolvedName = resolvePrimaryIndexName(bucketScopeCollection);
+                            
+                            // If we got a real index name (not #primary), use it
+                            if (resolvedName && resolvedName !== '#primary') {
+                                indexes.add(resolvedName);
+                            } 
+                            // If operator has explicit index name, use that instead
+                            else if (operator.index) {
+                                indexes.add(operator.index);
+                            }
+                            // Fallback to #primary
+                            else {
+                                indexes.add('#primary');
+                            }
+                        } catch (error) {
+                            // Fallback to operator.index if available
+                            if (operator.index) {
+                                indexes.add(operator.index);
+                            } else {
+                                indexes.add('#primary');
+                            }
+                        }
                     }
                 });
             }
-            
+
             // Extract USE KEYS from statement
-            const statement = request.preparedText || request.statement || "";
-            if (statement.includes('USE KEYS')) {
+            if (requestStatement.includes('USE KEYS')) {
                 hasUseKeys = true;
-                
+
                 // Handle all USE KEYS formats:
                 // USE KEYS(["key1","key2"]) or USE KEYS ["key1","key2"] 
                 // USE KEYS(['key1','key2']) or USE KEYS ['key1','key2']
                 // USE KEYS("key1") or USE KEYS "key1"
                 // USE KEYS('key1') or USE KEYS 'key1'
-                
+
                 let match;
-                
+
                 // Extract array format with double quotes: USE KEYS(?)["key1","key2"]
                 const arrayDoubleQuotes = /USE\s+KEYS\s*\(?\s*\[(.*?)\]\s*\)?/gi;
-                while ((match = arrayDoubleQuotes.exec(statement)) !== null) {
+                while ((match = arrayDoubleQuotes.exec(requestStatement)) !== null) {
                     // Split by comma and clean up each key, handle both single and double quotes
                     const keys = match[1].split(',').map(key => {
                         return key.trim().replace(/^['"]|['"]$/g, ''); // Remove leading/trailing quotes
                     }).filter(key => key.length > 0);
                     useKeys.push(...keys);
                 }
-                
+
                 // Reset regex for single key formats
                 arrayDoubleQuotes.lastIndex = 0;
-                
+
                 // Extract single key format: USE KEYS(?) "key" or USE KEYS(?) 'key'
                 // This should not match array formats, so we exclude those with brackets
                 const singleKeyRegex = /USE\s+KEYS\s*\(?\s*([^[\],]+?)\s*\)?(?:\s+WHERE|\s*$)/gi;
-                while ((match = singleKeyRegex.exec(statement)) !== null) {
+                while ((match = singleKeyRegex.exec(requestStatement)) !== null) {
                     const key = match[1].trim().replace(/^['"]|['"]$/g, ''); // Remove leading/trailing quotes
                     if (key && !key.includes('[') && !key.includes(']')) {
                         useKeys.push(key);
                     }
                 }
             }
-            
+
             return {
                 indexes: Array.from(indexes),
                 useKeys: [...new Set(useKeys)], // Remove duplicates
                 hasUseKeys
             };
         }
-        
+
         // Build enhanced plan modal with indexes and keys
         function buildEnhancedPlanModal(plan, indexesAndKeys) {
             let html = '<div style="margin-bottom: 20px;">';
-            
+
             // Indexes section
             if (indexesAndKeys.indexes.length > 0) {
                 html += '<div style="margin-bottom: 15px;">';
@@ -1665,11 +1505,11 @@
                 });
                 html += '</div></div>';
             }
-            
+
             // USE KEYS section
             if (indexesAndKeys.hasUseKeys) {
                 html += '<div style="margin-bottom: 15px;">';
-                
+
                 if (indexesAndKeys.useKeys.length > 0) {
                     // Header with Copy All button
                     html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">';
@@ -1678,13 +1518,13 @@
                     html += `<button onclick="copyToClipboard('${allKeys.replace(/'/g, "\\'")}', event)" 
                             style="padding: 4px 12px; font-size: 12px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Copy All</button>`;
                     html += '</div>';
-                    
+
                     const maxKeysToShow = 15;
                     const shouldTruncate = indexesAndKeys.useKeys.length > maxKeysToShow;
-                    
+
                     // Keys display container
                     html += '<div id="keys-container" style="display: flex; flex-wrap: wrap; gap: 8px;">';
-                    
+
                     // Show initial set of keys
                     const keysToShow = shouldTruncate ? indexesAndKeys.useKeys.slice(0, maxKeysToShow) : indexesAndKeys.useKeys;
                     keysToShow.forEach(key => {
@@ -1692,7 +1532,7 @@
                             <code style="font-family: monospace; color: #856404; font-size: 12px;">${key}</code>
                         </div>`;
                     });
-                    
+
                     // Hidden keys (if truncated)
                     if (shouldTruncate) {
                         const remainingKeys = indexesAndKeys.useKeys.slice(maxKeysToShow);
@@ -1702,9 +1542,9 @@
                             </div>`;
                         });
                     }
-                    
+
                     html += '</div>';
-                    
+
                     // Show more/hide button
                     if (shouldTruncate) {
                         const remainingCount = indexesAndKeys.useKeys.length - maxKeysToShow;
@@ -1715,27 +1555,27 @@
                             </button>`;
                         html += `</div>`;
                     }
-                    
+
                     // Summary info
                     html += `<div style="margin-top: 8px; font-size: 11px; color: #666; font-style: italic;">
                         Total: ${indexesAndKeys.useKeys.length} key${indexesAndKeys.useKeys.length !== 1 ? 's' : ''}
                     </div>`;
-                    
+
                 } else {
                     html += '<h3 style="margin: 0 0 10px 0; color: #333; font-size: 16px;">🔑 USE KEYS:</h3>';
                     html += '<div style="color: #666; font-style: italic;">Keys could not be extracted from the query</div>';
                 }
                 html += '</div>';
             }
-            
+
             html += '</div>';
-            
+
             // Execution plan section
             html += '<div style="border-top: 1px solid #ddd; padding-top: 15px;">';
             html += '<h3 style="margin: 0 0 10px 0; color: #333; font-size: 16px;">⚙️ Execution Plan:</h3>';
             html += "<ul>" + buildPlanTree(plan) + "</ul>";
             html += '</div>';
-            
+
             return html;
         }
 
@@ -1761,23 +1601,23 @@
                 'Union': { icon: '🔗', color: '#795548', bg: '#f3e5f5' },
                 'Join': { icon: '🤝', color: '#9c27b0', bg: '#f3e5f5' }
             };
-            
+
             return styles[operatorName] || { icon: '⚙️', color: '#6c757d', bg: '#f8f9fa' };
         }
 
         // Format time values for better readability
         function formatTimeValue(timeStr) {
             if (!timeStr || timeStr === 'N/A') return '<span style="color: #999;">N/A</span>';
-            
+
             // Parse time and check if it's a high value (potential bottleneck)
             const timeMs = parseTime(timeStr);
             const isBottleneck = timeMs > 60000; // > 1 minute
             const isWarning = timeMs > 10000; // > 10 seconds
-            
+
             let color = '#333';
             let bgColor = 'transparent';
             let fontWeight = 'normal';
-            
+
             if (isBottleneck) {
                 color = '#dc3545';
                 bgColor = '#fff5f5';
@@ -1787,18 +1627,18 @@
                 bgColor = '#fff4e6';
                 fontWeight = 'bold';
             }
-            
+
             return `<span style="color: ${color}; background: ${bgColor}; font-weight: ${fontWeight}; padding: 1px 4px; border-radius: 3px;">${timeStr}</span>`;
         }
 
         // Format item count with color coding
         function formatItemCount(count) {
             if (count === undefined || count === null) return '<span style="color: #999;">N/A</span>';
-            
+
             const numCount = typeof count === 'number' ? count : parseInt(count);
             let color = '#333';
             let icon = '';
-            
+
             if (numCount > 1000000) {
                 color = '#dc3545';
                 icon = '⚠️ ';
@@ -1808,51 +1648,51 @@
             } else if (numCount > 10000) {
                 color = '#ffc107';
             }
-            
+
             return `<span style="color: ${color};">${icon}${numCount.toLocaleString()}</span>`;
         }
 
         // Build plan tree for modal with enhanced formatting
         function buildPlanTree(operator) {
             if (!operator) return "";
-            
+
             const operatorName = operator["#operator"] || "Unknown Operator";
             const style = getOperatorStyle(operatorName);
-            
+
             let html = `<li style="margin: 8px 0; padding: 12px; border-left: 4px solid ${style.color}; background: ${style.bg}; border-radius: 6px;">`;
-            
+
             // Operator header with icon and name
             html += `<div style="display: flex; align-items: center; margin-bottom: 8px;">`;
             html += `<span style="font-size: 18px; margin-right: 8px;">${style.icon}</span>`;
             html += `<strong style="color: ${style.color}; font-size: 16px;">${operatorName}</strong>`;
             html += `</div>`;
-            
+
             // Statistics section
             if (operator["#stats"]) {
                 const stats = operator["#stats"];
                 html += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin: 8px 0; font-size: 13px;">`;
-                
+
                 // Items In/Out
                 html += `<div style="background: white; padding: 6px 10px; border-radius: 4px; border: 1px solid #e9ecef;">`;
                 html += `<span style="color: #6c757d; font-weight: 500;">📥 Items In:</span> ${formatItemCount(stats["#itemsIn"])}`;
                 html += `</div>`;
-                
+
                 html += `<div style="background: white; padding: 6px 10px; border-radius: 4px; border: 1px solid #e9ecef;">`;
                 html += `<span style="color: #6c757d; font-weight: 500;">📤 Items Out:</span> ${formatItemCount(stats["#itemsOut"])}`;
                 html += `</div>`;
-                
+
                 // Execution Time
                 html += `<div style="background: white; padding: 6px 10px; border-radius: 4px; border: 1px solid #e9ecef;">`;
                 html += `<span style="color: #6c757d; font-weight: 500;">⏱️ Exec Time:</span> ${formatTimeValue(stats.execTime)}`;
                 html += `</div>`;
-                
+
                 // Kernel Time
                 html += `<div style="background: white; padding: 6px 10px; border-radius: 4px; border: 1px solid #e9ecef;">`;
                 html += `<span style="color: #6c757d; font-weight: 500;">🔧 Kern Time:</span> ${formatTimeValue(stats.kernTime)}`;
                 html += `</div>`;
-                
+
                 html += `</div>`;
-                
+
                 // Efficiency indicator
                 const itemsIn = stats["#itemsIn"];
                 const itemsOut = stats["#itemsOut"];
@@ -1860,7 +1700,7 @@
                     const efficiency = (itemsOut / itemsIn) * 100;
                     let efficiencyColor = '#28a745';
                     let efficiencyIcon = '✅';
-                    
+
                     if (efficiency < 50) {
                         efficiencyColor = '#dc3545';
                         efficiencyIcon = '⚠️';
@@ -1868,16 +1708,16 @@
                         efficiencyColor = '#ffc107';
                         efficiencyIcon = '⚡';
                     }
-                    
+
                     html += `<div style="margin-top: 6px; font-size: 12px;">`;
                     html += `<span style="color: ${efficiencyColor};">${efficiencyIcon} Efficiency: ${efficiency.toFixed(1)}%</span>`;
                     html += `</div>`;
                 }
             }
-            
+
             // Child operations
             const childContainerStyle = 'margin-top: 10px; margin-left: 20px; border-left: 2px dashed #dee2e6; padding-left: 15px;';
-            
+
             if (operator["~child"]) {
                 html += `<ul style="${childContainerStyle}">` + buildPlanTree(operator["~child"]) + "</ul>";
             } else if (operator["~children"]) {
@@ -1887,7 +1727,7 @@
                 });
                 html += "</ul>";
             }
-            
+
             // Handle other child properties
             if (operator.input) {
                 html += `<ul style="${childContainerStyle}">` + buildPlanTree(operator.input) + "</ul>";
@@ -1930,7 +1770,7 @@
                 });
                 html += "</ul>";
             }
-            
+
             html += "</li>";
             return html;
         }
@@ -6393,18 +6233,30 @@
             }
 
             try {
+                // Helper function to add index to data, resolving #primary conflicts
+                function addIndexToData(indexName) {
+                    let resolvedName = indexName;
+                    
+                    // If this is #primary, try to resolve to actual primary index name
+                    if (indexName === '#primary') {
+                        const actualPrimary = resolvePrimaryIndexName(bucketScopeCollection || 'unknown.unknown.unknown');
+                        if (actualPrimary && actualPrimary !== '#primary') {
+                            resolvedName = actualPrimary;
+                        }
+                    }
+                    
+                    if (!indexData[resolvedName]) {
+                        indexData[resolvedName] = { count: 0, bucketScopeCollection: bucketScopeCollection || 'unknown' };
+                    }
+                    indexData[resolvedName].count++;
+                }
+
                 // Check for index name in various operator properties
                 if (operator.index && typeof operator.index === 'string') {
-                    if (!indexData[operator.index]) {
-                        indexData[operator.index] = { count: 0, bucketScopeCollection: bucketScopeCollection || 'unknown' };
-                    }
-                    indexData[operator.index].count++;
+                    addIndexToData(operator.index);
                 }
                 if (operator.indexName && typeof operator.indexName === 'string') {
-                    if (!indexData[operator.indexName]) {
-                        indexData[operator.indexName] = { count: 0, bucketScopeCollection: bucketScopeCollection || 'unknown' };
-                    }
-                    indexData[operator.indexName].count++;
+                    addIndexToData(operator.indexName);
                 }
 
                 // Check for primary scan operators (align with usesPrimaryIndex logic)
@@ -6415,10 +6267,11 @@
                     operator.using === "sequentialScan" ||
                     (operator.spans && Array.isArray(operator.spans) && operator.spans.length === 0)
                 ) {
-                    if (!indexData["#primary"]) {
-                        indexData["#primary"] = { count: 0, bucketScopeCollection: bucketScopeCollection || 'unknown' };
+                    // Only add #primary if we don't already have the actual index name
+                    if (!operator.index || operator.index === "#primary") {
+                        addIndexToData("#primary");
                     }
-                    indexData["#primary"].count++;
+                    // If operator.index exists and is not #primary, it was already added above
                 }
 
                 // Recursively check child operators
@@ -6904,6 +6757,12 @@
                 generateTimelineChart(filteredRequests);
                 generateDashboardCharts(filteredRequests);
                 buildIndexQueryFlow(filteredRequests);
+                
+                // Extract used indexes from the query data
+                extractUsedIndexes(filteredRequests);
+                
+                // Also parse index data if available
+                parseIndexJSON();
             } catch (e) {
                 console.error("Error generating charts:", e);
                 alert(
@@ -7016,6 +6875,24 @@
             connections: new Map()
         };
 
+        // Helper function to resolve #primary to actual primary index name
+        function resolvePrimaryIndexName(bucketScopeCollection) {
+            // Look through indexData to find the actual primary index for this collection
+            for (const index of indexData) {
+                if (index.indexString) {
+                    const target = parseIndexTarget(index.indexString);
+                    const targetString = `${target.bucket}.${target.scope}.${target.collection}`;
+                    const isPrimary = index.name.includes('primary') || index.name.includes('#primary');
+                    
+                    if (isPrimary && targetString === bucketScopeCollection) {
+                        return index.name;
+                    }
+                }
+            }
+            // If no actual primary index found, keep #primary
+            return '#primary';
+        }
+
         function buildIndexQueryFlow(requests = null) {
             // Use provided requests or fall back to original requests
             const requestsToUse = requests || originalRequests;
@@ -7060,7 +6937,24 @@
                     if (planObj && planObj["#operator"]) {
                         requestsWithOperators++;
 
-                        extractIndexUsage(planObj, requestIndex, requestIndexMap);
+                        // Get bucket.scope.collection from the statement for primary index resolution
+                        const statement = request.preparedText || request.statement || "";
+                        let bucketScopeCollection = 'unknown.unknown.unknown';
+                        
+                        const fromMatch = statement.match(/FROM\s+([^\s\n\r\t]+)/i);
+                        if (fromMatch) {
+                            const target = fromMatch[1].replace(/`/g, '').replace(/;$/, '');
+                            const parts = target.split('.');
+                            if (parts.length === 1) {
+                                bucketScopeCollection = `${parts[0]}._default._default`;
+                            } else if (parts.length === 2) {
+                                bucketScopeCollection = `${parts[0]}.${parts[1]}._default`;
+                            } else if (parts.length >= 3) {
+                                bucketScopeCollection = `${parts[0]}.${parts[1]}.${parts[2]}`;
+                            }
+                        }
+
+                        extractIndexUsage(planObj, requestIndex, requestIndexMap, bucketScopeCollection);
                     }
                 }
             });
@@ -7168,87 +7062,96 @@
             renderIndexQueryFlow(sortedIndexes, sortedQueries);
         }
 
-        function extractIndexUsage(operator, requestIndex, requestIndexMap) {
+        function extractIndexUsage(operator, requestIndex, requestIndexMap, bucketScopeCollection = 'unknown.unknown.unknown') {
             if (!operator) {
                 return;
             }
 
             // Function to record index usage for this request
             function recordIndexUsage(indexName) {
+                // If this is #primary, try to resolve to actual primary index name
+                if (indexName === '#primary') {
+                    const resolved = resolvePrimaryIndexName(bucketScopeCollection);
+                    indexName = resolved;
+                }
                 requestIndexMap.get(requestIndex).add(indexName);
             }
 
-            // Check for index name in various operator properties (same as Dashboard logic)
-            if (operator.index) {
-                recordIndexUsage(operator.index);
-            }
-            if (operator.indexName) {
-                recordIndexUsage(operator.indexName);
+            const opType = operator["#operator"];
+
+            // Check for IndexScan operators
+            if (opType === "IndexScan" || opType === "IndexScan2" || opType === "IndexScan3") {
+                if (operator.index) {
+                    recordIndexUsage(operator.index);
+                }
+                if (operator.indexName) {
+                    recordIndexUsage(operator.indexName);
+                }
             }
 
-            // Check for primary scan operators (same as Dashboard logic)
-            const isPrimaryScan = (
-                operator["#operator"] === "PrimaryScan" ||
-                operator["#operator"] === "PrimaryScan3" ||
-                operator.index === "#primary" ||
-                operator.using === "sequentialScan" ||
-                (operator.spans && operator.spans.length === 0)
-            );
-
-            if (isPrimaryScan) {
-                // Record as #sequentialscan if it's explicitly a sequential scan
-                if (operator.using === "sequentialScan") {
-                    recordIndexUsage("#sequentialscan");
+            // Check for PrimaryScan operators
+            if (opType === "PrimaryScan" || opType === "PrimaryScan2" || opType === "PrimaryScan3") {
+                // For primary scans, prefer resolved name over operator.index to avoid duplicates
+                let resolvedName = resolvePrimaryIndexName(bucketScopeCollection);
+                if (resolvedName && resolvedName !== '#primary') {
+                    recordIndexUsage(resolvedName);
+                } else if (operator.index) {
+                    recordIndexUsage(operator.index);
                 } else {
                     recordIndexUsage("#primary");
                 }
             }
 
+            // Check for sequential scan
+            if (operator.using === "sequentialScan") {
+                recordIndexUsage("#sequentialscan");
+            }
+
             // Recursively check child operators (same as Dashboard logic)
             if (operator["~child"]) {
-                extractIndexUsage(operator["~child"], requestIndex, requestIndexMap);
+                extractIndexUsage(operator["~child"], requestIndex, requestIndexMap, bucketScopeCollection);
             }
             if (operator["~children"] && Array.isArray(operator["~children"])) {
                 operator["~children"].forEach((child) =>
-                    extractIndexUsage(child, requestIndex, requestIndexMap)
+                    extractIndexUsage(child, requestIndex, requestIndexMap, bucketScopeCollection)
                 );
             }
             if (operator.input) {
-                extractIndexUsage(operator.input, requestIndex, requestIndexMap);
+                extractIndexUsage(operator.input, requestIndex, requestIndexMap, bucketScopeCollection);
             }
             if (operator.inputs && Array.isArray(operator.inputs)) {
                 operator.inputs.forEach((input) =>
-                    extractIndexUsage(input, requestIndex, requestIndexMap)
+                    extractIndexUsage(input, requestIndex, requestIndexMap, bucketScopeCollection)
                 );
             }
             if (operator.left) {
-                extractIndexUsage(operator.left, requestIndex, requestIndexMap);
+                extractIndexUsage(operator.left, requestIndex, requestIndexMap, bucketScopeCollection);
             }
             if (operator.right) {
-                extractIndexUsage(operator.right, requestIndex, requestIndexMap);
+                extractIndexUsage(operator.right, requestIndex, requestIndexMap, bucketScopeCollection);
             }
             // Check for first and second properties (used in set operations like ExceptAll)
             if (operator.first) {
-                extractIndexUsage(operator.first, requestIndex, requestIndexMap);
+                extractIndexUsage(operator.first, requestIndex, requestIndexMap, bucketScopeCollection);
             }
             if (operator.second) {
-                extractIndexUsage(operator.second, requestIndex, requestIndexMap);
+                extractIndexUsage(operator.second, requestIndex, requestIndexMap, bucketScopeCollection);
             }
             // Check for scans array (used in UnionScan, IntersectScan, etc.)
             if (operator.scans && Array.isArray(operator.scans)) {
                 operator.scans.forEach((scan) =>
-                    extractIndexUsage(scan, requestIndex, requestIndexMap)
+                    extractIndexUsage(scan, requestIndex, requestIndexMap, bucketScopeCollection)
                 );
             }
             // Check for scan property (used in DistinctScan)
             if (operator.scan) {
-                extractIndexUsage(operator.scan, requestIndex, requestIndexMap);
+                extractIndexUsage(operator.scan, requestIndex, requestIndexMap, bucketScopeCollection);
             }
             // Check for subqueries array
             if (operator["~subqueries"] && Array.isArray(operator["~subqueries"])) {
                 operator["~subqueries"].forEach((subquery) => {
                     if (subquery.executionTimings) {
-                        extractIndexUsage(subquery.executionTimings, requestIndex, requestIndexMap);
+                        extractIndexUsage(subquery.executionTimings, requestIndex, requestIndexMap, bucketScopeCollection);
                     }
                 });
             }
@@ -7338,7 +7241,7 @@
             div.dataset.indexName = index.name;
 
             const stats = calculateIndexStats(index);
-            
+
             // Check if avg scan time >= 10 seconds for red/bold styling
             const scanTimes = index.scanTimes || [];
             const avgScanTimeMs = scanTimes.length ? scanTimes.reduce((a, b) => a + b, 0) / scanTimes.length : 0;
@@ -7378,11 +7281,11 @@
 
             const avgDuration = query.totalDuration / query.count;
             const avgDurationSeconds = avgDuration / 1000;
-            
+
             // Check for USE KEYS in the statement
             const hasUseKeys = query.statement.includes('USE KEYS');
             const useKeysIndicator = hasUseKeys ? ' <span style="color: orange; font-weight: bold;">(USE KEYS)</span>' : '';
-            
+
             // Check if avg duration >= 60 seconds for red/bold styling
             const avgDurationStyle = avgDurationSeconds >= 60 ? 'font-weight: bold; color: red;' : '';
 
@@ -7689,10 +7592,10 @@
         function toggleUseKeys() {
             const hiddenKeys = document.querySelectorAll('.hidden-key');
             const toggleBtn = document.getElementById('toggle-keys-btn');
-            
+
             if (hiddenKeys.length > 0) {
                 const isHidden = hiddenKeys[0].style.display === 'none';
-                
+
                 if (isHidden) {
                     // Show hidden keys
                     hiddenKeys.forEach(key => key.style.display = 'block');
@@ -7708,8 +7611,8 @@
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = '2.2.0';
-        const LAST_UPDATED = '2025-01-19';
+        const APP_VERSION = '3.0.0';
+        const LAST_UPDATED = '2025-01-20';
 
         function getVersionInfo() {
             return {
@@ -7717,7 +7620,6 @@
                 lastUpdated: LAST_UPDATED,
                 features: [
                     'Global system query exclusion',
-                    'Dark/light theme toggle',
                     'Enhanced accessibility (ARIA)',
                     'Chart performance optimizations',
                     'Time range filtering with buffers',
@@ -7728,13 +7630,624 @@
         }
 
         // Initialize the application
+        // Index Analysis Variables
+        let indexData = [];
+        let filteredIndexData = [];
+        let usedIndexes = new Set(); // Store indexes found in query data
+
+        // Calculate human-readable time difference
+        function getTimeSince(dateString) {
+            if (!dateString || dateString === 'Never') return '';
+            
+            const now = new Date();
+            const past = new Date(dateString);
+            const diffMs = now - past;
+            
+            const minutes = Math.floor(diffMs / 60000);
+            const hours = Math.floor(diffMs / 3600000);
+            const days = Math.floor(diffMs / 86400000);
+            const weeks = Math.floor(days / 7);
+            const months = Math.floor(days / 30);
+            const years = Math.floor(days / 365);
+            
+            if (years > 0) return `(${years} year${years > 1 ? 's' : ''} ago)`;
+            if (months > 0) return `(${months} month${months > 1 ? 's' : ''} ago)`;
+            if (weeks > 0) return `(${weeks} week${weeks > 1 ? 's' : ''} ago)`;
+            if (days > 0) return `(${days} day${days > 1 ? 's' : ''} ago)`;
+            if (hours > 0) return `(${hours} hour${hours > 1 ? 's' : ''} ago)`;
+            if (minutes > 0) return `(${minutes} minute${minutes > 1 ? 's' : ''} ago)`;
+            return '(just now)';
+        }
+
+        // Create state badge HTML
+        function createStateBadge(state) {
+            const stateClass = state === 'online' ? 'state-online' : 
+                              state === 'offline' ? 'state-offline' : 
+                              state === 'building' ? 'state-building' : 'state-offline';
+            return `<span class="state-badge ${stateClass}">${state || 'unknown'}</span>`;
+        }
+
+        // Extract and store all indexes used in queries
+        function extractUsedIndexes(requests) {
+            usedIndexes.clear();
+            
+            console.log('🔍 Starting index extraction from query data...');
+            let totalIndexReferences = 0;
+            
+            requests.forEach((request, index) => {
+                console.log(`\n🔍 === Processing Request ${index + 1} ===`);
+                console.log(`📋 Original request keys:`, Object.keys(request));
+                
+                // Handle different JSON structures
+                let actualRequest = request;
+                if (request.completed_requests) {
+                    // User's format: { completed_requests: {...}, plan: "..." }
+                    actualRequest = { ...request.completed_requests, plan: request.plan };
+                    console.log(`🔄 Restructured request from user format`);
+                    console.log(`📋 Restructured request keys:`, Object.keys(actualRequest));
+                } else {
+                    console.log(`📋 Using original request structure`);
+                }
+                
+                console.log(`📝 Request has plan:`, !!actualRequest.plan);
+                console.log(`📝 Plan type:`, typeof actualRequest.plan);
+                if (actualRequest.plan) {
+                    console.log(`📝 Plan sample:`, typeof actualRequest.plan === 'string' ? actualRequest.plan.substring(0, 100) + '...' : 'Object');
+                }
+                
+                // Create a copy of the request with parsed plan
+                const processedRequest = { ...actualRequest };
+                
+                // Parse the plan if it's a string
+                if (typeof processedRequest.plan === 'string') {
+                    try {
+                        processedRequest.plan = JSON.parse(processedRequest.plan);
+                        console.log(`🔧 ✅ Parsed plan JSON for request: ${processedRequest.clientContextID || processedRequest.requestId || 'unknown'}`);
+                        console.log(`🔧 Parsed plan operator:`, processedRequest.plan?.["#operator"]);
+                    } catch (e) {
+                        console.warn(`⚠️ Failed to parse plan JSON for request: ${processedRequest.clientContextID || processedRequest.requestId || 'unknown'}`, e);
+                        return; // Skip this request if plan can't be parsed
+                    }
+                } else if (processedRequest.plan) {
+                    console.log(`🔧 Plan already parsed, operator:`, processedRequest.plan?.["#operator"]);
+                } else {
+                    console.warn(`⚠️ No plan found in request`);
+                    return;
+                }
+                
+                console.log(`🎯 Calling extractIndexesAndKeys...`);
+                const indexesAndKeys = extractIndexesAndKeys(processedRequest);
+                console.log(`🎯 extractIndexesAndKeys returned:`, indexesAndKeys);
+                
+                // Get bucket.scope.collection from the statement
+                const statement = actualRequest.preparedText || actualRequest.statement || "";
+                console.log(`📝 Statement:`, statement);
+                let bucketScopeCollection = 'unknown.unknown.unknown';
+                
+                // Try to extract FROM clause to get bucket.scope.collection
+                const fromMatch = statement.match(/FROM\s+([^\s\n\r\t]+)/i);
+                if (fromMatch) {
+                    const target = fromMatch[1].replace(/`/g, '').replace(/;$/, '');
+                    const parts = target.split('.');
+                    if (parts.length === 1) {
+                        bucketScopeCollection = `${parts[0]}._default._default`;
+                    } else if (parts.length === 2) {
+                        bucketScopeCollection = `${parts[0]}.${parts[1]}._default`;
+                    } else if (parts.length >= 3) {
+                        bucketScopeCollection = `${parts[0]}.${parts[1]}.${parts[2]}`;
+                    }
+                }
+                
+                console.log(`🎯 Processing statement: "${statement.substring(0, 50)}..." on ${bucketScopeCollection}`);
+                console.log(`🔍 Found ${indexesAndKeys.indexes.length} indexes in this query`);
+                
+                // Add each index with its bucket.scope.collection
+                indexesAndKeys.indexes.forEach(indexName => {
+                    const indexKey = `${indexName}|${bucketScopeCollection}`;
+                    usedIndexes.add(indexKey);
+                    totalIndexReferences++;
+                    
+                    console.log(`📋 Found index: "${indexName}" on ${bucketScopeCollection}`);
+                });
+            });
+            
+            console.log(`✅ Index extraction complete: ${usedIndexes.size} unique indexes, ${totalIndexReferences} total references`);
+        }
+
+        // Calculate and update index statistics
+        function updateIndexStats() {
+            const buckets = new Set();
+            const scopes = new Set();
+            const collections = new Set();
+            let primaryCount = 0;
+            let withReplicasCount = 0;
+            let noReplicasCount = 0;
+            let neverScannedCount = 0;
+            let usedCount = 0;
+
+            filteredIndexData.forEach(index => {
+                if (index.indexString) {
+                    const target = parseIndexTarget(index.indexString);
+                    buckets.add(target.bucket);
+                    scopes.add(target.scope);
+                    collections.add(target.collection);
+                }
+
+                // Check if primary
+                if (index.name.includes('primary') || index.name.includes('#primary')) {
+                    primaryCount++;
+                }
+
+                // Check replicas
+                const replica = index.metadata?.num_replica || 0;
+                if (replica > 0) {
+                    withReplicasCount++;
+                } else {
+                    noReplicasCount++;
+                }
+
+                // Check if never scanned
+                const lastScan = index.metadata?.last_scan_time;
+                if (!lastScan || lastScan === 'Never') {
+                    neverScannedCount++;
+                }
+
+                // Check if used in queries
+                const target = parseIndexTarget(index.indexString);
+                const targetString = `${target.bucket}.${target.scope}.${target.collection}`;
+                const isPrimary = index.name.includes('primary') || index.name.includes('#primary');
+                
+                const exactKey = `${index.name}|${targetString}`;
+                const primaryKey = `#primary|${targetString}`;
+                
+                if (usedIndexes.has(exactKey) || (isPrimary && usedIndexes.has(primaryKey))) {
+                    usedCount++;
+                }
+            });
+
+            // Update stats display
+            document.getElementById('stat-indexes').textContent = filteredIndexData.length;
+            document.getElementById('stat-buckets').textContent = buckets.size;
+            document.getElementById('stat-scopes').textContent = scopes.size;
+            document.getElementById('stat-collections').textContent = collections.size;
+            
+            const primaryElement = document.getElementById('stat-primary');
+            primaryElement.textContent = primaryCount;
+            primaryElement.className = primaryCount > 0 ? 'primary-warning' : '';
+            
+            const replicaInfoElement = document.getElementById('stat-replica-info');
+            replicaInfoElement.innerHTML = `<span class="${noReplicasCount > 0 ? 'replica-zero' : ''}">${noReplicasCount}</span>/${withReplicasCount}`;
+            
+            document.getElementById('stat-never-scanned').textContent = neverScannedCount;
+            document.getElementById('stat-used-total').textContent = `${usedCount}/${filteredIndexData.length}`;
+        }
+
+        // Parse and process index JSON data
+        function parseIndexJSON() {
+            const indexJsonInput = document.getElementById('indexJsonInput').value.trim();
+
+            if (!indexJsonInput) {
+                indexData = [];
+                displayIndexResults();
+                return;
+            }
+
+            try {
+                const parsedData = JSON.parse(indexJsonInput);
+                indexData = Array.isArray(parsedData) ? parsedData : [parsedData];
+
+                // Extract unique buckets, scopes, collections
+                updateFilterDropdowns();
+
+                // Apply current filters and display
+                applyIndexFilters();
+
+            } catch (error) {
+                document.getElementById('indexResults').innerHTML = `
+                    <div style="color: #dc3545; text-align: center; margin-top: 50px;">
+                        <strong>Invalid JSON Format</strong><br>
+                        Please check your JSON syntax: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Extract bucket, scope, collection from indexString
+        function parseIndexTarget(indexString) {
+            const match = indexString.match(/ON\s+([^\s(;]+)/i);
+            if (!match) return { bucket: 'unknown', scope: 'unknown', collection: 'unknown' };
+
+            // Clean up the target string - remove backticks, leading dots, trailing semicolons
+            let target = match[1].replace(/`/g, '').replace(/^\.+/, '').replace(/;+$/, '');
+            const parts = target.split('.').filter(part => part.length > 0);
+
+            if (parts.length === 1) {
+                return { bucket: parts[0], scope: '_default', collection: '_default' };
+            } else if (parts.length === 2) {
+                return { bucket: parts[0], scope: parts[1], collection: '_default' };
+            } else if (parts.length >= 3) {
+                return { bucket: parts[0], scope: parts[1], collection: parts[2] };
+            }
+
+            return { bucket: parts[0] || 'unknown', scope: parts[1] || 'unknown', collection: parts[2] || 'unknown' };
+        }
+
+        // Update filter dropdowns with available options
+        function updateFilterDropdowns() {
+            const buckets = new Set();
+
+            indexData.forEach(index => {
+                if (index.indexString) {
+                    const target = parseIndexTarget(index.indexString);
+                    buckets.add(target.bucket);
+                }
+            });
+
+            updateDropdown('bucketFilter', Array.from(buckets).sort());
+            
+            // Update scopes and collections based on selected bucket
+            updateCascadingDropdowns();
+        }
+
+        // Update scopes and collections based on selected bucket/scope
+        function updateCascadingDropdowns() {
+            const selectedBucket = document.getElementById('bucketFilter').value;
+            const selectedScope = document.getElementById('scopeFilter').value;
+            
+            const scopes = new Set();
+            const collections = new Set();
+
+            indexData.forEach(index => {
+                if (index.indexString) {
+                    const target = parseIndexTarget(index.indexString);
+                    
+                    // If bucket is selected, only show scopes for that bucket
+                    if (selectedBucket === '(ALL)' || target.bucket === selectedBucket) {
+                        scopes.add(target.scope);
+                        
+                        // If scope is also selected, only show collections for that bucket.scope
+                        if (selectedScope === '(ALL)' || target.scope === selectedScope) {
+                            collections.add(target.collection);
+                        }
+                    }
+                }
+            });
+
+            updateDropdown('scopeFilter', Array.from(scopes).sort());
+            updateDropdown('collectionFilter', Array.from(collections).sort());
+        }
+
+        function updateDropdown(selectId, options) {
+            const select = document.getElementById(selectId);
+            const currentValue = select.value;
+
+            // Clear existing options except (ALL)
+            select.innerHTML = '<option value="(ALL)">(ALL)</option>';
+
+            // Add new options
+            options.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                select.appendChild(optionElement);
+            });
+
+            // Restore previous selection if it still exists
+            if (options.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        // Apply current filter settings
+        function applyIndexFilters() {
+            const bucketFilter = document.getElementById('bucketFilter').value;
+            const scopeFilter = document.getElementById('scopeFilter').value;
+            const collectionFilter = document.getElementById('collectionFilter').value;
+            
+            // Get checkbox filter states
+            const filterPrimary = document.getElementById('filter-primary')?.checked || false;
+            const filterUsed = document.getElementById('filter-used')?.checked || false;
+            const filterNoReplica = document.getElementById('filter-no-replica')?.checked || false;
+            const filterNeverScanned = document.getElementById('filter-never-scanned')?.checked || false;
+
+            filteredIndexData = indexData.filter(index => {
+                if (!index.indexString) return false;
+
+                const target = parseIndexTarget(index.indexString);
+
+                // Basic dropdown filters
+                const passesDropdownFilters = (bucketFilter === '(ALL)' || target.bucket === bucketFilter) &&
+                    (scopeFilter === '(ALL)' || target.scope === scopeFilter) &&
+                    (collectionFilter === '(ALL)' || target.collection === collectionFilter);
+
+                if (!passesDropdownFilters) return false;
+
+                // Checkbox filters
+                const isPrimary = index.name.includes('primary') || index.name.includes('#primary');
+                if (filterPrimary && !isPrimary) return false;
+
+                // Check if used in queries
+                if (filterUsed) {
+                    const targetString = `${target.bucket}.${target.scope}.${target.collection}`;
+                    const exactKey = `${index.name}|${targetString}`;
+                    const primaryKey = `#primary|${targetString}`;
+                    const isUsed = usedIndexes.has(exactKey) || (isPrimary && usedIndexes.has(primaryKey));
+                    if (!isUsed) return false;
+                }
+
+                // Check replicas
+                if (filterNoReplica) {
+                    const replica = index.metadata?.num_replica || 0;
+                    if (replica !== 0) return false;
+                }
+
+                // Check never scanned
+                if (filterNeverScanned) {
+                    const lastScan = index.metadata?.last_scan_time;
+                    if (lastScan && lastScan !== 'Never') return false;
+                }
+
+                return true;
+            });
+
+            updateIndexStats();
+            displayIndexResults();
+            
+            // Count and log matches
+            let matchedCount = 0;
+            filteredIndexData.forEach(index => {
+                const target = parseIndexTarget(index.indexString);
+                const targetString = `${target.bucket}.${target.scope}.${target.collection}`;
+                const isPrimary = index.name.includes('primary') || index.name.includes('#primary');
+                
+                const exactKey = `${index.name}|${targetString}`;
+                const primaryKey = `#primary|${targetString}`;
+                
+                if (usedIndexes.has(exactKey) || (isPrimary && usedIndexes.has(primaryKey))) {
+                    matchedCount++;
+                }
+            });
+            
+            console.log(`📊 Matching summary: ${matchedCount}/${filteredIndexData.length} indexes found in query data`);
+        }
+
+        // Display filtered index results
+        function displayIndexResults() {
+            const resultsContainer = document.getElementById('indexResults');
+            const sortBy = document.getElementById('sortBy').value;
+
+            if (filteredIndexData.length === 0) {
+                if (indexData.length === 0) {
+                    // No index data loaded - show instructions
+                    resultsContainer.innerHTML = `
+                        <div style="text-align: center; margin-top: 30px;">
+                            <h4 style="color: #495057; margin-bottom: 20px;">No Index Data Loaded</h4>
+                            <p style="color: #666; margin-bottom: 20px;">
+                                To analyze indexes, run this query in your Couchbase Query Workbench and paste the results in the second textarea above:
+                            </p>
+                            <div class="sql-query-box">
+                                <button class="sql-copy-btn" onclick="copyIndexQuery(event)">Copy Query</button>
+                                <pre>SELECT 
+ s.name,
+ s.id,
+ s.metadata,
+ s.state,
+ s.num_replica,
+CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+FROM system:indexes AS s
+LET bid = CONCAT("", s.bucket_id, ""),
+    sid = CONCAT("", s.scope_id, ""),
+    kid = CONCAT("", s.keyspace_id, ""),
+    k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
+    ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
+    w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
+    p = CASE WHEN s.\`partition\` IS NOT NULL THEN " PARTITION BY " || s.\`partition\` ELSE "" END
+;</pre>
+                            </div>
+                            <p style="color: #666; font-size: 13px; margin-top: 15px;">
+                                <strong>Steps:</strong><br>
+                                1. Copy the query above<br>
+                                2. Run it in Couchbase Query Workbench<br>
+                                3. Copy the JSON results<br>
+                                4. Paste into the second textarea at the top<br>
+                                5. Click "Parse JSON" again
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    // Index data loaded but filtered out
+                    resultsContainer.innerHTML = `
+                        <p style="color: #666; text-align: center; margin-top: 50px;">
+                            No indexes match the current filters.
+                        </p>
+                    `;
+                }
+                return;
+            }
+
+            console.log(`🔄 Displaying ${filteredIndexData.length} indexes and checking for query matches...`);
+
+            let html = '';
+
+            if (sortBy === 'Bucket') {
+                // Group by bucket
+                const grouped = {};
+                filteredIndexData.forEach(index => {
+                    const target = parseIndexTarget(index.indexString);
+                    if (!grouped[target.bucket]) grouped[target.bucket] = [];
+                    grouped[target.bucket].push(index);
+                });
+
+                Object.keys(grouped).sort().forEach(bucket => {
+                    html += `<div class="bucket-group">`;
+                    html += `<h3 style="font-size: 24px;">${bucket}</h3>`;
+                    grouped[bucket].sort((a, b) => a.name.localeCompare(b.name)).forEach(index => {
+                        html += createIndexHTML(index);
+                    });
+                    html += `</div>`;
+                });
+            } else {
+                // Sort by name or other criteria
+                const sorted = [...filteredIndexData].sort((a, b) => a.name.localeCompare(b.name));
+                sorted.forEach(index => {
+                    html += createIndexHTML(index);
+                });
+            }
+
+            resultsContainer.innerHTML = html;
+        }
+
+        function createIndexHTML(index) {
+            const target = parseIndexTarget(index.indexString);
+            const isPrimary = index.name.includes('primary') || index.name.includes('#primary');
+            const lastScan = index.metadata?.last_scan_time || 'Never';
+            const replica = index.metadata?.num_replica || 0;
+            const state = index.state || 'unknown';
+            const timeSince = getTimeSince(lastScan);
+            const lastScanFormatted = lastScan === 'Never' ? 'Never' : new Date(lastScan).toLocaleString();
+            const replicaClass = replica === 0 ? 'replica-zero' : '';
+
+            // Check if this index is used in the parsed query data
+            const targetString = `${target.bucket}.${target.scope}.${target.collection}`;
+            let isUsed = false;
+            
+            // First try exact match
+            const exactKey = `${index.name}|${targetString}`;
+            if (usedIndexes.has(exactKey)) {
+                isUsed = true;
+                console.log(`✅ Exact match found: "${index.name}" on ${targetString}`);
+            }
+            
+            // If not found and this is a primary index, also check for #primary match
+            if (!isUsed && isPrimary) {
+                const primaryKey = `#primary|${targetString}`;
+                if (usedIndexes.has(primaryKey)) {
+                    isUsed = true;
+                    console.log(`✅ Primary match found: "${index.name}" matches "#primary" on ${targetString}`);
+                }
+            }
+            
+            const usedBadge = isUsed ? '<span class="used-badge">Used</span>' : '';
+
+            return `
+                <div class="index-item ${isPrimary ? 'primary' : ''}">
+                    <h4>${index.name} ${usedBadge}</h4>
+                    <div class="index-details">
+                        <strong>Target:</strong> ${target.bucket}.${target.scope}.${target.collection}<br>
+                        <strong>State:</strong> ${createStateBadge(state)} | <strong>Replicas:</strong> <span class="${replicaClass}">${replica}</span> | <strong>Last Scan:</strong> ${lastScanFormatted} ${timeSince}
+                    </div>
+                    <div class="index-statement">
+                        ${index.indexString}
+                        <button class="copy-btn" onclick="copyIndexDefinition('${index.indexString.replace(/'/g, "\\'")}', event)">Copy</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Copy index definition to clipboard
+        function copyIndexDefinition(indexString, event) {
+            navigator.clipboard.writeText(indexString).then(() => {
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.backgroundColor = '#28a745';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.backgroundColor = '#007bff';
+                }, 1000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        // Copy index query to clipboard
+        function copyIndexQuery(event) {
+            const query = `SELECT 
+ s.name,
+ s.id,
+ s.metadata,
+ s.state,
+ s.num_replica,
+CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+FROM system:indexes AS s
+LET bid = CONCAT("", s.bucket_id, ""),
+    sid = CONCAT("", s.scope_id, ""),
+    kid = CONCAT("", s.keyspace_id, ""),
+    k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
+    ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
+    w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
+    p = CASE WHEN s.\`partition\` IS NOT NULL THEN " PARTITION BY " || s.\`partition\` ELSE "" END
+;`;
+
+            navigator.clipboard.writeText(query).then(() => {
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.backgroundColor = '#28a745';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.backgroundColor = '#007bff';
+                }, 1000);
+            }).catch(err => {
+                console.error('Failed to copy query: ', err);
+            });
+        }
+
+        // Initialize index analysis functionality
+        function initializeIndexAnalysis() {
+            const indexJsonInput = document.getElementById('indexJsonInput');
+            const bucketFilter = document.getElementById('bucketFilter');
+            const scopeFilter = document.getElementById('scopeFilter');
+            const collectionFilter = document.getElementById('collectionFilter');
+            const sortBy = document.getElementById('sortBy');
+
+            // Add event listeners
+            if (indexJsonInput) indexJsonInput.addEventListener('input', parseIndexJSON);
+            if (bucketFilter) {
+                bucketFilter.addEventListener('change', () => {
+                    // Reset scope and collection when bucket changes
+                    document.getElementById('scopeFilter').value = '(ALL)';
+                    document.getElementById('collectionFilter').value = '(ALL)';
+                    updateCascadingDropdowns();
+                    applyIndexFilters();
+                });
+            }
+            if (scopeFilter) {
+                scopeFilter.addEventListener('change', () => {
+                    // Reset collection when scope changes
+                    document.getElementById('collectionFilter').value = '(ALL)';
+                    updateCascadingDropdowns();
+                    applyIndexFilters();
+                });
+            }
+            if (collectionFilter) collectionFilter.addEventListener('change', applyIndexFilters);
+            if (sortBy) sortBy.addEventListener('change', applyIndexFilters);
+
+            // Add checkbox event listeners
+            const filterCheckboxes = [
+                'filter-primary',
+                'filter-used', 
+                'filter-no-replica',
+                'filter-never-scanned'
+            ];
+            
+            filterCheckboxes.forEach(id => {
+                const checkbox = document.getElementById(id);
+                if (checkbox) {
+                    checkbox.addEventListener('change', applyIndexFilters);
+                }
+            });
+
+            console.log('✅ Index analysis initialized');
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             console.log('🚀 Initializing Couchbase Query Analyzer...');
             console.log(`📦 Version: ${APP_VERSION} (Updated: ${LAST_UPDATED})`);
             console.log('🔧 Features:', getVersionInfo().features.join(', '));
 
             // Initialize theme from localStorage
-            initializeTheme();
+
 
             // Enhance keyboard navigation
             enhanceKeyboardNavigation();
@@ -7769,6 +8282,9 @@
             }
 
             console.log('✅ Query Analyzer initialized successfully');
+
+            // Initialize index analysis
+            initializeIndexAnalysis();
 
             // Make version info globally accessible
             window.QueryAnalyzer = {
