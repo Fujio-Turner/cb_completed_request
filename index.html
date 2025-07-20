@@ -2,7 +2,7 @@
 <html lang="en">
 <!--
     Couchbase Query Analyzer
-    Version: 3.0.0
+    Version: 3.0.1
     Last Updated: 2025-01-20
     
     🤖 AI AGENT NOTE: When making changes to this file, please update the version number above.
@@ -14,9 +14,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.0.0" />
+    <meta name="version" content="3.0.1" />
     <meta name="last-updated" content="2025-01-20" />
-    <title>Query Analyzer v3.0.0</title>
+    <title>Query Analyzer v3.0.1</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css" />
     <!-- Include Chart.js -->
@@ -154,24 +154,21 @@
 </head>
 
 <body>
-    <!-- Dark mode toggle -->
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark/light theme">
-        🌙
-    </button>
-
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v2.1.0
+        v3.0.1
     </div>
 
     <!-- Input Section (outside tabs) -->
-    <div id="input-section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <textarea id="json-input"
-            placeholder="Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests;"
-            aria-label="JSON input field for Couchbase query data" role="textbox"></textarea>
-        <textarea id="indexJsonInput"
-            placeholder="Click the 'Indexes' tab below to get the SQL query to run. Paste the results here..."
-            aria-label="Index JSON input field" role="textbox"></textarea>
+    <div id="input-section">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+            <textarea id="json-input"
+                placeholder="Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests;"
+                aria-label="JSON input field for Couchbase query data" role="textbox"></textarea>
+            <textarea id="indexJsonInput"
+                placeholder="Click the 'Indexes' tab below to get the SQL query to run. Paste the results here..."
+                aria-label="Index JSON input field" role="textbox"></textarea>
+        </div>
         
         <div style="
           margin: 10px 0;
@@ -643,52 +640,63 @@
         <!-- Indexes Tab Content -->
         <div id="indexes">
             <!-- Filter Controls -->
-            <div style="margin-bottom: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
-                <div>
-                    <label for="bucketFilter" style="font-weight: bold; display: block; margin-bottom: 5px;">Bucket:</label>
-                    <select id="bucketFilter" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                        <option value="(ALL)">(ALL)</option>
-                    </select>
+            <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                <!-- First row: Bucket, Scope, Collection, Sort -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label for="bucketFilter" style="font-weight: bold; display: block; margin-bottom: 5px;">Bucket:</label>
+                        <select id="bucketFilter" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            <option value="(ALL)">(ALL)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="scopeFilter" style="font-weight: bold; display: block; margin-bottom: 5px;">Scope:</label>
+                        <select id="scopeFilter" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            <option value="(ALL)">(ALL)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="collectionFilter" style="font-weight: bold; display: block; margin-bottom: 5px;">Collection:</label>
+                        <select id="collectionFilter" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            <option value="(ALL)">(ALL)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="sortBy" style="font-weight: bold; display: block; margin-bottom: 5px;">Sort By:</label>
+                        <select id="sortBy" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            <option value="Name">Name</option>
+                            <option value="Bucket">Bucket</option>
+                            <option value="LastScanned">Last Scanned</option>
+                        </select>
+                    </div>
                 </div>
+                
+                <!-- Second row: Search -->
                 <div>
-                    <label for="scopeFilter" style="font-weight: bold; display: block; margin-bottom: 5px;">Scope:</label>
-                    <select id="scopeFilter" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                        <option value="(ALL)">(ALL)</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="collectionFilter" style="font-weight: bold; display: block; margin-bottom: 5px;">Collection:</label>
-                    <select id="collectionFilter" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                        <option value="(ALL)">(ALL)</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="sortBy" style="font-weight: bold; display: block; margin-bottom: 5px;">Sort By:</label>
-                    <select id="sortBy" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                        <option value="Name">Name</option>
-                        <option value="Bucket">Bucket</option>
-                    </select>
+                    <label for="indexSearch" style="font-weight: bold; display: block; margin-bottom: 5px;">Search Indexes:</label>
+                    <input type="text" id="indexSearch" placeholder="Search by index name or definition..." 
+                           style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
                 </div>
             </div>
 
             <!-- Stats Panel -->
             <div id="indexStats" style="margin-bottom: 15px; padding: 12px; background: #e7f3ff; border: 1px solid #b3d7ff; border-radius: 6px; font-size: 13px;">
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
-                    <div><strong>Indexes:</strong> <span id="stat-indexes">0</span></div>
+                    <div><strong>Total Indexes:</strong> <span id="stat-indexes">0</span></div>
                     <div><strong>Buckets:</strong> <span id="stat-buckets">0</span></div>
                     <div><strong>Scopes:</strong> <span id="stat-scopes">0</span></div>
                     <div><strong>Collections:</strong> <span id="stat-collections">0</span></div>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 8px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span><strong>Primary:</strong> <span id="stat-primary">0</span></span>
+                        <span><strong>Primary Indexes:</strong> <span id="stat-primary">0</span></span>
                         <label style="display: flex; align-items: center; gap: 4px; font-size: 11px;">
                             <input type="checkbox" id="filter-primary" style="margin: 0;">
                             Primary Only
                         </label>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span><strong>Used/Total:</strong> <span id="stat-used-total">0/0</span></span>
+                        <span><strong>Used/Total Indexes:</strong> <span id="stat-used-total">0/0</span></span>
                         <label style="display: flex; align-items: center; gap: 4px; font-size: 11px;">
                             <input type="checkbox" id="filter-used" style="margin: 0;">
                             Used Only
@@ -704,7 +712,7 @@
                         </label>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span><strong>Never Scanned:</strong> <span id="stat-never-scanned">0</span></span>
+                        <span><strong>Never Scanned Indexes:</strong> <span id="stat-never-scanned">0</span></span>
                         <label style="display: flex; align-items: center; gap: 4px; font-size: 11px;">
                             <input type="checkbox" id="filter-never-scanned" style="margin: 0;">
                             Never Scanned Only
@@ -744,7 +752,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         1. Copy the query above<br>
                         2. Run it in Couchbase Query Workbench<br>
                         3. Copy the JSON results<br>
-                        4. Paste into the second textarea at the top<br>
+                        4. Paste into the second textarea ,on the right, at the top<br>
                         5. Click "Parse JSON" again
                     </p>
                 </div>
@@ -7611,7 +7619,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = '3.0.0';
+        const APP_VERSION = '3.0.1';
         const LAST_UPDATED = '2025-01-20';
 
         function getVersionInfo() {
@@ -7943,6 +7951,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
             const bucketFilter = document.getElementById('bucketFilter').value;
             const scopeFilter = document.getElementById('scopeFilter').value;
             const collectionFilter = document.getElementById('collectionFilter').value;
+            const searchTerm = document.getElementById('indexSearch')?.value.toLowerCase().trim() || '';
             
             // Get checkbox filter states
             const filterPrimary = document.getElementById('filter-primary')?.checked || false;
@@ -7961,6 +7970,14 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     (collectionFilter === '(ALL)' || target.collection === collectionFilter);
 
                 if (!passesDropdownFilters) return false;
+
+                // Search filter
+                if (searchTerm) {
+                    const indexName = index.name.toLowerCase();
+                    const indexString = index.indexString?.toLowerCase() || '';
+                    const matchesSearch = indexName.includes(searchTerm) || indexString.includes(searchTerm);
+                    if (!matchesSearch) return false;
+                }
 
                 // Checkbox filters
                 const isPrimary = index.name.includes('primary') || index.name.includes('#primary');
@@ -8086,8 +8103,25 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     });
                     html += `</div>`;
                 });
+            } else if (sortBy === 'LastScanned') {
+                // Sort by last scanned time (newest first)
+                const sorted = [...filteredIndexData].sort((a, b) => {
+                    const aLastScan = a.metadata?.last_scan_time || 0;
+                    const bLastScan = b.metadata?.last_scan_time || 0;
+                    
+                    // Handle 'Never' scanned cases (put them at the end)
+                    if (aLastScan === 0 && bLastScan === 0) return a.name.localeCompare(b.name);
+                    if (aLastScan === 0) return 1;
+                    if (bLastScan === 0) return -1;
+                    
+                    // Sort by timestamp (newest first)
+                    return new Date(bLastScan) - new Date(aLastScan);
+                });
+                sorted.forEach(index => {
+                    html += createIndexHTML(index);
+                });
             } else {
-                // Sort by name or other criteria
+                // Sort by name (default)
                 const sorted = [...filteredIndexData].sort((a, b) => a.name.localeCompare(b.name));
                 sorted.forEach(index => {
                     html += createIndexHTML(index);
@@ -8222,6 +8256,16 @@ LET bid = CONCAT("", s.bucket_id, ""),
             }
             if (collectionFilter) collectionFilter.addEventListener('change', applyIndexFilters);
             if (sortBy) sortBy.addEventListener('change', applyIndexFilters);
+
+            // Add search input event listener with debouncing
+            const indexSearch = document.getElementById('indexSearch');
+            if (indexSearch) {
+                let searchTimeout;
+                indexSearch.addEventListener('input', () => {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(applyIndexFilters, 300); // 300ms debounce
+                });
+            }
 
             // Add checkbox event listeners
             const filterCheckboxes = [

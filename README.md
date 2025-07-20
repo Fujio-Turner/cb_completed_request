@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.0.0
+# Couchbase Slow Query Analysis Tool v3.0.1
 
 A comprehensive web-based tool for analyzing Couchbase query performance and execution plans. Visualize query patterns, identify bottlenecks, and optimize database performance with advanced index usage tracking, execution plan analysis, and dedicated index management features.
 
@@ -24,13 +24,18 @@ SELECT *, meta().plan FROM system:completed_requests LIMIT 4000;
 To use the new Indexes tab features, also collect index metadata:
 
 ```sql
-SELECT name, is_primary, bucket_id, scope_id, keyspace_id, 
-       index_key, condition, state, using, partition,
-       OBJECT_ADD(metadata, "indexString", bucket_id || "." || scope_id || "." || keyspace_id) as metadata,
-       ks = CASE WHEN is_primary THEN "" ELSE "(" || CONCAT2(",", index_key) || ")" END
-FROM system:indexes 
-WHERE state = "online"
-ORDER BY bucket_id, scope_id, keyspace_id, name;
+SELECT 
+  s.name, s.id, s.metadata, s.state, s.num_replica,
+  CONCAT('CREATE INDEX ', s.name, ' ON ', k, ks, p, w, ';') AS indexString
+FROM system:indexes AS s
+LET 
+  bid = CONCAT('', s.bucket_id, ''),
+  sid = CONCAT('', s.scope_id, ''),
+  kid = CONCAT('', s.keyspace_id, ''),
+  k = NVL2(bid, CONCAT2('.', bid, sid, kid), kid),
+  ks = CASE WHEN s.is_primary THEN '' ELSE '(' || CONCAT2(',', s.index_key) || ') ' END,
+  w = CASE WHEN s.condition IS NOT NULL THEN ' WHERE ' || REPLACE(s.condition, '"', '''') ELSE '' END,
+  p = CASE WHEN s.`partition` IS NOT NULL THEN ' PARTITION BY ' || s.`partition` ELSE '' END;
 ```
 
 **Notes**: 
