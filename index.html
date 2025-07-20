@@ -6957,7 +6957,7 @@
                 if (index.indexString) {
                     const target = parseIndexTarget(index.indexString);
                     const targetString = `${target.bucket}.${target.scope}.${target.collection}`;
-                    const isPrimary = index.name.includes('primary') || index.name.includes('#primary');
+                    const isPrimary = index.name.includes('primary') || index.name.includes('#primary') || index.name.endsWith('_primary');
                     
                     if (isPrimary && targetString === bucketScopeCollection) {
                         return index.name;
@@ -7075,7 +7075,7 @@
                                 allIndexes.set(indexName, {
                                     name: indexName,
                                     totalUsage: 0,
-                                    isPrimary: indexName === '#primary' || indexName.includes('#primary'),
+                                    isPrimary: indexName === '#primary' || indexName.includes('#primary') || indexName.includes('primary') || indexName.endsWith('_primary'),
                                     scanTimes: [],
                                     itemsScanned: [],
                                     itemsFetched: []
