@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.0.1
+# Couchbase Slow Query Analysis Tool v3.1.0
 
 A comprehensive web-based tool for analyzing Couchbase query performance and execution plans. Visualize query patterns, identify bottlenecks, and optimize database performance with advanced index usage tracking, execution plan analysis, and dedicated index management features.
 
@@ -66,7 +66,10 @@ Select ALL & Copy the full JSON results and paste it into the tool's input area 
 
 #### **1. Dashboard Tab**
 - **Query Duration Distribution** bar chart showing performance patterns
-- **Primary Scan Usage** pie chart identifying optimization opportunities
+- **Primary Indexes Used** donut chart with intelligent warning system
+  - Conditional warning display (only appears when primary indexes detected)
+  - Educational "Learn More" link to Couchbase primary index best practices
+  - Enhanced visual distinction for production performance awareness
 - **Query Pattern Features** analysis for performance insights
 - **Users by Query Count** sortable table showing top query generators
 - **Index Usage Count** sortable table tracking index utilization
@@ -130,7 +133,10 @@ Select ALL & Copy the full JSON results and paste it into the tool's input area 
   - Index usage statistics with scan counts and execution timings
   - Query pattern analysis with normalized statement grouping
   - Color-coded connections showing usage frequency
-- **Comprehensive Index Detection**:
+- **Enhanced Primary Index Detection** (NEW in v3.1.0):
+  - Improved detection for indexes ending with `*_primary` pattern
+  - Visual highlighting with light red background for all primary index variants
+  - Comprehensive coverage of `#primary`, `bucket_primary`, `collection_primary` formats
   - Captures indexes from all operator types (IndexScan3, PrimaryScan3, etc.)
   - Handles complex nested structures in execution plans
   - Tracks primary index usage and sequential scans
@@ -210,6 +216,27 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 - **By Day**: Best for ranges > 1 month (long-term trends)
 
 **⚠️ Warning**: Large date ranges with fine-grained groupings may cause chart rendering errors. The tool will alert you and suggest better combinations.
+
+## Changelog
+
+### Version 3.1.0 (2025-01-20)
+**New Features & Enhancements:**
+- **Dashboard Tab Improvements**:
+  - Converted "Primary Scan Usage" pie chart to "Primary Indexes Used" donut chart
+  - Added intelligent warning system that only appears when primary indexes are detected
+  - Integrated "Learn More" link to Couchbase best practices documentation
+  - Enhanced visual design with better color contrast and readability
+- **Index Query Flow Tab Enhancements**:
+  - Improved primary index detection to include indexes ending with `*_primary`
+  - Enhanced visual highlighting for all primary index variants
+  - Better coverage of primary index naming patterns (`#primary`, `bucket_primary`, etc.)
+- **User Experience**:
+  - Cleaner interface with conditional warnings only when relevant
+  - Educational resources directly integrated into the tool
+  - More intuitive visual feedback for performance optimization opportunities
+
+### Version 3.0.1 & Earlier
+- See git history for previous version changes
 
 ## Troubleshooting
 
