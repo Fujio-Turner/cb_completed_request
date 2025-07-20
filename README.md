@@ -18,6 +18,12 @@ Run this query in Couchbase Query Workbench or cbq:
 ```sql
 SELECT *, meta().plan FROM system:completed_requests LIMIT 4000;
 ```
+**Notes**: 
+This could return back a JSON of about 36MB~ish. Anything bigger will probably crash the browser. <i>Firefox</i> seems to be the faster browser.
+
+**Browser is slow/crashes:**
+If the browser slowes to a crawl reduce the data size via `LIMIT 2000`
+
 [More Query Options](sql_queries.md)
 
 **Optional - For Enhanced Index Analysis:**
@@ -41,13 +47,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
     w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
     p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;
 ```
-
-**Notes**: 
-This could return back a JSON of about 36MB~ish. Anything bigger will probably crash the browser. <i>Firefox</i> seems to be the faster browser.
-
-**Browser is slow/crashes:**
-If the browser slowes to a crawl reduce the data size via `LIMIT 2000`
-
 
 ### Step 4: Analyze
 Select ALL & Copy the full JSON results and paste it into the tool's input area up top, then click <button>Parse JSON</button> 
