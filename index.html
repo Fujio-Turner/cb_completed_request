@@ -72,8 +72,8 @@
         .query-text{font-family:monospace;font-size:12px;background:#f8f9fa;padding:8px;border-radius:4px;margin:8px 0;max-height:60px;overflow:hidden;position:relative}
         .query-text.expanded{max-height:none}
         .query-controls{margin-top:8px;display:flex;gap:8px}
-        .query-controls button{padding:4px 8px;border:1px solid #ddd;background:white;border-radius:3px;cursor:pointer;font-size:11px}
-        .query-controls button:hover{background:#f0f0f0}
+        .query-controls button:not(.btn-standard){padding:4px 8px;border:1px solid #ddd;background:white;border-radius:3px;cursor:pointer;font-size:11px}
+        .query-controls button:not(.btn-standard):hover{background:#f0f0f0}
         .usage-count{background:white;border:1px solid #333;padding:2px 6px;font-size:11px;font-weight:bold;border-radius:3px;position:absolute;transform:translate(-50%,-50%);z-index:10}
         #table-section,#analysis-table-section{flex:1;overflow-y:auto}
         #table-container,#analysis-table-container{overflow-x:auto}
@@ -96,8 +96,12 @@
         #operator-modal-body dd{margin-left:20px}
         #operator-modal-body,#plan-modal-body{user-select:text;-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text}
         #operator-modal-body *,#plan-modal-body *{user-select:text;-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text}
-        .copy-button{background-color:#4caf50;color:white;padding:5px 10px;border:none;border-radius:3px;cursor:pointer;margin:5px;font-size:12px}
-        .copy-button:hover{background-color:#45a049}
+
+        
+        /* Standard button styles for consistency */
+        .btn-standard{background:#007bff;color:white;border:none;border-radius:3px;padding:4px 8px;font-size:12px;cursor:pointer;margin:2px;font-weight:normal;text-transform:none}
+        .btn-standard:hover{background:#0056b3}
+        .btn-standard:active{background:#004494}
 
 
 
@@ -685,13 +689,12 @@
         <div id="indexes">
             <!-- Filter Controls -->
             <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
-                <!-- First row: Host, Bucket, Scope, Collection, Sort -->
+                <!-- First row: Search, Bucket, Scope, Collection, Sort -->
                 <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 15px;">
                     <div>
-                        <label for="hostFilter" style="font-weight: bold; display: block; margin-bottom: 5px;">Host:</label>
-                        <select id="hostFilter" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="(ALL)">(ALL)</option>
-                        </select>
+                        <label for="indexSearch" style="font-weight: bold; display: block; margin-bottom: 5px;">Search:</label>
+                        <input type="text" id="indexSearch" placeholder="Search indexes..." 
+                               style="width: 90%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
                     </div>
                     <div>
                         <label for="bucketFilter" style="font-weight: bold; display: block; margin-bottom: 5px;">Bucket:</label>
@@ -715,19 +718,12 @@
                         <label for="sortBy" style="font-weight: bold; display: block; margin-bottom: 5px;">Sort By:</label>
                         <select id="sortBy" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                             <option value="Name">Name</option>
-                            <option value="Hosts">Hosts</option>
                             <option value="Bucket">Bucket</option>
                             <option value="LastScanned">Last Scanned</option>
                         </select>
                     </div>
                 </div>
-                
-                <!-- Second row: Search -->
-                <div>
-                    <label for="indexSearch" style="font-weight: bold; display: block; margin-bottom: 5px;">Search Indexes:</label>
-                    <input type="text" id="indexSearch" placeholder="Search by index name or definition..." 
-                           style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
-                </div>
+
             </div>
 
             <!-- Stats Panel -->
@@ -780,7 +776,7 @@
                         To analyze indexes, run this query in your Couchbase Query Workbench and paste the results in the second textarea above:
                     </p>
                     <div class="sql-query-box">
-                        <button class="sql-copy-btn" onclick="copyIndexQuery(event)">Copy Query</button>
+                        <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">Copy Query</button>
                         <pre>
                           SELECT 
                             s.name,
@@ -788,7 +784,6 @@
                             s.metadata,
                             s.state,
                             s.num_replica,
-                            s.datastore_id,
                             CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
                             FROM system:indexes AS s
                             LET bid = CONCAT("", s.bucket_id, ""),
@@ -1261,7 +1256,7 @@
             let html = `<h3>Operator: ${operatorType}</h3>`;
 
             // Add copy button
-            html += `<button class="copy-button" onclick="copyOperatorStats(this)">Copy Stats</button>`;
+            html += `<button class="btn-standard" onclick="copyOperatorStats(this)">Copy Stats</button>`;
 
             // Show index name for specific operators
             if (
@@ -1556,7 +1551,7 @@
                 html += '<h3 style="margin: 0; color: #333; font-size: 16px;">📋 Indexes Used:</h3>';
                 const allIndexes = indexesAndKeys.indexes.join(', ');
                 html += `<button onclick="copyToClipboard('${allIndexes.replace(/'/g, "\\'")}', event)" 
-                        style="padding: 4px 12px; font-size: 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Copy All</button>`;
+                        class="btn-standard" style="background: #4CAF50;">Copy All</button>`;
                 html += '</div>';
                 html += '<div style="display: flex; flex-wrap: wrap; gap: 10px;">';
                 indexesAndKeys.indexes.forEach(index => {
@@ -1577,7 +1572,7 @@
                     html += '<h3 style="margin: 0; color: #333; font-size: 16px;">🔑 USE KEYS:</h3>';
                     const allKeys = indexesAndKeys.useKeys.join(', ');
                     html += `<button onclick="copyToClipboard('${allKeys.replace(/'/g, "\\'")}', event)" 
-                            style="padding: 4px 12px; font-size: 12px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Copy All</button>`;
+                            class="btn-standard" style="background: #ff9800;">Copy All</button>`;
                     html += '</div>';
 
                     const maxKeysToShow = 15;
@@ -2617,7 +2612,15 @@
                         value = rowData[dataField];
                     }
 
-                    if (col === "statement") {
+                    if (col === "request\nTime") {
+                        // Set fixed width for requestTime column to handle long ISO-8601 timestamps
+                        td.style.width = "120px";
+                        td.style.maxWidth = "120px";
+                        td.style.overflow = "hidden";
+                        td.style.wordWrap = "break-word";
+                        td.style.fontSize = "11px";
+                        td.textContent = value || "";
+                    } else if (col === "statement") {
                         // Set fixed width for statement column
                         td.style.width = "300px";
                         td.style.maxWidth = "300px";
@@ -2639,17 +2642,17 @@
                     <span>${truncated}...</span>
                     <br>
                     <button onclick="toggleStatement('${statementId}', true)" 
-                            style="font-size: 12px; margin-top: 5px; margin-right: 5px;">show more</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Show More</button>
                     <button onclick="copyStatement('${statementId}')" 
-                            style="font-size: 12px; margin-top: 5px;">copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                   <div id="${statementId}-full" style="display: none;">
                     <span>${statement}</span>
                     <br>
                     <button onclick="toggleStatement('${statementId}', false)" 
-                            style="font-size: 12px; margin-top: 5px; margin-right: 5px;">hide</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Hide</button>
                     <button onclick="copyStatement('${statementId}')" 
-                            style="font-size: 12px; margin-top: 5px;">copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                 `;
                         } else {
@@ -2659,7 +2662,7 @@
                     <span>${statement}</span>
                     <br>
                     <button onclick="copyStatement('${statementId}')" 
-                            style="font-size: 12px; margin-top: 5px;">copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                 `;
                         }
@@ -3006,17 +3009,17 @@
                     <span>${truncated}...</span>
                     <br>
                     <button onclick="toggleAnalysisStatement('${statementId}', true)" 
-                            style="font-size: 12px; margin-top: 5px; margin-right: 5px;">show more</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Show More</button>
                     <button onclick="copyAnalysisStatement('${statementId}')" 
-                            style="font-size: 12px; margin-top: 5px;">copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                   <div id="${statementId}-full" style="display: none;">
                     <span>${statement}</span>
                     <br>
                     <button onclick="toggleAnalysisStatement('${statementId}', false)" 
-                            style="font-size: 12px; margin-top: 5px; margin-right: 5px;">hide</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Hide</button>
                     <button onclick="copyAnalysisStatement('${statementId}')" 
-                            style="font-size: 12px; margin-top: 5px;">copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                 `;
                         } else {
@@ -3026,7 +3029,7 @@
                     <span>${statement}</span>
                     <br>
                     <button onclick="copyAnalysisStatement('${statementId}')" 
-                            style="font-size: 12px; margin-top: 5px;">copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                 `;
                         }
@@ -6150,8 +6153,8 @@
                     /'/g,
                     "\\'"
                 )}', this)" 
-                        style="margin-left: 8px; padding: 2px 8px; font-size: 12px; background: #6c757d; color: white; border: none; border-radius: 2px; cursor: pointer;">
-                  copy
+                        class="btn-standard" style="margin-left: 8px;">
+                  Copy
                 </button>
               </td>
             `;
@@ -6285,8 +6288,8 @@
                     /'/g,
                     "\\'"
                 )}', this)" 
-                        style="margin-left: 8px; padding: 2px 8px; font-size: 12px; background: #6c757d; color: white; border: none; border-radius: 2px; cursor: pointer;">
-                  copy
+                        class="btn-standard" style="margin-left: 8px;">
+                  Copy
                 </button>
               </td>
               <td style="padding: 8px; word-break: break-word; font-family: monospace; font-size: 12px;">
@@ -7325,11 +7328,10 @@
 
             div.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-weight: bold; font-size: 14px; color: #333;">${index.name}</div>
-            <button onclick="copyIndexName('${index.name.replace(/'/g, "\\'")}', event)" style="padding: 2px 8px; font-size: 11px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">Copy</button>
+            <div style="font-weight: bold; font-size: 14px; color: #333;">${index.name} : ${index.totalUsage}</div>
+            <button onclick="copyIndexName('${index.name.replace(/'/g, "\\'")}', event)" class="btn-standard" style="font-size: 11px;">Copy</button>
           </div>
-          <div style="font-size: 12px; color: #666; margin: 4px 0;">Usage: ${index.totalUsage}</div>
-          <div class="index-stats">
+          <div class="index-stats" style="font-size: 13px; margin-top: 8px;">
             Avg Scan Time: <span style="${avgScanTimeStyle}">${stats.avgScanTime}</span><br>
             Avg Items Scanned: ${stats.avgItemsScanned}<br>
             Avg Items Fetched: ${stats.avgItemsFetched}<br>
@@ -7371,8 +7373,8 @@
             ${query.statement}
           </div>
           <div class="query-controls">
-            <button onclick="toggleQueryText('${query.normalizedStatement.replace(/[^a-zA-Z0-9]/g, '')}')">Show More</button>
-            <button class="query-copy-btn" data-query-statement="${encodeURIComponent(query.statement)}">Copy</button>
+            <button onclick="toggleQueryText('${query.normalizedStatement.replace(/[^a-zA-Z0-9]/g, '')}')" class="btn-standard">Show More</button>
+            <button class="btn-standard query-copy-btn" data-query-statement="${encodeURIComponent(query.statement)}">Copy</button>
           </div>
         `;
 
@@ -7674,11 +7676,11 @@
                 if (isHidden) {
                     // Show hidden keys
                     hiddenKeys.forEach(key => key.style.display = 'block');
-                    toggleBtn.textContent = 'Hide keys';
+                    toggleBtn.textContent = 'Hide Keys';
                 } else {
                     // Hide keys
                     hiddenKeys.forEach(key => key.style.display = 'none');
-                    toggleBtn.textContent = `Show ${hiddenKeys.length} more keys`;
+                    toggleBtn.textContent = `Show ${hiddenKeys.length} More Keys`;
                 }
             }
         }
@@ -7927,16 +7929,7 @@
             }
         }
 
-        // Extract host from datastore_id
-        function parseHost(datastoreId) {
-            try {
-                const url = new URL(datastoreId);
-                return url.hostname + ':' + url.port;
-            } catch (error) {
-                // Fallback if URL parsing fails
-                return datastoreId.replace(/^https?:\/\//, '').replace(/\/$/, '');
-            }
-        }
+
 
         // Extract bucket, scope, collection from indexString
         function parseIndexTarget(indexString) {
@@ -7960,32 +7953,23 @@
 
         // Update filter dropdowns with available options
         function updateFilterDropdowns() {
-            const hosts = new Set();
             const buckets = new Set();
 
             indexData.forEach(index => {
-                // Extract host from datastore_id
-                if (index.datastore_id) {
-                    const host = parseHost(index.datastore_id);
-                    hosts.add(host);
-                }
-                
                 if (index.indexString) {
                     const target = parseIndexTarget(index.indexString);
                     buckets.add(target.bucket);
                 }
             });
 
-            updateDropdown('hostFilter', Array.from(hosts).sort());
             updateDropdown('bucketFilter', Array.from(buckets).sort());
             
             // Update scopes and collections based on selected filters
             updateCascadingDropdowns();
         }
 
-        // Update scopes and collections based on selected host/bucket/scope
+        // Update scopes and collections based on selected bucket/scope
         function updateCascadingDropdowns() {
-            const selectedHost = document.getElementById('hostFilter').value;
             const selectedBucket = document.getElementById('bucketFilter').value;
             const selectedScope = document.getElementById('scopeFilter').value;
             
@@ -7993,11 +7977,7 @@
             const collections = new Set();
 
             indexData.forEach(index => {
-                // Check host filter first
-                const host = index.datastore_id ? parseHost(index.datastore_id) : '';
-                const passesHostFilter = selectedHost === '(ALL)' || host === selectedHost;
-                
-                if (passesHostFilter && index.indexString) {
+                if (index.indexString) {
                     const target = parseIndexTarget(index.indexString);
                     
                     // If bucket is selected, only show scopes for that bucket
@@ -8039,7 +8019,6 @@
 
         // Apply current filter settings
         function applyIndexFilters() {
-            const hostFilter = document.getElementById('hostFilter').value;
             const bucketFilter = document.getElementById('bucketFilter').value;
             const scopeFilter = document.getElementById('scopeFilter').value;
             const collectionFilter = document.getElementById('collectionFilter').value;
@@ -8055,11 +8034,9 @@
                 if (!index.indexString) return false;
 
                 const target = parseIndexTarget(index.indexString);
-                const host = index.datastore_id ? parseHost(index.datastore_id) : '';
 
                 // Basic dropdown filters
-                const passesDropdownFilters = (hostFilter === '(ALL)' || host === hostFilter) &&
-                    (bucketFilter === '(ALL)' || target.bucket === bucketFilter) &&
+                const passesDropdownFilters = (bucketFilter === '(ALL)' || target.bucket === bucketFilter) &&
                     (scopeFilter === '(ALL)' || target.scope === scopeFilter) &&
                     (collectionFilter === '(ALL)' || target.collection === collectionFilter);
 
@@ -8137,7 +8114,7 @@
                                 To analyze indexes, run this query in your Couchbase Query Workbench and paste the results in the second textarea above:
                             </p>
                             <div class="sql-query-box">
-                                <button class="sql-copy-btn" onclick="copyIndexQuery(event)">Copy Query</button>
+                                <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">Copy Query</button>
                                 <pre>SELECT 
  s.name,
  s.id,
@@ -8180,24 +8157,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
             let html = '';
 
-            if (sortBy === 'Hosts') {
-                // Group by host
-                const grouped = {};
-                filteredIndexData.forEach(index => {
-                    const host = index.datastore_id ? parseHost(index.datastore_id) : 'unknown';
-                    if (!grouped[host]) grouped[host] = [];
-                    grouped[host].push(index);
-                });
-
-                Object.keys(grouped).sort().forEach(host => {
-                    html += `<div class="bucket-group">`;
-                    html += `<h3 style="font-size: 24px;">${host}</h3>`;
-                    grouped[host].sort((a, b) => a.name.localeCompare(b.name)).forEach(index => {
-                        html += createIndexHTML(index);
-                    });
-                    html += `</div>`;
-                });
-            } else if (sortBy === 'Bucket') {
+            if (sortBy === 'Bucket') {
                 // Group by bucket
                 const grouped = {};
                 filteredIndexData.forEach(index => {
@@ -8244,7 +8204,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
         function createIndexHTML(index) {
             const target = parseIndexTarget(index.indexString);
-            const host = index.datastore_id ? parseHost(index.datastore_id) : 'unknown';
             const isPrimary = index.name.includes('primary') || index.name.includes('#primary');
             const lastScan = index.metadata?.last_scan_time || 'Never';
             const replica = index.metadata?.num_replica || 0;
@@ -8280,11 +8239,11 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     <h4>${index.name} ${usedBadge}</h4>
                     <div class="index-details">
                         <strong>Target:</strong> ${target.bucket}.${target.scope}.${target.collection}<br>
-                        <strong>Host:</strong> ${host} | <strong>State:</strong> ${createStateBadge(state)} | <strong>Replicas:</strong> <span class="${replicaClass}">${replica}</span> | <strong>Last Scan:</strong> ${lastScanFormatted} ${timeSince}
+                        <strong>State:</strong> ${createStateBadge(state)} | <strong>Replicas:</strong> <span class="${replicaClass}">${replica}</span> | <strong>Last Scan:</strong> ${lastScanFormatted} ${timeSince}
                     </div>
                     <div class="index-statement">
                         ${index.indexString}
-                        <button class="copy-btn" onclick="copyIndexDefinition('${index.indexString.replace(/'/g, "\\'")}', event)">Copy</button>
+                        <button class="btn-standard copy-btn" onclick="copyIndexDefinition('${index.indexString.replace(/'/g, "\\'")}', event)">Copy</button>
                     </div>
                 </div>
             `;
@@ -8342,7 +8301,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
         // Initialize index analysis functionality
         function initializeIndexAnalysis() {
             const indexJsonInput = document.getElementById('indexJsonInput');
-            const hostFilter = document.getElementById('hostFilter');
             const bucketFilter = document.getElementById('bucketFilter');
             const scopeFilter = document.getElementById('scopeFilter');
             const collectionFilter = document.getElementById('collectionFilter');
@@ -8350,16 +8308,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
             // Add event listeners
             if (indexJsonInput) indexJsonInput.addEventListener('input', parseIndexJSON);
-            if (hostFilter) {
-                hostFilter.addEventListener('change', () => {
-                    // Reset bucket, scope and collection when host changes
-                    document.getElementById('bucketFilter').value = '(ALL)';
-                    document.getElementById('scopeFilter').value = '(ALL)';
-                    document.getElementById('collectionFilter').value = '(ALL)';
-                    updateCascadingDropdowns();
-                    applyIndexFilters();
-                });
-            }
             if (bucketFilter) {
                 bucketFilter.addEventListener('change', () => {
                     // Reset scope and collection when bucket changes

@@ -35,7 +35,6 @@ SELECT
  s.metadata,
  s.state,
  s.num_replica,
- s.datastore_id,
 CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
 FROM system:indexes AS s
 LET bid = CONCAT("", s.bucket_id, ""),
