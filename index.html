@@ -7328,7 +7328,7 @@
 
             div.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-weight: bold; font-size: 14px; color: #333;">${index.name} : ${index.totalUsage}</div>
+            <div style="font-weight: bold; font-size: 14px; color: #333;">${index.name} | Scanned: ${index.totalUsage}</div>
             <button onclick="copyIndexName('${index.name.replace(/'/g, "\\'")}', event)" class="btn-standard" style="font-size: 11px;">Copy</button>
           </div>
           <div class="index-stats" style="font-size: 13px; margin-top: 8px;">
