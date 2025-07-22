@@ -26,8 +26,21 @@ If the browser slowes to a crawl reduce the data size via `LIMIT 2000`
 
 [More Query Options](sql_queries.md)
 
-**Optional - For Enhanced Index Analysis:**
-To use the new Indexes tab features, also collect index metadata:
+### Step 4: Analyze
+Select ALL & Copy the full JSON results and paste it into the tool's input area up top, then click <button>Parse JSON</button> 
+
+![Query input interface](copy_paste_json.png)
+
+### Step 5a: Filter by Date Range (Optional)
+
+- **Auto-population**: Date fields automatically populate with your data's full time range
+- **Custom filtering**: Adjust "From" and "To" dates to focus on specific time periods
+- **Re-analyze**: Click "Parse JSON" again to apply the date filter
+- **Filter status**: See how many queries match your selected range
+
+### Step 5b: Enhanced Index Analysis (Optional)
+
+Run the query below to get the JSON result. Copy & Paste the results into the 2nd right text input box and click `Parse JSON` button. 
 
 ```sql
 SELECT 
@@ -36,7 +49,6 @@ SELECT
  s.metadata,
  s.state,
  s.num_replica,
- s.datastore_id,
 CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
 FROM system:indexes AS s
 LET bid = CONCAT("", s.bucket_id, ""),
@@ -48,16 +60,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
     p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;
 ```
 
-### Step 4: Analyze
-Select ALL & Copy the full JSON results and paste it into the tool's input area up top, then click <button>Parse JSON</button> 
-
-![Query input interface](copy_paste_json.png)
-
-### Step 5: Filter by Date Range (Optional)
-- **Auto-population**: Date fields automatically populate with your data's full time range
-- **Custom filtering**: Adjust "From" and "To" dates to focus on specific time periods
-- **Re-analyze**: Click "Parse JSON" again to apply the date filter
-- **Filter status**: See how many queries match your selected range
 
 ## Features
 

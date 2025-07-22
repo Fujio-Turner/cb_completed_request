@@ -1,47 +1,62 @@
-
-##### Retrieve Slow Query Logs from the Local Query Node
-This query retrieves slow query logs from the Couchbase `system:completed_requests` system catalog, specifically for the query node where the query is executed. It includes query details and the query execution plan.
-
+#### Couchbase's Slow Query log , but only from random query machine
 ```sql
 SELECT 
-  *, 
-  meta().plan
-FROM 
-  system:completed_requests
-WHERE 
-  node = NODE_NAME();
+    *,
+    meta().plan
+FROM
+    system:completed_requests
+WHERE
+    node = NODE_NAME();
 ```
 
-##### Retrieve Slow Queries from a Specific Query Node
-This query fetches slow query logs from the `system:completed_requests` system catalog for a specific query node, identified by its IP address or hostname. Replace `10.132.133.165%` with the desired node's IP or hostname pattern.
+
+#### If you want to get slow oueries from a specific Query Node
 
 ```sql
 SELECT 
-  *, 
-  meta().plan 
+    *, 
+    meta().plan
 FROM 
-  system:completed_requests 
+    system:completed_requests 
 WHERE 
-  node LIKE '10.132.133.165%';
+    node LIKE "10.132.133.165%" 
 ```
 
-##### List All Indexes in the Couchbase Cluster
-This query retrieves a list of all indexes in the Couchbase cluster from the `system:indexes` system catalog, including their names, metadata, and state. It also generates the corresponding `CREATE INDEX` statement for each index. The query filters for indexes using the Global Secondary Index (GSI) in the default namespace.
+#### To remove system level queries add the below to your query
 
 ```sql
-SELECT 
+SELECT
+    *, 
+    meta().plan
+FROM 
+    system:completed_requests 
+WHERE  
+    clientContextID NOT LIKE 'INTERNAL-%' AND 
+    UPPER(IFMISSING(preparedText, statement)) NOT LIKE 'INFER %' AND 
+    UPPER(IFMISSING(preparedText, statement)) NOT LIKE 'ADVISE %' AND 
+    UPPER(IFMISSING(preparedText, statement)) NOT LIKE 'CREATE %' AND 
+    UPPER(IFMISSING(preparedText, statement)) NOT LIKE 'CREATE INDEX%' AND 
+    UPPER(IFMISSING(preparedText, statement)) NOT LIKE 'ALTER INDEX%' AND 
+    UPPER(IFMISSING(preparedText, statement)) NOT LIKE '% SYSTEM:%' 
+```
+
+
+#### GETS A LIST OF ALL THE INDEXES in the cluster with their names
+```sql
+SELECT  
  s.name,
  s.id,
- s.metadata,
+ s.metadata,ß
  s.state,
  s.num_replica,
-CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+CONCAT("CREATE INDEX `", s.name, "` ON ", k, ks, p, w, ";") as indexString
 FROM system:indexes AS s
-LET bid = CONCAT("", s.bucket_id, ""),
-    sid = CONCAT("", s.scope_id, ""),
-    kid = CONCAT("", s.keyspace_id, ""),
+LET bid = CONCAT("`",s.bucket_id, "`"),
+    sid = CONCAT("`", s.scope_id, "`"),
+    kid = CONCAT("`", s.keyspace_id, "`"),
     k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
-    ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
-    w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
-    p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;
+    ks = CASE WHEN s.`is_primary` THEN "" ELSE "(" || CONCAT2(",",s.`index_key`) || ") " END,
+    w = CASE WHEN s.`condition` IS VALUED THEN " WHERE " || REPLACE(s.`condition`, "\"","'") ELSE "" END,
+    p = CASE WHEN s.`partition` IS VALUED THEN " PARTITION BY " || s.`partition` ELSE "" END
+WHERE s.`using` = "gsi";
 ```
