@@ -2,8 +2,8 @@
 <html lang="en">
 <!--
     Couchbase Query Analyzer
-    Version: 3.1.0
-    Last Updated: 2025-01-20
+    Version: 3.1.1
+    Last Updated: 2025-01-22
     
     🤖 AI AGENT NOTE: When making changes to this file, please update the version number above.
     Use semantic versioning: MAJOR.MINOR.PATCH
@@ -14,9 +14,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.1.0" />
-    <meta name="last-updated" content="2025-01-20" />
-    <title>Query Analyzer v3.1.0</title>
+    <meta name="version" content="3.1.1" />
+    <meta name="last-updated" content="2025-01-22" />
+    <title>Query Analyzer v3.1.1</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css" />
     <!-- Include Chart.js -->
@@ -844,8 +844,30 @@
         // Global variables for time range tracking
         let originalTimeRange = { min: null, max: null };
         let currentTimeRange = { min: null, max: null };
+        let isZoomSyncing = false;
 
-
+        // Sync zoom across all timeline charts
+        function syncChartZoom(sourceChart, xMin, xMax) {
+            if (isZoomSyncing) return;
+            isZoomSyncing = true;
+            
+            const charts = [
+                window.operationsChart,
+                window.filterChart, 
+                window.timelineChart,
+                window.queryTypesChart,
+                window.durationBucketsChart,
+                window.memoryChart
+            ];
+            
+            charts.forEach(chart => {
+                if (chart && chart !== sourceChart) {
+                    chart.zoomScale('x', { min: xMin, max: xMax }, 'none');
+                }
+            });
+            
+            setTimeout(() => { isZoomSyncing = false; }, 100);
+        }
 
         // Toast notification system
         function showToast(message, type = 'success') {
@@ -3400,7 +3422,27 @@
                                             "none"
                                         );
                                     }
-                                    if (window.memoryChart && chart !== window.memoryChart) {
+                                    if (
+                                         window.durationBucketsChart &&
+                                         chart !== window.durationBucketsChart
+                                     ) {
+                                         window.durationBucketsChart.zoomScale(
+                                             "x",
+                                             { min: chart.scales.x.min, max: chart.scales.x.max },
+                                             "none"
+                                         );
+                                     }
+                                     if (
+                                         window.durationBucketsChart &&
+                                         chart !== window.durationBucketsChart
+                                     ) {
+                                         window.durationBucketsChart.zoomScale(
+                                             "x",
+                                             { min: chart.scales.x.min, max: chart.scales.x.max },
+                                             "none"
+                                         );
+                                     }
+                                     if (window.memoryChart && chart !== window.memoryChart) {
                                         window.memoryChart.zoomScale(
                                             "x",
                                             { min: chart.scales.x.min, max: chart.scales.x.max },
@@ -3424,51 +3466,10 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
+                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
+                                    console.log('operationsChart onZoom triggered, syncing to other charts');
                                     // Sync zoom with other charts
-                                    if (window.filterChart && chart !== window.filterChart) {
-                                        window.filterChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.timelineChart &&
-                                        chart !== window.timelineChart
-                                    ) {
-                                        window.timelineChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.queryTypesChart &&
-                                        chart !== window.queryTypesChart
-                                    ) {
-                                        window.queryTypesChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.durationBucketsChart &&
-                                        chart !== window.durationBucketsChart
-                                    ) {
-                                        window.durationBucketsChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (window.memoryChart && chart !== window.memoryChart) {
-                                        window.memoryChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -3577,6 +3578,7 @@
                             borderWidth: 1,
                             yAxisID: "y",
                             stack: "stack1",
+                            order: 2,
                         },
                         {
                             label: "Filters: IN ≠ OUT",
@@ -3586,6 +3588,7 @@
                             borderWidth: 1,
                             yAxisID: "y",
                             stack: "stack1",
+                            order: 3,
                         },
                         {
                             label: "Efficiency %",
@@ -3597,6 +3600,7 @@
                             fill: false,
                             yAxisID: "y1",
                             tension: 0.1,
+                            order: 1,
                         },
                     ],
                 },
@@ -3685,44 +3689,10 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
+                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
+                                    console.log('filterChart onZoom triggered, syncing to other charts');
                                     // Sync zoom with other charts
-                                    if (
-                                        window.operationsChart &&
-                                        chart !== window.operationsChart
-                                    ) {
-                                        window.operationsChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.timelineChart &&
-                                        chart !== window.timelineChart
-                                    ) {
-                                        window.timelineChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.queryTypesChart &&
-                                        chart !== window.queryTypesChart
-                                    ) {
-                                        window.queryTypesChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (window.memoryChart && chart !== window.memoryChart) {
-                                        window.memoryChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -4064,46 +4034,14 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
-                                    // Update current time range - convert chart scale values to Date objects
+                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
+                                    console.log('timelineChart onZoom triggered, syncing to other charts');
+                                    // Update current time range
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-
                                     // Sync zoom with other charts
-                                    if (
-                                        window.operationsChart &&
-                                        chart !== window.operationsChart
-                                    ) {
-                                        window.operationsChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (window.filterChart && chart !== window.filterChart) {
-                                        window.filterChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.queryTypesChart &&
-                                        chart !== window.queryTypesChart
-                                    ) {
-                                        window.queryTypesChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (window.memoryChart && chart !== window.memoryChart) {
-                                        window.memoryChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -4406,56 +4344,14 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
+                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
+                                    console.log('queryTypesChart onZoom triggered, syncing to other charts');
                                     // Update current time range
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-
                                     // Sync zoom with other charts
-                                    if (
-                                        window.operationsChart &&
-                                        chart !== window.operationsChart
-                                    ) {
-                                        window.operationsChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (window.filterChart && chart !== window.filterChart) {
-                                        window.filterChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.timelineChart &&
-                                        chart !== window.timelineChart
-                                    ) {
-                                        window.timelineChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.queryTypesChart &&
-                                        chart !== window.queryTypesChart
-                                    ) {
-                                        window.queryTypesChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (window.memoryChart && chart !== window.memoryChart) {
-                                        window.memoryChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -4787,56 +4683,14 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
+                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
+                                    console.log('durationBucketsChart onZoom triggered, syncing to other charts');
                                     // Update current time range
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-
                                     // Sync zoom with other charts
-                                    if (
-                                        window.timelineChart &&
-                                        chart !== window.timelineChart
-                                    ) {
-                                        window.timelineChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.operationsChart &&
-                                        chart !== window.operationsChart
-                                    ) {
-                                        window.operationsChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (window.filterChart && chart !== window.filterChart) {
-                                        window.filterChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.queryTypesChart &&
-                                        chart !== window.queryTypesChart
-                                    ) {
-                                        window.queryTypesChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (window.memoryChart && chart !== window.memoryChart) {
-                                        window.memoryChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -5077,56 +4931,14 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
+                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
+                                    console.log('memoryChart onZoom triggered, syncing to other charts');
                                     // Update current time range
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-
                                     // Sync zoom with other charts
-                                    if (
-                                        window.operationsChart &&
-                                        chart !== window.operationsChart
-                                    ) {
-                                        window.operationsChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (window.filterChart && chart !== window.filterChart) {
-                                        window.filterChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.timelineChart &&
-                                        chart !== window.timelineChart
-                                    ) {
-                                        window.timelineChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.queryTypesChart &&
-                                        chart !== window.queryTypesChart
-                                    ) {
-                                        window.queryTypesChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (window.memoryChart && chart !== window.memoryChart) {
-                                        window.memoryChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -7688,8 +7500,8 @@
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = '3.1.0';
-        const LAST_UPDATED = '2025-01-20';
+        const APP_VERSION = '3.1.1';
+        const LAST_UPDATED = '2025-01-22';
 
         function getVersionInfo() {
             return {
