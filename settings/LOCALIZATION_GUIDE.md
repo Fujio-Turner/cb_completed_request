@@ -1,11 +1,69 @@
 # Localization Guide for Couchbase Query Analyzer
 
-## Quick Update Process
+## Architecture Overview
+
+This project now uses **separate files** for different aspects:
+
+### File Structure
+```
+├── README.md                    # English documentation
+├── README.de.md                 # German documentation  
+├── README.es.md                 # Spanish documentation
+├── README.pt.md                 # Portuguese documentation
+├── index.html                   # English HTML tool
+├── de_index.html               # German HTML tool
+├── es_index.html               # Spanish HTML tool
+├── pt_index.html               # Portuguese HTML tool
+└── settings/
+    ├── LOCALIZATION_GUIDE.md   # This guide
+    └── translations.json       # Translation mappings
+```
+
+## Documentation Updates (README Files)
+
+### Quick Update Process for README Files
+
+When making changes to `README.md`, use this process to update the localized versions:
+
+```text
+I've made changes to README.md. Please update README.de.md, README.es.md, and README.pt.md using the settings/translations.json file.
+
+Changes made:
+[Describe the specific changes you made]
+
+Please ensure:
+1. **Navigation Links**: Update language navigation links at the top
+2. **Download Instructions**: Keep language-specific HTML file references
+3. **Content Consistency**: Maintain same structure across all README files
+4. **Cross-references**: Update any references to sql_queries.md or other files
+5. **Version Numbers**: Keep version numbers synchronized
+
+Check the settings/translations.json file for consistent terminology.
+```
+
+### README File Maintenance
+
+#### Language Navigation Links
+Each README file should have navigation links at the top:
+```markdown
+**🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
+```
+
+#### Download Instructions  
+Each README should specify the correct HTML file:
+- **README.md**: Use `index.html`
+- **README.de.md**: Use `de_index.html`
+- **README.es.md**: Use `es_index.html`
+- **README.pt.md**: Use `pt_index.html`
+
+## HTML Tool Updates (Index Files)
+
+### Quick Update Process for HTML Tools
 
 When making changes to `index.html`, use this chat prompt template to update the localized versions:
 
 ```text
-I've made changes to index.html. Please update es_index.html, pt_index.html, and de_index.html using the translations.json file and LOCALIZATION_GUIDE.md process.
+I've made changes to index.html. Please update es_index.html, pt_index.html, and de_index.html using the settings/translations.json file and settings/LOCALIZATION_GUIDE.md process.
 
 Changes made:
 [Describe the specific changes you made]
@@ -34,11 +92,11 @@ Please follow the complete localization process:
    - Verify empty states and error messages
 
 5. **Validation:**
-   - Use grep commands from LOCALIZATION_GUIDE.md to find missed content
+   - Use grep commands from settings/LOCALIZATION_GUIDE.md to find missed content
    - Test chart functionality with translated variables
    - Verify all dynamic content displays correctly
 
-Update translations.json if new translatable strings were added.
+Update settings/translations.json if new translatable strings were added.
 
 ⚠️ **CRITICAL**: Use the JavaScript detection commands to find missed content:
 - `grep -n "textContent.*=" [lang]_index.html`
@@ -48,18 +106,26 @@ Update translations.json if new translatable strings were added.
 
 ## Complete Localization Process for New Languages
 
-### Step 1: Add Translations to translations.json
+### Step 1: Add Translations to settings/translations.json
 
 1. Add the new language code to every entry in `ui_strings` section
 2. Add the language code to `javascript_variables` section 
 3. Update the `languages` array in `notes` section
 4. Update the `instructions` field to include the new language file
+5. Add the new language to README file references
 
-### Step 2: Create New Language File
+### Step 2: Create New Language Files
 
+#### A. Create HTML Tool File
 1. **Copy base file**: `cp index.html [lang]_index.html` (e.g., `fr_index.html`)
 2. **Update language attribute**: Change `<html lang="en">` to `<html lang="[lang]">`
 3. **Update localization note**: Add language-specific note in HTML comment
+
+#### B. Create README Documentation File
+1. **Copy base README**: `cp README.md README.[lang].md` (e.g., `README.fr.md`)
+2. **Update navigation links**: Update language links to include new language
+3. **Update download instructions**: Change HTML file reference to `[lang]_index.html`
+4. **Add to all README files**: Update navigation in all existing README files
 
 ### Step 3: Systematic Translation
 
@@ -331,11 +397,21 @@ grep -n "innerHTML.*=.*['\"].*[A-Za-z]" [lang]_index.html
 
 ## Translation Files
 
-- **translations.json**: Master translation mapping
-- **index.html**: English (source)
-- **es_index.html**: Spanish 
-- **pt_index.html**: Portuguese (Brazil)
-- **de_index.html**: German
+### Documentation Files (README)
+- **README.md**: English documentation (source)
+- **README.de.md**: German documentation
+- **README.es.md**: Spanish documentation  
+- **README.pt.md**: Portuguese documentation
+
+### HTML Tool Files
+- **index.html**: English HTML tool (source)
+- **de_index.html**: German HTML tool
+- **es_index.html**: Spanish HTML tool
+- **pt_index.html**: Portuguese HTML tool
+
+### Configuration Files
+- **settings/translations.json**: Master translation mapping
+- **settings/LOCALIZATION_GUIDE.md**: This guide
 
 ## Common Pitfalls
 
@@ -366,8 +442,21 @@ After updating localized files:
 
 ## Adding New Languages
 
-1. Add language code to translations.json
-2. Copy index.html to new file (e.g., `fr_index.html`)
-3. Update `lang` attribute in `<html>` tag
-4. Apply all translations from translations.json
-5. Update this guide with the new language
+### Complete Process for New Language Support
+
+1. **Add to settings/translations.json**: Include new language code in all translation entries
+2. **Create HTML tool**: Copy `index.html` to `[lang]_index.html` (e.g., `fr_index.html`)
+3. **Create README**: Copy `README.md` to `README.[lang].md` (e.g., `README.fr.md`)
+4. **Update HTML `lang` attribute**: Change `<html lang="en">` to `<html lang="[lang]">`
+5. **Apply all translations**: Use settings/translations.json for consistent terminology
+6. **Update navigation links**: Add new language to all README files' navigation
+7. **Update this guide**: Add language-specific considerations and file references
+
+### Maintenance Workflow
+
+When updating content:
+
+1. **Change source files first**: Update `README.md` and `index.html`
+2. **Use this guide**: Follow the quick update processes above
+3. **Validate thoroughly**: Use the testing checklists and grep commands
+4. **Update settings/translations.json**: Add any new translatable strings
