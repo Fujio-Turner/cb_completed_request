@@ -19,10 +19,6 @@ A comprehensive web-based tool for analyzing Couchbase query performance and exe
 ### Step 1: Download the Tool
 **🌍 Language-Specific Downloads:**
 - **English**: Download `index.html`
-- **German**: Download `de_index.html`
-- **Spanish**: Download `es_index.html`
-- **Portuguese**: Download `pt_index.html`
-
 _Or download the whole repository for all languages_
 
 ### Step 2: Open in Browser
