@@ -1,11 +1,11 @@
-# Couchbase Slow Query Analysis Tool v3.2.0
+# Couchbase Slow Query Analysis Tool v3.3.0
 
 ## Version Management
-- **Current Version**: 3.2.0 (Last Updated: 2025-01-22)
+- **Current Version**: 3.3.0 (Last Updated: 2025-01-23)
 - **Title Updates**: When updating versions, remember to update:
-  - `<title>Query Analyzer v3.2.0</title>` in index.html header
-  - `<meta name="version" content="3.2.0" />` in index.html meta tags
-  - `APP_VERSION = '3.2.0';` in JavaScript constants
+  - `<title>Query Analyzer v3.3.0</title>` in index.html header
+  - `<meta name="version" content="3.3.0" />` in index.html meta tags
+  - `APP_VERSION = '3.3.0';` in JavaScript constants
   - Version number in this AGENT.md file header
 
 ## Architecture

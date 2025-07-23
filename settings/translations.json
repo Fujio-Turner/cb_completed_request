@@ -244,6 +244,41 @@
       "es": "Copie los resultados JSON",
       "pt": "Copie os resultados JSON",
       "de": "Kopieren Sie die JSON-Ergebnisse"
+    },
+    "Result Count Analysis: Total vs Average per Query": {
+      "es": "Análisis de Conteo de Resultados: Total vs Promedio por Consulta",
+      "pt": "Análise de Contagem de Resultados: Total vs Média por Consulta",
+      "de": "Ergebnisanzahl-Analyse: Gesamt vs. Durchschnitt pro Abfrage"
+    },
+    "Result Size Analysis: Total vs Average per Query": {
+      "es": "Análisis de Tamaño de Resultados: Total vs Promedio por Consulta",
+      "pt": "Análise de Tamanho de Resultados: Total vs Média por Consulta",
+      "de": "Ergebnisgröße-Analyse: Gesamt vs. Durchschnitt pro Abfrage"
+    },
+    "Total Result Count": {
+      "es": "Conteo Total de Resultados",
+      "pt": "Contagem Total de Resultados",
+      "de": "Gesamte Ergebnisanzahl"
+    },
+    "Total Result Size (MB)": {
+      "es": "Tamaño Total de Resultados (MB)",
+      "pt": "Tamanho Total de Resultados (MB)",
+      "de": "Gesamte Ergebnisgröße (MB)"
+    },
+    "Avg Result Count per Query": {
+      "es": "Conteo Promedio de Resultados por Consulta",
+      "pt": "Contagem Média de Resultados por Consulta",
+      "de": "Durchschnittliche Ergebnisanzahl pro Abfrage"
+    },
+    "Avg Result Size per Query (MB)": {
+      "es": "Tamaño Promedio de Resultados por Consulta (MB)",
+      "pt": "Tamanho Médio de Resultados por Consulta (MB)",
+      "de": "Durchschnittliche Ergebnisgröße pro Abfrage (MB)"
+    },
+    "Avg per Query (MB)": {
+      "es": "Promedio por Consulta (MB)",
+      "pt": "Média por Consulta (MB)",
+      "de": "Durchschnitt pro Abfrage (MB)"
     }
   },
   "javascript_variables": {

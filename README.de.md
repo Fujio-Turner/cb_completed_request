@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.2.0
+# Couchbase Slow Query Analysis Tool v3.3.0
 
 **🌍 Sprachen:** [🇺🇸 English](README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -11,6 +11,10 @@
 ---
 
 Ein umfassendes webbasiertes Tool zur Analyse der Couchbase-Query-Performance und Ausführungspläne. Visualisieren Sie Query-Muster, identifizieren Sie Engpässe und optimieren Sie die Datenbankleistung mit erweiterten Index-Nutzungstracking, Ausführungsplananalyse und dedizierten Index-Management-Funktionen.
+
+## 🆕 Neu in v3.3.0
+
+- **Synchronisierte Timeline-Fadenkreuze**: Alle Timeline-Diagramme verfügen jetzt über synchronisierte Fadenkreuze, die sich gemeinsam bewegen, wenn Sie über ein beliebiges Diagramm fahren. Dies erleichtert die Korrelation von Daten zwischen verschiedenen Metriken zum gleichen Zeitpunkt.
 
 ### (Capella Kompatibel)
 

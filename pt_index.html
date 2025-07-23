@@ -2,8 +2,10 @@
 <html lang="pt-BR">
 <!--
     Couchbase Query Analyzer
-    Version: 3.2.0
-    Last Updated: 2025-01-22
+    Version: 3.3.0
+    Last Updated: 2025-01-23
+    
+    🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
     
     🤖 AI AGENT NOTE: When making changes to this file, please update the version number above.
     Use semantic versioning: MAJOR.MINOR.PATCH
@@ -17,9 +19,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.2.0" />
-    <meta name="last-updated" content="2025-01-22" />
-    <title>Analisador de Consultas v3.2.0</title>
+    <meta name="version" content="3.3.0" />
+    <meta name="last-updated" content="2025-01-23" />
+    <title>Analisador de Consultas v3.3.0</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css" />
     <!-- Include Chart.js -->
@@ -182,7 +184,7 @@
 <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v3.2.0
+        v3.3.0
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -597,6 +599,15 @@
 
             <div style="display: flex; gap: 20px; margin-bottom: 20px">
                 <div style="flex: 1; height: 400px; position: relative">
+                    <canvas id="result-count-chart"></canvas>
+                </div>
+                <div style="flex: 1; height: 400px; position: relative">
+                    <canvas id="result-size-chart"></canvas>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 20px; margin-bottom: 20px">
+                <div style="flex: 1; height: 400px; position: relative">
                     <canvas id="timeline-chart"></canvas>
                 </div>
                 <div style="flex: 1; height: 400px; position: relative">
@@ -996,16 +1007,28 @@
         function destroyAllCharts() {
             const chartNames = [
                 'operationsChart', 'filterChart', 'timelineChart', 'queryTypesChart',
-                'durationBucketsChart', 'memoryChart', 'primaryScanChart', 'stateChart',
-                'statementTypeChart', 'elapsedTimeChart', 'queryPatternChart'
+                'durationBucketsChart', 'memoryChart', 'resultCountChart', 'resultSizeChart',
+                'primaryScanChart', 'stateChart', 'statementTypeChart', 'elapsedTimeChart', 
+                'queryPatternChart'
             ];
 
             chartNames.forEach(chartName => {
                 if (window[chartName]) {
+                    // Remove event listeners if they exist
+                    if (window[chartName]._crosshairHandlers && window[chartName].canvas) {
+                        const canvas = window[chartName].canvas;
+                        const handlers = window[chartName]._crosshairHandlers;
+                        canvas.removeEventListener('mousemove', handlers.mousemove);
+                        canvas.removeEventListener('mouseleave', handlers.mouseleave);
+                    }
+                    
                     window[chartName].destroy();
                     window[chartName] = null;
                 }
             });
+
+            // Clear timeline charts array
+            timelineCharts.length = 0;
         }
 
         // Global system query filtering
@@ -3282,6 +3305,186 @@
             }
         }
 
+        // Array to store all timeline charts for synchronization
+        const timelineCharts = [];
+
+        // Custom plugin to draw a vertical line on hover
+        const verticalLinePlugin = {
+            id: 'verticalLine',
+            afterInit(chart) {
+                chart.verticalLine = { draw: false, x: 0 };
+            },
+            afterEvent(chart, args) {
+                const { inChartArea, event } = args;
+                if (chart.verticalLine) {
+                    chart.verticalLine.draw = inChartArea;
+                    chart.verticalLine.x = event ? event.x : args.x;
+                    // Let Chart.js handle the redraw naturally, don't force it
+                }
+            },
+            afterDatasetsDraw(chart) {
+                if (!chart.verticalLine || !chart.verticalLine.draw || !chart.verticalLine.x) return;
+
+                const { ctx, chartArea: { top, bottom } } = chart;
+                ctx.save();
+                ctx.beginPath();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#007bff';
+                ctx.setLineDash([5, 5]);
+                ctx.moveTo(chart.verticalLine.x, top);
+                ctx.lineTo(chart.verticalLine.x, bottom);
+                ctx.stroke();
+                ctx.restore();
+            }
+        };
+
+        // Function to sync crosshairs across all timeline charts
+        function syncTimelineCharts(sourceEvent, activeChart) {
+            if (!activeChart || !activeChart.chartArea) return;
+            
+            const chartArea = activeChart.chartArea;
+            const inChartArea = sourceEvent.x >= chartArea.left && sourceEvent.x <= chartArea.right &&
+                                sourceEvent.y >= chartArea.top && sourceEvent.y <= chartArea.bottom;
+
+            // Filter out null/destroyed charts and exclude the active chart
+            const validCharts = timelineCharts.filter(chart => {
+                return chart && 
+                       chart !== activeChart &&  // Exclude active chart to prevent flicker
+                       chart.canvas && 
+                       chart.canvas.getContext && 
+                       chart.scales && 
+                       chart.scales.x && 
+                       chart.chartArea &&
+                       !chart.isDestroyed;
+            });
+
+            // Update active chart's crosshair state without redrawing
+            if (activeChart.verticalLine) {
+                activeChart.verticalLine.draw = inChartArea;
+                if (inChartArea) {
+                    activeChart.verticalLine.x = sourceEvent.x;
+                }
+            }
+
+            // Sync other charts
+            validCharts.forEach(chart => {
+                if (!inChartArea) {
+                    if (chart.verticalLine && chart.verticalLine.draw) {
+                        chart.verticalLine.draw = false;
+                        requestAnimationFrame(() => chart.draw());
+                    }
+                    return;
+                }
+
+                try {
+                    const xValue = activeChart.scales.x.getValueForPixel(sourceEvent.x);
+                    const targetX = chart.scales.x.getPixelForValue(xValue);
+                    
+                    if (chart.verticalLine && targetX >= chart.chartArea.left && targetX <= chart.chartArea.right) {
+                        const wasDrawn = chart.verticalLine.draw;
+                        const oldX = chart.verticalLine.x;
+                        
+                        chart.verticalLine.draw = true;
+                        chart.verticalLine.x = targetX;
+                        
+                        // Only redraw if position changed significantly or wasn't drawn before
+                        if (!wasDrawn || Math.abs(oldX - targetX) > 2) {
+                            requestAnimationFrame(() => chart.draw());
+                        }
+                    }
+                } catch (error) {
+                    // Silently handle errors
+                    if (chart.verticalLine) {
+                        chart.verticalLine.draw = false;
+                    }
+                }
+            });
+
+            // Update the timelineCharts array to only contain valid charts (including active chart)
+            const allValidCharts = timelineCharts.filter(chart => {
+                return chart && 
+                       chart.canvas && 
+                       chart.canvas.getContext && 
+                       chart.scales && 
+                       chart.scales.x && 
+                       chart.chartArea &&
+                       !chart.isDestroyed;
+            });
+            
+            if (allValidCharts.length !== timelineCharts.length) {
+                timelineCharts.length = 0;
+                timelineCharts.push(...allValidCharts);
+            }
+        }
+
+        // Clear crosshairs on all timeline charts
+        function clearTimelineCrosshairs() {
+            // Filter out null/destroyed charts
+            const validCharts = timelineCharts.filter(chart => {
+                return chart && 
+                       chart.canvas && 
+                       chart.canvas.getContext && 
+                       !chart.isDestroyed &&
+                       chart.verticalLine;
+            });
+
+            validCharts.forEach(chart => {
+                if (chart.verticalLine && chart.verticalLine.draw) {
+                    chart.verticalLine.draw = false;
+                    requestAnimationFrame(() => chart.draw());
+                }
+            });
+
+            // Update the timelineCharts array to only contain valid charts
+            if (validCharts.length !== timelineCharts.length) {
+                timelineCharts.length = 0;
+                timelineCharts.push(...validCharts);
+            }
+        }
+
+        // Helper function to register a chart for crosshair synchronization
+        function registerTimelineChart(chart, ctx) {
+            if (!chart || !ctx || !ctx.canvas) return;
+            
+            // Add to timeline charts array for synchronization
+            timelineCharts.push(chart);
+
+            // Throttle mousemove events to prevent excessive redraws
+            let mouseMoveTimeout;
+            const mouseMoveHandler = (event) => {
+                if (mouseMoveTimeout) return;
+                
+                mouseMoveTimeout = setTimeout(() => {
+                    mouseMoveTimeout = null;
+                    
+                    const rect = ctx.canvas.getBoundingClientRect();
+                    const canvasEvent = {
+                        x: event.clientX - rect.left,
+                        y: event.clientY - rect.top
+                    };
+                    syncTimelineCharts(canvasEvent, chart);
+                }, 8); // Throttle to ~120fps
+            };
+
+            // Add mouseleave event listener to clear crosshairs
+            const mouseLeaveHandler = () => {
+                if (mouseMoveTimeout) {
+                    clearTimeout(mouseMoveTimeout);
+                    mouseMoveTimeout = null;
+                }
+                clearTimelineCrosshairs();
+            };
+
+            ctx.canvas.addEventListener('mousemove', mouseMoveHandler);
+            ctx.canvas.addEventListener('mouseleave', mouseLeaveHandler);
+
+            // Store handlers for cleanup if needed
+            chart._crosshairHandlers = {
+                mousemove: mouseMoveHandler,
+                mouseleave: mouseLeaveHandler
+            };
+        }
+
         // Generate operations chart showing index scan vs fetch operations
         function generateOperationsChart(requests) {
             // Destroy existing chart if it exists - do this first
@@ -3496,7 +3699,9 @@
                         intersect: false,
                     },
                 },
+                plugins: [verticalLinePlugin],
             });
+            registerTimelineChart(window.operationsChart, ctx);
         }
 
         // Generate filter chart showing filter efficiency (IN vs OUT)
@@ -3733,7 +3938,9 @@
                         intersect: false,
                     },
                 },
+                plugins: [verticalLinePlugin],
             });
+            registerTimelineChart(window.filterChart, ctx);
         }
 
         // Generate timeline chart showing kernel time vs execution time performance
@@ -4066,7 +4273,11 @@
                         intersect: false,
                     },
                 },
+                plugins: [verticalLinePlugin]
             });
+
+            // Register this chart for crosshair synchronization
+            registerTimelineChart(window.timelineChart, ctx);
 
             // Create Query Types Scatter Plot Chart
             createQueryTypesChart(requests, grouping);
@@ -4076,6 +4287,12 @@
 
             // Create Memory Usage Chart
             createMemoryChart(requests, grouping);
+
+            // Create Result Count Chart
+            createResultCountChart(requests, grouping);
+
+            // Create Result Size Chart
+            createResultSizeChart(requests, grouping);
         }
 
         // Create Query Types Scatter Plot Chart
@@ -4110,15 +4327,7 @@
                     const trimmed = request.statement.trim();
                     if (trimmed) {
                         statementType = trimmed.split(/\s+/)[0].toUpperCase();
-                    } else {
-                        console.log("Empty statement after trim:", request.statement);
                     }
-                } else {
-                    console.log(
-                        "Non-string or null statement:",
-                        request.statement,
-                        typeof request.statement
-                    );
                 }
 
                 if (!timeGroups[key].statementTypes[statementType]) {
@@ -4366,7 +4575,9 @@
                         intersect: false,
                     },
                 },
+                plugins: [verticalLinePlugin],
             });
+            registerTimelineChart(window.queryTypesChart, ctx);
         }
 
         // Create Duration Buckets Chart
@@ -4725,7 +4936,9 @@
                         intersect: false,
                     },
                 },
+                plugins: [verticalLinePlugin],
             });
+            registerTimelineChart(window.durationBucketsChart, ctx);
         }
 
         // Create Memory Usage Chart
@@ -4954,7 +5167,345 @@
                         intersect: false,
                     },
                 },
+                plugins: [verticalLinePlugin],
             });
+            registerTimelineChart(window.memoryChart, ctx);
+        }
+
+        // Create Result Count Chart (light blue bar + orange line for resultCount/query)
+        function createResultCountChart(requests, grouping) {
+            const canvas = document.getElementById("result-count-chart");
+            if (!canvas) return;
+
+            const ctx = canvas.getContext("2d");
+
+            // Destroy existing chart if it exists
+            if (window.resultCountChart) {
+                window.resultCountChart.destroy();
+            }
+
+            // Group requests by time
+            const timeGroups = {};
+
+            requests.forEach((request) => {
+                const requestDate = new Date(request.requestTime);
+                const timeKey = roundTimestamp(requestDate, grouping, requests);
+                const key = timeKey.toISOString();
+
+                if (!timeGroups[key]) {
+                    timeGroups[key] = {
+                        timestamp: timeKey,
+                        totalResultCount: 0,
+                        queryCount: 0,
+                    };
+                }
+
+                const resultCount = request.resultCount || 0;
+                timeGroups[key].totalResultCount += resultCount;
+                timeGroups[key].queryCount++;
+            });
+
+            // Convert to sorted array
+            const sortedData = Object.values(timeGroups).sort(
+                (a, b) => a.timestamp - b.timestamp
+            );
+
+            // Prepare chart data
+            const labels = sortedData.map((item) => item.timestamp);
+            const resultCountData = sortedData.map((item) => item.totalResultCount);
+            const avgResultCountData = sortedData.map((item) =>
+                item.queryCount > 0 ? item.totalResultCount / item.queryCount : 0
+            );
+
+            window.resultCountChart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Contagem Total de Resultados",
+                            data: resultCountData,
+                            backgroundColor: "rgba(0, 100, 200, 0.8)", // Dark blue
+                            borderColor: "rgba(0, 100, 200, 1)",
+                            borderWidth: 1,
+                            yAxisID: "y",
+                            order: 2,
+                        },
+                        {
+                            label: "Contagem Média de Resultados por Consulta",
+                            data: avgResultCountData,
+                            type: "line",
+                            backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
+                            borderColor: "rgba(255, 165, 0, 1)",
+                            borderWidth: 2,
+                            fill: false,
+                            yAxisID: "y1",
+                            order: 1,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "Análise de Contagem de Resultados: Total vs Média por Consulta",
+                        },
+                        legend: {
+                            display: true,
+                        },
+                        zoom: {
+                            limits: {
+                                x: { min: "original", max: "original" },
+                                y: { min: "original", max: "original" },
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: "xy",
+                                onPan: function ({ chart }) {
+                                    // Update current time range
+                                    currentTimeRange.min = new Date(chart.scales.x.min);
+                                    currentTimeRange.max = new Date(chart.scales.x.max);
+                                    updateTimeRangeDisplay();
+                                    // Sync pan with other charts
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                },
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                },
+                                pinch: {
+                                    enabled: true,
+                                },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: "rgba(225,225,225,0.3)",
+                                    borderColor: "rgba(225,225,225)",
+                                    borderWidth: 1,
+                                },
+                                mode: "xy",
+                                onZoom: function ({ chart }) {
+                                    // Update current time range
+                                    currentTimeRange.min = new Date(chart.scales.x.min);
+                                    currentTimeRange.max = new Date(chart.scales.x.max);
+                                    updateTimeRangeDisplay();
+                                    // Sync zoom with other charts
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            type: "time",
+                            time: getCurrentTimeConfig(requests),
+                            title: {
+                                display: true,
+                                text: "Request Time",
+                            },
+                        },
+                        y: {
+                            type: "linear",
+                            position: "left",
+                            title: {
+                                display: true,
+                                text: "Contagem Total de Resultados",
+                            },
+                            beginAtZero: true,
+                        },
+                        y1: {
+                            type: "linear",
+                            position: "right",
+                            title: {
+                                display: true,
+                                text: "Avg per Query",
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        },
+                    },
+                    interaction: {
+                        mode: "index",
+                        intersect: false,
+                    },
+                },
+                plugins: [verticalLinePlugin]
+            });
+
+            // Register chart for crosshair synchronization
+            registerTimelineChart(window.resultCountChart, ctx);
+        }
+
+        // Create Result Size Chart (dark green bar + orange line for resultSize/query)
+        function createResultSizeChart(requests, grouping) {
+            const canvas = document.getElementById("result-size-chart");
+            if (!canvas) return;
+
+            const ctx = canvas.getContext("2d");
+
+            // Destroy existing chart if it exists
+            if (window.resultSizeChart) {
+                window.resultSizeChart.destroy();
+            }
+
+            // Group requests by time
+            const timeGroups = {};
+
+            requests.forEach((request) => {
+                const requestDate = new Date(request.requestTime);
+                const timeKey = roundTimestamp(requestDate, grouping, requests);
+                const key = timeKey.toISOString();
+
+                if (!timeGroups[key]) {
+                    timeGroups[key] = {
+                        timestamp: timeKey,
+                        totalResultSize: 0,
+                        queryCount: 0,
+                    };
+                }
+
+                const resultSize = request.resultSize || 0;
+                timeGroups[key].totalResultSize += resultSize;
+                timeGroups[key].queryCount++;
+            });
+
+            // Convert to sorted array
+            const sortedData = Object.values(timeGroups).sort(
+                (a, b) => a.timestamp - b.timestamp
+            );
+
+            // Prepare chart data (convert bytes to MB)
+            const labels = sortedData.map((item) => item.timestamp);
+            const resultSizeData = sortedData.map((item) => item.totalResultSize / (1024 * 1024));
+            const avgResultSizeData = sortedData.map((item) =>
+                item.queryCount > 0 ? (item.totalResultSize / item.queryCount) / (1024 * 1024) : 0
+            );
+
+            window.resultSizeChart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Tamanho Total de Resultados (MB)",
+                            data: resultSizeData,
+                            backgroundColor: "rgba(0, 100, 0, 0.8)", // Dark green
+                            borderColor: "rgba(0, 100, 0, 1)",
+                            borderWidth: 1,
+                            yAxisID: "y",
+                            order: 2,
+                        },
+                        {
+                            label: "Tamanho Médio de Resultados por Consulta (MB)",
+                            data: avgResultSizeData,
+                            type: "line",
+                            backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
+                            borderColor: "rgba(255, 165, 0, 1)",
+                            borderWidth: 2,
+                            fill: false,
+                            yAxisID: "y1",
+                            order: 1,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "Análise de Tamanho de Resultados: Total vs Média por Consulta",
+                        },
+                        legend: {
+                            display: true,
+                        },
+                        zoom: {
+                            limits: {
+                                x: { min: "original", max: "original" },
+                                y: { min: "original", max: "original" },
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: "xy",
+                                onPan: function ({ chart }) {
+                                    // Update current time range
+                                    currentTimeRange.min = new Date(chart.scales.x.min);
+                                    currentTimeRange.max = new Date(chart.scales.x.max);
+                                    updateTimeRangeDisplay();
+                                    // Sync pan with other charts
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                },
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                },
+                                pinch: {
+                                    enabled: true,
+                                },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: "rgba(225,225,225,0.3)",
+                                    borderColor: "rgba(225,225,225)",
+                                    borderWidth: 1,
+                                },
+                                mode: "xy",
+                                onZoom: function ({ chart }) {
+                                    // Update current time range
+                                    currentTimeRange.min = new Date(chart.scales.x.min);
+                                    currentTimeRange.max = new Date(chart.scales.x.max);
+                                    updateTimeRangeDisplay();
+                                    // Sync zoom with other charts
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            type: "time",
+                            time: getCurrentTimeConfig(requests),
+                            title: {
+                                display: true,
+                                text: "Request Time",
+                            },
+                        },
+                        y: {
+                            type: "linear",
+                            position: "left",
+                            title: {
+                                display: true,
+                                text: "Tamanho Total de Resultados (MB)",
+                            },
+                            beginAtZero: true,
+                        },
+                        y1: {
+                            type: "linear",
+                            position: "right",
+                            title: {
+                                display: true,
+                                text: "Média por Consulta (MB)",
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        },
+                    },
+                    interaction: {
+                        mode: "index",
+                        intersect: false,
+                    },
+                },
+                plugins: [verticalLinePlugin]
+            });
+
+            // Register chart for crosshair synchronization
+            registerTimelineChart(window.resultSizeChart, ctx);
         }
 
         // Reset timeline chart zoom
@@ -4976,6 +5527,12 @@
             }
             if (window.memoryChart) {
                 window.memoryChart.resetZoom();
+            }
+            if (window.resultCountChart) {
+                window.resultCountChart.resetZoom();
+            }
+            if (window.resultSizeChart) {
+                window.resultSizeChart.resetZoom();
             }
 
             // Reset to original time range
@@ -6562,7 +7119,7 @@
                     startDateInput.value = toDateTimeLocal(startWithBuffer);
                     endDateInput.value = toDateTimeLocal(endWithBuffer);
 
-                    console.log(`Date range with buffer: ${startWithBuffer} to ${endWithBuffer}`);
+            
                 }
             } else {
                 // Use existing originalRequests if available, otherwise use current data
@@ -6578,13 +7135,13 @@
             const endDate = endDateInput.value
                 ? new Date(endDateInput.value)
                 : null;
-            console.log(`Date filtering: start=${startDate}, end=${endDate}, originalRequests.length=${originalRequests.length}`);
+
             const filteredRequests = filterRequestsByDateRange(
                 originalRequests,
                 startDate,
                 endDate
             );
-            console.log(`After date filtering: ${filteredRequests.length} requests remaining`);
+
 
             // Validate date range for current time grouping
             const grouping = getTimeGrouping();
@@ -6756,8 +7313,7 @@
             // Use provided requests or fall back to original requests
             const requestsToUse = requests || originalRequests;
 
-            console.log(`Building Index/Query Flow with ${requestsToUse?.length || 0} requests`,
-                requests ? '(filtered data)' : '(original data)');
+
 
             if (!requestsToUse || requestsToUse.length === 0) {
                 console.log('No requests available for Index/Query Flow');
@@ -6864,7 +7420,7 @@
                                     itemsScanned: [],
                                     itemsFetched: []
                                 });
-                                console.log(`    Created new index entry for: ${indexName}`);
+
                             }
 
                             const indexObj = allIndexes.get(indexName);
@@ -6898,7 +7454,7 @@
                                     indexName: indexName,
                                     count: 0
                                 });
-                                console.log(`    Created new connection: ${connectionKey}`);
+
                             }
                             indexQueryFlowData.connections.get(connectionKey).count++;
                             connectionCount++;
@@ -7199,7 +7755,7 @@
         }
 
         function drawSimpleConnections(indexPositions, queryPositions, colors) {
-            console.log('drawSimpleConnections called');
+
             const svg = document.getElementById('flow-svg');
             if (!svg) {
                 console.error('SVG element not found');
@@ -7226,13 +7782,13 @@
                 const queryPos = queryMap.get(connection.queryStatement);
 
                 if (indexPos && queryPos) {
-                    console.log(`Drawing connection: ${connection.indexName} -> query (${connection.count} times)`);
+
                     drawSimpleConnection(svg, indexPos, queryPos, connection.count);
                     connectionsDrawn++;
                 }
             });
 
-            console.log(`Drew ${connectionsDrawn} connections`);
+
         }
 
         function drawSimpleConnection(svg, indexPos, queryPos, count) {
@@ -7241,7 +7797,7 @@
             const endX = queryPos.x;
             const endY = queryPos.y;
 
-            console.log(`Drawing line from (${startX}, ${startY}) to (${endX}, ${endY}) with count ${count}`);
+
 
             // Calculate line thickness (scale between 2 and 12 pixels)
             const maxCount = Math.max(...Array.from(indexQueryFlowData.connections.values()).map(c => c.count));
@@ -7469,8 +8025,8 @@
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = '3.1.1';
-        const LAST_UPDATED = '2025-01-22';
+        const APP_VERSION = '3.3.0';
+        const LAST_UPDATED = '2025-01-23';
 
         function getVersionInfo() {
             return {
@@ -7529,12 +8085,9 @@
         function extractUsedIndexes(requests) {
             usedIndexes.clear();
             
-            console.log('🔍 Starting index extraction from query data...');
             let totalIndexReferences = 0;
             
             requests.forEach((request, index) => {
-                console.log(`\n🔍 === Processing Request ${index + 1} ===`);
-                console.log(`📋 Original request keys:`, Object.keys(request));
                 
                 // Handle different JSON structures
                 let actualRequest = request;
@@ -7542,15 +8095,6 @@
                     // User's format: { completed_requests: {...}, plan: "..." }
                     actualRequest = { ...request.completed_requests, plan: request.plan };
                     console.log(`🔄 Restructured request from user format`);
-                    console.log(`📋 Restructured request keys:`, Object.keys(actualRequest));
-                } else {
-                    console.log(`📋 Using original request structure`);
-                }
-                
-                console.log(`📝 Request has plan:`, !!actualRequest.plan);
-                console.log(`📝 Plan type:`, typeof actualRequest.plan);
-                if (actualRequest.plan) {
-                    console.log(`📝 Plan sample:`, typeof actualRequest.plan === 'string' ? actualRequest.plan.substring(0, 100) + '...' : 'Object');
                 }
                 
                 // Create a copy of the request with parsed plan

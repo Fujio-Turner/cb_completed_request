@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.2.0
+# Couchbase Slow Query Analysis Tool v3.3.0
 
 **🌍 Idiomas:** [🇺🇸 English](README.md) | [🇩🇪 Deutsch](README.de.md) | **🇪🇸 Español** | [🇵🇹 Português](README.pt.md)
 
@@ -11,6 +11,10 @@
 ---
 
 Una herramienta web integral para analizar el rendimiento de consultas de Couchbase y planes de ejecución. Visualice patrones de consultas, identifique cuellos de botella y optimice el rendimiento de la base de datos con seguimiento avanzado de uso de índices, análisis de planes de ejecución y funciones dedicadas de gestión de índices.
+
+## 🆕 Novedades en v3.3.0
+
+- **Cursores de Línea de Tiempo Sincronizados**: Todos los gráficos de línea de tiempo ahora presentan cursores sincronizados que se mueven juntos al pasar el cursor sobre cualquier gráfico, facilitando la correlación de datos entre diferentes métricas en el mismo punto temporal.
 
 ### (Compatible con Capella)
 
