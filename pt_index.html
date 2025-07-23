@@ -2124,15 +2124,8 @@
 
         // Handle column sort click
         function handleColumnSort(column, tableType) {
-            console.log("=== handleColumnSort Called ===");
-            console.log("Display Column:", column);
-
             // Map display column to data field
             const dataField = getDataFieldName(column);
-            console.log("Data Field:", dataField);
-            console.log("Table Type:", tableType);
-            console.log("Current Sort Column:", currentSortColumn);
-            console.log("Current Sort Direction:", currentSortDirection);
 
             if (currentSortColumn === column && currentTableType === tableType) {
                 currentSortDirection =
@@ -2143,17 +2136,8 @@
                 currentTableType = tableType;
             }
 
-            console.log("New Sort Direction:", currentSortDirection);
-            console.log("Filtered Data Length:", filteredEveryQueryData.length);
-
             if (tableType === "every-query") {
                 currentPage = 1; // Reset to first page after sorting
-
-                console.log("Before sorting - first 3 items:", filteredEveryQueryData.slice(0, 3).map(item => ({
-                    displayValue: item[column],
-                    dataFieldValue: item[dataField],
-                    sortValue: getSortableValue(item, dataField)
-                })));
 
                 // Sort using the data field name, not the display name
                 const sortedData = sortData(
@@ -2161,12 +2145,6 @@
                     dataField,
                     currentSortDirection
                 );
-
-                console.log("After sorting - first 3 items:", sortedData.slice(0, 3).map(item => ({
-                    displayValue: item[column],
-                    dataFieldValue: item[dataField],
-                    sortValue: getSortableValue(item, dataField)
-                })));
 
                 filteredEveryQueryData = sortedData;
                 populateEveryQueryTable(filteredEveryQueryData);
@@ -3490,8 +3468,6 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
-                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
-                                    console.log('operationsChart onZoom triggered, syncing to other charts');
                                     // Sync zoom with other charts
                                     syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
@@ -3713,8 +3689,6 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
-                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
-                                    console.log('filterChart onZoom triggered, syncing to other charts');
                                     // Sync zoom with other charts
                                     syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
@@ -4058,8 +4032,6 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
-                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
-                                    console.log('timelineChart onZoom triggered, syncing to other charts');
                                     // Update current time range
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
@@ -4174,13 +4146,7 @@
                 });
             });
 
-            // Console log all statement types found
-            console.log(
-                "Statement types found:",
-                Array.from(allStatementTypes).sort()
-            );
 
-            console.log("First timeGroup sample:", Object.values(timeGroups)[0]);
 
             // Predefined colors for all statement types found
             const colorMap = {
@@ -4368,8 +4334,6 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
-                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
-                                    console.log('queryTypesChart onZoom triggered, syncing to other charts');
                                     // Update current time range
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
@@ -4420,10 +4384,7 @@
             // Group requests by time and duration buckets
             const timeGroups = {};
 
-            console.log(
-                "Duration buckets chart - processing requests:",
-                requests.length
-            );
+
 
             requests.forEach((request) => {
                 const requestDate = new Date(request.requestTime);
@@ -4485,13 +4446,7 @@
                 }
             });
 
-            console.log(
-                "Duration buckets chart - timeGroups count:",
-                Object.keys(timeGroups).length
-            );
-            if (Object.keys(timeGroups).length > 0) {
-                console.log("First timeGroup sample:", Object.values(timeGroups)[0]);
-            }
+
 
             // Calculate min/max counts for circle sizing
             let minCount = Infinity;
@@ -4707,8 +4662,6 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
-                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
-                                    console.log('durationBucketsChart onZoom triggered, syncing to other charts');
                                     // Update current time range
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
@@ -4955,8 +4908,6 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
-                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
-                                    console.log('memoryChart onZoom triggered, syncing to other charts');
                                     // Update current time range
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
@@ -5882,11 +5833,7 @@
                 }
             });
 
-            console.log("=== Query Pattern Chart Data ===");
-            console.log("Pattern Counts Object:", patternCounts);
-            console.log("Pattern Labels:", Object.keys(patternCounts));
-            console.log("Pattern Values:", Object.values(patternCounts));
-            console.log("Total patterns found:", Object.keys(patternCounts).length);
+
 
             const ctx = document
                 .getElementById("query-pattern-chart")
@@ -6468,9 +6415,7 @@
                     const batchSize = 200; // Reduced from 1000 for better responsiveness
                     const processedRequests = [];
 
-                    console.log(
-                        `Processing ${processData.length} requests in batches of ${batchSize}...`
-                    );
+
 
                     // Show progress bar
                     document.getElementById("progress-container").style.display =
@@ -6585,12 +6530,12 @@
             // Clear normalize cache if it gets too large to prevent memory issues
             if (normalizeCache.size > 5000) {
                 normalizeCache.clear();
-                console.log("Cleared statement normalize cache to free memory");
+
             }
 
             // Apply global system query filtering
             const filteredAllRequests = filterSystemQueries(allRequests);
-            console.log(`Filtered ${allRequests.length - filteredAllRequests.length} system queries from ${allRequests.length} total requests`);
+
 
             // If this is the first parse (no date filters set), populate date range
             if (
@@ -7652,7 +7597,7 @@
                 }
                 
                 console.log(`🎯 Processing statement: "${statement.substring(0, 50)}..." on ${bucketScopeCollection}`);
-                console.log(`🔍 Found ${indexesAndKeys.indexes.length} indexes in this query`);
+
                 
                 // Add each index with its bucket.scope.collection
                 indexesAndKeys.indexes.forEach(indexName => {
@@ -7660,7 +7605,7 @@
                     usedIndexes.add(indexKey);
                     totalIndexReferences++;
                     
-                    console.log(`📋 Found index: "${indexName}" on ${bucketScopeCollection}`);
+
                 });
             });
             

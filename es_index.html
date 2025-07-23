@@ -2788,15 +2788,11 @@
 
         // Handle column sort click
         function handleColumnSort(column, tableType) {
-            console.log("=== handleColumnSort Called ===");
-            console.log("Display Column:", column);
+            
 
             // Map display column to data field
             const dataField = getDataFieldName(column);
-            console.log("Data Field:", dataField);
-            console.log("Table Type:", tableType);
-            console.log("Current Sort Column:", currentSortColumn);
-            console.log("Current Sort Direction:", currentSortDirection);
+
 
             if (currentSortColumn === column && currentTableType === tableType) {
                 currentSortDirection =
@@ -2807,17 +2803,12 @@
                 currentTableType = tableType;
             }
 
-            console.log("New Sort Direction:", currentSortDirection);
-            console.log("Filtered Data Length:", filteredEveryQueryData.length);
+
 
             if (tableType === "every-query") {
                 currentPage = 1; // Reset to first page after sorting
 
-                console.log("Before sorting - first 3 items:", filteredEveryQueryData.slice(0, 3).map(item => ({
-                    displayValue: item[column],
-                    dataFieldValue: item[dataField],
-                    sortValue: getSortableValue(item, dataField)
-                })));
+
 
                 // Sort using the data field name, not the display name
                 const sortedData = sortData(
@@ -2826,11 +2817,7 @@
                     currentSortDirection
                 );
 
-                console.log("After sorting - first 3 items:", sortedData.slice(0, 3).map(item => ({
-                    displayValue: item[column],
-                    dataFieldValue: item[dataField],
-                    sortValue: getSortableValue(item, dataField)
-                })));
+
 
                 filteredEveryQueryData = sortedData;
                 populateEveryQueryTable(filteredEveryQueryData);
@@ -4154,8 +4141,6 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
-                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
-                                    console.log('operationsChart onZoom triggered, syncing to other charts');
                                     // Sync zoom with other charts
                                     syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
@@ -4377,8 +4362,6 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
-                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
-                                    console.log('filterChart onZoom triggered, syncing to other charts');
                                     // Sync zoom with other charts
                                     syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
@@ -4722,8 +4705,6 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
-                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
-                                    console.log('timelineChart onZoom triggered, syncing to other charts');
                                     // Update current time range
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
@@ -4802,15 +4783,7 @@
                     const trimmed = request.statement.trim();
                     if (trimmed) {
                         statementType = trimmed.split(/\s+/)[0].toUpperCase();
-                    } else {
-                        console.log("Empty statement after trim:", request.statement);
                     }
-                } else {
-                    console.log(
-                        "Non-string or null statement:",
-                        request.statement,
-                        typeof request.statement
-                    );
                 }
 
                 if (!timeGroups[key].statementTypes[statementType]) {
@@ -4838,13 +4811,7 @@
                 });
             });
 
-            // Console log all statement types found
-            console.log(
-                "Statement types found:",
-                Array.from(allStatementTypes).sort()
-            );
 
-            console.log("First timeGroup sample:", Object.values(timeGroups)[0]);
 
             // Predefined colors for all statement types found
             const colorMap = {
@@ -5032,8 +4999,6 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
-                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
-                                    console.log('queryTypesChart onZoom triggered, syncing to other charts');
                                     // Update current time range
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
@@ -5084,10 +5049,7 @@
             // Group requests by time and duration buckets
             const timeGroups = {};
 
-            console.log(
-                "Duration buckets chart - processing requests:",
-                requests.length
-            );
+
 
             requests.forEach((request) => {
                 const requestDate = new Date(request.requestTime);
@@ -5149,13 +5111,7 @@
                 }
             });
 
-            console.log(
-                "Duration buckets chart - timeGroups count:",
-                Object.keys(timeGroups).length
-            );
-            if (Object.keys(timeGroups).length > 0) {
-                console.log("First timeGroup sample:", Object.values(timeGroups)[0]);
-            }
+
 
             // Calculate min/max counts for circle sizing
             let minCount = Infinity;
@@ -5371,8 +5327,6 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
-                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
-                                    console.log('durationBucketsChart onZoom triggered, syncing to other charts');
                                     // Update current time range
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
@@ -5619,8 +5573,6 @@
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
-                                    console.log('Chart onZoom triggered:', chart.canvas.id || 'unknown chart');
-                                    console.log('memoryChart onZoom triggered, syncing to other charts');
                                     // Update current time range
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
@@ -6546,11 +6498,7 @@
                 }
             });
 
-            console.log("=== Query Pattern Chart Data ===");
-            console.log("Pattern Counts Object:", patternCounts);
-            console.log("Pattern Labels:", Object.keys(patternCounts));
-            console.log("Pattern Values:", Object.values(patternCounts));
-            console.log("Total patterns found:", Object.keys(patternCounts).length);
+
 
             const ctx = document
                 .getElementById("query-pattern-chart")
@@ -7132,9 +7080,7 @@
                     const batchSize = 200; // Reduced from 1000 for better responsiveness
                     const processedRequests = [];
 
-                    console.log(
-                        `Processing ${processData.length} requests in batches of ${batchSize}...`
-                    );
+
 
                     // Show progress bar
                     document.getElementById("progress-container").style.display =
@@ -7249,12 +7195,12 @@
             // Clear normalize cache if it gets too large to prevent memory issues
             if (normalizeCache.size > 5000) {
                 normalizeCache.clear();
-                console.log("Cleared statement normalize cache to free memory");
+
             }
 
             // Apply global system query filtering
             const filteredAllRequests = filterSystemQueries(allRequests);
-            console.log(`Filtered ${allRequests.length - filteredAllRequests.length} system queries from ${allRequests.length} total requests`);
+
 
             // If this is the first parse (no date filters set), populate date range
             if (
@@ -7281,7 +7227,7 @@
                     startDateInput.value = toDateTimeLocal(startWithBuffer);
                     endDateInput.value = toDateTimeLocal(endWithBuffer);
 
-                    console.log(`Date range with buffer: ${startWithBuffer} to ${endWithBuffer}`);
+
                 }
             } else {
                 // Use existing originalRequests if available, otherwise use current data
@@ -7297,13 +7243,11 @@
             const endDate = endDateInput.value
                 ? new Date(endDateInput.value)
                 : null;
-            console.log(`Date filtering: start=${startDate}, end=${endDate}, originalRequests.length=${originalRequests.length}`);
             const filteredRequests = filterRequestsByDateRange(
                 originalRequests,
                 startDate,
                 endDate
             );
-            console.log(`After date filtering: ${filteredRequests.length} requests remaining`);
 
             // Validate date range for current time grouping
             const grouping = getTimeGrouping();
@@ -7475,11 +7419,7 @@
             // Use provided requests or fall back to original requests
             const requestsToUse = requests || originalRequests;
 
-            console.log(`Building Index/Query Flow with ${requestsToUse?.length || 0} requests`,
-                requests ? '(filtered data)' : '(original data)');
-
             if (!requestsToUse || requestsToUse.length === 0) {
-                console.log('No requests available for Index/Query Flow');
                 return;
             }
 
@@ -7583,7 +7523,7 @@
                                     itemsScanned: [],
                                     itemsFetched: []
                                 });
-                                console.log(`    Created new index entry for: ${indexName}`);
+
                             }
 
                             const indexObj = allIndexes.get(indexName);
@@ -7617,7 +7557,7 @@
                                     indexName: indexName,
                                     count: 0
                                 });
-                                console.log(`    Created new connection: ${connectionKey}`);
+
                             }
                             indexQueryFlowData.connections.get(connectionKey).count++;
                             connectionCount++;
@@ -7918,7 +7858,7 @@
         }
 
         function drawSimpleConnections(indexPositions, queryPositions, colors) {
-            console.log('drawSimpleConnections called');
+
             const svg = document.getElementById('flow-svg');
             if (!svg) {
                 console.error('SVG element not found');
@@ -7945,13 +7885,10 @@
                 const queryPos = queryMap.get(connection.queryStatement);
 
                 if (indexPos && queryPos) {
-                    console.log(`Drawing connection: ${connection.indexName} -> query (${connection.count} times)`);
                     drawSimpleConnection(svg, indexPos, queryPos, connection.count);
                     connectionsDrawn++;
                 }
             });
-
-            console.log(`Drew ${connectionsDrawn} connections`);
         }
 
         function drawSimpleConnection(svg, indexPos, queryPos, count) {
@@ -7960,7 +7897,7 @@
             const endX = queryPos.x;
             const endY = queryPos.y;
 
-            console.log(`Drawing line from (${startX}, ${startY}) to (${endX}, ${endY}) with count ${count}`);
+
 
             // Calculate line thickness (scale between 2 and 12 pixels)
             const maxCount = Math.max(...Array.from(indexQueryFlowData.connections.values()).map(c => c.count));
@@ -8248,28 +8185,21 @@
         function extractUsedIndexes(requests) {
             usedIndexes.clear();
             
-            console.log('🔍 Starting index extraction from query data...');
+
             let totalIndexReferences = 0;
             
             requests.forEach((request, index) => {
-                console.log(`\n🔍 === Processing Request ${index + 1} ===`);
-                console.log(`📋 Original request keys:`, Object.keys(request));
+
                 
                 // Handle different JSON structures
                 let actualRequest = request;
                 if (request.completed_requests) {
                     // User's format: { completed_requests: {...}, plan: "..." }
                     actualRequest = { ...request.completed_requests, plan: request.plan };
-                    console.log(`🔄 Restructured request from user format`);
-                    console.log(`📋 Restructured request keys:`, Object.keys(actualRequest));
                 } else {
-                    console.log(`📋 Using original request structure`);
                 }
                 
-                console.log(`📝 Request has plan:`, !!actualRequest.plan);
-                console.log(`📝 Plan type:`, typeof actualRequest.plan);
                 if (actualRequest.plan) {
-                    console.log(`📝 Plan sample:`, typeof actualRequest.plan === 'string' ? actualRequest.plan.substring(0, 100) + '...' : 'Object');
                 }
                 
                 // Create a copy of the request with parsed plan
@@ -8279,26 +8209,23 @@
                 if (typeof processedRequest.plan === 'string') {
                     try {
                         processedRequest.plan = JSON.parse(processedRequest.plan);
-                        console.log(`🔧 ✅ Parsed plan JSON for request: ${processedRequest.clientContextID || processedRequest.requestId || 'unknown'}`);
-                        console.log(`🔧 Parsed plan operator:`, processedRequest.plan?.["#operator"]);
+
                     } catch (e) {
                         console.warn(`⚠️ Failed to parse plan JSON for request: ${processedRequest.clientContextID || processedRequest.requestId || 'unknown'}`, e);
                         return; // Skip this request if plan can't be parsed
                     }
                 } else if (processedRequest.plan) {
-                    console.log(`🔧 Plan already parsed, operator:`, processedRequest.plan?.["#operator"]);
+
                 } else {
                     console.warn(`⚠️ No plan found in request`);
                     return;
                 }
                 
-                console.log(`🎯 Calling extractIndexesAndKeys...`);
                 const indexesAndKeys = extractIndexesAndKeys(processedRequest);
-                console.log(`🎯 extractIndexesAndKeys returned:`, indexesAndKeys);
                 
                 // Get bucket.scope.collection from the statement
                 const statement = actualRequest.preparedText || actualRequest.statement || "";
-                console.log(`📝 Statement:`, statement);
+
                 let bucketScopeCollection = 'unknown.unknown.unknown';
                 
                 // Try to extract FROM clause to get bucket.scope.collection
@@ -8315,8 +8242,8 @@
                     }
                 }
                 
-                console.log(`🎯 Processing statement: "${statement.substring(0, 50)}..." on ${bucketScopeCollection}`);
-                console.log(`🔍 Found ${indexesAndKeys.indexes.length} indexes in this query`);
+
+
                 
                 // Add each index with its bucket.scope.collection
                 indexesAndKeys.indexes.forEach(indexName => {
@@ -8324,11 +8251,11 @@
                     usedIndexes.add(indexKey);
                     totalIndexReferences++;
                     
-                    console.log(`📋 Found index: "${indexName}" on ${bucketScopeCollection}`);
+
                 });
             });
             
-            console.log(`✅ Index extraction complete: ${usedIndexes.size} unique indexes, ${totalIndexReferences} total references`);
+
         }
 
         // Calculate and update index statistics
@@ -8595,8 +8522,7 @@
                     matchedCount++;
                 }
             });
-            
-            console.log(`📊 Matching summary: ${matchedCount}/${filteredIndexData.length} indexes found in query data`);
+
         }
 
         // Display filtered index results
@@ -8653,7 +8579,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 return;
             }
 
-            console.log(`🔄 Displaying ${filteredIndexData.length} indexes and checking for query matches...`);
+
 
             let html = '';
 
@@ -8720,7 +8646,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
             const exactKey = `${index.name}|${targetString}`;
             if (usedIndexes.has(exactKey)) {
                 isUsed = true;
-                console.log(`✅ Exact match found: "${index.name}" on ${targetString}`);
             }
             
             // If not found and this is a primary index, also check for #primary match
@@ -8728,7 +8653,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 const primaryKey = `#primary|${targetString}`;
                 if (usedIndexes.has(primaryKey)) {
                     isUsed = true;
-                    console.log(`✅ Primary match found: "${index.name}" matches "#primary" on ${targetString}`);
                 }
             }
             
@@ -8853,13 +8777,11 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 }
             });
 
-            console.log('✅ Index analysis initialized');
+
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-            console.log('🚀 Initializing Couchbase Query Analyzer...');
-            console.log(`📦 Version: ${APP_VERSION} (Updated: ${LAST_UPDATED})`);
-            console.log('🔧 Features:', getVersionInfo().features.join(', '));
+
 
             // Initialize theme from localStorage
 
@@ -8880,7 +8802,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
             const excludeCheckbox = document.getElementById('exclude-system-queries');
             if (excludeCheckbox) {
                 excludeCheckbox.addEventListener('change', function () {
-                    console.log(`System query exclusion changed to: ${this.checked}`);
+
                     // Only reprocess if we have JSON data
                     const jsonInput = document.getElementById('json-input').value;
                     if (jsonInput.trim()) {
@@ -8890,13 +8812,13 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         const endDateInput = document.getElementById('end-date');
                         startDateInput.value = '';
                         endDateInput.value = '';
-                        console.log('Clearing existing data, date filters, and reprocessing...');
+
                         parseJSON();
                     }
                 });
             }
 
-            console.log('✅ Query Analyzer initialized successfully');
+
 
             // Initialize index analysis
             initializeIndexAnalysis();
@@ -8919,7 +8841,7 @@ ${info.features.map(f => `   • ${f}`).join('\n')}
                 }
             };
 
-            console.log('💡 Tip: Type QueryAnalyzer.about() for full app info');
+
         });
     </script>
 </body>
