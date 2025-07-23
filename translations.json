@@ -1,0 +1,242 @@
+{
+  "ui_strings": {
+    "Query Analyzer v3.1.1": {
+      "es": "Analizador de Consultas v3.1.1",
+      "pt": "Analisador de Consultas v3.1.1",
+      "de": "Query Analyzer v3.1.1"
+    },
+    "Dashboard": {
+      "es": "Panel de Control",
+      "pt": "Painel de Controle",
+      "de": "Dashboard"
+    },
+    "Timeline": {
+      "es": "Línea de Tiempo",
+      "pt": "Linha do Tempo",
+      "de": "Zeitverlauf"
+    },
+    "Analysis": {
+      "es": "Análisis",
+      "pt": "Análise",
+      "de": "Analyse"
+    },
+    "Every Query": {
+      "es": "Cada Consulta",
+      "pt": "Cada Consulta",
+      "de": "Jede Abfrage"
+    },
+    "Index/Query Flow": {
+      "es": "Flujo de Índice/Consulta",
+      "pt": "Fluxo de Índice/Consulta",
+      "de": "Index/Abfrage-Fluss"
+    },
+    "Indexes": {
+      "es": "Índices",
+      "pt": "Índices",
+      "de": "Indizes"
+    },
+    "Parse JSON": {
+      "es": "Analizar JSON",
+      "pt": "Analisar JSON",
+      "de": "JSON Analysieren"
+    },
+    "Copy": {
+      "es": "Copiar",
+      "pt": "Copiar",
+      "de": "Kopieren"
+    },
+    "Copy All": {
+      "es": "Copiar Todo",
+      "pt": "Copiar Tudo",
+      "de": "Alle Kopieren"
+    },
+    "Show More": {
+      "es": "Mostrar Más",
+      "pt": "Mostrar Mais",
+      "de": "Mehr Anzeigen"
+    },
+    "Hide": {
+      "es": "Ocultar",
+      "pt": "Ocultar",
+      "de": "Ausblenden"
+    },
+    "Clear All": {
+      "es": "Limpiar Todo",
+      "pt": "Limpar Tudo",
+      "de": "Alle Löschen"
+    },
+    "From:": {
+      "es": "Desde:",
+      "pt": "De:",
+      "de": "Von:"
+    },
+    "To:": {
+      "es": "Hasta:",
+      "pt": "Até:",
+      "de": "Bis:"
+    },
+    "Use Time Range": {
+      "es": "Usar Rango de Tiempo",
+      "pt": "Usar Intervalo de Tempo",
+      "de": "Zeitbereich Verwenden"
+    },
+    "Search Statement:": {
+      "es": "Buscar Declaración:",
+      "pt": "Buscar Declaração:",
+      "de": "Anweisung Suchen:"
+    },
+    "Search Username:": {
+      "es": "Buscar Usuario:",
+      "pt": "Buscar Usuário:",
+      "de": "Benutzername Suchen:"
+    },
+    "Search indexes:": {
+      "es": "Buscar índices:",
+      "pt": "Buscar índices:",
+      "de": "Indizes suchen:"
+    },
+    "Query Duration Distribution": {
+      "es": "Distribución de Duración de Consultas",
+      "pt": "Distribuição de Duração de Consultas",
+      "de": "Verteilung der Abfragedauer"
+    },
+    "Primary Indexes Used": {
+      "es": "Índices Primarios Utilizados",
+      "pt": "Índices Primários Utilizados",
+      "de": "Verwendete Primäre Indizes"
+    },
+    "Query Pattern Features": {
+      "es": "Características del Patrón de Consulta",
+      "pt": "Características do Padrão de Consulta",
+      "de": "Abfragemuster-Eigenschaften"
+    },
+    "Total Indexes": {
+      "es": "Total de Índices",
+      "pt": "Total de Índices",
+      "de": "Gesamte Indizes"
+    },
+    "Buckets": {
+      "es": "Buckets",
+      "pt": "Buckets",
+      "de": "Buckets"
+    },
+    "Scopes": {
+      "es": "Ámbitos",
+      "pt": "Escopos",
+      "de": "Bereiche"
+    },
+    "Collections": {
+      "es": "Colecciones",
+      "pt": "Coleções",
+      "de": "Sammlungen"
+    },
+    "Primary Indexes": {
+      "es": "Índices Primarios",
+      "pt": "Índices Primários",
+      "de": "Primäre Indizes"
+    },
+    "Used/Total Indexes": {
+      "es": "Índices Usados/Total",
+      "pt": "Índices Usados/Total",
+      "de": "Verwendete/Gesamte Indizes"
+    },
+    "Without/With Replica": {
+      "es": "Sin/Con Réplica",
+      "pt": "Sem/Com Réplica",
+      "de": "Ohne/Mit Replikat"
+    },
+    "Never Scanned Indexes": {
+      "es": "Índices Nunca Escaneados",
+      "pt": "Índices Nunca Verificados",
+      "de": "Nie Gescannte Indizes"
+    },
+    "Primary Only": {
+      "es": "Solo Primarios",
+      "pt": "Apenas Primários",
+      "de": "Nur Primäre"
+    },
+    "Used Only": {
+      "es": "Solo Usados",
+      "pt": "Apenas Usados",
+      "de": "Nur Verwendete"
+    },
+    "No Replicas Only": {
+      "es": "Solo Sin Réplicas",
+      "pt": "Apenas Sem Réplicas",
+      "de": "Nur Ohne Replikate"
+    },
+    "Never Scanned Only": {
+      "es": "Solo Nunca Escaneados",
+      "pt": "Apenas Nunca Verificados",
+      "de": "Nur Nie Gescannte"
+    },
+    "Learn More": {
+      "es": "Aprender Más",
+      "pt": "Saiba Mais",
+      "de": "Mehr Erfahren"
+    },
+    "⚠️ WARNING ⚠️": {
+      "es": "⚠️ ADVERTENCIA ⚠️",
+      "pt": "⚠️ AVISO ⚠️",
+      "de": "⚠️ WARNUNG ⚠️"
+    },
+    "Primary index scans in production can cause full bucket scans leading to severe performance issues": {
+      "es": "Los escaneos de índices primarios en producción pueden causar escaneos completos de buckets llevando a problemas de rendimiento severos",
+      "pt": "Verificações de índice primário em produção podem causar verificações completas de bucket levando a problemas graves de desempenho",
+      "de": "Primäre Index-Scans in der Produktion können vollständige Bucket-Scans verursachen, die zu schwerwiegenden Leistungsproblemen führen"
+    },
+    "Select a query from the table to view the flow diagram.": {
+      "es": "Seleccione una consulta de la tabla para ver el diagrama de flujo.",
+      "pt": "Selecione uma consulta da tabela para visualizar o diagrama de fluxo.",
+      "de": "Wählen Sie eine Abfrage aus der Tabelle, um das Flussdiagramm anzuzeigen."
+    },
+    "Yes": {
+      "es": "Sí",
+      "pt": "Sim",
+      "de": "Ja"
+    },
+    "No": {
+      "es": "No",
+      "pt": "Não",
+      "de": "Nein"
+    },
+    "Showing all": {
+      "es": "Mostrando todos los",
+      "pt": "Mostrando todos os",
+      "de": "Zeige alle"
+    },
+    "records": {
+      "es": "registros",
+      "pt": "registros",
+      "de": "Datensätze"
+    },
+    "groups": {
+      "es": "grupos",
+      "pt": "grupos",
+      "de": "Gruppen"
+    },
+    "Search in SQL++ statements...": {
+      "es": "Buscar en declaraciones SQL++...",
+      "pt": "Buscar em declarações SQL++...",
+      "de": "In SQL++ Anweisungen suchen..."
+    }
+  },
+  "javascript_variables": {
+    "scanCounts_yes": {
+      "es": "Sí",
+      "pt": "Sim",
+      "de": "Ja"
+    },
+    "scanCounts_no": {
+      "es": "No", 
+      "pt": "Não",
+      "de": "Nein"
+    }
+  },
+  "notes": {
+    "purpose": "Translation mapping for Couchbase Query Analyzer localization",
+    "languages": ["es", "pt", "de"],
+    "last_updated": "2025-01-22",
+    "instructions": "When updating index.html, use this file to automatically translate es_index.html, pt_index.html, and de_index.html"
+  }
+}
