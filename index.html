@@ -1974,10 +1974,21 @@
 
         chartNames.forEach((chartName) => {
           if (window[chartName]) {
+            // Remove event listeners if they exist
+            if (window[chartName]._crosshairHandlers && window[chartName].canvas) {
+              const canvas = window[chartName].canvas;
+              const handlers = window[chartName]._crosshairHandlers;
+              canvas.removeEventListener('mousemove', handlers.mousemove);
+              canvas.removeEventListener('mouseleave', handlers.mouseleave);
+            }
+            
             window[chartName].destroy();
             window[chartName] = null;
           }
         });
+
+        // Clear timeline charts array
+        timelineCharts.length = 0;
       }
 
       // Global system query filtering
@@ -4399,6 +4410,186 @@
         }
       }
 
+      // Array to store all timeline charts for synchronization
+      const timelineCharts = [];
+
+      // Custom plugin to draw a vertical line on hover
+      const verticalLinePlugin = {
+        id: 'verticalLine',
+        afterInit(chart) {
+          chart.verticalLine = { draw: false, x: 0 };
+        },
+        afterEvent(chart, args) {
+          const { inChartArea, event } = args;
+          if (chart.verticalLine) {
+            chart.verticalLine.draw = inChartArea;
+            chart.verticalLine.x = event ? event.x : args.x;
+            // Let Chart.js handle the redraw naturally, don't force it
+          }
+        },
+        afterDatasetsDraw(chart) {
+          if (!chart.verticalLine || !chart.verticalLine.draw || !chart.verticalLine.x) return;
+
+          const { ctx, chartArea: { top, bottom } } = chart;
+          ctx.save();
+          ctx.beginPath();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#007bff';
+          ctx.setLineDash([5, 5]);
+          ctx.moveTo(chart.verticalLine.x, top);
+          ctx.lineTo(chart.verticalLine.x, bottom);
+          ctx.stroke();
+          ctx.restore();
+        }
+      };
+
+      // Function to sync crosshairs across all timeline charts
+      function syncTimelineCharts(sourceEvent, activeChart) {
+        if (!activeChart || !activeChart.chartArea) return;
+        
+        const chartArea = activeChart.chartArea;
+        const inChartArea = sourceEvent.x >= chartArea.left && sourceEvent.x <= chartArea.right &&
+                            sourceEvent.y >= chartArea.top && sourceEvent.y <= chartArea.bottom;
+
+        // Filter out null/destroyed charts and exclude the active chart
+        const validCharts = timelineCharts.filter(chart => {
+          return chart && 
+                 chart !== activeChart &&  // Exclude active chart to prevent flicker
+                 chart.canvas && 
+                 chart.canvas.getContext && 
+                 chart.scales && 
+                 chart.scales.x && 
+                 chart.chartArea &&
+                 !chart.isDestroyed;
+        });
+
+        // Update active chart's crosshair state without redrawing
+        if (activeChart.verticalLine) {
+          activeChart.verticalLine.draw = inChartArea;
+          if (inChartArea) {
+            activeChart.verticalLine.x = sourceEvent.x;
+          }
+        }
+
+        // Sync other charts
+        validCharts.forEach(chart => {
+          if (!inChartArea) {
+            if (chart.verticalLine && chart.verticalLine.draw) {
+              chart.verticalLine.draw = false;
+              requestAnimationFrame(() => chart.draw());
+            }
+            return;
+          }
+
+          try {
+            const xValue = activeChart.scales.x.getValueForPixel(sourceEvent.x);
+            const targetX = chart.scales.x.getPixelForValue(xValue);
+            
+            if (chart.verticalLine && targetX >= chart.chartArea.left && targetX <= chart.chartArea.right) {
+              const wasDrawn = chart.verticalLine.draw;
+              const oldX = chart.verticalLine.x;
+              
+              chart.verticalLine.draw = true;
+              chart.verticalLine.x = targetX;
+              
+              // Only redraw if position changed significantly or wasn't drawn before
+              if (!wasDrawn || Math.abs(oldX - targetX) > 2) {
+                requestAnimationFrame(() => chart.draw());
+              }
+            }
+          } catch (error) {
+            // Silently handle errors
+            if (chart.verticalLine) {
+              chart.verticalLine.draw = false;
+            }
+          }
+        });
+
+        // Update the timelineCharts array to only contain valid charts (including active chart)
+        const allValidCharts = timelineCharts.filter(chart => {
+          return chart && 
+                 chart.canvas && 
+                 chart.canvas.getContext && 
+                 chart.scales && 
+                 chart.scales.x && 
+                 chart.chartArea &&
+                 !chart.isDestroyed;
+        });
+        
+        if (allValidCharts.length !== timelineCharts.length) {
+          timelineCharts.length = 0;
+          timelineCharts.push(...allValidCharts);
+        }
+      }
+
+      // Clear crosshairs on all timeline charts
+      function clearTimelineCrosshairs() {
+        // Filter out null/destroyed charts
+        const validCharts = timelineCharts.filter(chart => {
+          return chart && 
+                 chart.canvas && 
+                 chart.canvas.getContext && 
+                 !chart.isDestroyed &&
+                 chart.verticalLine;
+        });
+
+        validCharts.forEach(chart => {
+          if (chart.verticalLine && chart.verticalLine.draw) {
+            chart.verticalLine.draw = false;
+            requestAnimationFrame(() => chart.draw());
+          }
+        });
+
+        // Update the timelineCharts array to only contain valid charts
+        if (validCharts.length !== timelineCharts.length) {
+          timelineCharts.length = 0;
+          timelineCharts.push(...validCharts);
+        }
+      }
+
+      // Helper function to register a chart for crosshair synchronization
+      function registerTimelineChart(chart, ctx) {
+        if (!chart || !ctx || !ctx.canvas) return;
+        
+        // Add to timeline charts array for synchronization
+        timelineCharts.push(chart);
+
+        // Throttle mousemove events to prevent excessive redraws
+        let mouseMoveTimeout;
+        const mouseMoveHandler = (event) => {
+          if (mouseMoveTimeout) return;
+          
+          mouseMoveTimeout = setTimeout(() => {
+            mouseMoveTimeout = null;
+            
+            const rect = ctx.canvas.getBoundingClientRect();
+            const canvasEvent = {
+              x: event.clientX - rect.left,
+              y: event.clientY - rect.top
+            };
+            syncTimelineCharts(canvasEvent, chart);
+          }, 8); // Throttle to ~120fps
+        };
+
+        // Add mouseleave event listener to clear crosshairs
+        const mouseLeaveHandler = () => {
+          if (mouseMoveTimeout) {
+            clearTimeout(mouseMoveTimeout);
+            mouseMoveTimeout = null;
+          }
+          clearTimelineCrosshairs();
+        };
+
+        ctx.canvas.addEventListener('mousemove', mouseMoveHandler);
+        ctx.canvas.addEventListener('mouseleave', mouseLeaveHandler);
+
+        // Store handlers for cleanup if needed
+        chart._crosshairHandlers = {
+          mousemove: mouseMoveHandler,
+          mouseleave: mouseLeaveHandler
+        };
+      }
+
       // Generate operations chart showing index scan vs fetch operations
       function generateOperationsChart(requests) {
         // Destroy existing chart if it exists - do this first
@@ -4617,7 +4808,11 @@
               intersect: false,
             },
           },
+          plugins: [verticalLinePlugin]
         });
+
+        // Register chart for crosshair synchronization
+        registerTimelineChart(window.operationsChart, ctx);
       }
 
       // Generate filter chart showing filter efficiency (IN vs OUT)
@@ -4860,7 +5055,11 @@
               intersect: false,
             },
           },
+          plugins: [verticalLinePlugin]
         });
+
+        // Register chart for crosshair synchronization
+        registerTimelineChart(window.filterChart, ctx);
       }
 
       // Generate timeline chart showing kernel time vs execution time performance
@@ -5197,7 +5396,11 @@
               intersect: false,
             },
           },
+          plugins: [verticalLinePlugin]
         });
+
+        // Register chart for crosshair synchronization
+        registerTimelineChart(window.timelineChart, ctx);
 
         // Create Query Types Scatter Plot Chart
         createQueryTypesChart(requests, grouping);
@@ -5513,7 +5716,11 @@
               intersect: false,
             },
           },
+          plugins: [verticalLinePlugin]
         });
+
+        // Register chart for crosshair synchronization
+        registerTimelineChart(window.queryTypesChart, ctx);
       }
 
       // Create Duration Buckets Chart
@@ -5880,7 +6087,11 @@
               intersect: false,
             },
           },
+          plugins: [verticalLinePlugin]
         });
+
+        // Register chart for crosshair synchronization
+        registerTimelineChart(window.durationBucketsChart, ctx);
       }
 
       // Create Memory Usage Chart
@@ -6115,7 +6326,11 @@
               intersect: false,
             },
           },
+          plugins: [verticalLinePlugin]
         });
+
+        // Register chart for crosshair synchronization
+        registerTimelineChart(window.memoryChart, ctx);
       }
 
       // Create Result Count Chart (light green bar + orange line for resultCount/query)
@@ -6279,7 +6494,11 @@
               intersect: false,
             },
           },
+          plugins: [verticalLinePlugin]
         });
+
+        // Register chart for crosshair synchronization
+        registerTimelineChart(window.resultCountChart, ctx);
       }
 
       // Create Result Size Chart (dark green bar + orange line for resultSize/query)
@@ -6443,7 +6662,11 @@
               intersect: false,
             },
           },
+          plugins: [verticalLinePlugin]
         });
+
+        // Register chart for crosshair synchronization
+        registerTimelineChart(window.resultSizeChart, ctx);
       }
 
       // Reset timeline chart zoom
