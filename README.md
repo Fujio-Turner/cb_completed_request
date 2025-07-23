@@ -3,10 +3,10 @@
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
 ## 📁 **Download Instructions:**
-- **English**: Use `index.html`
-- **German**: Use `de_index.html` 
-- **Spanish**: Use `es_index.html`
-- **Portuguese**: Use `pt_index.html`
+- **English**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/index.html)
+- **German**: Download [`de_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/de_index.html)
+- **Spanish**: Download [`es_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/es_index.html)
+- **Portuguese**: Download [`pt_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/pt_index.html)
 
 ---
 
