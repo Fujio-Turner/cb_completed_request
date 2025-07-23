@@ -219,6 +219,31 @@
       "es": "Buscar en declaraciones SQL++...",
       "pt": "Buscar em declarações SQL++...",
       "de": "In SQL++ Anweisungen suchen..."
+    },
+    "Note: #primary count shows total operations, not unique queries": {
+      "es": "Nota: el conteo #primary muestra operaciones totales, no consultas únicas",
+      "pt": "Nota: a contagem #primary mostra operações totais, não consultas únicas",
+      "de": "Hinweis: #primary Anzahl zeigt Gesamtoperationen, nicht eindeutige Abfragen"
+    },
+    "Reset Zoom": {
+      "es": "Restablecer Zoom",
+      "pt": "Redefinir Zoom",
+      "de": "Zoom Zurücksetzen"
+    },
+    "Copy Query": {
+      "es": "Copiar Consulta",
+      "pt": "Copiar Consulta",
+      "de": "Abfrage Kopieren"
+    },
+    "Copy the query above": {
+      "es": "Copie la consulta anterior",
+      "pt": "Copie a consulta acima",
+      "de": "Kopieren Sie die obige Abfrage"
+    },
+    "Copy the JSON results": {
+      "es": "Copie los resultados JSON",
+      "pt": "Copie os resultados JSON",
+      "de": "Kopieren Sie die JSON-Ergebnisse"
     }
   },
   "javascript_variables": {

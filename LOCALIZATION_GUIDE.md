@@ -39,6 +39,11 @@ Please follow the complete localization process:
    - Verify all dynamic content displays correctly
 
 Update translations.json if new translatable strings were added.
+
+⚠️ **CRITICAL**: Use the JavaScript detection commands to find missed content:
+- `grep -n "textContent.*=" [lang]_index.html`
+- `grep -n "Copy\|Reset\|Show\|Hide" [lang]_index.html`  
+- `grep -n "button\.textContent" [lang]_index.html`
 ```
 
 ## Complete Localization Process for New Languages
@@ -127,6 +132,50 @@ These elements are easily missed during translation:
 - Check for hardcoded messages in error handling and validation functions
 - Find instruction text that appears in empty states or help sections
 
+**🚨 CRITICAL: JavaScript-Generated Content**
+The most commonly missed translations come from JavaScript functions that generate HTML:
+
+**Button Text Generation:**
+```javascript
+button.textContent = "Copy";           // Must be translated
+button.textContent = "Copied!";        // Must be translated  
+button.textContent = "Reset Zoom";     // Must be translated
+```
+
+**Dynamic HTML Injection:**
+```javascript
+element.innerHTML = "No execution plan available.";
+flowDiagram.textContent = "No operators found...";
+sortHint.textContent = "↕ Sort";
+```
+
+**Common Patterns to Search:**
+- Table row generation with hardcoded "Copy" buttons
+- Modal content generation with English text
+- Error message generation in JavaScript
+- Chart control buttons ("Reset Zoom", "Show More", etc.)
+- Status messages ("Copied!", "Loading...", etc.)
+- Tooltip and help text generation
+
+**🎯 SNEAKY PATTERN - Template Literals with HTML:**
+```javascript
+// This pattern is easily missed:
+html += `<button onclick="copyFunction()">Copy</button>`;
+element.innerHTML = `<div><button>Copy</button></div>`;
+return `<button class="btn">Copy</button>`;
+```
+
+**Detection Commands for This Pattern:**
+```bash
+# Find buttons with English text in template literals
+grep -n "Copy</button>" [lang]_index.html
+grep -n "Show</button>\|Hide</button>" [lang]_index.html  
+grep -n ">Copy<\|>Show<\|>Hide<\|>Reset<" [lang]_index.html
+
+# Should return ZERO results in localized files
+# If found, these need manual translation
+```
+
 **Dynamic HTML Generation:**
 - Functions that use `innerHTML` or `createElement` with text content
 - Template strings that build HTML with embedded text
@@ -143,38 +192,65 @@ grep -n "Copy the query" *.html
 # Find common English words that might be missed
 grep -n "\(Click\|Run\|Copy\|Paste\|Select\)" *.html
 grep -n "\(Instructions\|Note\|Warning\|Error\)" *.html
+
+# Find JavaScript-generated text (CRITICAL)
+grep -n "textContent.*=" *.html
+grep -n "innerHTML.*=" *.html
+grep -n "\.textContent = ['\"]" *.html
+grep -n "\.innerHTML = ['\"]" *.html
+
+# Find button text in JavaScript
+grep -n "button\.textContent" *.html
+grep -n "Copy\|Reset\|Show\|Hide" *.html
+
+# Find template literals with text
+grep -n "\`.*[A-Za-z].*\`" *.html
+grep -n "\" + .* + \"" *.html
+
+# 🚨 CRITICAL: Find hardcoded English in HTML generation
+grep -n "Copy</button>" *.html
+grep -n "Show</button>\|Hide</button>" *.html
+grep -n ">Copy<\|>Show<\|>Hide<\|>Reset<" *.html
+grep -n "\`.*>.*Copy.*<.*\`" *.html
 ```
 
-#### F. CSS and Styling Changes
-Style changes in index.html must be synchronized across all localized versions:
+#### F. CSS and Styling Changes (UPDATED ARCHITECTURE)
+**🔥 ARCHITECTURAL IMPROVEMENT**: index.html is being refactored to move inline styles to CSS classes for easier maintenance.
 
-**Inline Styles:**
-- `style="margin-top: 30px;"` and other CSS property changes
-- Background colors, padding, border modifications
-- Font sizes, colors, and text styling changes
+**CSS-First Approach:**
+- Most styling now uses CSS classes instead of inline styles
+- Centralized CSS in main `<style>` section for easier maintenance
+- Reduced inline styles make localization much simpler
 
-**CSS Classes and Styling:**
-- New CSS rules added to `<style>` sections
-- Modified existing CSS selectors and properties
-- Responsive design changes and media queries
-
-**Style-Related HTML Changes:**
-- New `class` or `id` attributes
-- Changes to element structure that affect styling
-- Modifications to div containers and layout elements
+**New CSS Classes to Sync:**
+- `.dashboard-grid` - Main dashboard layout
+- `.chart-container` - Chart wrapper divs
+- `.table-container` - Table wrapper divs  
+- `.chart-title` - Chart heading styles
+- `.button-row` - Button container layout
+- `.input-grid` - Input section layout
 
 **Sync Process for Style Changes:**
 ```bash
-# Find inline style differences
-grep -n "style=\"" index.html > /tmp/index_styles.txt
-grep -n "style=\"" [lang]_index.html > /tmp/lang_styles.txt
-diff /tmp/index_styles.txt /tmp/lang_styles.txt
-
-# Find CSS rule changes in style blocks  
-grep -A20 -B5 "<style>" index.html > /tmp/index_css.txt
-grep -A20 -B5 "<style>" [lang]_index.html > /tmp/lang_css.txt
+# 1. Compare main CSS sections (most important now)
+grep -A100 "<style>" index.html > /tmp/index_css.txt
+grep -A100 "<style>" [lang]_index.html > /tmp/lang_css.txt
 diff /tmp/index_css.txt /tmp/lang_css.txt
+
+# 2. Check for remaining inline styles (should be minimal)
+grep -n "style=\"" index.html | wc -l
+grep -n "style=\"" [lang]_index.html | wc -l
+
+# 3. Find class attribute differences
+grep -n "class=\"" index.html > /tmp/index_classes.txt
+grep -n "class=\"" [lang]_index.html > /tmp/lang_classes.txt
+diff /tmp/index_classes.txt /tmp/lang_classes.txt
 ```
+
+**Benefits of New Architecture:**
+- 🎯 **Easier Localization**: Most style changes now in central CSS
+- 🔧 **Better Maintenance**: No scattered inline styles
+- 🚀 **Improved Performance**: CSS reusability and caching
 
 ### Step 4: Language-Specific Considerations
 
@@ -231,12 +307,27 @@ grep -n "innerHTML.*=.*['\"].*[A-Za-z]" [lang]_index.html
 - [ ] **Table sorting**: Click headers to verify sort direction indicators
 - [ ] **Flow diagram instructions**: Check text shown before selecting queries
 
+**🚨 JavaScript Content Testing:**
+- [ ] **Copy buttons**: Click all "Copy" buttons to verify translated text
+- [ ] **Chart controls**: Test "Reset Zoom" and other chart buttons
+- [ ] **Dynamic status**: Check "Copied!", "Loading...", success messages
+- [ ] **Table generation**: Verify dynamically generated table rows
+- [ ] **Modal content**: Open all modals to check generated content
+- [ ] **Sorting indicators**: Test "↕ Sort", "▲ ASC", "▼ DESC" text
+- [ ] **Button state changes**: Verify text changes during interactions
+
 **Complete Text Audit:**
 - [ ] Search for "English words" pattern in translated file
 - [ ] Verify all tab content is translated
 - [ ] Check all button labels and form fields
 - [ ] Validate all JavaScript-generated content
 - [ ] Test copy button functionality and text
+
+**🎯 Template Literal Validation (CRITICAL):**
+- [ ] Run: `grep -n "Copy</button>" [lang]_index.html` → Should return ZERO results
+- [ ] Run: `grep -n ">Copy<\|>Show<\|>Hide<\|>Reset<" [lang]_index.html` → Should return ZERO results
+- [ ] Run: `grep -n "Show</button>\|Hide</button>" [lang]_index.html` → Should return ZERO results
+- [ ] If any found: Manual translation required in JavaScript template literals
 
 ## Translation Files
 
