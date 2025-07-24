@@ -2,7 +2,7 @@
 <html lang="es">
 <!--
     Couchbase Query Analyzer
-    Version: 3.3.0
+    Version: 3.3.1
     Last Updated: 2025-01-23
     
     🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
@@ -19,16 +19,15 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.3.0" />
+    <meta name="version" content="3.3.1" />
     <meta name="last-updated" content="2025-01-23" />
-    <title>Analizador de Consultas v3.3.0</title>
+    <title>Analizador de Consultas v3.3.1</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css" />
     <!-- Include Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
     <!-- Include Chart.js datetime adapter -->
-    <script
-        src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <!-- Include Chart.js zoom plugin -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <!-- Include Hammer.js for touch/gesture support -->
@@ -848,7 +847,7 @@
 <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v3.3.0
+        v3.3.1
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -6332,6 +6331,34 @@
                 }
                 window.memoryChart.update();
             }
+
+
+
+            // Update result count chart Y-axis scale
+            if (window.resultCountChart) {
+                window.resultCountChart.options.scales.y.type = scaleType;
+                if (scaleType === "logarithmic") {
+                    window.resultCountChart.options.scales.y.beginAtZero = false;
+                    window.resultCountChart.options.scales.y.min = 1; // Avoid log(0)
+                } else {
+                    window.resultCountChart.options.scales.y.beginAtZero = true;
+                    delete window.resultCountChart.options.scales.y.min;
+                }
+                window.resultCountChart.update();
+            }
+
+            // Update result size chart Y-axis scale
+            if (window.resultSizeChart) {
+                window.resultSizeChart.options.scales.y.type = scaleType;
+                if (scaleType === "logarithmic") {
+                    window.resultSizeChart.options.scales.y.beginAtZero = false;
+                    window.resultSizeChart.options.scales.y.min = 0.001; // Avoid log(0) for small sizes
+                } else {
+                    window.resultSizeChart.options.scales.y.beginAtZero = true;
+                    delete window.resultSizeChart.options.scales.y.min;
+                }
+                window.resultSizeChart.update();
+            }
         }
 
         // Change time grouping for all charts
@@ -8700,7 +8727,7 @@
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = '3.3.0';
+        const APP_VERSION = '3.3.1';
         const LAST_UPDATED = '2025-01-23';
 
         function getVersionInfo() {

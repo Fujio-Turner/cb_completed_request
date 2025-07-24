@@ -8,7 +8,7 @@
     "Dashboard": {
       "es": "Panel de Control",
       "pt": "Painel de Controle",
-      "de": "Dashboard"
+      "de": "Instrumententafel"
     },
     "Timeline": {
       "es": "Línea de Tiempo",
@@ -18,7 +18,7 @@
     "Analysis": {
       "es": "Análisis",
       "pt": "Análise",
-      "de": "Analyse"
+      "de": "Analysieren"
     },
     "Every Query": {
       "es": "Cada Consulta",
@@ -279,6 +279,36 @@
       "es": "Promedio por Consulta (MB)",
       "pt": "Média por Consulta (MB)",
       "de": "Durchschnitt pro Abfrage (MB)"
+    },
+    "Database Operations Timeline: Index Scans vs Document Fetches": {
+      "es": "Línea de Tiempo de Operaciones de Base de Datos: Escaneos de Índice vs Recuperación de Documentos",
+      "pt": "Linha do Tempo de Operações de Banco de Dados: Varreduras de Índice vs Recuperação de Documentos",
+      "de": "Datenbank-Operationen Timeline: Index-Scans vs Dokument-Abrufe"
+    },
+    "Filter Operations Timeline: Efficiency Analysis (IN vs OUT)": {
+      "es": "Línea de Tiempo de Operaciones de Filtro: Análisis de Eficiencia (ENTRADA vs SALIDA)",
+      "pt": "Linha do Tempo de Operações de Filtro: Análise de Eficiência (ENTRADA vs SAÍDA)",
+      "de": "Filter-Operationen Timeline: Effizienz-Analyse (EINGANG vs AUSGANG)"
+    },
+    "Users by Query Count": {
+      "es": "Usuarios por Conteo de Consultas",
+      "pt": "Usuários por Contagem de Consultas",
+      "de": "Benutzer nach Abfrageanzahl"
+    },
+    "Index Usage Count": {
+      "es": "Conteo de Uso de Índices",
+      "pt": "Contagem de Uso de Índices",
+      "de": "Index-Nutzungsanzahl"
+    },
+    "Query Performance Timeline: KernTime % of ExecutionTime": {
+      "es": "Línea de Tiempo de Rendimiento de Consultas: % de KernTime del Tiempo de Ejecución",
+      "pt": "Linha do Tempo de Desempenho de Consultas: % de KernTime do Tempo de Execução",
+      "de": "Abfrage-Performance Timeline: KernTime % der Ausführungszeit"
+    },
+    "Total Query Process Memory Usage": {
+      "es": "Uso Total de Memoria del Proceso de Consultas",
+      "pt": "Uso Total de Memória do Processo de Consultas",
+      "de": "Gesamter Abfrageprozess-Speicherverbrauch"
     }
   },
   "javascript_variables": {

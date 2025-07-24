@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.3.0
+# Couchbase Slow Query Analysis Tool v3.3.1
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -12,8 +12,12 @@
 
 A comprehensive web-based tool for analyzing Couchbase query performance and execution plans. Visualize query patterns, identify bottlenecks, and optimize database performance with advanced index usage tracking, execution plan analysis, and dedicated index management features.
 
-## 🆕 What's New in v3.3.0
+## 🆕 What's New
 
+### v3.3.1 (2025-01-23)
+- **Bug Fixes**: Fixed crosshair synchronization issues in localized versions and corrected y-axis scaling behavior for timeline charts.
+
+### v3.3.0 (2025-01-23)
 - **Synchronized Timeline Crosshairs**: All timeline charts now feature synchronized crosshairs that move together when hovering over any chart, making it easier to correlate data across different metrics at the same time point.
 
 ### (Capella Compatible)

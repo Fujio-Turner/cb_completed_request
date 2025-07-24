@@ -2,7 +2,7 @@
 <html lang="de">
   <!--
     Couchbase Query Analyzer
-    Version: 3.3.0  
+    Version: 3.3.1  
     Last Updated: 2025-01-23
     
     🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
@@ -19,9 +19,9 @@
 
   <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.3.0" />
+    <meta name="version" content="3.3.1" />
     <meta name="last-updated" content="2025-01-23" />
-    <title>Query Analyzer v3.3.0</title>
+    <title>Query Analyzer v3.3.1</title>
     <!-- Include jQuery UI CSS -->
     <link
       rel="stylesheet"
@@ -187,7 +187,7 @@
   <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-      v3.3.0
+      v3.3.1
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -332,7 +332,7 @@
       <ul role="tablist" aria-label="Analysis views">
         <li role="tab">
           <a href="#dashboard" aria-controls="dashboard" tabindex="0"
-            >Dashboard</a
+            >Instrumententafel</a
           >
         </li>
         <li role="tab">
@@ -535,7 +535,7 @@
             "
           >
             <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center">
-              Users by Query Count
+              Benutzer nach Abfrageanzahl
             </h3>
             <div
               style="height: 250px; overflow-y: auto; border: 1px solid #eee"
@@ -583,7 +583,7 @@
             "
           >
             <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center">
-              Index Usage Count
+              Index-Nutzungsanzahl
             </h3>
             <div
               style="
@@ -4233,7 +4233,7 @@
             plugins: {
               title: {
                 display: true,
-                text: "Database Operations Timeline: Index Scans vs Document Fetches",
+                text: "Datenbank-Operationen Timeline: Index-Scans vs Dokument-Abrufe",
               },
               legend: {
                 display: true,
@@ -4491,7 +4491,7 @@
             plugins: {
               title: {
                 display: true,
-                text: "Filter Operations Timeline: Efficiency Analysis (IN vs OUT)",
+                text: "Filter-Operationen Timeline: Effizienz-Analyse (EINGANG vs AUSGANG)",
               },
               legend: {
                 display: true,
@@ -4850,7 +4850,7 @@
             plugins: {
               title: {
                 display: true,
-                text: "Query Performance Timeline: KernTime % of ExecutionTime",
+                text: "Abfrage-Performance Timeline: KernTime % der Ausführungszeit",
               },
               legend: {
                 display: true,
@@ -5720,7 +5720,7 @@
             plugins: {
               title: {
                 display: true,
-                text: "Total Query Process Memory Usage",
+                text: "Gesamter Abfrageprozess-Speicherverbrauch",
               },
               legend: {
                 display: true,
@@ -6347,6 +6347,34 @@
             delete window.memoryChart.options.scales.y.min;
           }
           window.memoryChart.update();
+        }
+
+
+
+        // Update result count chart Y-axis scale
+        if (window.resultCountChart) {
+          window.resultCountChart.options.scales.y.type = scaleType;
+          if (scaleType === "logarithmic") {
+            window.resultCountChart.options.scales.y.beginAtZero = false;
+            window.resultCountChart.options.scales.y.min = 1; // Avoid log(0)
+          } else {
+            window.resultCountChart.options.scales.y.beginAtZero = true;
+            delete window.resultCountChart.options.scales.y.min;
+          }
+          window.resultCountChart.update();
+        }
+
+        // Update result size chart Y-axis scale
+        if (window.resultSizeChart) {
+          window.resultSizeChart.options.scales.y.type = scaleType;
+          if (scaleType === "logarithmic") {
+            window.resultSizeChart.options.scales.y.beginAtZero = false;
+            window.resultSizeChart.options.scales.y.min = 0.001; // Avoid log(0) for small sizes
+          } else {
+            window.resultSizeChart.options.scales.y.beginAtZero = true;
+            delete window.resultSizeChart.options.scales.y.min;
+          }
+          window.resultSizeChart.update();
         }
       }
 
@@ -8939,7 +8967,7 @@
       // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
       // Version management
-      const APP_VERSION = "3.3.0";
+      const APP_VERSION = "3.3.1";
       const LAST_UPDATED = "2025-01-23";
 
       function getVersionInfo() {
