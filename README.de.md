@@ -12,11 +12,7 @@
 
 Ein umfassendes webbasiertes Tool zur Analyse der Couchbase-Query-Performance und Ausführungspläne. Visualisieren Sie Query-Muster, identifizieren Sie Engpässe und optimieren Sie die Datenbankleistung mit erweiterten Index-Nutzungstracking, Ausführungsplananalyse und dedizierten Index-Management-Funktionen.
 
-## 🆕 Neu in v3.3.0
-
-- **Synchronisierte Timeline-Fadenkreuze**: Alle Timeline-Diagramme verfügen jetzt über synchronisierte Fadenkreuze, die sich gemeinsam bewegen, wenn Sie über ein beliebiges Diagramm fahren. Dies erleichtert die Korrelation von Daten zwischen verschiedenen Metriken zum gleichen Zeitpunkt.
-
-### (Capella Kompatibel)
+#### (Capella Kompatibel)
 
 ## Schnellstart
 
@@ -114,7 +110,82 @@ LET bid = CONCAT("", s.bucket_id, ""),
 - **Intelligente Normalisierung**: Ersetzt String-Literale und Zahlen durch `?` Platzhalter
 - **Gefilterte Ergebnisse**: Schließt INFER, ADVISE, CREATE, ALTER INDEX und SYSTEM Queries aus
 
-## Changelog
+#### **4. Every Query Tab**
+- **Umfassende Query-Tabelle** mit 17 Spalten
+- **Interaktive Fluss-Diagramme** mit farbkodierter Ausführungsplan-Visualisierung
+- **Erweiterte Tabellen-Funktionen** mit vollständiger Spalten-Sortierung und Statement-Management
+- **Erweiterte Datenverarbeitung** mit Batch-Processing-Fähigkeiten
+
+#### **5. Index Query Flow Tab**
+- **Visuelle Index-Query-Beziehungen** mit interaktiven Fluss-Diagrammen
+- **Erweiterte Primary Index Erkennung** mit umfassender Abdeckung
+- **Performance-Einblicke** für Optimierungsmöglichkeiten
+
+#### **6. Indexes Tab** (NEU in v3.0.0)
+- **Umfassendes Index-Management** mit komplettem Index-Katalog
+- **Erweiterte Filteroptionen** und spezialisierte Filter
+- **Intelligente Index-Konsolidierung** und Query-Index-Matching
+
+## Die Analyse verstehen
+
+- **Grüne Bubbles**: < 25% der gesamten Query-Zeit
+- **Gelbe Bubbles**: 25-50% der gesamten Query-Zeit
+- **Orange Bubbles**: 50-75% der gesamten Query-Zeit
+- **Rote Bubbles**: > 75% der gesamten Query-Zeit
+- **Primary Scan hervorgehoben**: Queries, die Primary Index Scans verwenden (potentielle Optimierungskandidaten)
+
+## Zeit-Gruppierungs-Richtlinien
+
+Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche für jede Zeit-Gruppierung:
+
+- **Nach Optimizer**: Wählt automatisch die beste Gruppierung basierend auf Ihrem Datumsbereich (empfohlen)
+- **Nach Sekunde**: Am besten für Bereiche ≤ 1 Stunde (detaillierte Analyse)
+- **Nach Minute**: Am besten für Bereiche ≤ 1 Tag (stündliche Muster)
+- **Nach Stunde**: Am besten für Bereiche ≤ 1 Monat (tägliche Muster)
+- **Nach Tag**: Am besten für Bereiche > 1 Monat (langfristige Trends)
+
+**⚠️ Warnung**: Große Datumsbereiche mit feinkörnigen Gruppierungen können zu Diagramm-Rendering-Fehlern führen. Das Tool wird Sie warnen und bessere Kombinationen vorschlagen.
+
+## Release Notes
+
+### Version 3.3.1 (2025-01-23)
+- **Bug Fixes**: Behoben: Fadenkreuz-Synchronisationsprobleme in lokalisierten Versionen und korrigiertes Y-Achsen-Skalierungsverhalten für Timeline-Diagramme.
+
+### Version 3.3.0 (2025-01-23)
+- **Synchronisierte Timeline-Fadenkreuze**: Alle Timeline-Diagramme verfügen jetzt über synchronisierte Fadenkreuze, die sich gemeinsam bewegen, wenn Sie über ein beliebiges Diagramm fahren. Dies erleichtert die Korrelation von Daten zwischen verschiedenen Metriken zum gleichen Zeitpunkt.
+
+### Version 3.1.0 (2025-01-20)
+**Neue Funktionen & Verbesserungen:**
+- **Dashboard Tab Verbesserungen**:
+  - "Primary Scan Usage" Kreisdiagramm zu "Primary Indexes Used" Donut-Diagramm konvertiert
+  - Intelligentes Warnsystem hinzugefügt, das nur bei erkannten Primary Indexes erscheint
+  - "Mehr erfahren" Link zu Couchbase Best Practices Dokumentation integriert
+  - Verbessertes visuelles Design mit besserem Farbkontrast und Lesbarkeit
+- **Index Query Flow Tab Verbesserungen**:
+  - Verbesserte Primary Index Erkennung um Indexes mit `*_primary` Endung erweitert
+  - Verbesserte visuelle Hervorhebung für alle Primary Index Varianten
+  - Bessere Abdeckung von Primary Index Namensmustern (`#primary`, `bucket_primary`, etc.)
+- **Benutzererfahrung**:
+  - Sauberere Benutzeroberfläche mit bedingten Warnungen nur wenn relevant
+  - Lernressourcen direkt in das Tool integriert
+  - Intuitiveres visuelles Feedback für Performance-Optimierungsmöglichkeiten
+
+### Version 3.0.1 & Früher
+Siehe Git-Verlauf für vorherige Versionsänderungen
+
+## Fehlerbehebung
+
+- **Leere Ergebnisse**: Überprüfen Sie, ob Query-Logging in Couchbase aktiviert ist
+- **Browser-Fehler**: Stellen Sie sicher, dass JavaScript aktiviert ist
+- **Diagramm-Rendering-Fehler**: Reduzieren Sie den Datumsbereich oder verwenden Sie gröbere Zeit-Gruppierung (z.B. von "nach Minute" zu "nach Stunde" wechseln)
+- **"Too far apart" Fehler**: Der gewählte Zeitbereich ist zu groß für die gewählte Gruppierung - folgen Sie den Zeit-Gruppierungs-Richtlinien oben
+- **Canvas-Destruction-Warnungen**: Normales Verhalten beim Wechseln zwischen verschiedenen Zeit-Gruppierungen oder Datumsbereichen
+
+## Anforderungen
+
+- Moderner Webbrowser mit aktiviertem JavaScript
+- Couchbase Server mit aktiviertem Query-Logging
+- Zugang zu `system:completed_requests` (benötigt Admin-Privilegien)
 
 ### Version 3.2.0 (2025-01-22)
 **Wichtige Architektur- und Lokalisierungsverbesserungen:**
@@ -133,17 +204,3 @@ LET bid = CONCAT("", s.bucket_id, ""),
   - translations.json-System für konsistente Übersetzungen etabliert
   - Vereinfachter Lokalisierungs-Sync-Prozess mit zentralisiertem Styling
   - Verbesserte Code-Wartbarkeit und reduzierte Inline-Style-Abhängigkeiten
-
-## Die Analyse verstehen
-
-- **Grüne Bubbles**: < 25% der gesamten Query-Zeit
-- **Gelbe Bubbles**: 25-50% der gesamten Query-Zeit
-- **Orange Bubbles**: 50-75% der gesamten Query-Zeit
-- **Rote Bubbles**: > 75% der gesamten Query-Zeit
-- **Primary Scan hervorgehoben**: Queries, die Primary Index Scans verwenden (potentielle Optimierungskandidaten)
-
-## Anforderungen
-
-- Moderner Webbrowser mit aktiviertem JavaScript
-- Couchbase Server mit aktiviertem Query-Logging
-- Zugang zu `system:completed_requests` (benötigt Admin-Privilegien)

@@ -12,11 +12,7 @@
 
 Uma ferramenta web abrangente para analisar performance de consultas Couchbase e planos de execução. Visualize padrões de consultas, identifique gargalos e otimize performance do banco de dados com rastreamento avançado de uso de índices, análise de planos de execução e recursos dedicados de gerenciamento de índices.
 
-## 🆕 Novidades na v3.3.0
-
-- **Cursores de Linha do Tempo Sincronizados**: Todos os gráficos de linha do tempo agora apresentam cursores sincronizados que se movem juntos ao passar o mouse sobre qualquer gráfico, facilitando a correlação de dados entre diferentes métricas no mesmo ponto temporal.
-
-### (Compatível com Capella)
+#### (Compatível com Capella)
 
 ## Início Rápido
 
@@ -114,7 +110,82 @@ LET bid = CONCAT("", s.bucket_id, ""),
 - **Normalização Inteligente**: Substitui literais de string e números por placeholders `?`
 - **Resultados Filtrados**: Exclui consultas INFER, ADVISE, CREATE, ALTER INDEX e SYSTEM
 
-## Changelog
+#### **4. Aba Every Query**
+- **Tabela Abrangente de Consultas** com 17 colunas
+- **Diagramas de Fluxo Interativos** com visualização de plano de execução codificada por cores
+- **Recursos Avançados de Tabela** com ordenação completa de colunas e gerenciamento de statements
+- **Processamento Avançado de Dados** com capacidades de processamento em lote
+
+#### **5. Aba Index Query Flow**
+- **Relacionamentos Visuais Índice-Consulta** com diagramas de fluxo interativos
+- **Detecção Aprimorada de Índices Primários** com cobertura abrangente
+- **Insights de Performance** para oportunidades de otimização
+
+#### **6. Aba Indexes** (NOVO na v3.0.0)
+- **Gerenciamento Abrangente de Índices** com catálogo completo de índices
+- **Opções de filtragem avançadas** e filtros especializados
+- **Consolidação Inteligente de Índices** e correspondência consulta-índice
+
+## Entendendo a Análise
+
+- **Bolhas verdes**: < 25% do tempo total de consulta
+- **Bolhas amarelas**: 25-50% do tempo total de consulta
+- **Bolhas laranja**: 50-75% do tempo total de consulta
+- **Bolhas vermelhas**: > 75% do tempo total de consulta
+- **Scan Primário destacado**: Consultas usando scans de índices primários (candidatos potenciais de otimização)
+
+## Diretrizes de Agrupamento de Tempo
+
+Ao analisar gráficos de linha do tempo, escolha intervalos de data apropriados para cada agrupamento de tempo:
+
+- **Por Otimizador**: Seleciona automaticamente o melhor agrupamento baseado no seu intervalo de data (recomendado)
+- **Por Segundo**: Melhor para intervalos ≤ 1 hora (análise detalhada)
+- **Por Minuto**: Melhor para intervalos ≤ 1 dia (padrões horários)
+- **Por Hora**: Melhor para intervalos ≤ 1 mês (padrões diários)
+- **Por Dia**: Melhor para intervalos > 1 mês (tendências de longo prazo)
+
+**⚠️ Aviso**: Intervalos de data grandes com agrupamentos de granularidade fina podem causar erros de renderização de gráficos. A ferramenta alertará você e sugerirá melhores combinações.
+
+## Release Notes
+
+### Versão 3.3.1 (2025-01-23)
+- **Correções de Bugs**: Corrigidos problemas de sincronização de cursor cruzado em versões localizadas e corrigido comportamento de escala do eixo Y para gráficos de linha do tempo.
+
+### Versão 3.3.0 (2025-01-23)
+- **Cursores de Linha do Tempo Sincronizados**: Todos os gráficos de linha do tempo agora apresentam cursores sincronizados que se movem juntos ao passar o mouse sobre qualquer gráfico, facilitando a correlação de dados entre diferentes métricas no mesmo ponto temporal.
+
+### Versão 3.1.0 (2025-01-20)
+**Novos Recursos e Melhorias:**
+- **Melhorias da Aba Dashboard**:
+  - Convertido gráfico de pizza "Primary Scan Usage" para gráfico de donut "Primary Indexes Used"
+  - Adicionado sistema de alerta inteligente que aparece apenas quando índices primários são detectados
+  - Integrado link "Saiba mais" para documentação de melhores práticas do Couchbase
+  - Design visual aprimorado com melhor contraste de cores e legibilidade
+- **Melhorias da Aba Index Query Flow**:
+  - Melhorada detecção de índices primários para incluir índices terminando com `*_primary`
+  - Aprimorado destaque visual para todas as variantes de índices primários
+  - Melhor cobertura de padrões de nomes de índices primários (`#primary`, `bucket_primary`, etc.)
+- **Experiência do Usuário**:
+  - Interface mais limpa com alertas condicionais apenas quando relevante
+  - Recursos educacionais integrados diretamente na ferramenta
+  - Feedback visual mais intuitivo para oportunidades de otimização de performance
+
+### Versão 3.0.1 e Anteriores
+Veja histórico do git para mudanças de versões anteriores
+
+## Solução de Problemas
+
+- **Resultados vazios**: Verifique se o logging de consultas está habilitado no Couchbase
+- **Erros do navegador**: Certifique-se de que JavaScript está habilitado
+- **Erros de renderização de gráficos**: Reduza o intervalo de data ou use agrupamento de tempo mais grosso (ex., mude de "por Minuto" para "por Hora")
+- **Erros "Too far apart"**: O intervalo de tempo selecionado é muito grande para o agrupamento escolhido - siga as diretrizes de agrupamento de tempo acima
+- **Avisos de destruição de canvas**: Comportamento normal ao alternar entre diferentes agrupamentos de tempo ou intervalos de data
+
+## Requisitos
+
+- Navegador web moderno com JavaScript habilitado
+- Couchbase Server com logging de consultas habilitado
+- Acesso a `system:completed_requests` (requer privilégios de administrador)
 
 ### Versão 3.2.0 (2025-01-22)
 **Principais Melhorias de Arquitetura e Localização:**
@@ -133,17 +204,3 @@ LET bid = CONCAT("", s.bucket_id, ""),
   - Estabelecido sistema translations.json para traduções consistentes
   - Processo de sincronização de localização simplificado com estilo centralizado
   - Manutenibilidade de código aprimorada e dependências de estilos inline reduzidas
-
-## Entendendo a Análise
-
-- **Bolhas verdes**: < 25% do tempo total de consulta
-- **Bolhas amarelas**: 25-50% do tempo total de consulta
-- **Bolhas laranja**: 50-75% do tempo total de consulta
-- **Bolhas vermelhas**: > 75% do tempo total de consulta
-- **Scan Primário destacado**: Consultas usando scans de índices primários (candidatos potenciais de otimização)
-
-## Requisitos
-
-- Navegador web moderno com JavaScript habilitado
-- Couchbase Server com logging de consultas habilitado
-- Acesso a `system:completed_requests` (requer privilégios de administrador)

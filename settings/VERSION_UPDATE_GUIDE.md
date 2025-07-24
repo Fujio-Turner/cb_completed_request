@@ -76,6 +76,12 @@ Update the main heading in all README files:
 # Couchbase Slow Query Analysis Tool vX.X.X
 ```
 
+**📝 README Content Organization:**
+- Keep **Quick Start** section visible and high up in the document
+- Move **What's New** and **Changes** content into **Release Notes** section near the bottom
+- Perform spell checking on all README files before finalizing updates
+- Ensure Release Notes follow reverse chronological order (newest first)
+
 ## 🔄 Step-by-Step Update Process
 
 ### Step 1: Determine Version Type
@@ -122,7 +128,9 @@ For each HTML file (`index.html`, `de_index.html`, `es_index.html`, `pt_index.ht
 
 2. **Update README files:**
    - Main heading in all language versions
-   - Add "What's New" section for MINOR/MAJOR updates
+   - Reorganize content: Keep Quick Start section high up, move What's New/Changes to Release Notes section near bottom
+   - Perform spell checking on all README files
+   - Update Release Notes section with new version information (reverse chronological order)
 
 ### Step 4: Verification
 
@@ -170,7 +178,9 @@ When updating to version X.X.X:
 - [ ] `README.de.md` - main heading
 - [ ] `README.es.md` - main heading
 - [ ] `README.pt.md` - main heading
-- [ ] Add "What's New" sections (for MINOR/MAJOR updates)
+- [ ] Reorganize README content: Keep Quick Start high up, move What's New/Changes to Release Notes
+- [ ] Perform spell checking pass on all README files
+- [ ] Update Release Notes sections with new version information
 
 ### Verification
 - [ ] All HTML files show same version

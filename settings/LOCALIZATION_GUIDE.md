@@ -34,9 +34,12 @@ Changes made:
 Please ensure:
 1. **Navigation Links**: Update language navigation links at the top
 2. **Download Instructions**: Keep language-specific HTML file references
-3. **Content Consistency**: Maintain same structure across all README files
-4. **Cross-references**: Update any references to sql_queries.md or other files
-5. **Version Numbers**: Keep version numbers synchronized
+3. **Content Organization**: Keep Quick Start section high up, move all version info to Release Notes section near bottom
+4. **Spell Checking**: Perform spell checking on all README files before finalizing
+5. **Content Consistency**: Maintain same structure across all README files
+6. **Cross-references**: Update any references to sql_queries.md or other files
+7. **Version Numbers**: Keep version numbers synchronized
+8. **Release Notes Order**: Maintain reverse chronological order (newest first)
 
 Check the settings/translations.json file for consistent terminology.
 ```
@@ -55,6 +58,14 @@ Each README should specify the correct HTML file:
 - **README.de.md**: Use `de_index.html`
 - **README.es.md**: Use `es_index.html`
 - **README.pt.md**: Use `pt_index.html`
+
+#### Content Organization Requirements
+**CRITICAL**: All README files must follow this structure:
+1. **Quick Start Section**: Must be positioned high up in the document for immediate visibility
+2. **No "What's New" sections in middle**: Avoid adding version-specific content that interrupts the main flow
+3. **Release Notes Section**: All version information, changes, and new features go in "Release Notes" section near the bottom
+4. **Spell Checking Required**: All README files must be spell-checked before finalizing updates
+5. **Release Notes Order**: Version information in reverse chronological order (newest first)
 
 ## HTML Tool Updates (Index Files)
 

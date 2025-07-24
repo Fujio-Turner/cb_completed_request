@@ -3,24 +3,16 @@
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
 ## 📁 **Download Instructions:**
-- **English**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/index.html)
-- **German**: Download [`de_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/de_index.html)
-- **Spanish**: Download [`es_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/es_index.html)
-- **Portuguese**: Download [`pt_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/pt_index.html)
+- **English**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/index.html?download=true)
+- **German**: Download [`de_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/de_index.html?download=true)
+- **Spanish**: Download [`es_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/es_index.html?download=true)
+- **Portuguese**: Download [`pt_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/pt_index.html?download=true)
 
 ---
 
 A comprehensive web-based tool for analyzing Couchbase query performance and execution plans. Visualize query patterns, identify bottlenecks, and optimize database performance with advanced index usage tracking, execution plan analysis, and dedicated index management features.
 
-## 🆕 What's New
-
-### v3.3.1 (2025-01-23)
-- **Bug Fixes**: Fixed crosshair synchronization issues in localized versions and corrected y-axis scaling behavior for timeline charts.
-
-### v3.3.0 (2025-01-23)
-- **Synchronized Timeline Crosshairs**: All timeline charts now feature synchronized crosshairs that move together when hovering over any chart, making it easier to correlate data across different metrics at the same time point.
-
-### (Capella Compatible)
+#### (Capella Compatible)
 
 ## Quick Start
 
@@ -40,7 +32,7 @@ SELECT *, meta().plan FROM system:completed_requests LIMIT 4000;
 ```
 
 **Notes**: 
-This could return back a JSON of about 36MB~ish. Anything bigger will probably crash the browser. _Firefox_ seems to be the faster browser.
+This could return back a JSON of about 36MB~ish. Anything bigger will probably crash the browser. _Firefox_ seems to be render the data faster.
 
 **Browser is slow/crashes:**
 If the browser slowes to a crawl reduce the data size via `LIMIT 2000`
@@ -156,7 +148,13 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 
 **⚠️ Warning**: Large date ranges with fine-grained groupings may cause chart rendering errors. The tool will alert you and suggest better combinations.
 
-## Changelog
+## Release Notes
+
+### Version 3.3.1 (2025-01-23)
+- **Bug Fixes**: Fixed crosshair synchronization issues in localized versions and corrected y-axis scaling behavior for timeline charts.
+
+### Version 3.3.0 (2025-01-23)
+- **Synchronized Timeline Crosshairs**: All timeline charts now feature synchronized crosshairs that move together when hovering over any chart, making it easier to correlate data across different metrics at the same time point.
 
 ### Version 3.2.0 (2025-01-22)
 **Major Architecture & Localization Enhancements:**

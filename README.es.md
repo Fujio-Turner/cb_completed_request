@@ -12,11 +12,7 @@
 
 Una herramienta web integral para analizar el rendimiento de consultas de Couchbase y planes de ejecución. Visualice patrones de consultas, identifique cuellos de botella y optimice el rendimiento de la base de datos con seguimiento avanzado de uso de índices, análisis de planes de ejecución y funciones dedicadas de gestión de índices.
 
-## 🆕 Novedades en v3.3.0
-
-- **Cursores de Línea de Tiempo Sincronizados**: Todos los gráficos de línea de tiempo ahora presentan cursores sincronizados que se mueven juntos al pasar el cursor sobre cualquier gráfico, facilitando la correlación de datos entre diferentes métricas en el mismo punto temporal.
-
-### (Compatible con Capella)
+#### (Compatible con Capella)
 
 ## Inicio Rápido
 
@@ -114,7 +110,82 @@ LET bid = CONCAT("", s.bucket_id, ""),
 - **Normalización Inteligente**: Reemplaza literales de cadena y números con marcadores de posición `?`
 - **Resultados Filtrados**: Excluye consultas INFER, ADVISE, CREATE, ALTER INDEX y SYSTEM
 
-## Changelog
+#### **4. Pestaña Every Query**
+- **Tabla de Consultas Integral** con 17 columnas
+- **Diagramas de Flujo Interactivos** con visualización de plan de ejecución codificada por colores
+- **Características Avanzadas de Tabla** con ordenación completa de columnas y gestión de declaraciones
+- **Procesamiento Avanzado de Datos** con capacidades de procesamiento por lotes
+
+#### **5. Pestaña Index Query Flow**
+- **Relaciones Visuales Índice-Consulta** con diagramas de flujo interactivos
+- **Detección Mejorada de Índices Primarios** con cobertura integral
+- **Perspectivas de Rendimiento** para oportunidades de optimización
+
+#### **6. Pestaña Indexes** (NUEVO en v3.0.0)
+- **Gestión Integral de Índices** con catálogo completo de índices
+- **Opciones de filtrado avanzadas** y filtros especializados
+- **Consolidación Inteligente de Índices** y coincidencia consulta-índice
+
+## Entendiendo el Análisis
+
+- **Burbujas verdes**: < 25% del tiempo total de consulta
+- **Burbujas amarillas**: 25-50% del tiempo total de consulta
+- **Burbujas naranjas**: 50-75% del tiempo total de consulta
+- **Burbujas rojas**: > 75% del tiempo total de consulta
+- **Escaneo Primario resaltado**: Consultas que usan escaneos de índices primarios (candidatos potenciales de optimización)
+
+## Pautas de Agrupación de Tiempo
+
+Al analizar gráficos de línea de tiempo, elija rangos de fecha apropiados para cada agrupación de tiempo:
+
+- **Por Optimizador**: Selecciona automáticamente la mejor agrupación basada en su rango de fecha (recomendado)
+- **Por Segundo**: Mejor para rangos ≤ 1 hora (análisis detallado)
+- **Por Minuto**: Mejor para rangos ≤ 1 día (patrones por hora)
+- **Por Hora**: Mejor para rangos ≤ 1 mes (patrones diarios)
+- **Por Día**: Mejor para rangos > 1 mes (tendencias a largo plazo)
+
+**⚠️ Advertencia**: Rangos de fecha grandes con agrupaciones de grano fino pueden causar errores de renderizado de gráficos. La herramienta le alertará y sugerirá mejores combinaciones.
+
+## Release Notes
+
+### Versión 3.3.1 (2025-01-23)
+- **Corrección de Errores**: Solucionados problemas de sincronización de cursor cruzado en versiones localizadas y corregido el comportamiento de escalado del eje Y para gráficos de línea de tiempo.
+
+### Versión 3.3.0 (2025-01-23)
+- **Cursores de Línea de Tiempo Sincronizados**: Todos los gráficos de línea de tiempo ahora presentan cursores sincronizados que se mueven juntos al pasar el cursor sobre cualquier gráfico, facilitando la correlación de datos entre diferentes métricas en el mismo punto temporal.
+
+### Versión 3.1.0 (2025-01-20)
+**Nuevas Características y Mejoras:**
+- **Mejoras de la Pestaña Dashboard**:
+  - Convertido gráfico circular "Primary Scan Usage" a gráfico de donut "Primary Indexes Used"
+  - Añadido sistema de advertencia inteligente que solo aparece cuando se detectan índices primarios
+  - Integrado enlace "Saber más" a documentación de mejores prácticas de Couchbase
+  - Diseño visual mejorado con mejor contraste de colores y legibilidad
+- **Mejoras de la Pestaña Index Query Flow**:
+  - Mejorada detección de índices primarios para incluir índices que terminan con `*_primary`
+  - Mejorado resaltado visual para todas las variantes de índices primarios
+  - Mejor cobertura de patrones de nombres de índices primarios (`#primary`, `bucket_primary`, etc.)
+- **Experiencia de Usuario**:
+  - Interfaz más limpia con advertencias condicionales solo cuando es relevante
+  - Recursos educativos integrados directamente en la herramienta
+  - Retroalimentación visual más intuitiva para oportunidades de optimización de rendimiento
+
+### Versión 3.0.1 y Anteriores
+Ver historial de git para cambios de versiones anteriores
+
+## Solución de Problemas
+
+- **Resultados vacíos**: Verifique si el registro de consultas está habilitado en Couchbase
+- **Errores del navegador**: Asegúrese de que JavaScript esté habilitado
+- **Errores de renderizado de gráficos**: Reduzca el rango de fecha o use agrupación de tiempo más gruesa (ej., cambiar de "por Minuto" a "por Hora")
+- **Errores "Too far apart"**: El rango de tiempo seleccionado es demasiado grande para la agrupación elegida - siga las pautas de agrupación de tiempo arriba
+- **Advertencias de destrucción de canvas**: Comportamiento normal al cambiar entre diferentes agrupaciones de tiempo o rangos de fecha
+
+## Requisitos
+
+- Navegador web moderno con JavaScript habilitado
+- Couchbase Server con registro de consultas habilitado
+- Acceso a `system:completed_requests` (requiere privilegios de administrador)
 
 ### Versión 3.2.0 (2025-01-22)
 **Mejoras Importantes de Arquitectura y Localización:**
@@ -133,17 +204,3 @@ LET bid = CONCAT("", s.bucket_id, ""),
   - Establecido sistema translations.json para traducciones consistentes
   - Proceso de sincronización de localización simplificado con estilo centralizado
   - Mantenibilidad de código mejorada y dependencias de estilos en línea reducidas
-
-## Entendiendo el Análisis
-
-- **Burbujas verdes**: < 25% del tiempo total de consulta
-- **Burbujas amarillas**: 25-50% del tiempo total de consulta
-- **Burbujas naranjas**: 50-75% del tiempo total de consulta
-- **Burbujas rojas**: > 75% del tiempo total de consulta
-- **Escaneo Primario resaltado**: Consultas que usan escaneos de índices primarios (candidatos potenciales de optimización)
-
-## Requisitos
-
-- Navegador web moderno con JavaScript habilitado
-- Couchbase Server con registro de consultas habilitado
-- Acceso a `system:completed_requests` (requiere privilegios de administrador)
