@@ -148,16 +148,16 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 
 ## Release Notes
 
-### Version 3.4.0 (2025-01-27)
+### Version 3.4.0 (2025-08-13)
 - **Erweiterte Database Operations Timeline-Chart**: Hinzugefügtes Durchschnitt-Index-Scans-pro-Query-Metrik und gekrümmte Linien-Visualisierung für bessere Performance-Einblicke.
 
-### Version 3.3.1 (2025-01-23)
+### Version 3.3.1 (2025-08-10)
 - **Bug Fixes**: Behoben: Fadenkreuz-Synchronisationsprobleme in lokalisierten Versionen und korrigiertes Y-Achsen-Skalierungsverhalten für Timeline-Diagramme.
 
-### Version 3.3.0 (2025-01-23)
+### Version 3.3.0 (2025-08-09)
 - **Synchronisierte Timeline-Fadenkreuze**: Alle Timeline-Diagramme verfügen jetzt über synchronisierte Fadenkreuze, die sich gemeinsam bewegen, wenn Sie über ein beliebiges Diagramm fahren. Dies erleichtert die Korrelation von Daten zwischen verschiedenen Metriken zum gleichen Zeitpunkt.
 
-### Version 3.1.0 (2025-01-20)
+### Version 3.1.0 (2025-08-07)
 **Neue Funktionen & Verbesserungen:**
 - **Dashboard Tab Verbesserungen**:
   - "Primary Scan Usage" Kreisdiagramm zu "Primary Indexes Used" Donut-Diagramm konvertiert
@@ -190,7 +190,7 @@ Siehe Git-Verlauf für vorherige Versionsänderungen
 - Couchbase Server mit aktiviertem Query-Logging
 - Zugang zu `system:completed_requests` (benötigt Admin-Privilegien)
 
-### Version 3.2.0 (2025-01-22)
+### Version 3.2.0 (2025-08-08)
 **Wichtige Architektur- und Lokalisierungsverbesserungen:**
 - **CSS-Architektur-Refactoring**:
   - Von 208 Inline-Styles zu zentralisierten CSS-Klassen verschoben (44% Reduzierung)

@@ -148,16 +148,16 @@ Ao analisar gráficos de linha do tempo, escolha intervalos de data apropriados 
 
 ## Release Notes
 
-### Versão 3.4.0 (2025-01-27)
+### Versão 3.4.0 (2025-08-13)
 - **Gráfico de Linha do Tempo de Operações de Banco de Dados Aprimorado**: Adicionada métrica de média de scans de índices por consulta e visualização de linha curva para melhores insights de performance.
 
-### Versão 3.3.1 (2025-01-23)
+### Versão 3.3.1 (2025-08-10)
 - **Correções de Bugs**: Corrigidos problemas de sincronização de cursor cruzado em versões localizadas e corrigido comportamento de escala do eixo Y para gráficos de linha do tempo.
 
-### Versão 3.3.0 (2025-01-23)
+### Versão 3.3.0 (2025-08-09)
 - **Cursores de Linha do Tempo Sincronizados**: Todos os gráficos de linha do tempo agora apresentam cursores sincronizados que se movem juntos ao passar o mouse sobre qualquer gráfico, facilitando a correlação de dados entre diferentes métricas no mesmo ponto temporal.
 
-### Versão 3.1.0 (2025-01-20)
+### Versão 3.1.0 (2025-08-07)
 **Novos Recursos e Melhorias:**
 - **Melhorias da Aba Dashboard**:
   - Convertido gráfico de pizza "Primary Scan Usage" para gráfico de donut "Primary Indexes Used"
@@ -190,7 +190,7 @@ Veja histórico do git para mudanças de versões anteriores
 - Couchbase Server com logging de consultas habilitado
 - Acesso a `system:completed_requests` (requer privilégios de administrador)
 
-### Versão 3.2.0 (2025-01-22)
+### Versão 3.2.0 (2025-08-08)
 **Principais Melhorias de Arquitetura e Localização:**
 - **Refatoração da Arquitetura CSS**:
   - Migrado de 208 estilos inline para classes CSS centralizadas (redução de 44%)

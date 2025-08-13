@@ -150,16 +150,16 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 
 ## Release Notes
 
-### Version 3.4.0 (2025-01-27)
+### Version 3.4.0 (2025-08-13)
 - **Enhanced Database Operations Timeline Chart**: Added average index scans per query metric and curved line visualization for better performance insights.
 
-### Version 3.3.1 (2025-01-23)
+### Version 3.3.1 (2025-08-10)
 - **Bug Fixes**: Fixed crosshair synchronization issues in localized versions and corrected y-axis scaling behavior for timeline charts.
 
-### Version 3.3.0 (2025-01-23)
+### Version 3.3.0 (2025-08-09)
 - **Synchronized Timeline Crosshairs**: All timeline charts now feature synchronized crosshairs that move together when hovering over any chart, making it easier to correlate data across different metrics at the same time point.
 
-### Version 3.2.0 (2025-01-22)
+### Version 3.2.0 (2025-08-08)
 **Major Architecture & Localization Enhancements:**
 - **CSS Architecture Refactoring**:
   - Moved from 208 inline styles to centralized CSS classes (44% reduction)
@@ -177,7 +177,7 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
   - Simplified localization sync process with centralized styling
   - Enhanced code maintainability and reduced inline style dependencies
 
-### Version 3.1.0 (2025-01-20)
+### Version 3.1.0 (2025-08-07)
 **New Features & Enhancements:**
 - **Dashboard Tab Improvements**:
   - Converted "Primary Scan Usage" pie chart to "Primary Indexes Used" donut chart

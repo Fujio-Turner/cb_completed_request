@@ -1,7 +1,15 @@
 # Couchbase Slow Query Analysis Tool v3.4.0
 
 ## Version Management
-- **Current Version**: 3.4.0 (Last Updated: 2025-01-23)
+- **Current Version**: 3.4.0 (Last Updated: 2025-08-13)
+
+### Workflow Order for Updates
+When making changes, follow this order:
+1. **Update Version** → Follow settings/VERSION_UPDATE_GUIDE.md
+2. **Update Localization** → Follow settings/LOCALIZATION_GUIDE.md  
+3. **Update README Release Notes** → Add release notes to all README files
+
+### Version Update Process
 - **Title Updates**: When updating versions, remember to update:
   - `<title>Query Analyzer v3.4.0</title>` in index.html header
   - `<meta name="version" content="3.4.0" />` in index.html meta tags
@@ -18,6 +26,12 @@
 - No build commands - static HTML file
 - Open `index.html` directly in web browser
 - Input: JSON from `SELECT *, meta().plan FROM system:completed_requests WHERE node = NODE_NAME();`
+
+## Sample Data
+The `sample/` folder contains test JSON files for development and testing:
+- **test_system_completed_requests.json**: Sample completed request query output for LEFT TOP input box
+- **test_system_indexes.json**: Sample system:indexes query output for RIGHT TOP input box
+- Use these files for testing functionality or as reference for expected schema/data format
 
 ## Code Style
 - Vanilla JavaScript with jQuery for DOM manipulation
