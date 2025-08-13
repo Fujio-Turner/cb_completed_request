@@ -20,9 +20,9 @@
 
   <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.3.1" />
+    <meta name="version" content="3.4.0" />
     <meta name="last-updated" content="2025-01-23" />
-    <title>Query Analyzer v3.3.1</title>
+    <title>Query Analyzer v3.4.0</title>
     <!-- Include jQuery UI CSS -->
     <link
       rel="stylesheet"
@@ -50,7 +50,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
   <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-      v3.3.1
+      v3.4.0
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -3628,6 +3628,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               timestamp: timeKey,
               totalIndexScan: 0,
               totalFetch: 0,
+              indexScanQueryCount: 0,
             };
           }
 
@@ -3639,6 +3640,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
           timeGroups[key].totalIndexScan += primaryScan + indexScan;
           timeGroups[key].totalFetch += fetch;
+          
+          // Count queries that performed index scans
+          if (primaryScan > 0 || indexScan > 0) {
+            timeGroups[key].indexScanQueryCount++;
+          }
         });
 
         // Convert to sorted array
@@ -3650,6 +3656,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const labels = sortedData.map((item) => item.timestamp);
         const indexScanData = sortedData.map((item) => item.totalIndexScan);
         const fetchData = sortedData.map((item) => item.totalFetch);
+        const avgIndexScanData = sortedData.map((item) =>
+          item.indexScanQueryCount > 0 ? Math.round(item.totalIndexScan / item.indexScanQueryCount) : null
+        );
 
         // Create new side-by-side bar chart
         window.operationsChart = new Chart(ctx, {
@@ -3663,6 +3672,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 backgroundColor: "#28a745", // Green
                 borderColor: "#1e7e34",
                 borderWidth: 1,
+                yAxisID: "y",
+                order: 2,
               },
               {
                 label: "Index Scan Items",
@@ -3670,6 +3681,21 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 backgroundColor: "#007bff", // Blue
                 borderColor: "#0056b3",
                 borderWidth: 1,
+                yAxisID: "y",
+                order: 2,
+              },
+              {
+                label: "Avg Index Scans per Query",
+                data: avgIndexScanData,
+                type: "line",
+                backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
+                borderColor: "rgba(255, 165, 0, 1)",
+                borderWidth: 2,
+                fill: false,
+                yAxisID: "y1",
+                order: 1,
+                spanGaps: false,
+                tension: 0.3,
               },
             ],
           },
@@ -3805,11 +3831,25 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 },
               },
               y: {
+                type: "linear",
+                position: "left",
                 title: {
                   display: true,
                   text: "Operation Count",
                 },
                 beginAtZero: true,
+              },
+              y1: {
+                type: "linear",
+                position: "right",
+                title: {
+                  display: true,
+                  text: "Avg Index Scans per Query",
+                },
+                beginAtZero: true,
+                grid: {
+                  drawOnChartArea: false,
+                },
               },
             },
             interaction: {
@@ -3926,7 +3966,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 borderWidth: 2,
                 fill: false,
                 yAxisID: "y1",
-                tension: 0.1,
+                tension: 0.3,
                 order: 1,
               },
             ],
@@ -5179,7 +5219,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 borderWidth: 2,
                 fill: false,
                 yAxisID: "y1",
-                tension: 0.1,
+                tension: 0.3,
                 order: 1,
               },
             ],
@@ -5411,6 +5451,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 fill: false,
                 yAxisID: "y1",
                 order: 1,
+                tension: 0.3,
               },
             ],
           },
@@ -5579,6 +5620,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 fill: false,
                 yAxisID: "y1",
                 order: 1,
+                tension: 0.3,
               },
             ],
           },
@@ -5758,12 +5800,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         // Update operations chart Y-axis scale
         if (window.operationsChart) {
           window.operationsChart.options.scales.y.type = scaleType;
+          window.operationsChart.options.scales.y1.type = scaleType;
           if (scaleType === "logarithmic") {
             window.operationsChart.options.scales.y.beginAtZero = false;
             window.operationsChart.options.scales.y.min = 1; // Avoid log(0)
+            window.operationsChart.options.scales.y1.beginAtZero = false;
+            window.operationsChart.options.scales.y1.min = 0.1; // Avoid log(0)
           } else {
             window.operationsChart.options.scales.y.beginAtZero = true;
+            window.operationsChart.options.scales.y1.beginAtZero = true;
             delete window.operationsChart.options.scales.y.min;
+            delete window.operationsChart.options.scales.y1.min;
           }
           window.operationsChart.update();
         }
@@ -8426,7 +8473,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
       // Version management
-      const APP_VERSION = "3.3.1";
+      const APP_VERSION = "3.4.0";
       const LAST_UPDATED = "2025-01-23";
 
       function getVersionInfo() {

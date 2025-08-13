@@ -280,6 +280,11 @@
       "pt": "Média por Consulta (MB)",
       "de": "Durchschnitt pro Abfrage (MB)"
     },
+    "Avg Index Scans per Query": {
+      "es": "Escaneos de Índice Promedio por Consulta",
+      "pt": "Varreduras de Índice Médias por Consulta",
+      "de": "Durchschnittliche Index-Scans pro Abfrage"
+    },
     "Database Operations Timeline: Index Scans vs Document Fetches": {
       "es": "Línea de Tiempo de Operaciones de Base de Datos: Escaneos de Índice vs Recuperación de Documentos",
       "pt": "Linha do Tempo de Operações de Banco de Dados: Varreduras de Índice vs Recuperação de Documentos",

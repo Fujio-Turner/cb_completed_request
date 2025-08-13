@@ -19,9 +19,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.3.1" />
+    <meta name="version" content="3.4.0" />
     <meta name="last-updated" content="2025-01-23" />
-    <title>Analisador de Consultas v3.3.1</title>
+    <title>Analisador de Consultas v3.4.0</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css" />
     <!-- Include Chart.js -->
@@ -46,7 +46,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v3.3.1
+        v3.4.0
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -3376,6 +3376,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                         timestamp: timeKey,
                         totalIndexScan: 0,
                         totalFetch: 0,
+                        indexScanQueryCount: 0,
                     };
                 }
 
@@ -3387,6 +3388,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
                 timeGroups[key].totalIndexScan += primaryScan + indexScan;
                 timeGroups[key].totalFetch += fetch;
+                
+                // Count queries that performed index scans
+                if (primaryScan > 0 || indexScan > 0) {
+                    timeGroups[key].indexScanQueryCount++;
+                }
             });
 
             // Convert to sorted array
@@ -3398,6 +3404,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             const labels = sortedData.map((item) => item.timestamp);
             const indexScanData = sortedData.map((item) => item.totalIndexScan);
             const fetchData = sortedData.map((item) => item.totalFetch);
+            const avgIndexScanData = sortedData.map((item) =>
+                item.indexScanQueryCount > 0 ? Math.round(item.totalIndexScan / item.indexScanQueryCount) : null
+            );
 
             // Create new side-by-side bar chart
             window.operationsChart = new Chart(ctx, {
@@ -3406,18 +3415,35 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     labels: labels,
                     datasets: [
                         {
-                            label: "Fetch Documents",
+                            label: "Buscar Documentos",
                             data: fetchData,
                             backgroundColor: "#28a745", // Green
                             borderColor: "#1e7e34",
                             borderWidth: 1,
+                            yAxisID: "y",
+                            order: 2,
                         },
                         {
-                            label: "Index Scan Items",
+                            label: "Itens de Varredura de Índice",
                             data: indexScanData,
                             backgroundColor: "#007bff", // Blue
                             borderColor: "#0056b3",
                             borderWidth: 1,
+                            yAxisID: "y",
+                            order: 2,
+                        },
+                        {
+                            label: "Varreduras de Índice Médias por Consulta",
+                            data: avgIndexScanData,
+                            type: "line",
+                            backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
+                            borderColor: "rgba(255, 165, 0, 1)",
+                            borderWidth: 2,
+                            fill: false,
+                            yAxisID: "y1",
+                            order: 1,
+                            spanGaps: false,
+                            tension: 0.3,
                         },
                     ],
                 },
@@ -3426,7 +3452,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     plugins: {
                         title: {
                             display: true,
-                            text: "Linha do Tempo de Operações do Banco de Dados: Escaneamentos de Índice vs Buscas de Documentos",
+                            text: "Linha do Tempo de Operações de Banco de Dados: Varreduras de Índice vs Recuperação de Documentos",
                         },
                         legend: {
                             display: true,
@@ -3549,11 +3575,25 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                             },
                         },
                         y: {
+                            type: "linear",
+                            position: "left",
                             title: {
                                 display: true,
                                 text: "Contagem de Operações",
                             },
                             beginAtZero: true,
+                        },
+                        y1: {
+                            type: "linear",
+                            position: "right",
+                            title: {
+                                display: true,
+                                text: "Varreduras de Índice Médias por Consulta",
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false,
+                            },
                         },
                     },
                     interaction: {
@@ -3666,7 +3706,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                             borderWidth: 2,
                             fill: false,
                             yAxisID: "y1",
-                            tension: 0.1,
+                            tension: 0.3,
                             order: 1,
                         },
                     ],
@@ -4877,7 +4917,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                             borderWidth: 2,
                             fill: false,
                             yAxisID: "y1",
-                            tension: 0.1,
+                            tension: 0.3,
                             order: 1,
                         },
                     ],
@@ -5102,6 +5142,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                             borderWidth: 2,
                             fill: false,
                             yAxisID: "y1",
+                            tension: 0.3,
                             order: 1,
                         },
                     ],
@@ -5165,7 +5206,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                             time: getCurrentTimeConfig(requests),
                             title: {
                                 display: true,
-                                text: "Request Time",
+                                text: "Tempo de Solicitação",
                             },
                         },
                         y: {
@@ -5270,6 +5311,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                             borderWidth: 2,
                             fill: false,
                             yAxisID: "y1",
+                            tension: 0.3,
                             order: 1,
                         },
                     ],
@@ -5333,7 +5375,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                             time: getCurrentTimeConfig(requests),
                             title: {
                                 display: true,
-                                text: "Request Time",
+                                text: "Tempo de Solicitação",
                             },
                         },
                         y: {
@@ -5450,12 +5492,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             // Update operations chart Y-axis scale
             if (window.operationsChart) {
                 window.operationsChart.options.scales.y.type = scaleType;
+                window.operationsChart.options.scales.y1.type = scaleType;
                 if (scaleType === "logarithmic") {
                     window.operationsChart.options.scales.y.beginAtZero = false;
                     window.operationsChart.options.scales.y.min = 1; // Avoid log(0)
+                    window.operationsChart.options.scales.y1.beginAtZero = false;
+                    window.operationsChart.options.scales.y1.min = 0.1; // Avoid log(0)
                 } else {
                     window.operationsChart.options.scales.y.beginAtZero = true;
+                    window.operationsChart.options.scales.y1.beginAtZero = true;
                     delete window.operationsChart.options.scales.y.min;
+                    delete window.operationsChart.options.scales.y1.min;
                 }
                 window.operationsChart.update();
             }
@@ -7915,7 +7962,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = '3.3.1';
+        const APP_VERSION = '3.4.0';
         const LAST_UPDATED = '2025-01-23';
 
         function getVersionInfo() {

@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.3.1
+# Couchbase Slow Query Analysis Tool v3.4.0
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -149,6 +149,9 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 **⚠️ Warning**: Large date ranges with fine-grained groupings may cause chart rendering errors. The tool will alert you and suggest better combinations.
 
 ## Release Notes
+
+### Version 3.4.0 (2025-01-27)
+- **Enhanced Database Operations Timeline Chart**: Added average index scans per query metric and curved line visualization for better performance insights.
 
 ### Version 3.3.1 (2025-01-23)
 - **Bug Fixes**: Fixed crosshair synchronization issues in localized versions and corrected y-axis scaling behavior for timeline charts.
