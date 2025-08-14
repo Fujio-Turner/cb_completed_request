@@ -20,9 +20,9 @@
 
   <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.4.0" />
-    <meta name="last-updated" content="2025-08-13" />
-    <title>Query Analyzer v3.4.0</title>
+    <meta name="version" content="3.4.1" />
+    <meta name="last-updated" content="2025-08-14" />
+    <title>Query Analyzer v3.4.1</title>
     <!-- Include jQuery UI CSS -->
     <link
       rel="stylesheet"
@@ -50,7 +50,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
   <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-      v3.4.0
+      v3.4.1
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -2792,7 +2792,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <br>
                     <button onclick="toggleStatement('${statementId}', true)" 
                             class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Show More</button>
-                    <button onclick="copyStatement('${statementId}')" 
+                    <button onclick="copyStatement('${statementId}', event)" 
                             class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                   <div id="${statementId}-full" style="display: none;">
@@ -2800,7 +2800,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <br>
                     <button onclick="toggleStatement('${statementId}', false)" 
                             class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Hide</button>
-                    <button onclick="copyStatement('${statementId}')" 
+                    <button onclick="copyStatement('${statementId}', event)" 
                             class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                 `;
@@ -2810,7 +2810,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                   <div>
                     <span>${statement}</span>
                     <br>
-                    <button onclick="copyStatement('${statementId}')" 
+                    <button onclick="copyStatement('${statementId}', event)" 
                             class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                 `;
@@ -2866,7 +2866,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       }
 
       // Copy statement to clipboard
-      function copyStatement(statementId) {
+      function copyStatement(statementId, event) {
         const statement = statementStore[statementId];
         if (!statement) {
           console.error("Statement not found in store:", statementId);
@@ -2910,7 +2910,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       }
 
       // Copy analysis statement to clipboard
-      function copyAnalysisStatement(statementId) {
+      function copyAnalysisStatement(statementId, event) {
         const statement = analysisStatementStore[statementId];
         if (!statement) {
           console.error("Statement not found in store:", statementId);
@@ -3171,7 +3171,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <br>
                     <button onclick="toggleAnalysisStatement('${statementId}', true)" 
                             class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Show More</button>
-                    <button onclick="copyAnalysisStatement('${statementId}')" 
+                    <button onclick="copyAnalysisStatement('${statementId}', event)" 
                             class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                   <div id="${statementId}-full" style="display: none;">
@@ -3179,7 +3179,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <br>
                     <button onclick="toggleAnalysisStatement('${statementId}', false)" 
                             class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Hide</button>
-                    <button onclick="copyAnalysisStatement('${statementId}')" 
+                    <button onclick="copyAnalysisStatement('${statementId}', event)" 
                             class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                 `;
@@ -3189,7 +3189,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                   <div>
                     <span>${statement}</span>
                     <br>
-                    <button onclick="copyAnalysisStatement('${statementId}')" 
+                    <button onclick="copyAnalysisStatement('${statementId}', event)" 
                             class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                 `;
@@ -6740,7 +6740,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 <button onclick="copyToClipboard('${user.replace(
                   /'/g,
                   "\\'"
-                )}', this)" 
+                )}', event)" 
                         class="btn-standard" style="margin-left: 8px;">
                   Copy
                 </button>
@@ -6882,7 +6882,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 <button onclick="copyToClipboard('${indexName.replace(
                   /'/g,
                   "\\'"
-                )}', this)" 
+                )}', event)" 
                         class="btn-standard" style="margin-left: 8px;">
                   Copy
                 </button>
@@ -8473,8 +8473,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
       // Version management
-      const APP_VERSION = "3.4.0";
-      const LAST_UPDATED = "2025-08-13";
+      const APP_VERSION = "3.4.1";
+      const LAST_UPDATED = "2025-08-14";
 
       function getVersionInfo() {
         return {

@@ -19,9 +19,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.4.0" />
-    <meta name="last-updated" content="2025-08-13" />
-    <title>Analizador de Consultas v3.4.0</title>
+    <meta name="version" content="3.4.1" />
+    <meta name="last-updated" content="2025-08-14" />
+    <title>Analizador de Consultas v3.4.1</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css" />
     <!-- Include Chart.js -->
@@ -847,7 +847,7 @@
 <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v3.3.1
+        v3.4.1
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -3362,7 +3362,7 @@
                     <br>
                     <button onclick="toggleStatement('${statementId}', true)" 
                             class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Mostrar Más</button>
-                    <button onclick="copyStatement('${statementId}')" 
+                    <button onclick="copyStatement('${statementId}', event)" 
                             class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                   <div id="${statementId}-full" style="display: none;">
@@ -3370,7 +3370,7 @@
                     <br>
                     <button onclick="toggleStatement('${statementId}', false)" 
                             class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Ocultar</button>
-                    <button onclick="copyStatement('${statementId}')" 
+                    <button onclick="copyStatement('${statementId}', event)" 
                             class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                 `;
@@ -3380,7 +3380,7 @@
                   <div>
                     <span>${statement}</span>
                     <br>
-                    <button onclick="copyStatement('${statementId}')" 
+                    <button onclick="copyStatement('${statementId}', event)" 
                             class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                 `;
@@ -3433,7 +3433,7 @@
         }
 
         // Copy statement to clipboard
-        function copyStatement(statementId) {
+        function copyStatement(statementId, event) {
             const statement = statementStore[statementId];
             if (!statement) {
                 console.error("Statement not found in store:", statementId);
@@ -3477,7 +3477,7 @@
         }
 
         // Copy analysis statement to clipboard
-        function copyAnalysisStatement(statementId) {
+        function copyAnalysisStatement(statementId, event) {
             const statement = analysisStatementStore[statementId];
             if (!statement) {
                 console.error("Statement not found in store:", statementId);
@@ -3729,7 +3729,7 @@
                     <br>
                     <button onclick="toggleAnalysisStatement('${statementId}', true)" 
                             class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Mostrar Más</button>
-                    <button onclick="copyAnalysisStatement('${statementId}')" 
+                    <button onclick="copyAnalysisStatement('${statementId}', event)" 
                             class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                   <div id="${statementId}-full" style="display: none;">
@@ -3737,7 +3737,7 @@
                     <br>
                     <button onclick="toggleAnalysisStatement('${statementId}', false)" 
                             class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Ocultar</button>
-                    <button onclick="copyAnalysisStatement('${statementId}')" 
+                    <button onclick="copyAnalysisStatement('${statementId}', event)" 
                             class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                 `;
@@ -3747,7 +3747,7 @@
                   <div>
                     <span>${statement}</span>
                     <br>
-                    <button onclick="copyAnalysisStatement('${statementId}')" 
+                    <button onclick="copyAnalysisStatement('${statementId}', event)" 
                             class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                 `;
@@ -7249,7 +7249,7 @@
                 <button onclick="copyToClipboard('${user.replace(
                     /'/g,
                     "\\'"
-                )}', this)" 
+                )}', event)" 
                         class="btn-standard" style="margin-left: 8px;">
                   Copiar
                 </button>
@@ -7384,7 +7384,7 @@
                 <button onclick="copyToClipboard('${indexName.replace(
                     /'/g,
                     "\\'"
-                )}', this)" 
+                )}', event)" 
                         class="btn-standard" style="margin-left: 8px;">
                   Copiar
                 </button>
@@ -8774,8 +8774,8 @@
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = '3.4.0';
-        const LAST_UPDATED = '2025-08-13';
+        const APP_VERSION = '3.4.1';
+        const LAST_UPDATED = '2025-08-14';
 
         function getVersionInfo() {
             return {

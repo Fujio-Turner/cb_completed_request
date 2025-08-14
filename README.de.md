@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.4.0
+# Couchbase Slow Query Analysis Tool v3.4.1
 
 **🌍 Sprachen:** [🇺🇸 English](README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -147,6 +147,9 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 **⚠️ Warnung**: Große Datumsbereiche mit feinkörnigen Gruppierungen können zu Diagramm-Rendering-Fehlern führen. Das Tool wird Sie warnen und bessere Kombinationen vorschlagen.
 
 ## Release Notes
+
+### Version 3.4.1 (2025-08-14)
+- **Fehlerbehebungen**: JavaScript-Kopierbutton-Funktionalität in allen Sprachversionen repariert - Behandlung von Event-Parametern in copyStatement-, copyAnalysisStatement- und copyToClipboard-Funktionen behoben.
 
 ### Version 3.4.0 (2025-08-13)
 - **Erweiterte Database Operations Timeline-Chart**: Hinzugefügtes Durchschnitt-Index-Scans-pro-Query-Metrik und gekrümmte Linien-Visualisierung für bessere Performance-Einblicke.
