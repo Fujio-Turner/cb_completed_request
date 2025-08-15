@@ -19,9 +19,9 @@
 
   <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.4.2" />
-    <meta name="last-updated" content="2025-08-14" />
-    <title>Query Analyzer v3.4.2</title>
+    <meta name="version" content="3.5.0" />
+    <meta name="last-updated" content="2025-01-14" />
+    <title>Query Analyzer v3.5.0</title>
     <!-- Include jQuery UI CSS -->
     <link
       rel="stylesheet"
@@ -210,7 +210,7 @@
   <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-      v3.4.2
+      v3.5.0
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -231,7 +231,7 @@
         ></textarea>
         <textarea
           id="indexJsonInput"
-          placeholder="Click the 'Indexes' tab below to get the SQL query to run. Paste the results here..."
+          placeholder="Klicken Sie auf die Registerkarte 'Indizes' unten, um die auszuführende SQL-Abfrage zu erhalten. Fügen Sie die Ergebnisse hier ein..."
           aria-label="Index JSON input field"
           role="textbox"
         ></textarea>
@@ -309,23 +309,27 @@
             style="font-size: 0.9em; user-select: none; cursor: pointer"
             title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
           >
-            Exclude System Queries
+            Systemabfragen Ausschließen
           </span>
         </label>
-        <label for="start-date">Von:</label>
-        <input
-          type="datetime-local"
-          id="start-date"
-          step="1"
-          title="Start date/time for filtering"
-        />
-        <label for="end-date">Bis:</label>
-        <input
-          type="datetime-local"
-          id="end-date"
-          step="1"
-          title="End date/time for filtering"
-        />
+        
+        <!-- Date range controls in a vertical stack -->
+        <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-start;">
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <label for="start-date" style="width: 40px; text-align: left;">Von:</label>
+            <input type="datetime-local" id="start-date" step="1" title="Start date/time for filtering" />
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <label for="end-date" style="width: 40px; text-align: left;">Bis:</label>
+            <input type="datetime-local" id="end-date" step="1" title="End date/time for filtering" />
+          </div>
+        </div>
+        
+        <!-- SQL Statement Filter -->
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <input type="text" id="sql-statement-filter" placeholder="Anweisungen während der Analyse filtern..." title="SQL++ Anweisungen während der JSON Analyse filtern" style="width: 200px;" />
+        </div>
+        
         <div style="display: flex; gap: 5px; align-items: center">
           <button
             onclick="setTimeRange('original')"
@@ -337,13 +341,13 @@
             onclick="setTimeRange('1day')"
             class="cursor-pointer border-none border-radius-3 btn-gray"
           >
-            1 Day
+            1 Tag
           </button>
           <button
             onclick="setTimeRange('1hour')"
             class="cursor-pointer border-none border-radius-3 btn-gray"
           >
-            1 Hour
+            1 Stunde
           </button>
         </div>
         <span id="filter-info" style="color: #666; font-size: 0.9em"></span>
@@ -692,7 +696,7 @@
                 height: 30px;
               "
             >
-              Statement Type
+              Anweisungstyp
             </h3>
             <div style="height: 250px; position: relative">
               <canvas id="statement-type-chart"></canvas>
@@ -718,7 +722,7 @@
                 height: 30px;
               "
             >
-              Query State
+              Abfragestatus
             </h3>
             <div style="height: 250px; position: relative">
               <canvas id="state-chart"></canvas>
@@ -751,7 +755,7 @@
                 value="logarithmic"
                 onchange="changeYAxisScale()"
               />
-              Logarithmic</label
+              Logarithmisch</label
             >
           </span>
           <span style="margin-left: 30px">
@@ -763,7 +767,7 @@
                 checked
                 onchange="changeTimeGrouping()"
               />
-              <span id="optimizer-label">By Optimizer</span></label
+              <span id="optimizer-label">Nach Optimierer</span></label
             >
             <label style="margin-left: 10px"
               ><input
@@ -772,7 +776,7 @@
                 value="minute"
                 onchange="changeTimeGrouping()"
               />
-              By Minute</label
+              Nach Minute</label
             >
             <label style="margin-left: 10px"
               ><input
@@ -781,11 +785,11 @@
                 value="second"
                 onchange="changeTimeGrouping()"
               />
-              By Second</label
+              Nach Sekunde</label
             >
           </span>
           <span style="margin-left: 20px; color: #666; font-size: 12px">
-            Drag to pan • Scroll to zoom • Drag box to zoom area
+            Ziehen zum Schwenken • Scrollen zum Zoomen • Kasten ziehen zum Zoomen des Bereichs
           </span>
           <button
             id="use-time-range-btn"
@@ -1335,8 +1339,7 @@
               Keine Indexdaten Geladen
             </h4>
             <p style="color: #666; margin-bottom: 20px">
-              To analyze indexes, run this query in your Couchbase Query
-              Workbench and paste the results in the second textarea above:
+              Um Indizes zu analysieren, führen Sie diese Abfrage in Ihrer Couchbase Query Workbench aus und fügen Sie die Ergebnisse in das zweite Textfeld oben ein:
             </p>
             <div class="sql-query-box">
               <button
@@ -1618,11 +1621,27 @@
           "exclude-system-queries"
         );
         const isExcluding = excludeCheckbox && excludeCheckbox.checked;
-
-        const filtered = requests.filter(
-          (request) => !shouldExcludeSystemQuery(request)
-        );
-
+        
+        // Get SQL statement filter
+        const sqlFilter = document.getElementById("sql-statement-filter");
+        const sqlFilterText = sqlFilter ? sqlFilter.value.trim().toLowerCase() : "";
+        
+        const filtered = requests.filter((request) => {
+          // Apply system query exclusion first
+          if (isExcluding && shouldExcludeSystemQuery(request)) {
+            return false;
+          }
+          
+          // Apply SQL statement filtering only if filter text is not empty
+          if (sqlFilterText && sqlFilterText.length > 0) {
+            const statement = (request.statement || "").toLowerCase();
+            if (!statement.includes(sqlFilterText)) {
+              return false;
+            }
+          }
+          
+          return true;
+        });
         return filtered;
       }
 
@@ -8623,7 +8642,7 @@
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div style="font-weight: bold; font-size: 14px; color: #333;">${
               index.name
-            } | Scanned: ${index.totalUsage}</div>
+            } | Gescannt: ${index.totalUsage}</div>
             <button onclick="copyIndexName('${index.name.replace(
               /'/g,
               "\\'"
@@ -8670,7 +8689,7 @@
           avgDurationSeconds >= 60 ? "font-weight: bold; color: red;" : "";
 
         div.innerHTML = `
-          <div style="font-weight: bold; font-size: 14px; color: #333;">Executions: ${
+          <div style="font-weight: bold; font-size: 14px; color: #333;">Ausführungen: ${
             query.count
           }${useKeysIndicator}</div>
           <div style="font-size: 12px; color: #666; margin: 4px 0;">Avg Duration: <span style="${avgDurationStyle}">${formatTime(
@@ -9047,8 +9066,8 @@
       // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
       // Version management
-      const APP_VERSION = "3.4.2";
-      const LAST_UPDATED = "2025-08-14";
+      const APP_VERSION = "3.5.0";
+      const LAST_UPDATED = "2025-01-14";
 
       function getVersionInfo() {
         return {
@@ -9542,7 +9561,7 @@
                         <div style="text-align: center; margin-top: 30px;">
                             <h4 style="color: #495057; margin-bottom: 20px;">Keine Indexdaten Geladen</h4>
                             <p style="color: #666; margin-bottom: 20px;">
-                                To analyze indexes, run this query in your Couchbase Query Workbench and paste the results in the second textarea above:
+                                Um Indizes zu analysieren, führen Sie diese Abfrage in Ihrer Couchbase Query Workbench aus und fügen Sie die Ergebnisse in das zweite Textfeld oben ein:
                             </p>
                             <div class="sql-query-box">
                                 <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">Abfrage Kopieren</button>

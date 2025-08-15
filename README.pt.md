@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.4.2
+# Couchbase Slow Query Analysis Tool v3.5.0
 
 **🌍 Idiomas:** [🇺🇸 English](README.md) | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | **🇵🇹 Português**
 
@@ -147,6 +147,24 @@ Ao analisar gráficos de linha do tempo, escolha intervalos de data apropriados 
 **⚠️ Aviso**: Intervalos de data grandes com agrupamentos de granularidade fina podem causar erros de renderização de gráficos. A ferramenta alertará você e sugerirá melhores combinações.
 
 ## Release Notes
+
+### **Versão 3.5.0 - 14 de janeiro de 2025**
+**🎯 Filtragem Aprimorada de Declarações SQL e Layout Melhorado**
+
+**Novas Funcionalidades:**
+- **Pré-filtragem de Declarações SQL++**: Adicionada caixa de entrada "Buscar em Declarações SQL++" que filtra consultas durante análise inicial do JSON para melhor performance
+- **Layout Reorganizado**: Entradas do seletor de datas (De/Para) agora empilhadas verticalmente para melhor utilização do espaço e aparência mais limpa
+- **Alinhamento Melhorado**: Labels do seletor de datas agora têm largura fixa consistente para alinhamento perfeito das entradas
+
+**Melhorias Técnicas:**
+- Função `filterSystemQueries()` aprimorada para incluir filtragem de declarações SQL durante a fase de análise
+- Layout da UI melhorado com melhor gerenciamento de espaço
+- Tempo de análise reduzido para grandes conjuntos de dados através de pré-filtragem de consultas indesejadas
+- Corrigido problema de cache de dados onde filtros SQL não eram limpos adequadamente no re-análise
+
+**Localização:**
+- Atualizadas todas as versões de idioma (Espanhol, Português, Alemão) com novas funcionalidades
+- Adicionadas traduções para novos elementos de UI e texto de placeholder
 
 ### Versão 3.4.2 (2025-08-14)
 - **Melhorias de UI**: Melhoradas as interações dos gráficos de Timeline e consistência de estilo de botões - desabilitado zoom com roda do mouse, melhorada visibilidade da caixa de seleção, auto-reset dos botões de rádio ao analisar, aumentado botão Parse JSON e aplicado estilo consistente aos botões de intervalo de tempo e controle.

@@ -20,9 +20,9 @@
 
   <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.4.2" />
-    <meta name="last-updated" content="2025-08-14" />
-    <title>Query Analyzer v3.4.2</title>
+    <meta name="version" content="3.5.0" />
+    <meta name="last-updated" content="2025-01-14" />
+    <title>Query Analyzer v3.5.0</title>
     <!-- Include jQuery UI CSS -->
     <link
       rel="stylesheet"
@@ -73,7 +73,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
   <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-      v3.4.2
+      v3.5.0
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -126,20 +126,40 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             Exclude System Queries
           </span>
         </label>
-        <label for="start-date">From:</label>
-        <input
-          type="datetime-local"
-          id="start-date"
-          step="1"
-          title="Start date/time for filtering"
-        />
-        <label for="end-date">To:</label>
-        <input
-          type="datetime-local"
-          id="end-date"
-          step="1"
-          title="End date/time for filtering"
-        />
+        
+        <!-- Date range controls in a vertical stack -->
+        <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-start;">
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <label for="start-date" style="width: 40px; text-align: left;">From:</label>
+            <input
+              type="datetime-local"
+              id="start-date"
+              step="1"
+              title="Start date/time for filtering"
+            />
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <label for="end-date" style="width: 40px; text-align: left;">To:</label>
+            <input
+              type="datetime-local"
+              id="end-date"
+              step="1"
+              title="End date/time for filtering"
+            />
+          </div>
+        </div>
+        
+        <!-- SQL Statement Filter -->
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <input
+            type="text"
+            id="sql-statement-filter"
+            placeholder="Filter SQL++ Statement Contains"
+            title="Filter SQL++ statements during JSON parsing"
+            style="width: 200px;"
+          />
+        </div>
+        
         <div class="flex-row-5px">
           <button onclick="setTimeRange('original')" class="cursor-pointer border-none border-radius-3 btn-gray">
             Original
@@ -1057,17 +1077,33 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         return shouldExclude;
       }
 
-      // Filter requests based on system query exclusion setting
+      // Filter requests based on system query exclusion setting and SQL statement filter
       function filterSystemQueries(requests) {
         const excludeCheckbox = document.getElementById(
           "exclude-system-queries"
         );
         const isExcluding = excludeCheckbox && excludeCheckbox.checked;
-
-        const filtered = requests.filter(
-          (request) => !shouldExcludeSystemQuery(request)
-        );
-
+        
+        // Get SQL statement filter
+        const sqlFilter = document.getElementById("sql-statement-filter");
+        const sqlFilterText = sqlFilter ? sqlFilter.value.trim().toLowerCase() : "";
+        
+        const filtered = requests.filter((request) => {
+          // Apply system query exclusion first
+          if (isExcluding && shouldExcludeSystemQuery(request)) {
+            return false;
+          }
+          
+          // Apply SQL statement filtering only if filter text is not empty
+          if (sqlFilterText && sqlFilterText.length > 0) {
+            const statement = (request.statement || "").toLowerCase();
+            if (!statement.includes(sqlFilterText)) {
+              return false;
+            }
+          }
+          
+          return true;
+        });
         return filtered;
       }
 
@@ -7469,7 +7505,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           : null;
 
         const filteredRequests = filterRequestsByDateRange(
-          originalRequests,
+          filteredAllRequests,
           startDate,
           endDate
         );
@@ -7484,7 +7520,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         if (!validation.valid) {
           alert(validation.message);
           // Still continue with table generation, just skip charts
-          updateFilterInfo(originalRequests.length, filteredRequests.length);
+          updateFilterInfo(filteredAllRequests.length, filteredRequests.length);
           generateTable(filteredRequests);
           generateAnalysisTable(filteredRequests);
           buildIndexQueryFlow(filteredRequests);
@@ -7494,7 +7530,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         }
 
         // Update UI with filtered data
-        updateFilterInfo(originalRequests.length, filteredRequests.length);
+        updateFilterInfo(filteredAllRequests.length, filteredRequests.length);
         try {
           generateTable(filteredRequests);
           generateAnalysisTable(filteredRequests);
@@ -8506,8 +8542,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
       // Version management
-      const APP_VERSION = "3.4.2";
-      const LAST_UPDATED = "2025-08-14";
+      const APP_VERSION = "3.5.0";
+      const LAST_UPDATED = "2025-01-14";
 
       function getVersionInfo() {
         return {

@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.4.2
+# Couchbase Slow Query Analysis Tool v3.5.0
 
 **🌍 Sprachen:** [🇺🇸 English](README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -147,6 +147,24 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 **⚠️ Warnung**: Große Datumsbereiche mit feinkörnigen Gruppierungen können zu Diagramm-Rendering-Fehlern führen. Das Tool wird Sie warnen und bessere Kombinationen vorschlagen.
 
 ## Release Notes
+
+### **Version 3.5.0 - 14. Januar 2025**
+**🎯 Verbesserte SQL-Anweisungsfilterung & Verbessertes Layout**
+
+**Neue Funktionen:**
+- **SQL++ Anweisungs-Vorfilterung**: Hinzugefügtes "In SQL++ Anweisungen suchen" Eingabefeld, das Queries während der initialen JSON-Analyse für bessere Performance filtert
+- **Neuorganisiertes Layout**: Datumsauswahl-Eingaben (Von/Bis) sind jetzt vertikal gestapelt für bessere Platznutzung und saubereres Erscheinungsbild
+- **Verbesserte Ausrichtung**: Datumsauswahl-Labels haben jetzt konsistente feste Breite für perfekte Eingabe-Ausrichtung
+
+**Technische Verbesserungen:**
+- Erweiterte `filterSystemQueries()` Funktion um SQL-Anweisungsfilterung während der Parse-Phase zu integrieren
+- Verbessertes UI-Layout mit besserem Platzmanagement
+- Reduzierte Parse-Zeit für große Datensätze durch Vor-Filterung unerwünschter Queries
+- Behoben: Daten-Caching-Problem, bei dem SQL-Filter nicht ordnungsgemäß beim Re-Parse geleert wurden
+
+**Lokalisierung:**
+- Alle Sprachversionen (Spanisch, Portugiesisch, Deutsch) mit neuen Funktionen aktualisiert
+- Übersetzungen für neue UI-Elemente und Platzhaltertext hinzugefügt
 
 ### Version 3.4.2 (2025-08-14)
 - **UI-Verbesserungen**: Verbesserte Timeline-Chart-Interaktionen und Button-Styling-Konsistenz - Mausrad-Zoom deaktiviert, Auswahlbox-Sichtbarkeit verbessert, automatisches Zurücksetzen von Radio-Buttons beim Parsen, vergrößerte Parse JSON-Button und konsistente Gestaltung für Zeitbereich- und Steuerungsbuttons.

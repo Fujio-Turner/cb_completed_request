@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.4.2
+# Couchbase Slow Query Analysis Tool v3.5.0
 
 **🌍 Idiomas:** [🇺🇸 English](README.md) | [🇩🇪 Deutsch](README.de.md) | **🇪🇸 Español** | [🇵🇹 Português](README.pt.md)
 
@@ -147,6 +147,24 @@ Al analizar gráficos de línea de tiempo, elija rangos de fecha apropiados para
 **⚠️ Advertencia**: Rangos de fecha grandes con agrupaciones de grano fino pueden causar errores de renderizado de gráficos. La herramienta le alertará y sugerirá mejores combinaciones.
 
 ## Release Notes
+
+### **Versión 3.5.0 - 14 de enero de 2025**
+**🎯 Filtrado Mejorado de Declaraciones SQL y Diseño Mejorado**
+
+**Nuevas Características:**
+- **Filtrado Previo de Declaraciones SQL++**: Se añadió la caja de entrada "Buscar en Declaraciones SQL++" que filtra consultas durante el análisis inicial de JSON para mejor rendimiento
+- **Diseño Reorganizado**: Las entradas del selector de fechas (Desde/Hasta) ahora están apiladas verticalmente para mejor utilización del espacio y apariencia más limpia
+- **Alineación Mejorada**: Las etiquetas del selector de fechas ahora tienen un ancho fijo consistente para perfecta alineación de entradas
+
+**Mejoras Técnicas:**
+- Función `filterSystemQueries()` mejorada para incluir filtrado de declaraciones SQL durante la fase de análisis
+- Diseño de UI mejorado con mejor gestión del espacio
+- Tiempo de análisis reducido para conjuntos de datos grandes mediante pre-filtrado de consultas no deseadas
+- Solucionado problema de caché de datos donde los filtros SQL no se limpiaban correctamente en re-análisis
+
+**Localización:**
+- Actualizadas todas las versiones de idioma (Español, Portugués, Alemán) con nuevas características
+- Añadidas traducciones para nuevos elementos de UI y texto de marcador de posición
 
 ### Versión 3.4.2 (2025-08-14)
 - **Mejoras de UI**: Mejoradas las interacciones de gráficos de Timeline y consistencia de estilo de botones - deshabilitado zoom con rueda del ratón, mejorada visibilidad de caja de selección, auto-reset de botones de radio al parsear, agrandado botón Parse JSON y aplicado estilo consistente a botones de rango de tiempo y control.

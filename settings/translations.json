@@ -1,9 +1,9 @@
 {
   "ui_strings": {
-    "Query Analyzer v3.1.1": {
-      "es": "Analizador de Consultas v3.1.1",
-      "pt": "Analisador de Consultas v3.1.1",
-      "de": "Query Analyzer v3.1.1"
+    "Query Analyzer v3.5.0": {
+      "es": "Analizador de Consultas v3.5.0",
+      "pt": "Analisador de Consultas v3.5.0",
+      "de": "Query Analyzer v3.5.0"
     },
     "Dashboard": {
       "es": "Panel de Control",
@@ -220,6 +220,16 @@
       "pt": "Buscar em declarações SQL++...",
       "de": "In SQL++ Anweisungen suchen..."
     },
+    "Search In SQL++ Statements:": {
+      "es": "Buscar en Declaraciones SQL++:",
+      "pt": "Buscar em Declarações SQL++:",
+      "de": "In SQL++ Anweisungen Suchen:"
+    },
+    "Filter statements during parse...": {
+      "es": "Filtrar declaraciones durante el análisis...",
+      "pt": "Filtrar declarações durante a análise...",
+      "de": "Anweisungen während der Analyse filtern..."
+    },
     "Note: #primary count shows total operations, not unique queries": {
       "es": "Nota: el conteo #primary muestra operaciones totales, no consultas únicas",
       "pt": "Nota: a contagem #primary mostra operações totais, não consultas únicas",
@@ -314,6 +324,101 @@
       "es": "Uso Total de Memoria del Proceso de Consultas",
       "pt": "Uso Total de Memória do Processo de Consultas",
       "de": "Gesamter Abfrageprozess-Speicherverbrauch"
+    },
+    "Exclude System Queries": {
+      "es": "Excluir Consultas del Sistema",
+      "pt": "Excluir Consultas do Sistema",
+      "de": "Systemabfragen Ausschließen"
+    },
+    "To analyze indexes, run this query in your Couchbase Query Workbench and paste the results in the second textarea above:": {
+      "es": "Para analizar índices, ejecute esta consulta en su Couchbase Query Workbench y pegue los resultados en el segundo área de texto de arriba:",
+      "pt": "Para analisar índices, execute esta consulta em seu Couchbase Query Workbench e cole os resultados na segunda área de texto acima:",
+      "de": "Um Indizes zu analysieren, führen Sie diese Abfrage in Ihrer Couchbase Query Workbench aus und fügen Sie die Ergebnisse in das zweite Textfeld oben ein:"
+    },
+    "Sort By": {
+      "es": "Ordenar Por",
+      "pt": "Ordenar Por",
+      "de": "Sortieren Nach"
+    },
+    "Indexes Used:": {
+      "es": "Índices Utilizados:",
+      "pt": "Índices Utilizados:",
+      "de": "Verwendete Indizes:"
+    },
+    "Queries Executed:": {
+      "es": "Consultas Ejecutadas:",
+      "pt": "Consultas Executadas:",
+      "de": "Ausgeführte Abfragen:"
+    },
+    "Drag to pan • Scroll to zoom • Drag box to zoom area": {
+      "es": "Arrastrar para desplazar • Desplazar para hacer zoom • Arrastrar caja para ampliar área",
+      "pt": "Arraste para mover • Role para ampliar • Arraste caixa para ampliar área",
+      "de": "Ziehen zum Schwenken • Scrollen zum Zoomen • Kasten ziehen zum Zoomen des Bereichs"
+    },
+    "Linear": {
+      "es": "Lineal",
+      "pt": "Linear",
+      "de": "Linear"
+    },
+    "Logarithmic": {
+      "es": "Logarítmico",
+      "pt": "Logarítmico",
+      "de": "Logarithmisch"
+    },
+    "By Optimizer": {
+      "es": "Por Optimizador",
+      "pt": "Por Otimizador",
+      "de": "Nach Optimierer"
+    },
+    "By Minute": {
+      "es": "Por Minuto",
+      "pt": "Por Minuto",
+      "de": "Nach Minute"
+    },
+    "By Second": {
+      "es": "Por Segundo",
+      "pt": "Por Segundo",
+      "de": "Nach Sekunde"
+    },
+    "Original": {
+      "es": "Original",
+      "pt": "Original",
+      "de": "Original"
+    },
+    "1 Day": {
+      "es": "1 Día",
+      "pt": "1 Dia",
+      "de": "1 Tag"
+    },
+    "1 Hour": {
+      "es": "1 Hora",
+      "pt": "1 Hora",
+      "de": "1 Stunde"
+    },
+    "Statement Type": {
+      "es": "Tipo de Declaración",
+      "pt": "Tipo de Declaração",
+      "de": "Anweisungstyp"
+    },
+    "Query State": {
+      "es": "Estado de Consulta",
+      "pt": "Estado da Consulta",
+      "de": "Abfragestatus"
+    },
+    "Scanned:": {
+      "es": "Escaneado:",
+      "pt": "Verificado:",
+      "de": "Gescannt:"
+    },
+    "Executions:": {
+      "es": "Ejecuciones:",
+      "pt": "Execuções:",
+      "de": "Ausführungen:"
+    },
+    "Click the 'Indexes' tab below to get the SQL query to run. Paste the results here...": {
+      "es": "Haga clic en la pestaña 'Índices' a continuación para obtener la consulta SQL para ejecutar. Pegue los resultados aquí...",
+      "pt": "Clique na aba 'Índices' abaixo para obter a consulta SQL para executar. Cole os resultados aqui...",
+      "de": "Klicken Sie auf die Registerkarte 'Indizes' unten, um die auszuführende SQL-Abfrage zu erhalten. Fügen Sie die Ergebnisse hier ein..."
     }
   },
   "javascript_variables": {
