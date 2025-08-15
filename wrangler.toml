@@ -1,0 +1,3 @@
+name = "cb-completed-request"
+compatibility_date = "2025-08-15"
+pages_build_output_dir = "."
