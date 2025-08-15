@@ -2,7 +2,16 @@
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
+## 🚀 **Beta Deployment Links:**
+- **English**: [https://cb-completed-request.pages.dev](https://cb-completed-request.pages.dev)
+- **German**: [https://cb-completed-request.pages.dev/de_index](https://cb-completed-request.pages.dev/de_index)
+- **Spanish**: [https://cb-completed-request.pages.dev/es_index](https://cb-completed-request.pages.dev/es_index)
+- **Portuguese**: [https://cb-completed-request.pages.dev/pt_index](https://cb-completed-request.pages.dev/pt_index)
+
+If you don't want to download the index.html files, click the beta links above. Remember to still follow the steps in the `Quick Start` section below to complete `Steps 3:` and beyond to get the JSON data you need to debug and analyze.
+
 ## 📁 **Download Instructions:**
+Alternatively, you can download the HTML files locally:
 - **English**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/index.html?download=true)
 - **German**: Download [`de_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/de_index.html?download=true)
 - **Spanish**: Download [`es_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/es_index.html?download=true)
