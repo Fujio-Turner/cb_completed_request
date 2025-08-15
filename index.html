@@ -132,8 +132,8 @@
                 <pre>SELECT *, meta().plan FROM system:completed_requests LIMIT 4000;</pre>
                 <button class="sql-copy-btn">Copy</button>
             </div>
-                        <p><strong>Notes:</strong> This could return a JSON of about 36MB. Anything larger may crash the browser. <em>Firefox</em> renders data the fastest.</p>
-            <p><strong>Browser is slow/crashes:</strong> Reduce data size via <code>LIMIT 2000</code>.</p>
+            <p><strong>Notes:</strong> This could return a JSON of about 36MB. Anything larger may crash the browser.</p>
+            <p><strong>Browser is slow/crashes:</strong> Reduce data size via <code>LIMIT 2000</code> .</p>
             <p><a href="sql_queries.md">More Query Options</a></p>
         </div>
         <div class="guide-step">
@@ -178,7 +178,7 @@
                 <li><strong>Filter status:</strong> View the number of queries matching your criteria.</li>
             </ul>
             <p><strong>Enhanced Index Analysis:</strong></p>
-            <p>To retrieve the current list of indexes in your cluster and connect them to slow queries, run the query below in your workbench (as in Step 1). Paste the JSON output into the <strong>upper right</strong> text box.</p>
+            <p>To retrieve the current list of indexes in your cluster and connect them to slow queries, run the query below in your workbench (as in Step 1). Paste the JSON output into the <span style="font-size: large; color: black;"><b>Upper Right</b></span> text box.</p>
             <div class="sql-query-box">
                 <pre>SELECT 
  s.name,
@@ -213,7 +213,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
   "state": "online",
   "indexString": "CREATE INDEX #primary ON customer_addresses;"
 }]</pre>
-            <p><strong>Example:</strong> Paste index query results JSON into the <span style="font-size: large; color: black;"><b>Upper Right</b></span> text input box and click <strong>Parse JSON</strong>.</p>
         </div>
 
         <!-- Step 5: Download -->
