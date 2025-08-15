@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.4.1
+# Couchbase Slow Query Analysis Tool v3.4.2
 
 **🌍 Idiomas:** [🇺🇸 English](README.md) | [🇩🇪 Deutsch](README.de.md) | **🇪🇸 Español** | [🇵🇹 Português](README.pt.md)
 
@@ -147,6 +147,9 @@ Al analizar gráficos de línea de tiempo, elija rangos de fecha apropiados para
 **⚠️ Advertencia**: Rangos de fecha grandes con agrupaciones de grano fino pueden causar errores de renderizado de gráficos. La herramienta le alertará y sugerirá mejores combinaciones.
 
 ## Release Notes
+
+### Versión 3.4.2 (2025-08-14)
+- **Mejoras de UI**: Mejoradas las interacciones de gráficos de Timeline y consistencia de estilo de botones - deshabilitado zoom con rueda del ratón, mejorada visibilidad de caja de selección, auto-reset de botones de radio al parsear, agrandado botón Parse JSON y aplicado estilo consistente a botones de rango de tiempo y control.
 
 ### Versión 3.4.1 (2025-08-14)
 - **Correcciones de errores**: Se corrigió la funcionalidad del botón de copiar JavaScript en todas las versiones de idioma - se resolvió el manejo de parámetros de eventos en las funciones copyStatement, copyAnalysisStatement y copyToClipboard.

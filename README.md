@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.4.1
+# Couchbase Slow Query Analysis Tool v3.4.2
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -149,6 +149,9 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 **⚠️ Warning**: Large date ranges with fine-grained groupings may cause chart rendering errors. The tool will alert you and suggest better combinations.
 
 ## Release Notes
+
+### Version 3.4.2 (2025-08-14)
+- **UI Enhancements**: Improved Timeline chart interactions and button styling consistency - disabled mouse wheel zoom, enhanced selection box visibility, auto-reset radio buttons on parse, enlarged Parse JSON button, and applied consistent styling to time range and control buttons.
 
 ### Version 3.4.1 (2025-08-14)
 - **Bug Fixes**: Fixed JavaScript copy button functionality across all language versions - resolved event parameter handling in copyStatement, copyAnalysisStatement, and copyToClipboard functions.

@@ -19,9 +19,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.4.1" />
+    <meta name="version" content="3.4.2" />
     <meta name="last-updated" content="2025-08-14" />
-    <title>Analizador de Consultas v3.4.1</title>
+    <title>Analizador de Consultas v3.4.2</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css" />
     <!-- Include Chart.js -->
@@ -838,6 +838,29 @@
             background: rgba(0, 0, 0, 0.2);
         }
     </style>
+    <style>
+        /* Larger Parse JSON Button */
+        #parse-json-btn {
+          font-size: 18px !important;
+          padding: 12px 24px !important;
+          font-weight: bold !important;
+          background: #28a745 !important;
+          color: white !important;
+          border: none !important;
+          border-radius: 8px !important;
+          cursor: pointer !important;
+          transition: all 0.3s ease !important;
+        }
+        #parse-json-btn:hover {
+          background: #1e7e34 !important;
+          transform: translateY(-1px) !important;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+        }
+        #parse-json-btn:active {
+          transform: translateY(0) !important;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+        }
+    </style>
     <!-- Include Panzoom, jQuery, and jQuery UI -->
     <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.2/dist/panzoom.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -847,7 +870,7 @@
 <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v3.4.1
+        v3.4.2
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -868,7 +891,7 @@
           gap: 10px;
           flex-wrap: wrap;
         ">
-            <button onclick="parseJSON()" aria-label="Parse and analyze JSON data" tabindex="0" role="button">Analizar
+            <button id="parse-json-btn" onclick="parseJSON()" aria-label="Parse and analyze JSON data" tabindex="0" role="button">Analizar
             JSON</button>
 
             <div id="progress-container" style="display: none; margin: 10px 15px;">
@@ -910,13 +933,13 @@
             <label for="end-date">Hasta:</label>
             <input type="datetime-local" id="end-date" step="1" title="End date/time for filtering" />
             <div style="display: flex; gap: 5px; align-items: center">
-                <button onclick="setTimeRange('original')" style="padding: 4px 8px; font-size: 0.8em">
+                <button onclick="setTimeRange('original')" class="cursor-pointer border-none border-radius-3 btn-gray">
                     Original
                 </button>
-                <button onclick="setTimeRange('1day')" style="padding: 4px 8px; font-size: 0.8em">
+                <button onclick="setTimeRange('1day')" class="cursor-pointer border-none border-radius-3 btn-gray">
                     1 Día
                 </button>
-                <button onclick="setTimeRange('1hour')" style="padding: 4px 8px; font-size: 0.8em">
+                <button onclick="setTimeRange('1hour')" class="cursor-pointer border-none border-radius-3 btn-gray">
                     1 Hora
                 </button>
             </div>
@@ -1213,7 +1236,7 @@
         <!-- Timeline Tab Content -->
         <div id="timeline">
             <div style="margin-bottom: 10px">
-                <button id="reset-zoom-btn" onclick="resetTimelineZoom()">
+                <button id="reset-zoom-btn" onclick="resetTimelineZoom()" class="cursor-pointer border-none border-radius-3 btn-gray">
                 Restablecer Zoom
                 </button>
                 <span style="margin-left: 20px">
@@ -1238,7 +1261,7 @@
                     Drag to pan • Scroll to zoom • Drag box to zoom area
                 </span>
                 <button id="use-time-range-btn" onclick="useCurrentTimeRange()"
-                    style="margin-left: 20px; padding: 4px 8px; font-size: 0.8em">
+                    class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray">
                     Usar Rango de Tiempo
                 </button>
             </div>
@@ -4356,16 +4379,16 @@
                             },
                             zoom: {
                                 wheel: {
-                                    enabled: true,
+                                    enabled: false,
                                 },
                                 pinch: {
                                     enabled: true,
                                 },
                                 drag: {
                                     enabled: true,
-                                    backgroundColor: "rgba(225,225,225,0.3)",
-                                    borderColor: "rgba(225,225,225)",
-                                    borderWidth: 1,
+                                    backgroundColor: "rgba(100,100,100,0.4)",
+                                    borderColor: "rgba(50,50,50,0.8)",
+                                    borderWidth: 2,
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
@@ -4595,16 +4618,16 @@
                             },
                             zoom: {
                                 wheel: {
-                                    enabled: true,
+                                    enabled: false,
                                 },
                                 pinch: {
                                     enabled: true,
                                 },
                                 drag: {
                                     enabled: true,
-                                    backgroundColor: "rgba(225,225,225,0.3)",
-                                    borderColor: "rgba(225,225,225)",
-                                    borderWidth: 1,
+                                    backgroundColor: "rgba(100,100,100,0.4)",
+                                    borderColor: "rgba(50,50,50,0.8)",
+                                    borderWidth: 2,
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
@@ -4942,16 +4965,16 @@
                             },
                             zoom: {
                                 wheel: {
-                                    enabled: true,
+                                    enabled: false,
                                 },
                                 pinch: {
                                     enabled: true,
                                 },
                                 drag: {
                                     enabled: true,
-                                    backgroundColor: "rgba(225,225,225,0.3)",
-                                    borderColor: "rgba(225,225,225)",
-                                    borderWidth: 1,
+                                    backgroundColor: "rgba(100,100,100,0.4)",
+                                    borderColor: "rgba(50,50,50,0.8)",
+                                    borderWidth: 2,
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
@@ -5246,16 +5269,16 @@
                             },
                             zoom: {
                                 wheel: {
-                                    enabled: true,
+                                    enabled: false,
                                 },
                                 pinch: {
                                     enabled: true,
                                 },
                                 drag: {
                                     enabled: true,
-                                    backgroundColor: "rgba(225,225,225,0.3)",
-                                    borderColor: "rgba(225,225,225)",
-                                    borderWidth: 1,
+                                    backgroundColor: "rgba(100,100,100,0.4)",
+                                    borderColor: "rgba(50,50,50,0.8)",
+                                    borderWidth: 2,
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
@@ -5578,16 +5601,16 @@
                             },
                             zoom: {
                                 wheel: {
-                                    enabled: true,
+                                    enabled: false,
                                 },
                                 pinch: {
                                     enabled: true,
                                 },
                                 drag: {
                                     enabled: true,
-                                    backgroundColor: "rgba(225,225,225,0.3)",
-                                    borderColor: "rgba(225,225,225)",
-                                    borderWidth: 1,
+                                    backgroundColor: "rgba(100,100,100,0.4)",
+                                    borderColor: "rgba(50,50,50,0.8)",
+                                    borderWidth: 2,
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
@@ -5828,16 +5851,16 @@
                             },
                             zoom: {
                                 wheel: {
-                                    enabled: true,
+                                    enabled: false,
                                 },
                                 pinch: {
                                     enabled: true,
                                 },
                                 drag: {
                                     enabled: true,
-                                    backgroundColor: "rgba(225,225,225,0.3)",
-                                    borderColor: "rgba(225,225,225)",
-                                    borderWidth: 1,
+                                    backgroundColor: "rgba(100,100,100,0.4)",
+                                    borderColor: "rgba(50,50,50,0.8)",
+                                    borderWidth: 2,
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
@@ -5997,16 +6020,16 @@
                             },
                             zoom: {
                                 wheel: {
-                                    enabled: true,
+                                    enabled: false,
                                 },
                                 pinch: {
                                     enabled: true,
                                 },
                                 drag: {
                                     enabled: true,
-                                    backgroundColor: "rgba(225,225,225,0.3)",
-                                    borderColor: "rgba(225,225,225)",
-                                    borderWidth: 1,
+                                    backgroundColor: "rgba(100,100,100,0.4)",
+                                    borderColor: "rgba(50,50,50,0.8)",
+                                    borderWidth: 2,
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
@@ -6166,16 +6189,16 @@
                             },
                             zoom: {
                                 wheel: {
-                                    enabled: true,
+                                    enabled: false,
                                 },
                                 pinch: {
                                     enabled: true,
                                 },
                                 drag: {
                                     enabled: true,
-                                    backgroundColor: "rgba(225,225,225,0.3)",
-                                    borderColor: "rgba(225,225,225)",
-                                    borderWidth: 1,
+                                    backgroundColor: "rgba(100,100,100,0.4)",
+                                    borderColor: "rgba(50,50,50,0.8)",
+                                    borderWidth: 2,
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
@@ -7695,6 +7718,14 @@
             const startDateInput = document.getElementById("start-date");
             const endDateInput = document.getElementById("end-date");
 
+            // Reset time grouping to default (By Optimizer) to prevent fine-grain errors
+            const optimizerRadio = document.querySelector('input[name="timeGrouping"][value="optimizer"]');
+            if (optimizerRadio) {
+                optimizerRadio.checked = true;
+                // Trigger the change event to update any dependent UI
+                changeTimeGrouping();
+            }
+
             // Input validation
             if (!jsonInput) {
                 showToast("Please paste your JSON data first", "warning");
@@ -8726,11 +8757,12 @@
                 // Brief visual feedback
                 const button = event.target;
                 const originalText = button.textContent;
+                const originalBg = button.style.backgroundColor;
                 button.textContent = 'Copied!';
                 button.style.backgroundColor = '#4CAF50';
                 setTimeout(() => {
                     button.textContent = originalText;
-                    button.style.backgroundColor = '#f0f0f0';
+                    button.style.backgroundColor = originalBg;
                 }, 1000);
             });
         }
@@ -8774,7 +8806,7 @@
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = '3.4.1';
+        const APP_VERSION = '3.4.2';
         const LAST_UPDATED = '2025-08-14';
 
         function getVersionInfo() {
