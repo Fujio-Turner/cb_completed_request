@@ -150,23 +150,10 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 
 ## Release Notes
 
-### **Version 3.5.0 - January 14, 2025**
-**🎯 Enhanced SQL Statement Filtering & Improved Layout**
-
-**New Features:**
-- **SQL++ Statement Pre-filtering**: Added "Search In SQL++ Statements" input box that filters queries during initial JSON parsing for better performance
-- **Reorganized Layout**: Date picker inputs (From/To) now stacked vertically for better space utilization and cleaner appearance
-- **Improved Alignment**: Date picker labels now have consistent fixed width for perfect input alignment
-
-**Technical Improvements:**
-- Enhanced `filterSystemQueries()` function to include SQL statement filtering during parse phase
-- Improved UI layout with better space management
-- Reduced parse time for large datasets by pre-filtering unwanted queries
-- Fixed data caching issue where SQL filters weren't clearing properly on re-parse
-
-**Localization:**
-- Updated all language versions (Spanish, Portuguese, German) with new features
-- Added translations for new UI elements and placeholder text
+### Version 3.5.0 (2025-08-14)
+- **New Features**: Added SQL++ statement pre-filtering during JSON parsing for better performance, reorganized date picker layout with vertical stacking and improved label alignment.
+- **Technical Improvements**: Enhanced filterSystemQueries() function, improved UI layout and space management, reduced parse time for large datasets, and fixed data caching issue where SQL filters weren't clearing properly on re-parse.
+- **Localization**: Updated all language versions (Spanish, Portuguese, German) with new features and added translations for new UI elements.
 
 ### Version 3.4.2 (2025-08-14)
 - **UI Enhancements**: Improved Timeline chart interactions and button styling consistency - disabled mouse wheel zoom, enhanced selection box visibility, auto-reset radio buttons on parse, enlarged Parse JSON button, and applied consistent styling to time range and control buttons.

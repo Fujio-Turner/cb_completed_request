@@ -148,23 +148,10 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 
 ## Release Notes
 
-### **Version 3.5.0 - 14. Januar 2025**
-**🎯 Verbesserte SQL-Anweisungsfilterung & Verbessertes Layout**
-
-**Neue Funktionen:**
-- **SQL++ Anweisungs-Vorfilterung**: Hinzugefügtes "In SQL++ Anweisungen suchen" Eingabefeld, das Queries während der initialen JSON-Analyse für bessere Performance filtert
-- **Neuorganisiertes Layout**: Datumsauswahl-Eingaben (Von/Bis) sind jetzt vertikal gestapelt für bessere Platznutzung und saubereres Erscheinungsbild
-- **Verbesserte Ausrichtung**: Datumsauswahl-Labels haben jetzt konsistente feste Breite für perfekte Eingabe-Ausrichtung
-
-**Technische Verbesserungen:**
-- Erweiterte `filterSystemQueries()` Funktion um SQL-Anweisungsfilterung während der Parse-Phase zu integrieren
-- Verbessertes UI-Layout mit besserem Platzmanagement
-- Reduzierte Parse-Zeit für große Datensätze durch Vor-Filterung unerwünschter Queries
-- Behoben: Daten-Caching-Problem, bei dem SQL-Filter nicht ordnungsgemäß beim Re-Parse geleert wurden
-
-**Lokalisierung:**
-- Alle Sprachversionen (Spanisch, Portugiesisch, Deutsch) mit neuen Funktionen aktualisiert
-- Übersetzungen für neue UI-Elemente und Platzhaltertext hinzugefügt
+### Version 3.5.0 (2025-08-14)
+- **Neue Funktionen**: SQL++ Anweisungs-Vorfilterung während JSON-Analyse für bessere Leistung hinzugefügt, Datumsauswahl-Layout mit vertikaler Stapelung und verbesserter Beschriftungsausrichtung reorganisiert.
+- **Technische Verbesserungen**: Verbesserte filterSystemQueries() Funktion, verbessertes UI-Layout und Platzverwaltung, reduzierte Analysezeit für große Datensätze und behobenes Daten-Caching-Problem bei dem SQL-Filter beim erneuten Analysieren nicht ordnungsgemäß geleert wurden.
+- **Lokalisierung**: Alle Sprachversionen (Spanisch, Portugiesisch, Deutsch) mit neuen Funktionen aktualisiert und Übersetzungen für neue UI-Elemente hinzugefügt.
 
 ### Version 3.4.2 (2025-08-14)
 - **UI-Verbesserungen**: Verbesserte Timeline-Chart-Interaktionen und Button-Styling-Konsistenz - Mausrad-Zoom deaktiviert, Auswahlbox-Sichtbarkeit verbessert, automatisches Zurücksetzen von Radio-Buttons beim Parsen, vergrößerte Parse JSON-Button und konsistente Gestaltung für Zeitbereich- und Steuerungsbuttons.

@@ -148,23 +148,10 @@ Al analizar gráficos de línea de tiempo, elija rangos de fecha apropiados para
 
 ## Release Notes
 
-### **Versión 3.5.0 - 14 de enero de 2025**
-**🎯 Filtrado Mejorado de Declaraciones SQL y Diseño Mejorado**
-
-**Nuevas Características:**
-- **Filtrado Previo de Declaraciones SQL++**: Se añadió la caja de entrada "Buscar en Declaraciones SQL++" que filtra consultas durante el análisis inicial de JSON para mejor rendimiento
-- **Diseño Reorganizado**: Las entradas del selector de fechas (Desde/Hasta) ahora están apiladas verticalmente para mejor utilización del espacio y apariencia más limpia
-- **Alineación Mejorada**: Las etiquetas del selector de fechas ahora tienen un ancho fijo consistente para perfecta alineación de entradas
-
-**Mejoras Técnicas:**
-- Función `filterSystemQueries()` mejorada para incluir filtrado de declaraciones SQL durante la fase de análisis
-- Diseño de UI mejorado con mejor gestión del espacio
-- Tiempo de análisis reducido para conjuntos de datos grandes mediante pre-filtrado de consultas no deseadas
-- Solucionado problema de caché de datos donde los filtros SQL no se limpiaban correctamente en re-análisis
-
-**Localización:**
-- Actualizadas todas las versiones de idioma (Español, Portugués, Alemán) con nuevas características
-- Añadidas traducciones para nuevos elementos de UI y texto de marcador de posición
+### Version 3.5.0 (2025-08-14)
+- **Nuevas Características**: Se agregó pre-filtrado de declaraciones SQL++ durante el análisis JSON para mejor rendimiento, se reorganizó el diseño del selector de fechas con apilamiento vertical y mejor alineación de etiquetas.
+- **Mejoras Técnicas**: Se mejoró la función filterSystemQueries(), se mejoró el diseño de la interfaz y gestión del espacio, se redujo el tiempo de análisis para conjuntos de datos grandes y se solucionó el problema de caché de datos donde los filtros SQL no se limpiaban correctamente al re-analizar.
+- **Localización**: Se actualizaron todas las versiones de idiomas (español, portugués, alemán) con nuevas características y se agregaron traducciones para nuevos elementos de la interfaz.
 
 ### Versión 3.4.2 (2025-08-14)
 - **Mejoras de UI**: Mejoradas las interacciones de gráficos de Timeline y consistencia de estilo de botones - deshabilitado zoom con rueda del ratón, mejorada visibilidad de caja de selección, auto-reset de botones de radio al parsear, agrandado botón Parse JSON y aplicado estilo consistente a botones de rango de tiempo y control.
