@@ -3,10 +3,10 @@
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
 ## 🚀 **Beta Deployment Links:**
-- **English**: [https://cb-completed-request.pages.dev](https://cb-completed-request.pages.dev)
-- **German**: [https://cb-completed-request.pages.dev/de_index](https://cb-completed-request.pages.dev/de_index)
-- **Spanish**: [https://cb-completed-request.pages.dev/es_index](https://cb-completed-request.pages.dev/es_index)
-- **Portuguese**: [https://cb-completed-request.pages.dev/pt_index](https://cb-completed-request.pages.dev/pt_index)
+- **English**: [https://cb.fuj.io/en/](https://cb.fuj.io/en/)
+- **German**: [https://cb.fuj.io/de/](https://cb.fuj.io/de/)
+- **Spanish**: [https://cb.fuj.io/es/](https://cb.fuj.io/es/)
+- **Portuguese**: [https://cb.fuj.io/pt/](https://cb.fuj.io/pt/)
 
 If you don't want to download the index.html files, click the beta links above. Remember to still follow the steps in the `Quick Start` section below to complete `Steps 3:` and beyond to get the JSON data you need to debug and analyze.
 
@@ -51,7 +51,7 @@ If the browser slowes to a crawl reduce the data size via `LIMIT 2000`
 ### Step 4: Analyze
 Select ALL & Copy the full JSON results and paste it into the tool's input area up top, then click **Parse JSON**
 
-![Query input interface](copy_paste_json.png)
+![Query input interface](img/copy_paste_side_by_side.png)
 
 ### Step 5a: Filter by Date Range (Optional)
 
