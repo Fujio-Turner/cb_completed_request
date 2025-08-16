@@ -2,11 +2,20 @@
 
 **🌍 Sprachen:** [🇺🇸 English](README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
+## 🚀 **Beta-Deployment-Links:**
+- **Englisch**: [https://cb.fuj.io/](https://cb.fuj.io/)
+- **Deutsch**: [https://cb.fuj.io/de_index](https://cb.fuj.io/de_index)
+- **Spanisch**: [https://cb.fuj.io/es_index](https://cb.fuj.io/es_index)
+- **Portugiesisch**: [https://cb.fuj.io/pt_index](https://cb.fuj.io/pt_index)
+
+Wenn Sie die index.html-Dateien nicht herunterladen möchten, klicken Sie auf die Beta-Links oben. Denken Sie daran, die Schritte im `Schnellstart`-Abschnitt unten zu befolgen, um `Schritt 3:` und darüber hinaus zu vervollständigen, um die JSON-Daten zu erhalten, die Sie zum Debuggen und Analysieren benötigen.
+
 ## 📁 **Download-Anweisungen:**
-- **Deutsch**: Download [`de_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/de_index.html)
-- **Englisch**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/index.html)
-- **Spanisch**: Download [`es_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/es_index.html)
-- **Portugiesisch**: Download [`pt_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/pt_index.html)
+Alternativ können Sie die HTML-Dateien lokal herunterladen:
+- **Deutsch**: Download [`de_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/de_index.html?download=true)
+- **Englisch**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/index.html?download=true)
+- **Spanisch**: Download [`es_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/es_index.html?download=true)
+- **Portugiesisch**: Download [`pt_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/pt_index.html?download=true)
 
 ---
 

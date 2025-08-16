@@ -127,29 +127,29 @@
         <!-- Step 1 -->
         <div class="guide-step">
             <h3>Step 1: Extract Query Data</h3>
-            <p>Run this query in Couchbase Query Workbench or <code>cbq</code>:</p>
+            <p>Run the below query in your Couchbase Query Workbench or <code>cbq</code>.</p> 
+            <p>You will want to copy or save the JSON output.</p>
             <div class="sql-query-box">
                 <pre>SELECT *, meta().plan FROM system:completed_requests LIMIT 4000;</pre>
                 <button class="sql-copy-btn">Copy</button>
             </div>
-            <p><strong>Notes:</strong> This could return a JSON of about 36MB. Anything larger may crash the browser.</p>
-            <p><strong>Browser is slow/crashes:</strong> Reduce data size via <code>LIMIT 2000</code> .</p>
-            <p><a href="sql_queries.md">More Query Options</a></p>
+            <p><strong>Notes:</strong>This query could return a JSON of 36MB. Anything larger may crash the browser while processing the data.</p>
+            <p><strong>Browser is slow/crashes:</strong> Reduce the data size by changing query to: <code>LIMIT 2000</code> .</p>
+            <p><a href="sql_queries.md">Advanced Query Options</a></p>
         </div>
         <div class="guide-step">
             <img src="img/completed_request_json.png" alt="Query output JSON" style="width: 550px;">
-
         </div>
 
         <!-- Step 2 -->
         <div class="guide-step">
             <h3>Step 2: Access Hosted Tool</h3>
-            <p>Click the link below to go to the Tool by <strong>Language-Specific:</strong></p>
+            <p>Click the link below to go to the web based query analyzer tool. Pick by <strong>Language-Specific:</strong></p>
             <ul>
-                <li><span style="font-size: x-large;"><a href="https://cb.fuj.io/en/" target="_blank" rel="noopener noreferrer">https://cb.fuj.io/en/ (English)</a></span></li>
-                <li><span style="font-size: x-large;"><a href="https://cb.fuj.io/de/" target="_blank" rel="noopener noreferrer">https://cb.fuj.io/de/ (German)</a></span></li>
-                <li><span style="font-size: x-large;"><a href="https://cb.fuj.io/es/" target="_blank" rel="noopener noreferrer">https://cb.fuj.io/es/ (Spanish)</a></span></li>
-                <li><span style="font-size: x-large;"><a href="https://cb.fuj.io/pt/" target="_blank" rel="noopener noreferrer">https://cb.fuj.io/pt/ (Portuguese)</a></span></li>
+                <li><span style="font-size: large;"><a href="https://cb.fuj.io/en/" target="_blank" rel="noopener noreferrer">https://cb.fuj.io/en/ (English)</a></span></li>
+                <li><span style="font-size: large;"><a href="https://cb.fuj.io/de/" target="_blank" rel="noopener noreferrer">https://cb.fuj.io/de/ (German)</a></span></li>
+                <li><span style="font-size: large;"><a href="https://cb.fuj.io/es/" target="_blank" rel="noopener noreferrer">https://cb.fuj.io/es/ (Spanish)</a></span></li>
+                <li><span style="font-size: large;"><a href="https://cb.fuj.io/pt/" target="_blank" rel="noopener noreferrer">https://cb.fuj.io/pt/ (Portuguese)</a></span></li>
             </ul>
             <p>  <img src="img/firefox.png" alt="FireFox" style="width: 30px;"> <em>Firefox</em> renders data the fastest.</p>
         </div>
@@ -218,7 +218,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
         <!-- Step 5: Download -->
         <div class="guide-step">
             <h3>Step 5: Download the Tool (Optional)</h3>
-            <p>If you prefer to use the tool locally, get the raw HTML , copy/paste and save it as index.html :</p>
+            <p>If you prefer to use the tool locally you can get the raw HTML BELOW , copy/paste HTML and save it as index.html :</p>
             <ul>
                 <li><a href="https://raw.githubusercontent.com/Fujio-Turner/cb_completed_request/main/en/index.html">English (index.html)</a></li>
                 <li><a href="https://raw.githubusercontent.com/Fujio-Turner/cb_completed_request/main/de/index.html">German (index.html)</a></li>

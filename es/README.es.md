@@ -2,11 +2,20 @@
 
 **🌍 Idiomas:** [🇺🇸 English](README.md) | [🇩🇪 Deutsch](README.de.md) | **🇪🇸 Español** | [🇵🇹 Português](README.pt.md)
 
+## 🚀 **Enlaces de Implementación Beta:**
+- **Inglés**: [https://cb.fuj.io/](https://cb.fuj.io/)
+- **Alemán**: [https://cb.fuj.io/de_index](https://cb.fuj.io/de_index)
+- **Español**: [https://cb.fuj.io/es_index](https://cb.fuj.io/es_index)
+- **Portugués**: [https://cb.fuj.io/pt_index](https://cb.fuj.io/pt_index)
+
+Si no quiere descargar los archivos index.html, haga clic en los enlaces beta anteriores. Recuerde seguir los pasos en la sección `Inicio Rápido` a continuación para completar `Paso 3:` y más allá para obtener los datos JSON que necesita para depurar y analizar.
+
 ## 📁 **Instrucciones de Descarga:**
-- **Español**: Download [`es_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/es_index.html)
-- **Inglés**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/index.html)
-- **Alemán**: Download [`de_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/de_index.html)
-- **Portugués**: Download [`pt_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/pt_index.html)
+Alternativamente, puede descargar los archivos HTML localmente:
+- **Español**: Download [`es_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/es_index.html?download=true)
+- **Inglés**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/index.html?download=true)
+- **Alemán**: Download [`de_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/de_index.html?download=true)
+- **Portugués**: Download [`pt_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/pt_index.html?download=true)
 
 ---
 
