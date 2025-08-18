@@ -170,23 +170,29 @@
         <!-- Step 4 -->
         <div class="guide-step">
             <h3>Step 4: Filter and Index Analysis (Optional)</h3>
-            <p><strong>Filter by Date Range:</strong></p>
+            <p><strong>Filter by:</strong></p>
             <ul>
                 <li><strong>Auto-population:</strong> Date fields populate with your data's full time range.</li>
-                <li><strong>Custom filtering:</strong> Adjust "From" and "To" dates or filter by specific SQL++ query terms.</li>
+                <li><strong>Custom Date Ranges:</strong> Adjust "From" and "To" dates or filter by specific SQL++ query terms.</li>
+                <li><strong>SQL++ Term Search:</strong> Filter by specific SQL++ query terms. EX. <i>`SELECT city , state`</i></li>
                 <li><strong>Re-analyze:</strong> Click <strong>Parse JSON</strong> to apply filters.</li>
                 <li><strong>Filter status:</strong> View the number of queries matching your criteria.</li>
             </ul>
+
+        </div>
+        <div class="guide-step">
+
             <p><strong>Enhanced Index Analysis:</strong></p>
             <p>To retrieve the current list of indexes in your cluster and connect them to slow queries, run the query below in your workbench (as in Step 1). Paste the JSON output into the <span style="font-size: large; color: black;"><b>Upper Right</b></span> text box.</p>
             <div class="sql-query-box">
-                <pre>SELECT 
- s.name,
- s.id,
- s.metadata,
- s.state,
- s.num_replica,
-CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+                <pre>
+SELECT 
+    s.name,
+    s.id,
+    s.metadata,
+    s.state,
+    s.num_replica,
+    CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
 FROM system:indexes AS s
 LET bid = CONCAT("", s.bucket_id, ""),
     sid = CONCAT("", s.scope_id, ""),
@@ -194,11 +200,10 @@ LET bid = CONCAT("", s.bucket_id, ""),
     k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
     ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
     w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
-    p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;</pre>
+    p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;
+            </pre>
                 <button class="sql-copy-btn">Copy</button>
             </div>
-        </div>
-        <div class="guide-step">
             <p><strong>Example Index Query Output:</strong></p>
             <pre>[{
   "name": "#primary",
@@ -217,7 +222,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
         <!-- Step 5: Download -->
         <div class="guide-step">
-            <h3>Step 5: Download the Tool (Optional)</h3>
+            <h3>Download the Tool (Optional)</h3>
             <p>If you prefer to use the tool locally you can get the raw HTML BELOW , copy/paste HTML and save it as index.html :</p>
             <ul>
                 <li><a href="https://raw.githubusercontent.com/Fujio-Turner/cb_completed_request/main/en/index.html">English (index.html)</a></li>
