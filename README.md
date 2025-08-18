@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.5.0
+# Couchbase Slow Query Analysis Tool v3.5.1
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -158,6 +158,10 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 **⚠️ Warning**: Large date ranges with fine-grained groupings may cause chart rendering errors. The tool will alert you and suggest better combinations.
 
 ## Release Notes
+
+### Version 3.5.1 (2025-08-18)
+- **Bug Fixes**: Fixed regex parsing bug in Index tab bucket dropdown that showed "ON" instead of actual bucket names
+- **Improvements**: Improved parsing to handle complex CREATE INDEX statements with words containing "on" (like "accommodation")
 
 ### Version 3.5.0 (2025-08-14)
 - **New Features**: Added SQL++ statement pre-filtering during JSON parsing for better performance, reorganized date picker layout with vertical stacking and improved label alignment.

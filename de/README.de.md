@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.5.0
+# Couchbase Slow Query Analysis Tool v3.5.1
 
 **🌍 Sprachen:** [🇺🇸 English](README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -156,6 +156,10 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 **⚠️ Warnung**: Große Datumsbereiche mit feinkörnigen Gruppierungen können zu Diagramm-Rendering-Fehlern führen. Das Tool wird Sie warnen und bessere Kombinationen vorschlagen.
 
 ## Release Notes
+
+### Version 3.5.1 (2025-08-18)
+- **Bug Fixes**: Regex-Parsing-Fehler im Index-Tab-Bucket-Dropdown behoben, das "ON" anstatt der tatsächlichen Bucket-Namen anzeigte
+- **Verbesserungen**: Verbessertes Parsing zur Behandlung komplexer CREATE INDEX-Anweisungen mit Wörtern, die "on" enthalten (wie "accommodation")
 
 ### Version 3.5.0 (2025-08-14)
 - **Neue Funktionen**: SQL++ Anweisungs-Vorfilterung während JSON-Analyse für bessere Leistung hinzugefügt, Datumsauswahl-Layout mit vertikaler Stapelung und verbesserter Beschriftungsausrichtung reorganisiert.

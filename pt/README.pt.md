@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.5.0
+# Couchbase Slow Query Analysis Tool v3.5.1
 
 **🌍 Idiomas:** [🇺🇸 English](README.md) | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | **🇵🇹 Português**
 
@@ -156,6 +156,10 @@ Ao analisar gráficos de linha do tempo, escolha intervalos de data apropriados 
 **⚠️ Aviso**: Intervalos de data grandes com agrupamentos de granularidade fina podem causar erros de renderização de gráficos. A ferramenta alertará você e sugerirá melhores combinações.
 
 ## Release Notes
+
+### Version 3.5.1 (2025-08-18)
+- **Correções de bugs**: Corrigido erro de análise regex no dropdown de bucket da aba Index que mostrava "ON" em vez dos nomes reais dos buckets
+- **Melhorias**: Melhorada a análise para lidar com declarações CREATE INDEX complexas com palavras contendo "on" (como "accommodation")
 
 ### Version 3.5.0 (2025-08-14)
 - **Novas Funcionalidades**: Adicionada pré-filtragem de declarações SQL++ durante análise JSON para melhor desempenho, reorganizado layout do seletor de datas com empilhamento vertical e melhor alinhamento de rótulos.
