@@ -2,8 +2,8 @@
 <html lang="es">
 <!--
     Couchbase Query Analyzer
-    Version: 3.3.1
-    Last Updated: 2025-01-23
+    Version: 3.5.2
+    Last Updated: 2025-01-19
     
     🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
     
@@ -19,9 +19,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.5.1" />
-    <meta name="last-updated" content="2025-08-18" />
-    <title>Analizador de Consultas v3.5.1</title>
+    <meta name="version" content="3.5.2" />
+    <meta name="last-updated" content="2025-01-19" />
+    <title>Analizador de Consultas v3.5.2</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css" />
     <!-- Include Chart.js -->
@@ -870,7 +870,7 @@
 <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v3.5.1
+        v3.5.2
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -950,6 +950,9 @@
                 <button onclick="setTimeRange('original')" class="cursor-pointer border-none border-radius-3 btn-gray">
                     Original
                 </button>
+                <button onclick="setTimeRange('1week')" class="cursor-pointer border-none border-radius-3 btn-gray">
+                    1 Semana
+                </button>
                 <button onclick="setTimeRange('1day')" class="cursor-pointer border-none border-radius-3 btn-gray">
                     1 Día
                 </button>
@@ -967,8 +970,8 @@
         <ul role="tablist" aria-label="Analysis views">
             <li role="tab"><a href="#dashboard" aria-controls="dashboard" tabindex="0">Panel de Control</a></li>
             <li role="tab"><a href="#timeline" aria-controls="timeline" tabindex="0">Línea de Tiempo</a></li>
-            <li role="tab"><a href="#analysis" aria-controls="analysis" tabindex="0">Grupos de Consultas</a></li>
-            <li role="tab"><a href="#every-query" aria-controls="every-query" tabindex="0">Todas las Consultas</a></li>
+            <li role="tab"><a href="#analysis" aria-controls="analysis" tabindex="0">Análisis</a></li>
+            <li role="tab"><a href="#every-query" aria-controls="every-query" tabindex="0">Cada Consulta</a></li>
             <li role="tab"><a href="#index-query-flow" aria-controls="index-query-flow" tabindex="0">Flujo Índice/Consulta</a></li>
             <li role="tab"><a href="#indexes" aria-controls="indexes" tabindex="0">Índices</a></li>
         </ul>
@@ -1249,34 +1252,30 @@
 
         <!-- Timeline Tab Content -->
         <div id="timeline">
-            <div style="margin-bottom: 10px">
+            <div class="margin-bottom-10">
                 <button id="reset-zoom-btn" onclick="resetTimelineZoom()" class="cursor-pointer border-none border-radius-3 btn-gray">
                 Restablecer Zoom
                 </button>
-                <span style="margin-left: 20px">
-                    <label><input type="radio" name="yScale" value="linear" checked onchange="changeYAxisScale()" />
-                    Lineal</label>
-                    <label style="margin-left: 10px"><input type="radio" name="yScale" value="logarithmic"
-                    onchange="changeYAxisScale()" />
-                    Logarítmico</label>
+                <div class="margin-left-20" style="display: inline-block; background: #f8f9fa; padding: 6px 10px; border-radius: 4px; border: 1px solid #dee2e6;">
+                  <label style="font-weight: bold; margin-right: 8px; color: #495057;">Escala del Eje Y:</label>
+                  <label><input type="radio" name="yScale" value="linear" checked onchange="changeYAxisScale()" />Lineal</label>
+                  <label class="margin-left-10"><input type="radio" name="yScale" value="logarithmic" onchange="changeYAxisScale()" />Logarítmico</label>
+                </div>
+                <span class="margin-left-30">
+                  <label style="font-weight: bold; margin-right: 8px; color: #495057;">Agrupación de Tiempo:</label>
+                  <select id="time-grouping-select" onchange="changeTimeGrouping()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px;">
+                    <option value="optimizer">Por Optimizador (...)</option>
+                    <option value="hour">Por Hora</option>
+                    <option value="minute">Por Minuto</option>
+                    <option value="second">Por Segundo</option>
+                  </select>
                 </span>
-                <span style="margin-left: 30px">
-                    <label><input type="radio" name="timeGrouping" value="optimizer" checked
-                            onchange="changeTimeGrouping()" />
-                        <span id="optimizer-label">Por Optimizador</span></label>
-                    <label style="margin-left: 10px"><input type="radio" name="timeGrouping" value="minute"
-                            onchange="changeTimeGrouping()" />
-                        Por Minuto</label>
-                    <label style="margin-left: 10px"><input type="radio" name="timeGrouping" value="second"
-                            onchange="changeTimeGrouping()" />
-                        Por Segundo</label>
-                </span>
-                <span style="margin-left: 20px; color: #666; font-size: 12px">
-                    Arrastrar para desplazar • Desplazar para hacer zoom • Arrastrar caja para ampliar área
+                <span class="color-666 font-size-12 margin-left-20">
+                    Arrastrar caja para ampliar área
                 </span>
                 <button id="use-time-range-btn" onclick="useCurrentTimeRange()"
                     class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray">
-                    Usar Rango de Tiempo
+                    Usar Rango de Fechas del Eje X de los Gráficos Actuales
                 </button>
             </div>
             <div style="display: flex; gap: 20px; margin-bottom: 20px">
@@ -3823,6 +3822,11 @@
 
         // Helper function to get time grouping settings
         function getTimeGrouping() {
+            const dropdown = document.getElementById("time-grouping-select");
+            if (dropdown) {
+                return dropdown.value || "optimizer";
+            }
+            // Fallback to radio buttons if dropdown not found
             const selectedGrouping =
                 document.querySelector('input[name="timeGrouping"]:checked')?.value ||
                 "optimizer";
@@ -4026,9 +4030,25 @@
         // Helper function to update the optimizer label
         function updateOptimizerLabel(requests) {
             const optimizedUnit = getOptimalTimeUnit(requests);
-            const label = document.getElementById("optimizer-label");
-            if (label) {
-                label.textContent = `By Optimizer (${optimizedUnit})`;
+            
+            // Translate time unit to Spanish
+            const timeUnitTranslations = {
+                'second': 'segundo',
+                'minute': 'minuto', 
+                'hour': 'hora',
+                'day': 'día',
+                'week': 'semana',
+                'month': 'mes',
+                'year': 'año'
+            };
+            
+            const translatedUnit = timeUnitTranslations[optimizedUnit] || optimizedUnit;
+            const dropdown = document.getElementById("time-grouping-select");
+            if (dropdown) {
+                const optimizerOption = dropdown.querySelector('option[value="optimizer"]');
+                if (optimizerOption) {
+                    optimizerOption.textContent = `Por Optimizador (${translatedUnit})`;
+                }
             }
         }
 
@@ -7638,7 +7658,7 @@
                         return {
                             valid: false,
                             message:
-                                'For "by Second" grouping, please restrict the date range to 1 hour or less to avoid chart rendering issues.',
+                                'Para agrupación "Por Segundo", por favor restrinja el rango de fechas a 1 hora o menos para evitar problemas de renderizado del gráfico.',
                         };
                     }
                     break;
@@ -7647,16 +7667,16 @@
                         return {
                             valid: false,
                             message:
-                                'For "by Minute" grouping, please restrict the date range to 1 day or less to avoid chart rendering issues.',
+                                'Para agrupación "Por Minuto", por favor restrinja el rango de fechas a 1 día o menos para evitar problemas de renderizado del gráfico.',
                         };
                     }
                     break;
                 case "hour":
-                    if (diffDays > 31) {
+                    if (diffDays > 7) {
                         return {
                             valid: false,
                             message:
-                                'For "by Hour" grouping, please restrict the date range to 1 month or less for optimal performance.',
+                                'Para agrupación "Por Hora", por favor restrinja el rango de fechas a 1 semana o menos para un rendimiento óptimo.',
                         };
                     }
                     break;
@@ -7751,9 +7771,9 @@
             const endDateInput = document.getElementById("end-date");
 
             // Reset time grouping to default (By Optimizer) to prevent fine-grain errors
-            const optimizerRadio = document.querySelector('input[name="timeGrouping"][value="optimizer"]');
-            if (optimizerRadio) {
-                optimizerRadio.checked = true;
+            const dropdown = document.getElementById("time-grouping-select");
+            if (dropdown) {
+                dropdown.value = "optimizer";
                 // Trigger the change event to update any dependent UI
                 changeTimeGrouping();
             }
@@ -8838,8 +8858,8 @@
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = "3.5.1";
-const LAST_UPDATED = "2025-08-18";
+        const APP_VERSION = "3.5.2";
+const LAST_UPDATED = "2025-01-19";
 
         function getVersionInfo() {
             return {

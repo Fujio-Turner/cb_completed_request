@@ -20,9 +20,9 @@
 
   <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.5.1" />
-    <meta name="last-updated" content="2025-08-18" />
-    <title>Query Analyzer v3.5.1</title>
+    <meta name="version" content="3.5.2" />
+    <meta name="last-updated" content="2025-01-19" />
+    <title>Query Analyzer v3.5.2</title>
     <!-- Include jQuery UI CSS -->
     <link
       rel="stylesheet"
@@ -73,7 +73,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
   <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-      v3.5.1
+      v3.5.2
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -163,6 +163,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         <div class="flex-row-5px">
           <button onclick="setTimeRange('original')" class="cursor-pointer border-none border-radius-3 btn-gray">
             Original
+          </button>
+          <button onclick="setTimeRange('1week')" class="cursor-pointer border-none border-radius-3 btn-gray">
+            1 Week
           </button>
           <button onclick="setTimeRange('1day')" class="cursor-pointer border-none border-radius-3 btn-gray">
             1 Day
@@ -334,7 +337,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           <button id="reset-zoom-btn" onclick="resetTimelineZoom()" class="cursor-pointer border-none border-radius-3 btn-gray">
             Reset Zoom
           </button>
-          <span class="margin-left-20">
+          <div class="margin-left-20" style="display: inline-block; background: #f8f9fa; padding: 6px 10px; border-radius: 4px; border: 1px solid #dee2e6;">
+            <label style="font-weight: bold; margin-right: 8px; color: #495057;">Y-Axis Scale:</label>
             <label
               ><input
                 type="radio"
@@ -354,46 +358,25 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               />
               Logarithmic</label
             >
-          </span>
+          </div>
           <span class="margin-left-30">
-            <label
-              ><input
-                type="radio"
-                name="timeGrouping"
-                value="optimizer"
-                checked
-                onchange="changeTimeGrouping()"
-              />
-              <span id="optimizer-label">By Optimizer</span></label
-            >
-            <label class="margin-left-10"
-              ><input
-                type="radio"
-                name="timeGrouping"
-                value="minute"
-                onchange="changeTimeGrouping()"
-              />
-              By Minute</label
-            >
-            <label class="margin-left-10"
-              ><input
-                type="radio"
-                name="timeGrouping"
-                value="second"
-                onchange="changeTimeGrouping()"
-              />
-              By Second</label
-            >
+            <label style="font-weight: bold; margin-right: 8px; color: #495057;">Time Grouping:</label>
+            <select id="time-grouping-select" onchange="changeTimeGrouping()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px;">
+              <option value="optimizer">By Optimizer (...)</option>
+              <option value="hour">By Hour</option>
+              <option value="minute">By Minute</option>
+              <option value="second">By Second</option>
+            </select>
           </span>
           <span class="color-666 font-size-12 margin-left-20">
-            Drag to pan • Scroll to zoom • Drag box to zoom area
+            Drag box to zoom area
           </span>
           <button
             id="use-time-range-btn"
             onclick="useCurrentTimeRange()"
             class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray"
           >
-            Use Time Range
+            Use Charts Current X-Axis Date Range
           </button>
         </div>
         <div class="display-flex gap-20 margin-bottom-20">
@@ -3270,10 +3253,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       // Helper function to get time grouping settings
       function getTimeGrouping() {
-        const selectedGrouping =
-          document.querySelector('input[name="timeGrouping"]:checked')?.value ||
-          "optimizer";
-        return selectedGrouping;
+        const dropdown = document.getElementById('time-grouping-select');
+        return dropdown ? dropdown.value : "optimizer";
       }
 
       // Helper function to round timestamp based on grouping and optimal unit
@@ -3473,9 +3454,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Helper function to update the optimizer label
       function updateOptimizerLabel(requests) {
         const optimizedUnit = getOptimalTimeUnit(requests);
-        const label = document.getElementById("optimizer-label");
-        if (label) {
-          label.textContent = `By Optimizer (${optimizedUnit})`;
+        const dropdown = document.getElementById("time-grouping-select");
+        if (dropdown) {
+          // Update the first option text to show the actual optimized unit
+          const optimizerOption = dropdown.querySelector('option[value="optimizer"]');
+          if (optimizerOption) {
+            optimizerOption.textContent = `By Optimizer (${optimizedUnit})`;
+          }
         }
       }
 
@@ -7184,11 +7169,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             }
             break;
           case "hour":
-            if (diffDays > 31) {
+            const diffWeeks = diffDays / 7;
+            if (diffWeeks > 1) {
               return {
                 valid: false,
                 message:
-                  'For "by Hour" grouping, please restrict the date range to 1 month or less for optimal performance.',
+                  'For "by Hour" grouping, please restrict the date range to 1 week or less to avoid chart rendering issues.',
               };
             }
             break;
@@ -7292,9 +7278,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const endDateInput = document.getElementById("end-date");
 
         // Reset time grouping to default (By Optimizer) to prevent fine-grain errors
-        const optimizerRadio = document.querySelector('input[name="timeGrouping"][value="optimizer"]');
-        if (optimizerRadio) {
-          optimizerRadio.checked = true;
+        const timeGroupingSelect = document.getElementById('time-grouping-select');
+        if (timeGroupingSelect) {
+          timeGroupingSelect.value = 'optimizer';
           // Trigger the change event to update any dependent UI
           changeTimeGrouping();
         }
@@ -7589,7 +7575,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             startDateInput.value = toDateTimeLocal(originalStartDate);
             endDateInput.value = toDateTimeLocal(originalEndDate);
           }
-        } else if (type === "1day" || type === "1hour") {
+        } else if (type === "1day" || type === "1hour" || type === "1week") {
           const endDate = endDateInput.value
             ? new Date(endDateInput.value)
             : new Date();
@@ -7599,6 +7585,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             startDate.setDate(startDate.getDate() - 1);
           } else if (type === "1hour") {
             startDate.setHours(startDate.getHours() - 1);
+          } else if (type === "1week") {
+            startDate.setDate(startDate.getDate() - 7);
           }
 
           startDateInput.value = toDateTimeLocal(startDate);
@@ -8542,8 +8530,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
       // Version management
-      const APP_VERSION = "3.5.1";
-const LAST_UPDATED = "2025-08-18";
+      const APP_VERSION = "3.5.2";
+const LAST_UPDATED = "2025-01-19";
 
       function getVersionInfo() {
         return {

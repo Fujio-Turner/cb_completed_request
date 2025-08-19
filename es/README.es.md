@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.5.1
+# Couchbase Slow Query Analysis Tool v3.5.2
 
 **🌍 Idiomas:** [🇺🇸 English](README.md) | [🇩🇪 Deutsch](README.de.md) | **🇪🇸 Español** | [🇵🇹 Português](README.pt.md)
 
@@ -155,9 +155,34 @@ Al analizar gráficos de línea de tiempo, elija rangos de fecha apropiados para
 
 **⚠️ Advertencia**: Rangos de fecha grandes con agrupaciones de grano fino pueden causar errores de renderizado de gráficos. La herramienta le alertará y sugerirá mejores combinaciones.
 
-## Release Notes
+## 📋 Notas de Lanzamiento
 
-### Version 3.5.1 (2025-08-18)
+### Versión 3.5.2 (19 de enero de 2025)
+#### 🚀 Nuevas Características
+- **Controles de Línea de Tiempo Mejorados**: Radio buttons convertidos a dropdown para mejor UX
+- **Agrupación Por Hora**: Nueva opción de agrupación de tiempo "Por Hora" para análisis de línea de tiempo
+- **Rango de Tiempo de 1 Semana**: Botón "1 Semana" agregado para selección rápida de rango de tiempo
+- **Etiquetas de UI Mejoradas**: Etiquetas claras agregadas para controles de "Agrupación de Tiempo" y "Escala del Eje Y"
+- **Agrupación Visual**: Contenedor estilizado agregado para controles de Escala del Eje Y con jerarquía visual mejorada
+
+#### ✨ Mejoras
+- **Mejor Validación de Rango de Tiempo**: Validación agregada para agrupación "Por Hora" con límite de 1 semana
+- **Texto de Botón Mejorado**: "Usar Rango de Tiempo" actualizado a "Usar Rango de Fechas del Eje X de los Gráficos Actuales" para mayor claridad
+- **Instrucciones de Zoom Simplificadas**: Texto de ayuda de zoom simplificado a "Arrastrar caja para ampliar área"
+- **Traducción Dinámica de Unidades de Tiempo**: Las etiquetas del optimizador ahora muestran unidades de tiempo traducidas (ej. "Por Optimizador (hora)")
+- **Orden de Botones Mejorado**: Botones de rango de tiempo reordenados para flujo lógico (Original → 1 Semana → 1 Día → 1 Hora)
+
+#### 🌍 Localización
+- **Soporte Multiidioma Completo**: Todas las nuevas características completamente traducidas al español, portugués y alemán
+- **Traducciones Dinámicas de Unidades de Tiempo**: Las unidades de tiempo en etiquetas del optimizador ahora se traducen correctamente en todos los idiomas
+- **Claves de Traducción Actualizadas**: Nuevas claves de traducción agregadas para todos los nuevos elementos de UI
+
+#### 🔧 Mejoras Técnicas
+- **JavaScript Modernizado**: Funciones actualizadas para trabajar con controles dropdown en lugar de radio buttons
+- **Mejor Manejo de Errores**: Validación mejorada con mensajes de error específicos del idioma
+- **Arquitectura UI Consistente**: Estructura de clases CSS mejorada para mejor mantenibilidad
+
+### Versión 3.5.1 (18 de agosto de 2025)
 - **Correcciones de errores**: Solucionado error de análisis regex en el dropdown de bucket de la pestaña Index que mostraba "ON" en lugar de los nombres reales de los buckets
 - **Mejoras**: Mejorado el análisis para manejar declaraciones CREATE INDEX complejas con palabras que contienen "on" (como "accommodation")
 

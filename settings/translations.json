@@ -1,9 +1,9 @@
 {
   "ui_strings": {
-    "Query Analyzer v3.5.0": {
-      "es": "Analizador de Consultas v3.5.0",
-      "pt": "Analisador de Consultas v3.5.0",
-      "de": "Query Analyzer v3.5.0"
+    "Query Analyzer v3.5.2": {
+      "es": "Analizador de Consultas v3.5.2",
+      "pt": "Analisador de Consultas v3.5.2",
+      "de": "Query Analyzer v3.5.2"
     },
     "Dashboard": {
       "es": "Panel de Control",
@@ -75,10 +75,10 @@
       "pt": "Até:",
       "de": "Bis:"
     },
-    "Use Time Range": {
-      "es": "Usar Rango de Tiempo",
-      "pt": "Usar Intervalo de Tempo",
-      "de": "Zeitbereich Verwenden"
+    "Use Charts Current X-Axis Date Range": {
+      "es": "Usar Rango de Fechas del Eje X de los Gráficos Actuales",
+      "pt": "Usar Intervalo de Datas do Eixo X dos Gráficos Atuais",
+      "de": "Aktuellen X-Achsen Datumsbereich der Diagramme Verwenden"
     },
     "Search Statement:": {
       "es": "Buscar Declaración:",
@@ -350,10 +350,10 @@
       "pt": "Consultas Executadas:",
       "de": "Ausgeführte Abfragen:"
     },
-    "Drag to pan • Scroll to zoom • Drag box to zoom area": {
-      "es": "Arrastrar para desplazar • Desplazar para hacer zoom • Arrastrar caja para ampliar área",
-      "pt": "Arraste para mover • Role para ampliar • Arraste caixa para ampliar área",
-      "de": "Ziehen zum Schwenken • Scrollen zum Zoomen • Kasten ziehen zum Zoomen des Bereichs"
+    "Drag box to zoom area": {
+      "es": "Arrastrar caja para ampliar área",
+      "pt": "Arraste caixa para ampliar área",
+      "de": "Kasten ziehen zum Zoomen des Bereichs"
     },
     "Linear": {
       "es": "Lineal",
@@ -395,6 +395,26 @@
       "pt": "1 Hora",
       "de": "1 Stunde"
     },
+    "1 Week": {
+      "es": "1 Semana",
+      "pt": "1 Semana",
+      "de": "1 Woche"
+    },
+    "By Hour": {
+      "es": "Por Hora",
+      "pt": "Por Hora",
+      "de": "Nach Stunde"
+    },
+    "Y-Axis Scale:": {
+      "es": "Escala del Eje Y:",
+      "pt": "Escala do Eixo Y:",
+      "de": "Y-Achsen-Skalierung:"
+    },
+    "Time Grouping:": {
+      "es": "Agrupación de Tiempo:",
+      "pt": "Agrupamento de Tempo:",
+      "de": "Zeit-Gruppierung:"
+    },
     "Statement Type": {
       "es": "Tipo de Declaración",
       "pt": "Tipo de Declaração",
@@ -431,6 +451,43 @@
       "es": "No", 
       "pt": "Não",
       "de": "Nein"
+    }
+  },
+  "time_units": {
+    "second": {
+      "es": "segundo",
+      "pt": "segundo",
+      "de": "Sekunde"
+    },
+    "minute": {
+      "es": "minuto",
+      "pt": "minuto",
+      "de": "Minute"
+    },
+    "hour": {
+      "es": "hora",
+      "pt": "hora",
+      "de": "Stunde"
+    },
+    "day": {
+      "es": "día",
+      "pt": "dia",
+      "de": "Tag"
+    },
+    "week": {
+      "es": "semana",
+      "pt": "semana",
+      "de": "Woche"
+    },
+    "month": {
+      "es": "mes",
+      "pt": "mês",
+      "de": "Monat"
+    },
+    "year": {
+      "es": "año",
+      "pt": "ano",
+      "de": "Jahr"
     }
   },
   "notes": {

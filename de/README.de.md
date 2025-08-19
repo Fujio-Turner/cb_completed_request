@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.5.1
+# Couchbase Slow Query Analysis Tool v3.5.2
 
 **🌍 Sprachen:** [🇺🇸 English](README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -155,7 +155,32 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 
 **⚠️ Warnung**: Große Datumsbereiche mit feinkörnigen Gruppierungen können zu Diagramm-Rendering-Fehlern führen. Das Tool wird Sie warnen und bessere Kombinationen vorschlagen.
 
-## Release Notes
+## 📋 Versionshinweise
+
+### Version 3.5.2 (19. Januar 2025)
+#### 🚀 Neue Funktionen
+- **Verbesserte Timeline-Steuerung**: Radio-Buttons in Dropdown für bessere Benutzerfreundlichkeit umgewandelt
+- **Nach Stunde Gruppierung**: Neue "Nach Stunde" Zeit-Gruppierungsoption für Timeline-Analyse hinzugefügt
+- **1 Woche Zeitbereich**: "1 Woche" Button für schnelle Zeitbereich-Auswahl hinzugefügt
+- **Verbesserte UI-Labels**: Klare Labels für "Zeit-Gruppierung" und "Y-Achsen-Skalierung" Steuerungen hinzugefügt
+- **Visuelle Gruppierung**: Gestylter Container für Y-Achsen-Skalierung Steuerungen mit verbesserter visueller Hierarchie hinzugefügt
+
+#### ✨ Verbesserungen
+- **Bessere Zeitbereich-Validierung**: Validierung für "Nach Stunde" Gruppierung mit 1-Woche-Limit hinzugefügt
+- **Verbesserter Button-Text**: "Zeitbereich Verwenden" zu "Aktuellen X-Achsen Datumsbereich der Diagramme Verwenden" für mehr Klarheit aktualisiert
+- **Vereinfachte Zoom-Anweisungen**: Zoom-Hilfetext zu "Kasten ziehen zum Zoomen des Bereichs" vereinfacht
+- **Dynamische Zeiteinheit-Übersetzung**: Optimierer-Labels zeigen jetzt übersetzte Zeiteinheiten (z.B. "Nach Optimierer (Stunde)")
+- **Verbesserte Button-Reihenfolge**: Zeitbereich-Buttons für logischen Ablauf neu angeordnet (Original → 1 Woche → 1 Tag → 1 Stunde)
+
+#### 🌍 Lokalisierung
+- **Vollständige Mehrsprachunterstützung**: Alle neuen Funktionen vollständig ins Spanische, Portugiesische und Deutsche übersetzt
+- **Dynamische Zeiteinheit-Übersetzungen**: Zeiteinheiten in Optimierer-Labels übersetzen jetzt korrekt in allen Sprachen
+- **Aktualisierte Übersetzungsschlüssel**: Neue Übersetzungsschlüssel für alle neuen UI-Elemente hinzugefügt
+
+#### 🔧 Technische Verbesserungen
+- **Modernisiertes JavaScript**: Funktionen aktualisiert, um mit Dropdown-Steuerelementen anstatt Radio-Buttons zu arbeiten
+- **Bessere Fehlerbehandlung**: Verbesserte Validierung mit sprachspezifischen Fehlermeldungen
+- **Konsistente UI-Architektur**: Verbesserte CSS-Klassenstruktur für bessere Wartbarkeit
 
 ### Version 3.5.1 (2025-08-18)
 - **Bug Fixes**: Regex-Parsing-Fehler im Index-Tab-Bucket-Dropdown behoben, das "ON" anstatt der tatsächlichen Bucket-Namen anzeigte

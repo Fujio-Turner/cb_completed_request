@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.5.1
+# Couchbase Slow Query Analysis Tool v3.5.2
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -158,6 +158,31 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 **⚠️ Warning**: Large date ranges with fine-grained groupings may cause chart rendering errors. The tool will alert you and suggest better combinations.
 
 ## Release Notes
+
+### Version 3.5.2 (January 19, 2025)
+#### 🚀 New Features
+- **Enhanced Timeline Controls**: Converted radio buttons to dropdown for better UX
+- **By Hour Grouping**: Added new "By Hour" time grouping option for timeline analysis
+- **1 Week Time Range**: Added "1 Week" button for quick time range selection
+- **Improved UI Labels**: Added clear labels for "Time Grouping" and "Y-Axis Scale" controls
+- **Visual Grouping**: Added styled container for Y-Axis Scale controls with improved visual hierarchy
+
+#### ✨ Improvements
+- **Better Time Range Validation**: Added validation for "By Hour" grouping with 1-week limit
+- **Enhanced Button Text**: Updated "Use Time Range" to "Use Charts Current X-Axis Date Range" for clarity
+- **Simplified Zoom Instructions**: Streamlined zoom help text to "Drag box to zoom area"
+- **Dynamic Time Unit Translation**: Optimizer labels now show translated time units (e.g., "Por Optimizador (hora)" in Spanish)
+- **Improved Button Ordering**: Reordered time range buttons for logical flow (Original → 1 Week → 1 Day → 1 Hour)
+
+#### 🌍 Localization
+- **Complete Multi-language Support**: All new features fully translated to Spanish, Portuguese, and German
+- **Dynamic Time Unit Translations**: Time units in optimizer labels now translate properly in all languages
+- **Updated Translation Keys**: Added new translation keys for all new UI elements
+
+#### 🔧 Technical Improvements
+- **Modernized JavaScript**: Updated functions to work with dropdown controls instead of radio buttons
+- **Better Error Handling**: Enhanced validation with language-specific error messages
+- **Consistent UI Architecture**: Improved CSS class structure for better maintainability
 
 ### Version 3.5.1 (2025-08-18)
 - **Bug Fixes**: Fixed regex parsing bug in Index tab bucket dropdown that showed "ON" instead of actual bucket names
