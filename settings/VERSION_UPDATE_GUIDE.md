@@ -82,6 +82,20 @@ Update the main heading in all README files:
 - Perform spell checking on all README files before finalizing updates
 - Ensure Release Notes follow reverse chronological order (newest first)
 
+#### C. Docker Files
+
+##### Dockerfile
+```dockerfile
+LABEL version="X.X.X"
+```
+
+##### GitHub Actions Workflow (.github/workflows/docker-build-push.yml)
+```yaml
+tags: |
+  type=raw,value=X.X.X,enable={{is_default_branch}}
+  type=raw,value=vX.X.X,enable={{is_default_branch}}
+```
+
 ## 🔄 Step-by-Step Update Process
 
 ### Step 1: Determine Version Type
@@ -182,12 +196,18 @@ When updating to version X.X.X:
 - [ ] Perform spell checking pass on all README files
 - [ ] Update Release Notes sections with new version information
 
+### Docker Files
+- [ ] `Dockerfile` - version label
+- [ ] `.github/workflows/docker-build-push.yml` - version tags
+
 ### Verification
 - [ ] All HTML files show same version
 - [ ] All README files show same version
 - [ ] AGENT.md references correct version
 - [ ] JavaScript constants match meta tags
 - [ ] Last-updated date is current
+- [ ] Docker files use same version number
+- [ ] Docker Hub shows correct version tags
 
 ## 🚨 Common Issues
 
