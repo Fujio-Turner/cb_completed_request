@@ -35,7 +35,7 @@ Ve a la carpeta donde descargaste el `es_index.html` y ábrelo directamente en c
 Ejecuta esta consulta en Couchbase Query Workbench o cbq:
 
 ```sql
-SELECT *, meta().plan FROM system:completed_requests LIMIT 4000;
+SELECT *, meta().plan FROM system:completed_requests LIMIT 2000;
 ```
 
 **Notas**: 

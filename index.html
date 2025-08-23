@@ -130,11 +130,10 @@
             <p>Run the below query in your Couchbase Query Workbench or <code>cbq</code>.</p> 
             <p>You will want to copy or save the JSON output.</p>
             <div class="sql-query-box">
-                <pre>SELECT *, meta().plan FROM system:completed_requests LIMIT 4000;</pre>
+                <pre>SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;</pre>
                 <button class="sql-copy-btn">Copy</button>
             </div>
-            <p><strong>Notes:</strong>This query could return a JSON of 36MB. Anything larger may crash the browser while processing the data.</p>
-            <p><strong>Browser is slow/crashes:</strong> Reduce the data size by changing query to: <code>LIMIT 2000</code> .</p>
+            <p><strong>Notes:</strong>This query returns a JSON of 9-15MB optimized for browser performance.</p>
             <p><a href="sql_queries.md">Advanced Query Options</a></p>
         </div>
         <div class="guide-step">

@@ -37,7 +37,7 @@ Go to the folder where you downloaded the HTML file and open it directly in any 
 Run this query in Couchbase Query Workbench or cbq:
 
 ```sql
-SELECT *, meta().plan FROM system:completed_requests LIMIT 4000;
+SELECT *, meta().plan FROM system:completed_requests LIMIT 2000;
 ```
 
 **Notes**: 
