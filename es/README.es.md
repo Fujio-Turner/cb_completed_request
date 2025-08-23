@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.6.0
+# Couchbase Slow Query Analysis Tool v3.6.1
 
 **🌍 Idiomas:** [🇺🇸 English](README.md) | [🇩🇪 Deutsch](README.de.md) | **🇪🇸 Español** | [🇵🇹 Português](README.pt.md)
 
@@ -157,7 +157,7 @@ Al analizar gráficos de línea de tiempo, elija rangos de fecha apropiados para
 
 ## 📋 Notas de Lanzamiento
 
-### Versión 3.6.0 (23 de agosto de 2025)
+### Versión 3.6.1 (23 de agosto de 2025)
 #### 🚀 Nuevas Características
 - **Soporte para Declaración EXECUTE**: Se agregó soporte completo para el reconocimiento y categorización de declaraciones EXECUTE
 - **Colores de Estado de Consulta Mejorados**: Esquema de colores semántico para el gráfico de Estado de Consulta (verde=completado, rojo=fatal, naranja=timeout, gris=detenido/cancelado, azul=ejecutando)

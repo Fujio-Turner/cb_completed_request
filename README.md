@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.6.0
+# Couchbase Slow Query Analysis Tool v3.6.1
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -159,7 +159,7 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 
 ## Release Notes
 
-### Version 3.6.0 (August 23, 2025)
+### Version 3.6.1 (August 23, 2025)
 #### 🚀 New Features
 - **EXECUTE Statement Support**: Added full support for EXECUTE statement recognition and categorization
 - **Enhanced Query State Colors**: Semantic color scheme for Query State chart (green=completed, red=fatal, orange=timeout, gray=stopped/cancelled, blue=running)

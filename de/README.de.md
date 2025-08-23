@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.6.0
+# Couchbase Slow Query Analysis Tool v3.6.1
 
 **🌍 Sprachen:** [🇺🇸 English](README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -157,7 +157,7 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 
 ## 📋 Versionshinweise
 
-### Version 3.6.0 (23. August 2025)
+### Version 3.6.1 (23. August 2025)
 #### 🚀 Neue Funktionen
 - **EXECUTE-Anweisungsunterstützung**: Vollständige Unterstützung für die Erkennung und Kategorisierung von EXECUTE-Anweisungen hinzugefügt
 - **Erweiterte Query-Status-Farben**: Semantisches Farbschema für Query-Status-Diagramm (grün=abgeschlossen, rot=fatal, orange=timeout, grau=gestoppt/abgebrochen, blau=laufend)

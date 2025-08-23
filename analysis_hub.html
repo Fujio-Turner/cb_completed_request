@@ -1,0 +1,165 @@
+<html>
+<head>
+    <title>How to Debug & Glossary - Beta/Draft</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; line-height: 1.6; color: #333; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        h2 { color: #34495e; margin-top: 40px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        h3 { color: #2980b9; margin-top: 30px; }
+        p { margin-bottom: 15px; }
+        ul { list-style-type: disc; margin-left: 20px; margin-bottom: 15px; }
+        code { background-color: #f8f9fa; padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #e74c3c; }
+        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 250px; background: #fff; padding: 20px; overflow-y: auto; border-right: 1px solid #ccc; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        .sidebar h2 { font-size: 18px; color: #2c3e50; margin-bottom: 10px; }
+        .sidebar ul { list-style: none; margin: 0; padding: 0; }
+        .sidebar li { margin-bottom: 10px; }
+        .sidebar a { text-decoration: none; color: #2980b9; font-weight: bold; }
+        .sidebar a:hover { text-decoration: underline; }
+        .main-content { margin-left: 270px; max-width: 800px; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .guide-step { margin-bottom: 40px; padding: 20px; background: #fff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .guide-step p, .guide-step ul { color: #555; }
+        .guide-step strong { color: #333; }
+        .version-info { position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.1); color: #333; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; font-family: monospace; z-index: 999; opacity: 0.7; transition: opacity 0.3s ease; }
+        .version-info:hover { opacity: 1; background: rgba(0,0,0,0.2); }
+        footer { position: fixed; bottom: 10px; right: 10px; z-index: 999; text-align: center; font-size: 0.8em; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Topics</h2>
+        <ul>
+            <li><a href="#kernTime">kernTime</a></li>
+            <li><a href="#serviceTime">serviceTime</a></li>
+            <li><a href="#elapsedTime">elapsedTime</a></li>
+            <li><a href="#cpuTime">cpuTime</a></li>
+        </ul>
+    </div>
+    
+    <div class="main-content">
+        <h1>How to Debug & Glossary - Beta/Draft</h1>
+        
+        <div class="guide-step" id="kernTime">
+            <h2>-- `kernTime`</h2>
+            <p>KernelTime (often abbreviated as <code>kernTime</code> in query profiling statistics) refers to the amount of time a query operator or phase spends waiting to be scheduled for execution on a CPU core by the operating system's kernel. This is essentially idle time due to scheduling delays in a multi-threaded environment, where multiple threads or processes are competing for limited CPU resources. It's not time spent doing actual computation or waiting on external services (like data fetches or index scans); instead, it's the overhead from the system deciding when and how to allocate CPU cycles to the query's threads.</p>
+            <p>Think of it like this: Imagine a busy highway with more cars (threads) than lanes (CPU cores). KernelTime is the time your car (the query) spends stopped or slowed down in traffic, waiting for a lane to open up, rather than driving forward productively.</p>
+            
+            <h3>What a High KernelTime Means for a Slow Query</h3>
+            <p>A high KernelTime indicates that CPU contention is a primary bottleneck contributing to the query's slowness. This doesn't mean the query itself is inefficient in terms of logic or data access—instead, it points to systemic issues on the query node or cluster, such as:</p>
+            <ul>
+                <li><strong>Overloaded CPU resources</strong>: Too many concurrent queries, threads, or background processes (e.g., garbage collection, other services) are vying for CPU time, causing scheduling delays.</li>
+                <li><strong>Insufficient CPU cores</strong>: The node might have fewer logical cores than needed for the workload, leading to frequent context switches and queuing.</li>
+                <li><strong>High thread counts</strong>: As seen in system:vitals (e.g., <code>total.threads</code>), an excessive number of active threads can exacerbate scheduling overhead.</li>
+                <li><strong>Resource imbalance</strong>: If CPU utilization (from system:vitals, like <code>cpu.user.percent</code> or <code>cpu.sys.percent</code>) is consistently high, or if the load factor is elevated, this amplifies KernelTime.</li>
+            </ul>
+            <p>In profiling data (e.g., from system:active_requests or meta().plan), compare KernelTime to other metrics like <code>execTime</code> (actual computation time in the query engine) and <code>servTime</code> (time waiting on services like KV or indexes). If KernelTime dominates, the query isn't slow because of data volume or complex operations—it's slow because it's starved for CPU. To diagnose:</p>
+            <ul>
+                <li>Check system:vitals for CPU metrics, thread counts, and garbage collection pauses.</li>
+                <li>Look at phaseTimes in active/completed requests to see which phases (e.g., fetch, sort) have high KernelTime.</li>
+                <li>Monitor for patterns across queries; if many show high KernelTime, scale up CPU resources, reduce concurrency, or isolate workloads.</li>
+            </ul>
+            
+            <h3>Example: If KernelTime Equals 99% of ServiceTime</h3>
+            <p>ServiceTime is the total wall-clock (calendar) time taken to complete the query, from start to finish. If KernelTime accounts for 99% of this (e.g., ServiceTime = 10 seconds, KernelTime = 9.9 seconds), it strongly indicates severe CPU overload or contention on the query node. Practically, this means:</p>
+            <ul>
+                <li>The query is doing almost no useful work—only about 1% of the time is spent on actual execution (<code>execTime</code>) or service calls (<code>servTime</code>).</li>
+                <li>The system is thrashing: Threads are constantly being paused and rescheduled, leading to inefficiency and potential cascading slowdowns across the cluster.</li>
+                <li>Root causes could include an under-provisioned node (low <code>cores</code> in system:vitals), too many active requests (<code>request.active.count</code>), or external factors like high garbage collection (<code>gc.pause.percent</code>).</li>
+                <li>Implications: This query (and others) will perform poorly until CPU pressure is relieved. Recommendations include adding more query nodes, optimizing query concurrency (e.g., via request quotas), or investigating non-query processes consuming CPU. Use tools like system:active_requests to terminate long-running queries contributing to the overload.</li>
+            </ul>
+        </div>
+        
+        <div class="guide-step" id="serviceTime">
+            <h2>-- `serviceTime`</h2>
+            <p>ServiceTime refers to the total wall-clock (calendar) time taken to complete the query within the query service. This metric captures the duration from when the query begins active execution until it finishes, including time spent on computation, waiting for internal services like indexes or key-value stores, and any other execution-related activities. It does not include initial queuing or scheduling time before execution starts.</p>
+            <p>Think of it like this: Imagine baking a cake—ServiceTime is the total time the cake is in the oven, including preheating and cooling phases, but not the time spent gathering ingredients beforehand.</p>
+            
+            <h3>What a High ServiceTime Means for a Slow Query</h3>
+            <p>A high ServiceTime indicates that the query execution phase itself is the main contributor to slowness, often due to operational complexities or dependencies on other services. This could stem from issues within the query processing, such as:</p>
+            <ul>
+                <li><strong>Complex query operations</strong>: Large data scans, intricate joins, sorts, or aggregations that require significant processing.</li>
+                <li><strong>Delays in dependent services</strong>: Waiting on the indexer (GSI) for scans or the KV store for fetches, as reflected in <code>servTime</code>.</li>
+                <li><strong>Resource contention within services</strong>: High load on index or data nodes leading to slower responses.</li>
+                <li><strong>Inefficient query plan</strong>: Suboptimal index usage or lack of covering indexes, forcing more work during execution.</li>
+            </ul>
+            <p>In profiling data (e.g., from system:completed_requests or executionTimings), compare ServiceTime to metrics like <code>execTime</code> (computation time) and <code>servTime</code> (service waits). If ServiceTime is dominated by <code>servTime</code>, the bottleneck is external services; if by <code>execTime</code>, it's internal computation. To diagnose:</p>
+            <ul>
+                <li>Review phaseTimes and phaseOperators to identify slow phases (e.g., fetch or indexScan).</li>
+                <li>Check system:vitals for service-related metrics like memory usage or network utilization.</li>
+                <li>Analyze patterns in completed requests; if many queries show high ServiceTime, optimize indexes, tune query plans, or scale service resources.</li>
+            </ul>
+            
+            <h3>Example: If ServiceTime Equals 99% of ElapsedTime</h3>
+            <p>ElapsedTime is the total time from query acknowledgment to completion, including scheduling. If ServiceTime accounts for 99% of this (e.g., ElapsedTime = 10 seconds, ServiceTime = 9.9 seconds), it means minimal queuing delay, and the slowness is almost entirely due to execution. Practically, this means:</p>
+            <ul>
+                <li>The query spends nearly all its time in active processing, with little wait before starting.</li>
+                <li>Potential overload in execution resources, leading to prolonged runs and reduced throughput.</li>
+                <li>Root causes could include inefficient queries, large datasets, or stressed index/KV services.</li>
+                <li>Implications: Queries will remain slow without optimization. Recommendations include rewriting queries for efficiency, creating better indexes, or distributing load across more nodes. Use tools like EXPLAIN or profiling to pinpoint and refactor slow operators.</li>
+            </ul>
+        </div>
+        
+        <div class="guide-step" id="elapsedTime">
+            <h2>-- `elapsedTime`</h2>
+            <p>ElapsedTime refers to the total time from when the query request is acknowledged by the query service until the request is completed and results are ready. This encompasses queuing or scheduling delays before execution, plus the active ServiceTime. It's an end-to-end wall-clock measure of how long the entire process takes from the service's perspective.</p>
+            <p>Think of it like this: Imagine ordering food delivery—ElapsedTime is the total wait from placing the order until it arrives, including time in the restaurant's queue and cooking/delivery time.</p>
+            
+            <h3>What a High ElapsedTime Means for a Slow Query</h3>
+            <p>A high ElapsedTime signals overall delays in query handling, which could be due to pre-execution queuing or slow execution. This points to broader system or workload issues, such as:</p>
+            <ul>
+                <li><strong>Queue backlogs</strong>: Too many concurrent requests overwhelming the service, as indicated by high <code>request.queued.count</code>.</li>
+                <li><strong>Scheduling overhead</strong>: Delays in assigning resources, often linked to high load or limited servicers.</li>
+                <li><strong>Execution bottlenecks</strong>: If close to ServiceTime, the issue is in processing; otherwise, it's queuing.</li>
+                <li><strong>Cluster-wide pressure</strong>: High CPU, memory, or network usage affecting acknowledgment-to-completion flow.</li>
+            </ul>
+            <p>In metrics (e.g., from system:active_requests), compare ElapsedTime to ServiceTime—if ElapsedTime is much higher, queuing is the culprit. Also check <code>request_time</code> percentiles for trends. To diagnose:</p>
+            <ul>
+                <li>Monitor system:vitals for request rates and queue counts.</li>
+                <li>Examine active_requests for stuck queries contributing to backlogs.</li>
+                <li>Look for patterns; if widespread, increase servicers, add nodes, or limit concurrency via quotas.</li>
+            </ul>
+            
+            <h3>Example: If ElapsedTime is Significantly Higher Than ServiceTime</h3>
+            <p>For instance, if ElapsedTime = 10 seconds and ServiceTime = 2 seconds, it means 80% of the time (8 seconds) was spent waiting in queue. This indicates severe overload. Practically, this means:</p>
+            <ul>
+                <li>Queries are bottlenecked before even starting, reducing effective throughput.</li>
+                <li>The system appears unresponsive, as requests pile up.</li>
+                <li>Root causes could include insufficient servicers (defaults to 4x cores) or bursty workloads.</li>
+                <li>Implications: Performance degrades under load. Recommendations include scaling query nodes, tuning servicers, or using prepared statements to reduce overhead. Terminate queued queries via system:active_requests if needed.</li>
+            </ul>
+        </div>
+        
+        <div class="guide-step" id="cpuTime">
+            <h2>-- `cpuTime`</h2>
+            <p>CPUTime refers to the cumulative time spent by the query consuming CPU resources during its execution. This metric aggregates the CPU usage across all threads involved in processing the query, including both user-level computations in the query engine and system-level operations. It's a measure of the query's CPU footprint, often reflecting the intensity of operations like sorting or filtering.</p>
+            <p>Think of it like this: Imagine running a marathon—CPUTime is the total effort (energy) expended by the runner, which may exceed the race time if accounting for all movements, but in queries, it's the CPU "work" done.</p>
+            
+            <h3>What a High CPUTime Means for a Slow Query</h3>
+            <p>A high CPUTime suggests the query is CPU-bound, consuming significant processor resources, which can lead to slowness if CPUs are contended. This doesn't always correlate directly with wall-clock time in parallel environments but indicates issues like:</p>
+            <ul>
+                <li><strong>CPU-intensive operations</strong>: Heavy computations, large sorts, or aggregations without proper optimization.</li>
+                <li><strong>Parallelism overhead</strong>: Multi-threaded execution where total CPU exceeds wall time.</li>
+                <li><strong>System-wide CPU strain</strong>: Combined with high <code>cpu.user.percent</code> or <code>cpu.sys.percent</code>, it points to overload.</li>
+                <li><strong>Inefficient code paths</strong>: Loops or functions in user-defined functions eating CPU.</li>
+            </ul>
+            <p>In profiling (e.g., executionTimings), relate CPUTime to <code>execTime</code> across operators. If high, the query is computation-heavy. To diagnose:</p>
+            <ul>
+                <li>Check system:vitals for overall CPU metrics and gc pauses.</li>
+                <li>Analyze phaseTimes for CPU-heavy phases like project or sort.</li>
+                <li>Monitor across queries; if aggregate CPUTime is high, upgrade hardware or optimize queries.</li>
+            </ul>
+            
+            <h3>Example: If CPUTime Equals 99% of ServiceTime</h3>
+            <p>ServiceTime is wall-clock execution time. If CPUTime is 99% of this (e.g., ServiceTime = 10 seconds, CPUTime = 9.9 seconds), it means the query is almost fully CPU-bound with minimal waits. Practically, this means:</p>
+            <ul>
+                <li>Nearly all time is spent computing, with little I/O or service delay.</li>
+                <li>The system is efficient in scheduling but the workload is processor-intensive.</li>
+                <li>Root causes could include unoptimized expressions or large in-memory operations.</li>
+                <li>Implications: CPU becomes the limiting factor. Recommendations include simplifying queries, using indexes to reduce data, or leveraging more cores. Watch for heat on nodes and balance load.</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="version-info">Beta/Draft - August 23, 2025</div>
+    <footer>&copy; 2025 Debug Glossary</footer>
+</body>
+</html>
