@@ -7708,10 +7708,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 // Generate dashboard charts only when tab is activated
                 generateDashboardCharts(originalRequests);
               } else if (tabId === "index-query-flow" && originalRequests.length > 0) {
-                // Redraw Index/Query Flow when tab is activated to ensure correct positioning
-                setTimeout(() => {
-                  redrawConnectionsAfterDrag();
-                }, 100);
+                // Check if we have pending data from when tab was hidden
+                if (window.pendingIndexQueryFlowData) {
+                  console.log("Rendering deferred Index/Query Flow data");
+                  buildIndexQueryFlow(window.pendingIndexQueryFlowData);
+                  window.pendingIndexQueryFlowData = null;
+                } else {
+                  // Redraw existing connections when tab is activated to ensure correct positioning
+                  setTimeout(() => {
+                    redrawConnectionsAfterDrag();
+                  }, 100);
+                }
               }
             }
           },
@@ -7752,6 +7759,15 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
         if (!requestsToUse || requestsToUse.length === 0) {
           console.log("No requests available for Index/Query Flow");
+          return;
+        }
+
+        // Check if Index/Query Flow tab is currently visible
+        const indexQueryFlowTab = document.getElementById("index-query-flow");
+        if (indexQueryFlowTab && indexQueryFlowTab.style.display === "none") {
+          // Tab is hidden, store data for later rendering when tab becomes visible
+          console.log("Index/Query Flow tab is hidden, deferring connection drawing");
+          window.pendingIndexQueryFlowData = requestsToUse;
           return;
         }
 
