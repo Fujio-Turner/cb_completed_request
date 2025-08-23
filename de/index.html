@@ -479,6 +479,24 @@
         opacity: 1;
         background: rgba(0, 0, 0, 0.2);
       }
+
+      /* Fix text selection in table cells */
+      table td, table th {
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+      }
+
+      /* Ensure table rows still have pointer cursor but allow text selection */
+      table tr {
+        cursor: pointer;
+      }
+
+      table tr:hover {
+        background-color: #f1f1f1;
+      }
+
       .dashboard-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -4048,12 +4066,18 @@
                   </div>
                 `;
               }
+              } else if (
+["result\nCount", "result\nSize", "Items from\nIndex Scan", "Doc Fetch\nCount"].includes(col)
+) {
+              // Format numeric columns with commas
+              const numValue = Number(value);
+              td.textContent = isNaN(numValue) ? value : numValue.toLocaleString();
             } else {
               td.textContent = value;
             }
 
             if (
-              col === "Primary Scan Used" &&
+              col === "Primary Scan\nUsed" &&
               (value === "Yes" || value === "True" || value === true)
             ) {
               td.classList.add("primary-scan-yes");
@@ -4065,7 +4089,11 @@
             row.appendChild(td);
           });
 
-          row.addEventListener("click", () => {
+          row.addEventListener("click", (event) => {
+  // Allow text selection - only handle clicks, not text selection
+  if (window.getSelection().toString().length > 0) {
+    return; // User is selecting text, don't handle the click
+  }
             document
               .querySelectorAll("tr")
               .forEach((r) => (r.style.backgroundColor = ""));
@@ -4223,9 +4251,9 @@
           max_duration_in_seconds: max_duration,
           avg_duration_in_seconds: avg_duration,
           median_duration_in_seconds: median_duration,
-          avg_fetch,
-          avg_primaryScan,
-          avg_indexScan,
+          avg_fetch: Math.round(avg_fetch),
+          avg_primaryScan: Math.round(avg_primaryScan),
+          avg_indexScan: Math.round(avg_indexScan),
         };
       }
 
@@ -4315,7 +4343,7 @@
             } else if (
               ["avg_fetch", "avg_primaryScan", "avg_indexScan"].includes(col)
             ) {
-              value = isNaN(group[col]) ? "N/A" : Number(group[col]).toFixed(3);
+              value = isNaN(group[col]) ? "N/A" : Number(group[col]).toLocaleString();
             } else {
               value = group[col] || "N/A";
             }
@@ -4431,9 +4459,23 @@
               // Bold the counts in parentheses
               const formattedValue = value.replace(/\((\d+)\)/g, "<b>($1)</b>");
               td.innerHTML = formattedValue;
+            } else if (col === "total_count") {
+              // Format total_count with commas
+              const numValue = Number(value);
+              td.textContent = isNaN(numValue) ? value : numValue.toLocaleString();
             } else {
               td.textContent = value;
             }
+
+            // Style avg primaryScan when > 0 (red and bold)
+            if (col === "avg_primaryScan") {
+            // Handle comma-formatted numbers by removing commas first
+            const cleanValue = String(value).replace(/,/g, '');
+            const originalValue = Number(cleanValue);
+            if (!isNaN(originalValue) && originalValue > 0) {
+              td.classList.add("primary-scan-yes");
+              }
+              }
 
             row.appendChild(td);
           });
