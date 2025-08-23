@@ -5766,13 +5766,8 @@
             };
           }
 
-          let statementType = "UNKNOWN";
-          if (request.statement && typeof request.statement === "string") {
-            const trimmed = request.statement.trim();
-            if (trimmed) {
-              statementType = trimmed.split(/\s+/)[0].toUpperCase();
-            }
-          }
+          // Use consistent statement type parsing
+          let statementType = request.statementType || deriveStatementType(request.statement) || "UNKNOWN";
 
           if (!timeGroups[key].statementTypes[statementType]) {
             timeGroups[key].statementTypes[statementType] = {
@@ -7586,12 +7581,35 @@
         });
       }
 
-      // Statement Type Pie Chart
-      function generateStatementTypeChart(requests) {
+      // Derive statement type from SQL statement text
+      function deriveStatementType(statement) {
+          if (!statement || typeof statement !== "string") {
+            return "UNKNOWN";
+          }
+          
+          const trimmed = statement.trim().toUpperCase();
+          if (!trimmed) {
+            return "UNKNOWN";
+          }
+          
+          // Handle common multi-word statement types first
+          if (trimmed.startsWith("CREATE INDEX")) return "CREATE_INDEX";
+          if (trimmed.startsWith("DROP INDEX")) return "DROP_INDEX";
+          if (trimmed.startsWith("ALTER INDEX")) return "ALTER_INDEX";
+          if (trimmed.startsWith("BUILD INDEX")) return "BUILD_INDEX";
+          
+          // Get first word for other statement types
+          const firstWord = trimmed.split(/\s+/)[0];
+          return firstWord;
+        }
+
+        // Statement Type Pie Chart
+        function generateStatementTypeChart(requests) {
         const typeCounts = {};
 
         requests.forEach((request) => {
-          const type = request.statementType || "Unknown";
+          // First try the statementType field, then derive from statement
+          const type = request.statementType || deriveStatementType(request.statement) || "UNKNOWN";
           typeCounts[type] = (typeCounts[type] || 0) + 1;
         });
 
@@ -7807,6 +7825,7 @@
           LIKE: 0,
           COUNT: 0,
           REGEX: 0,
+          EXECUTE: 0,
         };
 
         requests.forEach((request) => {
@@ -7897,6 +7916,11 @@
           // REGEX
           if (statement.includes("REGEXP_") || /REGEX\s*\(/.test(statement)) {
             patternCounts["REGEX"]++;
+          }
+
+          // EXECUTE
+          if (statement.startsWith("EXECUTE")) {
+            patternCounts["EXECUTE"]++;
           }
         });
 
@@ -8430,6 +8454,8 @@
           indexInfo: plan ? extractIndexInfo(plan) : null,
           // Pre-calculate aggregations
           planStats: plan ? extractPlanStats(plan) : null,
+          // Ensure we have a statement type (derive if not present)
+          statementType: request.statementType || deriveStatementType(request.statement),
         };
 
         return processedRequest;

@@ -98,5 +98,59 @@
       "~qualifier": "threshold"
     },
     "plan": "{\n\t    \"#operator\": \"Authorize\",\n\t    \"#planPreparedTime\": \"2025-07-19T22:14:27.682-05:00\",\n\t    \"#stats\": {\n\t        \"#phaseSwitches\": 4,\n\t        \"execTime\": \"1.001µs\",\n\t        \"servTime\": \"5.875µs\"\n\t    },\n\t    \"privileges\": {\n\t        \"List\": [\n\t            {\n\t                \"Target\": \"default:travel-sample\",\n\t                \"Priv\": 7,\n\t                \"Props\": 0\n\t            }\n\t        ]\n\t    },\n\t    \"~child\": {\n\t        \"#operator\": \"Sequence\",\n\t        \"#stats\": {\n\t            \"#phaseSwitches\": 2,\n\t            \"execTime\": \"9.5µs\"\n\t        },\n\t        \"~children\": [\n\t            {\n\t                \"#operator\": \"PrimaryScan3\",\n\t                \"#stats\": {\n\t                    \"#heartbeatYields\": 1,\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 126367,\n\t                    \"execTime\": \"18.441287ms\",\n\t                    \"kernTime\": \"197.559967ms\",\n\t                    \"servTime\": \"11.428662ms\"\n\t                },\n\t                \"index\": \"def_primary\",\n\t                \"index_projection\": {\n\t                    \"primary_key\": true\n\t                },\n\t                \"keyspace\": \"travel-sample\",\n\t                \"namespace\": \"default\",\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 5402.279801258844,\n\t                    \"fr_cost\": 12.170627071041082,\n\t                    \"size\": 11\n\t                },\n\t                \"using\": \"gsi\"\n\t            },\n\t            {\n\t                \"#operator\": \"Fetch\",\n\t                \"#stats\": {\n\t                    \"#heartbeatYields\": 2,\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 126500,\n\t                    \"execTime\": \"30.215308ms\",\n\t                    \"kernTime\": \"52.428317ms\",\n\t                    \"servTime\": \"149.928833ms\"\n\t                },\n\t                \"keyspace\": \"travel-sample\",\n\t                \"namespace\": \"default\",\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 46269.39474997121,\n\t                    \"fr_cost\": 25.46387878667884,\n\t                    \"size\": 669\n\t                }\n\t            },\n\t            {\n\t                \"#operator\": \"InitialProject\",\n\t                \"#stats\": {\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 126368,\n\t                    \"execTime\": \"97.112972ms\",\n\t                    \"kernTime\": \"138.44757ms\"\n\t                },\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 47903.599347919706,\n\t                    \"fr_cost\": 25.51560885530435,\n\t                    \"size\": 669\n\t                },\n\t                \"preserve_order\": true,\n\t                \"result_terms\": [\n\t                    {\n\t                        \"expr\": \"self\",\n\t                        \"star\": true\n\t                    },\n\t                    {\n\t                        \"expr\": \"meta(`travel-sample`)\"\n\t                    }\n\t                ]\n\t            },\n\t            {\n\t                \"#operator\": \"Order\",\n\t                \"#stats\": {\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 94777,\n\t                    \"execTime\": \"123.826422ms\",\n\t                    \"kernTime\": \"122.265471ms\"\n\t                },\n\t                \"flags\": 6,\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 52136.44564242353,\n\t                    \"fr_cost\": 4258.361903359133,\n\t                    \"size\": 669\n\t                },\n\t                \"sort_terms\": [\n\t                    {\n\t                        \"expr\": \"(`travel-sample`.`type`)\"\n\t                    }\n\t                ]\n\t            },\n\t            {\n\t                \"#operator\": \"Stream\",\n\t                \"#stats\": {\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 31592,\n\t                    \"execTime\": \"824.325018ms\"\n\t                },\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 52136.44564242353,\n\t                    \"fr_cost\": 4258.361903359133,\n\t                    \"size\": 669\n\t                },\n\t                \"serializable\": true\n\t            }\n\t        ]\n\t    },\n\t    \"~versions\": [\n\t        \"7.6.5-N1QL\",\n\t        \"7.6.5-5704-enterprise\"\n\t    ]\n\t}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "f47b1b23-8c45-4d67-9a12-8e5d4f6c7890",
+      "cpuTime": "5.234ms",
+      "elapsedTime": "12.456789ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$city": "Paris",
+        "$country": "France"
+      },
+      "phaseCounts": {
+        "indexScan": 25,
+        "fetch": 25
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "45.123µs",
+        "instantiate": "12.456µs",
+        "parse": "234.567µs",
+        "plan": "15.789µs",
+        "plan.index.metadata": "3.234µs",
+        "plan.keyspace.metadata": "1.567µs",
+        "indexScan": "2.345ms",
+        "fetch": "8.901ms",
+        "project": "0.789ms",
+        "run": "11.987654ms",
+        "stream": "0.234ms"
+      },
+      "remoteAddr": "127.0.0.1:54321",
+      "requestId": "e8c9d1a2-3f4e-5b6c-7d8e-9f0a1b2c3d4e",
+      "requestTime": "2025-07-20T14:25:33.123Z",
+      "resultCount": 25,
+      "resultSize": 5680,
+      "scanConsistency": "request_plus",
+      "serviceTime": "12.398765ms",
+      "state": "completed",
+      "statement": "EXECUTE hotel_search USING {\"city\": \"Paris\", \"country\": \"France\"}",
+      "statementType": "EXECUTE",
+      "useCBO": true,
+      "usedMemory": 2048,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "users": "builtin:tester",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-20T14:25:33.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.123µs\",\"servTime\":\"43.0µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:travel-sample\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"8.456µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"#phaseSwitches\":100,\"execTime\":\"2.345ms\",\"kernTime\":\"2.234ms\",\"servTime\":\"2.1ms\"},\"index\":\"hotel_city_idx\",\"keyspace\":\"travel-sample\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"Paris\\\"\",\"inclusion\":3,\"low\":\"\\\"Paris\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"#phaseSwitches\":50,\"execTime\":\"8.901ms\",\"kernTime\":\"8.567ms\",\"servTime\":\"8.234ms\"},\"keyspace\":\"travel-sample\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"#phaseSwitches\":50,\"execTime\":\"0.789ms\",\"kernTime\":\"0.567ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true},{\"expr\":\"meta(`travel-sample`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"#phaseSwitches\":26,\"execTime\":\"0.234ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5704-enterprise\"]}"
   }
 ]
