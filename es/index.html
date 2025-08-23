@@ -8196,6 +8196,11 @@
                         } else if (tabId === "dashboard" && originalRequests.length > 0) {
                             // Generate dashboard charts only when tab is activated
                             generateDashboardCharts(originalRequests);
+                        } else if (tabId === "index-query-flow" && originalRequests.length > 0) {
+                            // Redraw Index/Query Flow when tab is activated to ensure correct positioning
+                            setTimeout(() => {
+                                redrawConnectionsAfterDrag();
+                            }, 100);
                         }
                     }
                 },
@@ -8542,9 +8547,15 @@
             });
 
             // Draw connections after elements are positioned
+            // Use multiple attempts with increasing delays to ensure layout is complete
             setTimeout(() => {
                 drawSimpleConnections(indexPositions, queryPositions, colors);
-            }, 50);
+            }, 100);
+
+            // Additional redraw after longer delay to ensure correct positioning
+            setTimeout(() => {
+                redrawConnectionsAfterDrag();
+            }, 300);
         }
 
         function createIndexDiv(index, color, x, y) {

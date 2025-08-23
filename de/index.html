@@ -1688,10 +1688,10 @@
             "
           >
             <div style="font-weight: bold; color: #333">
-              Indexes Used: <span id="index-count">0</span>
+              Verwendete Indizes: <span id="index-count">0</span>
             </div>
             <div style="font-weight: bold; color: #333">
-              Queries Executed: <span id="query-count">0</span>
+              Ausgeführte Abfragen: <span id="query-count">0</span>
             </div>
           </div>
           <div
@@ -2870,7 +2870,7 @@
           html +=
             '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">';
           html +=
-            '<h3 style="margin: 0; color: #333; font-size: 16px;">📋 Indexes Used:</h3>';
+            '<h3 style="margin: 0; color: #333; font-size: 16px;">📋 Verwendete Indizes:</h3>';
           const allIndexes = indexesAndKeys.indexes.join(", ");
           html += `<button onclick="copyToClipboard('${allIndexes.replace(
             /'/g,
@@ -8924,6 +8924,11 @@
               } else if (tabId === "dashboard" && originalRequests.length > 0) {
                 // Generate dashboard charts only when tab is activated
                 generateDashboardCharts(originalRequests);
+              } else if (tabId === "index-query-flow" && originalRequests.length > 0) {
+                // Redraw Index/Query Flow when tab is activated to ensure correct positioning
+                setTimeout(() => {
+                  redrawConnectionsAfterDrag();
+                }, 100);
               }
             }
           },
@@ -9360,9 +9365,15 @@
         });
 
         // Draw connections after elements are positioned
+        // Use multiple attempts with increasing delays to ensure layout is complete
         setTimeout(() => {
           drawSimpleConnections(indexPositions, queryPositions, colors);
-        }, 50);
+        }, 100);
+
+        // Additional redraw after longer delay to ensure correct positioning
+        setTimeout(() => {
+          redrawConnectionsAfterDrag();
+        }, 300);
       }
 
       function createIndexDiv(index, color, x, y) {
