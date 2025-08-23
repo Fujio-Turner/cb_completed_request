@@ -7502,14 +7502,27 @@
         );
         const labels = Object.keys(stateCounts);
         const data = Object.values(stateCounts);
-        const colors = [
-          "#ff6384",
-          "#36a2eb",
-          "#ffce56",
-          "#4bc0c0",
-          "#9966ff",
-          "#ff9f40",
-        ];
+        // Semantic colors based on query state
+        const colors = labels.map(state => {
+          const lowerState = state.toLowerCase();
+          switch (lowerState) {
+            case "completed":
+            case "success":
+              return "#28a745"; // Green - success
+            case "fatal":
+            case "errors":
+              return "#dc3545"; // Red - error
+            case "timeout":
+              return "#fd7e14"; // Orange - timeout
+            case "stopped":
+            case "cancelled":
+              return "#6c757d"; // Gray - stopped/cancelled
+            case "running":
+              return "#007bff"; // Blue - in progress
+            default:
+              return "#6f42c1"; // Purple - unknown/other
+          }
+        });
 
         const ctx = document.getElementById("state-chart").getContext("2d");
         if (window.stateChart) {
