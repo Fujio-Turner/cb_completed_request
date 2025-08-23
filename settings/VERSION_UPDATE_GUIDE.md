@@ -94,11 +94,49 @@ LABEL version="X.X.X"
 **Example**: `LABEL version="3.6.0"`
 
 ##### GitHub Actions Workflow (.github/workflows/docker-build-push.yml)
+Update the version tags in the workflow:
 ```yaml
 tags: |
+  type=ref,event=pr
+  type=sha,prefix=dev-,enable={{is_default_branch!=true}}
+  type=raw,value=latest,enable={{is_default_branch}}
   type=raw,value=X.X.X,enable={{is_default_branch}}
   type=raw,value=vX.X.X,enable={{is_default_branch}}
 ```
+
+**Location**: `/.github/workflows/docker-build-push.yml`
+**Example**: 
+```yaml
+type=raw,value=3.6.0,enable={{is_default_branch}}
+type=raw,value=v3.6.0,enable={{is_default_branch}}
+```
+
+**Tag Strategy**:
+- **Production releases**: `latest`, `3.6.0`, `v3.6.0` (only on main branch)
+- **Pull requests**: `pr-123` tags
+- **Development**: `dev-<sha>` tags (only on non-main branches)
+
+#### Docker Image Cleanup
+
+**Problem**: Multiple tags create duplicate images in Docker Hub
+
+**Current Cleanup Process**:
+1. **Manual Cleanup**: Delete old version tags from Docker Hub UI
+2. **Keep Strategy**: Only keep latest 2-3 versions for production use
+3. **Development Tags**: Clean up `main-<sha>` and `dev-<sha>` tags regularly
+
+**Automated Cleanup Script** (Future Enhancement):
+```bash
+# Delete old development tags (run manually when needed)
+docker rmi fujioturner/couchbase-query-analyzer:main-<old-sha>
+docker rmi fujioturner/couchbase-query-analyzer:dev-<old-sha>
+```
+
+**Docker Hub Manual Cleanup**:
+1. Go to [Docker Hub Repository](https://hub.docker.com/r/fujioturner/couchbase-query-analyzer/tags)
+2. Delete tags for old versions (keep latest 2-3 releases)
+3. Delete development SHA-based tags: `main-<sha>`, `dev-<sha>`
+4. Keep these tags: `latest`, `<current-version>`, `v<current-version>`
 
 ## 🔄 Step-by-Step Update Process
 

@@ -34,9 +34,8 @@ jobs:
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer
           tags: |
-            type=ref,event=branch
             type=ref,event=pr
-            type=sha,prefix={{branch}}-
+            type=sha,prefix=dev-,enable={{is_default_branch!=true}}
             type=raw,value=latest,enable={{is_default_branch}}
             type=raw,value=3.6.0,enable={{is_default_branch}}
             type=raw,value=v3.6.0,enable={{is_default_branch}}
