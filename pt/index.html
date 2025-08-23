@@ -8128,23 +8128,29 @@
       // Generate Query Pattern Chart
       function generateQueryPatternChart(requests) {
         const patternCounts = {
-          "No WHERE": 0,
-          "GROUP BY": 0,
-          "ORDER BY": 0,
+          // Far left
+          WITH: 0,
+          EXECUTE: 0,
+          "SELECT *": 0,
+          COUNT: 0,
+          // Left-center
           "USE INDEX": 0,
           "USE KEYS": 0,
+          // Center
+          "No WHERE": 0,
+          // Center-right  
           JOIN: 0,
           NEST: 0,
           UNNEST: 0,
-          OFFSET: 0,
           SEARCH: 0,
-          WITH: 0,
           "ARRAY QUERY": 0,
-          "SELECT *": 0,
           LIKE: 0,
-          COUNT: 0,
           REGEX: 0,
-          EXECUTE: 0,
+          // Far right
+          "GROUP BY": 0,
+          "ORDER BY": 0,
+          LIMIT: 0,
+          OFFSET: 0,
         };
 
         requests.forEach((request) => {
@@ -8200,17 +8206,18 @@
             patternCounts["SEARCH"]++;
           }
 
-          // WITH
-          if (statement.includes("WITH ")) {
+          // WITH (ensure it's a SQL clause, not a backticked field name)
+          if ((statement.startsWith("WITH ") || statement.includes(" WITH ")) && !statement.includes("`WITH`")) {
             patternCounts["WITH"]++;
           }
 
-          // ARRAY QUERY (has both SATISFIES and END)
+          // ARRAY QUERY (has ANY/EVERY + SATISFIES + END)
           if (
-            statement.includes(" SATISFIES ") &&
-            statement.includes(" END ")
+          (statement.includes(" ANY ") || statement.includes(" EVERY ") || statement.includes("ANY AND EVERY")) &&
+          statement.includes(" SATISFIES ") &&
+          (statement.includes(" END ") || statement.endsWith(" END"))
           ) {
-            patternCounts["ARRAY QUERY"]++;
+          patternCounts["ARRAY QUERY"]++;
           }
 
           // SELECT * (between SELECT and FROM)
@@ -8222,8 +8229,8 @@
             }
           }
 
-          // LIKE
-          if (statement.includes(" LIKE ")) {
+          // LIKE (ensure it's an operator, not a backticked field name)
+          if (statement.includes(" LIKE ") && !statement.includes("`LIKE`")) {
             patternCounts["LIKE"]++;
           }
 
@@ -8240,6 +8247,11 @@
           // EXECUTE
           if (statement.startsWith("EXECUTE")) {
             patternCounts["EXECUTE"]++;
+          }
+
+          // LIMIT
+          if (statement.includes(" LIMIT ")) {
+            patternCounts["LIMIT"]++;
           }
         });
 
