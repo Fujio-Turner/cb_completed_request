@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.5.2
+# Couchbase Slow Query Analysis Tool v3.6.0
 
 **🌍 Idiomas:** [🇺🇸 English](README.md) | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | **🇵🇹 Português**
 
@@ -157,7 +157,30 @@ Ao analisar gráficos de linha do tempo, escolha intervalos de data apropriados 
 
 ## 📋 Notas de Lançamento
 
-### Versão 3.5.2 (19 de janeiro de 2025)
+### Versão 3.6.0 (23 de agosto de 2025)
+#### 🚀 Novos Recursos
+- **Suporte à Declaração EXECUTE**: Adicionado suporte completo para reconhecimento e categorização de declarações EXECUTE
+- **Cores de Estado de Consulta Aprimoradas**: Esquema de cores semântico para o gráfico de Estado de Consulta (verde=concluído, vermelho=fatal, laranja=timeout, cinza=parado/cancelado, azul=executando)
+- **Formatação Numérica Aprimorada**: Adicionados separadores de vírgula e arredondamento a todas as colunas numéricas para melhor legibilidade
+- **Avisos de Varredura Primária Aprimorados**: Estilo vermelho/negrito para indicadores de uso de varredura primária nas tabelas Grupos de Consultas e Cada Consulta
+
+#### ✨ Melhorias na Experiência do Usuário
+- **Seleção de Texto Corrigida**: Resolvidos problemas de seleção de texto em células de tabela - usuários agora podem destacar e copiar dados de células da tabela
+- **Melhor Performance**: Otimizado o limite de consultas de 4000 para 2000 registros (8-10MB vs 36MB) para melhorar a performance do navegador
+- **Quebra de Cache CDN**: Adicionados parâmetros de versão a todas as importações de bibliotecas externas para melhor gerenciamento de cache
+- **Localização Alemã Aprimorada**: Corrigidas traduções ausentes para "Índices Utilizados" e "Consultas Executadas" na versão alemã
+
+#### 🔧 Melhorias Técnicas
+- **Análise Consistente de Tipos de Declaração**: Adicionada função `deriveStatementType()` para detecção confiável de tipos de declaração em todos os gráficos
+- **Tratamento Inteligente de Cliques**: Cliques em linhas da tabela agora detectam inteligentemente seleção de texto vs seleção de linha
+- **Diagrama de Fluxo Aprimorado**: Aprimorado posicionamento de conexões do Fluxo de Índice/Consulta com múltiplas tentativas de redesenho
+- **Melhor Tratamento de Erros**: Corrigidos erros de referência JavaScript na geração de tabela de análise
+
+#### 🌍 Localização
+- **Suporte Multilíngue Completo**: Todos os novos recursos completamente traduzidos para espanhol, português e alemão
+- **Formatação Numérica Consistente**: Formatação numérica consciente de localidade em todas as versões de idiomas
+
+### Versão 3.5.2 (21 de agosto de 2025)
 #### 🚀 Novos Recursos
 - **Controles de Linha do Tempo Aprimorados**: Radio buttons convertidos para dropdown para melhor UX
 - **Agrupamento Por Hora**: Nova opção de agrupamento de tempo "Por Hora" para análise de linha do tempo
@@ -182,19 +205,19 @@ Ao analisar gráficos de linha do tempo, escolha intervalos de data apropriados 
 - **Melhor Tratamento de Erros**: Validação melhorada com mensagens de erro específicas do idioma
 - **Arquitetura UI Consistente**: Estrutura de classes CSS melhorada para melhor manutenibilidade
 
-### Versão 3.5.1 (2025-08-18)
+### Versão 3.5.1 (20 de agosto de 2025)
 - **Correções de bugs**: Corrigido erro de análise regex no dropdown de bucket da aba Index que mostrava "ON" em vez dos nomes reais dos buckets
 - **Melhorias**: Melhorada a análise para lidar com declarações CREATE INDEX complexas com palavras contendo "on" (como "accommodation")
 
-### Version 3.5.0 (2025-08-14)
+### Versão 3.5.0 (15 de agosto de 2025)
 - **Novas Funcionalidades**: Adicionada pré-filtragem de declarações SQL++ durante análise JSON para melhor desempenho, reorganizado layout do seletor de datas com empilhamento vertical e melhor alinhamento de rótulos.
 - **Melhorias Técnicas**: Aprimorada função filterSystemQueries(), melhorado layout da interface e gerenciamento de espaço, reduzido tempo de análise para grandes conjuntos de dados e corrigido problema de cache de dados onde filtros SQL não eram limpos adequadamente na re-análise.
 - **Localização**: Atualizadas todas versões de idiomas (espanhol, português, alemão) com novas funcionalidades e adicionadas traduções para novos elementos da interface.
 
-### Versão 3.4.2 (2025-08-14)
+### Versão 3.4.2 (15 de agosto de 2025)
 - **Melhorias de UI**: Melhoradas as interações dos gráficos de Timeline e consistência de estilo de botões - desabilitado zoom com roda do mouse, melhorada visibilidade da caixa de seleção, auto-reset dos botões de rádio ao analisar, aumentado botão Parse JSON e aplicado estilo consistente aos botões de intervalo de tempo e controle.
 
-### Versão 3.4.1 (2025-08-14)
+### Versão 3.4.1 (15 de agosto de 2025)
 - **Correções de bugs**: Corrigida a funcionalidade do botão de copiar JavaScript em todas as versões de idioma - resolvido o tratamento de parâmetros de evento nas funções copyStatement, copyAnalysisStatement e copyToClipboard.
 
 ### Versão 3.4.0 (2025-08-13)

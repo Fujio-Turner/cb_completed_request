@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.5.2
+# Couchbase Slow Query Analysis Tool v3.6.0
 
 **🌍 Sprachen:** [🇺🇸 English](README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -157,7 +157,30 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 
 ## 📋 Versionshinweise
 
-### Version 3.5.2 (19. Januar 2025)
+### Version 3.6.0 (23. August 2025)
+#### 🚀 Neue Funktionen
+- **EXECUTE-Anweisungsunterstützung**: Vollständige Unterstützung für die Erkennung und Kategorisierung von EXECUTE-Anweisungen hinzugefügt
+- **Erweiterte Query-Status-Farben**: Semantisches Farbschema für Query-Status-Diagramm (grün=abgeschlossen, rot=fatal, orange=timeout, grau=gestoppt/abgebrochen, blau=laufend)
+- **Verbesserte Zahlenformatierung**: Komma-Trenner und Rundung zu allen numerischen Spalten für bessere Lesbarkeit hinzugefügt
+- **Erweiterte Primary Scan Warnungen**: Rot/fett Styling für Primary Scan Nutzungsindikatoren in Query Groups und Every Query Tabellen
+
+#### ✨ Verbesserungen der Benutzererfahrung
+- **Textauswahl korrigiert**: Probleme bei der Textauswahl in Tabellenzellen behoben - Benutzer können jetzt Text aus Tabellenzellen hervorheben und kopieren
+- **Bessere Performance**: Query-Limit von 4000 auf 2000 Datensätze optimiert (8-10MB vs 36MB) für verbesserte Browser-Performance
+- **CDN-Cache-Busting**: Versionsparameter zu allen externen Bibliothek-Importen für besseres Cache-Management hinzugefügt
+- **Verbesserte deutsche Lokalisierung**: Fehlende Übersetzungen für "Verwendete Indizes" und "Ausgeführte Abfragen" in der deutschen Version behoben
+
+#### 🔧 Technische Verbesserungen
+- **Konsistente Statement-Type-Analyse**: `deriveStatementType()` Funktion für zuverlässige Statement-Type-Erkennung in allen Diagrammen hinzugefügt
+- **Intelligente Klick-Behandlung**: Tabellenzeilen-Klicks erkennen jetzt intelligent Textauswahl vs. Zeilenauswahl
+- **Verbessertes Flow-Diagramm**: Erweiterte Index/Query-Flow-Verbindungspositionierung mit mehreren Redraw-Versuchen
+- **Bessere Fehlerbehandlung**: JavaScript-Referenzfehler in der Analyse-Tabellengenerierung behoben
+
+#### 🌍 Lokalisierung
+- **Vollständige mehrsprachige Unterstützung**: Alle neuen Funktionen vollständig ins Spanische, Portugiesische und Deutsche übersetzt
+- **Konsistente Zahlenformatierung**: Locale-bewusste Zahlenformatierung in allen Sprachversionen
+
+### Version 3.5.2 (21. August 2025)
 #### 🚀 Neue Funktionen
 - **Verbesserte Timeline-Steuerung**: Radio-Buttons in Dropdown für bessere Benutzerfreundlichkeit umgewandelt
 - **Nach Stunde Gruppierung**: Neue "Nach Stunde" Zeit-Gruppierungsoption für Timeline-Analyse hinzugefügt
@@ -182,19 +205,19 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 - **Bessere Fehlerbehandlung**: Verbesserte Validierung mit sprachspezifischen Fehlermeldungen
 - **Konsistente UI-Architektur**: Verbesserte CSS-Klassenstruktur für bessere Wartbarkeit
 
-### Version 3.5.1 (2025-08-18)
+### Version 3.5.1 (20. August 2025)
 - **Bug Fixes**: Regex-Parsing-Fehler im Index-Tab-Bucket-Dropdown behoben, das "ON" anstatt der tatsächlichen Bucket-Namen anzeigte
 - **Verbesserungen**: Verbessertes Parsing zur Behandlung komplexer CREATE INDEX-Anweisungen mit Wörtern, die "on" enthalten (wie "accommodation")
 
-### Version 3.5.0 (2025-08-14)
+### Version 3.5.0 (15. August 2025)
 - **Neue Funktionen**: SQL++ Anweisungs-Vorfilterung während JSON-Analyse für bessere Leistung hinzugefügt, Datumsauswahl-Layout mit vertikaler Stapelung und verbesserter Beschriftungsausrichtung reorganisiert.
 - **Technische Verbesserungen**: Verbesserte filterSystemQueries() Funktion, verbessertes UI-Layout und Platzverwaltung, reduzierte Analysezeit für große Datensätze und behobenes Daten-Caching-Problem bei dem SQL-Filter beim erneuten Analysieren nicht ordnungsgemäß geleert wurden.
 - **Lokalisierung**: Alle Sprachversionen (Spanisch, Portugiesisch, Deutsch) mit neuen Funktionen aktualisiert und Übersetzungen für neue UI-Elemente hinzugefügt.
 
-### Version 3.4.2 (2025-08-14)
+### Version 3.4.2 (15. August 2025)
 - **UI-Verbesserungen**: Verbesserte Timeline-Chart-Interaktionen und Button-Styling-Konsistenz - Mausrad-Zoom deaktiviert, Auswahlbox-Sichtbarkeit verbessert, automatisches Zurücksetzen von Radio-Buttons beim Parsen, vergrößerte Parse JSON-Button und konsistente Gestaltung für Zeitbereich- und Steuerungsbuttons.
 
-### Version 3.4.1 (2025-08-14)
+### Version 3.4.1 (15. August 2025)
 - **Fehlerbehebungen**: JavaScript-Kopierbutton-Funktionalität in allen Sprachversionen repariert - Behandlung von Event-Parametern in copyStatement-, copyAnalysisStatement- und copyToClipboard-Funktionen behoben.
 
 ### Version 3.4.0 (2025-08-13)

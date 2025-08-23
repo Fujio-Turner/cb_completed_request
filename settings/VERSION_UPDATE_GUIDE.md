@@ -85,9 +85,13 @@ Update the main heading in all README files:
 #### C. Docker Files
 
 ##### Dockerfile
+Update the version label in the Dockerfile:
 ```dockerfile
 LABEL version="X.X.X"
 ```
+
+**Location**: `/Dockerfile` (root directory)
+**Example**: `LABEL version="3.6.0"`
 
 ##### GitHub Actions Workflow (.github/workflows/docker-build-push.yml)
 ```yaml
@@ -197,7 +201,7 @@ When updating to version X.X.X:
 - [ ] Update Release Notes sections with new version information
 
 ### Docker Files
-- [ ] `Dockerfile` - version label
+- [ ] `Dockerfile` - LABEL version="X.X.X" in root directory
 - [ ] `.github/workflows/docker-build-push.yml` - version tags
 
 ### Verification

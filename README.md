@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.5.2
+# Couchbase Slow Query Analysis Tool v3.6.0
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -159,7 +159,30 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 
 ## Release Notes
 
-### Version 3.5.2 (January 19, 2025)
+### Version 3.6.0 (August 23, 2025)
+#### 🚀 New Features
+- **EXECUTE Statement Support**: Added full support for EXECUTE statement recognition and categorization
+- **Enhanced Query State Colors**: Semantic color scheme for Query State chart (green=completed, red=fatal, orange=timeout, gray=stopped/cancelled, blue=running)
+- **Improved Number Formatting**: Added comma separators and rounding to all numeric columns for better readability
+- **Enhanced Primary Scan Warnings**: Red/bold styling for primary scan usage indicators in both Query Groups and Every Query tables
+
+#### ✨ User Experience Improvements  
+- **Fixed Text Selection**: Resolved table cell text selection issues - users can now highlight and copy data from table cells
+- **Better Performance**: Optimized query limit from 4000 to 2000 records (8-10MB vs 36MB) for improved browser performance
+- **CDN Cache Busting**: Added version parameters to all external library imports for better cache management
+- **Enhanced German Localization**: Fixed missing translations for "Indexes Used" and "Queries Executed" in German version
+
+#### 🔧 Technical Improvements
+- **Consistent Statement Type Parsing**: Added `deriveStatementType()` function for reliable statement type detection across all charts
+- **Smart Click Handling**: Table row clicks now intelligently detect text selection vs row selection
+- **Improved Flow Diagram**: Enhanced Index/Query Flow connection positioning with multiple redraw attempts
+- **Better Error Handling**: Fixed JavaScript reference errors in analysis table generation
+
+#### 🌍 Localization
+- **Complete Multi-language Support**: All new features fully translated to Spanish, Portuguese, and German
+- **Consistent Number Formatting**: Locale-aware number formatting across all language versions
+
+### Version 3.5.2 (August 21, 2025)
 #### 🚀 New Features
 - **Enhanced Timeline Controls**: Converted radio buttons to dropdown for better UX
 - **By Hour Grouping**: Added new "By Hour" time grouping option for timeline analysis
@@ -184,19 +207,19 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 - **Better Error Handling**: Enhanced validation with language-specific error messages
 - **Consistent UI Architecture**: Improved CSS class structure for better maintainability
 
-### Version 3.5.1 (2025-08-18)
+### Version 3.5.1 (August 20, 2025)
 - **Bug Fixes**: Fixed regex parsing bug in Index tab bucket dropdown that showed "ON" instead of actual bucket names
 - **Improvements**: Improved parsing to handle complex CREATE INDEX statements with words containing "on" (like "accommodation")
 
-### Version 3.5.0 (2025-08-14)
+### Version 3.5.0 (August 15, 2025)
 - **New Features**: Added SQL++ statement pre-filtering during JSON parsing for better performance, reorganized date picker layout with vertical stacking and improved label alignment.
 - **Technical Improvements**: Enhanced filterSystemQueries() function, improved UI layout and space management, reduced parse time for large datasets, and fixed data caching issue where SQL filters weren't clearing properly on re-parse.
 - **Localization**: Updated all language versions (Spanish, Portuguese, German) with new features and added translations for new UI elements.
 
-### Version 3.4.2 (2025-08-14)
+### Version 3.4.2 (August 15, 2025)
 - **UI Enhancements**: Improved Timeline chart interactions and button styling consistency - disabled mouse wheel zoom, enhanced selection box visibility, auto-reset radio buttons on parse, enlarged Parse JSON button, and applied consistent styling to time range and control buttons.
 
-### Version 3.4.1 (2025-08-14)
+### Version 3.4.1 (August 15, 2025)
 - **Bug Fixes**: Fixed JavaScript copy button functionality across all language versions - resolved event parameter handling in copyStatement, copyAnalysisStatement, and copyToClipboard functions.
 
 ### Version 3.4.0 (2025-08-13)
