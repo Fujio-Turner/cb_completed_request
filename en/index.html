@@ -1232,93 +1232,61 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Cache for operators to avoid reprocessing the same plans
       const operatorsCache = new WeakMap();
 
-      // Recursively extract operators from the plan
-      function getOperators(
-        operator,
-        operators = [],
-        visited = new WeakSet(),
-        depth = 0
-      ) {
-        if (!operator) return operators;
+      // Iteratively extract operators from the plan - optimized for performance
+      function getOperators(operator) {
+        if (!operator) return [];
 
         // Check cache first for the root operator
-        if (depth === 0 && operatorsCache.has(operator)) {
+        if (operatorsCache.has(operator)) {
           return operatorsCache.get(operator);
         }
 
-        // Prevent infinite recursion by tracking visited objects
-        if (visited.has(operator)) {
-          return operators;
-        }
-        visited.add(operator);
+        const operators = [];
+        const stack = [operator];
+        const visited = new WeakSet();
 
-        // Add depth limit as additional safety
-        if (depth > 50) {
-          return operators;
-        }
+        while (stack.length > 0) {
+          const current = stack.pop();
+          if (visited.has(current)) continue;
+          visited.add(current);
 
-        if (operator["#operator"]) {
-          operators.push(operator);
-        }
-        if (operator["~child"]) {
-          getOperators(operator["~child"], operators, visited, depth + 1);
-        } else if (operator["~children"]) {
-          operator["~children"].forEach((child, i) => {
-            getOperators(child, operators, visited, depth + 1);
-          });
-        }
-        // Check for input/inputs
-        if (operator.input) {
-          getOperators(operator.input, operators, visited, depth + 1);
-        }
-        if (operator.inputs && Array.isArray(operator.inputs)) {
-          operator.inputs.forEach((input, i) => {
-            getOperators(input, operators, visited, depth + 1);
-          });
-        }
-        // Check for left/right (binary operations)
-        if (operator.left) {
-          getOperators(operator.left, operators, visited, depth + 1);
-        }
-        if (operator.right) {
-          getOperators(operator.right, operators, visited, depth + 1);
-        }
-        // Check for first and second properties (used in set operations like ExceptAll)
-        if (operator.first) {
-          getOperators(operator.first, operators, visited, depth + 1);
-        }
-        if (operator.second) {
-          getOperators(operator.second, operators, visited, depth + 1);
-        }
-        // Check for scans array (used in UnionScan, IntersectScan, etc.)
-        if (operator.scans && Array.isArray(operator.scans)) {
-          operator.scans.forEach((scan, i) => {
-            getOperators(scan, operators, visited, depth + 1);
-          });
-        }
-        // Check for scan property (used in DistinctScan)
-        if (operator.scan) {
-          getOperators(operator.scan, operators, visited, depth + 1);
-        }
-        // Check for subqueries array
-        if (operator["~subqueries"] && Array.isArray(operator["~subqueries"])) {
-          operator["~subqueries"].forEach((subquery, i) => {
-            if (subquery.executionTimings) {
-              getOperators(
-                subquery.executionTimings,
-                operators,
-                visited,
-                depth + 1
-              );
+          if (current["#operator"]) {
+            operators.push(current);
+          }
+
+          // Push children to stack in reverse order to maintain processing order
+          if (current["~subqueries"] && Array.isArray(current["~subqueries"])) {
+            for (let i = current["~subqueries"].length - 1; i >= 0; i--) {
+              const subquery = current["~subqueries"][i];
+              if (subquery.executionTimings) stack.push(subquery.executionTimings);
             }
-          });
+          }
+          if (current.scan) stack.push(current.scan);
+          if (current.scans && Array.isArray(current.scans)) {
+            for (let i = current.scans.length - 1; i >= 0; i--) {
+              stack.push(current.scans[i]);
+            }
+          }
+          if (current.second) stack.push(current.second);
+          if (current.first) stack.push(current.first);
+          if (current.right) stack.push(current.right);
+          if (current.left) stack.push(current.left);
+          if (current.inputs && Array.isArray(current.inputs)) {
+            for (let i = current.inputs.length - 1; i >= 0; i--) {
+              stack.push(current.inputs[i]);
+            }
+          }
+          if (current.input) stack.push(current.input);
+          if (current["~children"] && Array.isArray(current["~children"])) {
+            for (let i = current["~children"].length - 1; i >= 0; i--) {
+              stack.push(current["~children"][i]);
+            }
+          }
+          if (current["~child"]) stack.push(current["~child"]);
         }
 
         // Cache the result for root operator
-        if (depth === 0) {
-          operatorsCache.set(operator, operators);
-        }
-
+        operatorsCache.set(operator, operators);
         return operators;
       }
 
@@ -7410,56 +7378,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           }
 
           if (Array.isArray(processData)) {
-            // Process data in batches to avoid blocking UI
-            const batchSize = 200; // Reduced from 1000 for better responsiveness
-            const processedRequests = [];
-
-            // Show progress bar
-            document.getElementById("progress-container").style.display =
-              "block";
-
-            function processBatch(startIndex) {
-              const endIndex = Math.min(
-                startIndex + batchSize,
-                processData.length
-              );
-
-              for (let i = startIndex; i < endIndex; i++) {
-                try {
-                  processedRequests.push(processRequestData(processData[i]));
-                } catch (e) {
-                  console.warn(
-                    `Error processing request ${i}:`,
-                    e.message || e
-                  );
-                  // Continue processing other requests
-                }
-              }
-
-              // Update progress bar
-              const progress = Math.round(
-                (endIndex / processData.length) * 100
-              );
-              document.getElementById(
-                "progress-bar"
-              ).style.width = `${progress}%`;
-              document.getElementById(
-                "progress-text"
-              ).textContent = `${progress}%`;
-
-              if (endIndex < processData.length) {
-                // Process next batch asynchronously with optimized timing
-                requestAnimationFrame(() => {
-                  setTimeout(() => processBatch(endIndex), 10);
-                });
-              } else {
-                // All batches processed
-                finishProcessing(processedRequests);
-              }
+            // Determine processing strategy based on data size
+            const dataSize = processData.length;
+            const useWebWorkers = dataSize > 500; // Use workers for larger datasets
+            
+            if (useWebWorkers && typeof Worker !== 'undefined') {
+              // Process data using Web Workers for better performance
+              processWithWebWorkers(processData);
+            } else {
+              // Fallback to optimized batch processing for smaller datasets
+              processWithBatches(processData);
             }
-
-            // Start processing
-            processBatch(0);
           } else {
             showToast("Unexpected data format in JSON", "error");
           }
@@ -7468,6 +7397,116 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           showToast(`Error parsing JSON: ${e.message}`, "error");
           document.getElementById("progress-container").style.display = "none";
         }
+      }
+
+      // Process data using Web Workers for large datasets
+      function processWithWebWorkers(processData) {
+        const batchSize = 100; // Smaller batches for better responsiveness
+        const numWorkers = Math.min(4, navigator.hardwareConcurrency || 4);
+        const workers = [];
+        
+        // Show progress bar
+        document.getElementById("progress-container").style.display = "block";
+        
+        // Initialize workers
+        for (let w = 0; w < numWorkers; w++) {
+          workers.push(new Worker('parserWorker.js'));
+        }
+        
+        let completedBatches = 0;
+        const totalBatches = Math.ceil(processData.length / batchSize);
+        const processedRequests = new Array(processData.length);
+        
+        for (let i = 0; i < processData.length; i += batchSize) {
+          const worker = workers[Math.floor(i / batchSize) % numWorkers];
+          const end = Math.min(i + batchSize, processData.length);
+          const batch = processData.slice(i, end);
+          
+          worker.onmessage = function(msg) {
+            const { processed, startIndex, success, error } = msg.data;
+            
+            if (!success) {
+              console.error('Worker error:', error);
+              completedBatches++;
+            } else {
+              processed.forEach((item, idx) => {
+                processedRequests[startIndex + idx] = item;
+              });
+              completedBatches++;
+            }
+            
+            // Update progress
+            const progress = Math.round((completedBatches / totalBatches) * 100);
+            document.getElementById("progress-bar").style.width = `${progress}%`;
+            document.getElementById("progress-text").textContent = `${progress}%`;
+            
+            if (completedBatches === totalBatches) {
+              finishProcessing(processedRequests.filter(Boolean));
+              workers.forEach(w => w.terminate());
+            }
+          };
+          
+          worker.onerror = function(error) {
+            console.error('Worker error:', error);
+            completedBatches++;
+            if (completedBatches === totalBatches) {
+              finishProcessing(processedRequests.filter(Boolean));
+              workers.forEach(w => w.terminate());
+            }
+          };
+          
+          worker.postMessage({ 
+            batch, 
+            startIndex: i, 
+            endIndex: end,
+            workerId: Math.floor(i / batchSize) % numWorkers
+          });
+        }
+      }
+
+      // Fallback batch processing with requestIdleCallback optimization
+      function processWithBatches(processData) {
+        const batchSize = 100; // Smaller batches for better responsiveness
+        const processedRequests = [];
+
+        // Show progress bar
+        document.getElementById("progress-container").style.display = "block";
+
+        function processBatch(startIndex) {
+          const endIndex = Math.min(startIndex + batchSize, processData.length);
+
+          for (let i = startIndex; i < endIndex; i++) {
+            try {
+              processedRequests.push(processRequestData(processData[i]));
+            } catch (e) {
+              console.warn(`Error processing request ${i}:`, e.message || e);
+              // Continue processing other requests
+            }
+          }
+
+          // Update progress bar
+          const progress = Math.round((endIndex / processData.length) * 100);
+          document.getElementById("progress-bar").style.width = `${progress}%`;
+          document.getElementById("progress-text").textContent = `${progress}%`;
+
+          if (endIndex < processData.length) {
+            // Use requestIdleCallback for better responsiveness
+            if (typeof requestIdleCallback !== 'undefined') {
+              requestIdleCallback(() => processBatch(endIndex));
+            } else {
+              // Fallback for browsers without requestIdleCallback
+              requestAnimationFrame(() => {
+                setTimeout(() => processBatch(endIndex), 10);
+              });
+            }
+          } else {
+            // All batches processed
+            finishProcessing(processedRequests);
+          }
+        }
+
+        // Start processing
+        processBatch(0);
       }
 
       // Toast notification system
@@ -7611,21 +7650,87 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
         // Update UI with filtered data
         updateFilterInfo(filteredAllRequests.length, filteredRequests.length);
+        
         try {
+          // Generate tables first (synchronous, fast)
           generateTable(filteredRequests);
           generateAnalysisTable(filteredRequests);
           updateOptimizerLabel(filteredRequests);
-          generateOperationsChart(filteredRequests);
-          generateFilterChart(filteredRequests);
-          generateTimelineChart(filteredRequests);
-          generateDashboardCharts(filteredRequests);
-          buildIndexQueryFlow(filteredRequests);
-
-          // Extract used indexes from the query data
-          extractUsedIndexes(filteredRequests);
-
-          // Also parse index data if available
-          parseIndexJSON();
+          
+          // Parallelize chart generation for better performance
+          Promise.all([
+            new Promise(resolve => { 
+              try {
+                generateOperationsChart(filteredRequests);
+                resolve();
+              } catch (e) {
+                console.error('Error generating operations chart:', e);
+                resolve();
+              }
+            }),
+            new Promise(resolve => { 
+              try {
+                generateFilterChart(filteredRequests);
+                resolve();
+              } catch (e) {
+                console.error('Error generating filter chart:', e);
+                resolve();
+              }
+            }),
+            new Promise(resolve => { 
+              try {
+                generateTimelineChart(filteredRequests);
+                resolve();
+              } catch (e) {
+                console.error('Error generating timeline chart:', e);
+                resolve();
+              }
+            }),
+            new Promise(resolve => { 
+              try {
+                generateDashboardCharts(filteredRequests);
+                resolve();
+              } catch (e) {
+                console.error('Error generating dashboard charts:', e);
+                resolve();
+              }
+            }),
+            new Promise(resolve => { 
+              try {
+                buildIndexQueryFlow(filteredRequests);
+                resolve();
+              } catch (e) {
+                console.error('Error building index query flow:', e);
+                resolve();
+              }
+            }),
+            new Promise(resolve => { 
+              try {
+                extractUsedIndexes(filteredRequests);
+                resolve();
+              } catch (e) {
+                console.error('Error extracting used indexes:', e);
+                resolve();
+              }
+            }),
+            new Promise(resolve => { 
+              try {
+                parseIndexJSON();
+                resolve();
+              } catch (e) {
+                console.error('Error parsing index JSON:', e);
+                resolve();
+              }
+            })
+          ]).then(() => {
+            // All chart generation completed
+            console.log('All chart generation completed successfully');
+          }).catch(e => {
+            console.error("Error in parallel chart generation:", e);
+            alert(
+              "Error generating charts. Try reducing the date range or selecting a coarser time grouping."
+            );
+          });
         } catch (e) {
           console.error("Error generating charts:", e);
           alert(
