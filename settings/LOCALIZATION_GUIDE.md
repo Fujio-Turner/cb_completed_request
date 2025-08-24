@@ -69,12 +69,42 @@ Each README should specify the correct HTML file:
 
 ## HTML Tool Updates (Index Files)
 
-### Quick Update Process for HTML Tools
+### Quick Update Process for HTML Tools (RECOMMENDED METHOD)
 
-When making changes to `index.html`, use this chat prompt template to update the localized versions:
+**🚀 SIMPLIFIED APPROACH**: When `index.html` is working correctly and localized versions have issues, use this backup-and-copy method:
 
 ```text
-I've made changes to index.html. Please update es_index.html, pt_index.html, and de_index.html using the settings/translations.json file and settings/LOCALIZATION_GUIDE.md process.
+I need to synchronize the localized HTML files with the working en/index.html. Please follow this process:
+
+1. **Backup Current Localized Files:**
+   - Copy de/index.html → de/old_index.html  
+   - Copy es/index.html → es/old_index.html
+   - Copy pt/index.html → pt/old_index.html
+
+2. **Copy Working English Version:**
+   - Copy en/index.html → de/index.html
+   - Copy en/index.html → es/index.html  
+   - Copy en/index.html → pt/index.html
+
+3. **Apply Localization Using translations.json:**
+   - Update language attributes: <html lang="en"> → <html lang="de|es|pt">
+   - Apply all translations from settings/translations.json using find/replace
+   - Follow the systematic translation process below
+
+4. **Verification:**
+   - Use old_index.html files to double-check that all translations are preserved
+   - Run validation commands to ensure no English text remains
+   - Test functionality to ensure all features work correctly
+
+This method ensures JavaScript functionality is identical across all versions while maintaining proper localization.
+```
+
+### Alternative: Individual Function Sync Process
+
+If you prefer to sync individual changes, use this chat prompt template:
+
+```text
+I've made changes to index.html. Please update es/index.html, pt/index.html, and de/index.html using the settings/translations.json file and settings/LOCALIZATION_GUIDE.md process.
 
 Changes made:
 [Describe the specific changes you made]
@@ -110,9 +140,9 @@ Please follow the complete localization process:
 Update settings/translations.json if new translatable strings were added.
 
 ⚠️ **CRITICAL**: Use the JavaScript detection commands to find missed content:
-- `grep -n "textContent.*=" [lang]_index.html`
-- `grep -n "Copy\|Reset\|Show\|Hide" [lang]_index.html`  
-- `grep -n "button\.textContent" [lang]_index.html`
+- `grep -n "textContent.*=" [lang]/index.html`
+- `grep -n "Copy\|Reset\|Show\|Hide" [lang]/index.html`  
+- `grep -n "button\.textContent" [lang]/index.html`
 ```
 
 ## Complete Localization Process for New Languages

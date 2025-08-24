@@ -1,28 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
   <!--
     Couchbase Query Analyzer
     Version: 3.6.2
     Last Updated: 2025-08-23
     
     🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
-    This guide covers all HTML elements, JavaScript variables, and documentation files that need updating.
     
+    🤖 AI AGENT NOTE: When making changes to this file, please update the version number above.
     Use semantic versioning: MAJOR.MINOR.PATCH
     - MAJOR: Breaking changes or complete rewrites
     - MINOR: New features, significant enhancements  
     - PATCH: Bug fixes, small improvements
     
-    🌍 LOCALIZATION NOTE: This file has Spanish (es_index.html), Portuguese (pt_index.html), and German (de_index.html) versions.
-    When making changes to index.html, please also update all localized versions to maintain sync.
-    See LOCALIZATION_GUIDE.md and translations.json for detailed instructions.
+    🇧🇷 PORTUGUESE VERSION: This is the Brazilian Portuguese localization of the Couchbase Query Analyzer.
+    When making changes to index.html, please also update this file to maintain sync.
 -->
 
   <head>
     <meta charset="UTF-8" />
     <meta name="version" content="3.6.2" />
     <meta name="last-updated" content="2025-08-23" />
-    <title>Query Analyzer v3.6.2</title>
+    <title>Analisador de Consultas v3.6.2</title>
     <!-- Include jQuery UI CSS -->
     <link
       rel="stylesheet"
@@ -39,47 +38,1038 @@
     <!-- Include DOMPurify for security -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js?v=362"></script>
     <style>
-body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100vh;margin:0;padding:20px;background-color:#f5f5f5}#input-section{margin-bottom:20px}textarea{width:100%;height:50px;margin-bottom:10px}#tabs{flex:1;overflow:auto}#every-query,#analysis{display:flex;flex-direction:column;height:100%}#flow-diagram-section,#charts-placeholder{flex:0 0 250px;overflow:auto;margin-bottom:20px;border:1px solid #ccc;padding:10px;background-color:#fff}#flow-diagram{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.step-bubble{border:1px solid #000;border-radius:10px;padding:10px;text-align:center;box-shadow:2px 2px 5px rgba(0,0,0,0.1);cursor:pointer}.step-bubble p{margin:5px 0;line-height:1}.index-item{background:#fff;border:1px solid #ddd;border-radius:6px;padding:12px;margin-bottom:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1)}.index-item.primary{background:#ffe6e6;border-color:#ff9999}.index-item h4{margin:0 0 8px 0;font-size:14px;font-weight:bold;color:#333}.index-item .index-details{font-size:12px;color:#666;margin-bottom:8px}.index-item .index-statement{font-family:monospace;font-size:11px;background:#f5f5f5;padding:8px;border-radius:4px;border-left:3px solid #007bff;word-wrap:break-word;position:relative}.bucket-group{margin-bottom:20px}.bucket-group h3{background:#e9ecef;padding:8px 12px;margin:0 0 10px 0;border-radius:4px;font-size:16px;font-weight:bold;color:#495057}.state-badge{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold;text-transform:uppercase}.state-online{background:#d4edda;color:#155724}.state-offline{background:#f8d7da;color:#721c24}.state-building{background:#fff3cd;color:#856404}.replica-zero{color:#dc3545;font-weight:bold}.copy-btn{position:absolute;top:4px;right:4px;background:#007bff;color:white;border:none;border-radius:3px;padding:4px 8px;font-size:10px;cursor:pointer}.copy-btn:hover{background:#0056b3}.primary-warning{color:#dc3545;font-weight:bold}.used-badge{background:#28a745;color:white;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:bold;margin-left:8px;text-transform:uppercase}.sql-query-box{background:#f8f9fa;border:1px solid #dee2e6;border-radius:6px;padding:15px;margin:15px 0;position:relative}.sql-query-box pre{background:#ffffff;border:1px solid #e9ecef;border-radius:4px;padding:10px;margin:10px 0;font-family:monospace;font-size:12px;overflow-x:auto}.sql-copy-btn{position:absolute;top:10px;right:10px;background:#007bff;color:white;border:none;border-radius:4px;padding:6px 12px;font-size:11px;cursor:pointer}.sql-copy-btn:hover{background:#0056b3}.green{background-color:#d4edda}.yellow{background-color:#fff3cd}.orange{background-color:#ffe5d0}.red{background-color:#f8d7da}.connector{width:20px;height:2px;background-color:#000}.index-item,.query-item{border:2px solid #007bff;border-radius:12px;padding:12px;margin:10px 0;background:white;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:move;position:relative;transition:transform 0.2s,box-shadow 0.2s}.index-item:hover,.query-item:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}.index-item.primary{background-color:#ffebee;border-color:#f44336}.index-stats{font-size:11px;color:#666;margin-top:8px;line-height:1.3}.query-text{font-family:monospace;font-size:12px;background:#f8f9fa;padding:8px;border-radius:4px;margin:8px 0;max-height:60px;overflow:hidden;position:relative}.query-text.expanded{max-height:none}.query-controls{margin-top:8px;display:flex;gap:8px}.query-controls button:not(.btn-standard){padding:4px 8px;border:1px solid #ddd;background:white;border-radius:3px;cursor:pointer;font-size:11px}.query-controls button:not(.btn-standard):hover{background:#f0f0f0}.usage-count{background:white;border:1px solid #333;padding:2px 6px;font-size:11px;font-weight:bold;border-radius:3px;position:absolute;transform:translate(-50%,-50%);z-index:10}#table-section,#analysis-table-section{flex:1;overflow-y:auto}#table-container,#analysis-table-container{overflow-x:auto}table{width:100%;border-collapse:collapse;background-color:#fff}th,td{border:1px solid #ddd;padding:8px;text-align:center}th{background-color:#f2f2f2;cursor:pointer;user-select:none}th:hover{background-color:#e8e8e8}.sort-arrow{margin-left:5px;font-size:12px;color:#666}tr:hover{background-color:#f1f1f1;cursor:pointer}.primary-scan-yes{font-weight:bold!important;color:red!important}.fatal-state{font-weight:bold;color:red}.modal{display:none;position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0.4)}.modal-content{background-color:#fefefe;margin:15% auto;padding:20px;border:1px solid #888;width:80%;max-height:80vh;overflow-y:auto;user-select:text;-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text}.close{color:#aaa;float:right;font-size:28px;font-weight:bold}.close:hover,.close:focus{color:black;text-decoration:none;cursor:pointer}#plan-modal-body ul{list-style-type:none;padding-left:20px}#plan-modal-body li{margin-bottom:5px}#operator-modal-body dl{margin:0}#operator-modal-body dt{font-weight:bold}#operator-modal-body dd{margin-left:20px}#operator-modal-body,#plan-modal-body{user-select:text;-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text}#operator-modal-body *,#plan-modal-body *{user-select:text;-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text}.btn-standard{background:#007bff;color:white;border:none;border-radius:3px;padding:4px 8px;font-size:12px;cursor:pointer;margin:2px;font-weight:normal;text-transform:none}.btn-standard:hover{background:#0056b3}.btn-standard:active{background:#004494}.toast{position:fixed;bottom:20px;right:20px;background:#28a745;color:white;padding:12px 20px;border-radius:5px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1001;opacity:0;transform:translateY(100%);transition:all 0.3s ease}.toast.show{opacity:1;transform:translateY(0)}.toast.error{background:#dc3545}.version-info{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.1);color:#333;padding:4px 8px;border-radius:4px;font-size:0.75em;font-family:monospace;z-index:999;opacity:0.7;transition:opacity 0.3s ease}.version-info:hover{opacity:1;background:rgba(0,0,0,0.2)}.dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;grid-template-rows:300px}.dashboard-tables-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:30px}.chart-container{background:white;padding:15px;border:1px solid #ccc;border-radius:5px;height:400px;overflow:hidden}.chart-container.with-margin-top-20{margin-top:20px}.table-container{background:white;padding:15px;border:1px solid #ccc;border-radius:5px}.table-container.with-margin-top-40{margin-top:40px}.chart-title{margin-top:0;margin-bottom:10px;text-align:center}.chart-title.fixed-height{height:30px}.table-scroll{height:250px;overflow-y:auto;border:1px solid #eee}.table-header{padding:8px;text-align:center;border-bottom:1px solid #ddd;width:80px}.note-text{font-size:12px;color:#666;margin-bottom:10px;text-align:center;font-style:italic}.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.button-row{margin:10px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.progress-container{background-color:#f0f0f0;border:1px solid #ccc;border-radius:5px;height:20px;width:200px;overflow:hidden;position:relative}.progress-bar{background-color:#007bff;height:100%;width:0%;transition:width 0.3s ease}.progress-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:12px;font-weight:bold;color:#333}.flex-row{display:flex;align-items:center;gap:8px}.flex-row-small{display:flex;align-items:center;gap:4px;font-size:11px}.flex-row-5px{display:flex;gap:5px;align-items:center}.flex-row-20px{display:flex;gap:20px;margin-bottom:20px}.height-250-relative{height:250px;position:relative}.height-400-flex{flex:1;height:400px;position:relative}.flex-1{flex:1}.margin-top-5{margin-top:5px}.margin-top-5-right-5{margin-top:5px;margin-right:5px}.margin-left-10{margin-left:10px}.margin-0{margin:0}.margin-bottom-30{margin-bottom:30px}.font-bold{font-weight:bold}.font-bold-block{font-weight:bold;display:block;margin-bottom:5px}.font-bold-margin-right{font-weight:bold;margin-right:5px}.text-muted{color:#6c757d;font-weight:500}.input-full{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px}.input-250{width:250px;padding:5px;border:1px solid #ccc;border-radius:3px}.input-200{width:200px;padding:5px;border:1px solid #ccc;border-radius:3px}.btn-small{padding:4px 8px;font-size:0.8em}.card-white{background:white;padding:6px 10px;border-radius:4px;border:1px solid #e9ecef}.table-full{width:100%;border-collapse:collapse}.text-center-margin-top-30{text-align:center;margin-top:30px}.label-flex{display:flex;align-items:center;gap:5px;margin-left:15px}.chart-flex-container{display:flex;height:250px;gap:15px}#progress-container{display:none;margin:10px 15px}#filter-info{color:#666;font-size:0.9em}.progress-background{background-color:#f0f0f0;border-radius:5px;height:20px;position:relative}.progress-bar-fill{background-color:#4caf50;height:100%;border-radius:5px;width:0%;transition:width 0.3s ease}.progress-text{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:16px;font-weight:bold}.checkbox-label-text{font-size:0.9em;user-select:none;cursor:pointer}.warning-box{flex:0 0 200px;background:#fff3cd;border:2px solid #ffeaa7;border-radius:8px;padding:15px;display:none;flex-direction:column;justify-content:center}.warning-title{text-align:center;color:#ff6b35;font-weight:bold;font-size:16px;margin-bottom:10px}.warning-text{color:#333;font-size:13px;line-height:1.4;text-align:center}.warning-text-highlight{color:#dc3545;font-weight:bold}.warning-link-container{margin-top:10px;text-align:center}.warning-link{color:#007bff;text-decoration:none;font-size:12px;font-weight:bold}.pattern-analysis-grid{display:grid;grid-template-columns:1fr;gap:20px;margin-bottom:20px;grid-template-rows:400px}.height-350-relative{height:350px;position:relative}.sticky-header{position:sticky;top:0;background:#f5f5f5}.table-header-cell{font-weight:bold;text-align:center;padding:12px 8px;background:#f8f9fa;border:1px solid #dee2e6;user-select:none;cursor:pointer}.table-subheader{font-size:12px;color:#666;margin-bottom:10px;text-align:center;font-style:italic}.padding-8{padding:8px}.padding-5{padding:5px}.padding-15{padding:15px}.border-bottom{border-bottom:1px solid #ddd}.text-align-center{text-align:center}.width-100{width:100%}.width-80px{width:80px}.width-300px{width:300px}.position-sticky-top{position:sticky;top:0}.background-f5{background:#f5f5f5}.overflow-hidden{overflow:hidden}.cursor-pointer{cursor:pointer}.user-select-none{user-select:none}.font-size-12{font-size:12px}.font-size-11{font-size:11px}.margin-bottom-15{margin-bottom:15px}.margin-bottom-10{margin-bottom:10px}.margin-bottom-5{margin-bottom:5px}.margin-right-10{margin-right:10px}.vertical-align-top{vertical-align:top}.display-none{display:none}.max-width-500{max-width:500px}.background-white{background:white}.border-none{border:none}.border-radius-3{border-radius:3px}.color-666{color:#666}.gap-10{gap:10px}.gap-15{gap:15px}.gap-20{gap:20px}.margin-bottom-20{margin-bottom:20px}.margin-left-8{margin-left:8px}.margin-left-20{margin-left:20px}.margin-left-30{margin-left:30px}.overflow-auto{overflow:auto}.position-relative{position:relative}.display-flex{display:flex}.display-flex-center{display:flex;align-items:center}.display-flex-wrap{display:flex;flex-wrap:wrap}.height-100{height:100%}.height-300{height:300px}.height-400{height:400px}.width-90{width:90%}.width-250{width:250px}.width-200{width:200px}.flex-1-height-400{flex:1;height:400px;position:relative}.form-input{width:250px;padding:5px;border:1px solid #ccc;border-radius:3px}.form-input-small{width:200px;padding:5px;border:1px solid #ccc;border-radius:3px}.btn-gray{padding:5px 15px;background:#6c757d;color:white}.background-f8{background:#f8f9fa}.border-radius-8{border-radius:8px}.border-radius-6{border-radius:6px}.border-radius-4{border-radius:4px}.z-index-1{z-index:1}.z-index-2{z-index:2}.z-index-3{z-index:3}.padding-10-20{padding:10px 20px}.padding-4-8{padding:4px 8px}.font-size-14{font-size:14px}.font-size-0-8em{font-size:0.8em}.calc-height-minus-50{height:calc(100% - 50px)}.position-absolute{position:absolute}.top-0{top:0}.left-0{left:0}.pointer-events-none{pointer-events:none}.border-1-ddd{border:1px solid #ddd}.border-1-ccc{border:1px solid #ccc}.justify-space-between{justify-content:space-between}.align-center{align-items:center}.color-333{color:#333}.grid-2-col{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:300px}.chart-card{background:white;padding:15px;border:1px solid #ccc;border-radius:5px;height:300px;overflow:hidden}.chart-card-header{margin-top:0;margin-bottom:10px;text-align:center;height:30px}.chart-card-content{height:250px;position:relative}
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      #input-section {
+        margin-bottom: 20px;
+      }
+      textarea {
+        width: 100%;
+        height: 50px;
+        margin-bottom: 10px;
+      }
+      #tabs {
+        flex: 1;
+        overflow: auto;
+      }
+      #every-query,
+      #analysis {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      #flow-diagram-section,
+      #charts-placeholder {
+        flex: 0 0 250px;
+        overflow: auto;
+        margin-bottom: 20px;
+        border: 1px solid #ccc;
+        padding: 10px;
+        background-color: #fff;
+      }
+      #flow-diagram {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+      .step-bubble {
+        border: 1px solid #000;
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+      }
+      .step-bubble p {
+        margin: 5px 0;
+        line-height: 1;
+      }
+      .index-item {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .index-item.primary {
+        background: #ffe6e6;
+        border-color: #ff9999;
+      }
+      .index-item h4 {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        font-weight: bold;
+        color: #333;
+      }
+      .index-item .index-details {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 8px;
+      }
+      .index-item .index-statement {
+        font-family: monospace;
+        font-size: 11px;
+        background: #f5f5f5;
+        padding: 8px;
+        border-radius: 4px;
+        border-left: 3px solid #007bff;
+        word-wrap: break-word;
+        position: relative;
+      }
+      .bucket-group {
+        margin-bottom: 20px;
+      }
+      .bucket-group h3 {
+        background: #e9ecef;
+        padding: 8px 12px;
+        margin: 0 0 10px 0;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: bold;
+        color: #495057;
+      }
+      .state-badge {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+      .state-online {
+        background: #d4edda;
+        color: #155724;
+      }
+      .state-offline {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      .state-building {
+        background: #fff3cd;
+        color: #856404;
+      }
+      .replica-zero {
+        color: #dc3545;
+        font-weight: bold;
+      }
+      .copy-btn {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        padding: 4px 8px;
+        font-size: 10px;
+        cursor: pointer;
+      }
+      .copy-btn:hover {
+        background: #0056b3;
+      }
+      .primary-warning {
+        color: #dc3545;
+        font-weight: bold;
+      }
+      .used-badge {
+        background: #28a745;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: bold;
+        margin-left: 8px;
+        text-transform: uppercase;
+      }
+      .sql-query-box {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 15px;
+        margin: 15px 0;
+        position: relative;
+      }
+      .sql-query-box pre {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        padding: 10px;
+        margin: 10px 0;
+        font-family: monospace;
+        font-size: 12px;
+        overflow-x: auto;
+      }
+      .sql-copy-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-size: 11px;
+        cursor: pointer;
+      }
+      .sql-copy-btn:hover {
+        background: #0056b3;
+      }
+      .green {
+        background-color: #d4edda;
+      }
+      .yellow {
+        background-color: #fff3cd;
+      }
+      .orange {
+        background-color: #ffe5d0;
+      }
+      .red {
+        background-color: #f8d7da;
+      }
+      .connector {
+        width: 20px;
+        height: 2px;
+        background-color: #000;
+      }
+      .index-item,
+      .query-item {
+        border: 2px solid #007bff;
+        border-radius: 12px;
+        padding: 12px;
+        margin: 10px 0;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        cursor: move;
+        position: relative;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .index-item:hover,
+      .query-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+      .index-item.primary {
+        background-color: #ffebee;
+        border-color: #f44336;
+      }
+      .index-stats {
+        font-size: 11px;
+        color: #666;
+        margin-top: 8px;
+        line-height: 1.3;
+      }
+      .query-text {
+        font-family: monospace;
+        font-size: 12px;
+        background: #f8f9fa;
+        padding: 8px;
+        border-radius: 4px;
+        margin: 8px 0;
+        max-height: 60px;
+        overflow: hidden;
+        position: relative;
+      }
+      .query-text.expanded {
+        max-height: none;
+      }
+      .query-controls {
+        margin-top: 8px;
+        display: flex;
+        gap: 8px;
+      }
+      .query-controls button:not(.btn-standard) {
+        padding: 4px 8px;
+        border: 1px solid #ddd;
+        background: white;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 11px;
+      }
+      .query-controls button:not(.btn-standard):hover {
+        background: #f0f0f0;
+      }
+      .usage-count {
+        background: white;
+        border: 1px solid #333;
+        padding: 2px 6px;
+        font-size: 11px;
+        font-weight: bold;
+        border-radius: 3px;
+        position: absolute;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+      }
+      #table-section,
+      #analysis-table-section {
+        flex: 1;
+        overflow-y: auto;
+      }
+      #table-container,
+      #analysis-table-container {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #fff;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+      }
+      th {
+        background-color: #f2f2f2;
+        cursor: pointer;
+        user-select: none;
+      }
+      th:hover {
+        background-color: #e8e8e8;
+      }
+      .sort-arrow {
+        margin-left: 5px;
+        font-size: 12px;
+        color: #666;
+      }
+      tr:hover {
+        background-color: #f1f1f1;
+        cursor: pointer;
+      }
+      .primary-scan-yes {
+        font-weight: bold !important;
+        color: red !important;
+      }
+      .fatal-state {
+        font-weight: bold;
+        color: red;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+      }
+      .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-height: 80vh;
+        overflow-y: auto;
+        user-select: text;
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+      }
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+      }
+      .close:hover,
+      .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      #plan-modal-body ul {
+        list-style-type: none;
+        padding-left: 20px;
+      }
+      #plan-modal-body li {
+        margin-bottom: 5px;
+      }
+      #operator-modal-body dl {
+        margin: 0;
+      }
+      #operator-modal-body dt {
+        font-weight: bold;
+      }
+      #operator-modal-body dd {
+        margin-left: 20px;
+      }
+      #operator-modal-body,
+      #plan-modal-body {
+        user-select: text;
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+      }
+      #operator-modal-body *,
+      #plan-modal-body * {
+        user-select: text;
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+      }
+      .btn-standard {
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        padding: 4px 8px;
+        font-size: 12px;
+        cursor: pointer;
+        margin: 2px;
+        font-weight: normal;
+        text-transform: none;
+      }
+      .btn-standard:hover {
+        background: #0056b3;
+      }
+      .btn-standard:active {
+        background: #004494;
+      }
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #28a745;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1001;
+        opacity: 0;
+        transform: translateY(100%);
+        transition: all 0.3s ease;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .toast.error {
+        background: #dc3545;
+      }
+      .version-info {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.1);
+        color: #333;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75em;
+        font-family: monospace;
+        z-index: 999;
+        opacity: 0.7;
+        transition: opacity 0.3s ease;
+      }
+      .version-info:hover {
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      /* Fix text selection in table cells */
+      table td, table th {
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+      }
+
+      /* Ensure table rows still have pointer cursor but allow text selection */
+      table tr {
+        cursor: pointer;
+      }
+
+      table tr:hover {
+        background-color: #f1f1f1;
+      }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+        grid-template-rows: 300px;
+      }
+      .dashboard-tables-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+      .chart-container {
+        background: white;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        height: 400px;
+        overflow: hidden;
+      }
+      .chart-container.with-margin-top-20 {
+        margin-top: 20px;
+      }
+      .table-container {
+        background: white;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .table-container.with-margin-top-40 {
+        margin-top: 40px;
+      }
+      .chart-title {
+        margin-top: 0;
+        margin-bottom: 10px;
+        text-align: center;
+      }
+      .chart-title.fixed-height {
+        height: 30px;
+      }
+      .table-scroll {
+        height: 250px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+      }
+      .table-header {
+        padding: 8px;
+        text-align: center;
+        border-bottom: 1px solid #ddd;
+        width: 80px;
+      }
+      .note-text {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 10px;
+        text-align: center;
+        font-style: italic;
+      }
+      .input-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .button-row {
+        margin: 10px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .progress-container {
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        height: 20px;
+        width: 200px;
+        overflow: hidden;
+        position: relative;
+      }
+      .progress-bar {
+        background-color: #007bff;
+        height: 100%;
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+      .progress-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 12px;
+        font-weight: bold;
+        color: #333;
+      }
+      .flex-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .flex-row-small {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+      }
+      .flex-row-5px {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+      .flex-row-20px {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+      .height-250-relative {
+        height: 250px;
+        position: relative;
+      }
+      .height-400-flex {
+        flex: 1;
+        height: 400px;
+        position: relative;
+      }
+      .flex-1 {
+        flex: 1;
+      }
+      .margin-top-5 {
+        margin-top: 5px;
+      }
+      .margin-top-5-right-5 {
+        margin-top: 5px;
+        margin-right: 5px;
+      }
+      .margin-left-10 {
+        margin-left: 10px;
+      }
+      .margin-0 {
+        margin: 0;
+      }
+      .margin-bottom-30 {
+        margin-bottom: 30px;
+      }
+      .font-bold {
+        font-weight: bold;
+      }
+      .font-bold-block {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+      }
+      .font-bold-margin-right {
+        font-weight: bold;
+        margin-right: 5px;
+      }
+      .text-muted {
+        color: #6c757d;
+        font-weight: 500;
+      }
+      .input-full {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      .input-250 {
+        width: 250px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+      }
+      .input-200 {
+        width: 200px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+      }
+      .btn-small {
+        padding: 4px 8px;
+        font-size: 0.8em;
+      }
+      .card-white {
+        background: white;
+        padding: 6px 10px;
+        border-radius: 4px;
+        border: 1px solid #e9ecef;
+      }
+      .table-full {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .text-center-margin-top-30 {
+        text-align: center;
+        margin-top: 30px;
+      }
+      .label-flex {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-left: 15px;
+      }
+      .chart-flex-container {
+        display: flex;
+        height: 250px;
+        gap: 15px;
+      }
+      #progress-container {
+        display: none;
+        margin: 10px 15px;
+      }
+      #filter-info {
+        color: #666;
+        font-size: 0.9em;
+      }
+      .progress-background {
+        background-color: #f0f0f0;
+        border-radius: 5px;
+        height: 20px;
+        position: relative;
+      }
+      .progress-bar-fill {
+        background-color: #4caf50;
+        height: 100%;
+        border-radius: 5px;
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+      .progress-text {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 16px;
+        font-weight: bold;
+      }
+      .checkbox-label-text {
+        font-size: 0.9em;
+        user-select: none;
+        cursor: pointer;
+      }
+      .warning-box {
+        flex: 0 0 200px;
+        background: #fff3cd;
+        border: 2px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 15px;
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .warning-title {
+        text-align: center;
+        color: #ff6b35;
+        font-weight: bold;
+        font-size: 16px;
+        margin-bottom: 10px;
+      }
+      .warning-text {
+        color: #333;
+        font-size: 13px;
+        line-height: 1.4;
+        text-align: center;
+      }
+      .warning-text-highlight {
+        color: #dc3545;
+        font-weight: bold;
+      }
+      .warning-link-container {
+        margin-top: 10px;
+        text-align: center;
+      }
+      .warning-link {
+        color: #007bff;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .pattern-analysis-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+        grid-template-rows: 400px;
+      }
+      .height-350-relative {
+        height: 350px;
+        position: relative;
+      }
+      .sticky-header {
+        position: sticky;
+        top: 0;
+        background: #f5f5f5;
+      }
+      .table-header-cell {
+        font-weight: bold;
+        text-align: center;
+        padding: 12px 8px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        user-select: none;
+        cursor: pointer;
+      }
+      .table-subheader {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 10px;
+        text-align: center;
+        font-style: italic;
+      }
+      .padding-8 {
+        padding: 8px;
+      }
+      .padding-5 {
+        padding: 5px;
+      }
+      .padding-15 {
+        padding: 15px;
+      }
+      .border-bottom {
+        border-bottom: 1px solid #ddd;
+      }
+      .text-align-center {
+        text-align: center;
+      }
+      .width-100 {
+        width: 100%;
+      }
+      .width-80px {
+        width: 80px;
+      }
+      .width-300px {
+        width: 300px;
+      }
+      .position-sticky-top {
+        position: sticky;
+        top: 0;
+      }
+      .background-f5 {
+        background: #f5f5f5;
+      }
+      .overflow-hidden {
+        overflow: hidden;
+      }
+      .cursor-pointer {
+        cursor: pointer;
+      }
+      .user-select-none {
+        user-select: none;
+      }
+      .font-size-12 {
+        font-size: 12px;
+      }
+      .font-size-11 {
+        font-size: 11px;
+      }
+      .margin-bottom-15 {
+        margin-bottom: 15px;
+      }
+      .margin-bottom-10 {
+        margin-bottom: 10px;
+      }
+      .margin-bottom-5 {
+        margin-bottom: 5px;
+      }
+      .margin-right-10 {
+        margin-right: 10px;
+      }
+      .vertical-align-top {
+        vertical-align: top;
+      }
+      .display-none {
+        display: none;
+      }
+      .max-width-500 {
+        max-width: 500px;
+      }
+      .background-white {
+        background: white;
+      }
+      .border-none {
+        border: none;
+      }
+      .border-radius-3 {
+        border-radius: 3px;
+      }
+      .color-666 {
+        color: #666;
+      }
+      .gap-10 {
+        gap: 10px;
+      }
+      .gap-15 {
+        gap: 15px;
+      }
+      .gap-20 {
+        gap: 20px;
+      }
+      .margin-bottom-20 {
+        margin-bottom: 20px;
+      }
+      .margin-left-8 {
+        margin-left: 8px;
+      }
+      .margin-left-20 {
+        margin-left: 20px;
+      }
+      .margin-left-30 {
+        margin-left: 30px;
+      }
+      .overflow-auto {
+        overflow: auto;
+      }
+      .position-relative {
+        position: relative;
+      }
+      .display-flex {
+        display: flex;
+      }
+      .display-flex-center {
+        display: flex;
+        align-items: center;
+      }
+      .display-flex-wrap {
+        display: flex;
+        flex-wrap: wrap;
+      }
+      .height-100 {
+        height: 100%;
+      }
+      .height-300 {
+        height: 300px;
+      }
+      .height-400 {
+        height: 400px;
+      }
+      .width-90 {
+        width: 90%;
+      }
+      .width-250 {
+        width: 250px;
+      }
+      .width-200 {
+        width: 200px;
+      }
+      .flex-1-height-400 {
+        flex: 1;
+        height: 400px;
+        position: relative;
+      }
+      .form-input {
+        width: 250px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+      }
+      .form-input-small {
+        width: 200px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+      }
+      .btn-gray {
+        padding: 5px 15px;
+        background: #6c757d;
+        color: white;
+      }
+      .background-f8 {
+        background: #f8f9fa;
+      }
+      .border-radius-8 {
+        border-radius: 8px;
+      }
+      .border-radius-6 {
+        border-radius: 6px;
+      }
+      .border-radius-4 {
+        border-radius: 4px;
+      }
+      .z-index-1 {
+        z-index: 1;
+      }
+      .z-index-2 {
+        z-index: 2;
+      }
+      .z-index-3 {
+        z-index: 3;
+      }
+      .padding-10-20 {
+        padding: 10px 20px;
+      }
+      .padding-4-8 {
+        padding: 4px 8px;
+      }
+      .font-size-14 {
+        font-size: 14px;
+      }
+      .font-size-0-8em {
+        font-size: 0.8em;
+      }
+      .calc-height-minus-50 {
+        height: calc(100% - 50px);
+      }
+      .position-absolute {
+        position: absolute;
+      }
+      .top-0 {
+        top: 0;
+      }
+      .left-0 {
+        left: 0;
+      }
+      .pointer-events-none {
+        pointer-events: none;
+      }
+      .border-1-ddd {
+        border: 1px solid #ddd;
+      }
+      .border-1-ccc {
+        border: 1px solid #ccc;
+      }
+      .justify-space-between {
+        justify-content: space-between;
+      }
+      .align-center {
+        align-items: center;
+      }
+      .color-333 {
+        color: #333;
+      }
+      .grid-2-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 300px;
+      }
+      .chart-card {
+        background: white;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        height: 300px;
+        overflow: hidden;
+      }
+      .chart-card-header {
+        margin-top: 0;
+        margin-bottom: 10px;
+        text-align: center;
+        height: 30px;
+      }
+      .chart-card-content {
+        height: 250px;
+        position: relative;
+      }
     </style>
     <style>
-        /* Larger Parse JSON Button */
-        #parse-json-btn {
-          font-size: 18px !important;
-          padding: 12px 24px !important;
-          font-weight: bold !important;
-          background: #28a745 !important;
-          color: white !important;
-          border: none !important;
-          border-radius: 8px !important;
-          cursor: pointer !important;
-          transition: all 0.3s ease !important;
-        }
-        #parse-json-btn:hover {
-          background: #1e7e34 !important;
-          transform: translateY(-1px) !important;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
-        }
-        #parse-json-btn:active {
-          transform: translateY(0) !important;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
-        }
-        
-        /* Fix text selection in table cells */
-        table td, table th {
-          user-select: text !important;
-          -webkit-user-select: text !important;
-          -moz-user-select: text !important;
-          -ms-user-select: text !important;
-        }
-        
-        /* Ensure table rows still have pointer cursor but allow text selection */
-        table tr {
-          cursor: pointer;
-        }
-        
-        table tr:hover {
-          background-color: #f1f1f1;
-        }
+      /* Larger Parse JSON Button */
+      #parse-json-btn {
+        font-size: 18px !important;
+        padding: 12px 24px !important;
+        font-weight: bold !important;
+        background: #28a745 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+      }
+      #parse-json-btn:hover {
+        background: #1e7e34 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+      }
+      #parse-json-btn:active {
+        transform: translateY(0) !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+      }
     </style>
     <!-- Include Panzoom, jQuery, and jQuery UI -->
     <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.2/dist/panzoom.min.js?v=362"></script>
@@ -95,22 +1085,37 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
     <!-- Input Section (outside tabs) -->
     <div id="input-section">
-      <div class="input-grid">
+      <div
+        style="
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          margin-bottom: 10px;
+        "
+      >
         <textarea
           id="json-input"
-          placeholder="Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;"
+          placeholder="Cole sua saída JSON de: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;"
           aria-label="JSON input field for Couchbase query data"
           role="textbox"
         ></textarea>
         <textarea
           id="indexJsonInput"
-          placeholder="Click the 'Indexes' tab below to get the SQL query to run. Paste the results here..."
+          placeholder="Clique na aba 'Índices' abaixo para obter a consulta SQL. Cole os resultados aqui..."
           aria-label="Index JSON input field"
           role="textbox"
         ></textarea>
       </div>
 
-      <div class="flex-row" style="margin: 10px 0; flex-wrap: wrap">
+      <div
+        style="
+          margin: 10px 0;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        "
+      >
         <button
           id="parse-json-btn"
           onclick="parseJSON()"
@@ -118,17 +1123,51 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           tabindex="0"
           role="button"
         >
-          Parse JSON
+          Analisar JSON
         </button>
 
-        <div id="progress-container">
-          <div class="progress-background">
-            <div id="progress-bar" class="progress-bar-fill"></div>
-            <span id="progress-text" class="progress-text">0%</span>
+        <div id="progress-container" style="display: none; margin: 10px 15px">
+          <div
+            style="
+              background-color: #f0f0f0;
+              border-radius: 5px;
+              height: 20px;
+              position: relative;
+            "
+          >
+            <div
+              id="progress-bar"
+              style="
+                background-color: #4caf50;
+                height: 100%;
+                border-radius: 5px;
+                width: 0%;
+                transition: width 0.3s ease;
+              "
+            ></div>
+            <span
+              id="progress-text"
+              style="
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 16px;
+                font-weight: bold;
+              "
+              >0%</span
+            >
           </div>
         </div>
 
-        <label class="label-flex">
+        <label
+          style="
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: 15px;
+          "
+        >
           <input
             type="checkbox"
             id="exclude-system-queries"
@@ -137,17 +1176,26 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             aria-label="Exclude system queries from analysis"
           />
           <span
-            class="checkbox-label-text"
+            style="font-size: 0.9em; user-select: none; cursor: pointer"
             title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
           >
-            Exclude System Queries
+            Excluir Consultas do Sistema
           </span>
         </label>
-        
+
         <!-- Date range controls in a vertical stack -->
-        <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-start;">
-          <div style="display: flex; align-items: center; gap: 5px;">
-            <label for="start-date" style="width: 40px; text-align: left;">From:</label>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            align-items: flex-start;
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 5px">
+            <label for="start-date" style="width: 40px; text-align: left"
+              >De:</label
+            >
             <input
               type="datetime-local"
               id="start-date"
@@ -155,8 +1203,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               title="Start date/time for filtering"
             />
           </div>
-          <div style="display: flex; align-items: center; gap: 5px;">
-            <label for="end-date" style="width: 40px; text-align: left;">To:</label>
+          <div style="display: flex; align-items: center; gap: 5px">
+            <label for="end-date" style="width: 40px; text-align: left"
+              >Até:</label
+            >
             <input
               type="datetime-local"
               id="end-date"
@@ -165,33 +1215,45 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             />
           </div>
         </div>
-        
+
         <!-- SQL Statement Filter -->
-        <div style="display: flex; align-items: center; gap: 5px;">
+        <div style="display: flex; align-items: center; gap: 5px">
           <input
             type="text"
             id="sql-statement-filter"
-            placeholder="Filter SQL++ Statement Contains"
-            title="Filter SQL++ statements during JSON parsing"
-            style="width: 200px;"
+            placeholder="Filtrar Declaração SQL++ Contém"
+            title="Filtrar declarações SQL++ durante a análise JSON"
+            style="width: 200px"
           />
         </div>
-        
-        <div class="flex-row-5px">
-          <button onclick="setTimeRange('original')" class="cursor-pointer border-none border-radius-3 btn-gray">
+
+        <div style="display: flex; gap: 5px; align-items: center">
+          <button
+            onclick="setTimeRange('original')"
+            class="cursor-pointer border-none border-radius-3 btn-gray"
+          >
             Original
           </button>
-          <button onclick="setTimeRange('1week')" class="cursor-pointer border-none border-radius-3 btn-gray">
-            1 Week
+          <button
+            onclick="setTimeRange('1week')"
+            class="cursor-pointer border-none border-radius-3 btn-gray"
+          >
+            1 Semana
           </button>
-          <button onclick="setTimeRange('1day')" class="cursor-pointer border-none border-radius-3 btn-gray">
-            1 Day
+          <button
+            onclick="setTimeRange('1day')"
+            class="cursor-pointer border-none border-radius-3 btn-gray"
+          >
+            1 Dia
           </button>
-          <button onclick="setTimeRange('1hour')" class="cursor-pointer border-none border-radius-3 btn-gray">
-            1 Hour
+          <button
+            onclick="setTimeRange('1hour')"
+            class="cursor-pointer border-none border-radius-3 btn-gray"
+          >
+            1 Hora
           </button>
         </div>
-        <span id="filter-info"></span>
+        <span id="filter-info" style="color: #666; font-size: 0.9em"></span>
       </div>
     </div>
 
@@ -201,20 +1263,22 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       <ul role="tablist" aria-label="Analysis views">
         <li role="tab">
           <a href="#dashboard" aria-controls="dashboard" tabindex="0"
-            >Dashboard</a
+            >Painel de Controle</a
           >
         </li>
         <li role="tab">
-          <a href="#timeline" aria-controls="timeline" tabindex="0">Timeline</a>
+          <a href="#timeline" aria-controls="timeline" tabindex="0"
+            >Linha do Tempo</a
+          >
         </li>
         <li role="tab">
           <a href="#analysis" aria-controls="analysis" tabindex="0"
-            >Query Groups</a
+            >Grupos de Consultas</a
           >
         </li>
         <li role="tab">
           <a href="#every-query" aria-controls="every-query" tabindex="0"
-            >Every Query</a
+            >Todas as Consultas</a
           >
         </li>
         <li role="tab">
@@ -222,49 +1286,125 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             href="#index-query-flow"
             aria-controls="index-query-flow"
             tabindex="0"
-            >Index/Query Flow</a
+            >Fluxo Índice/Consulta</a
           >
         </li>
         <li role="tab">
-          <a href="#indexes" aria-controls="indexes" tabindex="0">Indexes</a>
+          <a href="#indexes" aria-controls="indexes" tabindex="0">Índices</a>
         </li>
       </ul>
 
       <!-- Dashboard Tab Content -->
       <div id="dashboard">
-        <div class="dashboard-grid">
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+            grid-template-rows: 300px;
+          "
+        >
           <!-- Elapsed Time Distribution Bar Chart -->
-          <div class="chart-container height-300">
-            <h3 class="chart-title fixed-height">
-              Query Duration Distribution
+          <div
+            style="
+              background: white;
+              padding: 15px;
+              border: 1px solid #ccc;
+              border-radius: 5px;
+              height: 300px;
+              overflow: hidden;
+            "
+          >
+            <h3
+              style="
+                margin-top: 0;
+                margin-bottom: 10px;
+                text-align: center;
+                height: 30px;
+              "
+            >
+              Distribuição de Duração de Consultas
             </h3>
-            <div class="height-250-relative">
+            <div style="height: 250px; position: relative">
               <canvas id="elapsed-time-chart"></canvas>
             </div>
           </div>
           <!-- Primary Index(es) Scan Used Chart -->
-          <div class="chart-container height-300">
-            <h3 class="chart-title fixed-height">Primary Indexes Used</h3>
-            <div class="chart-flex-container">
-              <div class="flex-1 position-relative">
+          <div
+            style="
+              background: white;
+              padding: 15px;
+              border: 1px solid #ccc;
+              border-radius: 5px;
+              height: 300px;
+              overflow: hidden;
+            "
+          >
+            <h3
+              style="
+                margin-top: 0;
+                margin-bottom: 10px;
+                text-align: center;
+                height: 30px;
+              "
+            >
+              Índices Primários Utilizados
+            </h3>
+            <div style="display: flex; height: 250px; gap: 15px">
+              <div style="flex: 1; position: relative">
                 <canvas id="primary-scan-chart"></canvas>
               </div>
-              <div id="primary-scan-warning" class="warning-box">
-                <div class="warning-title">⚠️ WARNING ⚠️</div>
-                <div class="warning-text">
-                  Primary index scans in production can cause full bucket scans
-                  leading to
-                  <span class="warning-text-highlight"
-                    >severe performance issues</span
+              <div
+                id="primary-scan-warning"
+                style="
+                  flex: 0 0 200px;
+                  background: #fff3cd;
+                  border: 2px solid #ffeaa7;
+                  border-radius: 8px;
+                  padding: 15px;
+                  display: none;
+                  flex-direction: column;
+                  justify-content: center;
+                "
+              >
+                <div
+                  style="
+                    text-align: center;
+                    color: #ff6b35;
+                    font-weight: bold;
+                    font-size: 16px;
+                    margin-bottom: 10px;
+                  "
+                >
+                  ⚠️ AVISO ⚠️
+                </div>
+                <div
+                  style="
+                    color: #333;
+                    font-size: 13px;
+                    line-height: 1.4;
+                    text-align: center;
+                  "
+                >
+                  Escaneamentos de índice primário em produção podem causar
+                  escaneamentos completos do bucket levando a
+                  <span style="color: #dc3545; font-weight: bold"
+                    >problemas graves de desempenho</span
                   >
                 </div>
-                <div class="warning-link-container">
+                <div style="margin-top: 10px; text-align: center">
                   <a
                     href="https://www.couchbase.com/blog/primary-uses-for-couchbase-primary-index/"
                     target="_blank"
-                    class="warning-link"
+                    style="
+                      color: #007bff;
+                      text-decoration: none;
+                      font-size: 12px;
+                      font-weight: bold;
+                    "
                   >
-                    📖 Learn More
+                    📖 Saiba Mais
                   </a>
                 </div>
               </div>
@@ -273,27 +1413,93 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         </div>
 
         <!-- Query Pattern Analysis Row -->
-        <div class="pattern-analysis-grid">
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+            grid-template-rows: 400px;
+          "
+        >
           <!-- Query Pattern Features Bar Chart -->
-          <div class="chart-container with-margin-top-20">
-            <h3 class="chart-title fixed-height">Query Pattern Features</h3>
-            <div class="height-350-relative">
+          <div
+            style="
+              background: white;
+              padding: 15px;
+              border: 1px solid #ccc;
+              border-radius: 5px;
+              height: 400px;
+              overflow: hidden;
+              margin-top: 20px;
+            "
+          >
+            <h3
+              style="
+                margin-top: 0;
+                margin-bottom: 10px;
+                text-align: center;
+                height: 30px;
+              "
+            >
+              Características de Padrões de Consulta
+            </h3>
+            <div style="height: 350px; position: relative">
               <canvas id="query-pattern-chart"></canvas>
             </div>
           </div>
         </div>
 
         <!-- Data Tables Row -->
-        <div class="dashboard-tables-grid">
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+          "
+        >
           <!-- User Query Count Table -->
-          <div class="table-container with-margin-top-40">
-            <h3 class="chart-title">Users by Query Count</h3>
-            <div class="table-scroll">
-              <table id="user-count-table" class="table-full">
-                <thead class="sticky-header">
+          <div
+            style="
+              background: white;
+              padding: 15px;
+              border: 1px solid #ccc;
+              border-radius: 5px;
+              margin-top: 40px;
+            "
+          >
+            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center">
+              Usuários por Contagem de Consultas
+            </h3>
+            <div
+              style="height: 250px; overflow-y: auto; border: 1px solid #eee"
+            >
+              <table
+                id="user-count-table"
+                style="width: 100%; border-collapse: collapse"
+              >
+                <thead style="position: sticky; top: 0; background: #f5f5f5">
                   <tr>
-                    <th class="width-80px">Count</th>
-                    <th>User</th>
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: center;
+                        border-bottom: 1px solid #ddd;
+                        width: 80px;
+                      "
+                    >
+                      Count
+                    </th>
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: center;
+                        border-bottom: 1px solid #ddd;
+                      "
+                    >
+                      User
+                    </th>
                   </tr>
                 </thead>
                 <tbody id="user-count-body"></tbody>
@@ -301,25 +1507,66 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             </div>
           </div>
 
-          <!-- Index Usage Count Table -->
-          <div class="table-container with-margin-top-40">
-            <h3 class="chart-title">Index Usage Count</h3>
-            <div class="table-subheader">
-              Note: #primary count shows total operations, not unique queries
+          <!-- Contagem de Uso de Índices Table -->
+          <div
+            style="
+              background: white;
+              padding: 15px;
+              border: 1px solid #ccc;
+              border-radius: 5px;
+              margin-top: 40px;
+            "
+          >
+            <h3 style="margin-top: 0; margin-bottom: 10px; text-align: center">
+              Contagem de Uso de Índices
+            </h3>
+            <div
+              style="
+                font-size: 12px;
+                color: #666;
+                margin-bottom: 10px;
+                text-align: center;
+                font-style: italic;
+              "
+            >
+              Nota: a contagem #primary mostra operações totais, não consultas
+              únicas
             </div>
-            <div class="table-scroll">
-              <table id="index-count-table" class="table-full">
-                <thead class="sticky-header">
+            <div
+              style="height: 250px; overflow-y: auto; border: 1px solid #eee"
+            >
+              <table
+                id="index-count-table"
+                style="width: 100%; border-collapse: collapse"
+              >
+                <thead style="position: sticky; top: 0; background: #f5f5f5">
                   <tr>
                     <th
-                      class="padding-8 text-align-center border-bottom width-80px"
+                      style="
+                        padding: 8px;
+                        text-align: center;
+                        border-bottom: 1px solid #ddd;
+                        width: 80px;
+                      "
                     >
                       Count
                     </th>
-                    <th class="padding-8 text-align-center border-bottom">
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: center;
+                        border-bottom: 1px solid #ddd;
+                      "
+                    >
                       Index Name
                     </th>
-                    <th class="padding-8 text-align-center border-bottom">
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: center;
+                        border-bottom: 1px solid #ddd;
+                      "
+                    >
                       Bucket.Scope.Collection
                     </th>
                   </tr>
@@ -329,19 +1576,63 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             </div>
           </div>
         </div>
-        <div class="grid-2-col gap-20 margin-bottom-20">
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+            grid-template-rows: 300px;
+          "
+        >
           <!-- Statement Type Pie Chart -->
-          <div class="chart-card">
-            <h3 class="chart-card-header">Statement Type</h3>
-            <div class="chart-card-content">
+          <div
+            style="
+              background: white;
+              padding: 15px;
+              border: 1px solid #ccc;
+              border-radius: 5px;
+              height: 300px;
+              overflow: hidden;
+            "
+          >
+            <h3
+              style="
+                margin-top: 0;
+                margin-bottom: 10px;
+                text-align: center;
+                height: 30px;
+              "
+            >
+              Tipo de Declaração
+            </h3>
+            <div style="height: 250px; position: relative">
               <canvas id="statement-type-chart"></canvas>
             </div>
           </div>
 
           <!-- Query State Pie Chart -->
-          <div class="chart-card">
-            <h3 class="chart-card-header">Query State</h3>
-            <div class="chart-card-content">
+          <div
+            style="
+              background: white;
+              padding: 15px;
+              border: 1px solid #ccc;
+              border-radius: 5px;
+              height: 300px;
+              overflow: hidden;
+            "
+          >
+            <h3
+              style="
+                margin-top: 0;
+                margin-bottom: 10px;
+                text-align: center;
+                height: 30px;
+              "
+            >
+              Estado da Consulta
+            </h3>
+            <div style="height: 250px; position: relative">
               <canvas id="state-chart"></canvas>
             </div>
           </div>
@@ -350,12 +1641,27 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       <!-- Timeline Tab Content -->
       <div id="timeline">
-        <div class="margin-bottom-10">
-          <button id="reset-zoom-btn" onclick="resetTimelineZoom()" class="cursor-pointer border-none border-radius-3 btn-gray">
-            Reset Zoom
+        <div style="margin-bottom: 10px">
+          <button
+            id="reset-zoom-btn"
+            onclick="resetTimelineZoom()"
+            class="cursor-pointer border-none border-radius-3 btn-gray"
+          >
+            Redefinir Zoom
           </button>
-          <div class="margin-left-20" style="display: inline-block; background: #f8f9fa; padding: 6px 10px; border-radius: 4px; border: 1px solid #dee2e6;">
-            <label style="font-weight: bold; margin-right: 8px; color: #495057;">Y-Axis Scale:</label>
+          <div
+            class="margin-left-20"
+            style="
+              display: inline-block;
+              background: #f8f9fa;
+              padding: 6px 10px;
+              border-radius: 4px;
+              border: 1px solid #dee2e6;
+            "
+          >
+            <label style="font-weight: bold; margin-right: 8px; color: #495057"
+              >Escala do Eixo Y:</label
+            >
             <label
               ><input
                 type="radio"
@@ -363,8 +1669,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 value="linear"
                 checked
                 onchange="changeYAxisScale()"
-              />
-              Linear</label
+              />Linear</label
             >
             <label class="margin-left-10"
               ><input
@@ -372,62 +1677,71 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 name="yScale"
                 value="logarithmic"
                 onchange="changeYAxisScale()"
-              />
-              Logarithmic</label
+              />Logarítmico</label
             >
           </div>
           <span class="margin-left-30">
-            <label style="font-weight: bold; margin-right: 8px; color: #495057;">Time Grouping:</label>
-            <select id="time-grouping-select" onchange="changeTimeGrouping()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px;">
-              <option value="optimizer">By Optimizer (...)</option>
-              <option value="hour">By Hour</option>
-              <option value="minute">By Minute</option>
-              <option value="second">By Second</option>
+            <label style="font-weight: bold; margin-right: 8px; color: #495057"
+              >Agrupamento de Tempo:</label
+            >
+            <select
+              id="time-grouping-select"
+              onchange="changeTimeGrouping()"
+              style="
+                padding: 4px 8px;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+              "
+            >
+              <option value="optimizer">Por Otimizador (...)</option>
+              <option value="hour">Por Hora</option>
+              <option value="minute">Por Minuto</option>
+              <option value="second">Por Segundo</option>
             </select>
           </span>
-          <span class="color-666 font-size-12 margin-left-20">
-            Drag box to zoom area
+          <span style="margin-left: 20px; color: #666; font-size: 12px">
+            Arraste caixa para ampliar área
           </span>
           <button
             id="use-time-range-btn"
             onclick="useCurrentTimeRange()"
             class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray"
           >
-            Use Charts Current X-Axis Date Range
+            Usar Intervalo de Datas do Eixo X dos Gráficos Atuais
           </button>
         </div>
-        <div class="display-flex gap-20 margin-bottom-20">
-          <div class="flex-1-height-400">
+        <div style="display: flex; gap: 20px; margin-bottom: 20px">
+          <div style="flex: 1; height: 400px; position: relative">
             <canvas id="duration-buckets-chart"></canvas>
           </div>
-          <div class="flex-1-height-400">
+          <div style="flex: 1; height: 400px; position: relative">
             <canvas id="query-types-chart"></canvas>
           </div>
         </div>
 
-        <div class="display-flex gap-20 margin-bottom-20">
-          <div class="flex-1-height-400">
+        <div style="display: flex; gap: 20px; margin-bottom: 20px">
+          <div style="flex: 1; height: 400px; position: relative">
             <canvas id="operations-chart"></canvas>
           </div>
-          <div class="flex-1-height-400">
+          <div style="flex: 1; height: 400px; position: relative">
             <canvas id="filter-chart"></canvas>
           </div>
         </div>
 
-        <div class="display-flex gap-20 margin-bottom-20">
-          <div class="flex-1-height-400">
+        <div style="display: flex; gap: 20px; margin-bottom: 20px">
+          <div style="flex: 1; height: 400px; position: relative">
             <canvas id="result-count-chart"></canvas>
           </div>
-          <div class="flex-1-height-400">
+          <div style="flex: 1; height: 400px; position: relative">
             <canvas id="result-size-chart"></canvas>
           </div>
         </div>
 
-        <div class="display-flex gap-20 margin-bottom-20">
-          <div class="flex-1-height-400">
+        <div style="display: flex; gap: 20px; margin-bottom: 20px">
+          <div style="flex: 1; height: 400px; position: relative">
             <canvas id="timeline-chart"></canvas>
           </div>
-          <div class="flex-1-height-400">
+          <div style="flex: 1; height: 400px; position: relative">
             <canvas id="memory-chart"></canvas>
           </div>
         </div>
@@ -445,44 +1759,74 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           <!-- Search Controls for Analysis Table -->
           <div
             id="analysis-search-controls"
-            class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd"
+            style="
+              background: #f5f5f5;
+              padding: 15px;
+              border: 1px solid #ddd;
+              margin-bottom: 10px;
+              border-radius: 5px;
+            "
           >
-            <div class="gap-15 display-flex-center display-flex-wrap">
+            <div
+              style="
+                display: flex;
+                gap: 15px;
+                align-items: center;
+                flex-wrap: wrap;
+              "
+            >
               <div>
                 <label
                   for="analysis-statement-search"
-                  class="font-bold-margin-right"
-                  >Search Statement:</label
+                  style="font-weight: bold; margin-right: 5px"
+                  >Buscar Declaração:</label
                 >
                 <input
                   type="text"
                   id="analysis-statement-search"
-                  placeholder="Search in SQL++ statements..."
-                  class="form-input"
+                  placeholder="Buscar em declarações SQL++..."
+                  style="
+                    width: 250px;
+                    padding: 5px;
+                    border: 1px solid #ccc;
+                    border-radius: 3px;
+                  "
                 />
               </div>
               <div>
                 <label
                   for="analysis-username-search"
-                  class="font-bold-margin-right"
-                  >Search Username:</label
+                  style="font-weight: bold; margin-right: 5px"
+                  >Buscar Usuário:</label
                 >
                 <input
                   type="text"
                   id="analysis-username-search"
-                  placeholder="Search usernames..."
-                  class="form-input-small"
+                  placeholder="Buscar usuários..."
+                  style="
+                    width: 200px;
+                    padding: 5px;
+                    border: 1px solid #ccc;
+                    border-radius: 3px;
+                  "
                 />
               </div>
               <button
                 id="analysis-clear-search"
-                class="cursor-pointer border-none border-radius-3 btn-gray"
+                style="
+                  padding: 5px 15px;
+                  background: #6c757d;
+                  color: white;
+                  border: none;
+                  border-radius: 3px;
+                  cursor: pointer;
+                "
               >
-                Clear All
+                Limpar Tudo
               </button>
               <div
                 id="analysis-search-results-info"
-                class="color-666 font-bold"
+                style="font-weight: bold; color: #666"
               ></div>
             </div>
           </div>
@@ -504,38 +1848,75 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           <!-- Search Controls -->
           <div
             id="search-controls"
-            class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd"
+            style="
+              background: #f5f5f5;
+              padding: 15px;
+              border: 1px solid #ddd;
+              margin-bottom: 10px;
+              border-radius: 5px;
+            "
           >
-            <div class="gap-15 display-flex-center display-flex-wrap">
+            <div
+              style="
+                display: flex;
+                gap: 15px;
+                align-items: center;
+                flex-wrap: wrap;
+              "
+            >
               <div>
-                <label for="statement-search" class="font-bold-margin-right"
-                  >Search Statement:</label
+                <label
+                  for="statement-search"
+                  style="font-weight: bold; margin-right: 5px"
+                  >Buscar Declaração:</label
                 >
                 <input
                   type="text"
                   id="statement-search"
-                  placeholder="Search in SQL++ statements..."
-                  class="form-input"
+                  placeholder="Buscar em declarações SQL++..."
+                  style="
+                    width: 250px;
+                    padding: 5px;
+                    border: 1px solid #ccc;
+                    border-radius: 3px;
+                  "
                 />
               </div>
               <div>
-                <label for="username-search" class="font-bold-margin-right"
-                  >Search Username:</label
+                <label
+                  for="username-search"
+                  style="font-weight: bold; margin-right: 5px"
+                  >Buscar Usuário:</label
                 >
                 <input
                   type="text"
                   id="username-search"
-                  placeholder="Search usernames..."
-                  class="form-input-small"
+                  placeholder="Buscar usuários..."
+                  style="
+                    width: 200px;
+                    padding: 5px;
+                    border: 1px solid #ccc;
+                    border-radius: 3px;
+                  "
                 />
               </div>
               <button
                 id="clear-search"
-                class="cursor-pointer border-none border-radius-3 btn-gray"
+                style="
+                  padding: 5px 15px;
+                  background: #6c757d;
+                  color: white;
+                  border: none;
+                  border-radius: 3px;
+                  cursor: pointer;
+                "
               >
-                Clear All
+                Limpar Tudo
               </button>
-              <div id="search-results-info" class="color-666 font-bold"></div>
+              <div
+                id="search-results-info"
+                style="font-weight: bold; color: #666"
+              ></div>
             </div>
           </div>
           <div id="table-container">
@@ -550,31 +1931,59 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       <!-- Index/Query Flow Tab Content -->
       <div id="index-query-flow">
         <div
-          class="height-100 position-relative background-f8 border-radius-8 overflow-hidden"
+          style="
+            height: 100%;
+            position: relative;
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+          "
         >
           <!-- Summary counts above the flow chart -->
           <div
             id="flow-summary"
-            class="position-relative z-index-3 background-white padding-10-20 border-bottom display-flex justify-space-between align-center"
+            style="
+              position: relative;
+              z-index: 3;
+              background: #fff;
+              padding: 10px 20px;
+              border-bottom: 1px solid #ddd;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
           >
-            <div class="font-bold color-333">
-              Indexes Used: <span id="index-count">0</span>
+            <div style="font-weight: bold; color: #333">
+              Índices Utilizados: <span id="index-count">0</span>
             </div>
-            <div class="font-bold color-333">
-              Queries Executed: <span id="query-count">0</span>
+            <div style="font-weight: bold; color: #333">
+              Consultas Executadas: <span id="query-count">0</span>
             </div>
           </div>
           <div
             id="flow-canvas"
-            class="width-100 calc-height-minus-50 position-relative overflow-auto"
+            style="
+              width: 100%;
+              height: calc(100% - 50px);
+              position: relative;
+              overflow: auto;
+            "
           >
             <svg
               id="flow-svg"
-              class="width-100 height-100 position-absolute top-0 left-0 pointer-events-none z-index-1"
+              style="
+                width: 100%;
+                height: 100%;
+                position: absolute;
+                top: 0;
+                left: 0;
+                pointer-events: none;
+                z-index: 1;
+              "
             ></svg>
             <div
               id="flow-elements"
-              class="position-relative z-index-2 padding-20"
+              style="position: relative; z-index: 2; padding: 20px"
             ></div>
           </div>
         </div>
@@ -583,44 +1992,74 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       <!-- Indexes Tab Content -->
       <div id="indexes">
         <!-- Filter Controls -->
-        <div class="margin-bottom-20 padding-15 background-f8 border-radius-6">
+        <div
+          style="
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+          "
+        >
           <!-- First row: Search, Bucket, Scope, Collection, Sort -->
           <div
-            class="gap-15 margin-bottom-15"
-            style="display: grid; grid-template-columns: repeat(5, 1fr)"
+            style="
+              display: grid;
+              grid-template-columns: repeat(5, 1fr);
+              gap: 15px;
+              margin-bottom: 15px;
+            "
           >
             <div>
-              <label for="indexSearch" class="margin-bottom-5 font-bold-block"
-                >Search:</label
+              <label
+                for="indexSearch"
+                style="font-weight: bold; display: block; margin-bottom: 5px"
+                >Buscar:</label
               >
               <input
                 type="text"
                 id="indexSearch"
-                placeholder="Search indexes..."
-                class="width-90 padding-8 border-radius-4 font-size-14"
-                style="border: 1px solid #ccc"
+                placeholder="Buscar índices..."
+                style="
+                  width: 90%;
+                  padding: 8px;
+                  border: 1px solid #ccc;
+                  border-radius: 4px;
+                  font-size: 14px;
+                "
               />
             </div>
             <div>
-              <label for="bucketFilter" class="margin-bottom-5 font-bold-block"
+              <label
+                for="bucketFilter"
+                style="font-weight: bold; display: block; margin-bottom: 5px"
                 >Bucket:</label
               >
               <select
                 id="bucketFilter"
-                class="width-100 padding-8 border-radius-4"
-                style="border: 1px solid #ccc"
+                style="
+                  width: 100%;
+                  padding: 8px;
+                  border: 1px solid #ccc;
+                  border-radius: 4px;
+                "
               >
                 <option value="(ALL)">(ALL)</option>
               </select>
             </div>
             <div>
-              <label for="scopeFilter" class="margin-bottom-5 font-bold-block"
+              <label
+                for="scopeFilter"
+                style="font-weight: bold; display: block; margin-bottom: 5px"
                 >Scope:</label
               >
               <select
                 id="scopeFilter"
-                class="width-100 padding-8 border-radius-4"
-                style="border: 1px solid #ccc"
+                style="
+                  width: 100%;
+                  padding: 8px;
+                  border: 1px solid #ccc;
+                  border-radius: 4px;
+                "
               >
                 <option value="(ALL)">(ALL)</option>
               </select>
@@ -628,25 +2067,35 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             <div>
               <label
                 for="collectionFilter"
-                class="margin-bottom-5 font-bold-block"
+                style="font-weight: bold; display: block; margin-bottom: 5px"
                 >Collection:</label
               >
               <select
                 id="collectionFilter"
-                class="width-100 padding-8 border-radius-4"
-                style="border: 1px solid #ccc"
+                style="
+                  width: 100%;
+                  padding: 8px;
+                  border: 1px solid #ccc;
+                  border-radius: 4px;
+                "
               >
                 <option value="(ALL)">(ALL)</option>
               </select>
             </div>
             <div>
-              <label for="sortBy" class="margin-bottom-5 font-bold-block"
+              <label
+                for="sortBy"
+                style="font-weight: bold; display: block; margin-bottom: 5px"
                 >Sort By:</label
               >
               <select
                 id="sortBy"
-                class="width-100 padding-8 border-radius-4"
-                style="border: 1px solid #ccc"
+                style="
+                  width: 100%;
+                  padding: 8px;
+                  border: 1px solid #ccc;
+                  border-radius: 4px;
+                "
               >
                 <option value="Name">Name</option>
                 <option value="Bucket">Bucket</option>
@@ -676,14 +2125,15 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             "
           >
             <div>
-              <strong>Total Indexes:</strong> <span id="stat-indexes">0</span>
+              <strong>Total de Índices:</strong>
+              <span id="stat-indexes">0</span>
             </div>
             <div>
               <strong>Buckets:</strong> <span id="stat-buckets">0</span>
             </div>
-            <div><strong>Scopes:</strong> <span id="stat-scopes">0</span></div>
+            <div><strong>Escopos:</strong> <span id="stat-scopes">0</span></div>
             <div>
-              <strong>Collections:</strong> <span id="stat-collections">0</span>
+              <strong>Coleções:</strong> <span id="stat-collections">0</span>
             </div>
           </div>
           <div
@@ -696,7 +2146,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           >
             <div style="display: flex; align-items: center; gap: 8px">
               <span
-                ><strong>Primary Indexes:</strong>
+                ><strong>Índices Primários:</strong>
                 <span id="stat-primary">0</span></span
               >
               <label
@@ -708,12 +2158,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 "
               >
                 <input type="checkbox" id="filter-primary" style="margin: 0" />
-                Primary Only
+                Apenas Primários
               </label>
             </div>
             <div style="display: flex; align-items: center; gap: 8px">
               <span
-                ><strong>Used/Total Indexes:</strong>
+                ><strong>Índices Usados/Total:</strong>
                 <span id="stat-used-total">0/0</span></span
               >
               <label
@@ -725,7 +2175,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 "
               >
                 <input type="checkbox" id="filter-used" style="margin: 0" />
-                Used Only
+                Apenas Usados
               </label>
             </div>
           </div>
@@ -739,7 +2189,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           >
             <div style="display: flex; align-items: center; gap: 8px">
               <span
-                ><strong>Without/With Replica:</strong>
+                ><strong>Sem/Com Réplica:</strong>
                 <span id="stat-replica-info">0/0</span></span
               >
               <label
@@ -755,12 +2205,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                   id="filter-no-replica"
                   style="margin: 0"
                 />
-                No Replicas Only
+                Apenas Sem Réplicas
               </label>
             </div>
             <div style="display: flex; align-items: center; gap: 8px">
               <span
-                ><strong>Never Scanned Indexes:</strong>
+                ><strong>Índices Nunca Escaneados:</strong>
                 <span id="stat-never-scanned">0</span></span
               >
               <label
@@ -776,7 +2226,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                   id="filter-never-scanned"
                   style="margin: 0"
                 />
-                Never Scanned Only
+                Apenas Nunca Escaneados
               </label>
             </div>
           </div>
@@ -785,28 +2235,30 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         <!-- Results Panel -->
         <div
           id="indexResults"
-          class="background-white padding-15"
           style="
             overflow-y: auto;
             height: calc(100% - 120px);
             border: 1px solid #ccc;
             border-radius: 4px;
+            padding: 15px;
+            background: #fff;
           "
         >
-          <div class="text-align-center" style="margin-top: 30px">
+          <div style="text-align: center; margin-top: 30px">
             <h4 style="color: #495057; margin-bottom: 20px">
-              No Index Data Loaded
+              Nenhum Dado de Índice Carregado
             </h4>
-            <p class="color-666" style="margin-bottom: 20px">
-              To analyze indexes, run this query in your Couchbase Query
-              Workbench and paste the results in the second textarea above:
+            <p style="color: #666; margin-bottom: 20px">
+              Para analisar índices, execute esta consulta em seu Couchbase
+              Query Workbench e cole os resultados na segunda área de texto
+              acima:
             </p>
             <div class="sql-query-box">
               <button
                 class="btn-standard sql-copy-btn"
                 onclick="copyIndexQuery(event)"
               >
-                Copy Query
+                Copiar Consulta
               </button>
               <pre>
                           SELECT 
@@ -828,12 +2280,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               >
             </div>
             <p style="color: #666; font-size: 13px; margin-top: 15px">
-              <strong>Steps:</strong><br />
-              1. Copy the query above<br />
-              2. Run it in Couchbase Query Workbench<br />
-              3. Copy the JSON results<br />
-              4. Paste into the second textarea ,on the right, at the top<br />
-              5. Click "Parse JSON" again
+              <strong>Passos:</strong><br />
+              1. Copie a consulta acima<br />
+              2. Execute no Couchbase Query Workbench<br />
+              3. Copie os resultados JSON<br />
+              4. Cole na segunda área de texto, à direita, no topo<br />
+              5. Clique em "Analisar JSON" novamente
             </p>
           </div>
         </div>
@@ -890,8 +2342,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           window.queryTypesChart,
           window.durationBucketsChart,
           window.memoryChart,
-          window.resultCountChart,
-          window.resultSizeChart,
         ];
 
         charts.forEach((chart) => {
@@ -1028,13 +2478,16 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         chartNames.forEach((chartName) => {
           if (window[chartName]) {
             // Remove event listeners if they exist
-            if (window[chartName]._crosshairHandlers && window[chartName].canvas) {
+            if (
+              window[chartName]._crosshairHandlers &&
+              window[chartName].canvas
+            ) {
               const canvas = window[chartName].canvas;
               const handlers = window[chartName]._crosshairHandlers;
-              canvas.removeEventListener('mousemove', handlers.mousemove);
-              canvas.removeEventListener('mouseleave', handlers.mouseleave);
+              canvas.removeEventListener("mousemove", handlers.mousemove);
+              canvas.removeEventListener("mouseleave", handlers.mouseleave);
             }
-            
+
             window[chartName].destroy();
             window[chartName] = null;
           }
@@ -1077,26 +2530,25 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         return shouldExclude;
       }
 
-      // Filter requests based on system query exclusion setting and SQL statement filter
+      // Filter requests based on system query exclusion setting
       function filterSystemQueries(requests) {
         const excludeCheckbox = document.getElementById(
           "exclude-system-queries"
         );
         const isExcluding = excludeCheckbox && excludeCheckbox.checked;
-        
+
         // Get SQL statement filter
         const sqlFilter = document.getElementById("sql-statement-filter");
-        const sqlFilterText = sqlFilter ? sqlFilter.value.trim().toLowerCase() : "";
-        
-        console.log("🔍 SQL Filter text:", sqlFilterText);
-        console.log("📝 Original requests:", requests.length);
-        
+        const sqlFilterText = sqlFilter
+          ? sqlFilter.value.trim().toLowerCase()
+          : "";
+
         const filtered = requests.filter((request) => {
           // Apply system query exclusion first
           if (isExcluding && shouldExcludeSystemQuery(request)) {
             return false;
           }
-          
+
           // Apply SQL statement filtering only if filter text is not empty
           if (sqlFilterText && sqlFilterText.length > 0) {
             const statement = (request.statement || "").toLowerCase();
@@ -1104,11 +2556,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               return false;
             }
           }
-          
+
           return true;
         });
-        
-        console.log("✅ Filtered requests:", filtered.length);
         return filtered;
       }
 
@@ -1371,7 +2821,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         let html = `<h3>Operator: ${operatorType}</h3>`;
 
         // Add copy button
-        html += `<button class="btn-standard" onclick="copyOperatorStats(this)">Copy Stats</button>`;
+        html += `<button class="btn-standard" onclick="copyOperatorStats(this)">Copiar Estatísticas</button>`;
 
         // Show index name for specific operators
         if (
@@ -1416,7 +2866,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             .then(() => {
               button.textContent = "Copied!";
               setTimeout(() => {
-                button.textContent = "Copy Stats";
+                button.textContent = "Copiar Stats";
               }, 2000);
             })
             .catch((err) => {
@@ -1684,13 +3134,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           html +=
             '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">';
           html +=
-            '<h3 style="margin: 0; color: #333; font-size: 16px;">📋 Indexes Used:</h3>';
+            '<h3 style="margin: 0; color: #333; font-size: 16px;">📋 Índices Utilizados:</h3>';
           const allIndexes = indexesAndKeys.indexes.join(", ");
           html += `<button onclick="copyToClipboard('${allIndexes.replace(
             /'/g,
             "\\'"
           )}', event)" 
-                        class="btn-standard" style="background: #4CAF50;">Copy All</button>`;
+                        class="btn-standard" style="background: #4CAF50;">Copiar Tudo</button>`;
           html += "</div>";
           html += '<div style="display: flex; flex-wrap: wrap; gap: 10px;">';
           indexesAndKeys.indexes.forEach((index) => {
@@ -1716,7 +3166,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               /'/g,
               "\\'"
             )}', event)" 
-                            class="btn-standard" style="background: #ff9800;">Copy All</button>`;
+                            class="btn-standard" style="background: #ff9800;">Copiar Tudo</button>`;
             html += "</div>";
 
             const maxKeysToShow = 15;
@@ -1733,7 +3183,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               : indexesAndKeys.useKeys;
             keysToShow.forEach((key) => {
               html += `<div style="background: #fff3cd; padding: 4px 8px; border-radius: 4px; border: 1px solid #ffeaa7;">
-                            <code class="font-size-12" style="font-family: monospace; color: #856404;">${key}</code>
+                            <code style="font-family: monospace; color: #856404; font-size: 12px;">${key}</code>
                         </div>`;
             });
 
@@ -1741,8 +3191,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             if (shouldTruncate) {
               const remainingKeys = indexesAndKeys.useKeys.slice(maxKeysToShow);
               remainingKeys.forEach((key) => {
-                html += `<div class="hidden-key display-none" style="background: #fff3cd; padding: 4px 8px; border-radius: 4px; border: 1px solid #ffeaa7;">
-                                <code class="font-size-12" style="font-family: monospace; color: #856404;">${key}</code>
+                html += `<div class="hidden-key" style="display: none; background: #fff3cd; padding: 4px 8px; border-radius: 4px; border: 1px solid #ffeaa7;">
+                                <code style="font-family: monospace; color: #856404; font-size: 12px;">${key}</code>
                             </div>`;
               });
             }
@@ -2437,9 +3887,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       function updateSearchResultsInfo(filteredCount, totalCount) {
         const infoDiv = document.getElementById("search-results-info");
         if (filteredCount === totalCount) {
-          infoDiv.textContent = `Showing all ${totalCount} records`;
+          infoDiv.textContent = `Mostrando todos os ${totalCount} registros`;
         } else {
-          infoDiv.textContent = `Showing ${filteredCount} of ${totalCount} records`;
+          infoDiv.textContent = `Mostrando ${filteredCount} de ${totalCount} registros`;
         }
       }
 
@@ -2472,9 +3922,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       function updateAnalysisSearchResultsInfo(filteredCount, totalCount) {
         const infoDiv = document.getElementById("analysis-search-results-info");
         if (filteredCount === totalCount) {
-          infoDiv.textContent = `Showing all ${totalCount} groups`;
+          infoDiv.textContent = `Mostrando todos os ${totalCount} grupos`;
         } else {
-          infoDiv.textContent = `Showing ${filteredCount} of ${totalCount} groups`;
+          infoDiv.textContent = `Mostrando ${filteredCount} de ${totalCount} grupos`;
         }
       }
 
@@ -2681,7 +4131,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           ].forEach((col) => {
             let value;
             if (col === "Primary Scan Used") {
-              value = request.usesPrimary ? "Yes" : "No";
+              value = request.usesPrimary ? "Sim" : "Não";
             } else if (col === "Items from Index Scan") {
               if (request.indexInfo) {
                 const stats = request.indexInfo.stats;
@@ -2856,17 +4306,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <span>${truncated}...</span>
                     <br>
                     <button onclick="toggleStatement('${statementId}', true)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Show More</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Mostrar Mais</button>
                     <button onclick="copyStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                   <div id="${statementId}-full" style="display: none;">
                     <span>${statement}</span>
                     <br>
                     <button onclick="toggleStatement('${statementId}', false)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Hide</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Ocultar</button>
                     <button onclick="copyStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                 `;
               } else {
@@ -2876,13 +4326,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <span>${statement}</span>
                     <br>
                     <button onclick="copyStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                 `;
               }
-            } else if (
-              ["result\nCount", "result\nSize", "Items from\nIndex Scan", "Doc Fetch\nCount"].includes(col)
-            ) {
+              } else if (
+["result\nCount", "result\nSize", "Items from\nIndex Scan", "Doc Fetch\nCount"].includes(col)
+) {
               // Format numeric columns with commas
               const numValue = Number(value);
               td.textContent = isNaN(numValue) ? value : numValue.toLocaleString();
@@ -2892,7 +4342,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
             if (
               col === "Primary Scan\nUsed" &&
-              (value === "Yes" || value === "True" || value === true)
+              (value === "Sim" ||
+                value === "Yes" ||
+                value === "True" ||
+                value === true)
             ) {
               td.classList.add("primary-scan-yes");
             }
@@ -2904,11 +4357,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           });
 
           row.addEventListener("click", (event) => {
-            // Allow text selection - only handle clicks, not text selection
-            if (window.getSelection().toString().length > 0) {
-              return; // User is selecting text, don't handle the click
-            }
-            
+  // Allow text selection - only handle clicks, not text selection
+  if (window.getSelection().toString().length > 0) {
+    return; // User is selecting text, don't handle the click
+  }
             document
               .querySelectorAll("tr")
               .forEach((r) => (r.style.backgroundColor = ""));
@@ -3246,17 +4698,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <span>${truncated}...</span>
                     <br>
                     <button onclick="toggleAnalysisStatement('${statementId}', true)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Show More</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Mostrar Mais</button>
                     <button onclick="copyAnalysisStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                   <div id="${statementId}-full" style="display: none;">
                     <span>${statement}</span>
                     <br>
                     <button onclick="toggleAnalysisStatement('${statementId}', false)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Hide</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Ocultar</button>
                     <button onclick="copyAnalysisStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                 `;
               } else {
@@ -3266,7 +4718,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <span>${statement}</span>
                     <br>
                     <button onclick="copyAnalysisStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                 `;
               }
@@ -3284,13 +4736,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
             // Style avg primaryScan when > 0 (red and bold)
             if (col === "avg_primaryScan") {
-              // Handle comma-formatted numbers by removing commas first
-              const cleanValue = String(value).replace(/,/g, '');
-              const originalValue = Number(cleanValue);
-              if (!isNaN(originalValue) && originalValue > 0) {
-                td.classList.add("primary-scan-yes");
+            // Handle comma-formatted numbers by removing commas first
+            const cleanValue = String(value).replace(/,/g, '');
+            const originalValue = Number(cleanValue);
+            if (!isNaN(originalValue) && originalValue > 0) {
+              td.classList.add("primary-scan-yes");
               }
-            }
+              }
 
             row.appendChild(td);
           });
@@ -3300,7 +4752,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       // Helper function to get time grouping settings
       function getTimeGrouping() {
-        const dropdown = document.getElementById('time-grouping-select');
+        const dropdown = document.getElementById("time-grouping-select");
         return dropdown ? dropdown.value : "optimizer";
       }
 
@@ -3501,12 +4953,27 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Helper function to update the optimizer label
       function updateOptimizerLabel(requests) {
         const optimizedUnit = getOptimalTimeUnit(requests);
+
+        // Translate time unit to Portuguese
+        const timeUnitTranslations = {
+          second: "segundo",
+          minute: "minuto",
+          hour: "hora",
+          day: "dia",
+          week: "semana",
+          month: "mês",
+          year: "ano",
+        };
+
+        const translatedUnit =
+          timeUnitTranslations[optimizedUnit] || optimizedUnit;
         const dropdown = document.getElementById("time-grouping-select");
         if (dropdown) {
-          // Update the first option text to show the actual optimized unit
-          const optimizerOption = dropdown.querySelector('option[value="optimizer"]');
+          const optimizerOption = dropdown.querySelector(
+            'option[value="optimizer"]'
+          );
           if (optimizerOption) {
-            optimizerOption.textContent = `By Optimizer (${optimizedUnit})`;
+            optimizerOption.textContent = `Por Otimizador (${translatedUnit})`;
           }
         }
       }
@@ -3516,7 +4983,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       // Custom plugin to draw a vertical line on hover
       const verticalLinePlugin = {
-        id: 'verticalLine',
+        id: "verticalLine",
         afterInit(chart) {
           chart.verticalLine = { draw: false, x: 0 };
         },
@@ -3529,39 +4996,52 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           }
         },
         afterDatasetsDraw(chart) {
-          if (!chart.verticalLine || !chart.verticalLine.draw || !chart.verticalLine.x) return;
+          if (
+            !chart.verticalLine ||
+            !chart.verticalLine.draw ||
+            !chart.verticalLine.x
+          )
+            return;
 
-          const { ctx, chartArea: { top, bottom } } = chart;
+          const {
+            ctx,
+            chartArea: { top, bottom },
+          } = chart;
           ctx.save();
           ctx.beginPath();
           ctx.lineWidth = 2;
-          ctx.strokeStyle = '#007bff';
+          ctx.strokeStyle = "#007bff";
           ctx.setLineDash([5, 5]);
           ctx.moveTo(chart.verticalLine.x, top);
           ctx.lineTo(chart.verticalLine.x, bottom);
           ctx.stroke();
           ctx.restore();
-        }
+        },
       };
 
       // Function to sync crosshairs across all timeline charts
       function syncTimelineCharts(sourceEvent, activeChart) {
         if (!activeChart || !activeChart.chartArea) return;
-        
+
         const chartArea = activeChart.chartArea;
-        const inChartArea = sourceEvent.x >= chartArea.left && sourceEvent.x <= chartArea.right &&
-                            sourceEvent.y >= chartArea.top && sourceEvent.y <= chartArea.bottom;
+        const inChartArea =
+          sourceEvent.x >= chartArea.left &&
+          sourceEvent.x <= chartArea.right &&
+          sourceEvent.y >= chartArea.top &&
+          sourceEvent.y <= chartArea.bottom;
 
         // Filter out null/destroyed charts and exclude the active chart
-        const validCharts = timelineCharts.filter(chart => {
-          return chart && 
-                 chart !== activeChart &&  // Exclude active chart to prevent flicker
-                 chart.canvas && 
-                 chart.canvas.getContext && 
-                 chart.scales && 
-                 chart.scales.x && 
-                 chart.chartArea &&
-                 !chart.isDestroyed;
+        const validCharts = timelineCharts.filter((chart) => {
+          return (
+            chart &&
+            chart !== activeChart && // Exclude active chart to prevent flicker
+            chart.canvas &&
+            chart.canvas.getContext &&
+            chart.scales &&
+            chart.scales.x &&
+            chart.chartArea &&
+            !chart.isDestroyed
+          );
         });
 
         // Update active chart's crosshair state without redrawing
@@ -3573,7 +5053,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         }
 
         // Sync other charts
-        validCharts.forEach(chart => {
+        validCharts.forEach((chart) => {
           if (!inChartArea) {
             if (chart.verticalLine && chart.verticalLine.draw) {
               chart.verticalLine.draw = false;
@@ -3585,14 +5065,18 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           try {
             const xValue = activeChart.scales.x.getValueForPixel(sourceEvent.x);
             const targetX = chart.scales.x.getPixelForValue(xValue);
-            
-            if (chart.verticalLine && targetX >= chart.chartArea.left && targetX <= chart.chartArea.right) {
+
+            if (
+              chart.verticalLine &&
+              targetX >= chart.chartArea.left &&
+              targetX <= chart.chartArea.right
+            ) {
               const wasDrawn = chart.verticalLine.draw;
               const oldX = chart.verticalLine.x;
-              
+
               chart.verticalLine.draw = true;
               chart.verticalLine.x = targetX;
-              
+
               // Only redraw if position changed significantly or wasn't drawn before
               if (!wasDrawn || Math.abs(oldX - targetX) > 2) {
                 requestAnimationFrame(() => chart.draw());
@@ -3607,16 +5091,18 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         });
 
         // Update the timelineCharts array to only contain valid charts (including active chart)
-        const allValidCharts = timelineCharts.filter(chart => {
-          return chart && 
-                 chart.canvas && 
-                 chart.canvas.getContext && 
-                 chart.scales && 
-                 chart.scales.x && 
-                 chart.chartArea &&
-                 !chart.isDestroyed;
+        const allValidCharts = timelineCharts.filter((chart) => {
+          return (
+            chart &&
+            chart.canvas &&
+            chart.canvas.getContext &&
+            chart.scales &&
+            chart.scales.x &&
+            chart.chartArea &&
+            !chart.isDestroyed
+          );
         });
-        
+
         if (allValidCharts.length !== timelineCharts.length) {
           timelineCharts.length = 0;
           timelineCharts.push(...allValidCharts);
@@ -3626,15 +5112,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Clear crosshairs on all timeline charts
       function clearTimelineCrosshairs() {
         // Filter out null/destroyed charts
-        const validCharts = timelineCharts.filter(chart => {
-          return chart && 
-                 chart.canvas && 
-                 chart.canvas.getContext && 
-                 !chart.isDestroyed &&
-                 chart.verticalLine;
+        const validCharts = timelineCharts.filter((chart) => {
+          return (
+            chart &&
+            chart.canvas &&
+            chart.canvas.getContext &&
+            !chart.isDestroyed &&
+            chart.verticalLine
+          );
         });
 
-        validCharts.forEach(chart => {
+        validCharts.forEach((chart) => {
           if (chart.verticalLine && chart.verticalLine.draw) {
             chart.verticalLine.draw = false;
             requestAnimationFrame(() => chart.draw());
@@ -3651,7 +5139,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Helper function to register a chart for crosshair synchronization
       function registerTimelineChart(chart, ctx) {
         if (!chart || !ctx || !ctx.canvas) return;
-        
+
         // Add to timeline charts array for synchronization
         timelineCharts.push(chart);
 
@@ -3659,14 +5147,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         let mouseMoveTimeout;
         const mouseMoveHandler = (event) => {
           if (mouseMoveTimeout) return;
-          
+
           mouseMoveTimeout = setTimeout(() => {
             mouseMoveTimeout = null;
-            
+
             const rect = ctx.canvas.getBoundingClientRect();
             const canvasEvent = {
               x: event.clientX - rect.left,
-              y: event.clientY - rect.top
+              y: event.clientY - rect.top,
             };
             syncTimelineCharts(canvasEvent, chart);
           }, 8); // Throttle to ~120fps
@@ -3681,13 +5169,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           clearTimelineCrosshairs();
         };
 
-        ctx.canvas.addEventListener('mousemove', mouseMoveHandler);
-        ctx.canvas.addEventListener('mouseleave', mouseLeaveHandler);
+        ctx.canvas.addEventListener("mousemove", mouseMoveHandler);
+        ctx.canvas.addEventListener("mouseleave", mouseLeaveHandler);
 
         // Store handlers for cleanup if needed
         chart._crosshairHandlers = {
           mousemove: mouseMoveHandler,
-          mouseleave: mouseLeaveHandler
+          mouseleave: mouseLeaveHandler,
         };
       }
 
@@ -3732,7 +5220,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
           timeGroups[key].totalIndexScan += primaryScan + indexScan;
           timeGroups[key].totalFetch += fetch;
-          
+
           // Count queries that performed index scans
           if (primaryScan > 0 || indexScan > 0) {
             timeGroups[key].indexScanQueryCount++;
@@ -3749,7 +5237,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const indexScanData = sortedData.map((item) => item.totalIndexScan);
         const fetchData = sortedData.map((item) => item.totalFetch);
         const avgIndexScanData = sortedData.map((item) =>
-          item.indexScanQueryCount > 0 ? Math.round(item.totalIndexScan / item.indexScanQueryCount) : null
+          item.indexScanQueryCount > 0
+            ? Math.round(item.totalIndexScan / item.indexScanQueryCount)
+            : null
         );
 
         // Create new side-by-side bar chart
@@ -3759,7 +5249,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             labels: labels,
             datasets: [
               {
-                label: "Fetch Documents",
+                label: "Buscar Documentos",
                 data: fetchData,
                 backgroundColor: "#28a745", // Green
                 borderColor: "#1e7e34",
@@ -3768,7 +5258,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 order: 2,
               },
               {
-                label: "Index Scan Items",
+                label: "Itens de Varredura de Índice",
                 data: indexScanData,
                 backgroundColor: "#007bff", // Blue
                 borderColor: "#0056b3",
@@ -3777,7 +5267,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 order: 2,
               },
               {
-                label: "Avg Index Scans per Query",
+                label: "Varreduras de Índice Médias por Consulta",
                 data: avgIndexScanData,
                 type: "line",
                 backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
@@ -3796,7 +5286,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Database Operations Timeline: Index Scans vs Document Fetches",
+                text: "Linha do Tempo de Operações de Banco de Dados: Varreduras de Índice vs Recuperação de Documentos",
               },
               legend: {
                 display: true,
@@ -3919,7 +5409,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 time: getCurrentTimeConfig(requests),
                 title: {
                   display: true,
-                  text: "Request Time",
+                  text: "Tempo de Solicitação",
                 },
               },
               y: {
@@ -3927,7 +5417,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "left",
                 title: {
                   display: true,
-                  text: "Operation Count",
+                  text: "Contagem de Operações",
                 },
                 beginAtZero: true,
               },
@@ -3936,7 +5426,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "right",
                 title: {
                   display: true,
-                  text: "Avg Index Scans per Query",
+                  text: "Varreduras de Índice Médias por Consulta",
                 },
                 beginAtZero: true,
                 grid: {
@@ -3949,10 +5439,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               intersect: false,
             },
           },
-          plugins: [verticalLinePlugin]
+          plugins: [verticalLinePlugin],
         });
-
-        // Register chart for crosshair synchronization
         registerTimelineChart(window.operationsChart, ctx);
       }
 
@@ -4068,7 +5556,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Filter Operations Timeline: Efficiency Analysis (IN vs OUT)",
+                text: "Linha do Tempo de Operações de Filtro: Análise de Eficiência (ENTRADA vs SAÍDA)",
               },
               legend: {
                 display: true,
@@ -4164,7 +5652,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 time: getCurrentTimeConfig(requests),
                 title: {
                   display: true,
-                  text: "Request Time",
+                  text: "Tempo de Solicitação",
                 },
               },
               y: {
@@ -4172,7 +5660,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "left",
                 title: {
                   display: true,
-                  text: "Filter Count",
+                  text: "Contagem de Filtros",
                 },
                 beginAtZero: true,
                 stacked: true,
@@ -4182,7 +5670,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "right",
                 title: {
                   display: true,
-                  text: "Efficiency %",
+                  text: "Eficiência %",
                 },
                 beginAtZero: true,
                 max: 100,
@@ -4196,10 +5684,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               intersect: false,
             },
           },
-          plugins: [verticalLinePlugin]
+          plugins: [verticalLinePlugin],
         });
-
-        // Register chart for crosshair synchronization
         registerTimelineChart(window.filterChart, ctx);
       }
 
@@ -4427,7 +5913,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Query Performance Timeline: KernTime % of ExecutionTime",
+                text: "Linha do Tempo de Desempenho de Consultas: KernTime % do TempoDeExecução",
               },
               legend: {
                 display: true,
@@ -4519,14 +6005,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 time: getCurrentTimeConfig(requests),
                 title: {
                   display: true,
-                  text: "Request Time",
+                  text: "Tempo de Solicitação",
                 },
                 stacked: true,
               },
               y: {
                 title: {
                   display: true,
-                  text: "Query Count",
+                  text: "Contagem de Consultas",
                 },
                 stacked: true,
                 beginAtZero: true,
@@ -4537,10 +6023,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               intersect: false,
             },
           },
-          plugins: [verticalLinePlugin]
+          plugins: [verticalLinePlugin],
         });
 
-        // Register chart for crosshair synchronization
+        // Register this chart for crosshair synchronization
         registerTimelineChart(window.timelineChart, ctx);
 
         // Create Query Types Scatter Plot Chart
@@ -4613,12 +6099,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             allStatementTypes.add(type);
           });
         });
-
-        // Console log all statement types found
-        console.log(
-          "Statement types found:",
-          Array.from(allStatementTypes).sort()
-        );
 
         // Predefined colors for all statement types found
         const colorMap = {
@@ -4711,7 +6191,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Query Duration by Statement Type (Bubble Size = Query Count)",
+                text: "Duração de Consultas por Tipo de Declaração (Tamanho da Bolha = Contagem de Consultas)",
               },
               legend: {
                 display: true,
@@ -4828,13 +6308,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 time: getCurrentTimeConfig(requests),
                 title: {
                   display: true,
-                  text: "Request Time",
+                  text: "Tempo de Solicitação",
                 },
               },
               y: {
                 title: {
                   display: true,
-                  text: "Average Duration (seconds)",
+                  text: "Duração Média (segundos)",
                 },
                 beginAtZero: true,
               },
@@ -4844,10 +6324,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               intersect: false,
             },
           },
-          plugins: [verticalLinePlugin]
+          plugins: [verticalLinePlugin],
         });
-
-        // Register chart for crosshair synchronization
         registerTimelineChart(window.queryTypesChart, ctx);
       }
 
@@ -4865,11 +6343,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
         // Group requests by time and duration buckets
         const timeGroups = {};
-
-        console.log(
-          "Duration buckets chart - processing requests:",
-          requests.length
-        );
 
         requests.forEach((request) => {
           const requestDate = new Date(request.requestTime);
@@ -4930,9 +6403,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             timeGroups[key].durationBuckets["900s+"]++;
           }
         });
-
-        if (Object.keys(timeGroups).length > 0) {
-        }
 
         // Calculate min/max counts for circle sizing
         let minCount = Infinity;
@@ -5053,7 +6523,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Query Duration Distribution by Time Buckets (Bubble Size = Query Count)",
+                text: "Distribuição de Duração de Consultas por Intervalos de Tempo (Tamanho da Bolha = Contagem de Consultas)",
               },
               legend: {
                 display: true,
@@ -5180,7 +6650,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 },
                 title: {
                   display: true,
-                  text: "Request Time",
+                  text: "Tempo de Solicitação",
                 },
               },
               y: {
@@ -5215,10 +6685,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               intersect: false,
             },
           },
-          plugins: [verticalLinePlugin]
+          plugins: [verticalLinePlugin],
         });
-
-        // Register chart for crosshair synchronization
         registerTimelineChart(window.durationBucketsChart, ctx);
       }
 
@@ -5281,7 +6749,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             labels: labels,
             datasets: [
               {
-                label: "Memory Usage (MB)",
+                label: "Uso de Memória (MB)",
                 data: memoryData,
                 backgroundColor: "#17a2b8", // Info blue-cyan
                 borderColor: "#138496",
@@ -5308,7 +6776,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Total Query Process Memory Usage",
+                text: "Uso Total de Memória do Processo de Consultas",
               },
               legend: {
                 display: true,
@@ -5424,7 +6892,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 time: getCurrentTimeConfig(requests),
                 title: {
                   display: true,
-                  text: "Request Time",
+                  text: "Tempo de Solicitação",
                 },
               },
               y: {
@@ -5432,7 +6900,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "left",
                 title: {
                   display: true,
-                  text: "Memory Usage (MB)",
+                  text: "Uso de Memória (MB)",
                 },
                 beginAtZero: true,
               },
@@ -5454,14 +6922,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               intersect: false,
             },
           },
-          plugins: [verticalLinePlugin]
+          plugins: [verticalLinePlugin],
         });
-
-        // Register chart for crosshair synchronization
         registerTimelineChart(window.memoryChart, ctx);
       }
 
-      // Create Result Count Chart (light green bar + orange line for resultCount/query)
+      // Create Result Count Chart (light blue bar + orange line for resultCount/query)
       function createResultCountChart(requests, grouping) {
         const canvas = document.getElementById("result-count-chart");
         if (!canvas) return;
@@ -5512,16 +6978,16 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             labels: labels,
             datasets: [
               {
-                label: "Total Result Count",
+                label: "Contagem Total de Resultados",
                 data: resultCountData,
-                backgroundColor: "rgba(144, 238, 144, 0.8)", // Light green
-                borderColor: "rgba(144, 238, 144, 1)",
+                backgroundColor: "rgba(0, 100, 200, 0.8)", // Dark blue
+                borderColor: "rgba(0, 100, 200, 1)",
                 borderWidth: 1,
                 yAxisID: "y",
                 order: 2,
               },
               {
-                label: "Avg Result Count per Query",
+                label: "Contagem Média de Resultados por Consulta",
                 data: avgResultCountData,
                 type: "line",
                 backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
@@ -5529,8 +6995,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 borderWidth: 2,
                 fill: false,
                 yAxisID: "y1",
-                order: 1,
                 tension: 0.3,
+                order: 1,
               },
             ],
           },
@@ -5540,7 +7006,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Result Count Analysis: Total vs Average per Query",
+                text: "Análise de Contagem de Resultados: Total vs Média por Consulta",
               },
               legend: {
                 display: true,
@@ -5559,7 +7025,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     currentTimeRange.max = new Date(chart.scales.x.max);
                     updateTimeRangeDisplay();
                     // Sync pan with other charts
-                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                    syncChartZoom(
+                      chart,
+                      chart.scales.x.min,
+                      chart.scales.x.max
+                    );
                   },
                 },
                 zoom: {
@@ -5582,7 +7052,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     currentTimeRange.max = new Date(chart.scales.x.max);
                     updateTimeRangeDisplay();
                     // Sync zoom with other charts
-                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                    syncChartZoom(
+                      chart,
+                      chart.scales.x.min,
+                      chart.scales.x.max
+                    );
                   },
                 },
               },
@@ -5593,7 +7067,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 time: getCurrentTimeConfig(requests),
                 title: {
                   display: true,
-                  text: "Request Time",
+                  text: "Tempo de Solicitação",
                 },
               },
               y: {
@@ -5601,7 +7075,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "left",
                 title: {
                   display: true,
-                  text: "Total Result Count",
+                  text: "Contagem Total de Resultados",
                 },
                 beginAtZero: true,
               },
@@ -5623,7 +7097,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               intersect: false,
             },
           },
-          plugins: [verticalLinePlugin]
+          plugins: [verticalLinePlugin],
         });
 
         // Register chart for crosshair synchronization
@@ -5670,9 +7144,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
         // Prepare chart data (convert bytes to MB)
         const labels = sortedData.map((item) => item.timestamp);
-        const resultSizeData = sortedData.map((item) => item.totalResultSize / (1024 * 1024));
+        const resultSizeData = sortedData.map(
+          (item) => item.totalResultSize / (1024 * 1024)
+        );
         const avgResultSizeData = sortedData.map((item) =>
-          item.queryCount > 0 ? (item.totalResultSize / item.queryCount) / (1024 * 1024) : 0
+          item.queryCount > 0
+            ? item.totalResultSize / item.queryCount / (1024 * 1024)
+            : 0
         );
 
         window.resultSizeChart = new Chart(ctx, {
@@ -5681,7 +7159,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             labels: labels,
             datasets: [
               {
-                label: "Total Result Size (MB)",
+                label: "Tamanho Total de Resultados (MB)",
                 data: resultSizeData,
                 backgroundColor: "rgba(0, 100, 0, 0.8)", // Dark green
                 borderColor: "rgba(0, 100, 0, 1)",
@@ -5690,7 +7168,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 order: 2,
               },
               {
-                label: "Avg Result Size per Query (MB)",
+                label: "Tamanho Médio de Resultados por Consulta (MB)",
                 data: avgResultSizeData,
                 type: "line",
                 backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
@@ -5698,8 +7176,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 borderWidth: 2,
                 fill: false,
                 yAxisID: "y1",
-                order: 1,
                 tension: 0.3,
+                order: 1,
               },
             ],
           },
@@ -5709,7 +7187,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Result Size Analysis: Total vs Average per Query",
+                text: "Análise de Tamanho de Resultados: Total vs Média por Consulta",
               },
               legend: {
                 display: true,
@@ -5728,7 +7206,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     currentTimeRange.max = new Date(chart.scales.x.max);
                     updateTimeRangeDisplay();
                     // Sync pan with other charts
-                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                    syncChartZoom(
+                      chart,
+                      chart.scales.x.min,
+                      chart.scales.x.max
+                    );
                   },
                 },
                 zoom: {
@@ -5751,7 +7233,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     currentTimeRange.max = new Date(chart.scales.x.max);
                     updateTimeRangeDisplay();
                     // Sync zoom with other charts
-                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                    syncChartZoom(
+                      chart,
+                      chart.scales.x.min,
+                      chart.scales.x.max
+                    );
                   },
                 },
               },
@@ -5762,7 +7248,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 time: getCurrentTimeConfig(requests),
                 title: {
                   display: true,
-                  text: "Request Time",
+                  text: "Tempo de Solicitação",
                 },
               },
               y: {
@@ -5770,7 +7256,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "left",
                 title: {
                   display: true,
-                  text: "Total Result Size (MB)",
+                  text: "Tamanho Total de Resultados (MB)",
                 },
                 beginAtZero: true,
               },
@@ -5779,7 +7265,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "right",
                 title: {
                   display: true,
-                  text: "Avg per Query (MB)",
+                  text: "Média por Consulta (MB)",
                 },
                 beginAtZero: true,
                 grid: {
@@ -5792,7 +7278,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               intersect: false,
             },
           },
-          plugins: [verticalLinePlugin]
+          plugins: [verticalLinePlugin],
         });
 
         // Register chart for crosshair synchronization
@@ -5946,8 +7432,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           window.memoryChart.update();
         }
 
-
-
         // Update result count chart Y-axis scale
         if (window.resultCountChart) {
           window.resultCountChart.options.scales.y.type = scaleType;
@@ -5973,8 +7457,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           }
           window.resultSizeChart.update();
         }
-
-
       }
 
       // Change time grouping for all charts
@@ -6199,22 +7681,22 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       // Primary Scan Used Donut Chart
       function generatePrimaryScanChart(requests) {
-        const scanCounts = { Yes: 0, No: 0 };
+        const scanCounts = { Sim: 0, Não: 0 };
 
         requests.forEach((request) => {
-          const primaryScan = request.usesPrimary ? "Yes" : "No";
+          const primaryScan = request.usesPrimary ? "Sim" : "Não";
           scanCounts[primaryScan]++;
         });
 
-        const total = scanCounts.Yes + scanCounts.No;
+        const total = scanCounts.Sim + scanCounts.Não;
         const yesPercent =
-          total > 0 ? ((scanCounts.Yes / total) * 100).toFixed(1) : 0;
+          total > 0 ? ((scanCounts.Sim / total) * 100).toFixed(1) : 0;
         const noPercent =
-          total > 0 ? ((scanCounts.No / total) * 100).toFixed(1) : 0;
+          total > 0 ? ((scanCounts.Não / total) * 100).toFixed(1) : 0;
 
         // Show/hide warning div based on whether primary scans are detected
         const warningDiv = document.getElementById("primary-scan-warning");
-        if (scanCounts.Yes > 0) {
+        if (scanCounts.Sim > 0) {
           warningDiv.style.display = "flex";
         } else {
           warningDiv.style.display = "none";
@@ -6230,10 +7712,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         window.primaryScanChart = new Chart(ctx, {
           type: "doughnut",
           data: {
-            labels: ["Yes", "No"],
+            labels: ["Sim", "Não"],
             datasets: [
               {
-                data: [scanCounts.Yes, scanCounts.No],
+                data: [scanCounts.Sim, scanCounts.Não],
                 backgroundColor: ["#dc3545", "#f8f9fa"],
                 borderColor: ["#dc3545", "#dee2e6"],
                 borderWidth: 2,
@@ -6326,7 +7808,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         );
         const labels = Object.keys(stateCounts);
         const data = Object.values(stateCounts);
-        
         // Semantic colors based on query state
         const colors = labels.map(state => {
           const lowerState = state.toLowerCase();
@@ -6421,28 +7902,28 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       // Derive statement type from SQL statement text
       function deriveStatementType(statement) {
-        if (!statement || typeof statement !== "string") {
-          return "UNKNOWN";
+          if (!statement || typeof statement !== "string") {
+            return "UNKNOWN";
+          }
+          
+          const trimmed = statement.trim().toUpperCase();
+          if (!trimmed) {
+            return "UNKNOWN";
+          }
+          
+          // Handle common multi-word statement types first
+          if (trimmed.startsWith("CREATE INDEX")) return "CREATE_INDEX";
+          if (trimmed.startsWith("DROP INDEX")) return "DROP_INDEX";
+          if (trimmed.startsWith("ALTER INDEX")) return "ALTER_INDEX";
+          if (trimmed.startsWith("BUILD INDEX")) return "BUILD_INDEX";
+          
+          // Get first word for other statement types
+          const firstWord = trimmed.split(/\s+/)[0];
+          return firstWord;
         }
-        
-        const trimmed = statement.trim().toUpperCase();
-        if (!trimmed) {
-          return "UNKNOWN";
-        }
-        
-        // Handle common multi-word statement types first
-        if (trimmed.startsWith("CREATE INDEX")) return "CREATE_INDEX";
-        if (trimmed.startsWith("DROP INDEX")) return "DROP_INDEX";
-        if (trimmed.startsWith("ALTER INDEX")) return "ALTER_INDEX";
-        if (trimmed.startsWith("BUILD INDEX")) return "BUILD_INDEX";
-        
-        // Get first word for other statement types
-        const firstWord = trimmed.split(/\s+/)[0];
-        return firstWord;
-      }
 
-      // Statement Type Pie Chart
-      function generateStatementTypeChart(requests) {
+        // Statement Type Pie Chart
+        function generateStatementTypeChart(requests) {
         const typeCounts = {};
 
         requests.forEach((request) => {
@@ -6732,11 +8213,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
           // ARRAY QUERY (has ANY/EVERY + SATISFIES + END)
           if (
-            (statement.includes(" ANY ") || statement.includes(" EVERY ") || statement.includes("ANY AND EVERY")) &&
-            statement.includes(" SATISFIES ") &&
-            (statement.includes(" END ") || statement.endsWith(" END"))
+          (statement.includes(" ANY ") || statement.includes(" EVERY ") || statement.includes("ANY AND EVERY")) &&
+          statement.includes(" SATISFIES ") &&
+          (statement.includes(" END ") || statement.endsWith(" END"))
           ) {
-            patternCounts["ARRAY QUERY"]++;
+          patternCounts["ARRAY QUERY"]++;
           }
 
           // SELECT * (between SELECT and FROM)
@@ -6836,7 +8317,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               x: {
                 title: {
                   display: true,
-                  text: "Query Pattern Features",
+                  text: "Características de Padrões de Consulta",
                 },
                 ticks: {
                   maxRotation: 45,
@@ -6868,15 +8349,15 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           const row = document.createElement("tr");
           row.style.borderBottom = "1px solid #eee";
           row.innerHTML = `
-              <td class="padding-8 text-align-center" style="font-weight: bold;">${count}</td>
-              <td class="padding-8" style="word-break: break-word;">
+              <td style="padding: 8px; text-align: right; font-weight: bold;">${count}</td>
+              <td style="padding: 8px; word-break: break-word;">
                 ${user}
                 <button onclick="copyToClipboard('${user.replace(
                   /'/g,
                   "\\'"
                 )}', event)" 
                         class="btn-standard" style="margin-left: 8px;">
-                  Copy
+                  Copiar
                 </button>
               </td>
             `;
@@ -7008,20 +8489,20 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           const row = document.createElement("tr");
           row.style.borderBottom = "1px solid #eee";
           row.innerHTML = `
-              <td class="padding-8 text-align-center" style="font-weight: bold;">${
+              <td style="padding: 8px; text-align: right; font-weight: bold;">${
                 data.count
               }</td>
-              <td class="padding-8" style="word-break: break-word;">
+              <td style="padding: 8px; word-break: break-word;">
                 ${indexName}
                 <button onclick="copyToClipboard('${indexName.replace(
                   /'/g,
                   "\\'"
                 )}', event)" 
                         class="btn-standard" style="margin-left: 8px;">
-                  Copy
+                  Copiar
                 </button>
               </td>
-              <td class="padding-8 font-size-12" style="word-break: break-word; font-family: monospace;">
+              <td style="padding: 8px; word-break: break-word; font-family: monospace; font-size: 12px;">
                 ${data.bucketScopeCollection}
               </td>
             `;
@@ -7186,7 +8667,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               button.style.background = "#dc3545";
               showToast("Failed to copy to clipboard", "error");
               setTimeout(() => {
-                button.textContent = "Copy";
+                button.textContent = "Copiar";
                 button.style.background = "#007bff";
               }, 1000);
             });
@@ -7244,7 +8725,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               return {
                 valid: false,
                 message:
-                  'For "by Second" grouping, please restrict the date range to 1 hour or less to avoid chart rendering issues.',
+                  'Para agrupamento "Por Segundo", por favor restrinja o intervalo de datas para 1 hora ou menos para evitar problemas de renderização.',
               };
             }
             break;
@@ -7253,17 +8734,16 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               return {
                 valid: false,
                 message:
-                  'For "by Minute" grouping, please restrict the date range to 1 day or less to avoid chart rendering issues.',
+                  'Para agrupamento "Por Minuto", por favor restrinja o intervalo de datas para 1 dia ou menos para evitar problemas de renderização.',
               };
             }
             break;
           case "hour":
-            const diffWeeks = diffDays / 7;
-            if (diffWeeks > 1) {
+            if (diffDays > 7) {
               return {
                 valid: false,
                 message:
-                  'For "by Hour" grouping, please restrict the date range to 1 week or less to avoid chart rendering issues.',
+                  'Para agrupamento "Por Hora", por favor restrinja o intervalo de datas para 1 semana ou menos para performance ótima.',
               };
             }
             break;
@@ -7277,20 +8757,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const request = item.completed_requests || item;
 
         // Parse and cache plan data immediately
-        let plan = null;
-        if (item.plan) {
-          if (typeof item.plan === "string") {
-            try {
-              plan = JSON.parse(item.plan);
-            } catch (e) {
-              console.warn(`Failed to parse plan JSON for request:`, e.message);
-              showNotification(`JSON parsing error: ${e.message}`, "warning");
-              plan = null;
-            }
-          } else {
-            plan = item.plan;
-          }
-        }
+        const plan = item.plan
+          ? typeof item.plan === "string"
+            ? JSON.parse(item.plan)
+            : item.plan
+          : null;
 
         // Pre-calculate commonly used values
         const processedRequest = {
@@ -7369,22 +8840,27 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const endDateInput = document.getElementById("end-date");
 
         // Reset time grouping to default (By Optimizer) to prevent fine-grain errors
-        const timeGroupingSelect = document.getElementById('time-grouping-select');
+        const timeGroupingSelect = document.getElementById(
+          "time-grouping-select"
+        );
         if (timeGroupingSelect) {
-          timeGroupingSelect.value = 'optimizer';
+          timeGroupingSelect.value = "optimizer";
           // Trigger the change event to update any dependent UI
           changeTimeGrouping();
         }
 
         // Input validation
         if (!jsonInput) {
-          showToast("Please paste your JSON data first", "warning");
+          showToast("Por favor, cole seus dados JSON primeiro", "warning");
           return;
         }
 
         if (jsonInput.length > 50 * 1024 * 1024) {
           // 50MB limit
-          showToast("Input too large. Please use smaller datasets.", "error");
+          showToast(
+            "Entrada muito grande. Por favor, use conjuntos de dados menores.",
+            "error"
+          );
           return;
         }
 
@@ -7398,14 +8874,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             processData = data.results;
           } else {
             showToast(
-              "Please provide a valid JSON array or object with results.",
+              "Por favor, forneça um array JSON válido ou objeto com resultados.",
               "error"
             );
             return;
           }
 
           if (processData.length === 0) {
-            showToast("No data found in the JSON", "warning");
+            showToast("Nenhum dado encontrado no JSON", "warning");
             return;
           }
 
@@ -7428,11 +8904,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 try {
                   processedRequests.push(processRequestData(processData[i]));
                 } catch (e) {
-                  console.warn(
-                    `Error processing request ${i}:`,
-                    e.message || e
-                  );
-                  // Continue processing other requests
+                  console.warn(`Error processing request ${i}:`, e);
                 }
               }
 
@@ -7582,11 +9054,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           : null;
 
         const filteredRequests = filterRequestsByDateRange(
-          filteredAllRequests,
+          originalRequests,
           startDate,
           endDate
         );
-        
+
         // Store filtered requests globally for Index/Query Flow tab activation
         window.filteredRequests = filteredRequests;
 
@@ -7600,17 +9072,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         if (!validation.valid) {
           alert(validation.message);
           // Still continue with table generation, just skip charts
-          updateFilterInfo(filteredAllRequests.length, filteredRequests.length);
+          updateFilterInfo(originalRequests.length, filteredRequests.length);
           generateTable(filteredRequests);
           generateAnalysisTable(filteredRequests);
           buildIndexQueryFlow(filteredRequests);
           document.getElementById("flow-diagram").innerHTML =
-            "Select a query from the table to view the flow diagram.";
+            "Selecione uma consulta da tabela para visualizar o diagrama de fluxo.";
           return;
         }
 
         // Update UI with filtered data
-        updateFilterInfo(filteredAllRequests.length, filteredRequests.length);
+        updateFilterInfo(originalRequests.length, filteredRequests.length);
         try {
           generateTable(filteredRequests);
           generateAnalysisTable(filteredRequests);
@@ -7633,7 +9105,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           );
         }
         document.getElementById("flow-diagram").innerHTML =
-          "Select a query from the table to view the flow diagram.";
+          "Selecione uma consulta da tabela para visualizar o diagrama de fluxo.";
       }
 
       // Modal event listeners
@@ -7669,7 +9141,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             startDateInput.value = toDateTimeLocal(originalStartDate);
             endDateInput.value = toDateTimeLocal(originalEndDate);
           }
-        } else if (type === "1day" || type === "1hour" || type === "1week") {
+        } else if (type === "1day" || type === "1hour") {
           const endDate = endDateInput.value
             ? new Date(endDateInput.value)
             : new Date();
@@ -7679,8 +9151,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             startDate.setDate(startDate.getDate() - 1);
           } else if (type === "1hour") {
             startDate.setHours(startDate.getHours() - 1);
-          } else if (type === "1week") {
-            startDate.setDate(startDate.getDate() - 7);
           }
 
           startDateInput.value = toDateTimeLocal(startDate);
@@ -7699,6 +9169,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             startDate,
             endDate
           );
+
+          // Store filtered requests globally for Index/Query Flow tab activation
+          window.filteredRequests = filteredRequests;
 
           updateFilterInfo(originalRequests.length, filteredRequests.length);
           generateTable(filteredRequests);
@@ -7727,27 +9200,21 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               } else if (tabId === "dashboard" && originalRequests.length > 0) {
                 // Generate dashboard charts only when tab is activated
                 generateDashboardCharts(originalRequests);
+              } else if (tabId === "index-query-flow" && originalRequests.length > 0) {
+                console.log("🎯 Index/Query Flow tab activated");
+                // Always rebuild Index/Query Flow from current filtered data when tab is activated
+                const currentFilteredData = window.filteredRequests || originalRequests;
+                console.log("🔄 Rebuilding Index/Query Flow with current data:", currentFilteredData.length, "requests");
+                
+                setTimeout(() => {
+                  // Force a complete rebuild with current filtered data
+                  buildIndexQueryFlow(currentFilteredData);
+                  console.log("✅ Index/Query Flow rebuild complete");
+                }, 150);
+                
+                // Clear any pending data since we're rebuilding fresh
+                window.pendingIndexQueryFlowData = null;
               }
-            }
-            
-            // Always check Index/Query Flow tab (not just first time)
-            if (tabId === "index-query-flow" && originalRequests.length > 0) {
-              console.log("🎯 Index/Query Flow tab activated (always rebuild)");
-              
-              // Full render from existing indexQueryFlowData (create DIVs + SVG)
-              setTimeout(() => {
-                console.log("🔄 Tab activation: Full render from existing indexQueryFlowData");
-                
-                // Convert indexQueryFlowData back to arrays for renderIndexQueryFlow
-                const indexes = Array.from(indexQueryFlowData.indexes.values());
-                const queries = Array.from(indexQueryFlowData.queries.values());
-                
-                console.log("  📊 Rendering with - Indexes:", indexes.length, "Queries:", queries.length);
-                
-                // Do full render (creates DIVs and SVG)
-                renderIndexQueryFlow(indexes, queries);
-                console.log("✅ Index/Query Flow full render complete");
-              }, 150);
             }
           },
         });
@@ -7782,6 +9249,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         }
       }
 
+      // Process Index/Query data without DOM rendering (for hidden tabs)
       // Process Index/Query data without DOM rendering (for hidden tabs)
       function processIndexQueryData(requests) {
         console.log("📊 Processing Index/Query data structures only (no DOM rendering)");
@@ -7832,12 +9300,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           if (stmt) {
             const normalized = normalizeStatement(stmt);
             if (!queryGroups.has(normalized)) {
-              queryGroups.set(normalized, { 
-                normalizedStatement: normalized, 
-                statement: stmt, // Add original statement for createQueryDiv
-                count: 0, 
-                requests: [] 
-              });
+              queryGroups.set(normalized, { normalizedStatement: normalized, count: 0, requests: [] });
             }
             queryGroups.get(normalized).count++;
             queryGroups.get(normalized).requests.push(request);
@@ -7865,7 +9328,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         // CRITICAL: Populate indexQueryFlowData with processed data for SVG rendering
         indexQueryFlowData.indexes = new Map(Array.from(allIndexes.values()).map(idx => [idx.name, idx]));
         indexQueryFlowData.queries = queryGroups;
-        
+
         // Rebuild connections data
         requestIndexMap.forEach((indexSet, requestIndex) => {
           const request = requests[requestIndex];
@@ -7921,30 +9384,27 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         // Use provided requests or fall back to original requests
         const requestsToUse = requests || originalRequests;
 
-        console.log("🔧 buildIndexQueryFlow called with requests:", requestsToUse?.length || 0);
-
         if (!requestsToUse || requestsToUse.length === 0) {
-          console.log("❌ No requests available for Index/Query Flow");
+          console.log("No requests available for Index/Query Flow");
           return;
         }
 
         // Check if Index/Query Flow tab is currently visible using jQuery UI tabs
         const activeTabIndex = $("#tabs").tabs("option", "active");
         const indexQueryFlowTabIndex = 4; // Index/Query Flow is the 5th tab (0-indexed)
-        
-        console.log(`📊 Active tab index: ${activeTabIndex}, Index/Query Flow tab index: ${indexQueryFlowTabIndex}`);
-        
-        // Always clear first to ensure clean state
-        clearIndexQueryFlow();
-        
-        // Process data but skip DOM rendering when tab is hidden
+
+        // Always process the data, but defer expensive rendering when tab is hidden
         if (activeTabIndex !== indexQueryFlowTabIndex) {
-          console.log("⏸️ Index/Query Flow tab hidden, processing data only");
+          console.log("⏸️ Index/Query Flow tab hidden, processing data but deferring SVG rendering");
+          // Process data structures but skip expensive DOM/SVG operations
           processIndexQueryData(requestsToUse);
           return;
         }
 
         console.log("✅ Index/Query Flow tab is visible, proceeding with rendering");
+
+        // Clear existing content and data structures
+        clearIndexQueryFlow();
 
         // Step 1: Track which indexes each request uses (by request index)
         const requestIndexMap = new Map(); // requestIndex -> Set of index names
@@ -8098,11 +9558,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           sortedQueries.map((q) => [q.normalizedStatement, q])
         );
 
-        console.log("🚀 About to call renderIndexQueryFlow with:");
-        console.log("  📋 sortedIndexes:", sortedIndexes.length);
-        console.log("  📋 sortedQueries:", sortedQueries.length);
-        console.log("  📋 indexQueryFlowData.connections:", indexQueryFlowData.connections.size);
-        
         renderIndexQueryFlow(sortedIndexes, sortedQueries);
       }
 
@@ -8270,11 +9725,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       }
 
       function renderIndexQueryFlow(indexes, queries) {
-        console.log("🎨 renderIndexQueryFlow called with:");
-        console.log("  📋 Indexes:", indexes.length, "items");
-        console.log("  📋 Queries:", queries.length, "items");
-        console.log("  📋 indexQueryFlowData.connections size:", indexQueryFlowData.connections.size);
-        
         const flowElements = document.getElementById("flow-elements");
 
         if (!flowElements) {
@@ -8348,7 +9798,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         setTimeout(() => {
           drawSimpleConnections(indexPositions, queryPositions, colors);
         }, 100);
-        
+
         // Additional redraw after longer delay to ensure correct positioning
         setTimeout(() => {
           redrawConnectionsAfterDrag();
@@ -8393,11 +9843,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div style="font-weight: bold; font-size: 14px; color: #333;">${
               index.name
-            } | Scanned: ${index.totalUsage}</div>
+            } | Verificado: ${index.totalUsage}</div>
             <button onclick="copyIndexName('${index.name.replace(
               /'/g,
               "\\'"
-            )}', event)" class="btn-standard" style="font-size: 11px;">Copy</button>
+            )}', event)" class="btn-standard" style="font-size: 11px;">Copiar</button>
           </div>
           <div class="index-stats" style="font-size: 13px; margin-top: 8px;">
             Avg Scan Time: <span style="${avgScanTimeStyle}">${
@@ -8440,7 +9890,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           avgDurationSeconds >= 60 ? "font-weight: bold; color: red;" : "";
 
         div.innerHTML = `
-          <div style="font-weight: bold; font-size: 14px; color: #333;">Executions: ${
+          <div style="font-weight: bold; font-size: 14px; color: #333;">Execuções: ${
             query.count
           }${useKeysIndicator}</div>
           <div style="font-size: 12px; color: #666; margin: 4px 0;">Avg Duration: <span style="${avgDurationStyle}">${formatTime(
@@ -8456,10 +9906,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             <button onclick="toggleQueryText('${query.normalizedStatement.replace(
               /[^a-zA-Z0-9]/g,
               ""
-            )}')" class="btn-standard">Show More</button>
+            )}')" class="btn-standard">Mostrar Mais</button>
             <button class="btn-standard query-copy-btn" data-query-statement="${encodeURIComponent(
               query.statement
-            )}">Copy</button>
+            )}">Copiar</button>
           </div>
         `;
 
@@ -8736,10 +10186,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
         if (element.classList.contains("expanded")) {
           element.classList.remove("expanded");
-          button.textContent = "Show More";
+          button.textContent = "Mostrar Mais";
         } else {
           element.classList.add("expanded");
-          button.textContent = "Hide";
+          button.textContent = "Ocultar";
         }
       }
 
@@ -8890,10 +10340,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               ...request.completed_requests,
               plan: request.plan,
             };
-          } else {
-          }
-
-          if (actualRequest.plan) {
+            console.log(`🔄 Restructured request from user format`);
           }
 
           // Create a copy of the request with parsed plan
@@ -8903,6 +10350,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           if (typeof processedRequest.plan === "string") {
             try {
               processedRequest.plan = JSON.parse(processedRequest.plan);
+              console.log(
+                `🔧 ✅ Parsed plan JSON for request: ${
+                  processedRequest.clientContextID ||
+                  processedRequest.requestId ||
+                  "unknown"
+                }`
+              );
+              console.log(
+                `🔧 Parsed plan operator:`,
+                processedRequest.plan?.["#operator"]
+              );
             } catch (e) {
               console.warn(
                 `⚠️ Failed to parse plan JSON for request: ${
@@ -8915,17 +10373,23 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               return; // Skip this request if plan can't be parsed
             }
           } else if (processedRequest.plan) {
+            console.log(
+              `🔧 Plan already parsed, operator:`,
+              processedRequest.plan?.["#operator"]
+            );
           } else {
             console.warn(`⚠️ No plan found in request`);
             return;
           }
 
+          console.log(`🎯 Calling extractIndexesAndKeys...`);
           const indexesAndKeys = extractIndexesAndKeys(processedRequest);
+          console.log(`🎯 extractIndexesAndKeys returned:`, indexesAndKeys);
 
           // Get bucket.scope.collection from the statement
           const statement =
             actualRequest.preparedText || actualRequest.statement || "";
-
+          console.log(`📝 Statement:`, statement);
           let bucketScopeCollection = "unknown.unknown.unknown";
 
           // Try to extract FROM clause to get bucket.scope.collection
@@ -8941,6 +10405,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               bucketScopeCollection = `${parts[0]}.${parts[1]}.${parts[2]}`;
             }
           }
+
+          console.log(
+            `🎯 Processing statement: "${statement.substring(
+              0,
+              50
+            )}..." on ${bucketScopeCollection}`
+          );
 
           // Add each index with its bucket.scope.collection
           indexesAndKeys.indexes.forEach((indexName) => {
@@ -9060,7 +10531,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           applyIndexFilters();
         } catch (error) {
           document.getElementById("indexResults").innerHTML = `
-                    <div class="text-align-center" style="color: #dc3545; margin-top: 50px;">
+                    <div style="color: #dc3545; text-align: center; margin-top: 50px;">
                         <strong>Invalid JSON Format</strong><br>
                         Please check your JSON syntax: ${error.message}
                     </div>
@@ -9280,13 +10751,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           if (indexData.length === 0) {
             // No index data loaded - show instructions
             resultsContainer.innerHTML = `
-                        <div class="text-align-center" style="margin-top: 30px;">
-                            <h4 style="color: #495057; margin-bottom: 20px;">No Index Data Loaded</h4>
+                        <div style="text-align: center; margin-top: 30px;">
+                            <h4 style="color: #495057; margin-bottom: 20px;">Nenhum Dado de Índice Carregado</h4>
                             <p style="color: #666; margin-bottom: 20px;">
-                                To analyze indexes, run this query in your Couchbase Query Workbench and paste the results in the second textarea above:
+                                Para analisar índices, execute esta consulta em seu Couchbase Query Workbench e cole os resultados na segunda área de texto acima:
                             </p>
                             <div class="sql-query-box">
-                                <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">Copy Query</button>
+                                <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">Copiar Consulta</button>
                                 <pre>SELECT 
  s.name,
  s.id,
@@ -9305,12 +10776,12 @@ LET bid = CONCAT("", s.bucket_id, ""),
 ;</pre>
                             </div>
                             <p style="color: #666; font-size: 13px; margin-top: 15px;">
-                                <strong>Steps:</strong><br>
-                                1. Copy the query above<br>
-                                2. Run it in Couchbase Query Workbench<br>
-                                3. Copy the JSON results<br>
-                                4. Paste into the second textarea at the top<br>
-                                5. Click "Parse JSON" again
+                                <strong>Passos:</strong><br>
+                                1. Copie a consulta acima<br>
+                                2. Execute no Couchbase Query Workbench<br>
+                                3. Copie os resultados JSON<br>
+                                4. Cole na segunda área de texto no topo<br>
+                                5. Clique em "Analisar JSON" novamente
                             </p>
                         </div>
                     `;
@@ -9437,7 +10908,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         <button class="btn-standard copy-btn" onclick="copyIndexDefinition('${index.indexString.replace(
                           /'/g,
                           "\\'"
-                        )}', event)">Copy</button>
+                        )}', event)">Copiar</button>
                     </div>
                 </div>
             `;

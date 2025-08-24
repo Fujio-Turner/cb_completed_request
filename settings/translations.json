@@ -1,9 +1,9 @@
 {
   "ui_strings": {
-    "Query Analyzer v3.5.2": {
-      "es": "Analizador de Consultas v3.5.2",
-      "pt": "Analisador de Consultas v3.5.2",
-      "de": "Query Analyzer v3.5.2"
+    "Query Analyzer v3.6.2": {
+      "es": "Analizador de Consultas v3.6.2",
+      "pt": "Analisador de Consultas v3.6.2",
+      "de": "Query Analyzer v3.6.2"
     },
     "Dashboard": {
       "es": "Panel de Control",

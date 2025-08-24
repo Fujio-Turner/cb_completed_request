@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.6.1
+# Couchbase Slow Query Analysis Tool v3.6.2
 
 **🌍 Idiomas:** [🇺🇸 English](README.md) | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | **🇵🇹 Português**
 
@@ -156,6 +156,19 @@ Ao analisar gráficos de linha do tempo, escolha intervalos de data apropriados 
 **⚠️ Aviso**: Intervalos de data grandes com agrupamentos de granularidade fina podem causar erros de renderização de gráficos. A ferramenta alertará você e sugerirá melhores combinações.
 
 ## 📋 Notas de Lançamento
+
+### Versão 3.6.2 (23 de agosto de 2025)
+#### 🔧 Correções de Bugs
+- **Problemas de Sincronização da Aba Index/Query Flow Corrigidos**: Resolvidos problemas de exibição de dados obsoletos ao usar filtros de strings SQL com abas ocultas
+- **Lógica de Ativação de Aba Aprimorada**: Index/Query Flow agora sempre reconstrói a partir dos dados filtrados atuais quando a aba é ativada
+- **Compatibilidade de Estrutura de Dados Melhorada**: Corrigida estrutura do objeto query para prevenir erros de propriedades `undefined` durante o renderizado
+- **Renderizado Diferido Complexo Eliminado**: Simplificado o manuseio de visibilidade de abas para remover problemas de timing e invalidação de cache
+
+#### 🎯 Melhorias Técnicas
+- **Processamento Adequado de Aba Oculta**: Index/Query Flow agora processa estruturas de dados corretamente mesmo quando a aba não está visível
+- **Renderizado de Conexões SVG Confiável**: Corrigidos problemas de posicionamento de conexões SVG com detecção de visibilidade de abas jQuery UI
+- **Depuração Aprimorada**: Adicionado logging abrangente do console para processamento e renderizado de dados do Index/Query Flow
+- **Comportamento Consistente Entre Abas**: Index/Query Flow agora se comporta consistentemente com outras abas em relação ao processamento de dados
 
 ### Versão 3.6.1 (23 de agosto de 2025)
 #### 🚀 Novos Recursos

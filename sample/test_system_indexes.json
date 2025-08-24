@@ -1,428 +1,464 @@
-[{
-        "name": "email_v1",
-        "id": "cf11acdf372ce112",
-        "metadata": {
-            "last_scan_time": "2025-04-24T17:46:20.429-05:00",
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 1745534780429999104
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX email_v1 ON property.users.profile(`email`);"
+[
+  {
+    "name": "def_primary",
+    "id": "b9d63840edf7d142",
+    "metadata": {
+      "last_scan_time": "2025-07-19T22:14:27.683-05:00",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752981267683661056
+      }
     },
-    {
-        "name": "start_date_v1",
-        "id": "6096e2904044f0e7",
-        "metadata": {
-            "last_scan_time": "2025-04-24T07:44:27.874-05:00",
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 1745498667874004992
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX start_date_v1 ON property.timeslots.reservations(`start_date`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX def_primary ON travel-sample;"
+  },
+  {
+    "name": "type_idx",
+    "id": "58a7d6b10415a83c",
+    "metadata": {
+      "last_scan_time": "2025-07-21T11:22:33.790Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1752985353790000000
+      }
     },
-    {
-        "name": "user_id_v1",
-        "id": "8ef18490c923c3b9",
-        "metadata": {
-            "last_scan_time": "2025-04-24T17:46:51.898-05:00",
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 1745534811898356992
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX user_id_v1 ON property.timeslots.reservations(`user_id`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX type_idx ON travel-sample(`type`) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "city_idx",
+    "id": "200ee02ff3388f66",
+    "metadata": {
+      "last_scan_time": "2025-07-20T14:25:33.124Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752899133124000000
+      }
     },
-    {
-        "name": "end_date_v1",
-        "id": "bbe7d179a5eac80d",
-        "metadata": {
-            "last_scan_time": "2025-04-24T07:43:01.614-05:00",
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 1745498581614920960
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX end_date_v1 ON property.timeslots.reservations(`end_date`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX city_idx ON travel-sample(`city`);"
+  },
+  {
+    "name": "hotel_city_idx",
+    "id": "f149dc589151a08d",
+    "metadata": {
+      "last_scan_time": "2025-07-20T14:25:33.124Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1752899133124000000
+      }
     },
-    {
-        "name": "start_year_v1",
-        "id": "fba5f51d34ef2ad3",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX start_year_v1 ON property.timeslots.reservations(date_part_str(`start_date`, \"year\"));"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX hotel_city_idx ON travel-sample(`city`) WHERE (`type` = \"hotel\") WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "country_idx",
+    "id": "a1b2c3d4e5f67890",
+    "metadata": {
+      "last_scan_time": "2025-07-21T09:15:42.568Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752966942568000000
+      }
     },
-    {
-        "name": "store.retail.products",
-        "id": "17cf5a5c5e87bde3",
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX store.retail.products ON store.retail.products();"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX country_idx ON travel-sample((all (array (`address`.`country`) for `address` in `addresses` end)));"
+  },
+  {
+    "name": "type_rating_idx",
+    "id": "b2c3d4e5f6789012",
+    "metadata": {
+      "last_scan_time": "2025-07-21T16:45:12.346Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1752993912346000000
+      }
     },
-    {
-        "name": "def_airportname",
-        "id": "f77123a33aa9456a",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_airportname ON travel-sample(`airportname`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX type_rating_idx ON travel-sample(`type`, `rating`) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "city_name_idx",
+    "id": "c3d4e5f678901234",
+    "metadata": {
+      "last_scan_time": "2025-07-21T17:20:30.679Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752996030679000000
+      }
     },
-    {
-        "name": "def_icao",
-        "id": "392a5a070d9126c8",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_icao ON travel-sample(`icao`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX city_name_idx ON travel-sample(`city`, `name`) WHERE (`type` = \"hotel\");"
+  },
+  {
+    "name": "search_idx",
+    "id": "d4e5f6789012345a",
+    "metadata": {
+      "last_scan_time": "2025-07-21T22:20:45.679Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753014045679000000
+      }
     },
-    {
-        "name": "def_route_src_dst_day",
-        "id": "1159e2b6002a8c28",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_route_src_dst_day ON travel-sample(`sourceairport`,`destinationairport`,(distinct (array (`v`.`day`) for `v` in `schedule` end))) WHERE (`type` = 'route');"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX search_idx ON travel-sample(`description`) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "type_city_idx",
+    "id": "e5f678901234567b",
+    "metadata": {
+      "last_scan_time": "2025-07-22T09:40:12.346Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753054812346000000
+      }
     },
-    {
-        "name": "def_city",
-        "id": "200ee02ff3388f66",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_city ON travel-sample(`city`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX type_city_idx ON travel-sample(`type`, `city`);"
+  },
+  {
+    "name": "amenities_idx",
+    "id": "f6789012345678c9",
+    "metadata": {
+      "last_scan_time": "2025-07-21T13:45:18.124Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1752983118124000000
+      }
     },
-    {
-        "name": "def_sourceairport",
-        "id": "8c49289af75a740",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_sourceairport ON travel-sample(`sourceairport`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX amenities_idx ON travel-sample((all (array `amenity` for `amenity` in `amenities` end))) WHERE (`type` = \"hotel\") WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "hotel_reviews_idx",
+    "id": "789012345678d0e1",
+    "metadata": {
+      "last_scan_time": "2025-07-21T20:30:18.790Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753007018790000000
+      }
     },
-    {
-        "name": "def_faa",
-        "id": "b612c36c0e105c7",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_faa ON travel-sample(`faa`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX hotel_reviews_idx ON travel-sample((all (array (`review`.`rating`) for `review` in `reviews` end))) WHERE (`type` = \"hotel\");"
+  },
+  {
+    "name": "hotel_name_regex_idx",
+    "id": "890123456789e1f2",
+    "metadata": {
+      "last_scan_time": "2025-07-21T23:10:55.235Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753017055235000000
+      }
     },
-    {
-        "name": "def_type",
-        "id": "58a7d6b10415a83c",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_type ON travel-sample(`type`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX hotel_name_regex_idx ON travel-sample(`name`) WHERE (`type` = \"hotel\") WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "airline_name_idx",
+    "id": "901234567890f2g3",
+    "metadata": {
+      "last_scan_time": "2025-07-21T18:05:45.124Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753001945124000000
+      }
     },
-    {
-        "name": "def_name_type",
-        "id": "a3278f269f20980",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_name_type ON travel-sample(`name`) WHERE (`_type` = 'User');"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX airline_name_idx ON travel-sample(`name`) WHERE (`type` = \"airline\");"
+  },
+  {
+    "name": "airport_keys_idx",
+    "id": "012345678901g3h4",
+    "metadata": {
+      "last_scan_time": "2025-07-21T19:15:22.457Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753004922457000000
+      }
     },
-    {
-        "name": "def_schedule_utc",
-        "id": "1a4de5c9c5e87a10",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_schedule_utc ON travel-sample(array (`s`.`utc`) for `s` in `schedule` end);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX airport_keys_idx ON travel-sample(`airport_keys`) WHERE (`type` = \"hotel\") WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "hotel_amenities_unnest_idx",
+    "id": "123456789012h4i5",
+    "metadata": {
+      "last_scan_time": "2025-07-21T21:45:33.457Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753010733457000000
+      }
     },
-    {
-        "name": "def_primary",
-        "id": "b9d63840edf7d142",
-        "metadata": {
-            "last_scan_time": "2025-07-19T22:14:27.683-05:00",
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 1752981267683661056
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_primary ON travel-sample;"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX hotel_amenities_unnest_idx ON travel-sample((distinct (array `amenity` for `amenity` in `amenities` end))) WHERE (`type` = \"hotel\");"
+  },
+  {
+    "name": "chatHistory_v1",
+    "id": "af55078068fd375d",
+    "metadata": {
+      "last_scan_time": "2025-07-13T00:35:07.376Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1752654907376000000
+      }
     },
-    {
-        "name": "def_inventory_route_schedule_utc",
-        "id": "2fc9b1b1ab2a7c67",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_inventory_route_schedule_utc ON travel-sample.inventory.route(array (`s`.`utc`) for `s` in `schedule` end);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX chatHistory_v1 ON yama.chats.usersChats(`userId`, ((`audit`.`up`).`dt`) DESC, `bookmark`, `chatName`) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "yama_users_email_idx",
+    "id": "234567890123i5j6",
+    "metadata": {
+      "last_scan_time": "2025-07-15T10:20:30.123Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752747630123000000
+      }
     },
-    {
-        "name": "def_inventory_route_route_src_dst_day",
-        "id": "add7863ed573533c",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_inventory_route_route_src_dst_day ON travel-sample.inventory.route(`sourceairport`,`destinationairport`,(distinct (array (`v`.`day`) for `v` in `schedule` end)));"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX yama_users_email_idx ON yama.users.profiles(`email`);"
+  },
+  {
+    "name": "yama_users_status_idx",
+    "id": "345678901234j6k7",
+    "metadata": {
+      "last_scan_time": null,
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 0
+      }
     },
-    {
-        "name": "def_inventory_route_sourceairport",
-        "id": "2224fa49a85bd73d",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_inventory_route_sourceairport ON travel-sample.inventory.route(`sourceairport`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX yama_users_status_idx ON yama.users.profiles(`status`) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "yama_users_login_composite_idx",
+    "id": "456789012345k7l8",
+    "metadata": {
+      "last_scan_time": "2025-07-17T18:45:30.127Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752795930127836928
+      }
     },
-    {
-        "name": "def_inventory_route_primary",
-        "id": "15e84633e58368b6",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_inventory_route_primary ON travel-sample.inventory.route;"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX yama_users_login_composite_idx ON yama.users.profiles(`email`, `password`) WHERE (`status` = true);"
+  },
+  {
+    "name": "yama_users_name_composite_idx",
+    "id": "567890123456l8m9",
+    "metadata": {
+      "last_scan_time": null,
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 0
+      }
     },
-    {
-        "name": "def_inventory_landmark_city",
-        "id": "5eaee77b6e18963f",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_inventory_landmark_city ON travel-sample.inventory.landmark(`city`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX yama_users_name_composite_idx ON yama.users.profiles(`firstName`, `lastName`, `userName`) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "yama_chats_primary",
+    "id": "678901234567m9n0",
+    "metadata": {
+      "last_scan_time": null,
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 0
+      }
     },
-    {
-        "name": "def_inventory_landmark_primary",
-        "id": "c97e1b9499769e02",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_inventory_landmark_primary ON travel-sample.inventory.landmark;"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX yama_chats_primary ON yama.chats.usersChats;"
+  },
+  {
+    "name": "yama_chats_chatname_idx",
+    "id": "789012345678n0o1",
+    "metadata": {
+      "last_scan_time": "2025-07-14T16:30:45.567Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1752856245567000000
+      }
     },
-    {
-        "name": "def_inventory_hotel_city",
-        "id": "f149dc589151a08d",
-        "metadata": {
-            "last_scan_time": "2025-07-17T19:30:59.4-05:00",
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 1752798659400890112
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_inventory_hotel_city ON travel-sample.inventory.hotel(`city`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX yama_chats_chatname_idx ON yama.chats.usersChats(`chatName`) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "yama_chats_bookmark_idx",
+    "id": "890123456789o1p2",
+    "metadata": {
+      "last_scan_time": null,
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 0
+      }
     },
-    {
-        "name": "def_inventory_hotel_primary",
-        "id": "3692c7cce904f3aa",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_inventory_hotel_primary ON travel-sample.inventory.hotel;"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX yama_chats_bookmark_idx ON yama.chats.usersChats(`bookmark`);"
+  },
+  {
+    "name": "yama_chats_audit_dt_idx",
+    "id": "901234567890p2q3",
+    "metadata": {
+      "last_scan_time": "2025-07-13T00:35:07.376Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1752654907376000000
+      }
     },
-    {
-        "name": "def_inventory_airport_faa",
-        "id": "62b556b35e9087be",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_inventory_airport_faa ON travel-sample.inventory.airport(`faa`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX yama_chats_audit_dt_idx ON yama.chats.usersChats(((`audit`.`up`).`dt`) DESC) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "travel_hotel_type_idx",
+    "id": "012345678901q3r4",
+    "metadata": {
+      "last_scan_time": "2025-07-21T11:22:33.790Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752985353790000000
+      }
     },
-    {
-        "name": "def_inventory_airport_airportname",
-        "id": "1e3a97512cd1abeb",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_inventory_airport_airportname ON travel-sample.inventory.airport(`airportname`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX travel_hotel_type_idx ON travel-sample(`type`) WHERE (`type` = \"hotel\");"
+  },
+  {
+    "name": "travel_hotel_amenities_idx",
+    "id": "123456789012r4s5",
+    "metadata": {
+      "last_scan_time": "2025-07-21T13:45:18.124Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1752983118124000000
+      }
     },
-    {
-        "name": "def_inventory_airport_city",
-        "id": "7d9b346d322c61de",
-        "metadata": {
-            "last_scan_time": "2025-07-17T19:30:59.399-05:00",
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 1752798659399227904
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_inventory_airport_city ON travel-sample.inventory.airport(`city`);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX travel_hotel_amenities_idx ON travel-sample((all (array `amenity` for `amenity` in `amenities` end))) WHERE (`type` = \"hotel\") WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "travel_hotel_rating_idx",
+    "id": "234567890123s5t6",
+    "metadata": {
+      "last_scan_time": "2025-07-21T16:45:12.346Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752993912346000000
+      }
     },
-    {
-        "name": "def_inventory_airport_primary",
-        "id": "7820c3cf7182bc30",
-        "metadata": {
-            "last_scan_time": "2025-07-17T19:27:22.081-05:00",
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 1752798442081808896
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_inventory_airport_primary ON travel-sample.inventory.airport;"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX travel_hotel_rating_idx ON travel-sample(`rating`) WHERE (`type` = \"hotel\" AND `rating` > 4);"
+  },
+  {
+    "name": "travel_hotel_reviews_rating_idx",
+    "id": "345678901234t6u7",
+    "metadata": {
+      "last_scan_time": "2025-07-21T20:30:18.790Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753007018790000000
+      }
     },
-    {
-        "name": "def_inventory_airline_primary",
-        "id": "c3a7108c7233ea88",
-        "metadata": {
-            "last_scan_time": null,
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 0
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX def_inventory_airline_primary ON travel-sample.inventory.airline;"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX travel_hotel_reviews_rating_idx ON travel-sample((all (array (`review`.`rating`) for `review` in `reviews` end))) WHERE (`type` = \"hotel\") WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "travel_hotel_name_city_idx",
+    "id": "456789012345u7v8",
+    "metadata": {
+      "last_scan_time": "2025-07-22T09:40:12.346Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753054812346000000
+      }
     },
-    {
-        "name": "login_v2",
-        "id": "dc5bce4459b3f00a",
-        "metadata": {
-            "last_scan_time": "2025-07-17T18:45:30.127-05:00",
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 1752795930127836928
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX login_v2 ON yama.users.profiles(`email`,`password`,{\"firstName\": `firstName`, \"lastName\": `lastName`, \"userName\": `userName`}) WHERE (`status` = true);"
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX travel_hotel_name_city_idx ON travel-sample(`name`, `city`) WHERE (`type` = \"hotel\");"
+  },
+  {
+    "name": "travel_airline_type_idx",
+    "id": "567890123456v8w9",
+    "metadata": {
+      "last_scan_time": "2025-07-21T18:05:45.124Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753001945124000000
+      }
     },
-    {
-        "name": "chatHistory_v1",
-        "id": "af55078068fd375d",
-        "metadata": {
-            "last_scan_time": "2025-07-17T18:45:30.495-05:00",
-            "num_replica": 0,
-            "stats": {
-                "last_known_scan_time": 1752795930495823872
-            }
-        },
-        "state": "online",
-        "datastore_id": "http://127.0.0.1:8091",
-        "indexString": "CREATE INDEX chatHistory_v1 ON yama.chats.usersChats(`userId`,((`audit`.`up`).`dt`) DESC,`bookmark`,`chatName`);"
-    }
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX travel_airline_type_idx ON travel-sample(`type`) WHERE (`type` = \"airline\") WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "travel_airline_name_idx",
+    "id": "678901234567w9x0",
+    "metadata": {
+      "last_scan_time": "2025-07-21T18:05:45.124Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753001945124000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX travel_airline_name_idx ON travel-sample(`name`) WHERE (`type` = \"airline\");"
+  },
+  {
+    "name": "travel_search_description_idx",
+    "id": "789012345678x0y1",
+    "metadata": {
+      "last_scan_time": "2025-07-21T22:20:45.679Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753014045679000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX travel_search_description_idx ON travel-sample(`description`) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "travel_groupby_city_count_idx",
+    "id": "890123456789y1z2",
+    "metadata": {
+      "last_scan_time": "2025-07-21T15:30:55.891Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752988255891000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX travel_groupby_city_count_idx ON travel-sample(`city`) WHERE (`type` = \"hotel\");"
+  }
 ]

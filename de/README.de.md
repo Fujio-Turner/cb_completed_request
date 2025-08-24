@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.6.1
+# Couchbase Slow Query Analysis Tool v3.6.2
 
 **🌍 Sprachen:** [🇺🇸 English](README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
@@ -156,6 +156,19 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 **⚠️ Warnung**: Große Datumsbereiche mit feinkörnigen Gruppierungen können zu Diagramm-Rendering-Fehlern führen. Das Tool wird Sie warnen und bessere Kombinationen vorschlagen.
 
 ## 📋 Versionshinweise
+
+### Version 3.6.2 (23. August 2025)
+#### 🔧 Fehlerbehebungen
+- **Index/Query Flow Tab-Synchronisationsprobleme Behoben**: Probleme mit veralteter Datenanzeige bei Verwendung von SQL-String-Filtern mit versteckten Tabs gelöst
+- **Verbesserte Tab-Aktivierungslogik**: Index/Query Flow wird jetzt immer aus aktuellen gefilterten Daten neu erstellt, wenn der Tab aktiviert wird
+- **Verbesserte Datenstruktur-Kompatibilität**: Query-Objektstruktur korrigiert, um `undefined`-Eigenschaftsfehler während des Renderings zu verhindern
+- **Komplexes Verzögertes Rendering Eliminiert**: Tab-Sichtbarkeitsbehandlung vereinfacht, um Timing-Probleme und Cache-Invalidierung zu beseitigen
+
+#### 🎯 Technische Verbesserungen
+- **Ordnungsgemäße Versteckte Tab-Verarbeitung**: Index/Query Flow verarbeitet jetzt Datenstrukturen korrekt, auch wenn der Tab nicht sichtbar ist
+- **Zuverlässiges SVG-Verbindungs-Rendering**: SVG-Verbindungspositionierungsprobleme mit jQuery UI Tab-Sichtbarkeitserkennung behoben
+- **Erweiterte Fehlerbehebung**: Umfassendes Konsolen-Logging für Index/Query Flow Datenverarbeitung und Rendering hinzugefügt
+- **Konsistentes Tab-übergreifendes Verhalten**: Index/Query Flow verhält sich jetzt konsistent mit anderen Tabs bezüglich Datenverarbeitung
 
 ### Version 3.6.1 (23. August 2025)
 #### 🚀 Neue Funktionen
