@@ -20,9 +20,9 @@
 
   <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.6.2" />
-    <meta name="last-updated" content="2025-08-23" />
-    <title>Query Analyzer v3.6.2</title>
+    <meta name="version" content="3.7.0" />
+    <meta name="last-updated" content="2025-01-24" />
+    <title>Query Analyzer v3.7.0</title>
     <!-- Include jQuery UI CSS -->
     <link
       rel="stylesheet"
@@ -90,7 +90,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
   <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-      v3.6.2
+      v3.7.0
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -7894,8 +7894,29 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 itemsFetched: []
               });
             }
-            allIndexes.get(indexName).requests.push(requests[requestIndex]);
-            allIndexes.get(indexName).totalUsage++;
+            const indexObj = allIndexes.get(indexName);
+            indexObj.requests.push(requests[requestIndex]);
+            indexObj.totalUsage++;
+            
+            // Collect statistics from the request
+            const request = requests[requestIndex];
+            if (request) {
+              // Add execution time as scan time
+              const executionTime = parseTime(request.elapsedTime);
+              if (!isNaN(executionTime)) {
+                indexObj.scanTimes.push(executionTime);
+              }
+
+              // Add phase counts as items scanned/fetched
+              if (request.phaseCounts) {
+                if (request.phaseCounts.indexScan) {
+                  indexObj.itemsScanned.push(request.phaseCounts.indexScan);
+                }
+                if (request.phaseCounts.fetch) {
+                  indexObj.itemsFetched.push(request.phaseCounts.fetch);
+                }
+              }
+            }
           });
         });
 
@@ -8088,7 +8109,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 indexObj.totalUsage++;
 
                 // Collect statistics from the request
-                const request = originalRequests[requestIndex];
+                const request = requestsToUse[requestIndex];
                 if (request) {
                   // Add execution time as scan time
                   const executionTime = parseTime(request.elapsedTime);
@@ -8848,8 +8869,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
       // Version management
-      const APP_VERSION = "3.6.2";
-      const LAST_UPDATED = "2025-08-23";
+      const APP_VERSION = "3.7.0";
+const LAST_UPDATED = "2025-01-24";
 
       function getVersionInfo() {
         return {

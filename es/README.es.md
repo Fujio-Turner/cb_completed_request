@@ -1,21 +1,21 @@
-# Couchbase Slow Query Analysis Tool v3.6.2
+# Couchbase Slow Query Analysis Tool v3.7.0
 
 **🌍 Idiomas:** [🇺🇸 English](README.md) | [🇩🇪 Deutsch](README.de.md) | **🇪🇸 Español** | [🇵🇹 Português](README.pt.md)
 
-## 🚀 **Enlaces de Implementación Beta:**
-- **Inglés**: [https://cb.fuj.io/](https://cb.fuj.io/)
-- **Alemán**: [https://cb.fuj.io/de_index](https://cb.fuj.io/de_index)
-- **Español**: [https://cb.fuj.io/es_index](https://cb.fuj.io/es_index)
-- **Portugués**: [https://cb.fuj.io/pt_index](https://cb.fuj.io/pt_index)
+🚀 **Beta Deployment Links:**
+- English: https://cb.fuj.io/en/
+- German: https://cb.fuj.io/de/
+- Spanish: https://cb.fuj.io/es/
+- Portuguese: https://cb.fuj.io/pt/
 
 Si no quiere descargar los archivos index.html, haga clic en los enlaces beta anteriores. Recuerde seguir los pasos en la sección `Inicio Rápido` a continuación para completar `Paso 3:` y más allá para obtener los datos JSON que necesita para depurar y analizar.
 
 ## 📁 **Instrucciones de Descarga:**
 Alternativamente, puede descargar los archivos HTML localmente:
-- **Español**: Download [`es_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/es_index.html?download=true)
-- **Inglés**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/index.html?download=true)
-- **Alemán**: Download [`de_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/de_index.html?download=true)
-- **Portugués**: Download [`pt_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/pt_index.html?download=true)
+- **Español**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/es/index.html?download=true)
+- **Inglés**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/en/index.html?download=true)
+- **Alemán**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/de/index.html?download=true)
+- **Portugués**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/pt/index.html?download=true)
 
 ---
 
@@ -156,6 +156,27 @@ Al analizar gráficos de línea de tiempo, elija rangos de fecha apropiados para
 **⚠️ Advertencia**: Rangos de fecha grandes con agrupaciones de grano fino pueden causar errores de renderizado de gráficos. La herramienta le alertará y sugerirá mejores combinaciones.
 
 ## 📋 Notas de Lanzamiento
+
+### Versión 3.7.0 (24 de enero de 2025)
+#### 🚀 Nuevas Características
+- **Columna de Consistencia de Escaneo**: Agregada nueva columna "Consistencia de Escaneo" en la tabla Every Query entre las columnas de statement y usuarios, mostrando valores como "unbounded" y "request_plus"
+- **Filtrado de Índices de Sync Gateway**: Agregada checkbox "Excluir Índices Móviles" en la pestaña Indexes para filtrar los índices móviles de Sync Gateway
+- **Estadísticas de Índices Mejoradas**: Corregida la visualización de estadísticas de la pestaña Index/Query Flow - los DIVs de índices ahora muestran tiempos de escaneo promedio/min/max y conteos de elementos apropiados en lugar de "N/A"
+
+#### 🔧 Corrección de Errores
+- **Corregido Error de Estadísticas de Índices**: Resuelto problema donde todas las estadísticas de índices mostraban "N/A" en la pestaña Index/Query Flow corrigiendo el acceso a datos de solicitud en la función `buildIndexQueryFlow()`
+- **Recolección de Estadísticas Mejorada**: Agregada recolección de estadísticas faltante en la función `processIndexQueryData()` para comportamiento consistente cuando la pestaña está oculta
+- **Acceso de Índice de Array Corregido**: Corregido `originalRequests[requestIndex]` a `requestsToUse[requestIndex]` para prevenir acceso de datos desajustado
+
+#### 🌍 Actualizaciones de Localización
+- **Soporte Multiidioma Completo**: Todas las nuevas características completamente traducidas al español, portugués y alemán
+- **Traducciones Actualizadas**: Agregadas traducciones para "Consistencia de Escaneo", "Índices de Sync Gateway" y "Excluir Índices Móviles"
+- **Sincronización de Versiones**: Actualizadas todas las versiones de idiomas a v3.7.0 con funcionalidad consistente
+
+#### 🎯 Mejoras Técnicas
+- **Funcionalidad de Tabla Mejorada**: Mejorado el manejo de desbordamiento de tabla para tablas más anchas con nueva columna de Consistencia de Escaneo
+- **Mejor Procesamiento de Datos**: Racionalizado el cálculo de estadísticas de índices y lógica de visualización
+- **Paridad de Características Consistente**: Todas las versiones localizadas ahora incluyen funcionalidad idéntica y correcciones de errores
 
 ### Versión 3.6.2 (23 de agosto de 2025)
 #### 🔧 Correcciones de Errores

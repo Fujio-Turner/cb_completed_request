@@ -1,9 +1,9 @@
 {
   "ui_strings": {
-    "Query Analyzer v3.6.2": {
-      "es": "Analizador de Consultas v3.6.2",
-      "pt": "Analisador de Consultas v3.6.2",
-      "de": "Query Analyzer v3.6.2"
+    "Query Analyzer v3.7.0": {
+      "es": "Analizador de Consultas v3.7.0",
+      "pt": "Analisador de Consultas v3.7.0",
+      "de": "Query Analyzer v3.7.0"
     },
     "Dashboard": {
       "es": "Panel de Control",
@@ -439,6 +439,21 @@
       "es": "Haga clic en la pestaña 'Índices' a continuación para obtener la consulta SQL para ejecutar. Pegue los resultados aquí...",
       "pt": "Clique na aba 'Índices' abaixo para obter a consulta SQL para executar. Cole os resultados aqui...",
       "de": "Klicken Sie auf die Registerkarte 'Indizes' unten, um die auszuführende SQL-Abfrage zu erhalten. Fügen Sie die Ergebnisse hier ein..."
+    },
+    "Sync Gateway Indexes:": {
+      "es": "Índices de Sync Gateway:",
+      "pt": "Índices do Sync Gateway:",
+      "de": "Sync Gateway Indizes:"
+    },
+    "Exclude Mobile Indexes": {
+      "es": "Excluir Índices Móviles",
+      "pt": "Excluir Índices Móveis", 
+      "de": "Mobile Indizes Ausschließen"
+    },
+    "Scan Consistency": {
+      "es": "Consistencia de Escaneo",
+      "pt": "Consistência de Verificação",
+      "de": "Scan-Konsistenz"
     }
   },
   "javascript_variables": {
@@ -493,7 +508,7 @@
   "notes": {
     "purpose": "Translation mapping for Couchbase Query Analyzer localization",
     "languages": ["es", "pt", "de"],
-    "last_updated": "2025-01-22",
-    "instructions": "When updating index.html, use this file to automatically translate es_index.html, pt_index.html, and de_index.html"
+    "last_updated": "2025-01-24",
+    "instructions": "When updating en/index.html, use this file to automatically translate de/index.html, es/index.html, and pt/index.html"
   }
 }

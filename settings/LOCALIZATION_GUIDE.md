@@ -145,6 +145,262 @@ Update settings/translations.json if new translatable strings were added.
 - `grep -n "button\.textContent" [lang]/index.html`
 ```
 
+## 🎯 **EXPLICIT TRANSLATION BOUNDARIES**
+
+### ✅ **WHAT MUST BE TRANSLATED:**
+
+#### **HTML Content (User-Facing Text):**
+- `<button>Copy Query</button>` → `<button>Kopieren Abfrage</button>`
+- `<label>Search Statement:</label>` → `<label>Anweisung Suchen:</label>`
+- `<h3>Users by Query Count</h3>` → `<h3>Benutzer nach Abfrageanzahl</h3>`
+- `placeholder="Search..."` → `placeholder="Suchen..."`
+- `title="Tooltip text"` → `title="Tooltip-Text"`
+
+#### **JavaScript String Literals (In Quotes):**
+- `button.textContent = "Copy";` → `button.textContent = "Kopieren";`
+- `"Reset Zoom"` → `"Zoom Zurücksetzen"`
+- `innerHTML = "No data available";` → `innerHTML = "Keine Daten verfügbar";`
+- Template literals: `` `Showing ${count} records` `` → `` `Zeige ${count} Datensätze` ``
+
+#### **Chart.js Configuration Strings:**
+- `title: { text: "Database Operations Timeline" }` → `title: { text: "Datenbank-Operationen Timeline" }`
+- `labels: ["Yes", "No"]` → `labels: ["Ja", "Nein"]`
+- `datasets: [{ label: "Query Count" }]` → `datasets: [{ label: "Abfrageanzahl" }]`
+
+#### **Dynamic Text Generation:**
+- `"Showing all " + count + " records"` → `"Zeige alle " + count + " Datensätze"`
+- Status messages, error messages, success messages
+- Button text that changes dynamically
+
+### ❌ **WHAT MUST NEVER BE TRANSLATED:**
+
+#### **JavaScript Technical Elements:**
+- Function names: `function syncTimelineCharts()` (NEVER `function syncZeitverlaufDiagramme()`)
+- Variable names: `const allIndexes` (NEVER `const alleIndizes`)
+- Object properties: `itemsScanned:` (NEVER `itemsGescannt:`)
+- CSS classes: `class="btn-primary"` (NEVER `class="schaltfläche-primär"`)
+- HTML IDs: `id="search-input"` (NEVER `id="suche-eingabe"`)
+
+#### **Code Structure:**
+- HTML tag names: `<div>` stays `<div>`
+- CSS selectors: `.container` stays `.container`
+- JavaScript keywords: `if`, `else`, `function`, `const`, `let`
+- JSON keys in data structures (unless they're user-facing labels)
+
+### 🚨 **CRITICAL DETECTION PATTERNS:**
+
+#### **Find Untranslated User-Facing Content:**
+```bash
+# Find HTML labels and text that need translation
+grep -n ">Search.*:</label>" [lang]/index.html
+grep -n ">Sort.*:</label>" [lang]/index.html  
+grep -n ">Filter.*:</label>" [lang]/index.html
+grep -n "<button.*>.*[A-Z].*</button>" [lang]/index.html
+
+# Find JavaScript strings that need translation
+grep -n "textContent.*=.*['\"].*[A-Z]" [lang]/index.html
+grep -n "innerHTML.*=.*['\"].*[A-Z]" [lang]/index.html
+grep -n "title.*:.*['\"].*[A-Z].*['\"]" [lang]/index.html
+
+# Find chart configuration strings
+grep -n "text.*:.*['\"].*[A-Z].*['\"]" [lang]/index.html
+grep -n "label.*:.*['\"].*[A-Z].*['\"]" [lang]/index.html
+```
+
+#### **Verify No JavaScript Was Broken:**
+```bash
+# These should return ZERO results (if found, JavaScript is broken)
+grep -n "function.*[áéíóúâêîôûäöüß]" [lang]/index.html
+grep -n "const.*[áéíóúâêîôûäöüß]" [lang]/index.html  
+grep -n "let.*[áéíóúâêîôûäöüß]" [lang]/index.html
+```
+
+## 🔍 **POST-TRANSLATION AUDIT SYSTEM**
+
+After completing localization, run this comprehensive audit to detect the remaining untranslated content and categorize it for improvement.
+
+### **Audit Script Usage:**
+```bash
+# Run comprehensive translation audit for a specific language
+./settings/translation_audit.sh [lang]
+
+# Example:
+./settings/translation_audit.sh de
+./settings/translation_audit.sh es  
+./settings/translation_audit.sh pt
+
+# Results will be written to:
+# settings/translation_audit_[lang]_[date].log
+```
+
+### **Manual Audit Commands:**
+
+#### **1. Find Remaining English UI Text:**
+```bash
+LANG="de"  # Change to es, pt as needed
+OUTPUT_FILE="settings/translation_audit_${LANG}_$(date +%Y%m%d).log"
+
+echo "=== TRANSLATION AUDIT FOR ${LANG^^} ===" > $OUTPUT_FILE
+echo "Generated: $(date)" >> $OUTPUT_FILE
+echo "File: ${LANG}/index.html" >> $OUTPUT_FILE
+echo "" >> $OUTPUT_FILE
+
+# Category 1: HTML Labels and Buttons
+echo "=== 1. UNTRANSLATED HTML LABELS & BUTTONS ===" >> $OUTPUT_FILE
+grep -n ">Search.*:</label>\|>Sort.*:</label>\|>Filter.*:</label>" ${LANG}/index.html >> $OUTPUT_FILE
+grep -n "<button[^>]*>[^<]*[A-Z][^<]*</button>" ${LANG}/index.html >> $OUTPUT_FILE
+grep -n "placeholder=\"[^\"]*[A-Z][^\"]*\"" ${LANG}/index.html >> $OUTPUT_FILE
+grep -n "title=\"[^\"]*[A-Z][^\"]*\"" ${LANG}/index.html >> $OUTPUT_FILE
+echo "" >> $OUTPUT_FILE
+
+# Category 2: JavaScript String Literals  
+echo "=== 2. UNTRANSLATED JAVASCRIPT STRINGS ===" >> $OUTPUT_FILE
+grep -n "textContent.*=.*['\"][^'\"]*[A-Z][^'\"]*['\"]" ${LANG}/index.html >> $OUTPUT_FILE
+grep -n "innerHTML.*=.*['\"][^'\"]*[A-Z][^'\"]*['\"]" ${LANG}/index.html >> $OUTPUT_FILE
+grep -n "\.text.*=.*['\"][^'\"]*[A-Z][^'\"]*['\"]" ${LANG}/index.html >> $OUTPUT_FILE
+echo "" >> $OUTPUT_FILE
+
+# Category 3: Chart Configuration Text
+echo "=== 3. UNTRANSLATED CHART CONFIGURATIONS ===" >> $OUTPUT_FILE
+grep -n "title.*:.*{.*text.*:.*['\"][^'\"]*[A-Z][^'\"]*['\"]" ${LANG}/index.html >> $OUTPUT_FILE
+grep -n "label.*:.*['\"][^'\"]*[A-Z][^'\"]*['\"]" ${LANG}/index.html >> $OUTPUT_FILE
+grep -n "labels.*:.*\[.*['\"][^'\"]*[A-Z][^'\"]*['\"]" ${LANG}/index.html >> $OUTPUT_FILE
+echo "" >> $OUTPUT_FILE
+
+# Category 4: Template Literals and Concatenation
+echo "=== 4. UNTRANSLATED TEMPLATE LITERALS ===" >> $OUTPUT_FILE
+grep -n "\`[^\`]*[A-Z][^\`]*\${[^}]*}[^\`]*\`" ${LANG}/index.html >> $OUTPUT_FILE
+grep -n "\"[^\"]*[A-Z][^\"]*\"\s*\+.*\+\s*\"[^\"]*[A-Z][^\"]*\"" ${LANG}/index.html >> $OUTPUT_FILE
+echo "" >> $OUTPUT_FILE
+
+# Category 5: Hard-to-Find Content
+echo "=== 5. POTENTIAL MISSED CONTENT ===" >> $OUTPUT_FILE
+grep -n "console\.log.*['\"][^'\"]*[A-Z][^'\"]*['\"]" ${LANG}/index.html >> $OUTPUT_FILE
+grep -n "alert.*['\"][^'\"]*[A-Z][^'\"]*['\"]" ${LANG}/index.html >> $OUTPUT_FILE
+grep -n "confirm.*['\"][^'\"]*[A-Z][^'\"]*['\"]" ${LANG}/index.html >> $OUTPUT_FILE
+echo "" >> $OUTPUT_FILE
+
+# Category 6: Comments That Should Be Translated (User-Facing)
+echo "=== 6. USER-FACING COMMENTS ===" >> $OUTPUT_FILE
+grep -n "<!--[^>]*[A-Z][^>]*-->" ${LANG}/index.html >> $OUTPUT_FILE
+echo "" >> $OUTPUT_FILE
+
+echo "=== AUDIT COMPLETE ===" >> $OUTPUT_FILE
+echo "Review $OUTPUT_FILE to identify remaining translation needs" >> $OUTPUT_FILE
+```
+
+### **Automated Audit Script:**
+Create `/settings/translation_audit.sh`:
+
+```bash
+#!/bin/bash
+# Translation Audit Script
+# Usage: ./translation_audit.sh [lang]
+
+if [ $# -eq 0 ]; then
+    echo "Usage: $0 <language_code>"
+    echo "Example: $0 de"
+    exit 1
+fi
+
+LANG="$1"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+OUTPUT_FILE="${SCRIPT_DIR}/translation_audit_${LANG}_$(date +%Y%m%d_%H%M%S).log"
+HTML_FILE="${PROJECT_ROOT}/${LANG}/index.html"
+
+if [ ! -f "$HTML_FILE" ]; then
+    echo "Error: $HTML_FILE not found"
+    exit 1
+fi
+
+echo "Running translation audit for ${LANG^^}..."
+echo "=== TRANSLATION AUDIT FOR ${LANG^^} ===" > "$OUTPUT_FILE"
+echo "Generated: $(date)" >> "$OUTPUT_FILE"
+echo "File: ${LANG}/index.html" >> "$OUTPUT_FILE"
+echo "Total Lines: $(wc -l < "$HTML_FILE")" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+
+# Function to count matches and add category
+audit_category() {
+    local category="$1"
+    local pattern="$2"
+    echo "=== $category ===" >> "$OUTPUT_FILE"
+    local matches=$(grep -n "$pattern" "$HTML_FILE" 2>/dev/null || true)
+    if [ -z "$matches" ]; then
+        echo "✅ No untranslated content found in this category" >> "$OUTPUT_FILE"
+    else
+        echo "$matches" >> "$OUTPUT_FILE"
+        local count=$(echo "$matches" | wc -l)
+        echo "📊 Found $count items needing attention" >> "$OUTPUT_FILE"
+    fi
+    echo "" >> "$OUTPUT_FILE"
+}
+
+# Run audit categories
+audit_category "1. HTML LABELS & BUTTONS" ">Search.*:</label>\|>Sort.*:</label>\|>Filter.*:</label>\|<button[^>]*>[^<]*[A-Z][^<]*</button>\|placeholder=\"[^\"]*[A-Z][^\"]*\""
+
+audit_category "2. JAVASCRIPT STRING LITERALS" "textContent.*=.*['\"][^'\"]*[A-Z][^'\"]*['\"]\|innerHTML.*=.*['\"][^'\"]*[A-Z][^'\"]*['\"]\|\.text.*=.*['\"][^'\"]*[A-Z][^'\"]*['\"]"
+
+audit_category "3. CHART CONFIGURATIONS" "title.*:.*text.*:.*['\"][^'\"]*[A-Z][^'\"]*['\"]\|label.*:.*['\"][^'\"]*[A-Z][^'\"]*['\"]\|labels.*:.*\[.*['\"][^'\"]*[A-Z]"
+
+audit_category "4. TEMPLATE LITERALS" "\`[^\`]*[A-Z][^\`]*\\\${[^}]*}[^\`]*\`"
+
+audit_category "5. CONSOLE/ALERT MESSAGES" "console\.log.*['\"][^'\"]*[A-Z][^'\"]*['\"]\|alert.*['\"][^'\"]*[A-Z][^'\"]*['\"]\|confirm.*['\"][^'\"]*[A-Z]"
+
+audit_category "6. USER-FACING COMMENTS" "<!--[^>]*[A-Z][^>]*-->"
+
+# Summary
+echo "=== AUDIT SUMMARY ===" >> "$OUTPUT_FILE"
+total_issues=$(grep -c "📊 Found" "$OUTPUT_FILE" 2>/dev/null || echo "0")
+echo "Total categories with issues: $total_issues" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+
+# Recommendations
+echo "=== RECOMMENDATIONS ===" >> "$OUTPUT_FILE"
+echo "1. Review each category above" >> "$OUTPUT_FILE"
+echo "2. Add missing translations to settings/translations.json" >> "$OUTPUT_FILE"  
+echo "3. Create bespoke regex rules for complex patterns" >> "$OUTPUT_FILE"
+echo "4. Update translation functions for systematic patterns" >> "$OUTPUT_FILE"
+echo "5. Re-run audit after fixes to verify improvements" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+echo "Audit complete! Results saved to: $OUTPUT_FILE" >> "$OUTPUT_FILE"
+
+echo "✅ Audit complete! Results saved to: $OUTPUT_FILE"
+echo "📊 Found issues in $total_issues categories"
+echo "📝 Review the log file to identify specific translation needs"
+```
+
+### **Analysis Categories:**
+
+After running the audit, categorize findings for action:
+
+#### **🔧 Quick Fixes (Add to translations.json):**
+- Simple string replacements
+- Button text, labels, placeholders
+- Common UI messages
+
+#### **🛠 Function Modifications:**
+- Dynamic text generation functions
+- String concatenation patterns
+- Template literal content
+
+#### **⚙️ Bespoke Regex Rules:**
+- Complex HTML patterns
+- Multi-line content
+- Context-dependent translations
+
+#### **🎯 Special Cases:**
+- Chart configuration objects
+- Conditional display text
+- Generated HTML content
+
+### **Continuous Improvement Workflow:**
+1. Run audit after each translation update
+2. Track improvement over time with dated logs
+3. Update translation rules based on findings
+4. Maintain target of 95%+ translation coverage
+
 ## Complete Localization Process for New Languages
 
 ### Step 1: Add Translations to settings/translations.json

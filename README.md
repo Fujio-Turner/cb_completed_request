@@ -1,21 +1,21 @@
-# Couchbase Slow Query Analysis Tool v3.6.2
+# Couchbase Slow Query Analysis Tool v3.7.0
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
-## 🚀 **Beta Deployment Links:**
-- **English**: [https://cb.fuj.io/en/](https://cb.fuj.io/en/)
-- **German**: [https://cb.fuj.io/de/](https://cb.fuj.io/de/)
-- **Spanish**: [https://cb.fuj.io/es/](https://cb.fuj.io/es/)
-- **Portuguese**: [https://cb.fuj.io/pt/](https://cb.fuj.io/pt/)
+🚀 **Beta Deployment Links:**
+- English: https://cb.fuj.io/en/
+- German: https://cb.fuj.io/de/
+- Spanish: https://cb.fuj.io/es/
+- Portuguese: https://cb.fuj.io/pt/
 
 If you don't want to download the index.html files, click the beta links above. Remember to still follow the steps in the `Quick Start` section below to complete `Steps 3:` and beyond to get the JSON data you need to debug and analyze.
 
 ## 📁 **Download Instructions:**
 Alternatively, you can download the HTML files locally:
-- **English**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/index.html?download=true)
-- **German**: Download [`de_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/de_index.html?download=true)
-- **Spanish**: Download [`es_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/es_index.html?download=true)
-- **Portuguese**: Download [`pt_index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/pt_index.html?download=true)
+- **English**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/en/index.html?download=true)
+- **German**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/de/index.html?download=true)
+- **Spanish**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/es/index.html?download=true)
+- **Portuguese**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/pt/index.html?download=true)
 
 ---
 
@@ -158,6 +158,27 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 **⚠️ Warning**: Large date ranges with fine-grained groupings may cause chart rendering errors. The tool will alert you and suggest better combinations.
 
 ## Release Notes
+
+### Version 3.7.0 (January 24, 2025)
+#### 🚀 New Features
+- **Scan Consistency Column**: Added new "Scan Consistency" column in Every Query table between statement and users columns, displaying values like "unbounded" and "request_plus"
+- **Sync Gateway Index Filtering**: Added "Exclude Mobile Indexes" checkbox in Indexes tab to filter out Sync Gateway mobile indexes
+- **Enhanced Index Statistics**: Fixed Index/Query Flow tab statistics display - index DIVs now show proper avg/min/max scan times and item counts instead of "N/A"
+
+#### 🔧 Bug Fixes
+- **Fixed Index Statistics Bug**: Resolved issue where all index statistics showed "N/A" in Index/Query Flow tab by correcting request data access in `buildIndexQueryFlow()` function
+- **Improved Statistics Collection**: Added missing statistics collection in `processIndexQueryData()` function for consistent behavior when tab is hidden
+- **Corrected Array Index Access**: Fixed `originalRequests[requestIndex]` to `requestsToUse[requestIndex]` to prevent mismatched data access
+
+#### 🌍 Localization Updates
+- **Complete Multi-language Support**: All new features fully translated to Spanish, Portuguese, and German
+- **Updated Translations**: Added translations for "Scan Consistency", "Sync Gateway Indexes", and "Exclude Mobile Indexes"
+- **Version Synchronization**: Updated all language versions to v3.7.0 with consistent functionality
+
+#### 🎯 Technical Improvements
+- **Enhanced Table Functionality**: Improved table overflow handling for wider tables with new Scan Consistency column
+- **Better Data Processing**: Streamlined index statistics calculation and display logic
+- **Consistent Feature Parity**: All localized versions now include identical functionality and bug fixes
 
 ### Version 3.6.2 (August 23, 2025)
 #### 🔧 Bug Fixes
