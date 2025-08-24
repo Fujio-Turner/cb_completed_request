@@ -460,5 +460,89 @@
     "state": "online",
     "datastore_id": "http://127.0.0.1:8091",
     "indexString": "CREATE INDEX travel_groupby_city_count_idx ON travel-sample(`city`) WHERE (`type` = \"hotel\");"
+  },
+  {
+    "name": "sg_channels_x1",
+    "id": "sg001234567890z2a3",
+    "metadata": {
+      "last_scan_time": "2025-07-22T08:15:30.456Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753041330456000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX sg_channels_x1 ON mobile_bucket (DISTINCT ARRAY v.`name` FOR v IN OBJECT_PAIRS(_sync.`channels`) END, _sync.`seq`) WHERE _sync.`channels` IS NOT MISSING WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "sg_access_x1",
+    "id": "sg012345678901a3b4",
+    "metadata": {
+      "last_scan_time": "2025-07-22T08:20:45.789Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753041645789000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX sg_access_x1 ON mobile_bucket (DISTINCT ARRAY v.`name` FOR v IN OBJECT_PAIRS(_sync.`access`) END, _sync.`seq`) WHERE _sync.`access` IS NOT MISSING;"
+  },
+  {
+    "name": "sg_roleAccess_x1",
+    "id": "sg123456789012b4c5",
+    "metadata": {
+      "last_scan_time": "2025-07-22T08:25:12.123Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753041912123000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX sg_roleAccess_x1 ON mobile_bucket (DISTINCT ARRAY v.`name` FOR v IN OBJECT_PAIRS(_sync.`role_access`) END, _sync.`seq`) WHERE _sync.`role_access` IS NOT MISSING WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "sg_syncDocs_x1",
+    "id": "sg234567890123c5d6",
+    "metadata": {
+      "last_scan_time": "2025-07-22T08:30:55.567Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753042255567000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX sg_syncDocs_x1 ON mobile_bucket (_sync.`seq`) WHERE _sync IS NOT MISSING;"
+  },
+  {
+    "name": "sg_allDocs_x1",
+    "id": "sg345678901234d6e7",
+    "metadata": {
+      "last_scan_time": null,
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 0
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX sg_allDocs_x1 ON mobile_bucket (_sync.`seq`) WHERE _sync IS NOT MISSING WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "sg_tombstones_x1",
+    "id": "sg456789012345e7f8",
+    "metadata": {
+      "last_scan_time": "2025-07-21T14:45:30.890Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752985530890000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX sg_tombstones_x1 ON mobile_bucket (_sync.`rev`, _sync.`seq`) WHERE _sync.`deleted` = true;"
   }
 ]

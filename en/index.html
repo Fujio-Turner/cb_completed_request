@@ -780,6 +780,37 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               </label>
             </div>
           </div>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 15px;
+              margin-top: 8px;
+            "
+          >
+            <div style="display: flex; align-items: center; gap: 8px">
+              <span
+                ><strong>Sync Gateway Indexes:</strong>
+                <span id="stat-mobile-indexes">0</span></span
+              >
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                  font-size: 11px;
+                "
+              >
+                <input
+                  type="checkbox"
+                  id="filter-exclude-mobile"
+                  style="margin: 0"
+                />
+                Exclude Mobile Indexes
+              </label>
+            </div>
+            <div></div>
+          </div>
         </div>
 
         <!-- Results Panel -->
@@ -8965,6 +8996,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         let noReplicasCount = 0;
         let neverScannedCount = 0;
         let usedCount = 0;
+        let mobileIndexCount = 0;
 
         filteredIndexData.forEach((index) => {
           if (index.indexString) {
@@ -9011,6 +9043,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           ) {
             usedCount++;
           }
+
+          // Check if mobile/sync gateway index
+          if (index.name.startsWith("sg_")) {
+            mobileIndexCount++;
+          }
         });
 
         // Update stats display
@@ -9035,6 +9072,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         document.getElementById(
           "stat-used-total"
         ).textContent = `${usedCount}/${filteredIndexData.length}`;
+        document.getElementById("stat-mobile-indexes").textContent =
+          mobileIndexCount;
       }
 
       // Parse and process index JSON data
@@ -9188,6 +9227,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           document.getElementById("filter-no-replica")?.checked || false;
         const filterNeverScanned =
           document.getElementById("filter-never-scanned")?.checked || false;
+        const filterExcludeMobile =
+          document.getElementById("filter-exclude-mobile")?.checked || false;
 
         filteredIndexData = indexData.filter((index) => {
           if (!index.indexString) return false;
@@ -9239,6 +9280,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           if (filterNeverScanned) {
             const lastScan = index.metadata?.last_scan_time;
             if (lastScan && lastScan !== "Never") return false;
+          }
+
+          // Exclude Sync Gateway/Mobile indexes (sg_ prefixed)
+          if (filterExcludeMobile) {
+            if (index.name.startsWith("sg_")) return false;
           }
 
           return true;
@@ -9546,6 +9592,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
           "filter-used",
           "filter-no-replica",
           "filter-never-scanned",
+          "filter-exclude-mobile",
         ];
 
         filterCheckboxes.forEach((id) => {
