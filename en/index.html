@@ -2631,6 +2631,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           "Primary Scan\nUsed",
           "state",
           "statement",
+          "Scan\nConsistency",
           "users",
         ];
 
@@ -2813,6 +2814,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           "Primary Scan\nUsed",
           "state",
           "statement",
+          "Scan\nConsistency",
           "users",
         ];
 
@@ -2847,12 +2849,16 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             else if (col === "Doc Fetch\nCount") dataField = "Doc Fetch Count";
             else if (col === "Primary Scan\nUsed")
               dataField = "Primary Scan Used";
+            else if (col === "Scan\nConsistency") dataField = "scanConsistency";
             else dataField = col;
 
             // Use globalIndex for row number to maintain correct numbering across pages
             let value;
             if (col === "#") {
               value = globalIndex + 1;
+            } else if (col === "Scan\nConsistency") {
+              // scanConsistency is nested under request object
+              value = rowData.request && rowData.request.scanConsistency ? rowData.request.scanConsistency : "N/A";
             } else {
               value = rowData[dataField];
             }
