@@ -18,7 +18,7 @@ RUN echo 'server { \
     \
     # Default to English version \
     location = / { \
-        return 301 /en/; \
+        try_files /en/index.html =404; \
     } \
     \
     # Handle language directories \
