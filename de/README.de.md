@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.7.0
+# Couchbase Slow Query Analysis Tool v3.7.1
 
 **🌍 Sprachen:** [🇺🇸 English](README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
 
