@@ -7873,11 +7873,16 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 normalizedStatement: normalized, 
                 statement: stmt, // Add original statement for createQueryDiv
                 count: 0, 
+                totalDuration: 0, // Add totalDuration calculation
                 requests: [] 
               });
             }
-            queryGroups.get(normalized).count++;
-            queryGroups.get(normalized).requests.push(request);
+            const group = queryGroups.get(normalized);
+            group.count++;
+            // Use same logic as Analysis tab: serviceTime converted to ms
+            const durationMs = parseTime(request.serviceTime);
+            group.totalDuration += isNaN(durationMs) ? 0 : durationMs;
+            group.requests.push(request);
           }
         });
 
@@ -7902,9 +7907,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             const request = requests[requestIndex];
             if (request) {
               // Add execution time as scan time
-              const executionTime = parseTime(request.elapsedTime);
+              const executionTime = request.elapsedTimeMs || 0;
               if (!isNaN(executionTime)) {
-                indexObj.scanTimes.push(executionTime);
+              indexObj.scanTimes.push(executionTime);
               }
 
               // Add phase counts as items scanned/fetched
@@ -8075,7 +8080,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           }
           const group = queryGroups.get(normalizedStatement);
           group.count++;
-          group.totalDuration += parseTime(request.elapsedTime);
+          // Use same logic as Analysis tab: serviceTime converted to ms
+          const durationMs = parseTime(request.serviceTime);
+          
+          group.totalDuration += isNaN(durationMs) ? 0 : durationMs;
           group.requestIndices.push(requestIndex);
         });
 
@@ -8112,9 +8120,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 const request = requestsToUse[requestIndex];
                 if (request) {
                   // Add execution time as scan time
-                  const executionTime = parseTime(request.elapsedTime);
+                  const executionTime = request.elapsedTimeMs || 0;
                   if (!isNaN(executionTime)) {
-                    indexObj.scanTimes.push(executionTime);
+                  indexObj.scanTimes.push(executionTime);
                   }
 
                   // Add phase counts as items scanned/fetched
@@ -8151,6 +8159,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const sortedQueries = Array.from(queryGroups.values()).sort(
           (a, b) => b.count - a.count
         );
+
+
 
         indexQueryFlowData.queries = new Map(
           sortedQueries.map((q) => [q.normalizedStatement, q])
