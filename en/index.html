@@ -2637,8 +2637,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           "memory\n(MB)",
           "result\nCount",
           "result\nSize",
-          "Items from\nIndex Scan",
           "Doc Fetch\nCount",
+          "Items from\nIndex Scan",
           "Primary Scan\nUsed",
           "state",
           "statement",
@@ -2820,8 +2820,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           "memory\n(MB)",
           "result\nCount",
           "result\nSize",
-          "Items from\nIndex Scan",
           "Doc Fetch\nCount",
+          "Items from\nIndex Scan",
           "Primary Scan\nUsed",
           "state",
           "statement",
@@ -2929,7 +2929,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 `;
               }
             } else if (
-              ["result\nCount", "result\nSize", "Items from\nIndex Scan", "Doc Fetch\nCount"].includes(col)
+              ["result\nCount", "result\nSize", "Doc Fetch\nCount", "Items from\nIndex Scan"].includes(col)
             ) {
               // Format numeric columns with commas
               const numValue = Number(value);
