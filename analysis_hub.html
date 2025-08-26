@@ -1,6 +1,6 @@
 <html>
 <head>
-    <title>How to Debug & Glossary - Beta/Draft</title>
+    <title>How to Debug & Glossary</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; line-height: 1.6; color: #333; }
         h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
@@ -22,28 +22,394 @@
         .version-info { position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.1); color: #333; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; font-family: monospace; z-index: 999; opacity: 0.7; transition: opacity 0.3s ease; }
         .version-info:hover { opacity: 1; background: rgba(0,0,0,0.2); }
         footer { position: fixed; bottom: 10px; right: 10px; z-index: 999; text-align: center; font-size: 0.8em; color: #777; }
+        .sql-code { background: #f6f8fa; color: #24292e; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.4; margin: 15px 0; overflow-x: auto; border-left: 4px solid #0366d6; }
+        .sql-keyword { color: #0366d6; font-weight: bold; }
+        .sql-string { color: #032f62; }
+        .sql-comment { color: #6a737d; font-style: italic; }
+        .performance-level { margin: 20px 0; padding: 20px; border-radius: 8px; border-left: 5px solid; }
+        .walk-level { background: #fff5f5; border-color: #fc8181; }
+        .crawl-level { background: #fffaf0; border-color: #f6ad55; }
+        .run-level { background: #f0fff4; border-color: #68d391; }
+        .level-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; }
+        .level-icon { margin-right: 10px; font-size: 20px; }
+        img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <h2>Topics</h2>
         <ul>
-            <li><a href="#kernTime">kernTime</a></li>
-            <li><a href="#serviceTime">serviceTime</a></li>
-            <li><a href="#elapsedTime">elapsedTime</a></li>
-            <li><a href="#cpuTime">cpuTime</a></li>
+            <li><strong>How To:</strong></li>
+            <li style="margin-left: 20px;"><a href="#optimizer">Performance Optimize</a></li>
+            <li style="margin-left: 35px; font-size: 13px;"><a href="#crawl">• Crawl</a></li>
+            <li style="margin-left: 35px; font-size: 13px;"><a href="#walk">• Walk</a></li>
+            <li style="margin-left: 35px; font-size: 13px;"><a href="#run">• Run</a></li>
+            <li style="margin-left: 35px; font-size: 13px;"><a href="#bestPractices">• Best Practices</a></li>
+            <li style="margin-left: 20px;"><a href="#readStats">Understanding the Stats</a></li>
+            <li style="margin-left: 35px; font-size: 13px;"><a href="#timingMetrics">• Timing Metrics</a></li>
+            <li style="margin-left: 35px; font-size: 13px;"><a href="#executionMetrics">• Execution Metrics</a></li>
+            <li style="margin-left: 35px; font-size: 13px;"><a href="#phaseMetrics">• Phase Metrics</a></li>
+            <li style="margin-left: 35px; font-size: 13px;"><a href="#optimizationLevels">• Crawl, Walk, Run Metrics</a></li>
+            <li style="margin-left: 35px; font-size: 13px;"><a href="#performanceTips">• Performance Tips</a></li>
+            <li><strong>Stats Glossary:</strong></li>
+            <li style="margin-left: 20px;"><a href="#cpuTime">cpuTime</a></li>
+            <li style="margin-left: 20px;"><a href="#elapsedTime">elapsedTime</a></li>
+            <li style="margin-left: 20px;"><a href="#executionTime">executionTime</a></li>
+            <li style="margin-left: 20px;"><a href="#kernTime">kernTime</a></li>
+            <li style="margin-left: 20px;"><a href="#scanConsistency">scanConsistency</a></li>
+            <li style="margin-left: 20px;"><a href="#serviceTime">serviceTime</a></li>
+            <li style="margin-left: 20px;"><a href="#state">state</a></li>
+            <li style="margin-left: 20px;"><a href="#usedMemory">usedMemory</a></li>
+            <!-- <li style="margin-left: 20px;"><a href="#requestStats">Request Stats</a></li>
+            <li style="margin-left: 20px;"><a href="#statementStats">Statement Stats</a></li> -->
         </ul>
     </div>
     
     <div class="main-content">
-        <h1>How to Debug & Glossary - Beta/Draft</h1>
+        <h1>"Why Is My Query Slow?"</h1>
+        <h3>"How to Debug & Glossary - Draft</h3>
+        <div class="guide-step" id="optimizer">
+            <h2>Performance Optimization: Crawl, Walk, Run Approach</h2>
+            <p>Optimizing Couchbase queries follows a progressive approach - start simple, then incrementally improve. Each step builds upon the previous one to achieve better performance.</p>
+
+            <div class="performance-level walk-level" id="crawl">
+                <div class="level-title">
+                    <span class="level-icon">🍼</span>
+                    CRAWL: Basic Index Strategy
+                </div>
+                <img src="img/full_index.png" alt="Basic index query execution flow">
+
+                <p>Start with a simple index that covers your most common filter conditions. This establishes baseline performance and ensures your queries can use indexes instead of full bucket scans.</p>
+                
+                <div class="sql-code">
+<span class="sql-keyword">CREATE INDEX</span> <span class="sql-string">`allTypes`</span> <span class="sql-keyword">ON</span> <span class="sql-string">`bucket`</span>(<span class="sql-string">`type`</span>);
+                </div>
+
+                <p><strong>General steps in a SQL++ query execution:</strong></p>
+                <ol>
+                    <li><strong>Plan</strong> - Query engine creates execution plan</li>
+                    <li><strong>Index Scan</strong> - Scan the index for matching keys</li>
+                    <li><strong>Document Fetch</strong> - Retrieve full documents from data service</li>
+                    <li><strong>Filter</strong> - Apply remaining WHERE conditions</li>
+                    <li><strong>Project</strong> - Select only requested fields</li>
+                    <li><strong>Stream</strong> - Return results to client</li>
+                </ol>
+
+                <p><strong>Example query:</strong></p>
+                <div class="sql-code">
+<span class="sql-keyword">SELECT</span> * <span class="sql-keyword">FROM</span> <span class="sql-string">`bucket`</span> 
+<span class="sql-keyword">WHERE</span> <span class="sql-string">`type`</span> = <span class="sql-string">"invoice"</span> 
+  <span class="sql-keyword">AND</span> <span class="sql-string">`date`</span> = <span class="sql-string">"today"</span> 
+        <span class="sql-keyword">AND</span> <span class="sql-string">`custId`</span> = <span class="sql-string">"12345"</span>
+                </div>
+
+                <p><strong>Performance characteristics:</strong> Basic index usage, requires document fetches, applies filters after retrieval.</p>
+            </div>
+
+            <div class="performance-level crawl-level" id="walk">
+                <div class="level-title">
+                    <span class="level-icon">🚶</span>
+                    WALK: Composite Index with Filtering
+                </div>
+
+                <img src="img/reduced_index.png" alt="Composite index with reduced document fetches">
+                <p>Create a composite index that matches your WHERE clause more precisely. This reduces the number of documents that need to be fetched and filtered.</p>
+
+                <div class="sql-code">
+<span class="sql-keyword">CREATE INDEX</span> <span class="sql-string">`custInvoices_v1`</span> <span class="sql-keyword">ON</span> <span class="sql-string">`bucket`</span>(<span class="sql-string">`date`</span>, <span class="sql-string">`custId`</span>) 
+<span class="sql-keyword">WHERE</span> <span class="sql-string">`type`</span> = <span class="sql-string">"invoice"</span>
+                </div>
+
+                <p><strong>Key improvements:</strong></p>
+                <ul>
+                    <li>Smaller index size due to WHERE filter</li>
+                    <li>Index provides pre-filtered document list</li>
+                    <li>Fewer document fetches required</li>
+                    <li>More efficient memory usage</li>
+                </ul>
+
+                <p><strong>Performance characteristics:</strong> Reduced I/O, fewer document fetches, faster filtering.</p>
+            </div>
+
+            <div class="performance-level run-level" id="run">
+                <div class="level-title">
+                    <span class="level-icon">🏃</span>
+                    RUN: Covering Index Strategy
+                </div>
+
+                <img src="img/covered_index.png" alt="Covering index with no document fetches">
+                <p>Create a covering index that includes all fields needed by your query. This eliminates document fetches entirely, providing maximum performance.</p>
+
+                <p><strong>First, optimize your SELECT to only request needed fields:</strong></p>
+                <div class="sql-code">
+<span class="sql-keyword">SELECT</span> invoiceId, status, orderTotal, discounts 
+<span class="sql-keyword">FROM</span> <span class="sql-string">`bucket`</span> 
+<span class="sql-keyword">WHERE</span> <span class="sql-string">`type`</span> = <span class="sql-string">"invoice"</span> 
+  <span class="sql-keyword">AND</span> <span class="sql-string">`date`</span> = <span class="sql-string">"today"</span> 
+  <span class="sql-keyword">AND</span> <span class="sql-string">`custId`</span> = <span class="sql-string">"12345"</span>
+                </div>
+
+                <p><strong>Then create a covering index with proper field ordering:</strong></p>
+                <div class="sql-code">
+<span class="sql-keyword">CREATE INDEX</span> <span class="sql-string">`custInvoicesShort_v1`</span> <span class="sql-keyword">ON</span> <span class="sql-string">`bucket`</span>(
+    <span class="sql-string">`custId`</span>, <span class="sql-string">`date`</span>,              <span class="sql-comment">-- Filter fields: highest cardinality first</span>
+    <span class="sql-string">`invoiceId`</span>, <span class="sql-string">`status`</span>, <span class="sql-string">`orderTotal`</span>, <span class="sql-string">`discounts`</span>  <span class="sql-comment">-- SELECT fields at end</span>
+) <span class="sql-keyword">WHERE</span> <span class="sql-string">`type`</span> = <span class="sql-string">"invoice"</span>
+                </div>
+
+                <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                    <h4 style="color: #856404; margin-top: 0;">🎯 Index Field Ordering Strategy</h4>
+                    <p style="color: #664d03; margin-bottom: 10px;"><strong>Cardinality Rule:</strong> Place fields with highest cardinality (most unique values) first in filter section.</p>
+                    <ul style="color: #664d03; margin-bottom: 0;">
+                        <li><strong>custId</strong> (high cardinality) - thousands of unique customers</li>
+                        <li><strong>date</strong> (medium cardinality) - limited date range values</li>
+                        <li><strong>type</strong> (low cardinality) - handled by WHERE clause</li>
+                    </ul>
+                    <p style="color: #664d03; margin: 10px 0 0;"><strong>Result:</strong> Index scans fewer entries = faster performance</p>
+                </div>
+
+                <p><strong>🔑 Key Principles:</strong></p>
+                <ul>
+                    <li>Place fields with <strong>highest cardinality first</strong> in filter section</li>
+                    <li>Place <strong>SELECT fields at the end</strong> to create covering index</li>
+                    <li>Use <strong>WHERE clause filters</strong> for low cardinality fields</li>
+                </ul>
+
+                <p><strong>Performance benefits:</strong></p>
+                <ul>
+                    <li><strong>Zero document fetches</strong> - All data comes from index</li>
+                    <li><strong>Minimal network I/O</strong> - No KV service calls</li>
+                    <li><strong>Fastest execution</strong> - Index-only operations</li>
+                    <li><strong>Predictable performance</strong> - No dependency on document size</li>
+                </ul>
+
+            
+
+                <p><strong>Performance characteristics:</strong> Index-only execution, minimal I/O, maximum throughput.</p>
+            </div>
+
+            <div style="background: #e6fffa; border: 1px solid #4fd1c7; border-radius: 8px; padding: 20px; margin: 20px 0;" id="bestPractices">
+                <h3 style="color: #234e52; margin-top: 0;">🎯 Query Tuning Best Practices</h3>
+                <ul style="color: #2d3748;">
+                    <li><strong>Start Simple:</strong> Begin with basic indexes, measure performance</li>
+                    <li><strong>Measure Impact:</strong> Use <code>EXPLAIN</code> and profiling data to validate improvements</li>
+                    <li><strong>Index Strategy:</strong> Filter fields first, then SELECT fields for covering</li>
+                    <li><strong>Iterative Approach:</strong> Make one change at a time, measure results</li>
+                    <li><strong>Monitor Resources:</strong> Watch CPU, memory, and I/O patterns after changes</li>
+                </ul>
+            </div>
+        </div>
+       
+         <div class="guide-step" id="readStats">
+            <h2>📊 Understanding Query Statistics: Connecting Performance Data to Execution</h2>
+            <p>The statistics table in our tool provides crucial performance metrics that directly correspond to the optimization levels shown above. Understanding these metrics helps you identify bottlenecks and measure the impact of your Walk → Crawl → Run improvements.</p>
+
+            <img src="img/stats_to_plan.png" alt="Query statistics table showing performance metrics">
+
+            <h3>🔍 Key Statistics Breakdown</h3>
+            
+            <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;" id="timingMetrics">
+                <h4 style="color: #2c3e50; margin-top: 0;">Timing Metrics (Click for detailed explanations)</h4>
+                
+                <img src="img/query_times.png" alt="Complete timing metrics relationship diagram showing how elapsedTime, executionTime, serviceTime, cpuTime, and kernTime relate to each other">
+                
+                <p style="margin: 15px 0 10px; font-weight: bold; color: #2c3e50;">📊 Understanding How Timing Metrics Relate:</p>
+                <ul style="line-height: 2;">
+                    <li><strong><a href="#cpuTime" style="color: #f39c12;">cpuTime</a></strong> - Cumulative CPU consumption across all query threads</li>
+                    <li><strong><a href="#elapsedTime" style="color: #e74c3c;">elapsedTime</a></strong> - Total wall-clock time from request acknowledgment to completion</li>
+                    <li><strong><a href="#executionTime" style="color: #27ae60;">executionTime</a></strong> - Actual time to execute the query logic</li>
+                    <li><strong><a href="#kernTime" style="color: #3498db;">kernTime</a></strong> - Time spent waiting for CPU scheduling by the OS kernel</li>
+                    <li><strong><a href="#serviceTime" style="color: #e67e22;">serviceTime</a></strong> - Time Query service waits for other services (Index, Data, FTS)</li>
+                </ul>
+                
+                <p style="margin: 10px 0 0; font-size: 14px; color: #666;"><em>💡 Refer to this timing diagram when reading individual metric explanations below.</em></p>
+            </div>
+
+            <div style="background: #eef7ff; border-radius: 8px; padding: 20px; margin: 20px 0;" id="executionMetrics">
+                <h4 style="color: #2c3e50; margin-top: 0;">Execution Metrics</h4>
+                <ul style="line-height: 1.8;">
+                    <li><strong>resultCount</strong> - Number of documents returned to the client</li>
+                    <li><strong>resultSize</strong> - Total size in bytes of the result set</li>
+                    <li><strong>errorCount</strong> - Number of errors encountered during execution</li>
+                    <li><strong>usedMemory</strong> - Peak memory consumption during query execution (in bytes)</li>
+                </ul>
+            </div>
+
+            <img src="img/query_node.png" alt="Query statistics table showing performance metrics">
+
+            <div style="background: #f0f9ff; border-radius: 8px; padding: 20px; margin: 20px 0;" id="phaseMetrics">
+                <h4 style="color: #2c3e50; margin-top: 0;">Phase-Level Metrics</h4>
+                <ul style="line-height: 1.8;">
+                    <li><strong>phaseCounts</strong> - Count of items processed in each phase (fetch, indexScan, sort, etc.)</li>
+                    <li><strong>phaseOperators</strong> - Number of operators used in each phase</li>
+                    <li><strong>phaseTimes</strong> - Time spent in each query execution phase</li>
+                </ul>
+                <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                    <strong>Common Phase Types:</strong> 
+                    <code>indexScan</code>, <code>fetch</code>, <code>project</code>, <code>sort</code>, <code>authorize</code>, <code>parse</code>, <code>plan</code>, <code>run</code>, <code>stream</code>
+                </p>
+                
+                <div style="background: #e8f5e8; border: 1px solid #4caf50; border-radius: 6px; padding: 12px; margin: 12px 0;">
+                    <h5 style="color: #2e7d32; margin-top: 0; margin-bottom: 8px;">🔍 Operator-Level Details</h5>
+                    <p style="color: #388e3c; font-size: 13px; margin: 0;">For detailed breakdowns, enable profiling with <code>profile="timings"</code>. This exposes operator-level metrics:</p>
+                    <ul style="color: #388e3c; font-size: 13px; margin: 5px 0 0 15px;">
+                        <li><strong>execTime</strong> - Code execution time within operators</li>
+                        <li><strong>servTime</strong> - Time waiting on services (KV, Index)</li>
+                        <li><strong>kernTime</strong> - OS scheduling overhead per operator</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3 id="optimizationLevels">🎯 Connecting Statistics to Optimization Levels</h3>
+            
+            <div class="performance-level walk-level">
+                <div class="level-title">
+                    <span class="level-icon">🍼</span>
+                    CRAWL Level Statistics
+                </div>
+                <p><strong>What to expect:</strong> High <code>phaseCounts.fetch</code>, high <code>resultSize</code>, moderate <code>serviceTime</code></p>
+                <ul>
+                    <li><strong>phaseCounts.fetch</strong> will be high - every matching document requires a KV fetch</li>
+                    <li><strong>resultSize</strong> large due to fetching full documents</li>
+                    <li>Higher <a href="#serviceTime">serviceTime</a> due to document fetch overhead</li>
+                    <li><strong>phaseTimes.fetch</strong> dominates execution time</li>
+                </ul>
+            </div>
+
+            <div class="performance-level crawl-level">
+                <div class="level-title">
+                    <span class="level-icon">🚶</span>
+                    WALK Level Statistics
+                </div>
+                <p><strong>What to expect:</strong> Reduced <code>phaseCounts.fetch</code>, targeted <code>phaseCounts.indexScan</code>, improved <code>serviceTime</code></p>
+                <ul>
+                    <li><strong>phaseCounts.fetch</strong> decreases - composite index pre-filters documents</li>
+                    <li><strong>phaseCounts.indexScan</strong> is more efficient due to targeted scanning</li>
+                    <li>Better <a href="#serviceTime">serviceTime</a> from reduced I/O operations</li>
+                    <li><strong>phaseTimes.indexScan</strong> becomes smaller relative to fetch time</li>
+                </ul>
+            </div>
+
+            <div class="performance-level run-level">
+                <div class="level-title">
+                    <span class="level-icon">🏃</span>
+                    RUN Level Statistics
+                </div>
+                <p><strong>What to expect:</strong> Zero <code>phaseCounts.fetch</code>, minimal <code>resultSize</code>, optimal <code>serviceTime</code></p>
+                <ul>
+                    <li><strong>phaseCounts.fetch = 0</strong> - Covering index eliminates all document fetches</li>
+                    <li><strong>resultSize</strong> minimal - only selected fields returned</li>
+                    <li>Minimal <a href="#serviceTime">serviceTime</a> with index-only operations</li>
+                    <li>Low <a href="#kernTime">kernTime</a> due to reduced resource contention</li>
+                    <li><strong>phaseTimes.fetch</strong> absent or near zero</li>
+                </ul>
+            </div>
+
+            <div style="background: #fff8e1; border: 1px solid #ffb74d; border-radius: 8px; padding: 20px; margin: 20px 0;" id="performanceTips">
+                <h3 style="color: #e65100; margin-top: 0;">⚡ Performance Analysis Tips</h3>
+                <ul style="color: #2d3748;">
+                    <li><strong>High <a href="#kernTime">kernTime</a>:</strong> CPU contention - check system load and thread counts</li>
+                    <li><strong>High phaseCounts.fetch:</strong> Missing covering indexes - implement RUN level optimization</li>
+                    <li><strong>Large resultSize relative to resultCount:</strong> Inefficient indexing - move to WALK or RUN level</li>
+                    <li><strong>High <a href="#elapsedTime">elapsedTime</a> vs <a href="#serviceTime">serviceTime</a>:</strong> Queuing delays - scale query nodes</li>
+                    <li><strong>High <a href="#cpuTime">cpuTime</a>:</strong> CPU-intensive operations - optimize query logic or add cores</li>
+                    <li><strong>Large phaseTimes.fetch:</strong> Document fetch bottleneck - consider covering indexes</li>
+                </ul>
+            </div>
+
+            <div style="background: #e8f5e8; border: 1px solid #4caf50; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="color: #2e7d32; margin-top: 0;">📈 Measuring Optimization Success</h3>
+                <p><strong>Track these key improvements as you progress through optimization levels:</strong></p>
+                <ul style="color: #2d3748;">
+                    <li><strong>CRAWL → WALK:</strong> Watch for 30-50% reduction in <code>phaseCounts.fetch</code> and <code>phaseTimes.fetch</code></li>
+                    <li><strong>WALK → RUN:</strong> Achieve <code>phaseCounts.fetch = 0</code> and 70-90% reduction in <code>serviceTime</code></li>
+                    <li><strong>Overall Success:</strong> Lower <a href="#elapsedTime">elapsedTime</a>, reduced <a href="#kernTime">kernTime</a>, consistent <code>resultCount</code></li>
+                    <li><strong>Efficiency Gains:</strong> Lower <code>resultSize</code>-to-<code>resultCount</code> ratio, minimal <code>usedMemory</code></li>
+                </ul>
+            </div>
+         </div>
+         
+         <div class="guide-step" id="executionTime">
+            <h2>-- `executionTime`</h2>
+            <p>ExecutionTime refers to the actual time taken to execute the query logic within the Query service. This represents the pure computational time spent processing the query—parsing, planning, and running the SQL++ operations—without including time spent waiting for other services or transmitting results to the client.</p>
+            
+            <div style="background: #e1f5fe; border: 1px solid #03a9f4; border-radius: 6px; padding: 12px; margin: 12px 0;">
+                <p style="color: #0277bd; margin: 0; font-size: 13px;">📊 <strong>See the <a href="#timingMetrics" style="color: #01579b;">complete timing diagram</a></strong> to understand how executionTime fits within the overall query timeline.</p>
+            </div>
+            
+            <div style="background: #e8f5e8; border: 1px solid #4caf50; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #2e7d32; margin-top: 0;">⚙️ ExecutionTime Components</h4>
+                <p style="color: #388e3c; margin-bottom: 10px;">ExecutionTime captures the core query processing phases:</p>
+                <ul style="color: #388e3c; margin: 0;">
+                    <li><strong>Parse:</strong> SQL++ statement parsing and validation</li>
+                    <li><strong>Plan:</strong> Query plan generation and optimization</li>
+                    <li><strong>Execute:</strong> Actual query operation processing (joins, filters, projections)</li>
+                </ul>
+            </div>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #856404; margin-top: 0;">📊 ExecutionTime in Context</h4>
+                <p style="color: #664d03; margin-bottom: 10px;"><strong>Source:</strong> <a href="https://docs.couchbase.com/server/current/fts-rest-query/index.html#ActiveResponseFilterMapItem" target="_blank" style="color: #856404;">Couchbase FTS REST API documentation</a></p>
+                <ul style="color: #664d03; margin: 0;">
+                    <li><strong>executionTime:</strong> Pure query processing time</li>
+                    <li><strong><a href="#serviceTime">serviceTime</a>:</strong> Waiting time for other services (Index, Data, FTS)</li>
+                    <li><strong><a href="#elapsedTime">elapsedTime</a>:</strong> Total time including result transmission to client</li>
+                </ul>
+            </div>
+            
+            <p>Think of it like this: Imagine cooking a meal—executionTime is the actual time you spend actively cooking (chopping, stirring, seasoning), not the time waiting for water to boil or for ingredients to be delivered.</p>
+            
+            <h3>What High ExecutionTime Means for Query Performance</h3>
+            <p>High ExecutionTime indicates that the query logic itself is computationally intensive or inefficient, pointing to optimization opportunities within the query processing:</p>
+            <ul>
+                <li><strong>Complex query logic:</strong> Intricate JOINs, nested queries, or complex expressions requiring substantial computation.</li>
+                <li><strong>Large data processing:</strong> Operations on large result sets that require significant in-memory processing.</li>
+                <li><strong>Inefficient query plans:</strong> Suboptimal execution plans that could benefit from better indexing or query rewriting.</li>
+                <li><strong>Resource-intensive functions:</strong> Heavy use of user-defined functions, regular expressions, or mathematical computations.</li>
+                <li><strong>Sort and aggregation overhead:</strong> ORDER BY or GROUP BY operations on large datasets without optimal indexes.</li>
+            </ul>
+            
+            <h3>Optimizing High ExecutionTime</h3>
+            <p>When executionTime is the primary contributor to slow queries:</p>
+            <ul>
+                <li><strong>Review query plan:</strong> Use <code>EXPLAIN</code> to identify inefficient operations and optimize with better indexes</li>
+                <li><strong>Simplify query logic:</strong> Break complex queries into simpler components or use more efficient SQL++ constructs</li>
+                <li><strong>Add covering indexes:</strong> Eliminate expensive fetch operations by including all needed fields in indexes</li>
+                <li><strong>Optimize data access:</strong> Use appropriate index hints and ensure queries leverage the best available indexes</li>
+                <li><strong>Consider data modeling:</strong> Sometimes restructuring documents can simplify query logic and improve execution efficiency</li>
+            </ul>
+            
+            <div style="background: #f0f8ff; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #2c3e50; margin-top: 0;">🔍 ExecutionTime vs Other Metrics</h4>
+                <ul style="color: #555; margin: 0;">
+                    <li><strong>If executionTime ≈ elapsedTime:</strong> Query processing dominates, minimal waiting and transmission time</li>
+                    <li><strong>If serviceTime >> executionTime:</strong> Query spends more time waiting for services than actual processing</li>
+                    <li><strong>If elapsedTime >> executionTime:</strong> Significant queuing delays or large result transmission time</li>
+                </ul>
+            </div>
+        </div>
         
         <div class="guide-step" id="kernTime">
             <h2>-- `kernTime`</h2>
             <p>KernelTime (often abbreviated as <code>kernTime</code> in query profiling statistics) refers to the amount of time a query operator or phase spends waiting to be scheduled for execution on a CPU core by the operating system's kernel. This is essentially idle time due to scheduling delays in a multi-threaded environment, where multiple threads or processes are competing for limited CPU resources. It's not time spent doing actual computation or waiting on external services (like data fetches or index scans); instead, it's the overhead from the system deciding when and how to allocate CPU cycles to the query's threads.</p>
             <p>Think of it like this: Imagine a busy highway with more cars (threads) than lanes (CPU cores). KernelTime is the time your car (the query) spends stopped or slowed down in traffic, waiting for a lane to open up, rather than driving forward productively.</p>
             
-            <h3>What a High KernelTime Means for a Slow Query</h3>
+            <h3 id="kernTimeNodes">🖥️ Query Node Impact on KernTime</h3>
+            <p>Understanding how kernTime relates to query node architecture helps identify the root causes of CPU scheduling delays. The relationship between query nodes, CPU resources, and thread management directly impacts kernTime performance.</p>
+            
+            <img src="img/query_node.png" alt="Query node architecture showing CPU, memory, and thread management impact on kernTime">
+            
+            <div style="background: #f0f8ff; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #2c3e50; margin-top: 0;">Node-Level Factors Affecting KernTime</h4>
+                <ul style="line-height: 1.8;">
+                    <li><strong>CPU Core Count:</strong> More cores reduce contention but require balanced thread distribution</li>
+                    <li><strong>Memory Pressure:</strong> Low memory forces more aggressive scheduling and context switching</li>
+                    <li><strong>Node Load:</strong> High concurrent query load increases thread competition for CPU time</li>
+                    <li><strong>Service Mixing:</strong> Query nodes also running KV/Index services compete for CPU resources</li>
+                </ul>
+            </div>
+            
+            <h3 id="kernTimeAnalysis">What a High KernelTime Means for a Slow Query</h3>
             <p>A high KernelTime indicates that CPU contention is a primary bottleneck contributing to the query's slowness. This doesn't mean the query itself is inefficient in terms of logic or data access—instead, it points to systemic issues on the query node or cluster, such as:</p>
             <ul>
                 <li><strong>Overloaded CPU resources</strong>: Too many concurrent queries, threads, or background processes (e.g., garbage collection, other services) are vying for CPU time, causing scheduling delays.</li>
@@ -58,7 +424,7 @@
                 <li>Monitor for patterns across queries; if many show high KernelTime, scale up CPU resources, reduce concurrency, or isolate workloads.</li>
             </ul>
             
-            <h3>Example: If KernelTime Equals 99% of ServiceTime</h3>
+            <h3 id="kernTimeExamples">Example: If KernelTime Equals 99% of ServiceTime</h3>
             <p>ServiceTime is the total wall-clock (calendar) time taken to complete the query, from start to finish. If KernelTime accounts for 99% of this (e.g., ServiceTime = 10 seconds, KernelTime = 9.9 seconds), it strongly indicates severe CPU overload or contention on the query node. Practically, this means:</p>
             <ul>
                 <li>The query is doing almost no useful work—only about 1% of the time is spent on actual execution (<code>execTime</code>) or service calls (<code>servTime</code>).</li>
@@ -68,12 +434,82 @@
             </ul>
         </div>
         
+        <div class="guide-step" id="scanConsistency">
+            <h2>-- `scanConsistency`</h2>
+            <p>ScanConsistency determines the level of consistency required between the index and the data service when executing queries. This parameter controls whether queries use the most current data or can accept slightly stale index information for better performance.</p>
+            
+            <p>Think of it like this: Imagine reading a news website—scanConsistency is like choosing between reading the latest breaking news (which might take longer to load) versus reading news that's a few minutes old (which loads instantly).</p>
+            
+            <div style="background: #f0f8ff; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #2c3e50; margin-top: 0;">🔄 Index Consistency Fundamentals</h4>
+                <p style="color: #555; margin-bottom: 10px;">Couchbase maintains indexes with <strong>eventual consistency</strong>. While data mutations are immediately available, indexes may not contain the most up-to-date information, especially in write-heavy environments. This asynchronous updating nature allows indexes to be very quick to query without the overhead of real-time recalculations.</p>
+            </div>
+            
+            <h3>ScanConsistency Options</h3>
+            <div style="background: #fff5f5; border-left: 4px solid #fc8181; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #c53030; margin-top: 0;">not_bounded (unbounded)</h4>
+                <p style="color: #744210; margin: 0;"><strong>Default for SQL++.</strong> Executes the query immediately without requiring any consistency. Provides the best performance but may return out-of-date results if index maintenance is running behind.</p>
+            </div>
+            
+            <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #c05621; margin-top: 0;">at_plus</h4>
+                <p style="color: #744210; margin: 0;">Executes the query after updating indexes to the timestamp of the last update. Query waits for index maintenance to catch up if it's running behind.</p>
+            </div>
+            
+            <div style="background: #f0fff4; border-left: 4px solid #68d391; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #22543d; margin-top: 0;">request_plus</h4>
+                <p style="color: #744210; margin: 0;"><strong>Strongest consistency.</strong> Executes the query after updating indexes to the timestamp of the current query request. Ensures indexes are synchronized with the data service before querying, but may have performance impact.</p>
+            </div>
+            
+            <h3>Performance Impact of ScanConsistency</h3>
+            <p>The choice of scanConsistency directly affects query performance and data freshness:</p>
+            <ul>
+                <li><strong>not_bounded/unbounded:</strong> Fastest execution, potential for stale data</li>
+                <li><strong>at_plus:</strong> Moderate performance impact, ensures recent updates are visible</li>
+                <li><strong>request_plus:</strong> Highest performance cost, guarantees latest data visibility</li>
+            </ul>
+            
+            <div style="background: #fff8e1; border: 1px solid #ffb74d; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #856404; margin-top: 0;">⚖️ Choosing the Right Consistency Level</h4>
+                <ul style="color: #664d03; margin: 0;">
+                    <li><strong>Use unbounded</strong> for analytics, reporting, and read-heavy workloads where slight staleness is acceptable</li>
+                    <li><strong>Use at_plus</strong> when you need recent updates reflected, but can tolerate some delay</li>
+                    <li><strong>Use request_plus</strong> for critical operations requiring absolute data freshness, despite performance cost</li>
+                </ul>
+            </div>
+        </div>
+        
         <div class="guide-step" id="serviceTime">
             <h2>-- `serviceTime`</h2>
-            <p>ServiceTime refers to the total wall-clock (calendar) time taken to complete the query within the query service. This metric captures the duration from when the query begins active execution until it finishes, including time spent on computation, waiting for internal services like indexes or key-value stores, and any other execution-related activities. It does not include initial queuing or scheduling time before execution starts.</p>
-            <p>Think of it like this: Imagine baking a cake—ServiceTime is the total time the cake is in the oven, including preheating and cooling phases, but not the time spent gathering ingredients beforehand.</p>
+            <p>ServiceTime refers to the cumulative time the Query service spends waiting for other services to respond during query execution. From the Query service perspective, when it needs to perform operations like index scans or document fetches, it makes requests to other services (Index service, Data service, FTS service) and waits for their responses—this waiting time is captured as serviceTime.</p>
             
-            <h3>What a High ServiceTime Means for a Slow Query</h3>
+            <div style="background: #e1f5fe; border: 1px solid #03a9f4; border-radius: 6px; padding: 12px; margin: 12px 0;">
+                <p style="color: #0277bd; margin: 0; font-size: 13px;">📊 <strong>See the <a href="#timingMetrics" style="color: #01579b;">complete timing diagram</a></strong> to understand how serviceTime relates to executionTime and elapsedTime.</p>
+            </div>
+            
+            <div style="background: #f0f8ff; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #2c3e50; margin-top: 0;">🔄 Query Service Dependencies</h4>
+                <p style="color: #555; margin-bottom: 10px;">The Query service coordinates with multiple other services:</p>
+                <ul style="color: #555; margin: 0;">
+                    <li><strong>Index Service:</strong> For index scans and lookups</li>
+                    <li><strong>Data Service:</strong> For document fetches from KV store</li>
+                    <li><strong>FTS Service:</strong> For full-text search operations (less common)</li>
+                </ul>
+            </div>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #856404; margin-top: 0;">📝 serviceTime vs executionTime vs elapsedTime</h4>
+                <ul style="color: #664d03; margin: 0;">
+                    <li><strong>serviceTime:</strong> Time Query service waits for other services (Index, Data, FTS)</li>
+                    <li><strong>executionTime:</strong> Actual time to execute the query logic</li>
+                    <li><strong>elapsedTime:</strong> Total time including result transmission to client</li>
+                </ul>
+                <p style="color: #664d03; margin: 10px 0 0;"><strong>Key insight:</strong> If elapsedTime >> executionTime, it likely indicates large result sets or slow network when sending data to the client.</p>
+            </div>
+            
+            <p>Think of it like this: Imagine ordering at a restaurant—serviceTime is how long you wait for the kitchen and bar to prepare your food and drinks, not the time you spend eating or the time it takes to bring your order to your table.</p>
+            
+            <h3 id="serviceTimeAnalysis">What a High ServiceTime Means for a Slow Query</h3>
             <p>A high ServiceTime indicates that the query execution phase itself is the main contributor to slowness, often due to operational complexities or dependencies on other services. This could stem from issues within the query processing, such as:</p>
             <ul>
                 <li><strong>Complex query operations</strong>: Large data scans, intricate joins, sorts, or aggregations that require significant processing.</li>
@@ -88,7 +524,7 @@
                 <li>Analyze patterns in completed requests; if many queries show high ServiceTime, optimize indexes, tune query plans, or scale service resources.</li>
             </ul>
             
-            <h3>Example: If ServiceTime Equals 99% of ElapsedTime</h3>
+            <h3 id="serviceTimeExamples">Example: If ServiceTime Equals 99% of ElapsedTime</h3>
             <p>ElapsedTime is the total time from query acknowledgment to completion, including scheduling. If ServiceTime accounts for 99% of this (e.g., ElapsedTime = 10 seconds, ServiceTime = 9.9 seconds), it means minimal queuing delay, and the slowness is almost entirely due to execution. Practically, this means:</p>
             <ul>
                 <li>The query spends nearly all its time in active processing, with little wait before starting.</li>
@@ -100,16 +536,42 @@
         
         <div class="guide-step" id="elapsedTime">
             <h2>-- `elapsedTime`</h2>
-            <p>ElapsedTime refers to the total time from when the query request is acknowledged by the query service until the request is completed and results are ready. This encompasses queuing or scheduling delays before execution, plus the active ServiceTime. It's an end-to-end wall-clock measure of how long the entire process takes from the service's perspective.</p>
-            <p>Think of it like this: Imagine ordering food delivery—ElapsedTime is the total wait from placing the order until it arrives, including time in the restaurant's queue and cooking/delivery time.</p>
+            <p>ElapsedTime refers to the total end-to-end time from when the query request is acknowledged by the query service until the complete results are delivered to the client. This encompasses queuing delays, query execution time, and crucially, the time required to transmit results back to the client over the network.</p>
             
-            <h3>What a High ElapsedTime Means for a Slow Query</h3>
-            <p>A high ElapsedTime signals overall delays in query handling, which could be due to pre-execution queuing or slow execution. This points to broader system or workload issues, such as:</p>
+            <div style="background: #e1f5fe; border: 1px solid #03a9f4; border-radius: 6px; padding: 12px; margin: 12px 0;">
+                <p style="color: #0277bd; margin: 0; font-size: 13px;">📊 <strong>See the <a href="#timingMetrics" style="color: #01579b;">complete timing diagram</a></strong> to understand how elapsedTime relates to other timing metrics.</p>
+            </div>
+            
+            <div style="background: #e8f5e8; border: 1px solid #4caf50; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #2e7d32; margin-top: 0;">⏱️ ElapsedTime Components</h4>
+                <ul style="color: #388e3c; margin: 0;">
+                    <li><strong>Queuing time:</strong> Time waiting in queue before execution starts</li>
+                    <li><strong>Execution time:</strong> Time to process the query logic</li>
+                    <li><strong>Result transmission:</strong> Time to send results to client over network</li>
+                </ul>
+            </div>
+            
+            <p>Think of it like this: Imagine ordering food delivery—ElapsedTime is the total wait from placing the order until it's delivered to your door, including restaurant queue time, cooking time, and delivery transportation time.</p>
+            
+            <h3 id="elapsedTimeAnalysis">What a High ElapsedTime Means for a Slow Query</h3>
+            <p>A high ElapsedTime signals overall delays in the complete query lifecycle, which could be due to several factors depending on how it compares to executionTime:</p>
+            
+            <div style="background: #fff8e1; border: 1px solid #ffb74d; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #856404; margin-top: 0;">🔍 ElapsedTime Analysis Patterns</h4>
+                <ul style="color: #664d03; margin: 0;">
+                    <li><strong>elapsedTime ≈ executionTime:</strong> Minimal queuing and fast result transmission</li>
+                    <li><strong>elapsedTime >> executionTime:</strong> Either queuing delays OR large result sets with slow network transmission</li>
+                    <li><strong>elapsedTime much larger than expected:</strong> Check resultSize—large datasets take time to transmit to client</li>
+                </ul>
+            </div>
+            
+            <p>Common causes of high ElapsedTime include:</p>
             <ul>
                 <li><strong>Queue backlogs</strong>: Too many concurrent requests overwhelming the service, as indicated by high <code>request.queued.count</code>.</li>
+                <li><strong>Large result sets</strong>: High <code>resultSize</code> requiring significant time for network transmission to client.</li>
+                <li><strong>Network latency/bandwidth</strong>: Slow network connections between Query service and client causing transmission delays.</li>
                 <li><strong>Scheduling overhead</strong>: Delays in assigning resources, often linked to high load or limited servicers.</li>
-                <li><strong>Execution bottlenecks</strong>: If close to ServiceTime, the issue is in processing; otherwise, it's queuing.</li>
-                <li><strong>Cluster-wide pressure</strong>: High CPU, memory, or network usage affecting acknowledgment-to-completion flow.</li>
+                <li><strong>Execution bottlenecks</strong>: If close to ServiceTime, the issue is in processing; otherwise, it's queuing or transmission.</li>
             </ul>
             <p>In metrics (e.g., from system:active_requests), compare ElapsedTime to ServiceTime—if ElapsedTime is much higher, queuing is the culprit. Also check <code>request_time</code> percentiles for trends. To diagnose:</p>
             <ul>
@@ -118,7 +580,7 @@
                 <li>Look for patterns; if widespread, increase servicers, add nodes, or limit concurrency via quotas.</li>
             </ul>
             
-            <h3>Example: If ElapsedTime is Significantly Higher Than ServiceTime</h3>
+            <h3 id="elapsedTimeExamples">Example: If ElapsedTime is Significantly Higher Than ServiceTime</h3>
             <p>For instance, if ElapsedTime = 10 seconds and ServiceTime = 2 seconds, it means 80% of the time (8 seconds) was spent waiting in queue. This indicates severe overload. Practically, this means:</p>
             <ul>
                 <li>Queries are bottlenecked before even starting, reducing effective throughput.</li>
@@ -131,9 +593,14 @@
         <div class="guide-step" id="cpuTime">
             <h2>-- `cpuTime`</h2>
             <p>CPUTime refers to the cumulative time spent by the query consuming CPU resources during its execution. This metric aggregates the CPU usage across all threads involved in processing the query, including both user-level computations in the query engine and system-level operations. It's a measure of the query's CPU footprint, often reflecting the intensity of operations like sorting or filtering.</p>
+            
+            <div style="background: #e1f5fe; border: 1px solid #03a9f4; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #01579b; margin-top: 0;">ℹ️ Availability Note</h4>
+                <p style="color: #0277bd; margin: 0;"><strong>cpuTime availability:</strong> This metric is primarily available through system monitoring catalogs (system:active_requests, system:completed_requests). It may not appear in basic query meta() output without additional profiling enabled.</p>
+            </div>
             <p>Think of it like this: Imagine running a marathon—CPUTime is the total effort (energy) expended by the runner, which may exceed the race time if accounting for all movements, but in queries, it's the CPU "work" done.</p>
             
-            <h3>What a High CPUTime Means for a Slow Query</h3>
+            <h3 id="cpuTimeAnalysis">What a High CPUTime Means for a Slow Query</h3>
             <p>A high CPUTime suggests the query is CPU-bound, consuming significant processor resources, which can lead to slowness if CPUs are contended. This doesn't always correlate directly with wall-clock time in parallel environments but indicates issues like:</p>
             <ul>
                 <li><strong>CPU-intensive operations</strong>: Heavy computations, large sorts, or aggregations without proper optimization.</li>
@@ -148,7 +615,7 @@
                 <li>Monitor across queries; if aggregate CPUTime is high, upgrade hardware or optimize queries.</li>
             </ul>
             
-            <h3>Example: If CPUTime Equals 99% of ServiceTime</h3>
+            <h3 id="cpuTimeExamples">Example: If CPUTime Equals 99% of ServiceTime</h3>
             <p>ServiceTime is wall-clock execution time. If CPUTime is 99% of this (e.g., ServiceTime = 10 seconds, CPUTime = 9.9 seconds), it means the query is almost fully CPU-bound with minimal waits. Practically, this means:</p>
             <ul>
                 <li>Nearly all time is spent computing, with little I/O or service delay.</li>
@@ -157,6 +624,218 @@
                 <li>Implications: CPU becomes the limiting factor. Recommendations include simplifying queries, using indexes to reduce data, or leveraging more cores. Watch for heat on nodes and balance load.</li>
             </ul>
         </div>
+        
+        <div class="guide-step" id="state">
+            <h2>-- `state`</h2>
+            <p>State indicates the current execution status of a query request within the Couchbase query service. This field provides real-time visibility into where a query stands in its lifecycle, helping administrators and developers track query progress and identify stuck or problematic queries.</p>
+            
+            <p>Think of it like this: Imagine tracking a package delivery—state is like the shipping status that tells you whether your package is "in transit," "delivered," or "delayed."</p>
+            
+            <h3>Query State Values</h3>
+            <div style="background: #f0fff4; border-left: 4px solid #68d391; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #22543d; margin-top: 0;">completed</h4>
+                <p style="color: #2d5016; margin: 0;">The query has finished execution successfully and results are available. This is the final state for successful queries.</p>
+            </div>
+            
+            <div style="background: #fff7e6; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #c05621; margin-top: 0;">running</h4>
+                <p style="color: #744210; margin: 0;">The query is currently being executed. Monitor queries in this state to identify long-running operations that may need optimization or termination.</p>
+            </div>
+            
+            <div style="background: #fff5f5; border-left: 4px solid #fc8181; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #c53030; margin-top: 0;">cancelled</h4>
+                <p style="color: #742a2a; margin: 0;">The query was manually terminated by an administrator or client before completion. This often happens when queries are taking too long or consuming excessive resources.</p>
+            </div>
+            
+            <div style="background: #fef7f0; border-left: 4px solid #f56565; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #9b2c2c; margin-top: 0;">timeout</h4>
+                <p style="color: #742a2a; margin-bottom: 8px;">The query exceeded the configured timeout limit and was automatically terminated by the system.</p>
+                <p style="color: #742a2a; margin: 0; font-size: 13px;"><strong>Default:</strong> Couchbase SDK clients have a default timeout of 75 seconds (1m15s).</p>
+            </div>
+            
+            <div style="background: #fef5e7; border-left: 4px solid #dd6b20; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #9c4221; margin-top: 0;">error</h4>
+                <p style="color: #744210; margin: 0;">The query encountered an error during execution and could not complete successfully. Check the <code>errors</code> field for specific error details.</p>
+            </div>
+            
+            <h3>Using State for Query Management</h3>
+            <p>The state field is particularly valuable for query monitoring and management:</p>
+            <ul>
+                <li><strong>Identify stuck queries:</strong> Queries in "running" state for extended periods may need investigation</li>
+                <li><strong>Monitor system health:</strong> High numbers of "cancelled" or "error" states indicate potential issues</li>
+                <li><strong>Resource management:</strong> Use with system:active_requests to terminate problematic running queries</li>
+                <li><strong>Performance analysis:</strong> Compare state distribution across different time periods</li>
+            </ul>
+            
+            <div style="background: #e1f5fe; border: 1px solid #03a9f4; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #01579b; margin-top: 0;">📊 State in Monitoring Context</h4>
+                <p style="color: #0277bd; margin-bottom: 10px;">State appears in both system:active_requests (for currently executing queries) and system:completed_requests (for finished queries). This field is sourced from the <a href="https://docs.couchbase.com/server/7.0/n1ql/n1ql-rest-api/admin.html#_vitals" target="_blank" style="color: #01579b;">Couchbase N1QL REST API vitals endpoint</a>.</p>
+                <ul style="color: #0277bd; margin: 0;">
+                    <li>Use with <code>requestId</code> to track specific queries across state transitions</li>
+                    <li>Combine with timing metrics to understand performance patterns by state</li>
+                    <li>Monitor state changes to detect system overload or configuration issues</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="guide-step" id="usedMemory">
+            <h2>-- `usedMemory`</h2>
+            <p>UsedMemory refers to the peak amount of document memory consumed during query execution, measured in bytes. This metric tracks the maximum memory footprint required by the query for processing documents, intermediate results, and temporary data structures. It provides insight into the memory efficiency of query operations and helps identify memory-intensive queries that could impact system performance.</p>
+            
+            <div style="background: #e1f5fe; border: 1px solid #03a9f4; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <h4 style="color: #01579b; margin-top: 0;">ℹ️ Availability Note</h4>
+                <p style="color: #0277bd; margin: 0;"><strong>usedMemory availability:</strong> This metric is only returned when a memory quota is set for the query using the memory_quota parameter. Without a quota, this field won't appear in query statistics.</p>
+            </div>
+            
+            <p>Think of it like this: Imagine organizing a large event—UsedMemory is the maximum venue capacity you needed at any point during the event, not the average occupancy, but the peak moment when the most space was required.</p>
+            
+            <h3 id="usedMemoryAnalysis">What High UsedMemory Means for a Slow Query</h3>
+            <p>High UsedMemory suggests the query requires significant memory resources for processing, which can impact performance through memory pressure, garbage collection overhead, or system swapping. This could indicate several issues:</p>
+            <ul>
+                <li><strong>Large result sets</strong>: Queries returning many documents or large document payloads consume more memory for buffering.</li>
+                <li><strong>Complex operations</strong>: JOINs, UNNESTs, or aggregations on large datasets require substantial intermediate storage.</li>
+                <li><strong>Sorting operations</strong>: ORDER BY clauses on large result sets need memory to hold data during sorting.</li>
+                <li><strong>Inefficient queries</strong>: Lack of proper indexing forcing the query to process more data than necessary.</li>
+                <li><strong>Memory quota pressure</strong>: When approaching the configured memory_quota, queries may slow due to memory management overhead.</li>
+            </ul>
+            <p>In profiling data (e.g., from system:completed_requests), compare UsedMemory to the configured memory quota and resultSize. Monitor for patterns where high memory usage correlates with slower execution times. To diagnose:</p>
+            <ul>
+                <li>Check if queries are hitting memory_quota limits, causing potential spilling or throttling.</li>
+                <li>Compare usedMemory to resultSize—inefficient ratios suggest optimization opportunities.</li>
+                <li>Look for patterns where usedMemory grows with specific query patterns or data sizes.</li>
+                <li>Monitor system-wide memory pressure via system:vitals memory metrics.</li>
+            </ul>
+            
+            <h3 id="usedMemoryExamples">Example: If UsedMemory Approaches Memory Quota</h3>
+            <p>If a query's UsedMemory approaches or exceeds 80% of the configured memory_quota (e.g., memory_quota = 100MB, UsedMemory = 85MB), it indicates potential memory pressure. Practically, this means:</p>
+            <ul>
+                <li>The query is consuming most of its allocated memory budget, increasing risk of memory-related slowdowns.</li>
+                <li>Additional memory requests may trigger garbage collection or memory management overhead.</li>
+                <li>In extreme cases, queries may be terminated if they exceed hard memory limits.</li>
+                <li>Root causes could include queries processing more data than expected, lack of result limits, or inefficient query patterns.</li>
+                <li>Implications: Consider optimizing the query with better indexes, adding LIMIT clauses, or increasing the memory quota. Review the query plan to identify memory-intensive operations like large sorts or aggregations.</li>
+            </ul>
+        </div>
+        
+        <!-- <div class="guide-step" id="requestStats">
+            <h2>📊 Request Statistics Glossary</h2>
+            <p>Comprehensive reference for all request-level statistics available in Couchbase query monitoring. These metrics are sourced from the <a href="https://docs.couchbase.com/server/current/n1ql/n1ql-rest-api/admin.html#_requests" target="_blank">Couchbase N1QL REST API documentation</a>.</p>
+            
+            <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Request Identification & Context</h3>
+                <ul style="line-height: 1.8;">
+                    <li><strong>clientContextID</strong> - The opaque ID or context provided by the client application for request tracking</li>
+                    <li><strong>requestId</strong> - Unique UUID internally generated for each query request</li>
+                    <li><strong>requestTime</strong> - Timestamp when the query request was received by the service</li>
+                    <li><strong>remoteAddr</strong> - IP address and port of the client application that sent the request</li>
+                    <li><strong>node</strong> - IP address and port of the Couchbase node executing the query</li>
+                    <li><strong>userAgent</strong> - Client application or program identifier that issued the query</li>
+                    <li><strong>users</strong> - Username with whose privileges the query executes</li>
+                </ul>
+            </div>
+
+            <div style="background: #eef7ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Core Performance Metrics</h3>
+                <ul style="line-height: 1.8;">
+                    <li><strong><a href="#elapsedTime">elapsedTime</a></strong> - Total time from request acknowledgment to completion, including scheduling overhead</li>
+                    <li><strong><a href="#serviceTime">serviceTime</a></strong> - Calendar time spent actively executing the query (subset of <a href="#elapsedTime">elapsedTime</a>)</li>
+                    <li><strong>scanConsistency</strong> - The scan consistency level used: unbounded, request_plus, or statement_plus</li>
+                    <li><strong>state</strong> - Current execution state: completed, running, cancelled, timeout, or error</li>
+                </ul>
+            </div>
+
+            <div style="background: #f0f9ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Result & Resource Metrics</h3>
+                <ul style="line-height: 1.8;">
+                    <li><strong>resultCount</strong> - Total number of documents returned in the query result set</li>
+                    <li><strong>resultSize</strong> - Total bytes returned in the query result (larger = more data transferred)</li>
+                    <li><strong>errorCount</strong> - Total number of errors encountered during query execution</li>
+                    <li><strong>usedMemory</strong> - Peak document memory consumption in bytes (only shown when memory quota is set)</li>
+                    <li><strong>memoryQuota</strong> - Memory quota for the request in MB (when configured)</li>
+                </ul>
+            </div>
+
+            <div style="background: #fffbf0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Execution Phase Details</h3>
+                <ul style="line-height: 1.8;">
+                    <li><strong>phaseCounts</strong> - Count of documents processed at each execution phase (fetch, indexScan, sort, etc.)</li>
+                    <li><strong>phaseOperators</strong> - Number of each type of query operator used in different phases</li>
+                    <li><strong>phaseTimes</strong> - Cumulative execution time breakdown by phase (authorize, parse, plan, run, stream)</li>
+                </ul>
+                <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                    <strong>Key Phase Types:</strong> authorize, parse, plan, instantiate, run, indexScan, fetch, project, sort, stream
+                </p>
+            </div>
+
+            <div style="background: #f0fff4; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Query Configuration</h3>
+                <ul style="line-height: 1.8;">
+                    <li><strong>statement</strong> - The complete N1QL query text being executed</li>
+                    <li><strong>useCBO</strong> - Boolean indicating if cost-based optimizer is enabled</li>
+                    <li><strong>statementType</strong> - Type of SQL++ operation: SELECT, INSERT, UPDATE, DELETE, CREATE_INDEX, etc.</li>
+                </ul>
+            </div>
+        </div> -->
+        
+        <!-- <div class="guide-step" id="statementStats">
+            <h2>📋 Prepared Statement Statistics Glossary</h2>
+            <p>Reference for prepared statement metrics that track performance across multiple executions. These help identify frequently-used queries and their performance patterns. Sourced from <a href="https://docs.couchbase.com/server/current/n1ql/n1ql-rest-api/admin.html#_requests" target="_blank">Couchbase N1QL REST API documentation</a>.</p>
+            
+            <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Statement Identity & Usage</h3>
+                <ul style="line-height: 1.8;">
+                    <li><strong>name</strong> - Prepared statement identifier (UUID or user-specified name)</li>
+                    <li><strong>statement</strong> - The original N1QL query text that was prepared</li>
+                    <li><strong>uses</strong> - Total execution count for this prepared statement</li>
+                    <li><strong>lastUse</strong> - Date and time of most recent execution</li>
+                    <li><strong>encoded_plan</strong> - Full prepared statement in encoded format for reuse</li>
+                </ul>
+            </div>
+
+            <div style="background: #eef7ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Aggregate Performance Metrics</h3>
+                <ul style="line-height: 1.8;">
+                    <li><strong>avgElapsedTime</strong> - Mean time from acknowledgment to completion across all executions</li>
+                    <li><strong>avgServiceTime</strong> - Mean active execution time (similar to <a href="#serviceTime">serviceTime</a>)</li>
+                    <li><strong>minElapsedTime</strong> - Fastest execution time (best case performance)</li>
+                    <li><strong>maxElapsedTime</strong> - Slowest execution time (worst case performance)</li>
+                    <li><strong>minServiceTime</strong> - Minimum active execution time</li>
+                    <li><strong>maxServiceTime</strong> - Maximum active execution time</li>
+                </ul>
+            </div>
+
+            <div style="background: #fff8e1; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                <h3 style="color: #856404; margin-top: 0;">💡 Performance Analysis with Statement Stats</h3>
+                <ul style="color: #664d03;">
+                    <li><strong>High uses count:</strong> Indicates frequently executed queries - prime candidates for optimization</li>
+                    <li><strong>Large avgElapsedTime vs avgServiceTime gap:</strong> Suggests queuing/scheduling issues</li>
+                    <li><strong>Wide min/max ranges:</strong> Points to inconsistent performance - investigate data distribution</li>
+                    <li><strong>Growing maxElapsedTime over time:</strong> May indicate resource pressure or data growth</li>
+                </ul>
+            </div>
+
+            <div style="background: #f0f9ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Technical Support Fields</h3>
+                <ul style="line-height: 1.8;">
+                    <li><strong>featureControls</strong> - Internal feature flags (technical support use only)</li>
+                    <li><strong>indexApiVersion</strong> - Index API version used (technical support use only)</li>
+                </ul>
+                <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                    <em>Note: These fields are provided for Couchbase technical support diagnosis and are not typically needed for performance analysis.</em>
+                </p>
+            </div>
+
+            <div style="background: #e6fffa; border: 1px solid #4fd1c7; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="color: #234e52; margin-top: 0;">🔗 Cross-Reference Guide</h3>
+                <p style="color: #2d3748;">Understanding how metrics relate to optimization levels:</p>
+                <ul style="color: #2d3748;">
+                    <li><strong>Request <a href="#elapsedTime">elapsedTime</a> vs Statement avgElapsedTime:</strong> Compare single execution to historical average</li>
+                    <li><strong>High phaseCounts.fetch:</strong> Look for covering index opportunities (see <a href="#optimizer">CRAWL → WALK → RUN approach</a>)</li>
+                    <li><strong>Statement uses + high maxServiceTime:</strong> Priority candidates for <a href="#optimizer">index optimization</a></li>
+                    <li><strong>Large resultSize with high <a href="#serviceTime">serviceTime</a>:</strong> Consider projection optimization</li>
+                </ul>
+            </div>
+        </div> -->
     </div>
     
     <div class="version-info">Beta/Draft - August 23, 2025</div>
