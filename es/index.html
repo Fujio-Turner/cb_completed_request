@@ -20,9 +20,9 @@
 
   <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.7.0" />
-    <meta name="last-updated" content="2025-01-24" />
-    <title>Analizador de Consultas v3.7.0</title>
+    <meta name="version" content="3.7.1" />
+    <meta name="last-updated" content="2025-01-26" />
+    <title>Analizador de Consultas v3.7.1</title>
     <!-- Include jQuery UI CSS -->
     <link
       rel="stylesheet"
@@ -90,7 +90,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
   <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-      v3.7.0
+      v3.7.1
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -7873,11 +7873,16 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 normalizedStatement: normalized, 
                 statement: stmt, // Add original statement for createQueryDiv
                 count: 0, 
+                totalDuration: 0, // Add totalDuration calculation
                 requests: [] 
               });
             }
-            queryGroups.get(normalized).count++;
-            queryGroups.get(normalized).requests.push(request);
+            const group = queryGroups.get(normalized);
+            group.count++;
+            // Use same logic as Analysis tab: serviceTime converted to ms
+            const durationMs = parseTime(request.serviceTime);
+            group.totalDuration += isNaN(durationMs) ? 0 : durationMs;
+            group.requests.push(request);
           }
         });
 
@@ -7902,7 +7907,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             const request = requests[requestIndex];
             if (request) {
               // Add execution time as scan time
-              const executionTime = parseTime(request.elapsedTime);
+              const executionTime = request.elapsedTimeMs || 0;
               if (!isNaN(executionTime)) {
                 indexObj.scanTimes.push(executionTime);
               }
@@ -8075,7 +8080,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           }
           const group = queryGroups.get(normalizedStatement);
           group.count++;
-          group.totalDuration += parseTime(request.elapsedTime);
+          // Use same logic as Analysis tab: serviceTime converted to ms
+          const durationMs = parseTime(request.serviceTime);
+          group.totalDuration += isNaN(durationMs) ? 0 : durationMs;
           group.requestIndices.push(requestIndex);
         });
 
@@ -8112,7 +8119,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 const request = requestsToUse[requestIndex];
                 if (request) {
                   // Add execution time as scan time
-                  const executionTime = parseTime(request.elapsedTime);
+                  const executionTime = request.elapsedTimeMs || 0;
                   if (!isNaN(executionTime)) {
                     indexObj.scanTimes.push(executionTime);
                   }
@@ -8869,8 +8876,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
       // Version management
-      const APP_VERSION = "3.7.0";
-const LAST_UPDATED = "2025-01-24";
+      const APP_VERSION = "3.7.1";
+const LAST_UPDATED = "2025-01-26";
 
       function getVersionInfo() {
         return {
