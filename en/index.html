@@ -1095,15 +1095,26 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const upperStmt = stmt.toUpperCase();
 
         // Apply same filtering logic as Query Groups tab
+        // Get derived statement type and normalize underscores to spaces
+        const statementType = request.statementType || deriveStatementType(request.statement) || "";
+        const normalizedType = statementType.replace(/_/g, " ").toUpperCase();
+        
+        // Define system query patterns (both with and without underscores)
+        const systemPatterns = [
+          "INFER", "ADVISE", "CREATE", "ALTER", "DROP", "BUILD", "EXPLAIN"
+        ];
+        
         const shouldExclude =
           upperStmt.startsWith("INFER ") ||
           upperStmt.startsWith("ADVISE ") ||
           upperStmt.startsWith("CREATE ") ||
-          upperStmt.startsWith("CREATE INDEX") ||
-          upperStmt.startsWith("ALTER INDEX") ||
-          upperStmt.startsWith("DROP INDEX") ||
+          upperStmt.startsWith("ALTER ") ||
+          upperStmt.startsWith("DROP ") ||
+          upperStmt.startsWith("BUILD ") ||
           upperStmt.startsWith("EXPLAIN ") ||
-          upperStmt.includes(" SYSTEM:");
+          upperStmt.includes(" SYSTEM:") ||
+          // Check normalized statement type for any system operation with underscores
+          systemPatterns.some(pattern => normalizedType.startsWith(pattern + " "));
 
         return shouldExclude;
       }

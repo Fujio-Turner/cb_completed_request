@@ -39,6 +39,124 @@
     },
     "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-13T00:35:07.376Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.06µs\",\"servTime\":\"530.491µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:yama.chats.usersChats\",\"Priv\":12,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"3.438µs\"},\"~children\":[{\"#operator\":\"CreateIndex\",\"#stats\":{\"#itemsOut\":1,\"#phaseSwitches\":3,\"execTime\":\"879ns\",\"servTime\":\"2.936414647s\"},\"bucket\":\"yama\",\"ifNotExists\":false,\"index\":\"chatHistory_v1\",\"keys\":[{\"expr\":\"`userId`\"},{\"desc\":true,\"expr\":\"((`audit`.`up`).`dt`)\"},{\"expr\":\"`bookmark`\"},{\"expr\":\"`chatName`\"}],\"keyspace\":\"usersChats\",\"namespace\":\"default\",\"scope\":\"chats\",\"using\":\"default\",\"vector\":false},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":1,\"#itemsOut\":1,\"#phaseSwitches\":2,\"execTime\":\"15.475µs\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
   },
+  {
+    "completed_requests": {
+      "clientContextID": "c1r2e3a4-t5e6-i7n8d-x9t0-1e2s3t4i5n6g",
+      "cpuTime": "15.234ms",
+      "elapsedTime": "3.456789s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseOperators": {
+        "authorize": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "645.123µs",
+        "instantiate": "23.456µs",
+        "parse": "567.890µs",
+        "plan": "45.678µs",
+        "plan.keyspace.metadata": "6.789µs",
+        "run": "3.455123456s",
+        "stream": "18.901µs"
+      },
+      "remoteAddr": "127.0.0.1:54678",
+      "requestId": "c1r2e3a4-t5e6-i7n8d-x9t0-1e2s3t4i5n6g",
+      "requestTime": "2025-07-25T10:15:30.123Z",
+      "resultCount": 1,
+      "resultSize": 89,
+      "scanConsistency": "unbounded",
+      "serviceTime": "3.456712345s",
+      "state": "completed",
+      "statement": "CREATE INDEX `performance_idx` ON `myapp`.`analytics`.`events`(`eventType`, `timestamp` DESC, `userId`) WHERE `eventType` IS NOT NULL\n",
+      "statementType": "CREATE_INDEX",
+      "useCBO": true,
+      "usedMemory": 1024,
+      "userAgent": "couchbase-query-workbench",
+      "users": "local:dev_user_12345-678a-90bc-def1-234567890abc",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-25T10:15:30.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"3.21µs\",\"servTime\":\"642.901µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:myapp.analytics.events\",\"Priv\":12,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"4.567µs\"},\"~children\":[{\"#operator\":\"CreateIndex\",\"#stats\":{\"#itemsOut\":1,\"#phaseSwitches\":3,\"execTime\":\"1.123ms\",\"servTime\":\"3.453456789s\"},\"bucket\":\"myapp\",\"ifNotExists\":false,\"index\":\"performance_idx\",\"keys\":[{\"expr\":\"`eventType`\"},{\"desc\":true,\"expr\":\"`timestamp`\"},{\"expr\":\"`userId`\"}],\"keyspace\":\"events\",\"namespace\":\"default\",\"scope\":\"analytics\",\"using\":\"default\",\"vector\":false,\"where\":\"`eventType` IS NOT NULL\"},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":1,\"#itemsOut\":1,\"#phaseSwitches\":2,\"execTime\":\"18.901µs\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "d1r2o3p4-i5n6d-x7t8e-s9t0-1a2b3c4d5e6f",
+      "cpuTime": "8.456ms",
+      "elapsedTime": "1.234567s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseOperators": {
+        "authorize": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "234.567µs",
+        "instantiate": "12.345µs",
+        "parse": "345.678µs",
+        "plan": "23.456µs",
+        "run": "1.233456789s",
+        "stream": "8.901µs"
+      },
+      "remoteAddr": "127.0.0.1:56789",
+      "requestId": "d1r2o3p4-i5n6d-x7t8e-s9t0-1a2b3c4d5e6f",
+      "requestTime": "2025-07-25T11:30:45.678Z",
+      "resultCount": 1,
+      "resultSize": 45,
+      "scanConsistency": "unbounded",
+      "serviceTime": "1.234012345s",
+      "state": "completed",
+      "statement": "DROP INDEX `old_performance_idx` ON `myapp`.`analytics`.`events`\n",
+      "statementType": "DROP_INDEX",
+      "useCBO": false,
+      "usedMemory": 512,
+      "userAgent": "couchbase-query-workbench",
+      "users": "local:admin_98765-432b-10cd-ef12-345678901234",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-25T11:30:45.679Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.34µs\",\"servTime\":\"232.123µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:myapp.analytics.events\",\"Priv\":12,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"3.456µs\"},\"~children\":[{\"#operator\":\"DropIndex\",\"#stats\":{\"#itemsOut\":1,\"#phaseSwitches\":3,\"execTime\":\"567µs\",\"servTime\":\"1.232890123s\"},\"bucket\":\"myapp\",\"index\":\"old_performance_idx\",\"keyspace\":\"events\",\"namespace\":\"default\",\"scope\":\"analytics\",\"using\":\"default\"},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":1,\"#itemsOut\":1,\"#phaseSwitches\":2,\"execTime\":\"8.901µs\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "a1l2t3e4-r5i6n-d7x8t-e9s0-1t2a3b4c5d6e",
+      "cpuTime": "12.789ms",
+      "elapsedTime": "2.345678s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseOperators": {
+        "authorize": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "456.789µs",
+        "instantiate": "18.901µs",
+        "parse": "567.890µs",
+        "plan": "34.567µs",
+        "run": "2.344123456s",
+        "stream": "12.345µs"
+      },
+      "remoteAddr": "127.0.0.1:67890",
+      "requestId": "a1l2t3e4-r5i6n-d7x8t-e9s0-1t2a3b4c5d6e",
+      "requestTime": "2025-07-25T12:45:18.901Z",
+      "resultCount": 1,
+      "resultSize": 78,
+      "scanConsistency": "unbounded",
+      "serviceTime": "2.345123456s",
+      "state": "completed",
+      "statement": "ALTER INDEX `performance_idx` ON `myapp`.`analytics`.`events` WITH {\"action\": \"resume\"}\n",
+      "statementType": "ALTER_INDEX",
+      "useCBO": false,
+      "usedMemory": 768,
+      "userAgent": "couchbase-query-workbench",
+      "users": "local:dba_54321-876f-54ab-cdef-987654321098",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-25T12:45:18.902Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"3.45µs\",\"servTime\":\"453.234µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:myapp.analytics.events\",\"Priv\":12,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"4.567µs\"},\"~children\":[{\"#operator\":\"AlterIndex\",\"#stats\":{\"#itemsOut\":1,\"#phaseSwitches\":3,\"execTime\":\"890µs\",\"servTime\":\"2.343567890s\"},\"bucket\":\"myapp\",\"index\":\"performance_idx\",\"keyspace\":\"events\",\"namespace\":\"default\",\"scope\":\"analytics\",\"using\":\"default\",\"with\":{\"action\":\"resume\"}},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":1,\"#itemsOut\":1,\"#phaseSwitches\":2,\"execTime\":\"12.345µs\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
 
     {
     "completed_requests": {
