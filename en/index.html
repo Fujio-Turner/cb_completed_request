@@ -1526,7 +1526,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         }
 
         const totalKernTime = calculateTotalKernTime(request.plan);
-        const totalExecTime = calculateTotalExecTime(request.plan);
+        // Use overall query elapsed time instead of summing operator exec times
+        const totalElapsedTimeMs = request.elapsedTimeMs || parseTime(request.elapsedTime) || 0;
         const operators = getOperators(request.plan);
 
         if (operators.length === 0) {
@@ -1549,9 +1550,15 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           const execTimeMs = parseTime(execTime);
           const servTimeMs = parseTime(servTime);
 
+          // Calculate effective time: execTime + servTime (if servTime exists)
+          const effectiveTimeMs = !isNaN(execTimeMs) ? execTimeMs : 0;
+          const additionalServTime = !isNaN(servTimeMs) ? servTimeMs : 0;
+          const totalOperatorTime = effectiveTimeMs + additionalServTime;
+
+          // Calculate percentage based on total elapsed time of the query
           const percentage =
-            totalExecTime > 0 && !isNaN(execTimeMs)
-              ? ((execTimeMs / totalExecTime) * 100).toFixed(2)
+            totalElapsedTimeMs > 0 && totalOperatorTime > 0
+              ? ((totalOperatorTime / totalElapsedTimeMs) * 100).toFixed(2)
               : "N/A";
 
           const bubble = document.createElement("div");
@@ -1570,7 +1577,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           // Build the HTML content
           let bubbleContent = `
                     <h4>${operatorName}</h4>
-                    <p>${formatTime(execTimeMs)} (${percentage}%)</p>`;
+                    <p>${formatTime(totalOperatorTime)} (${percentage}%)</p>`;
 
           // Add servTime if available
           if (servTime !== "N/A" && !isNaN(servTimeMs) && servTimeMs > 0) {
