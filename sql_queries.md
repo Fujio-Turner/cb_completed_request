@@ -42,3 +42,16 @@ WHERE
     UPPER(IFMISSING(preparedText, statement)) NOT LIKE '% SYSTEM:%' 
     LIMIT 2000 ;
 ```
+
+
+#### Query to look for parts of SQL Strings Only
+
+```sql
+SELECT
+    *, 
+    meta().plan
+FROM 
+    system:completed_requests 
+WHERE  
+CONTAINS(`statement`,"SELECT *");
+```

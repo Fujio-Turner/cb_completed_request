@@ -140,9 +140,34 @@ docker rmi fujioturner/couchbase-query-analyzer:dev-<old-sha>
 
 ## 🔄 Step-by-Step Update Process
 
+### Step 0: Create Release Log
+Before starting any updates, create a copy of the release template to track all changes:
+```bash
+# Copy template with current datetime
+cp settings/release.template settings/release_$(date +%Y%m%d_%H%M%S).txt
+
+# Open the copied file and update it throughout the release process
+```
+
+**📝 IMPORTANT**: Update the release log file after each step to document what changes were made and to which files.
+
 ### Step 1: Determine Version Type
-- Assess the changes made since last version
-- Choose appropriate version increment (MAJOR/MINOR/PATCH)
+**FIRST:** Use [VERSION_CALCULATION_GUIDE.md](VERSION_CALCULATION_GUIDE.md) to analyze your changes and determine the appropriate version number.
+
+The VERSION_CALCULATION_GUIDE.md provides:
+- Current version detection commands
+- Change analysis framework (MAJOR/MINOR/PATCH)
+- Version calculation formulas
+- Decision documentation template
+- **No files are modified** - it's a "dry run" planning tool
+
+**After completing VERSION_CALCULATION_GUIDE.md, you should have:**
+- Current version: `_____________`
+- New version: `_____________`
+- Version type: `[MAJOR/MINOR/PATCH]`
+- Documented reasoning for the version choice
+
+**Proceed with the steps below only after you have determined your version numbers using VERSION_CALCULATION_GUIDE.md.**
 
 ### Step 2: Update HTML Files
 For each HTML file (`index.html`, `de_index.html`, `es_index.html`, `pt_index.html`):
@@ -188,7 +213,14 @@ For each HTML file (`index.html`, `de_index.html`, `es_index.html`, `pt_index.ht
    - Perform spell checking on all README files
    - Update Release Notes section with new version information (reverse chronological order)
 
-### Step 4: Verification
+### Step 4: Update Release Log
+After completing all version updates, update your release log file with:
+- Final version numbers
+- List of all files modified
+- Date of completion
+- Any special notes or issues encountered
+
+### Step 5: Verification
 
 Run these checks to ensure all versions are updated:
 
@@ -261,5 +293,13 @@ When updating to version X.X.X:
 
 ## 📚 Related Files
 
-- [LOCALIZATION_GUIDE.md](LOCALIZATION_GUIDE.md) - For language-specific updates
-- [AGENT.md](../AGENT.md) - Main project documentation
+- **[VERSION_CALCULATION_GUIDE.md](VERSION_CALCULATION_GUIDE.md)** - Determine version number before using this guide (REQUIRED FIRST STEP)
+- **[RELEASE_GUIDE.md](RELEASE_GUIDE.md)** - Master guide for complete releases (combines this guide with others)  
+- **[LOCALIZATION_GUIDE.md](LOCALIZATION_GUIDE.md)** - For language-specific updates
+- **[settings/release.template](release.template)** - Template for tracking release changes
+- **[AGENT.md](../AGENT.md)** - Main project documentation
+
+## 🔄 Usage Context
+
+- **Use this guide independently:** When testing version updates without localization changes
+- **Use via RELEASE_GUIDE.md:** When performing a complete release with version + localization updates

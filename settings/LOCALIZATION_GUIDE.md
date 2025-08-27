@@ -25,6 +25,8 @@ This project now uses **separate files** for different aspects:
 
 When making changes to `README.md`, use this process to update the localized versions:
 
+**📝 RELEASE LOG REMINDER**: If this is part of a release process, update your settings/release_YYYYMMDD_HHMMSS.txt file with the changes made.
+
 ```text
 I've made changes to README.md. Please update README.de.md, README.es.md, and README.pt.md using the settings/translations.json file.
 
@@ -73,6 +75,8 @@ Each README should specify the correct HTML file:
 
 **🚀 SIMPLIFIED APPROACH**: When `index.html` is working correctly and localized versions have issues, use this backup-and-copy method:
 
+**📝 RELEASE LOG REMINDER**: If this is part of a release process, update your settings/release_YYYYMMDD_HHMMSS.txt file with each HTML file updated.
+
 ```text
 I need to synchronize the localized HTML files with the working en/index.html. Please follow this process:
 
@@ -102,6 +106,8 @@ This method ensures JavaScript functionality is identical across all versions wh
 ### Alternative: Individual Function Sync Process
 
 If you prefer to sync individual changes, use this chat prompt template:
+
+**📝 RELEASE LOG REMINDER**: If this is part of a release process, document each HTML file change in your settings/release_YYYYMMDD_HHMMSS.txt file.
 
 ```text
 I've made changes to index.html. Please update es/index.html, pt/index.html, and de/index.html using the settings/translations.json file and settings/LOCALIZATION_GUIDE.md process.
@@ -913,3 +919,15 @@ When updating content:
 2. **Use this guide**: Follow the quick update processes above
 3. **Validate thoroughly**: Use the testing checklists and grep commands
 4. **Update settings/translations.json**: Add any new translatable strings
+
+## 📚 Related Files
+
+- **[RELEASE_GUIDE.md](RELEASE_GUIDE.md)** - Master guide for complete releases (combines this guide with others)
+- **[VERSION_UPDATE_GUIDE.md](VERSION_UPDATE_GUIDE.md)** - For version number updates
+- **[settings/translations.json](translations.json)** - Master translation mappings
+- **[settings/release.template](release.template)** - Template for tracking release changes
+
+## 🔄 Usage Context
+
+- **Use this guide independently:** When testing localization updates without version changes
+- **Use via RELEASE_GUIDE.md:** When performing a complete release with version + localization updates
