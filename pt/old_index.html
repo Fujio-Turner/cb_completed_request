@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
   <!--
     Couchbase Query Analyzer
     Version: 3.6.2
@@ -20,9 +20,9 @@
 
   <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.7.0" />
-    <meta name="last-updated" content="2025-01-24" />
-    <title>Query Analyzer v3.7.0</title>
+    <meta name="version" content="3.7.2" />
+    <meta name="last-updated" content="2025-08-27" />
+    <title>Analisador de Consultas v3.7.2</title>
     <!-- Include jQuery UI CSS -->
     <link
       rel="stylesheet"
@@ -90,7 +90,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
   <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-      v3.7.0
+      v3.7.2
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -104,7 +104,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         ></textarea>
         <textarea
           id="indexJsonInput"
-          placeholder="Click the 'Indexes' tab below to get the SQL query to run. Paste the results here..."
+          placeholder="Click the 'Índices' tab below to get the SQL query to run. Paste the results here..."
           aria-label="Index JSON input field"
           role="textbox"
         ></textarea>
@@ -147,7 +147,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         <!-- Date range controls in a vertical stack -->
         <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-start;">
           <div style="display: flex; align-items: center; gap: 5px;">
-            <label for="start-date" style="width: 40px; text-align: left;">From:</label>
+            <label for="start-date" style="width: 40px; text-align: left;">De:</label>
             <input
               type="datetime-local"
               id="start-date"
@@ -156,7 +156,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             />
           </div>
           <div style="display: flex; align-items: center; gap: 5px;">
-            <label for="end-date" style="width: 40px; text-align: left;">To:</label>
+            <label for="end-date" style="width: 40px; text-align: left;">Até:</label>
             <input
               type="datetime-local"
               id="end-date"
@@ -171,7 +171,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           <input
             type="text"
             id="sql-statement-filter"
-            placeholder="Filter SQL++ Statement Contains"
+            placeholder="Filtrar Declaração SQL++ Contém"
             title="Filter SQL++ statements during JSON parsing"
             style="width: 200px;"
           />
@@ -201,11 +201,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       <ul role="tablist" aria-label="Analysis views">
         <li role="tab">
           <a href="#dashboard" aria-controls="dashboard" tabindex="0"
-            >Dashboard</a
+            >Painel de Controle</a
           >
         </li>
         <li role="tab">
-          <a href="#timeline" aria-controls="timeline" tabindex="0">Timeline</a>
+          <a href="#timeline" aria-controls="timeline" tabindex="0">Linha do Tempo</a>
         </li>
         <li role="tab">
           <a href="#analysis" aria-controls="analysis" tabindex="0"
@@ -214,7 +214,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         </li>
         <li role="tab">
           <a href="#every-query" aria-controls="every-query" tabindex="0"
-            >Every Query</a
+            >Cada Consulta</a
           >
         </li>
         <li role="tab">
@@ -222,11 +222,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             href="#index-query-flow"
             aria-controls="index-query-flow"
             tabindex="0"
-            >Index/Query Flow</a
+            >Fluxo de Índice/Consulta</a
           >
         </li>
         <li role="tab">
-          <a href="#indexes" aria-controls="indexes" tabindex="0">Indexes</a>
+          <a href="#indexes" aria-controls="indexes" tabindex="0">Índices</a>
         </li>
       </ul>
 
@@ -244,13 +244,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           </div>
           <!-- Primary Index(es) Scan Used Chart -->
           <div class="chart-container height-300">
-            <h3 class="chart-title fixed-height">Primary Indexes Used</h3>
+            <h3 class="chart-title fixed-height">Índices Primários Utilizados</h3>
             <div class="chart-flex-container">
               <div class="flex-1 position-relative">
                 <canvas id="primary-scan-chart"></canvas>
               </div>
               <div id="primary-scan-warning" class="warning-box">
-                <div class="warning-title">⚠️ WARNING ⚠️</div>
+                <div class="warning-title">⚠️ AVISO ⚠️</div>
                 <div class="warning-text">
                   Primary index scans in production can cause full bucket scans
                   leading to
@@ -276,7 +276,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         <div class="pattern-analysis-grid">
           <!-- Query Pattern Features Bar Chart -->
           <div class="chart-container with-margin-top-20">
-            <h3 class="chart-title fixed-height">Query Pattern Features</h3>
+            <h3 class="chart-title fixed-height">Características do Padrão de Consulta</h3>
             <div class="height-350-relative">
               <canvas id="query-pattern-chart"></canvas>
             </div>
@@ -287,13 +287,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         <div class="dashboard-tables-grid">
           <!-- User Query Count Table -->
           <div class="table-container with-margin-top-40">
-            <h3 class="chart-title">Users by Query Count</h3>
+            <h3 class="chart-title">Usuários por Contagem de Consultas</h3>
             <div class="table-scroll">
               <table id="user-count-table" class="table-full">
                 <thead class="sticky-header">
                   <tr>
-                    <th class="width-80px">Count</th>
-                    <th>User</th>
+                    <th class="width-80px">Contagem</th>
+                    <th>Usuário</th>
                   </tr>
                 </thead>
                 <tbody id="user-count-body"></tbody>
@@ -303,7 +303,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
           <!-- Index Usage Count Table -->
           <div class="table-container with-margin-top-40">
-            <h3 class="chart-title">Index Usage Count</h3>
+            <h3 class="chart-title">Contagem de Uso de Índices</h3>
             <div class="table-subheader">
               Note: #primary count shows total operations, not unique queries
             </div>
@@ -332,7 +332,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         <div class="grid-2-col gap-20 margin-bottom-20">
           <!-- Statement Type Pie Chart -->
           <div class="chart-card">
-            <h3 class="chart-card-header">Statement Type</h3>
+            <h3 class="chart-card-header">Tipo de Declaração</h3>
             <div class="chart-card-content">
               <canvas id="statement-type-chart"></canvas>
             </div>
@@ -340,7 +340,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
           <!-- Query State Pie Chart -->
           <div class="chart-card">
-            <h3 class="chart-card-header">Query State</h3>
+            <h3 class="chart-card-header">Estado da Consulta</h3>
             <div class="chart-card-content">
               <canvas id="state-chart"></canvas>
             </div>
@@ -355,7 +355,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             Reset Zoom
           </button>
           <div class="margin-left-20" style="display: inline-block; background: #f8f9fa; padding: 6px 10px; border-radius: 4px; border: 1px solid #dee2e6;">
-            <label style="font-weight: bold; margin-right: 8px; color: #495057;">Y-Axis Scale:</label>
+            <label style="font-weight: bold; margin-right: 8px; color: #495057;">Escala do Eixo Y:</label>
             <label
               ><input
                 type="radio"
@@ -377,12 +377,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             >
           </div>
           <span class="margin-left-30">
-            <label style="font-weight: bold; margin-right: 8px; color: #495057;">Time Grouping:</label>
+            <label style="font-weight: bold; margin-right: 8px; color: #495057;">Agrupamento de Tempo:</label>
             <select id="time-grouping-select" onchange="changeTimeGrouping()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px;">
               <option value="optimizer">By Optimizer (...)</option>
-              <option value="hour">By Hour</option>
-              <option value="minute">By Minute</option>
-              <option value="second">By Second</option>
+              <option value="hour">Por Hora</option>
+              <option value="minute">Por Minuto</option>
+              <option value="second">Por Segundo</option>
             </select>
           </span>
           <span class="color-666 font-size-12 margin-left-20">
@@ -452,12 +452,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 <label
                   for="analysis-statement-search"
                   class="font-bold-margin-right"
-                  >Search Statement:</label
+                  >Buscar Declaração:</label
                 >
                 <input
                   type="text"
                   id="analysis-statement-search"
-                  placeholder="Search in SQL++ statements..."
+                  placeholder="Buscar em declarações SQL++..."
                   class="form-input"
                 />
               </div>
@@ -465,12 +465,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 <label
                   for="analysis-username-search"
                   class="font-bold-margin-right"
-                  >Search Username:</label
+                  >Buscar Usuário:</label
                 >
                 <input
                   type="text"
                   id="analysis-username-search"
-                  placeholder="Search usernames..."
+                  placeholder="Buscar usuários..."
                   class="form-input-small"
                 />
               </div>
@@ -509,23 +509,23 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             <div class="gap-15 display-flex-center display-flex-wrap">
               <div>
                 <label for="statement-search" class="font-bold-margin-right"
-                  >Search Statement:</label
+                  >Buscar Declaração:</label
                 >
                 <input
                   type="text"
                   id="statement-search"
-                  placeholder="Search in SQL++ statements..."
+                  placeholder="Buscar em declarações SQL++..."
                   class="form-input"
                 />
               </div>
               <div>
                 <label for="username-search" class="font-bold-margin-right"
-                  >Search Username:</label
+                  >Buscar Usuário:</label
                 >
                 <input
                   type="text"
                   id="username-search"
-                  placeholder="Search usernames..."
+                  placeholder="Buscar usuários..."
                   class="form-input-small"
                 />
               </div>
@@ -596,7 +596,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               <input
                 type="text"
                 id="indexSearch"
-                placeholder="Search indexes..."
+                placeholder="Buscar índices..."
                 class="width-90 padding-8 border-radius-4 font-size-14"
                 style="border: 1px solid #ccc"
               />
@@ -610,7 +610,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 class="width-100 padding-8 border-radius-4"
                 style="border: 1px solid #ccc"
               >
-                <option value="(ALL)">(ALL)</option>
+                <option value="(ALL)">(TODOS)</option>
               </select>
             </div>
             <div>
@@ -622,7 +622,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 class="width-100 padding-8 border-radius-4"
                 style="border: 1px solid #ccc"
               >
-                <option value="(ALL)">(ALL)</option>
+                <option value="(ALL)">(TODOS)</option>
               </select>
             </div>
             <div>
@@ -636,7 +636,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 class="width-100 padding-8 border-radius-4"
                 style="border: 1px solid #ccc"
               >
-                <option value="(ALL)">(ALL)</option>
+                <option value="(ALL)">(TODOS)</option>
               </select>
             </div>
             <div>
@@ -648,9 +648,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 class="width-100 padding-8 border-radius-4"
                 style="border: 1px solid #ccc"
               >
-                <option value="Name">Name</option>
+                <option value="Name">Nome</option>
                 <option value="Bucket">Bucket</option>
-                <option value="LastScanned">Last Scanned</option>
+                <option value="LastScanned">Última Verificação</option>
               </select>
             </div>
           </div>
@@ -676,14 +676,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             "
           >
             <div>
-              <strong>Total Indexes:</strong> <span id="stat-indexes">0</span>
+              <strong>Total de Índices:</strong> <span id="stat-indexes">0</span>
             </div>
             <div>
               <strong>Buckets:</strong> <span id="stat-buckets">0</span>
             </div>
-            <div><strong>Scopes:</strong> <span id="stat-scopes">0</span></div>
+            <div><strong>Escopos:</strong> <span id="stat-scopes">0</span></div>
             <div>
-              <strong>Collections:</strong> <span id="stat-collections">0</span>
+              <strong>Coleções:</strong> <span id="stat-collections">0</span>
             </div>
           </div>
           <div
@@ -696,7 +696,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           >
             <div style="display: flex; align-items: center; gap: 8px">
               <span
-                ><strong>Primary Indexes:</strong>
+                ><strong>Índices Primários:</strong>
                 <span id="stat-primary">0</span></span
               >
               <label
@@ -713,7 +713,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             </div>
             <div style="display: flex; align-items: center; gap: 8px">
               <span
-                ><strong>Used/Total Indexes:</strong>
+                ><strong>Índices Usados/Total:</strong>
                 <span id="stat-used-total">0/0</span></span
               >
               <label
@@ -739,7 +739,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           >
             <div style="display: flex; align-items: center; gap: 8px">
               <span
-                ><strong>Without/With Replica:</strong>
+                ><strong>Sem/Com Réplica:</strong>
                 <span id="stat-replica-info">0/0</span></span
               >
               <label
@@ -760,7 +760,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             </div>
             <div style="display: flex; align-items: center; gap: 8px">
               <span
-                ><strong>Never Scanned Indexes:</strong>
+                ><strong>Índices Nunca Verificados:</strong>
                 <span id="stat-never-scanned">0</span></span
               >
               <label
@@ -790,7 +790,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           >
             <div style="display: flex; align-items: center; gap: 8px">
               <span
-                ><strong>Sync Gateway Indexes:</strong>
+                ><strong>Índices do Sync Gateway:</strong>
                 <span id="stat-mobile-indexes">0</span></span
               >
               <label
@@ -864,7 +864,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               2. Run it in Couchbase Query Workbench<br />
               3. Copy the JSON results<br />
               4. Paste into the second textarea ,on the right, at the top<br />
-              5. Click "Parse JSON" again
+              5. Click "Analisar JSON" again
             </p>
           </div>
         </div>
@@ -1445,9 +1445,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           navigator.clipboard
             .writeText(text)
             .then(() => {
-              button.textContent = "Copied!";
+              button.textContent = "Kopiert!";
               setTimeout(() => {
-                button.textContent = "Copy Stats";
+                button.textContent = "Statistiken Kopieren";
               }, 2000);
             })
             .catch((err) => {
@@ -1721,7 +1721,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             /'/g,
             "\\'"
           )}', event)" 
-                        class="btn-standard" style="background: #4CAF50;">Copy All</button>`;
+                        class="btn-standard" style="background: #4CAF50;">Copiar Tudo</button>`;
           html += "</div>";
           html += '<div style="display: flex; flex-wrap: wrap; gap: 10px;">';
           indexesAndKeys.indexes.forEach((index) => {
@@ -1747,7 +1747,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               /'/g,
               "\\'"
             )}', event)" 
-                            class="btn-standard" style="background: #ff9800;">Copy All</button>`;
+                            class="btn-standard" style="background: #ff9800;">Copiar Tudo</button>`;
             html += "</div>";
 
             const maxKeysToShow = 15;
@@ -2179,7 +2179,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           column === "Primary Scan Used" ||
           cleanColumn === "Primary Scan Used"
         ) {
-          return value === "Yes" ? 1 : 0;
+          return value === "Sim" ? 1 : 0;
         }
         if (column === "statementType" || cleanColumn === "statement Type") {
           return String(value || "").toLowerCase();
@@ -2273,10 +2273,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             arrow.style.marginTop = "2px";
 
             if (direction === "asc") {
-              arrow.textContent = "▲ ASC";
+              arrow.textContent = "▲ AUF";
               arrow.style.color = "#28a745";
             } else {
-              arrow.textContent = "▼ DESC";
+              arrow.textContent = "▼ AB";
               arrow.style.color = "#dc3545";
             }
 
@@ -2289,7 +2289,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             sortHint.style.color = "#6c757d";
             sortHint.style.fontWeight = "normal";
             sortHint.style.marginTop = "2px";
-            sortHint.textContent = "↕ Sort";
+            sortHint.textContent = "↕ Sortieren";
             th.appendChild(sortHint);
           }
         });
@@ -2421,7 +2421,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         });
 
         const jumpLabel = document.createElement("span");
-        jumpLabel.textContent = "Go to page: ";
+        jumpLabel.textContent = "Zu Seite: ";
         jumpLabel.style.marginLeft = "20px";
 
         paginationDiv.appendChild(prevButton);
@@ -2669,7 +2669,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           sortHint.style.color = "#6c757d";
           sortHint.style.fontWeight = "normal";
           sortHint.style.marginTop = "2px";
-          sortHint.textContent = "↕ Sort";
+          sortHint.textContent = "↕ Sortieren";
           th.appendChild(sortHint);
 
           th.addEventListener("click", () => {
@@ -2713,7 +2713,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           ].forEach((col) => {
             let value;
             if (col === "Primary Scan Used") {
-              value = request.usesPrimary ? "Yes" : "No";
+              value = request.usesPrimary ? "Sim" : "Não";
             } else if (col === "Items from Index Scan") {
               if (request.indexInfo) {
                 const stats = request.indexInfo.stats;
@@ -2893,17 +2893,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <span>${truncated}...</span>
                     <br>
                     <button onclick="toggleStatement('${statementId}', true)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Show More</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Mostrar Mais</button>
                     <button onclick="copyStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                   <div id="${statementId}-full" style="display: none;">
                     <span>${statement}</span>
                     <br>
                     <button onclick="toggleStatement('${statementId}', false)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Hide</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Ocultar</button>
                     <button onclick="copyStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                 `;
               } else {
@@ -2913,7 +2913,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <span>${statement}</span>
                     <br>
                     <button onclick="copyStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                 `;
               }
@@ -2929,7 +2929,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
             if (
               col === "Primary Scan\nUsed" &&
-              (value === "Yes" || value === "True" || value === true)
+              (value === "Sim" || value === "True" || value === true)
             ) {
               td.classList.add("primary-scan-yes");
             }
@@ -2993,7 +2993,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             // Show brief feedback
             const button = event.target;
             const originalText = button.textContent;
-            button.textContent = "copied!";
+            button.textContent = "kopiert!";
             button.style.backgroundColor = "#4CAF50";
             setTimeout(() => {
               button.textContent = originalText;
@@ -3037,7 +3037,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             // Show brief feedback
             const button = event.target;
             const originalText = button.textContent;
-            button.textContent = "copied!";
+            button.textContent = "kopiert!";
             button.style.backgroundColor = "#4CAF50";
             setTimeout(() => {
               button.textContent = originalText;
@@ -3283,17 +3283,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <span>${truncated}...</span>
                     <br>
                     <button onclick="toggleAnalysisStatement('${statementId}', true)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Show More</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Mostrar Mais</button>
                     <button onclick="copyAnalysisStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                   <div id="${statementId}-full" style="display: none;">
                     <span>${statement}</span>
                     <br>
                     <button onclick="toggleAnalysisStatement('${statementId}', false)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Hide</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Ocultar</button>
                     <button onclick="copyAnalysisStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                 `;
               } else {
@@ -3303,7 +3303,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <span>${statement}</span>
                     <br>
                     <button onclick="copyAnalysisStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
+                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
                   </div>
                 `;
               }
@@ -3814,7 +3814,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 order: 2,
               },
               {
-                label: "Avg Index Scans per Query",
+                label: "Varreduras de Índice Médias por Consulta",
                 data: avgIndexScanData,
                 type: "line",
                 backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
@@ -3833,7 +3833,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Database Operations Timeline: Index Scans vs Document Fetches",
+                text: "Linha do Tempo de Operações de Banco de Dados: Varreduras de Índice vs Recuperação de Documentos",
               },
               legend: {
                 display: true,
@@ -3973,7 +3973,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "right",
                 title: {
                   display: true,
-                  text: "Avg Index Scans per Query",
+                  text: "Varreduras de Índice Médias por Consulta",
                 },
                 beginAtZero: true,
                 grid: {
@@ -4105,7 +4105,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Filter Operations Timeline: Efficiency Analysis (IN vs OUT)",
+                text: "Linha do Tempo de Operações de Filtro: Análise de Eficiência (ENTRADA vs SAÍDA)",
               },
               legend: {
                 display: true,
@@ -4464,7 +4464,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Query Performance Timeline: KernTime % of ExecutionTime",
+                text: "Linha do Tempo de Desempenho de Consultas: % de KernTime do Tempo de Execução",
               },
               legend: {
                 display: true,
@@ -5327,7 +5327,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 order: 2,
               },
               {
-                label: "Avg per Query (MB)",
+                label: "Média por Consulta (MB)",
                 data: avgMemoryData,
                 type: "line",
                 backgroundColor: "#fd7e14", // Orange
@@ -5345,7 +5345,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Total Query Process Memory Usage",
+                text: "Uso Total de Memória do Processo de Consultas",
               },
               legend: {
                 display: true,
@@ -5478,7 +5478,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "right",
                 title: {
                   display: true,
-                  text: "Avg per Query (MB)",
+                  text: "Média por Consulta (MB)",
                 },
                 beginAtZero: true,
                 grid: {
@@ -5549,7 +5549,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             labels: labels,
             datasets: [
               {
-                label: "Total Result Count",
+                label: "Contagem Total de Resultados",
                 data: resultCountData,
                 backgroundColor: "rgba(144, 238, 144, 0.8)", // Light green
                 borderColor: "rgba(144, 238, 144, 1)",
@@ -5558,7 +5558,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 order: 2,
               },
               {
-                label: "Avg Result Count per Query",
+                label: "Contagem Média de Resultados por Consulta",
                 data: avgResultCountData,
                 type: "line",
                 backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
@@ -5577,7 +5577,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Result Count Analysis: Total vs Average per Query",
+                text: "Análise de Contagem de Resultados: Total vs Média por Consulta",
               },
               legend: {
                 display: true,
@@ -5638,7 +5638,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "left",
                 title: {
                   display: true,
-                  text: "Total Result Count",
+                  text: "Contagem Total de Resultados",
                 },
                 beginAtZero: true,
               },
@@ -5718,7 +5718,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             labels: labels,
             datasets: [
               {
-                label: "Total Result Size (MB)",
+                label: "Tamanho Total de Resultados (MB)",
                 data: resultSizeData,
                 backgroundColor: "rgba(0, 100, 0, 0.8)", // Dark green
                 borderColor: "rgba(0, 100, 0, 1)",
@@ -5727,7 +5727,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 order: 2,
               },
               {
-                label: "Avg Result Size per Query (MB)",
+                label: "Tamanho Médio de Resultados por Consulta (MB)",
                 data: avgResultSizeData,
                 type: "line",
                 backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
@@ -5746,7 +5746,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Result Size Analysis: Total vs Average per Query",
+                text: "Análise de Tamanho de Resultados: Total vs Média por Consulta",
               },
               legend: {
                 display: true,
@@ -5807,7 +5807,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "left",
                 title: {
                   display: true,
-                  text: "Total Result Size (MB)",
+                  text: "Tamanho Total de Resultados (MB)",
                 },
                 beginAtZero: true,
               },
@@ -5816,7 +5816,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "right",
                 title: {
                   display: true,
-                  text: "Avg per Query (MB)",
+                  text: "Média por Consulta (MB)",
                 },
                 beginAtZero: true,
                 grid: {
@@ -6239,19 +6239,19 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const scanCounts = { Yes: 0, No: 0 };
 
         requests.forEach((request) => {
-          const primaryScan = request.usesPrimary ? "Yes" : "No";
+          const primaryScan = request.usesPrimary ? "Sim" : "Não";
           scanCounts[primaryScan]++;
         });
 
-        const total = scanCounts.Yes + scanCounts.No;
+        const total = scanCounts.Sim + scanCounts.Não;
         const yesPercent =
-          total > 0 ? ((scanCounts.Yes / total) * 100).toFixed(1) : 0;
+          total > 0 ? ((scanCounts.Sim / total) * 100).toFixed(1) : 0;
         const noPercent =
-          total > 0 ? ((scanCounts.No / total) * 100).toFixed(1) : 0;
+          total > 0 ? ((scanCounts.Não / total) * 100).toFixed(1) : 0;
 
         // Show/hide warning div based on whether primary scans are detected
         const warningDiv = document.getElementById("primary-scan-warning");
-        if (scanCounts.Yes > 0) {
+        if (scanCounts.Sim > 0) {
           warningDiv.style.display = "flex";
         } else {
           warningDiv.style.display = "none";
@@ -6267,10 +6267,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         window.primaryScanChart = new Chart(ctx, {
           type: "doughnut",
           data: {
-            labels: ["Yes", "No"],
+            labels: ["Sim", "Não"],
             datasets: [
               {
-                data: [scanCounts.Yes, scanCounts.No],
+                data: [scanCounts.Sim, scanCounts.Não],
                 backgroundColor: ["#dc3545", "#f8f9fa"],
                 borderColor: ["#dc3545", "#dee2e6"],
                 borderWidth: 2,
@@ -6873,7 +6873,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               x: {
                 title: {
                   display: true,
-                  text: "Query Pattern Features",
+                  text: "Características do Padrão de Consulta",
                 },
                 ticks: {
                   maxRotation: 45,
@@ -7209,7 +7209,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             .writeText(sanitizedText)
             .then(() => {
               const originalText = button.textContent;
-              button.textContent = "Copied!";
+              button.textContent = "Kopiert!";
               button.style.background = "#28a745";
               showToast("Copied to clipboard", "success");
               setTimeout(() => {
@@ -7219,11 +7219,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             })
             .catch((err) => {
               console.error("Failed to copy text: ", err);
-              button.textContent = "Error";
+              button.textContent = "Fehler";
               button.style.background = "#dc3545";
               showToast("Failed to copy to clipboard", "error");
               setTimeout(() => {
-                button.textContent = "Copy";
+                button.textContent = "Copiar";
                 button.style.background = "#007bff";
               }, 1000);
             });
@@ -7243,7 +7243,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
             if (successful) {
               const originalText = button.textContent;
-              button.textContent = "Copied!";
+              button.textContent = "Kopiert!";
               button.style.background = "#28a745";
               showToast("Copied to clipboard", "success");
               setTimeout(() => {
@@ -7255,11 +7255,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             }
           } catch (err) {
             console.error("Failed to copy text (fallback): ", err);
-            button.textContent = "Error";
+            button.textContent = "Fehler";
             button.style.background = "#dc3545";
             showToast("Failed to copy to clipboard", "error");
             setTimeout(() => {
-              button.textContent = "Copy";
+              button.textContent = "Copiar";
               button.style.background = "#007bff";
             }, 1000);
           }
@@ -7642,7 +7642,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           generateAnalysisTable(filteredRequests);
           buildIndexQueryFlow(filteredRequests);
           document.getElementById("flow-diagram").innerHTML =
-            "Select a query from the table to view the flow diagram.";
+            "Selecione uma consulta da tabela para visualizar o diagrama de fluxo.";
           return;
         }
 
@@ -7670,7 +7670,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           );
         }
         document.getElementById("flow-diagram").innerHTML =
-          "Select a query from the table to view the flow diagram.";
+          "Selecione uma consulta da tabela para visualizar o diagrama de fluxo.";
       }
 
       // Modal event listeners
@@ -7873,11 +7873,16 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 normalizedStatement: normalized, 
                 statement: stmt, // Add original statement for createQueryDiv
                 count: 0, 
+                totalDuration: 0, // Add totalDuration calculation
                 requests: [] 
               });
             }
-            queryGroups.get(normalized).count++;
-            queryGroups.get(normalized).requests.push(request);
+            const group = queryGroups.get(normalized);
+            group.count++;
+            // Use same logic as Analysis tab: serviceTime converted to ms
+            const durationMs = parseTime(request.serviceTime);
+            group.totalDuration += isNaN(durationMs) ? 0 : durationMs;
+            group.requests.push(request);
           }
         });
 
@@ -7894,8 +7899,29 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 itemsFetched: []
               });
             }
-            allIndexes.get(indexName).requests.push(requests[requestIndex]);
-            allIndexes.get(indexName).totalUsage++;
+            const indexObj = allIndexes.get(indexName);
+            indexObj.requests.push(requests[requestIndex]);
+            indexObj.totalUsage++;
+            
+            // Collect statistics from the request
+            const request = requests[requestIndex];
+            if (request) {
+              // Add execution time as scan time
+              const executionTime = request.elapsedTimeMs || 0;
+              if (!isNaN(executionTime)) {
+                indexObj.scanTimes.push(executionTime);
+              }
+
+              // Add phase counts as items scanned/fetched
+              if (request.phaseCounts) {
+                if (request.phaseCounts.indexScan) {
+                  indexObj.itemsScanned.push(request.phaseCounts.indexScan);
+                }
+                if (request.phaseCounts.fetch) {
+                  indexObj.itemsFetched.push(request.phaseCounts.fetch);
+                }
+              }
+            }
           });
         });
 
@@ -8054,7 +8080,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           }
           const group = queryGroups.get(normalizedStatement);
           group.count++;
-          group.totalDuration += parseTime(request.elapsedTime);
+          // Use same logic as Analysis tab: serviceTime converted to ms
+          const durationMs = parseTime(request.serviceTime);
+          group.totalDuration += isNaN(durationMs) ? 0 : durationMs;
           group.requestIndices.push(requestIndex);
         });
 
@@ -8088,10 +8116,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 indexObj.totalUsage++;
 
                 // Collect statistics from the request
-                const request = originalRequests[requestIndex];
+                const request = requestsToUse[requestIndex];
                 if (request) {
                   // Add execution time as scan time
-                  const executionTime = parseTime(request.elapsedTime);
+                  const executionTime = request.elapsedTimeMs || 0;
                   if (!isNaN(executionTime)) {
                     indexObj.scanTimes.push(executionTime);
                   }
@@ -8434,7 +8462,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             <button onclick="copyIndexName('${index.name.replace(
               /'/g,
               "\\'"
-            )}', event)" class="btn-standard" style="font-size: 11px;">Copy</button>
+            )}', event)" class="btn-standard" style="font-size: 11px;">Copiar</button>
           </div>
           <div class="index-stats" style="font-size: 13px; margin-top: 8px;">
             Avg Scan Time: <span style="${avgScanTimeStyle}">${
@@ -8493,10 +8521,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             <button onclick="toggleQueryText('${query.normalizedStatement.replace(
               /[^a-zA-Z0-9]/g,
               ""
-            )}')" class="btn-standard">Show More</button>
+            )}')" class="btn-standard">Mostrar Mais</button>
             <button class="btn-standard query-copy-btn" data-query-statement="${encodeURIComponent(
               query.statement
-            )}">Copy</button>
+            )}">Copiar</button>
           </div>
         `;
 
@@ -8773,10 +8801,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
         if (element.classList.contains("expanded")) {
           element.classList.remove("expanded");
-          button.textContent = "Show More";
+          button.textContent = "Mostrar Mais";
         } else {
           element.classList.add("expanded");
-          button.textContent = "Hide";
+          button.textContent = "Ocultar";
         }
       }
 
@@ -8785,7 +8813,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           // Brief visual feedback
           const button = event ? event.target : window.event.target;
           const originalText = button.textContent;
-          button.textContent = "Copied!";
+          button.textContent = "Kopiert!";
           button.style.backgroundColor = "#4CAF50";
           setTimeout(() => {
             button.textContent = originalText;
@@ -8800,7 +8828,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           const button = event.target;
           const originalText = button.textContent;
           const originalBg = button.style.backgroundColor;
-          button.textContent = "Copied!";
+          button.textContent = "Kopiert!";
           button.style.backgroundColor = "#4CAF50";
           setTimeout(() => {
             button.textContent = originalText;
@@ -8816,7 +8844,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           const button = event.target;
           const originalText = button.textContent;
           const originalBg = button.style.backgroundColor;
-          button.textContent = "Copied!";
+          button.textContent = "Kopiert!";
           button.style.backgroundColor = "#28a745";
           setTimeout(() => {
             button.textContent = originalText;
@@ -8848,8 +8876,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
       // Version management
-      const APP_VERSION = "3.7.0";
-const LAST_UPDATED = "2025-01-24";
+      const APP_VERSION = "3.7.2";
+const LAST_UPDATED = "2025-08-27";
 
       function getVersionInfo() {
         return {
@@ -9198,7 +9226,7 @@ const LAST_UPDATED = "2025-01-24";
         const currentValue = select.value;
 
         // Clear existing options except (ALL)
-        select.innerHTML = '<option value="(ALL)">(ALL)</option>';
+        select.innerHTML = '<option value="(ALL)">(TODOS)</option>';
 
         // Add new options
         options.forEach((option) => {
@@ -9338,7 +9366,7 @@ const LAST_UPDATED = "2025-01-24";
                                 To analyze indexes, run this query in your Couchbase Query Workbench and paste the results in the second textarea above:
                             </p>
                             <div class="sql-query-box">
-                                <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">Copy Query</button>
+                                <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">Copiar Consulta</button>
                                 <pre>SELECT 
  s.name,
  s.id,
@@ -9362,7 +9390,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                                 2. Run it in Couchbase Query Workbench<br>
                                 3. Copy the JSON results<br>
                                 4. Paste into the second textarea at the top<br>
-                                5. Click "Parse JSON" again
+                                5. Click "Analisar JSON" again
                             </p>
                         </div>
                     `;
@@ -9489,7 +9517,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         <button class="btn-standard copy-btn" onclick="copyIndexDefinition('${index.indexString.replace(
                           /'/g,
                           "\\'"
-                        )}', event)">Copy</button>
+                        )}', event)">Copiar</button>
                     </div>
                 </div>
             `;
@@ -9502,7 +9530,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
           .then(() => {
             const button = event.target;
             const originalText = button.textContent;
-            button.textContent = "Copied!";
+            button.textContent = "Kopiert!";
             button.style.backgroundColor = "#28a745";
             setTimeout(() => {
               button.textContent = originalText;
@@ -9538,7 +9566,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
           .then(() => {
             const button = event.target;
             const originalText = button.textContent;
-            button.textContent = "Copied!";
+            button.textContent = "Kopiert!";
             button.style.backgroundColor = "#28a745";
             setTimeout(() => {
               button.textContent = originalText;

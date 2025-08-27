@@ -1,0 +1,580 @@
+Generated: Wed Aug 27 01:25:51 CDT 2025
+File: es/index.html
+Total Lines:     9712
+
+=== 1. HTML LABELS & BUTTONS ===
+Pattern: Untranslated form labels, button text, placeholders, and tooltips
+
+92:    <div class="version-info" title="Couchbase Query Analyzer Version">
+101:          placeholder="Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;"
+107:          placeholder="Click the 'Índices' tab below to get the SQL query to run. Paste the results here..."
+136:            title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
+141:            title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
+155:              title="Start date/time for filtering"
+164:              title="End date/time for filtering"
+174:            placeholder="Filtrar Declaración SQL++ Contiene"
+175:            title="Filter SQL++ statements during JSON parsing"
+460:                  placeholder="Buscar en declaraciones SQL++..."
+473:                  placeholder="Buscar usuarios..."
+517:                  placeholder="Buscar en declaraciones SQL++..."
+528:                  placeholder="Buscar usuarios..."
+599:                placeholder="Buscar índices..."
+1405:        html += `<button class="btn-standard" onclick="copyOperatorStats(this)">Copy Stats</button>`;
+9369:                                <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">Copiar Consulta</button>
+
+📊 Found       16 items needing attention
+
+=== 2. JAVASCRIPT STRING LITERALS ===
+Pattern: Dynamic text assignments in JavaScript code
+
+1448:              button.textContent = "Kopiert!";
+1450:                button.textContent = "Statistiken Kopieren";
+1496:          flowDiagram.textContent = "No execution plan available.";
+1505:          flowDiagram.textContent = "No operators found in the execution plan.";
+2264:            if (oldHint && oldHint.textContent === "↕ Sort") {
+2276:              arrow.textContent = "▲ AUF";
+2279:              arrow.textContent = "▼ AB";
+2292:            sortHint.textContent = "↕ Sortieren";
+2424:        jumpLabel.textContent = "Zu Seite: ";
+2672:          sortHint.textContent = "↕ Sortieren";
+7212:              button.textContent = "Kopiert!";
+7222:              button.textContent = "Fehler";
+7226:                button.textContent = "Copiar";
+7246:              button.textContent = "Kopiert!";
+7258:            button.textContent = "Fehler";
+7262:              button.textContent = "Copiar";
+8804:          button.textContent = "Mostrar Más";
+8807:          button.textContent = "Ocultar";
+8816:          button.textContent = "Kopiert!";
+8831:          button.textContent = "Kopiert!";
+8847:          button.textContent = "Kopiert!";
+8867:            toggleBtn.textContent = "Hide Keys";
+9229:        select.innerHTML = '<option value="(ALL)">(TODOS)</option>';
+9533:            button.textContent = "Kopiert!";
+9569:            button.textContent = "Kopiert!";
+
+📊 Found       25 items needing attention
+
+=== 3. CHART CONFIGURATIONS ===
+Pattern: Chart.js titles, labels, and legend text
+
+3799:                label: "Fetch Documents",
+3808:                label: "Index Scan Items",
+3817:                label: "Escaneos de Índice Promedio por Consulta",
+4070:                label: "Filters: IN = OUT",
+4080:                label: "Filters: IN ≠ OUT",
+4090:                label: "Efficiency %",
+5321:                label: "Memory Usage (MB)",
+5330:                label: "Promedio por Consulta (MB)",
+5552:                label: "Conteo Total de Resultados",
+5561:                label: "Conteo Promedio de Resultados por Consulta",
+5721:                label: "Tamaño Total de Resultados (MB)",
+5730:                label: "Tamaño Promedio de Resultados por Consulta (MB)",
+6270:            labels: ["Sí", "No"],
+6642:                label: "Query Count",
+6842:                label: "Query Count",
+
+📊 Found       15 items needing attention
+
+=== 4. TEMPLATE LITERALS & CONCATENATION ===
+Pattern: Template literals and string concatenation with English text
+
+✅ No untranslated content found in this category
+
+=== 5. CONSOLE/ALERT MESSAGES ===
+Pattern: Debug messages and user dialogs
+
+1122:        console.log("🔍 SQL Filter text:", sqlFilterText);
+1123:        console.log("📝 Original requests:", requests.length);
+1142:        console.log("✅ Filtered requests:", filtered.length);
+2986:          alert("Statement not found");
+3005:            alert("Failed to copy to clipboard");
+3030:          alert("Statement not found");
+3049:            alert("Failed to copy to clipboard");
+7772:              console.log("🎯 Index/Query Flow tab activated (always rebuild)");
+7776:                console.log("🔄 Tab activation: Full render from existing indexQueryFlowData");
+7782:                console.log("  📊 Rendering with - Indexes:", indexes.length, "Queries:", queries.length);
+7786:                console.log("✅ Index/Query Flow full render complete");
+7824:        console.log("📊 Processing Index/Query data structures only (no DOM rendering)");
+7958:        console.log("📊 Updated counts - Indexes:", allIndexes.size, "Queries:", queryGroups.size);
+7959:        console.log("📊 Populated indexQueryFlowData for SVG rendering");
+7987:        console.log("🔧 buildIndexQueryFlow called with requests:", requestsToUse?.length || 0);
+7990:          console.log("❌ No requests available for Index/Query Flow");
+8005:          console.log("⏸️ Index/Query Flow tab hidden, processing data only");
+8010:        console.log("✅ Index/Query Flow tab is visible, proceeding with rendering");
+8166:        console.log("🚀 About to call renderIndexQueryFlow with:");
+8167:        console.log("  📋 sortedIndexes:", sortedIndexes.length);
+8168:        console.log("  📋 sortedQueries:", sortedQueries.length);
+8169:        console.log("  📋 indexQueryFlowData.connections:", indexQueryFlowData.connections.size);
+8338:        console.log("🎨 renderIndexQueryFlow called with:");
+8339:        console.log("  📋 Indexes:", indexes.length, "items");
+8340:        console.log("  📋 Queries:", queries.length, "items");
+8341:        console.log("  📋 indexQueryFlowData.connections size:", indexQueryFlowData.connections.size);
+9639:        console.log("✅ Index analysis initialized");
+9643:        console.log("🚀 Initializing Couchbase Query Analyzer...");
+9645:        console.log("🔧 Features:", getVersionInfo().features.join(", "));
+9685:        console.log("✅ Query Analyzer initialized successfully");
+9708:        console.log("💡 Tip: Type QueryAnalyzer.about() for full app info");
+
+📊 Found       31 items needing attention
+
+=== 6. USER-FACING COMMENTS ===
+Pattern: HTML comments that users might see in source view
+
+26:    <!-- Include jQuery UI CSS -->
+31:    <!-- Include Chart.js -->
+33:    <!-- Include Chart.js datetime adapter -->
+35:    <!-- Include Chart.js zoom plugin -->
+37:    <!-- Include Hammer.js for touch/gesture support -->
+39:    <!-- Include DOMPurify for security -->
+84:    <!-- Include Panzoom, jQuery, and jQuery UI -->
+91:    <!-- Version info -->
+96:    <!-- Input Section (outside tabs) -->
+147:        <!-- Date range controls in a vertical stack -->
+169:        <!-- SQL Statement Filter -->
+198:    <!-- Tabs Container -->
+200:      <!-- Tab Headers -->
+233:      <!-- Dashboard Tab Content -->
+236:          <!-- Elapsed Time Distribution Bar Chart -->
+245:          <!-- Primary Index(es) Scan Used Chart -->
+275:        <!-- Query Pattern Analysis Row -->
+277:          <!-- Query Pattern Features Bar Chart -->
+286:        <!-- Data Tables Row -->
+288:          <!-- User Query Count Table -->
+304:          <!-- Index Usage Count Table -->
+333:          <!-- Statement Type Pie Chart -->
+341:          <!-- Query State Pie Chart -->
+351:      <!-- Timeline Tab Content -->
+436:      <!-- Analysis Tab Content -->
+445:          <!-- Search Controls for Analysis Table -->
+498:      <!-- Every Query Tab Content -->
+504:          <!-- Search Controls -->
+550:      <!-- Index/Query Flow Tab Content -->
+555:          <!-- Summary counts above the flow chart -->
+583:      <!-- Indexes Tab Content -->
+585:        <!-- Filter Controls -->
+587:          <!-- First row: Search, Bucket, Scope, Collection, Sort -->
+659:        <!-- Stats Panel -->
+816:        <!-- Results Panel -->
+873:    <!-- Modals (outside tabs) -->
+
+📊 Found       36 items needing attention
+
+
+=== ADDITIONAL CHECKS ===
+🔍 COMMON ENGLISH WORDS DETECTED:
+6:    Last Updated: 2025-08-23
+107:          placeholder="Click the 'Índices' tab below to get the SQL query to run. Paste the results here..."
+288:          <!-- User Query Count Table -->
+304:          <!-- Index Usage Count Table -->
+308:              Note: #primary count shows total operations, not unique queries
+317:                      Count
+587:          <!-- First row: Search, Bucket, Scope, Collection, Sort -->
+651:                <option value="Name">Nombre</option>
+653:                <option value="LastScanned">Último Escaneo</option>
+679:              <strong>Total de Índices:</strong> <span id="stat-indexes">0</span>
+716:                ><strong>Índices Usados/Total:</strong>
+758:                No Replicas Only
+816:        <!-- Results Panel -->
+818:          id="indexResults"
+829:              No Index Data Loaded
+867:              5. Click "Analizar JSON" again
+924:          window.resultCountChart,
+956:            if (toast.parentNode) {
+957:              toast.parentNode.removeChild(toast);
+973:          console.error("Failed to copy: ", err);
+974:          showToast("Failed to copy to clipboard", "error");
+982:          if (e.key === "Enter" || e.key === " ") {
+1022:            throw new Error("Invalid request data");
+1036:          console.error("Error processing request data:", error);
+1050:          "resultCountChart",
+1229:      // Normalize statement by replacing literals and numbers with "?" (with improved caching)
+1357:      function calculateTotalKernTime(plan) {
+1371:      function calculateTotalMemoryUsage(plan) {
+1386:      function calculateTotalExecTime(plan) {
+1434:          html += "<p>No stats available.</p>";
+1454:              console.error("Failed to copy: ", err);
+1481:            showToast("Failed to copy to clipboard", "error");
+1485:          showToast("Failed to copy to clipboard", "error");
+1496:          flowDiagram.textContent = "No execution plan available.";
+1500:        const totalKernTime = calculateTotalKernTime(request.plan);
+1501:        const totalExecTime = calculateTotalExecTime(request.plan);
+1505:          flowDiagram.textContent = "No operators found in the execution plan.";
+1632:                // First try to resolve #primary to actual name
+1785:              const remainingCount =
+1790:                                Show ${remainingCount} more keys
+1797:                        Total: ${indexesAndKeys.useKeys.length} key${
+1862:        const isWarning = timeMs > 10000; // > 10 seconds
+1872:        } else if (isWarning) {
+1882:      function formatItemCount(count) {
+1886:        const numCount = typeof count === "number" ? count : parseInt(count);
+1890:        if (numCount > 1000000) {
+1893:        } else if (numCount > 100000) {
+1896:        } else if (numCount > 10000) {
+1900:        return `<span style="color: ${color};">${icon}${numCount.toLocaleString()}</span>`;
+1923:          // Items In/Out
+1925:          html += `<span style="color: #6c757d; font-weight: 500;">📥 Items In:</span> ${formatItemCount(
+1931:          html += `<span style="color: #6c757d; font-weight: 500;">📤 Items Out:</span> ${formatItemCount(
+2066:      let currentPage = 1;
+2067:      const pageSize = 50; // Records per page
+2164:            "resultCount",
+2166:            "Items from Index Scan",
+2167:            "Doc Fetch Count",
+2170:            "result Count",
+2172:            "Items from Index Scan",
+2173:            "Doc Fetch Count",
+2242:        const headers = document.querySelectorAll(`#${tableHeaderId} th`);
+2245:          const existingArrow = th.querySelector(".sort-arrow");
+2246:          const existingSortHint = th.querySelector(".sort-hint");
+2263:            const oldHint = th.querySelector("div");
+2309:        else if (displayColumn === "result\nCount") return "resultCount";
+2311:        else if (displayColumn === "Items from\nIndex Scan")
+2312:          return "Items from Index Scan";
+2313:        else if (displayColumn === "Doc Fetch\nCount") return "Doc Fetch Count";
+2334:          currentPage = 1; // Reset to first page after sorting
+2364:      function addPaginationControls(totalRecords) {
+2379:        const totalPages = Math.ceil(totalRecords / pageSize);
+2381:        // Previous button
+2383:          if (currentPage > 1) {
+2384:            currentPage--;
+2388:        prevButton.disabled = currentPage === 1;
+2390:        // Next button
+2391:        const nextButton = createButton("Next ▶", () => {
+2392:          if (currentPage < totalPages) {
+2393:            currentPage++;
+2397:        nextButton.disabled = currentPage === totalPages;
+2399:        // Page info
+2401:        pageInfo.textContent = ` Page ${currentPage} of ${totalPages} (${totalRecords} records) `;
+2405:        // Page jump input
+2409:        pageInput.max = totalPages.toString();
+2410:        pageInput.value = currentPage.toString();
+2414:          if (e.key === "Enter") {
+2415:            const newPage = parseInt(pageInput.value);
+2416:            if (newPage >= 1 && newPage <= totalPages) {
+2417:              currentPage = newPage;
+2434:      function createButton(text, onClick) {
+2440:        btn.onclick = onClick;
+2468:      function updateSearchResultsInfo(filteredCount, totalCount) {
+2470:        if (filteredCount === totalCount) {
+2471:          infoDiv.textContent = `Showing all ${totalCount} records`;
+2473:          infoDiv.textContent = `Showing ${filteredCount} of ${totalCount} records`;
+2503:      function updateAnalysisSearchResultsInfo(filteredCount, totalCount) {
+2505:        if (filteredCount === totalCount) {
+2506:          infoDiv.textContent = `Showing all ${totalCount} groups`;
+2508:          infoDiv.textContent = `Showing ${filteredCount} of ${totalCount} groups`;
+2531:          updateAnalysisSearchResultsInfo(
+2554:          updateAnalysisSearchResultsInfo(
+2575:          currentPage = 1;
+2579:          updateSearchResultsInfo(
+2601:          currentPage = 1;
+2603:          updateSearchResultsInfo(
+2627:          "result\nCount",
+2629:          "Items from\nIndex Scan",
+2630:          "Doc Fetch\nCount",
+2645:          th.style.userSelect = "none";
+2705:            "resultCount",
+2707:            "Items from Index Scan",
+2708:            "Doc Fetch Count",
+2716:              value = request.usesPrimary ? "Sí" : "No";
+2717:            } else if (col === "Items from Index Scan") {
+2730:            } else if (col === "Doc Fetch Count") {
+2770:        currentPage = 1;
+2786:        updateSearchResultsInfo(
+2810:          "result\nCount",
+2812:          "Items from\nIndex Scan",
+2813:          "Doc Fetch\nCount",
+2822:        const start = (currentPage - 1) * pageSize;
+2845:            else if (col === "result\nCount") dataField = "resultCount";
+2847:            else if (col === "Items from\nIndex Scan")
+2848:              dataField = "Items from Index Scan";
+2849:            else if (col === "Doc Fetch\nCount") dataField = "Doc Fetch Count";
+2921:              ["result\nCount", "result\nSize", "Items from\nIndex Scan", "Doc Fetch\nCount"].includes(col)
+2945:            if (window.getSelection().toString().length > 0) {
+2950:              .querySelectorAll("tr")
+3004:            console.error("Failed to copy statement:", err);
+3005:            alert("Failed to copy to clipboard");
+3048:            console.error("Failed to copy statement:", err);
+3049:            alert("Failed to copy to clipboard");
+3076:          (r) => r.phaseCounts?.fetch || 0
+3079:          (r) => r.phaseCounts?.primaryScan || 0
+3082:          (r) => r.phaseCounts?.indexScan || 0
+3128:          // Note: System query filtering is now handled globally in parseJSON()
+3234:        updateAnalysisSearchResultsInfo(
+3405:        // Choose time unit based on span to keep Chart.js happy
+3544:          const optimizerOption = dropdown.querySelector('option[value="optimizer"]');
+3760:              indexScanQueryCount: 0,
+3773:          // Count queries that performed index scans
+3775:            timeGroups[key].indexScanQueryCount++;
+3789:          item.indexScanQueryCount > 0 ? Math.round(item.totalIndexScan / item.indexScanQueryCount) : null
+3808:                label: "Index Scan Items",
+3967:                  text: "Operation Count",
+4024:              filtersNotEqual: 0,
+4040:                  timeGroups[key].filtersNotEqual++;
+4055:        const filtersNotEqualData = sortedData.map(
+4056:          (item) => item.filtersNotEqual
+4059:          const total = item.filtersEqual + item.filtersNotEqual;
+4060:          return total > 0 ? (item.filtersNotEqual / total) * 100 : 0;
+4081:                data: filtersNotEqualData,
+4212:                  text: "Filter Count",
+4566:                  text: "Query Count",
+4592:        // Create Result Count Chart
+4593:        createResultCountChart(requests, grouping);
+4679:        let minCount = Infinity;
+4680:        let maxCount = 0;
+4683:            minCount = Math.min(minCount, typeData.count);
+4684:            maxCount = Math.max(maxCount, typeData.count);
+4702:                maxCount > minCount
+4703:                  ? (typeData.count - minCount) / (maxCount - minCount)
+4751:                text: "Query Duration by Statement Type (Bubble Size = Query Count)",
+4764:                      `Count: ${dataPoint.count}`,
+4975:        let minCount = Infinity;
+4976:        let maxCount = 0;
+4980:              minCount = Math.min(minCount, count);
+4981:              maxCount = Math.max(maxCount, count);
+5012:                maxCount > minCount
+5013:                  ? (count - minCount) / (maxCount - minCount)
+5093:                text: "Query Duration Distribution by Time Buckets (Bubble Size = Query Count)",
+5106:                      `Count: ${dataPoint.count}`,
+5286:              queryCount: 0,
+5293:          timeGroups[key].queryCount++;
+5302:            queryCount: item.queryCount,
+5311:          (item) => item.totalMemoryMB / item.queryCount
+5348:                text: "Uso Total de Memoria del Proceso de Consultas",
+5359:                    const queryCount = sortedData[dataIndex].queryCount;
+5362:                      `Queries: ${queryCount}`,
+5363:                      `Avg per Query: ${(memoryMB / queryCount).toFixed(2)} MB`,
+5501:      // Create Result Count Chart (light green bar + orange line for resultCount/query)
+5502:      function createResultCountChart(requests, grouping) {
+5509:        if (window.resultCountChart) {
+5510:          window.resultCountChart.destroy();
+5524:              totalResultCount: 0,
+5525:              queryCount: 0,
+5529:          const resultCount = request.resultCount || 0;
+5530:          timeGroups[key].totalResultCount += resultCount;
+5531:          timeGroups[key].queryCount++;
+5541:        const resultCountData = sortedData.map((item) => item.totalResultCount);
+5542:        const avgResultCountData = sortedData.map((item) =>
+5543:          item.queryCount > 0 ? item.totalResultCount / item.queryCount : 0
+5546:        window.resultCountChart = new Chart(ctx, {
+5552:                label: "Conteo Total de Resultados",
+5553:                data: resultCountData,
+5562:                data: avgResultCountData,
+5580:                text: "Análisis de Conteo de Resultados: Total vs Promedio por Consulta",
+5641:                  text: "Conteo Total de Resultados",
+5667:        registerTimelineChart(window.resultCountChart, ctx);
+5694:              queryCount: 0,
+5700:          timeGroups[key].queryCount++;
+5712:          item.queryCount > 0 ? (item.totalResultSize / item.queryCount) / (1024 * 1024) : 0
+5721:                label: "Tamaño Total de Resultados (MB)",
+5749:                text: "Análisis de Tamaño de Resultados: Total vs Promedio por Consulta",
+5810:                  text: "Tamaño Total de Resultados (MB)",
+5859:        if (window.resultCountChart) {
+5860:          window.resultCountChart.resetZoom();
+5910:        const selectedScale = document.querySelector(
+5989:        if (window.resultCountChart) {
+5990:          window.resultCountChart.options.scales.y.type = scaleType;
+5992:            window.resultCountChart.options.scales.y.beginAtZero = false;
+5993:            window.resultCountChart.options.scales.y.min = 1; // Avoid log(0)
+5995:            window.resultCountChart.options.scales.y.beginAtZero = true;
+5996:            delete window.resultCountChart.options.scales.y.min;
+5998:          window.resultCountChart.update();
+6054:            console.error("Error parsing JSON for time grouping change:", e);
+6089:          console.error("Error regenerating charts:", e);
+6091:            "Error generating charts. Try reducing the date range or selecting a coarser time grouping."
+6140:      function updateFilterInfo(originalCount, filteredCount) {
+6142:        if (originalCount === filteredCount) {
+6143:          filterInfo.textContent = `Showing all ${originalCount} queries`;
+6145:          filterInfo.textContent = `Showing ${filteredCount} of ${originalCount} queries`;
+6156:        generateUserCountTable(requests);
+6157:        generateIndexCountTable(requests);
+6239:        const scanCounts = { Yes: 0, No: 0 };
+6242:          const primaryScan = request.usesPrimary ? "Sí" : "No";
+6243:          scanCounts[primaryScan]++;
+6246:        const total = scanCounts.Sí + scanCounts.No;
+6248:          total > 0 ? ((scanCounts.Sí / total) * 100).toFixed(1) : 0;
+6250:          total > 0 ? ((scanCounts.No / total) * 100).toFixed(1) : 0;
+6254:        if (scanCounts.Sí > 0) {
+6270:            labels: ["Sí", "No"],
+6273:                data: [scanCounts.Sí, scanCounts.No],
+6353:        const stateCounts = {};
+6357:          stateCounts[state] = (stateCounts[state] || 0) + 1;
+6360:        const total = Object.values(stateCounts).reduce(
+6364:        const labels = Object.keys(stateCounts);
+6365:        const data = Object.values(stateCounts);
+6483:        const typeCounts = {};
+6486:          // First try the statementType field, then derive from statement
+6488:          typeCounts[type] = (typeCounts[type] || 0) + 1;
+6491:        const total = Object.values(typeCounts).reduce(
+6495:        const labels = Object.keys(typeCounts);
+6496:        const data = Object.values(typeCounts);
+6642:                label: "Query Count",
+6686:        const patternCounts = {
+6696:          "No WHERE": 0,
+6715:          // No WHERE
+6717:            patternCounts["No WHERE"]++;
+6722:            patternCounts["GROUP BY"]++;
+6727:            patternCounts["ORDER BY"]++;
+6732:            patternCounts["USE INDEX"]++;
+6737:            patternCounts["USE KEYS"]++;
+6742:            patternCounts["JOIN"]++;
+6747:            patternCounts["NEST"]++;
+6752:            patternCounts["UNNEST"]++;
+6757:            patternCounts["OFFSET"]++;
+6762:            patternCounts["SEARCH"]++;
+6767:            patternCounts["WITH"]++;
+6776:            patternCounts["ARRAY QUERY"]++;
+6784:              patternCounts["SELECT *"]++;
+6790:            patternCounts["LIKE"]++;
+6795:            patternCounts["COUNT"]++;
+6800:            patternCounts["REGEX"]++;
+6805:            patternCounts["EXECUTE"]++;
+6810:            patternCounts["LIMIT"]++;
+6822:        const colors = Object.keys(patternCounts).map((pattern) => {
+6827:            pattern === "No WHERE" ||
+6839:            labels: Object.keys(patternCounts),
+6842:                label: "Query Count",
+6843:                data: Object.values(patternCounts),
+6888:      // Generate User Count Table
+6889:      function generateUserCountTable(requests) {
+6890:        const userCounts = {};
+6894:          userCounts[user] = (userCounts[user] || 0) + 1;
+6897:        const sortedUsers = Object.entries(userCounts).sort(
+6933:            .replace(/\s+/g, " ") // Normalize whitespace
+6979:          console.warn("Error parsing FROM clause:", error, statement);
+6984:      // Generate Index Count Table
+6985:      function generateIndexCountTable(requests) {
+7015:                console.error("Error parsing plan JSON:", e, request.plan);
+7031:                console.error("Error parsing plan JSON:", e, request.plan);
+7153:          console.warn("Error in extractIndexNames:", e);
+7221:              console.error("Failed to copy text: ", err);
+7224:              showToast("Failed to copy to clipboard", "error");
+7254:              throw new Error("execCommand failed");
+7257:            console.error("Failed to copy text (fallback): ", err);
+7260:            showToast("Failed to copy to clipboard", "error");
+7323:              console.warn(`Failed to parse plan JSON for request:`, e.message);
+7324:              showNotification(`JSON parsing error: ${e.message}`, "warning");
+7338:          kernTimeMs: plan ? calculateTotalKernTime(plan) : 0,
+7390:        let totalItemsIn = 0;
+7391:        let totalItemsOut = 0;
+7395:          totalItemsIn += stats["#itemsIn"] || 0;
+7396:          totalItemsOut += stats["#itemsOut"] || 0;
+7399:        return { totalItemsIn, totalItemsOut };
+7409:        const timeGroupingSelect = document.getElementById('time-grouping-select');
+7410:        if (timeGroupingSelect) {
+7411:          timeGroupingSelect.value = 'optimizer';
+7445:            showToast("No data found in the JSON", "warning");
+7469:                    `Error processing request ${i}:`,
+7494:                finishProcessing(processedRequests);
+7505:          showToast(`Error parsing JSON: ${e.message}`, "error");
+7513:        const existingToasts = document.querySelectorAll(".toast");
+7554:            if (toast.parentNode) {
+7562:      function finishProcessing(allRequests) {
+7667:          console.error("Error generating charts:", e);
+7669:            "Error generating charts. Try reducing the date range or selecting a coarser time grouping."
+7678:      const planCloseBtn = planModal.querySelector(".close");
+7689:      const operatorCloseBtn = operatorModal.querySelector(".close");
+7824:        console.log("📊 Processing Index/Query data structures only (no DOM rendering)");
+7916:              if (request.phaseCounts) {
+7917:                if (request.phaseCounts.indexScan) {
+7918:                  indexObj.itemsScanned.push(request.phaseCounts.indexScan);
+7920:                if (request.phaseCounts.fetch) {
+7921:                  indexObj.itemsFetched.push(request.phaseCounts.fetch);
+7953:        const indexCountEl = document.getElementById("index-count");
+7954:        const queryCountEl = document.getElementById("query-count");
+7955:        if (indexCountEl) indexCountEl.textContent = allIndexes.size;
+7956:        if (queryCountEl) queryCountEl.textContent = queryGroups.size;
+7990:          console.log("❌ No requests available for Index/Query Flow");
+8091:        let connectionCount = 0;
+8128:                  if (request.phaseCounts) {
+8129:                    if (request.phaseCounts.indexScan) {
+8130:                      indexObj.itemsScanned.push(request.phaseCounts.indexScan);
+8132:                    if (request.phaseCounts.fetch) {
+8133:                      indexObj.itemsFetched.push(request.phaseCounts.fetch);
+8148:                connectionCount++;
+8351:        const indexCountEl = document.getElementById("index-count");
+8352:        const queryCountEl = document.getElementById("query-count");
+8353:        if (indexCountEl) indexCountEl.textContent = indexes.length;
+8354:        if (queryCountEl) queryCountEl.textContent = queries.length;
+8361:            '<div style="padding: 20px; text-align: center; color: #666; font-style: italic;">No index usage found in the queries.<br><br>This could mean:<br>• Queries use sequential scans<br>• Index information not in execution plans<br>• All queries are prepared statements without index details</div>';
+8471:            Avg Items Scanned: ${stats.avgItemsScanned}<br>
+8472:            Avg Items Fetched: ${stats.avgItemsFetched}<br>
+8474:            Min/Max Items: ${stats.minItems} / ${stats.maxItems}
+8532:        const copyBtn = div.querySelector(".query-copy-btn");
+8562:          avgItemsScanned: itemsScanned.length
+8567:          avgItemsFetched: itemsFetched.length
+8572:          minItems: itemsScanned.length ? Math.min(...itemsScanned) : "N/A",
+8573:          maxItems: itemsScanned.length ? Math.max(...itemsScanned) : "N/A",
+8626:        const maxCount = Math.max(
+8633:          Math.min(12, (count / maxCount) * 10 + 2)
+8749:        const indexElements = document.querySelectorAll("[data-index-name]");
+8750:        const queryElements = document.querySelectorAll("[data-query-id]");
+8858:        const hiddenKeys = document.querySelectorAll(".hidden-key");
+8973:                `⚠️ Failed to parse plan JSON for request: ${
+8984:            console.warn(`⚠️ No plan found in request`);
+9028:        let primaryCount = 0;
+9029:        let withReplicasCount = 0;
+9030:        let noReplicasCount = 0;
+9031:        let neverScannedCount = 0;
+9032:        let usedCount = 0;
+9033:        let mobileIndexCount = 0;
+9048:            primaryCount++;
+9054:            withReplicasCount++;
+9056:            noReplicasCount++;
+9062:            neverScannedCount++;
+9078:            usedCount++;
+9083:            mobileIndexCount++;
+9096:        primaryElement.textContent = primaryCount;
+9097:        primaryElement.className = primaryCount > 0 ? "primary-warning" : "";
+9101:          noReplicasCount > 0 ? "replica-zero" : ""
+9102:        }">${noReplicasCount}</span>/${withReplicasCount}`;
+9105:          neverScannedCount;
+9108:        ).textContent = `${usedCount}/${filteredIndexData.length}`;
+9110:          mobileIndexCount;
+9121:          displayIndexResults();
+9135:          document.getElementById("indexResults").innerHTML = `
+9260:        const filterNoReplica =
+9308:          if (filterNoReplica) {
+9328:        displayIndexResults();
+9330:        // Count and log matches
+9331:        let matchedCount = 0;
+9345:            matchedCount++;
+9350:          `📊 Matching summary: ${matchedCount}/${filteredIndexData.length} indexes found in query data`
+9355:      function displayIndexResults() {
+9356:        const resultsContainer = document.getElementById("indexResults");
+9361:            // No index data loaded - show instructions
+9364:                            <h4 style="color: #495057; margin-bottom: 20px;">No Index Data Loaded</h4>
+9393:                                5. Click "Analizar JSON" again
+9401:                            No indexes match the current filters.
+9435:        } else if (sortBy === "LastScanned") {
+9438:            const aLastScan = a.metadata?.last_scan_time || 0;
+9439:            const bLastScan = b.metadata?.last_scan_time || 0;
+9442:            if (aLastScan === 0 && bLastScan === 0)
+9444:            if (aLastScan === 0) return 1;
+9445:            if (bLastScan === 0) return -1;
+9448:            return new Date(bLastScan) - new Date(aLastScan);
+9482:        // First try exact match
+9513:                        )} | <strong>Replicas:</strong> <span class="${replicaClass}">${replica}</span> | <strong>Last Scan:</strong> ${lastScanFormatted} ${timeSince}
+9541:            console.error("Failed to copy: ", err);
+9577:            console.error("Failed to copy query: ", err);
+9697:📅 Last Updated: ${info.lastUpdated}
+📊 Found      394 instances of common English words
+
+=== AUDIT SUMMARY ===
+Total categories with issues: 6
+Estimated translation coverage: ~100%
+
+=== RECOMMENDATIONS ===
+🚨 Significant translation work needed:
+1. Review all categories systematically
+2. Consider regenerating localized files with updated process
+3. Create bespoke regex rules for complex patterns
+4. Update LOCALIZATION_GUIDE.md based on findings
+
+💡 ACTION ITEMS:
+1. Review each finding above
+2. Categorize fixes: translations.json vs. function modifications
+3. Implement fixes systematically
+4. Re-run audit to verify improvements
+5. Target: 95%+ translation coverage
+
+Audit complete! Results saved to: translation_audit_es_20250827_012551.log

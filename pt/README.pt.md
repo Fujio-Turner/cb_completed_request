@@ -1,6 +1,6 @@
-# Couchbase Slow Query Analysis Tool v3.7.1
+# Couchbase Slow Query Analysis Tool v3.7.2
 
-**🌍 Idiomas:** [🇺🇸 English](README.md) | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | **🇵🇹 Português**
+**🌍 Idiomas:** [🇺🇸 English](../README.md) | [🇩🇪 Deutsch](../de/README.de.md) | [🇪🇸 Español](../es/README.es.md) | **🇵🇹 Português**
 
 🚀 **Beta Deployment Links:**
 - English: https://cb.fuj.io/en/
@@ -156,6 +156,16 @@ Ao analisar gráficos de linha do tempo, escolha intervalos de data apropriados 
 **⚠️ Aviso**: Intervalos de data grandes com agrupamentos de granularidade fina podem causar erros de renderização de gráficos. A ferramenta alertará você e sugerirá melhores combinações.
 
 ## 📋 Notas de Lançamento
+
+### Versão 3.7.2 (27 de agosto de 2025)
+#### 🔧 Bug Fixes
+- **Fixed ServiceTime Calculation**: Fixed serviceTime calculation in Every Query table to properly sum all operator service times from execution plan instead of displaying the same value as elapsedTime
+- **Enhanced Data Accuracy**: ServiceTime column now shows accurate sum of all servTime values from plan operators, providing better query performance insights
+
+#### 🎯 Technical Improvements  
+- **Improved Query Analysis**: Added `calculateTotalServiceTime()` function to sum all servTime values from plan operators
+- **Better Data Processing**: Updated `processRequestData()` to calculate serviceTimeMs from plan data instead of using raw serviceTime value
+- **Enhanced Table Display**: Updated table display logic to use calculated serviceTimeMs value for accurate performance metrics
 
 ### Versão 3.7.0 (24 de janeiro de 2025)
 #### 🚀 Novas Funcionalidades

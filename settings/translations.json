@@ -1,5 +1,10 @@
 {
   "ui_strings": {
+    "Query Analyzer v3.7.2": {
+      "es": "Analizador de Consultas v3.7.2",
+      "pt": "Analisador de Consultas v3.7.2",
+      "de": "Query Analyzer v3.7.2"
+    },
     "Query Analyzer v3.7.0": {
       "es": "Analizador de Consultas v3.7.0",
       "pt": "Analisador de Consultas v3.7.0",
@@ -20,21 +25,6 @@
       "pt": "Análise",
       "de": "Analysieren"
     },
-    "Every Query": {
-      "es": "Cada Consulta",
-      "pt": "Cada Consulta",
-      "de": "Jede Abfrage"
-    },
-    "Index/Query Flow": {
-      "es": "Flujo de Índice/Consulta",
-      "pt": "Fluxo de Índice/Consulta",
-      "de": "Index/Abfrage-Fluss"
-    },
-    "Indexes": {
-      "es": "Índices",
-      "pt": "Índices",
-      "de": "Indizes"
-    },
     "Parse JSON": {
       "es": "Analizar JSON",
       "pt": "Analisar JSON",
@@ -49,16 +39,6 @@
       "es": "Copiar Todo",
       "pt": "Copiar Tudo",
       "de": "Alle Kopieren"
-    },
-    "Show More": {
-      "es": "Mostrar Más",
-      "pt": "Mostrar Mais",
-      "de": "Mehr Anzeigen"
-    },
-    "Hide": {
-      "es": "Ocultar",
-      "pt": "Ocultar",
-      "de": "Ausblenden"
     },
     "Clear All": {
       "es": "Limpiar Todo",
@@ -454,6 +434,271 @@
       "es": "Consistencia de Escaneo",
       "pt": "Consistência de Verificação",
       "de": "Scan-Konsistenz"
+    },
+    "NEED HELP? Debugging + Tool Tips": {
+      "es": "¿NECESITAS AYUDA? Depuración + Consejos de Herramienta",
+      "pt": "PRECISA DE AJUDA? Depuração + Dicas da Ferramenta",
+      "de": "BRAUCHEN SIE HILFE? Fehlersuche + Tool-Tipps"
+    },
+    "Copy Stats": {
+      "es": "Copiar Estadísticas",
+      "pt": "Copiar Estatísticas",
+      "de": "Statistiken Kopieren"
+    },
+    "Show More": {
+      "es": "Mostrar Más",
+      "pt": "Mostrar Mais",
+      "de": "Mehr Anzeigen"
+    },
+    "Hide": {
+      "es": "Ocultar",
+      "pt": "Ocultar",
+      "de": "Ausblenden"
+    },
+    "Query Groups": {
+      "es": "Grupos de Consulta",
+      "pt": "Grupos de Consulta",
+      "de": "Abfragegruppen"
+    },
+    "Every Query": {
+      "es": "Cada Consulta",
+      "pt": "Cada Consulta",
+      "de": "Jede Abfrage"
+    },
+    "Index/Query Flow": {
+      "es": "Flujo de Índice/Consulta",
+      "pt": "Fluxo de Índice/Consulta",
+      "de": "Index/Abfrage-Fluss"
+    },
+    "Indexes": {
+      "es": "Índices",
+      "pt": "Índices",
+      "de": "Indizes"
+    },
+    "Filter SQL++ Statement Contains": {
+      "es": "Filtrar Declaración SQL++ Contiene",
+      "pt": "Filtrar Declaração SQL++ Contém",
+      "de": "SQL++ Anweisung Filter Enthält"
+    },
+    "Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;": {
+      "es": "Pegue su salida JSON de: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;",
+      "pt": "Cole sua saída JSON de: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;",
+      "de": "Fügen Sie Ihre JSON-Ausgabe ein von: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;"
+    },
+    "JSON input field for Couchbase query data": {
+      "es": "Campo de entrada JSON para datos de consulta de Couchbase",
+      "pt": "Campo de entrada JSON para dados de consulta do Couchbase",
+      "de": "JSON-Eingabefeld für Couchbase-Abfragedaten"
+    },
+    "Index JSON input field": {
+      "es": "Campo de entrada JSON de índices",
+      "pt": "Campo de entrada JSON de índices",
+      "de": "Index JSON-Eingabefeld"
+    },
+    "Parse and analyze JSON data": {
+      "es": "Analizar y analizar datos JSON",
+      "pt": "Analisar e analisar dados JSON",
+      "de": "JSON-Daten parsen und analysieren"
+    },
+    "Exclude system queries from analysis": {
+      "es": "Excluir consultas del sistema del análisis",
+      "pt": "Excluir consultas do sistema da análise",
+      "de": "Systemabfragen von der Analyse ausschließen"
+    },
+    "Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces": {
+      "es": "Excluye declaraciones INFER, ADVISE, CREATE, ALTER INDEX y consultas de keyspaces del sistema:",
+      "pt": "Exclui declarações INFER, ADVISE, CREATE, ALTER INDEX e consultas de keyspaces do sistema:",
+      "de": "Schließt INFER, ADVISE, CREATE, ALTER INDEX Anweisungen und Abfragen von System-Keyspaces aus:"
+    },
+    "Start date/time for filtering": {
+      "es": "Fecha/hora de inicio para filtrar",
+      "pt": "Data/hora de início para filtragem",
+      "de": "Startdatum/-zeit für Filterung"
+    },
+    "End date/time for filtering": {
+      "es": "Fecha/hora de fin para filtrar",
+      "pt": "Data/hora de fim para filtragem",
+      "de": "Enddatum/-zeit für Filterung"
+    },
+    "Filter SQL++ statements during JSON parsing": {
+      "es": "Filtrar declaraciones SQL++ durante el análisis JSON",
+      "pt": "Filtrar declarações SQL++ durante a análise JSON",
+      "de": "SQL++ Anweisungen während JSON-Parsing filtern"
+    },
+    "request\\nTime": {
+      "es": "tiempo de\\nsolicitud",
+      "pt": "tempo de\\nsolicitação",
+      "de": "Anfrage-\\nzeit"
+    },
+    "statement\\nType": {
+      "es": "Tipo de\\nDeclaración",
+      "pt": "Tipo de\\nDeclaração",
+      "de": "Anweisungs-\\ntyp"
+    },
+    "elapsed\\nTime": {
+      "es": "Tiempo\\nTranscurrido",
+      "pt": "Tempo\\nDecorrido",
+      "de": "Verstrichene\\nZeit"
+    },
+    "service\\nTime": {
+      "es": "Tiempo de\\nServicio",
+      "pt": "Tempo de\\nServiço",
+      "de": "Service-\\nzeit"
+    },
+    "kern\\nTime": {
+      "es": "Tiempo de\\nKernel",
+      "pt": "Tempo de\\nKernel",
+      "de": "Kernel-\\nzeit"
+    },
+    "KernTime\\n%": {
+      "es": "% Tiempo\\nKernel",
+      "pt": "% Tempo\\nKernel",
+      "de": "KernZeit\\n%"
+    },
+    "cpu\\nTime": {
+      "es": "Tiempo de\\nCPU",
+      "pt": "Tempo de\\nCPU",
+      "de": "CPU-\\nzeit"
+    },
+    "memory\\n(MB)": {
+      "es": "memoria\\n(MB)",
+      "pt": "memória\\n(MB)",
+      "de": "Speicher\\n(MB)"
+    },
+    "result\\nCount": {
+      "es": "Conteo de\\nResultados",
+      "pt": "Contagem de\\nResultados",
+      "de": "Ergebnis-\\nanzahl"
+    },
+    "result\\nSize": {
+      "es": "Tamaño de\\nResultados",
+      "pt": "Tamanho de\\nResultados",
+      "de": "Ergebnis-\\ngröße"
+    },
+    "Doc Fetch\\nCount": {
+      "es": "Conteo de\\nRecuperación",
+      "pt": "Contagem de\\nRecuperação",
+      "de": "Dokument-\\nAbruf-Anzahl"
+    },
+    "Items from\\nIndex Scan": {
+      "es": "Elementos del\\nEscaneo de Índice",
+      "pt": "Itens da\\nVerificação de Índice",
+      "de": "Elemente vom\\nIndex-Scan"
+    },
+    "Primary Scan\\nUsed": {
+      "es": "Escaneo Primario\\nUtilizado",
+      "pt": "Verificação Primária\\nUtilizada",
+      "de": "Primärer Scan\\nVerwendet"
+    },
+    "state": {
+      "es": "estado",
+      "pt": "estado",
+      "de": "Status"
+    },
+    "statement": {
+      "es": "declaración",
+      "pt": "declaração",
+      "de": "Anweisung"
+    },
+    "Scan\\nConsistency": {
+      "es": "Consistencia\\nde Escaneo",
+      "pt": "Consistência\\nde Verificação",
+      "de": "Scan-\\nKonsistenz"
+    },
+    "users": {
+      "es": "usuarios",
+      "pt": "usuários",
+      "de": "Benutzer"
+    },
+    "copied!": {
+      "es": "¡copiado!",
+      "pt": "copiado!",
+      "de": "kopiert!"
+    },
+    "Copied!": {
+      "es": "¡Copiado!",
+      "pt": "Copiado!",
+      "de": "Kopiert!"
+    },
+    "Used": {
+      "es": "Usado",
+      "pt": "Usado",
+      "de": "Verwendet"
+    },
+    "online": {
+      "es": "en línea",
+      "pt": "online",
+      "de": "online"
+    },
+    "offline": {
+      "es": "fuera de línea",
+      "pt": "offline",
+      "de": "offline"
+    },
+    "building": {
+      "es": "construyendo",
+      "pt": "construindo",
+      "de": "wird erstellt"
+    },
+    "unknown": {
+      "es": "desconocido",
+      "pt": "desconhecido",
+      "de": "unbekannt"
+    },
+    "Query Count": {
+      "es": "Conteo de Consultas",
+      "pt": "Contagem de Consultas",
+      "de": "Abfrageanzahl"
+    },
+    "Number of Queries": {
+      "es": "Número de Consultas",
+      "pt": "Número de Consultas",
+      "de": "Anzahl der Abfragen"
+    },
+    "Elapsed Time Range": {
+      "es": "Rango de Tiempo Transcurrido",
+      "pt": "Intervalo de Tempo Decorrido",
+      "de": "Verstrichene Zeitspanne"
+    },
+    "Request Time": {
+      "es": "Tiempo de Solicitud",
+      "pt": "Tempo de Solicitação",
+      "de": "Anfragezeit"
+    },
+    "Copy Query": {
+      "es": "Copiar Consulta",
+      "pt": "Copiar Consulta",
+      "de": "Abfrage Kopieren"
+    },
+    "Show More": {
+      "es": "Mostrar Más",
+      "pt": "Mostrar Mais",
+      "de": "Mehr Anzeigen"
+    },
+    "Hide": {
+      "es": "Ocultar",
+      "pt": "Ocultar",
+      "de": "Ausblenden"
+    },
+    "Search Statement:": {
+      "es": "Buscar Declaración:",
+      "pt": "Buscar Declaração:",
+      "de": "Anweisung Suchen:"
+    },
+    "Search Username:": {
+      "es": "Buscar Usuario:",
+      "pt": "Buscar Usuário:",
+      "de": "Benutzername Suchen:"
+    },
+    "Search in SQL++ statements...": {
+      "es": "Buscar en declaraciones SQL++...",
+      "pt": "Buscar em declarações SQL++...",
+      "de": "In SQL++ Anweisungen suchen..."
+    },
+    "Search usernames...": {
+      "es": "Buscar usuarios...",
+      "pt": "Buscar usuários...",
+      "de": "Benutzernamen suchen..."
     }
   },
   "javascript_variables": {

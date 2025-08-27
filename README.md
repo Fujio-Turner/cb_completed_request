@@ -1,6 +1,6 @@
-# Couchbase Slow Query Analysis Tool v3.7.1
+# Couchbase Slow Query Analysis Tool v3.7.2
 
-**🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](README.de.md) | [🇪🇸 Español](README.es.md) | [🇵🇹 Português](README.pt.md)
+**🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](de/README.de.md) | [🇪🇸 Español](es/README.es.md) | [🇵🇹 Português](pt/README.pt.md)
 
 🚀 **Beta Deployment Links:**
 - English: https://cb.fuj.io/en/
@@ -159,7 +159,17 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 
 ## Release Notes
 
-### Version 3.7.0 (January 24, 2025)
+### Version 3.7.2 (August 27, 2025)
+#### 🔧 Bug Fixes
+- **Fixed ServiceTime Calculation**: Fixed serviceTime calculation in Every Query table to properly sum all operator service times from execution plan instead of displaying the same value as elapsedTime
+- **Enhanced Data Accuracy**: ServiceTime column now shows accurate sum of all servTime values from plan operators, providing better query performance insights
+
+#### 🎯 Technical Improvements
+- **Improved Query Analysis**: Added `calculateTotalServiceTime()` function to sum all servTime values from plan operators
+- **Better Data Processing**: Updated `processRequestData()` to calculate serviceTimeMs from plan data instead of using raw serviceTime value
+- **Enhanced Table Display**: Updated table display logic to use calculated serviceTimeMs value for accurate performance metrics
+
+### Version 3.7.0 (August 25, 2025)
 #### 🚀 New Features
 - **Scan Consistency Column**: Added new "Scan Consistency" column in Every Query table between statement and users columns, displaying values like "unbounded" and "request_plus"
 - **Sync Gateway Index Filtering**: Added "Exclude Mobile Indexes" checkbox in Indexes tab to filter out Sync Gateway mobile indexes

@@ -125,11 +125,13 @@ This file tracks all changes made during the release process. Update each sectio
 ### ✅ Version Consistency Checks
 ```bash
 # Run these commands to verify consistency:
-- [ ] `grep -r "name=\"version\"" *.html` - All show {new version}
-- [ ] `grep -r "<title>" *.html` - All show v{new version} 
-- [ ] `grep -r "version-info" *.html` - All show v{new version}
-- [ ] `grep -r "APP_VERSION" *.html` - All show "{new version}"
+- [ ] `grep -r "name=\"version\"" */index.html` - All language directories show {new version}
+- [ ] `grep -r "<title>" */index.html` - All show v{new version} 
+- [ ] `grep -r "version-info" */index.html` - All show v{new version}
+- [ ] `grep -r "APP_VERSION" */index.html` - All show "{new version}"
+- [ ] `grep -r "APP_VERSION" */old_index.html` - Check old_index.html versions for reference
 - [ ] `grep -r "# Couchbase Slow Query Analysis Tool" README*.md AGENT.md` - All show v{new version}
+- [ ] **Localization Check:** Verify /en/index.html was copied to /*/index.html properly
 ```
 
 ### ✅ Functional Testing
