@@ -1553,6 +1553,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
           const bubble = document.createElement("div");
           bubble.className = "step-bubble";
+          
+          // Use operator-specific styling instead of performance-based colors
+          const operatorStyle = getOperatorStyle(operatorName);
+          bubble.style.backgroundColor = operatorStyle.bg;
+          bubble.style.borderColor = operatorStyle.color;
+          bubble.style.borderWidth = "2px";
+          
+          // Still add performance-based class as fallback for other styling
           const colorClass = getColorClass(parseFloat(percentage));
           bubble.classList.add(colorClass);
 
@@ -1848,11 +1856,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       function getOperatorStyle(operatorName) {
         const styles = {
           Authorize: { icon: "🔐", color: "#6f42c1", bg: "#f8f7ff" },
-          Sequence: { icon: "📋", color: "#495057", bg: "#f8f9fa" },
+          Sequence: { icon: "📋", color: "#856404", bg: "#fff3cd" },
           IndexScan: { icon: "🔍", color: "#007bff", bg: "#e7f3ff" },
           IndexScan2: { icon: "🔍", color: "#007bff", bg: "#e7f3ff" },
           IndexScan3: { icon: "🔍", color: "#007bff", bg: "#e7f3ff" },
           PrimaryScan: { icon: "🔑", color: "#dc3545", bg: "#fff5f5" },
+          PrimaryScan3: { icon: "🔑", color: "#dc3545", bg: "#fff5f5" },
           Fetch: { icon: "📥", color: "#28a745", bg: "#f1f8e9" },
           Filter: { icon: "🔧", color: "#fd7e14", bg: "#fff4e6" },
           InitialGroup: { icon: "📊", color: "#20c997", bg: "#e6fffa" },
@@ -7667,8 +7676,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           generateTable(filteredRequests);
           generateAnalysisTable(filteredRequests);
           buildIndexQueryFlow(filteredRequests);
-          document.getElementById("flow-diagram").innerHTML =
-            "Select a query from the table to view the flow diagram.";
+          // Only reset flow diagram if no query was previously selected
+          const flowDiagramValidation = document.getElementById("flow-diagram");
+          if (!flowDiagramValidation.hasChildNodes() || flowDiagramValidation.children.length === 0) {
+            flowDiagramValidation.innerHTML = "Select a query from the table to view the flow diagram.";
+          }
           return;
         }
 
@@ -7695,8 +7707,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             "Error generating charts. Try reducing the date range or selecting a coarser time grouping."
           );
         }
-        document.getElementById("flow-diagram").innerHTML =
-          "Select a query from the table to view the flow diagram.";
+        // Only reset flow diagram if no query was previously selected
+        const flowDiagram = document.getElementById("flow-diagram");
+        if (!flowDiagram.hasChildNodes() || flowDiagram.children.length === 0) {
+          flowDiagram.innerHTML = "Select a query from the table to view the flow diagram.";
+        }
       }
 
       // Modal event listeners
@@ -7796,10 +7811,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             // Always check Index/Query Flow tab (not just first time)
             if (tabId === "index-query-flow" && originalRequests.length > 0) {
               console.log("🎯 Index/Query Flow tab activated (always rebuild)");
+              console.log("🎯 indexQueryFlowData.indexes size:", indexQueryFlowData.indexes.size);
+              console.log("🎯 indexQueryFlowData.queries size:", indexQueryFlowData.queries.size);
               
               // Full render from existing indexQueryFlowData (create DIVs + SVG)
               setTimeout(() => {
                 console.log("🔄 Tab activation: Full render from existing indexQueryFlowData");
+                console.log("🔄 Tab activation timeout - about to render");
                 
                 // Convert indexQueryFlowData back to arrays for renderIndexQueryFlow
                 const indexes = Array.from(indexQueryFlowData.indexes.values());
@@ -7848,6 +7866,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Process Index/Query data without DOM rendering (for hidden tabs)
       function processIndexQueryData(requests) {
         console.log("📊 Processing Index/Query data structures only (no DOM rendering)");
+        console.log("📊 processIndexQueryData received requests:", requests?.length || 0);
         
         // Clear and rebuild data structures
         indexQueryFlowData.indexes.clear();
@@ -7916,10 +7935,18 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         requestIndexMap.forEach((indexSet, requestIndex) => {
           indexSet.forEach((indexName) => {
             if (!allIndexes.has(indexName)) {
+              const isPrimaryCheck = indexName === "#primary" ||
+                      indexName.includes("#primary") ||
+                      indexName.includes("primary") ||
+                      indexName.endsWith("_primary");
+              
+              console.log(`🔍 processIndexQueryData - Index "${indexName}": isPrimary check = ${isPrimaryCheck}`);
+              
               allIndexes.set(indexName, {
                 name: indexName,
                 requests: [],
                 totalUsage: 0,
+                isPrimary: isPrimaryCheck,
                 scanTimes: [],
                 itemsScanned: [],
                 itemsFetched: []
@@ -7952,8 +7979,15 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         });
 
         // CRITICAL: Populate indexQueryFlowData with processed data for SVG rendering
-        indexQueryFlowData.indexes = new Map(Array.from(allIndexes.values()).map(idx => [idx.name, idx]));
-        indexQueryFlowData.queries = queryGroups;
+        // Sort indexes by totalUsage (descending) to match full rendering behavior
+        const sortedIndexes = Array.from(allIndexes.values()).sort((a, b) => b.totalUsage - a.totalUsage);
+        const sortedQueries = Array.from(queryGroups.values()).sort((a, b) => b.count - a.count);
+        
+        indexQueryFlowData.indexes = new Map(sortedIndexes.map(idx => [idx.name, idx]));
+        indexQueryFlowData.queries = new Map(sortedQueries.map(q => [q.normalizedStatement, q]));
+        
+        console.log("📊 processIndexQueryData: Sorted indexes by totalUsage");
+        console.log("📊 processIndexQueryData: Sorted queries by count");
         
         // Rebuild connections data
         requestIndexMap.forEach((indexSet, requestIndex) => {
@@ -8011,6 +8045,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const requestsToUse = requests || originalRequests;
 
         console.log("🔧 buildIndexQueryFlow called with requests:", requestsToUse?.length || 0);
+        console.log("🔧 buildIndexQueryFlow called from:", new Error().stack.split('\n')[1]);
 
         if (!requestsToUse || requestsToUse.length === 0) {
           console.log("❌ No requests available for Index/Query Flow");
@@ -8028,12 +8063,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         
         // Process data but skip DOM rendering when tab is hidden
         if (activeTabIndex !== indexQueryFlowTabIndex) {
-          console.log("⏸️ Index/Query Flow tab hidden, processing data only");
+          console.log("⏸️ Index/Query Flow tab hidden, processing data only - CALLING processIndexQueryData");
           processIndexQueryData(requestsToUse);
           return;
         }
 
-        console.log("✅ Index/Query Flow tab is visible, proceeding with rendering");
+        console.log("✅ Index/Query Flow tab is visible, proceeding with FULL rendering");
 
         // Step 1: Track which indexes each request uses (by request index)
         const requestIndexMap = new Map(); // requestIndex -> Set of index names
@@ -8125,14 +8160,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               indexesForRequest.forEach((indexName) => {
                 // Track index usage
                 if (!allIndexes.has(indexName)) {
+                  const isPrimaryCheck = indexName === "#primary" ||
+                      indexName.includes("#primary") ||
+                      indexName.includes("primary") ||
+                      indexName.endsWith("_primary");
+                  
+                  console.log(`🔍 Index "${indexName}": isPrimary check = ${isPrimaryCheck}`);
+                  
                   allIndexes.set(indexName, {
                     name: indexName,
                     totalUsage: 0,
-                    isPrimary:
-                      indexName === "#primary" ||
-                      indexName.includes("#primary") ||
-                      indexName.includes("primary") ||
-                      indexName.endsWith("_primary"),
+                    isPrimary: isPrimaryCheck,
                     scanTimes: [],
                     itemsScanned: [],
                     itemsFetched: [],
@@ -8368,6 +8406,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         console.log("  📋 Indexes:", indexes.length, "items");
         console.log("  📋 Queries:", queries.length, "items");
         console.log("  📋 indexQueryFlowData.connections size:", indexQueryFlowData.connections.size);
+        console.log("🎨 renderIndexQueryFlow called from:", new Error().stack.split('\n')[1]);
         
         const flowElements = document.getElementById("flow-elements");
 
@@ -8450,10 +8489,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       }
 
       function createIndexDiv(index, color, x, y) {
+        console.log(`🎨 createIndexDiv for "${index.name}": isPrimary=${index.isPrimary}, totalUsage=${index.totalUsage}`);
+        
         const div = document.createElement("div");
         let className = "index-item";
         if (index.isPrimary) className += " primary";
         if (index.name === "#sequentialscan") className += " sequential-scan";
+        
+        console.log(`🎨 createIndexDiv className: "${className}"`);
 
         div.className = className;
         div.style.borderColor = color;
