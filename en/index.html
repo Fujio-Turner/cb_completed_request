@@ -7962,20 +7962,19 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             // Collect statistics from the request
             const request = requests[requestIndex];
             if (request) {
-              // Add execution time as scan time
-              const executionTime = request.elapsedTimeMs || 0;
-              if (!isNaN(executionTime)) {
-              indexObj.scanTimes.push(executionTime);
+              console.log("DEBUG: request keys:", Object.keys(request));
+              console.log("DEBUG: request.plan exists:", !!request.plan);
+              console.log("DEBUG: typeof request.plan:", typeof request.plan);
+              // Extract actual index scan service time and items data from plan data  
+              const indexData = extractIndexScanDataFromPlan(request.plan, indexName);
+              if (indexData.scanTime > 0) {
+                indexObj.scanTimes.push(indexData.scanTime);
               }
-
-              // Add phase counts as items scanned/fetched
-              if (request.phaseCounts) {
-                if (request.phaseCounts.indexScan) {
-                  indexObj.itemsScanned.push(request.phaseCounts.indexScan);
-                }
-                if (request.phaseCounts.fetch) {
-                  indexObj.itemsFetched.push(request.phaseCounts.fetch);
-                }
+              if (indexData.itemsScanned > 0) {
+                indexObj.itemsScanned.push(indexData.itemsScanned);
+              }
+              if (indexData.itemsFetched > 0) {
+                indexObj.itemsFetched.push(indexData.itemsFetched);
               }
             }
           });
@@ -8186,20 +8185,18 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 // Collect statistics from the request
                 const request = requestsToUse[requestIndex];
                 if (request) {
-                  // Add execution time as scan time
-                  const executionTime = request.elapsedTimeMs || 0;
-                  if (!isNaN(executionTime)) {
-                  indexObj.scanTimes.push(executionTime);
+                  // Extract actual index scan service time and items data from plan data
+                  console.log(`Processing request for index ${indexName}:`, typeof request.plan);
+                  const indexData = extractIndexScanDataFromPlan(request.plan, indexName);
+                  console.log(`Index: ${indexName}, Scan Time: ${indexData.scanTime}ms, Items: ${indexData.itemsScanned}`);
+                  if (indexData.scanTime > 0) {
+                    indexObj.scanTimes.push(indexData.scanTime);
                   }
-
-                  // Add phase counts as items scanned/fetched
-                  if (request.phaseCounts) {
-                    if (request.phaseCounts.indexScan) {
-                      indexObj.itemsScanned.push(request.phaseCounts.indexScan);
-                    }
-                    if (request.phaseCounts.fetch) {
-                      indexObj.itemsFetched.push(request.phaseCounts.fetch);
-                    }
+                  if (indexData.itemsScanned > 0) {
+                    indexObj.itemsScanned.push(indexData.itemsScanned);
+                  }
+                  if (indexData.itemsFetched > 0) {
+                    indexObj.itemsFetched.push(indexData.itemsFetched);
                   }
                 }
 
@@ -8239,6 +8236,74 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         console.log("  📋 indexQueryFlowData.connections:", indexQueryFlowData.connections.size);
         
         renderIndexQueryFlow(sortedIndexes, sortedQueries);
+      }
+
+      // Extract the actual service time and items data for a specific index from the plan JSON
+      function extractIndexScanDataFromPlan(planString, indexName) {
+        if (!planString || !indexName) return { scanTime: 0, itemsScanned: 0, itemsFetched: 0 };
+        
+        try {
+          // Handle both cases: plan as string (needs parsing) or plan as object (already parsed)
+          let plan;
+          if (typeof planString === 'string') {
+            plan = JSON.parse(planString);
+          } else if (typeof planString === 'object' && planString !== null) {
+            plan = planString; // Already parsed
+          } else {
+            return { scanTime: 0, itemsScanned: 0, itemsFetched: 0 };
+          }
+          
+          let result = { scanTime: 0, itemsScanned: 0, itemsFetched: 0 };
+          
+          function searchOperatorForIndex(operator) {
+            if (!operator) return;
+            
+            const opType = operator["#operator"];
+            
+            // Check if this operator uses the target index
+            const operatorIndex = operator.index || operator.indexName;
+            
+            if (operatorIndex === indexName || 
+                (indexName.includes("primary") && operatorIndex === "#primary") ||
+                (indexName === "def_primary" && operatorIndex === "#primary")) {
+              
+              // Extract servTime and items data from this operator's stats
+              if (operator["#stats"]) {
+                const stats = operator["#stats"];
+                if (stats["servTime"]) {
+                  result.scanTime = parseTime(stats["servTime"]);
+                  console.log(`Found matching operator for ${indexName}: servTime = ${stats["servTime"]}`);
+                }
+                if (stats["#itemsOut"]) {
+                  result.itemsScanned = stats["#itemsOut"];
+                  console.log(`Found items scanned for ${indexName}: ${stats["#itemsOut"]}`);
+                }
+                if (stats["#itemsIn"]) {
+                  result.itemsFetched = stats["#itemsIn"];
+                }
+              }
+            }
+            
+            // Recursively search child operators
+            if (operator["~child"]) {
+              searchOperatorForIndex(operator["~child"]);
+            }
+            
+            if (operator["~children"]) {
+              for (const child of operator["~children"]) {
+                searchOperatorForIndex(child);
+              }
+            }
+          }
+          
+          searchOperatorForIndex(plan);
+          return result;
+        } catch (e) {
+          console.warn("Failed to process plan data:", e);
+          console.warn("Plan type:", typeof planString);
+          console.warn("Plan is null:", planString === null);
+          return { scanTime: 0, itemsScanned: 0, itemsFetched: 0 };
+        }
       }
 
       function extractIndexUsage(
