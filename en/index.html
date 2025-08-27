@@ -1407,6 +1407,20 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         return totalExecTime;
       }
 
+      // Calculate the sum of all service times from all operators in the plan
+      function calculateTotalServiceTime(plan) {
+        const operators = getOperators(plan);
+        let totalServiceTime = 0;
+        operators.forEach((operator, index) => {
+          const stats = operator["#stats"] || {};
+          const servTime = parseTime(stats.servTime);
+          if (!isNaN(servTime)) {
+            totalServiceTime += servTime;
+          }
+        });
+        return totalServiceTime;
+      }
+
       // Build operator stats for modal
       function buildOperatorStats(operator) {
         const operatorType = operator["#operator"] || "Unknown";
@@ -2759,7 +2773,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             } else if (col === "cpuTime") {
               value = formatTime(parseTime(request[col]));
             } else if (col === "serviceTime") {
-              value = formatTime(parseTime(request[col]));
+              value = formatTime(request.serviceTimeMs || parseTime(request[col]));
             } else {
               value = request[col] || "N/A";
             }
@@ -7346,6 +7360,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           plan: plan,
           // Pre-calculate time values
           elapsedTimeMs: parseTime(request.elapsedTime),
+          serviceTimeMs: plan ? calculateTotalServiceTime(plan) : parseTime(request.serviceTime || '0ms'),
           kernTimeMs: plan ? calculateTotalKernTime(plan) : 0,
           memoryBytes: request.usedMemory || 0,
           // Pre-calculate boolean flags
