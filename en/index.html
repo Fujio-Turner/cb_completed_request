@@ -84,11 +84,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         /* Insights Tab Styles */
         .insights-navigation {
           display: flex;
-          gap: 15px;
-          margin-bottom: 30px;
-          padding: 20px;
+          gap: 10px;
+          margin-bottom: 20px;
+          padding: 8px 12px;
           background: #f8f9fa;
-          border-radius: 8px;
+          border-radius: 6px;
           border: 1px solid #dee2e6;
           flex-wrap: wrap;
           justify-content: center;
@@ -97,17 +97,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         .nav-category-link {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 12px 16px;
+          gap: 6px;
+          padding: 6px 12px;
           background: #fff;
-          border: 2px solid #dee2e6;
-          border-radius: 6px;
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
           text-decoration: none;
           color: #495057;
-          font-weight: 600;
-          font-size: 14px;
+          font-weight: 500;
+          font-size: 12px;
           transition: all 0.2s ease;
-          min-width: 120px;
+          min-width: 100px;
           justify-content: center;
         }
 
@@ -263,91 +263,100 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         ></textarea>
       </div>
 
-      <div class="flex-row" style="margin: 10px 0; flex-wrap: wrap">
-        <button
-          id="parse-json-btn"
-          onclick="parseJSON()"
-          aria-label="Parse and analyze JSON data"
-          tabindex="0"
-          role="button"
-        >
-          Parse JSON
-        </button>
-
-        <div id="progress-container">
-          <div class="progress-background">
-            <div id="progress-bar" class="progress-bar-fill"></div>
-            <span id="progress-text" class="progress-text">0%</span>
+      <div style="margin: 10px 0; display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
+        <!-- Parse Button and Progress (Left Side) -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button
+            id="parse-json-btn"
+            onclick="parseJSON()"
+            aria-label="Parse and analyze JSON data"
+            tabindex="0"
+            role="button"
+          >
+            Parse JSON
+          </button>
+          <div id="progress-container">
+            <div class="progress-background">
+              <div id="progress-bar" class="progress-bar-fill"></div>
+              <span id="progress-text" class="progress-text">0%</span>
+            </div>
           </div>
         </div>
 
-        <label class="label-flex">
-          <input
-            type="checkbox"
-            id="exclude-system-queries"
-            checked
-            title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
-            aria-label="Exclude system queries from analysis"
-          />
-          <span
-            class="checkbox-label-text"
-            title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
-          >
-            Exclude System Queries
-          </span>
-        </label>
-        
-        <!-- Date range controls in a vertical stack -->
-        <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-start;">
+        <!-- Filtering Controls Group -->
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: #f8f9fa; padding: 8px 12px; border-radius: 6px; border: 1px solid #dee2e6;">
+          <label class="label-flex" style="margin: 0;">
+            <input
+              type="checkbox"
+              id="exclude-system-queries"
+              checked
+              title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
+              aria-label="Exclude system queries from analysis"
+            />
+            <span
+              class="checkbox-label-text"
+              title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
+              style="font-size: 12px;"
+            >
+              Exclude System
+            </span>
+          </label>
+
           <div style="display: flex; align-items: center; gap: 5px;">
-            <label for="start-date" style="width: 40px; text-align: left;">From:</label>
+            <label for="start-date" style="font-size: 12px; color: #6c757d;">From:</label>
             <input
               type="datetime-local"
               id="start-date"
               step="1"
               title="Start date/time for filtering"
+              style="font-size: 11px; padding: 2px 4px;"
             />
           </div>
+
           <div style="display: flex; align-items: center; gap: 5px;">
-            <label for="end-date" style="width: 40px; text-align: left;">To:</label>
+            <label for="end-date" style="font-size: 12px; color: #6c757d;">To:</label>
             <input
               type="datetime-local"
               id="end-date"
               step="1"
               title="End date/time for filtering"
+              style="font-size: 11px; padding: 2px 4px;"
             />
           </div>
-        </div>
-        
-        <!-- SQL Statement Filter -->
-        <div style="display: flex; align-items: center; gap: 5px;">
+
           <input
             type="text"
             id="sql-statement-filter"
-            placeholder="Filter SQL++ Statement Contains"
+            placeholder="Filter SQL++ Contains..."
             title="Filter SQL++ statements during JSON parsing"
-            style="width: 200px;"
+            style="width: 150px; font-size: 11px; padding: 4px 6px;"
           />
         </div>
-        
+
+        <!-- Time Range Buttons -->
         <div class="flex-row-5px">
-          <button onclick="setTimeRange('original')" class="cursor-pointer border-none border-radius-3 btn-gray">
+          <button onclick="setTimeRange('original')" class="cursor-pointer border-none border-radius-3 btn-gray" style="font-size: 11px; padding: 4px 8px;">
             Original
           </button>
-          <button onclick="setTimeRange('1week')" class="cursor-pointer border-none border-radius-3 btn-gray">
+          <button onclick="setTimeRange('1week')" class="cursor-pointer border-none border-radius-3 btn-gray" style="font-size: 11px; padding: 4px 8px;">
             1 Week
           </button>
-          <button onclick="setTimeRange('1day')" class="cursor-pointer border-none border-radius-3 btn-gray">
+          <button onclick="setTimeRange('1day')" class="cursor-pointer border-none border-radius-3 btn-gray" style="font-size: 11px; padding: 4px 8px;">
             1 Day
           </button>
-          <button onclick="setTimeRange('1hour')" class="cursor-pointer border-none border-radius-3 btn-gray">
+          <button onclick="setTimeRange('1hour')" class="cursor-pointer border-none border-radius-3 btn-gray" style="font-size: 11px; padding: 4px 8px;">
             1 Hour
           </button>
         </div>
-        <span id="filter-info"></span>
-        <a href="https://cb.fuj.io/analysis_hub#readStats" target="_blank" style="float: right; text-decoration: none; color: #007bff; font-size: 14px;">
-          NEED HELP? Debugging + Tool Tips
-         </a>
+
+        <span id="filter-info" style="font-size: 12px; color: #6c757d;"></span>
+
+        <!-- Help Link (Right Side) -->
+        <div style="margin-left: auto;">
+          <a href="https://cb.fuj.io/analysis_hub#readStats" target="_blank" style="text-decoration: none; color: #007bff; font-size: 14px;">
+            NEED HELP? Debugging + Tool Tips
+          </a>
+        </div>
       </div>
     </div>
 
@@ -519,9 +528,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         </div>
 
         <div style="background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h2 style="color: #333; margin-top: 0; margin-bottom: 20px; font-size: 28px;">
-            Slow Query Analysis Insights
-          </h2>
 
           <!-- Category Navigation -->
           <div class="insights-navigation">
