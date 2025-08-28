@@ -2991,15 +2991,10 @@
                 const execTimeMs = parseTime(execTime);
                 const servTimeMs = parseTime(servTime);
 
-                // Calculate effective time: execTime + servTime (if servTime exists)
-                const effectiveTimeMs = !isNaN(execTimeMs) ? execTimeMs : 0;
-                const additionalServTime = !isNaN(servTimeMs) ? servTimeMs : 0;
-                const totalOperatorTime = effectiveTimeMs + additionalServTime;
-
-                // Calculate percentage based on total elapsed time of the query
+                // Calculate percentage based on execTime only (not servTime)
                 const percentage =
-                    totalElapsedTimeMs > 0 && totalOperatorTime > 0
-                        ? ((totalOperatorTime / totalElapsedTimeMs) * 100).toFixed(2)
+                    totalElapsedTimeMs > 0 && !isNaN(execTimeMs) && execTimeMs > 0
+                        ? ((execTimeMs / totalElapsedTimeMs) * 100).toFixed(2)
                         : "N/A";
 
                 const bubble = document.createElement("div");
@@ -3018,7 +3013,7 @@
                 // Build the HTML content
                 let bubbleContent = `
                     <h4>${operatorName}</h4>
-                    <p>${formatTime(totalOperatorTime)} (${percentage}%)</p>`;
+                    <p>${formatTime(execTimeMs)} (${percentage}%)</p>`;
 
                 // Add servTime if available
                 if (servTime !== "N/A" && !isNaN(servTimeMs) && servTimeMs > 0) {
