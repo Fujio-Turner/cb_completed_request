@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.7.2
+# Couchbase Slow Query Analysis Tool v3.8.0
 
 **🌍 Idiomas:** [🇺🇸 English](../README.md) | [🇩🇪 Deutsch](../de/README.de.md) | [🇪🇸 Español](../es/README.es.md) | **🇵🇹 Português**
 
@@ -156,6 +156,12 @@ Ao analisar gráficos de linha do tempo, escolha intervalos de data apropriados 
 **⚠️ Aviso**: Intervalos de data grandes com agrupamentos de granularidade fina podem causar erros de renderização de gráficos. A ferramenta alertará você e sugerirá melhores combinações.
 
 ## 📋 Notas de Lançamento
+
+### Versão 3.8.0 (27 de agosto de 2025)
+#### 🚀 Novos Recursos
+- **Aba de Insights Adicionada**: Nova aba de análise abrangente fornecendo insights de padrões de consulta e análise de desempenho
+- **Navegação Aprimorada**: Sistema de abas atualizado com interface de usuário melhorada para melhor fluxo de análise
+- **Análise de Dados Estáticos**: Base para reconhecimento avançado de padrões de consulta e recomendações de otimização
 
 ### Versão 3.7.2 (27 de agosto de 2025)
 #### 🔧 Bug Fixes

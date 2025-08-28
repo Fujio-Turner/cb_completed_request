@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.7.2
+# Couchbase Slow Query Analysis Tool v3.8.0
 
 **🌍 Sprachen:** [🇺🇸 English](../README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](../es/README.es.md) | [🇵🇹 Português](../pt/README.pt.md)
 
@@ -156,6 +156,12 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 **⚠️ Warnung**: Große Datumsbereiche mit feinkörnigen Gruppierungen können zu Diagramm-Rendering-Fehlern führen. Das Tool wird Sie warnen und bessere Kombinationen vorschlagen.
 
 ## 📋 Versionshinweise
+
+### Version 3.8.0 (27. August 2025)
+#### 🚀 Neue Funktionen
+- **Einblicke-Tab hinzugefügt**: Neue umfassende Analyse-Registerkarte mit Einblicken in Abfragemuster und Leistungsanalyse
+- **Verbesserte Navigation**: Aktualisiertes Tab-System mit verbesserter Benutzeroberfläche für besseren Analyse-Workflow
+- **Statische Datenanalyse**: Grundlage für erweiterte Abfragemuster-Erkennung und Optimierungsempfehlungen
 
 ### Version 3.7.2 (27. August 2025)
 #### 🔧 Bug Fixes
