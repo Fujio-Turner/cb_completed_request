@@ -1274,6 +1274,48 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         return "red";
       }
 
+      // Get percentage-based background color for bubble
+      function getPercentageColor(percentage) {
+        if (percentage === "N/A" || isNaN(percentage)) {
+          return { bg: "#d4edda", border: "#28a745" }; // Light green
+        }
+
+        const percent = parseFloat(percentage);
+        
+        if (percent <= 33) {
+          // 0-33%: Light to darker green
+          const intensity = Math.min(percent / 33, 1);
+          // Start with very light green and go to medium green
+          const red = Math.floor(212 - (84 * intensity)); // 212 to 128
+          const green = Math.floor(237 - (18 * intensity)); // 237 to 219  
+          const blue = Math.floor(218 - (90 * intensity)); // 218 to 128
+          return { 
+            bg: `rgb(${red}, ${green}, ${blue})`, 
+            border: "#28a745" 
+          };
+        } else if (percent <= 90) {
+          // 33-90%: Light orange to hard orange
+          const intensity = (percent - 33) / 57; // 0 to 1
+          const red = Math.floor(255);
+          const green = Math.floor(193 - (67 * intensity)); // 193 to 126
+          const blue = Math.floor(7 + (93 * intensity)); // 7 to 100, then back to 7
+          return { 
+            bg: `rgb(${red}, ${green}, 7)`, 
+            border: "#fd7e14" 
+          };
+        } else {
+          // 90-100%: Light red to bright red
+          const intensity = (percent - 90) / 10; // 0 to 1
+          const red = Math.floor(255);
+          const green = Math.floor(205 - (205 * intensity)); // 205 to 0
+          const blue = Math.floor(210 - (210 * intensity)); // 210 to 0
+          return { 
+            bg: `rgb(${red}, ${green}, ${blue})`, 
+            border: "#dc3545" 
+          };
+        }
+      }
+
       // Cache for operators to avoid reprocessing the same plans
       const operatorsCache = new WeakMap();
 
@@ -1564,10 +1606,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           const bubble = document.createElement("div");
           bubble.className = "step-bubble";
           
-          // Use operator-specific styling instead of performance-based colors
-          const operatorStyle = getOperatorStyle(operatorName);
-          bubble.style.backgroundColor = operatorStyle.bg;
-          bubble.style.borderColor = operatorStyle.color;
+          // Use percentage-based colors to draw attention to performance issues
+          const percentageColors = getPercentageColor(percentage);
+          bubble.style.backgroundColor = percentageColors.bg;
+          bubble.style.borderColor = percentageColors.border;
           bubble.style.borderWidth = "2px";
           
           // Still add performance-based class as fallback for other styling
