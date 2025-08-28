@@ -80,6 +80,98 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         table tr:hover {
           background-color: #f1f1f1;
         }
+
+        /* Insights Tab Styles */
+        .insight-category {
+          margin-bottom: 40px;
+        }
+
+        .category-title {
+          color: #343a40;
+          font-size: 22px;
+          font-weight: 700;
+          margin: 0 0 20px 0;
+          padding-bottom: 10px;
+          border-bottom: 3px solid #007bff;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .insight-item {
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 8px;
+          padding: 20px;
+          margin-bottom: 15px;
+          border-left: 4px solid #007bff;
+        }
+
+        .insight-title {
+          color: #495057;
+          font-size: 16px;
+          font-weight: 600;
+          margin: 0 0 12px 0;
+        }
+
+        .insight-description {
+          color: #6c757d;
+          font-size: 14px;
+          line-height: 1.6;
+          margin: 0 0 10px 0;
+        }
+
+        .highlight-number {
+          background: linear-gradient(135deg, #ffd700, #ffed4e);
+          color: #5a5a00;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-weight: 700;
+          font-size: 13px;
+          border: 1px solid #e6c300;
+          display: inline-block;
+          margin: 0 2px;
+        }
+
+        .learn-more-section {
+          background: #e3f2fd;
+          border: 1px solid #90caf9;
+          border-radius: 6px;
+          padding: 15px;
+          margin-top: 15px;
+        }
+
+        .learn-more-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          margin-bottom: 8px;
+          font-size: 13px;
+          line-height: 1.4;
+        }
+
+        .learn-more-item:last-child {
+          margin-bottom: 0;
+        }
+
+        .learn-more-icon {
+          font-size: 14px;
+          margin-top: 1px;
+          flex-shrink: 0;
+        }
+
+        .insight-link {
+          color: #1565c0;
+          text-decoration: none;
+          font-weight: 600;
+          border-bottom: 1px dotted #1565c0;
+        }
+
+        .insight-link:hover {
+          color: #0d47a1;
+          text-decoration: none;
+          border-bottom: 1px solid #0d47a1;
+        }
     </style>
     <!-- Include Panzoom, jQuery, and jQuery UI -->
     <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.2/dist/panzoom.min.js?v=362"></script>
@@ -206,6 +298,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           <a href="#dashboard" aria-controls="dashboard" tabindex="0"
             >Dashboard</a
           >
+        </li>
+        <li role="tab">
+          <a href="#insights" aria-controls="insights" tabindex="0">Insights</a>
         </li>
         <li role="tab">
           <a href="#timeline" aria-controls="timeline" tabindex="0">Timeline</a>
@@ -346,6 +441,180 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             <h3 class="chart-card-header">Query State</h3>
             <div class="chart-card-content">
               <canvas id="state-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Insights Tab Content -->
+      <div id="insights">
+        <div style="padding: 20px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; margin-bottom: 20px;">
+          <h2 style="color: #856404; margin-top: 0; font-size: 24px; font-weight: bold; text-align: center;">
+            ⚠️ NON-WORKING STATIC DUMMY DATA ⚠️
+          </h2>
+          <p style="color: #856404; text-align: center; margin: 0;">
+            This is placeholder content for future insights functionality
+          </p>
+        </div>
+
+        <div style="background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="color: #333; margin-top: 0; margin-bottom: 30px; font-size: 28px;">
+            Slow Query Analysis Insights
+          </h2>
+
+          <!-- Indexes Category -->
+          <div class="insight-category">
+            <h3 class="category-title">🔍 Index Performance Issues</h3>
+            
+            <div class="insight-item">
+              <h4 class="insight-title">Inefficient Index Scans</h4>
+              <p class="insight-description">
+                There are <span class="highlight-number">200 queries</span> that scan <span class="highlight-number">1 million+</span> entries from the index but return <span class="highlight-number">≤10 items</span>, and these are not aggregate functions such as COUNT, AVG, MIN, or MAX.
+              </p>
+            </div>
+
+            <div class="insight-item">
+              <h4 class="insight-title">Delayed Index Responses</h4>
+              <p class="insight-description">
+                <span class="highlight-number">300 queries</span> involve indexes that take more than <span class="highlight-number">10 seconds</span> to respond, yet on average return fewer than <span class="highlight-number">50,000 items</span>, with many occurring concurrently.
+              </p>
+              <div class="learn-more-section">
+                <div class="learn-more-item">
+                  <span class="learn-more-icon">💡</span>
+                  Are the Index and Query services co-located? <a href="#" class="insight-link">Learn more</a>
+                </div>
+                <div class="learn-more-item">
+                  <span class="learn-more-icon">💡</span>
+                  What percentage of your index is stored in memory? <a href="#" class="insight-link">Learn more</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="insight-item">
+              <h4 class="insight-title">Primary Index Over-Usage</h4>
+              <p class="insight-description">
+                <span class="highlight-number">85 queries</span> are using primary index scans which represent <span class="highlight-number">34%</span> of all slow queries. These could benefit from secondary indexes.
+              </p>
+              <div class="learn-more-section">
+                <div class="learn-more-item">
+                  <span class="learn-more-icon">💡</span>
+                  Review your indexing strategy for better performance <a href="#" class="insight-link">Learn more</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resources Category -->
+          <div class="insight-category">
+            <h3 class="category-title">⚡ Resource Utilization Issues</h3>
+            
+            <div class="insight-item">
+              <h4 class="insight-title">High Kernel Time in Queries</h4>
+              <p class="insight-description">
+                Analysis indicates <span class="highlight-number">300 queries</span> where CPU time constitutes <span class="highlight-number">≤10%</span> of the total execution time, while kernel time accounts for <span class="highlight-number">≥90%</span> of the execution time.
+              </p>
+              <div class="learn-more-section">
+                <div class="learn-more-item">
+                  <span class="learn-more-icon">💡</span>
+                  Is the Query Service co-located with other services? <a href="#" class="insight-link">Learn more</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="insight-item">
+              <h4 class="insight-title">Memory Pressure Detected</h4>
+              <p class="insight-description">
+                <span class="highlight-number">127 queries</span> are using more than <span class="highlight-number">100MB</span> of memory each, with <span class="highlight-number">23 queries</span> exceeding <span class="highlight-number">500MB</span> memory usage.
+              </p>
+              <div class="learn-more-section">
+                <div class="learn-more-item">
+                  <span class="learn-more-icon">💡</span>
+                  Consider increasing query memory limits or optimizing queries <a href="#" class="insight-link">Learn more</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="insight-item">
+              <h4 class="insight-title">Slow USE KEY Queries</h4>
+              <p class="insight-description">
+                <span class="highlight-number">50 USE KEY queries</span> exceed <span class="highlight-number">1 second</span> in execution time, suggesting potential KV service bottlenecks.
+              </p>
+              <div class="learn-more-section">
+                <div class="learn-more-item">
+                  <span class="learn-more-icon">💡</span>
+                  Is the Data Service and/or Query Service co-located with other services? <a href="#" class="insight-link">Learn more</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Query Patterns Category -->
+          <div class="insight-category">
+            <h3 class="category-title">🔄 Query Pattern Analysis</h3>
+            
+            <div class="insight-item">
+              <h4 class="insight-title">Missing WHERE Clauses</h4>
+              <p class="insight-description">
+                <span class="highlight-number">156 queries</span> (<span class="highlight-number">18.3%</span>) lack WHERE clauses, potentially scanning entire collections unnecessarily.
+              </p>
+            </div>
+
+            <div class="insight-item">
+              <h4 class="insight-title">Complex JOIN Operations</h4>
+              <p class="insight-description">
+                <span class="highlight-number">89 JOIN queries</span> are taking an average of <span class="highlight-number">4.2 seconds</span> each, with <span class="highlight-number">67%</span> showing suboptimal join patterns.
+              </p>
+              <div class="learn-more-section">
+                <div class="learn-more-item">
+                  <span class="learn-more-icon">💡</span>
+                  Consider denormalizing frequently joined data <a href="#" class="insight-link">Learn more</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="insight-item">
+              <h4 class="insight-title">Inefficient LIKE Operations</h4>
+              <p class="insight-description">
+                <span class="highlight-number">234 queries</span> use LIKE operations with leading wildcards (<code>%text</code>), preventing index usage and causing full scans.
+              </p>
+            </div>
+          </div>
+
+          <!-- Performance Category -->
+          <div class="insight-category">
+            <h3 class="category-title">🚀 Performance Optimization Opportunities</h3>
+            
+            <div class="insight-item">
+              <h4 class="insight-title">Large Payload Streaming</h4>
+              <p class="insight-description">
+                <span class="highlight-number">250 queries</span> return <span class="highlight-number">100,000+ items</span>, with an overall average payload of <span class="highlight-number">15 MB+</span> and <span class="highlight-number">40%</span> of query time dedicated to streaming data to the client.
+              </p>
+              <div class="learn-more-section">
+                <div class="learn-more-item">
+                  <span class="learn-more-icon">💡</span>
+                  Consider implementing pagination for large result sets <a href="#" class="insight-link">Learn more</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="insight-item">
+              <h4 class="insight-title">Timeout-Prone Queries</h4>
+              <p class="insight-description">
+                <span class="highlight-number">43 queries</span> are consistently approaching timeout thresholds, with <span class="highlight-number">12 queries</span> actually timing out in the analyzed period.
+              </p>
+            </div>
+
+            <div class="insight-item">
+              <h4 class="insight-title">Concurrent Query Conflicts</h4>
+              <p class="insight-description">
+                <span class="highlight-number">178 queries</span> show evidence of resource contention, with execution times varying by more than <span class="highlight-number">300%</span> during peak hours.
+              </p>
+              <div class="learn-more-section">
+                <div class="learn-more-item">
+                  <span class="learn-more-icon">💡</span>
+                  Review query scheduling and resource allocation <a href="#" class="insight-link">Learn more</a>
+                </div>
+              </div>
             </div>
           </div>
         </div>
