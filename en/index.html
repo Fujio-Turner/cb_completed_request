@@ -247,7 +247,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           </div>
           <!-- Primary Index(es) Scan Used Chart -->
           <div class="chart-container height-300">
-            <h3 class="chart-title fixed-height">Primary Indexes Used</h3>
+            <h3 class="chart-title fixed-height">Index Type Usage</h3>
             <div class="chart-flex-container">
               <div class="flex-1 position-relative">
                 <canvas id="primary-scan-chart"></canvas>
@@ -6258,6 +6258,103 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         }
       }
 
+      // Determine the index type used: 'Primary', 'Sequential Scan', or 'GSI'
+      function getIndexType(request) {
+        if (!request.plan) return 'GSI';
+
+        try {
+          const planObj =
+            typeof request.plan === "string"
+              ? JSON.parse(request.plan)
+              : request.plan;
+          return checkOperatorForIndexType(planObj);
+        } catch (e) {
+          return 'GSI';
+        }
+      }
+
+      // Recursively check operators to determine index type
+      function checkOperatorForIndexType(operator) {
+        if (!operator) return 'GSI';
+
+        // Check for sequential scan first (most specific)
+        if (operator.using === "sequentialscan") {
+          return 'Sequential Scan';
+        }
+
+        // Check for primary index indicators
+        if (
+          operator["#operator"] === "PrimaryScan" ||
+          operator["#operator"] === "PrimaryScan3" ||
+          operator.index === "#primary" ||
+          (operator.spans && operator.spans.length === 0)
+        ) {
+          return 'Primary';
+        }
+
+        // Recursively check child operators
+        if (operator["~child"]) {
+          const childType = checkOperatorForIndexType(operator["~child"]);
+          if (childType !== 'GSI') return childType;
+        }
+        if (operator["~children"] && Array.isArray(operator["~children"])) {
+          for (const child of operator["~children"]) {
+            const childType = checkOperatorForIndexType(child);
+            if (childType !== 'GSI') return childType;
+          }
+        }
+        if (operator.input) {
+          const inputType = checkOperatorForIndexType(operator.input);
+          if (inputType !== 'GSI') return inputType;
+        }
+        if (operator.inputs && Array.isArray(operator.inputs)) {
+          for (const input of operator.inputs) {
+            const inputType = checkOperatorForIndexType(input);
+            if (inputType !== 'GSI') return inputType;
+          }
+        }
+        if (operator.left) {
+          const leftType = checkOperatorForIndexType(operator.left);
+          if (leftType !== 'GSI') return leftType;
+        }
+        if (operator.right) {
+          const rightType = checkOperatorForIndexType(operator.right);
+          if (rightType !== 'GSI') return rightType;
+        }
+        // Check for first and second properties (used in set operations like ExceptAll)
+        if (operator.first) {
+          const firstType = checkOperatorForIndexType(operator.first);
+          if (firstType !== 'GSI') return firstType;
+        }
+        if (operator.second) {
+          const secondType = checkOperatorForIndexType(operator.second);
+          if (secondType !== 'GSI') return secondType;
+        }
+        // Check for scans array (used in UnionScan, IntersectScan, etc.)
+        if (operator.scans && Array.isArray(operator.scans)) {
+          for (const scan of operator.scans) {
+            const scanType = checkOperatorForIndexType(scan);
+            if (scanType !== 'GSI') return scanType;
+          }
+        }
+        // Check for scan property (used in DistinctScan)
+        if (operator.scan) {
+          const scanType = checkOperatorForIndexType(operator.scan);
+          if (scanType !== 'GSI') return scanType;
+        }
+        // Check for subqueries array
+        if (operator["~subqueries"] && Array.isArray(operator["~subqueries"])) {
+          for (const subquery of operator["~subqueries"]) {
+            if (subquery.executionTimings) {
+              const subType = checkOperatorForIndexType(subquery.executionTimings);
+              if (subType !== 'GSI') return subType;
+            }
+          }
+        }
+
+        return 'GSI';
+      }
+
       // Recursively check operators for primary index usage
       function checkOperatorForPrimary(operator) {
         if (!operator) return false;
@@ -6267,7 +6364,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           operator["#operator"] === "PrimaryScan" ||
           operator["#operator"] === "PrimaryScan3" ||
           operator.index === "#primary" ||
-          operator.using === "sequentialScan" ||
+          operator.using === "sequentialscan" ||
           (operator.spans && operator.spans.length === 0)
         ) {
           return true;
@@ -6322,22 +6419,18 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       // Primary Scan Used Donut Chart
       function generatePrimaryScanChart(requests) {
-        const scanCounts = { Yes: 0, No: 0 };
+        const scanCounts = { 'Primary': 0, 'Sequential Scan': 0, 'GSI': 0 };
 
         requests.forEach((request) => {
-          const primaryScan = request.usesPrimary ? "Yes" : "No";
-          scanCounts[primaryScan]++;
+          const indexType = getIndexType(request);
+          scanCounts[indexType]++;
         });
 
-        const total = scanCounts.Yes + scanCounts.No;
-        const yesPercent =
-          total > 0 ? ((scanCounts.Yes / total) * 100).toFixed(1) : 0;
-        const noPercent =
-          total > 0 ? ((scanCounts.No / total) * 100).toFixed(1) : 0;
-
+        const total = scanCounts['Primary'] + scanCounts['Sequential Scan'] + scanCounts['GSI'];
+        
         // Show/hide warning div based on whether primary scans are detected
         const warningDiv = document.getElementById("primary-scan-warning");
-        if (scanCounts.Yes > 0) {
+        if (scanCounts['Primary'] > 0) {
           warningDiv.style.display = "flex";
         } else {
           warningDiv.style.display = "none";
@@ -6353,12 +6446,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         window.primaryScanChart = new Chart(ctx, {
           type: "doughnut",
           data: {
-            labels: ["Yes", "No"],
+            labels: ["Primary", "Sequential Scan", "GSI"],
             datasets: [
               {
-                data: [scanCounts.Yes, scanCounts.No],
-                backgroundColor: ["#dc3545", "#f8f9fa"],
-                borderColor: ["#dc3545", "#dee2e6"],
+                data: [scanCounts['Primary'], scanCounts['Sequential Scan'], scanCounts['GSI']],
+                backgroundColor: ["#dc3545", "#fd7e14", "#f8f9fa"],
+                borderColor: ["#dc3545", "#fd7e14", "#dee2e6"],
                 borderWidth: 2,
               },
             ],
@@ -6392,7 +6485,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               datalabels: {
                 display: true,
                 color: function (context) {
-                  return context.dataIndex === 0 ? "white" : "#6c757d";
+                  // White text for Primary (red) and Sequential Scan (orange), dark text for GSI (light gray)
+                  return context.dataIndex <= 1 ? "white" : "#6c757d";
                 },
                 font: {
                   weight: "bold",
@@ -6420,7 +6514,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     total > 0 ? ((value / total) * 100).toFixed(1) : 0;
 
                   if (value > 0) {
-                    ctx.fillStyle = index === 0 ? "white" : "#6c757d";
+                    // White text for Primary (red) and Sequential Scan (orange), dark text for GSI (light gray)
+                    ctx.fillStyle = index <= 1 ? "white" : "#6c757d";
                     ctx.font = "bold 14px Arial";
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
@@ -7204,7 +7299,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             operator["#operator"] === "PrimaryScan" ||
             operator["#operator"] === "PrimaryScan3" ||
             operator.index === "#primary" ||
-            operator.using === "sequentialScan" ||
+            operator.using === "sequentialscan" ||
             (operator.spans &&
               Array.isArray(operator.spans) &&
               operator.spans.length === 0)
@@ -8409,7 +8504,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         }
 
         // Check for sequential scan
-        if (operator.using === "sequentialScan") {
+        if (operator.using === "sequentialscan") {
           recordIndexUsage("#sequentialscan");
         }
 
