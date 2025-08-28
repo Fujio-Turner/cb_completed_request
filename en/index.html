@@ -1583,18 +1583,48 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           return "00:00.000";
         }
 
+        // Handle very small values (less than 1ms) by rounding to nearest millisecond
+        // but ensuring they show as at least 0.001 if they're greater than 0
+        if (milliseconds < 1) {
+          milliseconds = Math.max(0.001, Math.round(milliseconds * 1000) / 1000);
+        }
+
         const totalSeconds = Math.floor(milliseconds / 1000);
-        const ms = Math.floor(milliseconds % 1000);
+        const remainingMs = milliseconds % 1000;
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
 
         // Format with leading zeros
         const formattedMinutes = minutes.toString().padStart(2, "0");
         const formattedSeconds = seconds.toString().padStart(2, "0");
-        const formattedMs = ms.toString().padStart(3, "0");
+        
+        // Format milliseconds as 3-digit integer (rounded)
+        formattedMs = Math.round(remainingMs).toString().padStart(3, "0");
 
         return `${formattedMinutes}:${formattedSeconds}.${formattedMs}`;
       }
+
+      // Format original time value for tooltip display
+      function formatTimeTooltip(timeStr, milliseconds) {
+        if (!timeStr || timeStr === "N/A") {
+          return "";
+        }
+        
+        // If it's a very small value, show the original string for precision
+        if (milliseconds < 1) {
+          return `Original: ${timeStr}`;
+        }
+        
+        // For larger values, show both formatted time and original
+        const formatted = formatTime(milliseconds);
+        if (timeStr !== formatted) {
+          return `Original: ${timeStr}`;
+        }
+        
+        return "";
+      }
+
+
 
       // Cache for normalized statements with size limit
       const normalizeCache = new Map();
@@ -1848,14 +1878,19 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           html += "<dl>";
           for (const [key, value] of Object.entries(operator["#stats"])) {
             let formattedValue = value;
-            // Format time fields
+            // Format time fields with tooltips
             if (
               key === "execTime" ||
               key === "kernTime" ||
               key === "servTime"
             ) {
               const timeMs = parseTime(value);
-              formattedValue = timeMs > 0 ? formatTime(timeMs) : value;
+              if (timeMs > 0) {
+                const tooltip = formatTimeTooltip(value, timeMs);
+                formattedValue = tooltip ? 
+                  `<span title="${tooltip}">${formatTime(timeMs)}</span>` : 
+                  formatTime(timeMs);
+              }
             }
             html += `<dt>${key}</dt><dd>${formattedValue}</dd>`;
           }
@@ -1930,7 +1965,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const totalKernTime = calculateTotalKernTime(request.plan);
         // Use overall query elapsed time instead of summing operator exec times
         const totalElapsedTimeMs = request.elapsedTimeMs || parseTime(request.elapsedTime) || 0;
-        const operators = getOperators(request.plan);
+        const allOperators = getOperators(request.plan);
+        // Filter out Sequence operators (they're just orchestration, not real work)
+        const operators = allOperators.filter(op => op["#operator"] !== "Sequence");
 
         if (operators.length === 0) {
           flowDiagram.textContent = "No operators found in the execution plan.";
@@ -1952,10 +1989,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           const execTimeMs = parseTime(execTime);
           const servTimeMs = parseTime(servTime);
 
-          // Calculate percentage based on execTime only (not servTime)
+          // Calculate percentage based on servTime when available (actual bottleneck), fallback to execTime
+          const timeForPercentage = !isNaN(servTimeMs) && servTimeMs > 0 ? servTimeMs : execTimeMs;
           const percentage =
-            totalElapsedTimeMs > 0 && !isNaN(execTimeMs) && execTimeMs > 0
-              ? ((execTimeMs / totalElapsedTimeMs) * 100).toFixed(2)
+            totalElapsedTimeMs > 0 && !isNaN(timeForPercentage) && timeForPercentage > 0
+              ? ((timeForPercentage / totalElapsedTimeMs) * 100).toFixed(2)
               : "N/A";
 
           const bubble = document.createElement("div");
@@ -1971,14 +2009,16 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           const colorClass = getColorClass(parseFloat(percentage));
           bubble.classList.add(colorClass);
 
-          // Build the HTML content
+          // Build the HTML content with timing information
+          const execTimeTooltip = formatTimeTooltip(execTime, execTimeMs);
           let bubbleContent = `
                     <h4>${operatorName}</h4>
-                    <p>${formatTime(execTimeMs)} (${percentage}%)</p>`;
+                    <p><span title="${execTimeTooltip}">${formatTime(execTimeMs)}</span> (${percentage}%)</p>`;
 
           // Add servTime if available
           if (servTime !== "N/A" && !isNaN(servTimeMs) && servTimeMs > 0) {
-            bubbleContent += `<p>${formatTime(servTimeMs)} servTime</p>`;
+            const servTimeTooltip = formatTimeTooltip(servTime, servTimeMs);
+            bubbleContent += `<p><span title="${servTimeTooltip}">${formatTime(servTimeMs)}</span> servTime</p>`;
           }
 
           // Only show in/out line if both values are present and not "-"
