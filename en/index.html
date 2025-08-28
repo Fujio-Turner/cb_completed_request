@@ -82,8 +82,69 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         }
 
         /* Insights Tab Styles */
+        .insights-navigation {
+          display: flex;
+          gap: 15px;
+          margin-bottom: 30px;
+          padding: 20px;
+          background: #f8f9fa;
+          border-radius: 8px;
+          border: 1px solid #dee2e6;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+
+        .nav-category-link {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 12px 16px;
+          background: #fff;
+          border: 2px solid #dee2e6;
+          border-radius: 6px;
+          text-decoration: none;
+          color: #495057;
+          font-weight: 600;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          min-width: 120px;
+          justify-content: center;
+        }
+
+        .nav-category-link:hover {
+          background: #e3f2fd;
+          border-color: #90caf9;
+          color: #1565c0;
+          text-decoration: none;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .nav-emoji {
+          font-size: 16px;
+        }
+
+        .nav-text {
+          flex: 1;
+          text-align: center;
+        }
+
+        .nav-count {
+          background: #6c757d;
+          color: white;
+          padding: 2px 6px;
+          border-radius: 10px;
+          font-size: 11px;
+          font-weight: bold;
+        }
+
+        .nav-category-link:hover .nav-count {
+          background: #1565c0;
+        }
+
         .insight-category {
           margin-bottom: 40px;
+          scroll-margin-top: 20px;
         }
 
         .category-title {
@@ -458,12 +519,36 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         </div>
 
         <div style="background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h2 style="color: #333; margin-top: 0; margin-bottom: 30px; font-size: 28px;">
+          <h2 style="color: #333; margin-top: 0; margin-bottom: 20px; font-size: 28px;">
             Slow Query Analysis Insights
           </h2>
 
+          <!-- Category Navigation -->
+          <div class="insights-navigation">
+            <a href="#index-issues" class="nav-category-link">
+              <span class="nav-emoji">🔍</span>
+              <span class="nav-text">Index Issues</span>
+              <span class="nav-count">(3)</span>
+            </a>
+            <a href="#resource-issues" class="nav-category-link">
+              <span class="nav-emoji">⚡</span>
+              <span class="nav-text">Resource Issues</span>
+              <span class="nav-count">(3)</span>
+            </a>
+            <a href="#pattern-analysis" class="nav-category-link">
+              <span class="nav-emoji">🔄</span>
+              <span class="nav-text">Query Patterns</span>
+              <span class="nav-count">(3)</span>
+            </a>
+            <a href="#performance-opportunities" class="nav-category-link">
+              <span class="nav-emoji">🚀</span>
+              <span class="nav-text">Performance</span>
+              <span class="nav-count">(3)</span>
+            </a>
+          </div>
+
           <!-- Indexes Category -->
-          <div class="insight-category">
+          <div id="index-issues" class="insight-category">
             <h3 class="category-title">🔍 Index Performance Issues</h3>
             
             <div class="insight-item">
@@ -505,7 +590,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           </div>
 
           <!-- Resources Category -->
-          <div class="insight-category">
+          <div id="resource-issues" class="insight-category">
             <h3 class="category-title">⚡ Resource Utilization Issues</h3>
             
             <div class="insight-item">
@@ -549,7 +634,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           </div>
 
           <!-- Query Patterns Category -->
-          <div class="insight-category">
+          <div id="pattern-analysis" class="insight-category">
             <h3 class="category-title">🔄 Query Pattern Analysis</h3>
             
             <div class="insight-item">
@@ -581,7 +666,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           </div>
 
           <!-- Performance Category -->
-          <div class="insight-category">
+          <div id="performance-opportunities" class="insight-category">
             <h3 class="category-title">🚀 Performance Optimization Opportunities</h3>
             
             <div class="insight-item">
