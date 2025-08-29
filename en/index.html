@@ -1694,11 +1694,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             border: "#fd7e14" 
           };
         } else {
-          // 90-100%: Light red to bright red
+          // 90-100%: Light red to darker red (less bright for readability)
           const intensity = (percent - 90) / 10; // 0 to 1
-          const red = Math.floor(255);
-          const green = Math.floor(205 - (205 * intensity)); // 205 to 0
-          const blue = Math.floor(210 - (210 * intensity)); // 210 to 0
+          const red = Math.floor(220 - (20 * intensity)); // 220 to 200 (less bright)
+          const green = Math.floor(180 - (120 * intensity)); // 180 to 60
+          const blue = Math.floor(180 - (120 * intensity)); // 180 to 60
           return { 
             bg: `rgb(${red}, ${green}, ${blue})`, 
             border: "#dc3545" 
