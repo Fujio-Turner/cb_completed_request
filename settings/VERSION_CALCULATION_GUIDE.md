@@ -46,6 +46,19 @@ Date Last Updated: ___________________
 ### Step 2: Analyze Your Changes
 Review what has changed since the last version using these categories:
 
+**💡 TIP**: Check git history for issue-related merges:
+```bash
+# Find recent commits with issue numbers
+git log --oneline --since="1 week ago" | grep -E "issue-[0-9]+|fix/issue|feature/issue"
+
+# Check merged branches
+git branch -a | grep -E "issue|fix|feature"
+
+# Get commit details for specific issues
+git show --name-only <commit-hash>
+```
+Then check GitHub issues at https://github.com/Fujio-Turner/cb_completed_request/issues for context.
+
 #### 🚨 **MAJOR Version Changes (X.0.0)**
 Check if you have made any of these changes:
 - [ ] **Breaking API changes**: Changed how users interact with the tool
@@ -171,10 +184,10 @@ Primary Reason for Version Change:
 _____________________________________
 _____________________________________
 
-Key Changes Made:
-- ________________________________
-- ________________________________  
-- ________________________________
+Key Changes Made (with GitHub Issue References):
+- ________________________________ (issue #___)
+- ________________________________ (issue #___)  
+- ________________________________ (issue #___)
 
 Breaking Changes (if MAJOR):
 _____________________________________

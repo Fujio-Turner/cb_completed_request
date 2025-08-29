@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.8.0
+# Couchbase Slow Query Analysis Tool v3.9.0
 
 **🌍 Idiomas:** [🇺🇸 English](../README.md) | [🇩🇪 Deutsch](../de/README.de.md) | **🇪🇸 Español** | [🇵🇹 Português](../pt/README.pt.md)
 
@@ -157,11 +157,25 @@ Al analizar gráficos de línea de tiempo, elija rangos de fecha apropiados para
 
 ## 📋 Notas de Lanzamiento
 
+### Versión 3.9.0 (28 de agosto de 2025)
+#### 🔧 Corrección de Errores
+- **Funcionalidad de Pestañas Corregida**: Resuelto problema crítico donde las pestañas en versiones no inglesas (alemán, español, portugués) se mostraban como hipervínculos en lugar de pestañas interactivas debido a errores de sintaxis JavaScript en literales de cadena traducidos
+- **Visualización de Porcentaje de Stream Corregida**: Corregido problema [#35](https://github.com/Fujio-Turner/cb_completed_request/issues/35) donde el tiempo de ejecución de Stream se mostraba como 00:00.000 pero incorrectamente mostraba valores de porcentaje de dos dígitos en diagramas de flujo de burbujas
+- **Localización JavaScript Mejorada**: Proceso de traducción mejorado para prevenir errores de sintaxis de literales de cadena en versiones de idiomas
+
+#### 🚀 Nuevas Características  
+- **Documentación Mejorada**: Organización mejorada de notas de lanzamiento con integración de issues de GitHub y directrices de gestión de versiones
+- **Proceso de Localización Mejorado**: Actualizado LOCALIZATION_GUIDE.md con validación de sintaxis JavaScript obligatoria para prevenir errores de sintaxis inducidos por traducción
+
+#### 🎯 Mejoras Técnicas
+- **Verificación de Lanzamiento Integral**: Agregada herramienta RELEASE_WORK_CHECK.md para verificación independiente de finalización de trabajo de lanzamiento
+- **Problemas Futuros Prevenidos**: Guías de localización actualizadas con comandos de detección e instrucciones de corrección para preservación de sintaxis JavaScript
+
 ### Versión 3.8.0 (27 de agosto de 2025)
 #### 🚀 Nuevas Características
-- **Pestaña de Perspectivas Añadida**: Nueva pestaña de análisis integral que proporciona perspectivas de patrones de consulta y análisis de rendimiento
-- **Navegación Mejorada**: Sistema de pestañas actualizado con interfaz de usuario mejorada para mejor flujo de análisis
-- **Análisis de Datos Estáticos**: Base para reconocimiento avanzado de patrones de consulta y recomendaciones de optimización
+- **Pestaña de Perspectivas Añadida**: Implementada nueva pestaña de Perspectivas ([#32](https://github.com/Fujio-Turner/cb_completed_request/issues/32)) con análisis integral de consultas lentas incluyendo detección de tiempo de kernel alto, escaneos de índices ineficientes, respuestas de índices retrasadas, consultas USE KEY lentas, y análisis de streaming de payloads grandes
+- **Navegación Mejorada**: Sistema de pestañas actualizado con interfaz de usuario mejorada para mejor flujo de trabajo de análisis
+- **Inteligencia de Rendimiento**: Reconocimiento avanzado de patrones de consulta con métricas específicas para recomendaciones de optimización
 
 ### Versión 3.7.2 (27 de agosto de 2025)
 #### 🔧 Bug Fixes

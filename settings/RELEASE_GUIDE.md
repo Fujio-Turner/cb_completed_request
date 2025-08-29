@@ -31,9 +31,11 @@ cp settings/release.template settings/release_$(date +%Y%m%d_%H%M%S).txt
 First, calculate what version number you'll be releasing:
 
 1. **Open:** [VERSION_CALCULATION_GUIDE.md](VERSION_CALCULATION_GUIDE.md)
-2. **Complete:** Full change analysis and version calculation
-3. **Document:** Your version decision and reasoning
-4. **Result:** You should have your old and new version numbers ready
+2. **Analyze Git History:** Check for recent issue-related merges using the git commands in the guide
+3. **Read GitHub Issues:** Review issues at https://github.com/Fujio-Turner/cb_completed_request/issues for context on recent fixes/features
+4. **Complete:** Full change analysis and version calculation with issue references
+5. **Document:** Your version decision, reasoning, and GitHub issue links
+6. **Result:** You should have your old and new version numbers ready with issue-based context
 
 ### Step 2: Follow VERSION_UPDATE_GUIDE.md
 Execute the complete version update process:
@@ -114,10 +116,11 @@ Complete the deployment preparation:
 ### Step 6: Final Release Documentation
 Complete your release log:
 
-1. **Fill Additional Notes:** Document any issues or special considerations
+1. **Fill Additional Notes:** Document any issues or special considerations, including GitHub issue references
 2. **Complete Files Modified:** Check off all modified files
-3. **Finalize Release Complete section:** Add your name and completion date
-4. **Save release log:** This becomes your permanent release record
+3. **Add GitHub Context:** Document which GitHub issues were resolved or addressed in this release
+4. **Finalize Release Complete section:** Add your name and completion date
+5. **Save release log:** This becomes your permanent release record with issue tracking
 
 ## 🚨 Release Quality Gates
 

@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.8.0
+# Couchbase Slow Query Analysis Tool v3.9.0
 
 **🌍 Idiomas:** [🇺🇸 English](../README.md) | [🇩🇪 Deutsch](../de/README.de.md) | [🇪🇸 Español](../es/README.es.md) | **🇵🇹 Português**
 
@@ -157,11 +157,25 @@ Ao analisar gráficos de linha do tempo, escolha intervalos de data apropriados 
 
 ## 📋 Notas de Lançamento
 
+### Versão 3.9.0 (28 de agosto de 2025)
+#### 🔧 Correções de Bugs
+- **Funcionalidade de Abas Corrigida**: Resolveu problema crítico onde abas nas versões não-inglesas (alemão, espanhol, português) apareciam como hiperlinks em vez de abas interativas devido a erros de sintaxe JavaScript em string literals traduzidos
+- **Exibição de Porcentagem de Stream Corrigida**: Corrigiu issue [#35](https://github.com/Fujio-Turner/cb_completed_request/issues/35) onde tempo de execução Stream mostrava 00:00.000 mas incorretamente exibia valores de porcentagem de dois dígitos nos diagramas de fluxo em bolhas
+- **Localização JavaScript Aprimorada**: Processo de tradução melhorado para prevenir erros de sintaxe de string literal entre versões de idiomas
+
+#### 🚀 Novos Recursos  
+- **Documentação Aprimorada**: Organização melhorada das notas de lançamento com integração de issues do GitHub e diretrizes de gerenciamento de versões
+- **Processo de Localização Melhorado**: Atualizado LOCALIZATION_GUIDE.md com validação obrigatória de sintaxe JavaScript para prevenir erros de sintaxe induzidos por tradução
+
+#### 🎯 Melhorias Técnicas
+- **Verificação de Lançamento Abrangente**: Adicionado ferramenta RELEASE_WORK_CHECK.md para verificação independente da conclusão do trabalho de lançamento
+- **Prevenção de Problemas Futuros**: Guias de localização atualizados com comandos de detecção e instruções de correção para preservação de sintaxe JavaScript
+
 ### Versão 3.8.0 (27 de agosto de 2025)
 #### 🚀 Novos Recursos
-- **Aba de Insights Adicionada**: Nova aba de análise abrangente fornecendo insights de padrões de consulta e análise de desempenho
+- **Aba de Insights Adicionada**: Implementada nova aba Insights ([#32](https://github.com/Fujio-Turner/cb_completed_request/issues/32)) com análise abrangente de consultas lentas incluindo detecção de alto tempo de kernel, scans de índice ineficientes, respostas de índice atrasadas, consultas USE KEY lentas, e análise de streaming de payload grande
 - **Navegação Aprimorada**: Sistema de abas atualizado com interface de usuário melhorada para melhor fluxo de análise
-- **Análise de Dados Estáticos**: Base para reconhecimento avançado de padrões de consulta e recomendações de otimização
+- **Inteligência de Performance**: Reconhecimento avançado de padrões de consulta com métricas específicas para recomendações de otimização
 
 ### Versão 3.7.2 (27 de agosto de 2025)
 #### 🔧 Bug Fixes

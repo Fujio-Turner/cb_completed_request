@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.8.0
+# Couchbase Slow Query Analysis Tool v3.9.0
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](de/README.de.md) | [🇪🇸 Español](es/README.es.md) | [🇵🇹 Português](pt/README.pt.md)
 
@@ -159,11 +159,25 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 
 ## Release Notes
 
+### Version 3.9.0 (August 28, 2025)
+#### 🔧 Bug Fixes
+- **Fixed Tab Functionality**: Resolved critical issue where tabs in non-English versions (German, Spanish, Portuguese) were displaying as hyperlinks instead of interactive tabs due to JavaScript syntax errors in translated string literals
+- **Fixed Stream Percentage Display**: Fixed issue [#35](https://github.com/Fujio-Turner/cb_completed_request/issues/35) where Stream execution time showed as 00:00.000 but incorrectly displayed two-digit percentage values in bubble flow diagrams
+- **Enhanced JavaScript Localization**: Improved translation process to prevent string literal syntax errors across language versions
+
+#### 🚀 New Features  
+- **Enhanced Documentation**: Improved release notes organization with GitHub issue integration and version management guidelines
+- **Improved Localization Process**: Updated LOCALIZATION_GUIDE.md with mandatory JavaScript syntax validation to prevent translation-induced syntax errors
+
+#### 🎯 Technical Improvements
+- **Comprehensive Release Verification**: Added RELEASE_WORK_CHECK.md tool for independent verification of release work completion
+- **Prevented Future Issues**: Updated localization guides with detection commands and fix instructions for JavaScript syntax preservation
+
 ### Version 3.8.0 (August 27, 2025)
 #### 🚀 New Features
-- **Added Insights Tab**: New comprehensive analysis tab providing query pattern insights and performance analysis
+- **Added Insights Tab**: Implemented new Insights tab ([#32](https://github.com/Fujio-Turner/cb_completed_request/issues/32)) with comprehensive slow query analysis including high kernel time detection, inefficient index scans, delayed index responses, slow USE KEY queries, and large payload streaming analysis
 - **Enhanced Navigation**: Updated tab system with improved user interface for better analysis workflow
-- **Static Data Analysis**: Foundation for advanced query pattern recognition and optimization recommendations
+- **Performance Intelligence**: Advanced query pattern recognition with specific metrics for optimization recommendations
 
 ### Version 3.7.2 (August 27, 2025)
 #### 🔧 Bug Fixes

@@ -1,217 +1,136 @@
 #!/usr/bin/env python3
 """
-Additional Translation Pass - Handles remaining specific patterns
+Final Translation Script - Handles Remaining Untranslated Content
+Uses precise pattern matching to catch all missed translations
 """
+
 import json
 import re
+import sys
+from pathlib import Path
 
-def apply_remaining_translations():
-    languages = {
+def load_translations():
+    """Load translations from JSON file"""
+    with open('settings/translations.json', 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+def apply_final_translations(html_content, language_code):
+    """Apply final translations for specific problematic patterns"""
+    
+    translations = load_translations()
+    
+    # Language-specific translations
+    lang_map = {
         'de': {
-            '1 Week': '1 Woche',
-            '1 Day': '1 Tag', 
-            '1 Hour': '1 Stunde',
-            'Clear All': 'Alle Löschen',
-            'Original': 'Original',
-            'Linear': 'Linear',
-            'Logarithmic': 'Logarithmisch',
-            'Reset Zoom': 'Zoom Zurücksetzen',
-            'Use Charts Current X-Axis Date Range': 'Aktuellen X-Achsen Datumsbereich der Diagramme Verwenden',
-            'Primary index scans in production can cause full bucket scans leading to severe performance issues': 'Primäre Index-Scans in der Produktion können vollständige Bucket-Scans verursachen, die zu schwerwiegenden Leistungsproblemen führen',
-            'Learn More': 'Mehr Erfahren',
-            'Note: #primary count shows total operations, not unique queries': 'Hinweis: #primary Anzahl zeigt Gesamtoperationen, nicht eindeutige Abfragen',
-            'Drag box to zoom area': 'Kasten ziehen zum Zoomen des Bereichs',
-            'By Optimizer': 'Nach Optimierer',
-            'Query Duration Distribution': 'Verteilung der Abfragedauer',
-            # Placeholders
-            'Paste your JSON output from: SELECT': 'Fügen Sie Ihre JSON-Ausgabe ein von: SELECT',
-            'Search usernames...': 'Benutzernamen suchen...',
-            'Search indexes...': 'Indizes suchen...',
-            'Filter SQL++ Statement Contains': 'Filter SQL++ Anweisung Enthält',
-            # Table headers
-            'Count': 'Anzahl',
-            'User': 'Benutzer', 
-            'Index Name': 'Index-Name',
-            'Bucket.Scope.Collection': 'Bucket.Bereich.Sammlung',
-            'Scanned:': 'Gescannt:',
-            'Executions:': 'Ausführungen:',
-            'Indexes Used:': 'Verwendete Indizes:',
-            'Queries Executed:': 'Ausgeführte Abfragen:',
-            # Statistics labels
-            'Total Indexes:': 'Gesamte Indizes:',
-            'Buckets:': 'Buckets:',
-            'Scopes:': 'Bereiche:',
-            'Collections:': 'Sammlungen:',
-            'Primary Indexes:': 'Primäre Indizes:',
-            'Used/Total Indexes:': 'Verwendete/Gesamte Indizes:',
-            'Without/With Replica:': 'Ohne/Mit Replikat:',
-            'Never Scanned Indexes:': 'Nie Gescannte Indizes:',
-            'Primary Only': 'Nur Primäre',
-            'Used Only': 'Nur Verwendete', 
-            'No Replicas Only': 'Nur Ohne Replikate',
-            'Never Scanned Only': 'Nur Nie Gescannte',
-            # Dropdown options
-            '(ALL)': '(ALLE)',
-            'Name': 'Name',
-            'Bucket': 'Bucket',
-            'Last Scanned': 'Zuletzt Gescannt',
-            'Sort By': 'Sortieren Nach',
+            'Search in SQL++ statements...': 'In SQL++ Anweisungen suchen...',
+            'Database Operations Timeline: Index Scans vs Document Fetches': 'Datenbank-Operationen Timeline: Index-Scans vs Dokument-Abrufe',
+            'Filter Operations Timeline: Efficiency Analysis (IN vs OUT)': 'Filter-Operationen Timeline: Effizienz-Analyse (EINGANG vs AUSGANG)',  
+            'Query Performance Timeline: KernTime % of ExecutionTime': 'Abfrage-Performance Timeline: KernTime % der Ausführungszeit',
+            'Yes': 'Ja',
+            'No': 'Nein',
+            'Dashboard': 'Instrumententafel',
+            'Timeline': 'Zeitverlauf', 
+            'Analysis': 'Analysieren',
+            'Every Query': 'Jede Abfrage',
+            'Index/Query Flow': 'Index/Abfrage-Fluss',
+            'Indexes': 'Indizes',
+            'Query Groups': 'Abfragegruppen'
         },
         'es': {
-            '1 Week': '1 Semana',
-            '1 Day': '1 Día',
-            '1 Hour': '1 Hora', 
-            'Clear All': 'Limpiar Todo',
-            'Original': 'Original',
-            'Linear': 'Lineal',
-            'Logarithmic': 'Logarítmico',
-            'Reset Zoom': 'Restablecer Zoom',
-            'Use Charts Current X-Axis Date Range': 'Usar Rango de Fechas del Eje X de los Gráficos Actuales',
-            'Primary index scans in production can cause full bucket scans leading to severe performance issues': 'Los escaneos de índices primarios en producción pueden causar escaneos completos de buckets llevando a problemas de rendimiento severos',
-            'Learn More': 'Aprender Más',
-            'Note: #primary count shows total operations, not unique queries': 'Nota: el conteo #primary muestra operaciones totales, no consultas únicas',
-            'Drag box to zoom area': 'Arrastrar caja para ampliar área',
-            'By Optimizer': 'Por Optimizador',
-            'Query Duration Distribution': 'Distribución de Duración de Consultas',
-            'Exclude System Queries': 'Excluir Consultas del Sistema',
-            # Placeholders  
-            'Search usernames...': 'Buscar usuarios...',
-            'Search indexes...': 'Buscar índices...',
-            'Filter SQL++ Statement Contains': 'Filtrar Declaración SQL++ Contiene',
-            # Table headers
-            'Count': 'Conteo',
-            'User': 'Usuario',
-            'Index Name': 'Nombre de Índice',
-            'Bucket.Scope.Collection': 'Bucket.Ámbito.Colección',
-            'Scanned:': 'Escaneado:',
-            'Executions:': 'Ejecuciones:',
-            'Indexes Used:': 'Índices Utilizados:',
-            'Queries Executed:': 'Consultas Ejecutadas:',
-            # Statistics labels
-            'Total Indexes:': 'Total de Índices:',
-            'Buckets:': 'Buckets:',
-            'Scopes:': 'Ámbitos:',
-            'Collections:': 'Colecciones:',
-            'Primary Indexes:': 'Índices Primarios:',
-            'Used/Total Indexes:': 'Índices Usados/Total:',
-            'Without/With Replica:': 'Sin/Con Réplica:',
-            'Never Scanned Indexes:': 'Índices Nunca Escaneados:',
-            'Primary Only': 'Solo Primarios',
-            'Used Only': 'Solo Usados',
-            'No Replicas Only': 'Solo Sin Réplicas', 
-            'Never Scanned Only': 'Solo Nunca Escaneados',
-            # Dropdown options
-            '(ALL)': '(TODOS)',
-            'Name': 'Nombre',
-            'Bucket': 'Bucket',
-            'Last Scanned': 'Último Escaneo',
-            'Sort By': 'Ordenar Por',
+            'Search in SQL++ statements...': 'Buscar en declaraciones SQL++...',
+            'Database Operations Timeline: Index Scans vs Document Fetches': 'Línea de Tiempo de Operaciones de Base de Datos: Escaneos de Índice vs Recuperación de Documentos',
+            'Filter Operations Timeline: Efficiency Analysis (IN vs OUT)': 'Línea de Tiempo de Operaciones de Filtro: Análisis de Eficiencia (ENTRADA vs SALIDA)',
+            'Query Performance Timeline: KernTime % of ExecutionTime': 'Línea de Tiempo de Rendimiento de Consultas: % de KernTime del Tiempo de Ejecución',
+            'Yes': 'Sí',
+            'No': 'No',
+            'Dashboard': 'Panel de Control',
+            'Timeline': 'Línea de Tiempo',
+            'Analysis': 'Análisis',
+            'Every Query': 'Cada Consulta',
+            'Index/Query Flow': 'Flujo de Índice/Consulta',
+            'Indexes': 'Índices',
+            'Query Groups': 'Grupos de Consulta'
         },
         'pt': {
-            '1 Week': '1 Semana',
-            '1 Day': '1 Dia',
-            '1 Hour': '1 Hora',
-            'Clear All': 'Limpar Tudo',
-            'Original': 'Original',
-            'Linear': 'Linear',
-            'Logarithmic': 'Logarítmico', 
-            'Reset Zoom': 'Redefinir Zoom',
-            'Use Charts Current X-Axis Date Range': 'Usar Intervalo de Datas do Eixo X dos Gráficos Atuais',
-            'Primary index scans in production can cause full bucket scans leading to severe performance issues': 'Verificações de índice primário em produção podem causar verificações completas de bucket levando a problemas graves de desempenho',
-            'Learn More': 'Saiba Mais',
-            'Note: #primary count shows total operations, not unique queries': 'Nota: a contagem #primary mostra operações totais, não consultas únicas',
-            'Drag box to zoom area': 'Arraste caixa para ampliar área',
-            'By Optimizer': 'Por Otimizador',
-            'Query Duration Distribution': 'Distribuição de Duração de Consultas',
-            'Exclude System Queries': 'Excluir Consultas do Sistema',
-            # Placeholders
-            'Search usernames...': 'Buscar usuários...',
-            'Search indexes...': 'Buscar índices...',
-            'Filter SQL++ Statement Contains': 'Filtrar Declaração SQL++ Contém',
-            # Table headers
-            'Count': 'Contagem',
-            'User': 'Usuário',
-            'Index Name': 'Nome do Índice',
-            'Bucket.Scope.Collection': 'Bucket.Escopo.Coleção',
-            'Scanned:': 'Verificado:',
-            'Executions:': 'Execuções:',
-            'Indexes Used:': 'Índices Utilizados:',
-            'Queries Executed:': 'Consultas Executadas:',
-            # Statistics labels
-            'Total Indexes:': 'Total de Índices:',
-            'Buckets:': 'Buckets:',
-            'Scopes:': 'Escopos:',
-            'Collections:': 'Coleções:',
-            'Primary Indexes:': 'Índices Primários:',
-            'Used/Total Indexes:': 'Índices Usados/Total:',
-            'Without/With Replica:': 'Sem/Com Réplica:',
-            'Never Scanned Indexes:': 'Índices Nunca Verificados:',
-            'Primary Only': 'Apenas Primários',
-            'Used Only': 'Apenas Usados',
-            'No Replicas Only': 'Apenas Sem Réplicas',
-            'Never Scanned Only': 'Apenas Nunca Verificados',
-            # Dropdown options
-            '(ALL)': '(TODOS)',
-            'Name': 'Nome',
-            'Bucket': 'Bucket',
-            'Last Scanned': 'Última Verificação',
-            'Sort By': 'Ordenar Por',
+            'Search in SQL++ statements...': 'Buscar em declarações SQL++...',
+            'Database Operations Timeline: Index Scans vs Document Fetches': 'Linha do Tempo de Operações de Banco de Dados: Varreduras de Índice vs Recuperação de Documentos',
+            'Filter Operations Timeline: Efficiency Analysis (IN vs OUT)': 'Linha do Tempo de Operações de Filtro: Análise de Eficiência (ENTRADA vs SAÍDA)',
+            'Query Performance Timeline: KernTime % of ExecutionTime': 'Linha do Tempo de Desempenho de Consultas: % de KernTime do Tempo de Execução',
+            'Yes': 'Sim',
+            'No': 'Não',
+            'Dashboard': 'Painel de Controle',
+            'Timeline': 'Linha do Tempo',
+            'Analysis': 'Análise',
+            'Every Query': 'Cada Consulta', 
+            'Index/Query Flow': 'Fluxo de Índice/Consulta',
+            'Indexes': 'Índices',
+            'Query Groups': 'Grupos de Consulta'
         }
     }
     
-    files = {
-        'de': 'de/index.html',
-        'es': 'es/index.html', 
-        'pt': 'pt/index.html'
-    }
+    if language_code not in lang_map:
+        return html_content
     
-    total_translations = 0
+    # Apply translations using simple string replacement
+    for english, target in lang_map[language_code].items():
+        
+        # Multiple replacement patterns to catch all instances
+        patterns = [
+            f'>{english}<',  # Between HTML tags
+            f'"{english}"',  # In quotes  
+            f"'{english}'",  # In single quotes
+            f'placeholder="{english}"',  # Placeholder attributes
+            f'title="{english}"',  # Title attributes
+            f'text: "{english}"',  # Chart configurations
+            f'label: "{english}"',  # Chart labels
+            f'textContent = "{english}"',  # JavaScript assignments
+            f'innerHTML = "{english}"',  # JavaScript innerHTML
+        ]
+        
+        for pattern in patterns:
+            replacement = pattern.replace(english, target)
+            html_content = html_content.replace(pattern, replacement)
     
-    for lang_code, file_path in files.items():
-        print(f"\n🌍 Processing additional translations for {lang_code}")
-        
-        # Read file
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        lang_translations = languages[lang_code]
-        
-        for english_text, translated_text in lang_translations.items():
-            # Try multiple replacement patterns
-            patterns = [
-                f'>{english_text}<',
-                f'>{english_text}</button>',
-                f'>{english_text}</option>',
-                f'placeholder="{english_text}"',
-                f'title="{english_text}"',
-                f'>{english_text}</span>',
-                f'>{english_text}</label>',
-            ]
-            
-            replacements = [
-                f'>{translated_text}<',
-                f'>{translated_text}</button>',
-                f'>{translated_text}</option>',
-                f'placeholder="{translated_text}"',
-                f'title="{translated_text}"',
-                f'>{translated_text}</span>',
-                f'>{translated_text}</label>',
-            ]
-            
-            for pattern, replacement in zip(patterns, replacements):
-                if pattern.replace('>', '').replace('<', '').replace('placeholder="', '').replace('"', '').replace('title="', '').replace('</button>', '').replace('</option>', '').replace('</span>', '').replace('</label>', '') in content:
-                    old_content = content
-                    content = content.replace(pattern, replacement)
-                    if content != old_content:
-                        total_translations += 1
-                        print(f"  ✅ {english_text} → {translated_text}")
-                        break
-        
-        # Write back
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(content)
+    return html_content
+
+def process_file(file_path, language_code):
+    """Process a single language file"""
     
-    print(f"\n🎯 Applied {total_translations} additional translations")
+    language_names = {'de': 'German', 'es': 'Spanish', 'pt': 'Portuguese'}
+    language_name = language_names.get(language_code, language_code)
     
+    if not file_path.exists():
+        print(f"❌ {file_path} not found")
+        return False
+    
+    print(f"🌍 Processing final {language_name} translations...")
+    
+    # Read file
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    # Apply final translations
+    translated_content = apply_final_translations(content, language_code)
+    
+    # Write back
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(translated_content)
+    
+    print(f"✅ {language_name} final translations applied")
+    return True
+
+def main():
+    """Main function"""
+    
+    print("🎯 Applying final translations to catch remaining English text...")
+    
+    languages = ['de', 'es', 'pt']
+    
+    for lang in languages:
+        file_path = Path(f'{lang}/index.html')
+        process_file(file_path, lang)
+    
+    print("\n🎉 Final translation pass completed!")
+
 if __name__ == '__main__':
-    apply_remaining_translations()
+    main()

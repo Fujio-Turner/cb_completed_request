@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.8.0
+# Couchbase Slow Query Analysis Tool v3.9.0
 
 **🌍 Sprachen:** [🇺🇸 English](../README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](../es/README.es.md) | [🇵🇹 Português](../pt/README.pt.md)
 
@@ -157,11 +157,25 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 
 ## 📋 Versionshinweise
 
+### Version 3.9.0 (28. August 2025)
+#### 🔧 Fehlerbehebungen
+- **Tab-Funktionalität repariert**: Kritisches Problem behoben, bei dem Tabs in nicht-englischen Versionen (Deutsch, Spanisch, Portugiesisch) als Hyperlinks anstatt als interaktive Tabs angezeigt wurden, aufgrund von JavaScript-Syntaxfehlern in übersetzten String-Literalen
+- **Stream-Prozentanzeige repariert**: Problem [#35](https://github.com/Fujio-Turner/cb_completed_request/issues/35) behoben, bei dem Stream-Ausführungszeit als 00:00.000 angezeigt wurde, aber fälschlicherweise zweistellige Prozentwerte in Bubble-Flow-Diagrammen darstellte
+- **Verbesserte JavaScript-Lokalisierung**: Verbesserter Übersetzungsprozess zur Vermeidung von String-Literal-Syntaxfehlern in verschiedenen Sprachversionen
+
+#### 🚀 Neue Funktionen  
+- **Erweiterte Dokumentation**: Verbesserte Organisation der Versionshinweise mit GitHub-Issue-Integration und Versionsverwaltungsrichtlinien
+- **Verbesserter Lokalisierungsprozess**: Aktualisierte LOCALIZATION_GUIDE.md mit obligatorischer JavaScript-Syntaxvalidierung zur Vermeidung übersetzungsbedingter Syntaxfehler
+
+#### 🎯 Technische Verbesserungen
+- **Umfassende Release-Verifizierung**: RELEASE_WORK_CHECK.md-Tool für unabhängige Verifizierung der Release-Arbeitsfertigstellung hinzugefügt
+- **Zukünftige Probleme verhindert**: Lokalisierungsleitfäden mit Erkennungsbefehlen und Korrekturanweisungen für JavaScript-Syntaxerhaltung aktualisiert
+
 ### Version 3.8.0 (27. August 2025)
 #### 🚀 Neue Funktionen
-- **Einblicke-Tab hinzugefügt**: Neue umfassende Analyse-Registerkarte mit Einblicken in Abfragemuster und Leistungsanalyse
+- **Einblicke-Tab hinzugefügt**: Neue Einblicke-Registerkarte implementiert ([#32](https://github.com/Fujio-Turner/cb_completed_request/issues/32)) mit umfassender Analyse langsamer Queries, einschließlich Erkennung hoher Kernel-Zeiten, ineffizienter Index-Scans, verzögerter Index-Antworten, langsamer USE KEY-Queries und Analyse großer Payload-Streaming
 - **Verbesserte Navigation**: Aktualisiertes Tab-System mit verbesserter Benutzeroberfläche für besseren Analyse-Workflow
-- **Statische Datenanalyse**: Grundlage für erweiterte Abfragemuster-Erkennung und Optimierungsempfehlungen
+- **Performance-Intelligenz**: Erweiterte Query-Pattern-Erkennung mit spezifischen Metriken für Optimierungsempfehlungen
 
 ### Version 3.7.2 (27. August 2025)
 #### 🔧 Bug Fixes

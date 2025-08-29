@@ -103,6 +103,29 @@ I need to synchronize the localized HTML files with the working en/index.html. P
 This method ensures JavaScript functionality is identical across all versions while maintaining proper localization.
 ```
 
+### ⚠️ **CRITICAL: JavaScript Syntax Requirements**
+
+**BEFORE ANY TRANSLATION WORK**: Be aware that JavaScript string literals CANNOT span multiple lines. When applying translations:
+
+**❌ WRONG** (causes syntax errors):
+```javascript
+if (col === "tiempo de
+solicitud") return "requestTime";
+```
+
+**✅ CORRECT** (proper JavaScript syntax):
+```javascript
+if (col === "tiempo de " +
+"solicitud") return "requestTime";
+```
+
+**🚨 MANDATORY VALIDATION**: After any translation work, run:
+```bash
+# Check for JavaScript syntax errors in language files
+grep -n '"[^"]*$' */index.html | grep -v "style=\|href=\|src=\|class=\|id="
+```
+If this finds any results in JavaScript code sections, they need string concatenation fixes.
+
 ### Alternative: Individual Function Sync Process
 
 If you prefer to sync individual changes, use this chat prompt template:
@@ -195,6 +218,24 @@ Update settings/translations.json if new translatable strings were added.
 
 ### 🚨 **CRITICAL DETECTION PATTERNS:**
 
+#### **🚨 MANDATORY: JavaScript Syntax Validation**
+**ALWAYS RUN AFTER TRANSLATION WORK**:
+```bash
+# 1. Check for broken JavaScript string literals (CRITICAL)
+grep -n -A1 '"[^"]*$' */index.html | grep -v "style=\|href=\|src=\|class=\|id=\|content=\|placeholder="
+
+# 2. If found, fix with string concatenation:
+#    "broken text" becomes "broken " + "text"
+
+# 3. Verify fix by checking for syntax errors:
+#    Open each language file in browser and check JavaScript console for errors
+```
+
+**❌ IMMEDIATE FIX REQUIRED** if you find patterns like:
+- `"text\ntext"` in JavaScript code sections
+- Multi-line strings in column arrays or conditional statements  
+- Broken string literals in JavaScript functions
+
 #### **Find Untranslated User-Facing Content:**
 ```bash
 # Find HTML labels and text that need translation
@@ -240,6 +281,28 @@ After completing localization, run this comprehensive audit to detect the remain
 ```
 
 ### **Manual Audit Commands:**
+
+#### **0. MANDATORY: JavaScript Syntax Validation (RUN FIRST)**
+```bash
+LANG="de"  # Change to es, pt as needed
+
+echo "=== JAVASCRIPT SYNTAX VALIDATION FOR ${LANG^^} ===" 
+echo "Checking for broken string literals..."
+
+# Find broken JavaScript strings (CRITICAL CHECK)
+BROKEN_JS=$(grep -n '"[^"]*$' ${LANG}/index.html | grep -v "style=\|href=\|src=\|class=\|id=\|content=\|placeholder=" | head -10)
+
+if [ -n "$BROKEN_JS" ]; then
+  echo "❌ CRITICAL: Found broken JavaScript string literals:"
+  echo "$BROKEN_JS"
+  echo ""
+  echo "🔧 FIX REQUIRED: Add string concatenation with + operators"
+  echo "   Example: \"text\" becomes \"text \" + \"continuation\""
+else
+  echo "✅ No broken JavaScript string literals found"
+fi
+echo ""
+```
 
 #### **1. Find Remaining English UI Text:**
 ```bash
