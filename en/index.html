@@ -6514,6 +6514,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             startDate,
             endDate
           );
+          
+          // Apply SQL filter and system query exclusion
+          requests = filterSystemQueries(requests);
         } else {
           // Fallback to parsing JSON if no original data
           const jsonInput = document.getElementById("json-input").value;
@@ -6531,6 +6534,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                   : null,
               }));
             }
+            
+            // Apply SQL filter and system query exclusion to parsed data
+            requests = filterSystemQueries(requests);
           } catch (e) {
             console.error("Error parsing JSON for time grouping change:", e);
             return;
