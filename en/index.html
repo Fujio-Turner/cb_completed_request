@@ -229,10 +229,16 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         }
 
         .insight-link:hover {
-          color: #0d47a1;
-          text-decoration: none;
-          border-bottom: 1px solid #0d47a1;
+        color: #0d47a1;
+        text-decoration: none;
+        border-bottom: 1px solid #0d47a1;
         }
+         
+         /* Status counts styling */
+         .fatal-count {
+           font-weight: bold;
+           color: #dc3545;
+         }
     </style>
     <!-- Include Panzoom, jQuery, and jQuery UI -->
     <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.2/dist/panzoom.min.js?v=362"></script>
@@ -3576,6 +3582,27 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           user_query_counts[user] = users_agg.filter((v) => v === user).length;
         });
 
+        // Calculate status counts
+        const status_counts = {
+          completed: 0,
+          fatal: 0,
+          cancelled: 0,
+          other: 0
+        };
+        
+        groupedRequests.forEach((r) => {
+          const state = r.state ? r.state.toLowerCase() : 'completed';
+          if (state === 'completed') {
+            status_counts.completed++;
+          } else if (state === 'fatal') {
+            status_counts.fatal++;
+          } else if (state === 'cancelled') {
+            status_counts.cancelled++;
+          } else {
+            status_counts.other++;
+          }
+        });
+
         return {
           normalized_statement,
           user_query_counts,
@@ -3587,6 +3614,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           avg_fetch: Math.round(avg_fetch),
           avg_primaryScan: Math.round(avg_primaryScan),
           avg_indexScan: Math.round(avg_indexScan),
+          status_counts,
         };
       }
 
@@ -3630,6 +3658,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           "avg_fetch",
           "avg_primaryScan",
           "avg_indexScan",
+          "status_counts",
           "normalized_statement",
           "user_query_counts",
         ];
@@ -3643,6 +3672,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             .replace("in seconds", " (mm:ss.sss)");
           if (col === "user_query_counts") {
             displayName = "user: (count)";
+          }
+          if (col === "status_counts") {
+            displayName = "state\nfatal";
           }
           th.textContent = displayName;
           th.style.textAlign = "center";
@@ -3660,6 +3692,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               value = Object.entries(group.user_query_counts)
                 .map(([user, count]) => `${user}: (${count})`)
                 .join(", ");
+            } else if (col === "status_counts") {
+              const counts = group.status_counts;
+              value = counts.fatal;
             } else if (col === "total_count") {
               value = group.total_count;
             } else if (
@@ -3737,6 +3772,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           "avg_fetch",
           "avg_primaryScan",
           "avg_indexScan",
+          "status_counts",
           "normalized_statement",
           "user_query_counts",
         ];
@@ -3792,6 +3828,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               // Bold the counts in parentheses
               const formattedValue = value.replace(/\((\d+)\)/g, "<b>($1)</b>");
               td.innerHTML = formattedValue;
+            } else if (col === "status_counts") {
+              // Show fatal count, make it bold and red if > 0
+              if (value > 0) {
+                td.innerHTML = `<span class="fatal-count">${value}</span>`;
+              } else {
+                td.textContent = value;
+              }
             } else if (col === "total_count") {
               // Format total_count with commas
               const numValue = Number(value);
