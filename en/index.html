@@ -749,7 +749,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             <label style="font-weight: bold; margin-right: 8px; color: #495057;">Time Grouping:</label>
             <select id="time-grouping-select" onchange="changeTimeGrouping()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px;">
               <option value="optimizer">By Optimizer (...)</option>
+              <option value="day">By Day</option>
               <option value="hour">By Hour</option>
+              <option value="5min">By 5 Minute</option>
               <option value="minute">By Minute</option>
               <option value="second">By Second</option>
             </select>
@@ -3881,6 +3883,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         switch (actualUnit) {
           case "second":
             date.setMilliseconds(0);
+            break;
+          case "5min":
+            const minutes5 = Math.floor(date.getMinutes() / 5) * 5;
+            date.setMinutes(minutes5, 0, 0);
             break;
           case "minute":
             date.setSeconds(0, 0);
@@ -7885,7 +7891,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       // Validate date range for time grouping
       function validateDateRangeForGrouping(startDate, endDate, grouping) {
-        if (!startDate || !endDate || grouping === "optimizer")
+        if (!startDate || !endDate || grouping === "optimizer" || grouping === "day")
           return { valid: true };
 
         const diffMs = endDate.getTime() - startDate.getTime();
@@ -7908,6 +7914,16 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 valid: false,
                 message:
                   'For "by Minute" grouping, please restrict the date range to 1 day or less to avoid chart rendering issues.',
+              };
+            }
+            break;
+          case "5min":
+            const diffWeeks5min = diffDays / 7;
+            if (diffWeeks5min > 1) {
+              return {
+                valid: false,
+                message:
+                  'For "by 5min" grouping, please restrict the date range to 1 week or less to avoid chart rendering issues.',
               };
             }
             break;
