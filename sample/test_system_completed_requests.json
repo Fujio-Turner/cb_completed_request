@@ -274,7 +274,7 @@
     "completed_requests": {
       "clientContextID": "simple-document-get",
       "cpuTime": "0.234ms",
-      "elapsedTime": "3.456ms",
+      "elapsedTime": "1.456s",
       "errorCount": 0,
       "errors": [],
       "n1qlFeatCtrl": 76,
@@ -559,5 +559,502 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-15T14:45:33.790Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"3.456µs\",\"servTime\":\"12.778µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:employees\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"8.901µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":600000,\"execTime\":\"234.567ms\",\"kernTime\":\"198.432ms\",\"servTime\":\"210.123ms\"},\"index\":\"idx_employees_hire_date\",\"keyspace\":\"employees\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"null\",\"inclusion\":1,\"low\":\"\\\"2025-06-01\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":125,\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":600125,\"execTime\":\"1234.567ms\",\"kernTime\":\"1123.219ms\",\"servTime\":\"1187.678ms\"},\"keyspace\":\"employees\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":300000,\"execTime\":\"89.123ms\",\"kernTime\":\"82.456ms\"},\"condition\":\"((`employees`.`department`) = 'engineering')\"},{\"#operator\":\"InitialGroup\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":0,\"#phaseSwitches\":150000,\"execTime\":\"3456.789ms\",\"kernTime\":\"3234.567ms\"},\"aggregates\":[\"count(*)\",\"avg((`employees`.`salary`))\",\"sum((`employees`.`total_expenses`))\"],\"group_keys\":[\"(`employees`.`department`)\",\"(`employees`.`location`)\",\"(`employees`.`team`)\",\"(`employees`.`sub_department`)\"]},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":0,\"#itemsOut\":0,\"#phaseSwitches\":0,\"execTime\":\"0.567ms\",\"kernTime\":\"0.5ms\"},\"result_terms\":[{\"as\":\"department\",\"expr\":\"(`employees`.`department`)\"},{\"as\":\"employee_count\",\"expr\":\"count(*)\"},{\"as\":\"avg_salary\",\"expr\":\"avg((`employees`.`salary`))\"},{\"as\":\"total_expenses\",\"expr\":\"sum((`employees`.`total_expenses`))\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":0,\"#itemsOut\":0,\"#phaseSwitches\":1,\"execTime\":\"0.123ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "large-analytics-export-day1",
+      "cpuTime": "234.567ms",
+      "elapsedTime": "4.789123s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$reportDate": "2025-07-25"
+      },
+      "phaseCounts": {
+        "indexScan": 75000,
+        "fetch": 75000,
+        "sort": 75000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "18.456µs",
+        "instantiate": "23.789µs",
+        "parse": "456.789µs",
+        "plan": "89.012µs",
+        "plan.index.metadata": "34.567µs",
+        "plan.keyspace.metadata": "23.456µs",
+        "indexScan": "567.890ms",
+        "fetch": "2.345678s",
+        "project": "234.567ms",
+        "run": "4.567890s",
+        "stream": "1.234567s"
+      },
+      "remoteAddr": "127.0.0.1:54987",
+      "requestId": "large-analytics-export-day1",
+      "requestTime": "2025-07-25T02:15:30.456Z",
+      "resultCount": 75000,
+      "resultSize": 8388608,
+      "scanConsistency": "request_plus",
+      "serviceTime": "4.789012s",
+      "state": "completed",
+      "statement": "SELECT * FROM `analytics_data` WHERE reportDate = $reportDate ORDER BY timestamp",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 12288,
+      "userAgent": "python-analytics/2.1.4",
+      "users": "local:analytics_export_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-25T02:15:30.457Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.789µs\",\"servTime\":\"16.445µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:analytics_data\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"6.789µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":75000,\"#itemsOut\":75000,\"#phaseSwitches\":150000,\"execTime\":\"567.890ms\",\"kernTime\":\"523.456ms\",\"servTime\":\"545.123ms\"},\"index\":\"idx_analytics_report_date\",\"keyspace\":\"analytics_data\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"2025-07-25\\\"\",\"inclusion\":3,\"low\":\"\\\"2025-07-25\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":150,\"#itemsIn\":75000,\"#itemsOut\":75000,\"#phaseSwitches\":150150,\"execTime\":\"2345.678ms\",\"kernTime\":\"2123.456ms\",\"servTime\":\"2234.567ms\"},\"keyspace\":\"analytics_data\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":75000,\"#itemsOut\":75000,\"#phaseSwitches\":150000,\"execTime\":\"234.567ms\",\"kernTime\":\"212.345ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Order\",\"#stats\":{\"#itemsIn\":75000,\"#itemsOut\":75000,\"#phaseSwitches\":225000,\"execTime\":\"1456.789ms\",\"kernTime\":\"1334.567ms\"},\"sort_terms\":[{\"expr\":\"(`analytics_data`.`timestamp`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":75000,\"#itemsOut\":75000,\"#phaseSwitches\":75001,\"execTime\":\"1234.567ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "large-analytics-export-day2",
+      "cpuTime": "198.432ms",
+      "elapsedTime": "3.567891s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$reportDate": "2025-07-26"
+      },
+      "phaseCounts": {
+        "indexScan": 68000,
+        "fetch": 68000,
+        "sort": 68000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "16.234µs",
+        "instantiate": "21.567µs",
+        "parse": "398.456µs",
+        "plan": "78.901µs",
+        "plan.index.metadata": "29.834µs",
+        "plan.keyspace.metadata": "19.876µs",
+        "indexScan": "445.678ms",
+        "fetch": "1.987654s",
+        "project": "189.432ms",
+        "run": "3.345678s",
+        "stream": "987.654ms"
+      },
+      "remoteAddr": "127.0.0.1:54988",
+      "requestId": "large-analytics-export-day2",
+      "requestTime": "2025-07-26T02:15:30.456Z",
+      "resultCount": 68000,
+      "resultSize": 6291456,
+      "scanConsistency": "request_plus",
+      "serviceTime": "3.567789s",
+      "state": "completed",
+      "statement": "SELECT * FROM `analytics_data` WHERE reportDate = $reportDate ORDER BY timestamp",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 11264,
+      "userAgent": "python-analytics/2.1.4",
+      "users": "local:analytics_export_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-26T02:15:30.457Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.456µs\",\"servTime\":\"14.223µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:analytics_data\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"5.789µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":68000,\"#itemsOut\":68000,\"#phaseSwitches\":136000,\"execTime\":\"445.678ms\",\"kernTime\":\"412.345ms\",\"servTime\":\"434.567ms\"},\"index\":\"idx_analytics_report_date\",\"keyspace\":\"analytics_data\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"2025-07-26\\\"\",\"inclusion\":3,\"low\":\"\\\"2025-07-26\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":136,\"#itemsIn\":68000,\"#itemsOut\":68000,\"#phaseSwitches\":136136,\"execTime\":\"1987.654ms\",\"kernTime\":\"1789.123ms\",\"servTime\":\"1876.543ms\"},\"keyspace\":\"analytics_data\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":68000,\"#itemsOut\":68000,\"#phaseSwitches\":136000,\"execTime\":\"189.432ms\",\"kernTime\":\"167.890ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Order\",\"#stats\":{\"#itemsIn\":68000,\"#itemsOut\":68000,\"#phaseSwitches\":204000,\"execTime\":\"1123.456ms\",\"kernTime\":\"1001.234ms\"},\"sort_terms\":[{\"expr\":\"(`analytics_data`.`timestamp`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":68000,\"#itemsOut\":68000,\"#phaseSwitches\":68001,\"execTime\":\"987.654ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "inefficient-email-search-day1",
+      "cpuTime": "89.234ms",
+      "elapsedTime": "2.567891s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$emailDomain": "gmail.com"
+      },
+      "phaseCounts": {
+        "primaryScan": 50000,
+        "fetch": 50000,
+        "filter": 50000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "primaryScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "19.456µs",
+        "instantiate": "25.789µs",
+        "parse": "234.567µs",
+        "plan": "56.789µs",
+        "plan.keyspace.metadata": "28.456µs",
+        "primaryScan": "1.234567s",
+        "fetch": "987.654ms",
+        "filter": "234.567ms",
+        "project": "89.123ms",
+        "run": "2.456789s",
+        "stream": "45.678ms"
+      },
+      "remoteAddr": "127.0.0.1:55123",
+      "requestId": "inefficient-email-search-day1",
+      "requestTime": "2025-07-27T14:30:45.789Z",
+      "resultCount": 1250,
+      "resultSize": 3840000,
+      "scanConsistency": "unbounded",
+      "serviceTime": "2.567823s",
+      "state": "completed",
+      "statement": "SELECT * FROM `users` WHERE email LIKE '%gmail.com'",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 8192,
+      "userAgent": "python-search/1.2.3",
+      "users": "local:search_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-27T14:30:45.790Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"3.789µs\",\"servTime\":\"17.445µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:users\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"7.890µs\"},\"~children\":[{\"#operator\":\"PrimaryScan3\",\"#stats\":{\"#heartbeatYields\":50,\"#itemsIn\":50000,\"#itemsOut\":50000,\"#phaseSwitches\":200000,\"execTime\":\"1234.567ms\",\"kernTime\":\"1123.456ms\",\"servTime\":\"1178.890ms\"},\"index\":\"#primary\",\"index_projection\":{\"primary_key\":true},\"keyspace\":\"users\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":100,\"#itemsIn\":50000,\"#itemsOut\":50000,\"#phaseSwitches\":200100,\"execTime\":\"987.654ms\",\"kernTime\":\"890.123ms\",\"servTime\":\"934.567ms\"},\"keyspace\":\"users\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":50000,\"#itemsOut\":1250,\"#phaseSwitches\":51250,\"execTime\":\"234.567ms\",\"kernTime\":\"212.345ms\"},\"condition\":\"((`users`.`email`) LIKE '%gmail.com')\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":1250,\"#itemsOut\":1250,\"#phaseSwitches\":2500,\"execTime\":\"89.123ms\",\"kernTime\":\"78.901ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":1250,\"#itemsOut\":1250,\"#phaseSwitches\":1251,\"execTime\":\"45.678ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "inefficient-email-search-day2",
+      "cpuTime": "95.678ms",
+      "elapsedTime": "2.789123s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$emailDomain": "hotmail.com"
+      },
+      "phaseCounts": {
+        "primaryScan": 52000,
+        "fetch": 52000,
+        "filter": 52000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "primaryScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "21.234µs",
+        "instantiate": "27.890µs",
+        "parse": "256.789µs",
+        "plan": "62.345µs",
+        "plan.keyspace.metadata": "31.567µs",
+        "primaryScan": "1.345678s",
+        "fetch": "1.089234s",
+        "filter": "267.890ms",
+        "project": "76.543ms",
+        "run": "2.678901s",
+        "stream": "52.345ms"
+      },
+      "remoteAddr": "127.0.0.1:55124",
+      "requestId": "inefficient-email-search-day2",
+      "requestTime": "2025-07-28T14:30:45.789Z",
+      "resultCount": 890,
+      "resultSize": 2867200,
+      "scanConsistency": "unbounded",
+      "serviceTime": "2.789067s",
+      "state": "completed",
+      "statement": "SELECT * FROM `users` WHERE email LIKE '%hotmail.com'",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 7168,
+      "userAgent": "python-search/1.2.3",
+      "users": "local:search_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-28T14:30:45.790Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"4.123µs\",\"servTime\":\"18.667µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:users\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"8.234µs\"},\"~children\":[{\"#operator\":\"PrimaryScan3\",\"#stats\":{\"#heartbeatYields\":52,\"#itemsIn\":52000,\"#itemsOut\":52000,\"#phaseSwitches\":208000,\"execTime\":\"1345.678ms\",\"kernTime\":\"1234.567ms\",\"servTime\":\"1289.012ms\"},\"index\":\"#primary\",\"index_projection\":{\"primary_key\":true},\"keyspace\":\"users\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":104,\"#itemsIn\":52000,\"#itemsOut\":52000,\"#phaseSwitches\":208104,\"execTime\":\"1089.234ms\",\"kernTime\":\"967.890ms\",\"servTime\":\"1023.456ms\"},\"keyspace\":\"users\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":52000,\"#itemsOut\":890,\"#phaseSwitches\":52890,\"execTime\":\"267.890ms\",\"kernTime\":\"234.567ms\"},\"condition\":\"((`users`.`email`) LIKE '%hotmail.com')\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":890,\"#itemsOut\":890,\"#phaseSwitches\":1780,\"execTime\":\"76.543ms\",\"kernTime\":\"67.890ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":890,\"#itemsOut\":890,\"#phaseSwitches\":891,\"execTime\":\"52.345ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "inefficient-rare-item-search",
+      "cpuTime": "345.678ms",
+      "elapsedTime": "4.567891s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$status": "premium_rare"
+      },
+      "phaseCounts": {
+        "indexScan": 120000,
+        "fetch": 45,
+        "filter": 45
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "23.456µs",
+        "instantiate": "34.567µs",
+        "parse": "456.789µs",
+        "plan": "89.012µs",
+        "plan.index.metadata": "45.678µs",
+        "plan.keyspace.metadata": "34.567µs",
+        "indexScan": "12.345678s",
+        "fetch": "123.456ms",
+        "filter": "67.890ms",
+        "project": "23.456ms",
+        "run": "4.456789s",
+        "stream": "12.345ms"
+      },
+      "remoteAddr": "127.0.0.1:56789",
+      "requestId": "inefficient-rare-item-search",
+      "requestTime": "2025-07-29T16:45:30.123Z",
+      "resultCount": 45,
+      "resultSize": 138240,
+      "scanConsistency": "request_plus",
+      "serviceTime": "4.567823s",
+      "state": "completed",
+      "statement": "SELECT * FROM `products` WHERE category = 'electronics' AND status = $status AND price > 1000",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 15360,
+      "userAgent": "java-inventory/2.3.4",
+      "users": "local:inventory_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-29T16:45:30.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"4.567µs\",\"servTime\":\"19.012µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:products\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"8.901µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":120000,\"#itemsOut\":120000,\"#phaseSwitches\":480000,\"execTime\":\"2345.678ms\",\"kernTime\":\"2123.456ms\",\"servTime\":\"2234.567ms\"},\"index\":\"idx_products_category\",\"keyspace\":\"products\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"electronics\\\"\",\"inclusion\":3,\"low\":\"\\\"electronics\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":240,\"#itemsIn\":120000,\"#itemsOut\":120000,\"#phaseSwitches\":480240,\"execTime\":\"1456.789ms\",\"kernTime\":\"1234.567ms\",\"servTime\":\"1345.678ms\"},\"keyspace\":\"products\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":120000,\"#itemsOut\":45,\"#phaseSwitches\":120045,\"execTime\":\"567.890ms\",\"kernTime\":\"456.789ms\"},\"condition\":\"(((`products`.`status`) = 'premium_rare') AND ((`products`.`price`) > 1000))\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":45,\"#itemsOut\":45,\"#phaseSwitches\":90,\"execTime\":\"23.456ms\",\"kernTime\":\"19.890ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":45,\"#itemsOut\":45,\"#phaseSwitches\":46,\"execTime\":\"12.345ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "inefficient-location-search",
+      "cpuTime": "267.890ms",
+      "elapsedTime": "3.789123s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$region": "west-coast"
+      },
+      "phaseCounts": {
+        "indexScan": 85000,
+        "fetch": 120,
+        "filter": 120
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "25.678µs",
+        "instantiate": "31.234µs",
+        "parse": "345.678µs",
+        "plan": "78.901µs",
+        "plan.index.metadata": "42.345µs",
+        "plan.keyspace.metadata": "29.678µs",
+        "indexScan": "1.789123s",
+        "fetch": "567.890ms",
+        "filter": "234.567ms",
+        "project": "145.678ms",
+        "run": "3.678901s",
+        "stream": "89.123ms"
+      },
+      "remoteAddr": "127.0.0.1:57890",
+      "requestId": "inefficient-location-search",
+      "requestTime": "2025-07-30T09:20:15.456Z",
+      "resultCount": 120,
+      "resultSize": 245760,
+      "scanConsistency": "request_plus",
+      "serviceTime": "3.789089s",
+      "state": "completed",
+      "statement": "SELECT * FROM `stores` WHERE region = $region AND status = 'active' AND revenue > 100000",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 9216,
+      "userAgent": "node-store-locator/1.4.2",
+      "users": "local:store_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-30T09:20:15.457Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"5.234µs\",\"servTime\":\"20.444µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:stores\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"9.456µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":85000,\"#itemsOut\":85000,\"#phaseSwitches\":340000,\"execTime\":\"1789.123ms\",\"kernTime\":\"1567.890ms\",\"servTime\":\"1678.456ms\"},\"index\":\"idx_stores_region\",\"keyspace\":\"stores\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"west-coast\\\"\",\"inclusion\":3,\"low\":\"\\\"west-coast\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":170,\"#itemsIn\":85000,\"#itemsOut\":85000,\"#phaseSwitches\":340170,\"execTime\":\"1567.890ms\",\"kernTime\":\"1345.678ms\",\"servTime\":\"1456.789ms\"},\"keyspace\":\"stores\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":85000,\"#itemsOut\":120,\"#phaseSwitches\":85120,\"execTime\":\"434.567ms\",\"kernTime\":\"389.012ms\"},\"condition\":\"(((`stores`.`status`) = 'active') AND ((`stores`.`revenue`) > 100000))\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":120,\"#itemsOut\":120,\"#phaseSwitches\":240,\"execTime\":\"145.678ms\",\"kernTime\":\"123.456ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":120,\"#itemsOut\":120,\"#phaseSwitches\":121,\"execTime\":\"89.123ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "inefficient-vip-customer-lookup",
+      "cpuTime": "198.456ms",
+      "elapsedTime": "2.123456s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$tier": "platinum"
+      },
+      "phaseCounts": {
+        "primaryScan": 75000,
+        "fetch": 15,
+        "filter": 15
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "primaryScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "22.345µs",
+        "instantiate": "28.567µs",
+        "parse": "289.012µs",
+        "plan": "67.890µs",
+        "plan.keyspace.metadata": "35.678µs",
+        "primaryScan": "1.456789s",
+        "fetch": "234.567ms",
+        "filter": "189.123ms",
+        "project": "98.765ms",
+        "run": "2.012345s",
+        "stream": "67.890ms"
+      },
+      "remoteAddr": "127.0.0.1:58901",
+      "requestId": "inefficient-vip-customer-lookup",
+      "requestTime": "2025-07-31T11:45:22.789Z",
+      "resultCount": 15,
+      "resultSize": 49152,
+      "scanConsistency": "request_plus",
+      "serviceTime": "2.123398s",
+      "state": "completed",
+      "statement": "SELECT * FROM `customers` WHERE tier = $tier AND lastActivity > '2025-01-01' AND totalSpent > 50000",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 6144,
+      "userAgent": "java-crm/2.8.1",
+      "users": "local:crm_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-31T11:45:22.790Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"4.890µs\",\"servTime\":\"17.777µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:customers\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"8.567µs\"},\"~children\":[{\"#operator\":\"PrimaryScan3\",\"#stats\":{\"#heartbeatYields\":75,\"#itemsIn\":75000,\"#itemsOut\":75000,\"#phaseSwitches\":300000,\"execTime\":\"1456.789ms\",\"kernTime\":\"1289.012ms\",\"servTime\":\"15367.890ms\"},\"index\":\"#primary\",\"index_projection\":{\"primary_key\":true},\"keyspace\":\"customers\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":150,\"#itemsIn\":75000,\"#itemsOut\":75000,\"#phaseSwitches\":300150,\"execTime\":\"1234.567ms\",\"kernTime\":\"1098.765ms\",\"servTime\":\"1167.890ms\"},\"keyspace\":\"customers\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":75000,\"#itemsOut\":15,\"#phaseSwitches\":75015,\"execTime\":\"389.123ms\",\"kernTime\":\"345.678ms\"},\"condition\":\"((((`customers`.`tier`) = 'platinum') AND ((`customers`.`lastActivity`) > '2025-01-01')) AND ((`customers`.`totalSpent`) > 50000))\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":15,\"#itemsOut\":15,\"#phaseSwitches\":30,\"execTime\":\"98.765ms\",\"kernTime\":\"87.654ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":15,\"#itemsOut\":15,\"#phaseSwitches\":16,\"execTime\":\"67.890ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "slow-index-test-3-seconds",
+      "cpuTime": "123.456ms",
+      "elapsedTime": "5.678912s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$category": "books"
+      },
+      "phaseCounts": {
+        "indexScan": 60000,
+        "fetch": 200,
+        "filter": 200
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "18.234µs",
+        "instantiate": "22.567µs",
+        "parse": "234.567µs",
+        "plan": "56.789µs",
+        "plan.index.metadata": "28.901µs",
+        "plan.keyspace.metadata": "19.456µs",
+        "indexScan": "3.234567s",
+        "fetch": "345.678ms",
+        "filter": "123.456ms",
+        "project": "67.890ms",
+        "run": "5.567890s",
+        "stream": "34.567ms"
+      },
+      "remoteAddr": "127.0.0.1:59012",
+      "requestId": "slow-index-test-3-seconds",
+      "requestTime": "2025-08-01T13:30:45.123Z",
+      "resultCount": 200,
+      "resultSize": 655360,
+      "scanConsistency": "request_plus",
+      "serviceTime": "5.678856s",
+      "state": "completed",
+      "statement": "SELECT * FROM `inventory` WHERE category = $category AND status = 'available' AND warehouse = 'central'",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 5120,
+      "userAgent": "java-warehouse/1.7.3",
+      "users": "local:warehouse_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-01T13:30:45.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"3.567µs\",\"servTime\":\"15.234µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:inventory\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"7.890µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":60000,\"#itemsOut\":60000,\"#phaseSwitches\":240000,\"execTime\":\"3234.567ms\",\"kernTime\":\"2987.654ms\",\"servTime\":\"3123.456ms\"},\"index\":\"idx_inventory_category\",\"keyspace\":\"inventory\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"books\\\"\",\"inclusion\":3,\"low\":\"\\\"books\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":120,\"#itemsIn\":60000,\"#itemsOut\":60000,\"#phaseSwitches\":240120,\"execTime\":\"1345.678ms\",\"kernTime\":\"1234.567ms\",\"servTime\":\"1289.012ms\"},\"keyspace\":\"inventory\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":60000,\"#itemsOut\":200,\"#phaseSwitches\":60200,\"execTime\":\"523.456ms\",\"kernTime\":\"478.901ms\"},\"condition\":\"(((`inventory`.`status`) = 'available') AND ((`inventory`.`warehouse`) = 'central'))\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":200,\"#itemsOut\":200,\"#phaseSwitches\":400,\"execTime\":\"67.890ms\",\"kernTime\":\"59.123ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":200,\"#itemsOut\":200,\"#phaseSwitches\":201,\"execTime\":\"34.567ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "high-memory-analytics-query",
+      "cpuTime": "678.901ms",
+      "elapsedTime": "8.567891s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$year": "2024"
+      },
+      "phaseCounts": {
+        "indexScan": 500000,
+        "fetch": 500000,
+        "group": 500000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "group": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "45.678µs",
+        "instantiate": "67.890µs",
+        "parse": "789.012µs",
+        "plan": "123.456µs",
+        "plan.index.metadata": "89.012µs",
+        "plan.keyspace.metadata": "56.789µs",
+        "indexScan": "3.456789s",
+        "fetch": "2.789123s",
+        "group": "1.567890s",
+        "project": "456.789ms",
+        "run": "8.234567s",
+        "stream": "234.567ms"
+      },
+      "remoteAddr": "127.0.0.1:60123",
+      "requestId": "high-memory-analytics-query",
+      "requestTime": "2025-08-02T16:45:30.789Z",
+      "resultCount": 25000,
+      "resultSize": 83886080,
+      "scanConsistency": "request_plus",
+      "serviceTime": "8.567823s",
+      "state": "completed",
+      "statement": "SELECT department, COUNT(*) as count, AVG(salary) as avg_salary, SUM(total_comp) as total_comp FROM `employees` WHERE year = $year GROUP BY department ORDER BY count DESC",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 1610612736,
+      "userAgent": "python-analytics/3.2.1",
+      "users": "local:hr_analytics_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-02T16:45:30.790Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"6.789µs\",\"servTime\":\"34.567µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:employees\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"12.345µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":500000,\"#itemsOut\":500000,\"#phaseSwitches\":2000000,\"execTime\":\"3456.789ms\",\"kernTime\":\"3123.456ms\",\"servTime\":\"3289.012ms\"},\"index\":\"idx_employees_year\",\"keyspace\":\"employees\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"2024\\\"\",\"inclusion\":3,\"low\":\"\\\"2024\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":500,\"#itemsIn\":500000,\"#itemsOut\":500000,\"#phaseSwitches\":2000500,\"execTime\":\"2789.123ms\",\"kernTime\":\"2456.789ms\",\"servTime\":\"2623.456ms\"},\"keyspace\":\"employees\",\"namespace\":\"default\"},{\"#operator\":\"InitialGroup\",\"#stats\":{\"#itemsIn\":500000,\"#itemsOut\":25000,\"#phaseSwitches\":525000,\"execTime\":\"1567.890ms\",\"kernTime\":\"1345.678ms\"},\"aggregates\":[\"count(*)\",\"avg((`employees`.`salary`))\",\"sum((`employees`.`total_comp`))\"],\"group_keys\":[\"(`employees`.`department`)\"]},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":25000,\"#itemsOut\":25000,\"#phaseSwitches\":50000,\"execTime\":\"456.789ms\",\"kernTime\":\"398.012ms\"},\"result_terms\":[{\"as\":\"department\",\"expr\":\"(`employees`.`department`)\"},{\"as\":\"count\",\"expr\":\"count(*)\"},{\"as\":\"avg_salary\",\"expr\":\"avg((`employees`.`salary`))\"},{\"as\":\"total_comp\",\"expr\":\"sum((`employees`.`total_comp`))\"}]},{\"#operator\":\"Order\",\"#stats\":{\"#itemsIn\":25000,\"#itemsOut\":25000,\"#phaseSwitches\":75000,\"execTime\":\"234.567ms\",\"kernTime\":\"198.432ms\"},\"sort_terms\":[{\"desc\":\"\\\"desc\\\"\",\"expr\":\"(`count`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":25000,\"#itemsOut\":25000,\"#phaseSwitches\":25001,\"execTime\":\"234.567ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
   }
 ]

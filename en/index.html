@@ -239,6 +239,75 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
            font-weight: bold;
            color: #dc3545;
          }
+         
+         /* Live insight badge */
+         .live-badge {
+           background: #28a745;
+           color: white;
+           padding: 2px 6px;
+           border-radius: 12px;
+           font-size: 10px;
+           font-weight: bold;
+           text-transform: uppercase;
+           margin-left: 8px;
+           display: inline-block;
+         }
+         
+         /* Non-working insight badge */
+         .dev-badge {
+           background: #fd7e14;
+           color: white;
+           padding: 2px 6px;
+           border-radius: 12px;
+           font-size: 10px;
+           font-weight: bold;
+           text-transform: uppercase;
+           margin-left: 8px;
+           display: inline-block;
+         }
+         
+         /* Hide insights with dev badges */
+         .insight-item:has(.dev-badge) {
+           display: none !important;
+         }
+         
+         /* Accordion styles */
+         .category-title {
+           cursor: pointer;
+           transition: all 0.3s ease;
+           position: relative;
+           padding-right: 30px;
+         }
+         
+         .category-title:hover {
+           background: rgba(0,123,255,0.1);
+           border-radius: 6px;
+           padding: 10px;
+           margin: -10px 0 10px -10px;
+         }
+         
+         .category-title::after {
+           content: "▼";
+           position: absolute;
+           right: 10px;
+           top: 50%;
+           transform: translateY(-50%);
+           transition: transform 0.3s ease;
+           font-size: 16px;
+         }
+         
+         .category-title.collapsed::after {
+           transform: translateY(-50%) rotate(-90deg);
+         }
+         
+         .insight-category-content {
+           overflow: hidden;
+           transition: max-height 0.3s ease;
+         }
+         
+         .insight-category-content.collapsed {
+           max-height: 0 !important;
+         }
     </style>
     <!-- Include Panzoom, jQuery, and jQuery UI -->
     <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.2/dist/panzoom.min.js?v=362"></script>
@@ -526,10 +595,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       <div id="insights">
         <div style="padding: 20px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; margin-bottom: 20px;">
           <h2 style="color: #856404; margin-top: 0; font-size: 24px; font-weight: bold; text-align: center;">
-            ⚠️ NON-WORKING STATIC DUMMY DATA ⚠️
+            🚧 INSIGHTS IN DEVELOPMENT 🚧
           </h2>
           <p style="color: #856404; text-align: center; margin: 0;">
-            This is placeholder content for future insights functionality
+            Some insights show <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold;">LIVE</span> data, others display placeholder content. Look for the green "Live" badges!
           </p>
         </div>
 
@@ -561,52 +630,61 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
           <!-- Indexes Category -->
           <div id="index-issues" class="insight-category">
-            <h3 class="category-title">🔍 Index Performance Issues</h3>
+            <h3 class="category-title" onclick="toggleCategory('index-issues')">🔍 Index Performance Issues</h3>
+            <div class="insight-category-content" id="index-issues-content">
             
             <div class="insight-item">
-              <h4 class="insight-title">Inefficient Index Scans</h4>
+              <h4 class="insight-title">Inefficient Index Scans<span class="live-badge">Live</span></h4>
               <p class="insight-description">
-                There are <span class="highlight-number">200 queries</span> that scan <span class="highlight-number">1 million+</span> entries from the index but return <span class="highlight-number">≤10 items</span>, and these are not aggregate functions such as COUNT, AVG, MIN, or MAX.
-              </p>
-            </div>
-
-            <div class="insight-item">
-              <h4 class="insight-title">Delayed Index Responses</h4>
-              <p class="insight-description">
-                <span class="highlight-number">300 queries</span> involve indexes that take more than <span class="highlight-number">10 seconds</span> to respond, yet on average return fewer than <span class="highlight-number">50,000 items</span>, with many occurring concurrently.
+                <span class="highlight-number" id="inefficient-index-scans-count">0 queries</span> scan an average of <span class="highlight-number" id="avg-scan-count">0</span> index entries but returned back avg <span class="highlight-number" id="avg-result-count">0</span> records per query or a selectivity of <span class="highlight-number" id="avg-selectivity">0%</span> (excluding aggregate functions like COUNT, AVG, MIN, MAX).
               </p>
               <div class="learn-more-section">
                 <div class="learn-more-item">
                   <span class="learn-more-icon">💡</span>
-                  Are the Index and Query services co-located? <a href="https://cb.fuj.io/analysis_hub.html#systemMetrics" class="insight-link">Learn more</a>
-                </div>
-                <div class="learn-more-item">
-                  <span class="learn-more-icon">💡</span>
-                  What percentage of your index is stored in memory? <a href="https://cb.fuj.io/analysis_hub.html#indexes" class="insight-link">Learn more</a>
+                  Consider creating more selective indexes to reduce scan overhead <a href="https://cb.fuj.io/analysis_hub.html#indexes" class="insight-link">Learn more</a>
                 </div>
               </div>
             </div>
 
             <div class="insight-item">
-              <h4 class="insight-title">Primary Index Over-Usage</h4>
+              <h4 class="insight-title">Slow Index Scan Times<span class="live-badge">Live</span></h4>
               <p class="insight-description">
-                <span class="highlight-number">85 queries</span> are using primary index scans which represent <span class="highlight-number">34%</span> of all slow queries. These could benefit from secondary indexes.
+                Out of <span class="highlight-number" id="total-indexes-count">0</span> indexes: <span class="highlight-number" id="slow-indexes-2-10s">0</span> are between 2-10 seconds, <span class="highlight-number" id="slow-indexes-10s-plus">0</span> are greater than 10 seconds, <span class="highlight-number" id="slow-primary-indexes">0</span> are #primary indexes with 2+ seconds.
               </p>
               <div class="learn-more-section">
                 <div class="learn-more-item">
                   <span class="learn-more-icon">💡</span>
-                  Review your indexing strategy for better performance <a href="https://cb.fuj.io/analysis_hub.html#optimizer" class="insight-link">Learn more</a>
+                  Check kernel time on index nodes - high kernel time may indicate resource contention <a href="https://cb.fuj.io/analysis_hub.html#systemMetrics" class="insight-link">Learn more</a>
+                </div>
+                <div class="learn-more-item">
+                  <span class="learn-more-icon">💡</span>
+                  Index returning millions of records? Create more selective compound indexes <a href="https://cb.fuj.io/analysis_hub.html#indexes" class="insight-link">Learn more</a>
                 </div>
               </div>
+            </div>
+
+            <div class="insight-item">
+              <h4 class="insight-title">Primary Index Over-Usage<span class="live-badge">Live</span></h4>
+              <p class="insight-description">
+                Primary indexes on avg are scanning <span class="highlight-number" id="primary-avg-items-scanned">0</span> items with an avg scan time of <span class="highlight-number" id="primary-avg-scan-time">0ms</span>. These could benefit from secondary indexes.
+              </p>
+              <div class="learn-more-section">
+                <div class="learn-more-item">
+                  <span class="learn-more-icon">💡</span>
+                  Review your indexing strategy - create selective secondary indexes <a href="https://cb.fuj.io/analysis_hub.html#optimizer" class="insight-link">Learn more</a>
+                </div>
+              </div>
+            </div>
             </div>
           </div>
 
           <!-- Resources Category -->
           <div id="resource-issues" class="insight-category">
-            <h3 class="category-title">⚡ Resource Utilization Issues</h3>
+            <h3 class="category-title" onclick="toggleCategory('resource-issues')">⚡ Resource Utilization Issues</h3>
+            <div class="insight-category-content" id="resource-issues-content">
             
             <div class="insight-item">
-              <h4 class="insight-title">High Kernel Time in Queries</h4>
+              <h4 class="insight-title">High Kernel Time in Queries<span class="dev-badge">Dev</span></h4>
               <p class="insight-description">
                 Analysis indicates <span class="highlight-number">300 queries</span> where CPU time constitutes <span class="highlight-number">≤10%</span> of the total execution time, while kernel time accounts for <span class="highlight-number">≥90%</span> of the execution time.
               </p>
@@ -619,9 +697,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             </div>
 
             <div class="insight-item">
-              <h4 class="insight-title">Memory Pressure Detected</h4>
+              <h4 class="insight-title">High Memory Usage Detected<span class="live-badge">Live</span></h4>
               <p class="insight-description">
-                <span class="highlight-number">127 queries</span> are using more than <span class="highlight-number">100MB</span> of memory each, with <span class="highlight-number">23 queries</span> exceeding <span class="highlight-number">500MB</span> memory usage.
+                <span class="highlight-number" id="high-memory-count">0 queries</span> are using <span class="highlight-number">1GB or more</span> of memory each, indicating potential memory optimization opportunities.
               </p>
               <div class="learn-more-section">
                 <div class="learn-more-item">
@@ -632,9 +710,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             </div>
 
             <div class="insight-item">
-              <h4 class="insight-title">Slow USE KEY Queries</h4>
+              <h4 class="insight-title">Slow USE KEY Queries<span class="live-badge">Live</span></h4>
               <p class="insight-description">
-                <span class="highlight-number">50 USE KEY queries</span> exceed <span class="highlight-number">1 second</span> in execution time, suggesting potential KV service bottlenecks.
+                <span class="highlight-number" id="slow-use-keys-count">0 USE KEY queries</span> exceed <span class="highlight-number">1 second</span> in execution time, suggesting potential KV service bottlenecks.
               </p>
               <div class="learn-more-section">
                 <div class="learn-more-item">
@@ -643,21 +721,23 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 </div>
               </div>
             </div>
+            </div>
           </div>
 
           <!-- Query Patterns Category -->
           <div id="pattern-analysis" class="insight-category">
-            <h3 class="category-title">🔄 Query Pattern Analysis</h3>
+            <h3 class="category-title" onclick="toggleCategory('pattern-analysis')">🔄 Query Pattern Analysis</h3>
+            <div class="insight-category-content" id="pattern-analysis-content">
             
             <div class="insight-item">
-              <h4 class="insight-title">Missing WHERE Clauses</h4>
+              <h4 class="insight-title">Missing WHERE Clauses<span class="live-badge">Live</span></h4>
               <p class="insight-description">
-                <span class="highlight-number">156 queries</span> (<span class="highlight-number">18.3%</span>) lack WHERE clauses, potentially scanning entire collections unnecessarily.
+                <span class="highlight-number" id="missing-where-count">0 queries</span> (<span class="highlight-number" id="missing-where-percent">0%</span>) lack WHERE clauses, potentially scanning entire collections unnecessarily.
               </p>
             </div>
 
             <div class="insight-item">
-              <h4 class="insight-title">Complex JOIN Operations</h4>
+              <h4 class="insight-title">Complex JOIN Operations<span class="dev-badge">Dev</span></h4>
               <p class="insight-description">
                 <span class="highlight-number">89 JOIN queries</span> are taking an average of <span class="highlight-number">4.2 seconds</span> each, with <span class="highlight-number">67%</span> showing suboptimal join patterns.
               </p>
@@ -670,19 +750,21 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             </div>
 
             <div class="insight-item">
-              <h4 class="insight-title">Inefficient LIKE Operations</h4>
+              <h4 class="insight-title">Inefficient LIKE Operations<span class="live-badge">Live</span></h4>
               <p class="insight-description">
-                <span class="highlight-number">234 queries</span> use LIKE operations with leading wildcards (<code>%text</code>), preventing index usage and causing full scans.
+                <span class="highlight-number" id="inefficient-like-count">0 queries</span> use LIKE operations with leading wildcards (<code>%text</code>), preventing index usage and causing full scans.
               </p>
+            </div>
             </div>
           </div>
 
           <!-- Performance Category -->
           <div id="performance-opportunities" class="insight-category">
-            <h3 class="category-title">🚀 Performance Optimization Opportunities</h3>
+            <h3 class="category-title" onclick="toggleCategory('performance-opportunities')">🚀 Performance Optimization Opportunities</h3>
+            <div class="insight-category-content" id="performance-opportunities-content">
             
             <div class="insight-item">
-              <h4 class="insight-title">Large Payload Streaming</h4>
+              <h4 class="insight-title">Large Payload Streaming<span class="dev-badge">Dev</span></h4>
               <p class="insight-description">
                 <span class="highlight-number">250 queries</span> return <span class="highlight-number">100,000+ items</span>, with an overall average payload of <span class="highlight-number">15 MB+</span> and <span class="highlight-number">40%</span> of query time dedicated to streaming data to the client.
               </p>
@@ -695,14 +777,27 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             </div>
 
             <div class="insight-item">
-              <h4 class="insight-title">Timeout-Prone Queries</h4>
+              <h4 class="insight-title">Large Result Set Queries<span class="live-badge">Live</span></h4>
+              <p class="insight-description">
+                <span class="highlight-number" id="large-results-count">0 queries</span> return result sets larger than <span class="highlight-number">5 MB</span>, which can consume significant memory and network resources.
+              </p>
+              <div class="learn-more-section">
+                <div class="learn-more-item">
+                  <span class="learn-more-icon">💡</span>
+                  Large result sets can impact performance and resource usage <a href="https://cb.fuj.io/analysis_hub.html#practicalAnalysis" class="insight-link">Learn more</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="insight-item">
+              <h4 class="insight-title">Timeout-Prone Queries<span class="dev-badge">Dev</span></h4>
               <p class="insight-description">
                 <span class="highlight-number">43 queries</span> are consistently approaching timeout thresholds, with <span class="highlight-number">12 queries</span> actually timing out in the analyzed period.
               </p>
             </div>
 
             <div class="insight-item">
-              <h4 class="insight-title">Concurrent Query Conflicts</h4>
+              <h4 class="insight-title">Concurrent Query Conflicts<span class="dev-badge">Dev</span></h4>
               <p class="insight-description">
                 <span class="highlight-number">178 queries</span> show evidence of resource contention, with execution times varying by more than <span class="highlight-number">300%</span> during peak hours.
               </p>
@@ -712,6 +807,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                   Review query scheduling and resource allocation <a href="https://cb.fuj.io/analysis_hub.html#elapsedTime" class="insight-link">Learn more</a>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
@@ -6761,6 +6857,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         generateQueryPatternChart(requests);
         generateUserCountTable(requests);
         generateIndexCountTable(requests);
+        updateInsights(requests);
       }
 
       // Check if a query uses primary index by analyzing the plan
@@ -7895,6 +7992,420 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               );
             }
           });
+        }
+      }
+
+      // Update Insights tab with live data
+      function updateInsights(requests) {
+        // Reset metrics tracking
+        window.inefficientScanMetrics = [];
+        
+        // Count queries with no WHERE clauses
+        let noWhereCount = 0;
+        let slowUseKeysCount = 0;
+        let largeResultsCount = 0;
+        let inefficientLikeCount = 0;
+        let inefficientIndexScansCount = 0;
+        let highMemoryCount = 0;
+        
+        requests.forEach((request) => {
+          const statement = (request.statement || "").toUpperCase();
+          
+          // Count missing WHERE clauses
+          if (!statement.includes(" WHERE ")) {
+            noWhereCount++;
+          }
+          
+          // Count slow USE KEYS queries (> 1 second)
+          if (statement.includes("USE KEYS")) {
+            const elapsedTime = parseTime(request.elapsedTime);
+            if (elapsedTime > 1000) { // 1 second = 1000ms
+              slowUseKeysCount++;
+            }
+          }
+          
+          // Count large result size queries (> 5MB)
+          const resultSize = request.resultSize || 0;
+          const resultSizeMB = resultSize / (1024 * 1024); // Convert bytes to MB
+          if (resultSizeMB > 5) {
+            largeResultsCount++;
+          }
+          
+          // Count inefficient LIKE operations with leading wildcards
+          if (statement.includes(" LIKE ")) {
+            // Look for patterns like LIKE '%text' or LIKE "%text"
+            const likeMatches = statement.match(/ LIKE\s+['"]%[^'"]*['"]?/g);
+            if (likeMatches && likeMatches.length > 0) {
+              inefficientLikeCount++;
+            }
+          }
+          
+          // Count high memory usage queries (>= 1GB)
+          const usedMemory = request.usedMemory || 0;
+          const usedMemoryGB = usedMemory / (1024 * 1024 * 1024); // Convert bytes to GB
+          if (usedMemoryGB >= 1) {
+            highMemoryCount++;
+          }
+          
+          // Count inefficient index scans
+          // Check if query has aggregate functions (exclude them)
+          const hasAggregates = /\b(COUNT|AVG|MIN|MAX|SUM)\s*\(/i.test(statement);
+          
+          if (!hasAggregates) {
+            const resultCount = request.resultCount || 0;
+            const phaseCounts = request.phaseCounts || {};
+            
+            // Check various types of index scans
+            let totalScanned = 0;
+            if (phaseCounts.primaryScan) totalScanned += phaseCounts.primaryScan;
+            if (phaseCounts.indexScan) totalScanned += phaseCounts.indexScan;
+            if (phaseCounts['primaryScan.GSI']) totalScanned += phaseCounts['primaryScan.GSI'];
+            if (phaseCounts['indexScan.GSI']) totalScanned += phaseCounts['indexScan.GSI'];
+            
+            // Check if scanned >= 50,000 and efficiency < 10%
+            if (totalScanned >= 50000) {
+              const efficiency = totalScanned > 0 ? (resultCount / totalScanned) * 100 : 0;
+              if (efficiency < 10) {
+                inefficientIndexScansCount++;
+                // Track metrics for average calculation
+                if (!window.inefficientScanMetrics) window.inefficientScanMetrics = [];
+                window.inefficientScanMetrics.push({
+                  scanned: totalScanned,
+                  resultCount: resultCount,
+                  selectivity: efficiency
+                });
+              }
+            }
+          }
+        });
+        
+        const totalQueries = requests.length;
+        const noWherePercent = totalQueries > 0 ? ((noWhereCount / totalQueries) * 100).toFixed(1) : 0;
+        
+        // Update the missing WHERE clauses insight
+        const missingWhereCountElement = document.getElementById("missing-where-count");
+        const missingWherePercentElement = document.getElementById("missing-where-percent");
+        
+        if (missingWhereCountElement && missingWherePercentElement) {
+          missingWhereCountElement.textContent = `${noWhereCount} queries`;
+          missingWherePercentElement.textContent = `${noWherePercent}%`;
+          
+          // Only highlight if there are issues
+          if (noWhereCount > 0) {
+            missingWhereCountElement.className = "highlight-number";
+            missingWherePercentElement.className = "highlight-number";
+          } else {
+            missingWhereCountElement.className = "";
+            missingWherePercentElement.className = "";
+          }
+        }
+        
+        // Update the slow USE KEYS queries insight
+        const slowUseKeysCountElement = document.getElementById("slow-use-keys-count");
+        
+        if (slowUseKeysCountElement) {
+          slowUseKeysCountElement.textContent = `${slowUseKeysCount} USE KEY queries`;
+          slowUseKeysCountElement.className = slowUseKeysCount > 0 ? "highlight-number" : "";
+        }
+        
+        // Update the large result sets insight
+        const largeResultsCountElement = document.getElementById("large-results-count");
+        
+        if (largeResultsCountElement) {
+          largeResultsCountElement.textContent = `${largeResultsCount} queries`;
+          largeResultsCountElement.className = largeResultsCount > 0 ? "highlight-number" : "";
+        }
+        
+        // Update the inefficient LIKE operations insight
+        const inefficientLikeCountElement = document.getElementById("inefficient-like-count");
+        
+        if (inefficientLikeCountElement) {
+          inefficientLikeCountElement.textContent = `${inefficientLikeCount} queries`;
+          inefficientLikeCountElement.className = inefficientLikeCount > 0 ? "highlight-number" : "";
+        }
+        
+        // Update the high memory usage insight
+        const highMemoryCountElement = document.getElementById("high-memory-count");
+        
+        if (highMemoryCountElement) {
+          highMemoryCountElement.textContent = `${highMemoryCount} queries`;
+          highMemoryCountElement.className = highMemoryCount > 0 ? "highlight-number" : "";
+        }
+        
+        // Update the inefficient index scans insight
+        const inefficientIndexScansCountElement = document.getElementById("inefficient-index-scans-count");
+        const avgScanCountElement = document.getElementById("avg-scan-count");
+        const avgResultCountElement = document.getElementById("avg-result-count");
+        const avgSelectivityElement = document.getElementById("avg-selectivity");
+        
+        if (inefficientIndexScansCountElement) {
+          inefficientIndexScansCountElement.textContent = `${inefficientIndexScansCount} queries`;
+          inefficientIndexScansCountElement.className = inefficientIndexScansCount > 0 ? "highlight-number" : "";
+        }
+        
+        // Calculate and display averages
+        if (window.inefficientScanMetrics && window.inefficientScanMetrics.length > 0) {
+          const totalScanned = window.inefficientScanMetrics.reduce((sum, metric) => sum + metric.scanned, 0);
+          const totalResults = window.inefficientScanMetrics.reduce((sum, metric) => sum + metric.resultCount, 0);
+          const totalSelectivity = window.inefficientScanMetrics.reduce((sum, metric) => sum + metric.selectivity, 0);
+          
+          const avgScanned = Math.round(totalScanned / window.inefficientScanMetrics.length);
+          const avgResults = Math.round(totalResults / window.inefficientScanMetrics.length);
+          const avgSelectivity = (totalSelectivity / window.inefficientScanMetrics.length).toFixed(2);
+          
+          if (avgScanCountElement) {
+            avgScanCountElement.textContent = avgScanned.toLocaleString();
+            avgScanCountElement.className = "highlight-number";
+          }
+          if (avgResultCountElement) {
+            avgResultCountElement.textContent = avgResults.toLocaleString();
+            avgResultCountElement.className = "highlight-number";
+          }
+          if (avgSelectivityElement) {
+            avgSelectivityElement.textContent = `${avgSelectivity}%`;
+            avgSelectivityElement.className = "highlight-number";
+          }
+        } else {
+          // Reset to defaults when no inefficient queries
+          if (avgScanCountElement) {
+            avgScanCountElement.textContent = "0";
+            avgScanCountElement.className = "";
+          }
+          if (avgResultCountElement) {
+            avgResultCountElement.textContent = "0";
+            avgResultCountElement.className = "";
+          }
+          if (avgSelectivityElement) {
+            avgSelectivityElement.textContent = "0%";
+            avgSelectivityElement.className = "";
+          }
+        }
+        
+        // Reset metrics for next parse
+        window.inefficientScanMetrics = [];
+        
+        // Update slow index scan times insight
+        updateSlowIndexScanTimes(requests);
+        
+        // Update navigation counts and accordion states
+        updateInsightNavigation();
+      }
+      
+      // Toggle accordion category
+      function toggleCategory(categoryId) {
+        const title = document.querySelector(`#${categoryId} .category-title`);
+        const content = document.getElementById(`${categoryId}-content`);
+        
+        if (title && content) {
+          title.classList.toggle('collapsed');
+          content.classList.toggle('collapsed');
+        }
+      }
+      
+      // Update navigation counts and show/hide categories based on live insights
+      function updateInsightNavigation() {
+        // Count live insights in each category
+        const indexIssuesCount = document.querySelectorAll('#index-issues .insight-item:has(.live-badge)').length;
+        const resourceIssuesCount = document.querySelectorAll('#resource-issues .insight-item:has(.live-badge)').length;
+        const patternAnalysisCount = document.querySelectorAll('#pattern-analysis .insight-item:has(.live-badge)').length;
+        const performanceCount = document.querySelectorAll('#performance-opportunities .insight-item:has(.live-badge)').length;
+        
+        // Update navigation counts
+        const navLinks = document.querySelectorAll('.nav-category-link');
+        navLinks.forEach(link => {
+          const countSpan = link.querySelector('.nav-count');
+          if (link.href.includes('#index-issues')) {
+            countSpan.textContent = `(${indexIssuesCount})`;
+          } else if (link.href.includes('#resource-issues')) {
+            countSpan.textContent = `(${resourceIssuesCount})`;
+          } else if (link.href.includes('#pattern-analysis')) {
+            countSpan.textContent = `(${patternAnalysisCount})`;
+          } else if (link.href.includes('#performance-opportunities')) {
+            countSpan.textContent = `(${performanceCount})`;
+          }
+        });
+        
+        // Show/hide categories and set initial accordion state
+        const categories = [
+          { id: 'index-issues', count: indexIssuesCount },
+          { id: 'resource-issues', count: resourceIssuesCount },
+          { id: 'pattern-analysis', count: patternAnalysisCount },
+          { id: 'performance-opportunities', count: performanceCount }
+        ];
+        
+        categories.forEach(category => {
+          const categoryElement = document.getElementById(category.id);
+          const titleElement = categoryElement?.querySelector('.category-title');
+          const contentElement = document.getElementById(`${category.id}-content`);
+          
+          if (category.count > 0) {
+            // Show category and expand accordion
+            if (categoryElement) categoryElement.style.display = 'block';
+            if (titleElement) titleElement.classList.remove('collapsed');
+            if (contentElement) contentElement.classList.remove('collapsed');
+          } else {
+            // Hide category
+            if (categoryElement) categoryElement.style.display = 'none';
+          }
+        });
+      }
+      
+      // Update slow index scan times insight
+      function updateSlowIndexScanTimes(requests) {
+        const indexData = {};
+        let totalIndexes = 0;
+        let slowIndexes2to10s = 0;
+        let slowIndexes10sPlus = 0;
+        let slowPrimaryIndexes = 0;
+        
+        // Primary index over-usage tracking
+        let primaryIndexOverUseCount = 0;
+        let primaryIndexTotalItemsScanned = 0;
+        let primaryIndexTotalScanTime = 0;
+        let primaryIndexQueryCount = 0;
+        
+        // Collect index data similar to Index/Query Flow logic
+        requests.forEach((request) => {
+          if (request.plan) {
+            try {
+              const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
+              extractIndexDataForTiming(planObj, indexData);
+              
+              // Also track primary index usage for over-usage insight
+              extractPrimaryIndexUsage(planObj, request);
+            } catch (e) {
+              console.error("Error parsing plan for index timing:", e);
+            }
+          }
+        });
+        
+        // Helper function to track primary index usage
+        function extractPrimaryIndexUsage(operator, request) {
+          if (!operator) return;
+          
+          const opType = operator["#operator"];
+          
+          if (opType === "PrimaryScan3" && operator.index && 
+              (operator.index.includes("primary") || operator.index === "#primary" || operator.index === "def_primary")) {
+            
+            if (operator["#stats"]) {
+              const stats = operator["#stats"];
+              const itemsScanned = stats["#itemsOut"] || stats["#itemsIn"] || 0;
+              const scanTime = stats["servTime"] ? parseTime(stats["servTime"]) : 0;
+              
+              if (itemsScanned > 10000) {
+                primaryIndexOverUseCount++;
+                primaryIndexTotalItemsScanned += itemsScanned;
+                primaryIndexTotalScanTime += scanTime;
+                primaryIndexQueryCount++;
+              }
+            }
+          }
+          
+          // Recursively search child operators
+          if (operator["~child"]) {
+            extractPrimaryIndexUsage(operator["~child"], request);
+          }
+          if (operator["~children"]) {
+            for (const child of operator["~children"]) {
+              extractPrimaryIndexUsage(child, request);
+            }
+          }
+        }
+        
+        // Analyze timing data for each index
+        Object.values(indexData).forEach((index) => {
+          totalIndexes++;
+          
+          if (index.scanTimes && index.scanTimes.length > 0) {
+            const avgScanTimeMs = index.scanTimes.reduce((a, b) => a + b, 0) / index.scanTimes.length;
+            const avgScanTimeSeconds = avgScanTimeMs / 1000;
+            
+            if (avgScanTimeSeconds >= 10) {
+              slowIndexes10sPlus++;
+            } else if (avgScanTimeSeconds >= 2) {
+              slowIndexes2to10s++;
+            }
+            
+            // Check if it's a primary index with 2+ seconds
+            if ((index.name.includes("primary") || index.name === "#primary" || index.name === "def_primary") && avgScanTimeSeconds >= 2) {
+              slowPrimaryIndexes++;
+            }
+          }
+        });
+        
+        // Update display elements for slow index scan times
+        const totalIndexesElement = document.getElementById("total-indexes-count");
+        const slowIndexes2to10sElement = document.getElementById("slow-indexes-2-10s");
+        const slowIndexes10sPlusElement = document.getElementById("slow-indexes-10s-plus");
+        const slowPrimaryIndexesElement = document.getElementById("slow-primary-indexes");
+        
+        if (totalIndexesElement) totalIndexesElement.textContent = totalIndexes;
+        if (slowIndexes2to10sElement) slowIndexes2to10sElement.textContent = slowIndexes2to10s;
+        if (slowIndexes10sPlusElement) slowIndexes10sPlusElement.textContent = slowIndexes10sPlus;
+        if (slowPrimaryIndexesElement) slowPrimaryIndexesElement.textContent = slowPrimaryIndexes;
+        
+        // Update primary index over-usage insight
+        const primaryAvgItemsScannedElement = document.getElementById("primary-avg-items-scanned");
+        const primaryAvgScanTimeElement = document.getElementById("primary-avg-scan-time");
+        
+        if (primaryIndexQueryCount > 0) {
+          const avgItemsScanned = Math.round(primaryIndexTotalItemsScanned / primaryIndexQueryCount);
+          const avgScanTime = Math.round(primaryIndexTotalScanTime / primaryIndexQueryCount);
+          
+          if (primaryAvgItemsScannedElement) {
+            primaryAvgItemsScannedElement.textContent = avgItemsScanned.toLocaleString();
+            primaryAvgItemsScannedElement.className = "highlight-number";
+          }
+          if (primaryAvgScanTimeElement) {
+            primaryAvgScanTimeElement.textContent = `${avgScanTime}ms`;
+            primaryAvgScanTimeElement.className = "highlight-number";
+          }
+        } else {
+          // Reset to defaults
+          if (primaryAvgItemsScannedElement) {
+            primaryAvgItemsScannedElement.textContent = "0";
+            primaryAvgItemsScannedElement.className = "";
+          }
+          if (primaryAvgScanTimeElement) {
+            primaryAvgScanTimeElement.textContent = "0ms";
+            primaryAvgScanTimeElement.className = "";
+          }
+        }
+      }
+      
+      // Extract index data for timing analysis (simplified version of existing logic)
+      function extractIndexDataForTiming(operator, indexData) {
+        if (!operator) return;
+        
+        const opType = operator["#operator"];
+        
+        if ((opType === "IndexScan3" || opType === "PrimaryScan3" || opType === "KeyScan") && operator.index) {
+          const indexName = operator.index;
+          
+          if (!indexData[indexName]) {
+            indexData[indexName] = {
+              name: indexName,
+              scanTimes: [],
+              totalUsage: 0
+            };
+          }
+          
+          if (operator["#stats"] && operator["#stats"]["servTime"]) {
+            const scanTime = parseTime(operator["#stats"]["servTime"]);
+            indexData[indexName].scanTimes.push(scanTime);
+            indexData[indexName].totalUsage++;
+          }
+        }
+        
+        // Recursively search child operators
+        if (operator["~child"]) {
+          extractIndexDataForTiming(operator["~child"], indexData);
+        }
+        if (operator["~children"]) {
+          for (const child of operator["~children"]) {
+            extractIndexDataForTiming(child, indexData);
+          }
         }
       }
 
