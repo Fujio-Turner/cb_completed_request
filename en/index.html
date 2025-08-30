@@ -8258,60 +8258,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         let slowIndexes10sPlus = 0;
         let slowPrimaryIndexes = 0;
         
-        // Primary index over-usage tracking
-        let primaryIndexOverUseCount = 0;
-        let primaryIndexTotalItemsScanned = 0;
-        let primaryIndexTotalScanTime = 0;
-        let primaryIndexQueryCount = 0;
-        
-        // Collect index data similar to Index/Query Flow logic
-        requests.forEach((request) => {
-          if (request.plan) {
-            try {
-              const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
-              extractIndexDataForTiming(planObj, indexData);
-              
-              // Also track primary index usage for over-usage insight
-              extractPrimaryIndexUsage(planObj, request);
-            } catch (e) {
-              console.error("Error parsing plan for index timing:", e);
-            }
-          }
-        });
-        
-        // Helper function to track primary index usage
-        function extractPrimaryIndexUsage(operator, request) {
-          if (!operator) return;
-          
-          const opType = operator["#operator"];
-          
-          if (opType === "PrimaryScan3" && operator.index && 
-              (operator.index.includes("primary") || operator.index === "#primary" || operator.index === "def_primary")) {
-            
-            if (operator["#stats"]) {
-              const stats = operator["#stats"];
-              const itemsScanned = stats["#itemsOut"] || stats["#itemsIn"] || 0;
-              const scanTime = stats["servTime"] ? parseTime(stats["servTime"]) : 0;
-              
-              if (itemsScanned > 10000) {
-                primaryIndexOverUseCount++;
-                primaryIndexTotalItemsScanned += itemsScanned;
-                primaryIndexTotalScanTime += scanTime;
-                primaryIndexQueryCount++;
-              }
-            }
-          }
-          
-          // Recursively search child operators
-          if (operator["~child"]) {
-            extractPrimaryIndexUsage(operator["~child"], request);
-          }
-          if (operator["~children"]) {
-            for (const child of operator["~children"]) {
-              extractPrimaryIndexUsage(child, request);
-            }
-          }
-        }
+        // Use the same aggregated index data as Index/Query Flow
+        updatePrimaryIndexOverUsageFromAggregatedData(requests);
         
         // Analyze timing data for each index
         Object.values(indexData).forEach((index) => {
@@ -8344,14 +8292,102 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         if (slowIndexes2to10sElement) slowIndexes2to10sElement.textContent = slowIndexes2to10s;
         if (slowIndexes10sPlusElement) slowIndexes10sPlusElement.textContent = slowIndexes10sPlus;
         if (slowPrimaryIndexesElement) slowPrimaryIndexesElement.textContent = slowPrimaryIndexes;
+      }
+      
+      // Update Primary Index Over-Usage using same aggregated data as Index/Query Flow
+      function updatePrimaryIndexOverUsageFromAggregatedData(requests) {
+        const allIndexes = new Map();
         
-        // Update primary index over-usage insight
+        // Use the exact same logic as Index/Query Flow to build aggregated index data
+        requests.forEach((request) => {
+          if (request.plan) {
+            try {
+              const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
+              extractIndexNamesForFlow(planObj, allIndexes, request);
+            } catch (e) {
+              console.error("Error parsing plan for aggregated index data:", e);
+            }
+          }
+        });
+        
+        // Helper function (simplified version of existing Index/Query Flow logic)
+        function extractIndexNamesForFlow(operator, allIndexes, request) {
+          if (!operator) return;
+          
+          const opType = operator["#operator"];
+          
+          if ((opType === "IndexScan3" || opType === "PrimaryScan3" || opType === "KeyScan") && operator.index) {
+            const indexName = operator.index;
+            
+            if (!allIndexes.has(indexName)) {
+              allIndexes.set(indexName, {
+                name: indexName,
+                totalUsage: 0,
+                scanTimes: [],
+                itemsScanned: [],
+                itemsFetched: []
+              });
+            }
+            
+            const indexObj = allIndexes.get(indexName);
+            indexObj.totalUsage++;
+            
+            // Extract data using same function as Index/Query Flow
+            const indexData = extractIndexScanDataFromPlan(request.plan, indexName);
+            if (indexData.scanTime > 0) {
+              indexObj.scanTimes.push(indexData.scanTime);
+            }
+            if (indexData.itemsScanned > 0) {
+              indexObj.itemsScanned.push(indexData.itemsScanned);
+            }
+            if (indexData.itemsFetched > 0) {
+              indexObj.itemsFetched.push(indexData.itemsFetched);
+            }
+          }
+          
+          // Recursively search child operators (same as existing logic)
+          if (operator["~child"]) {
+            extractIndexNamesForFlow(operator["~child"], allIndexes, request);
+          }
+          if (operator["~children"]) {
+            for (const child of operator["~children"]) {
+              extractIndexNamesForFlow(child, allIndexes, request);
+            }
+          }
+        }
+        
+        // Now analyze primary indexes using aggregated data
+        let totalPrimaryItemsScanned = 0;
+        let totalPrimaryScanTime = 0;
+        let primaryIndexCount = 0;
+        
+        allIndexes.forEach((index) => {
+          const isPrimary = index.name.includes("primary") || index.name === "#primary" || index.name === "def_primary";
+          
+          if (isPrimary && index.itemsScanned.length > 0) {
+            // Calculate aggregated stats using same logic as Index/Query Flow
+            const avgItemsScanned = Math.round(
+              index.itemsScanned.reduce((a, b) => a + b, 0) / index.itemsScanned.length
+            );
+            const avgScanTime = index.scanTimes.length > 0 
+              ? Math.round(index.scanTimes.reduce((a, b) => a + b, 0) / index.scanTimes.length)
+              : 0;
+            
+            if (avgItemsScanned > 10000) {
+              totalPrimaryItemsScanned += avgItemsScanned;
+              totalPrimaryScanTime += avgScanTime;
+              primaryIndexCount++;
+            }
+          }
+        });
+        
+        // Update primary index over-usage insight display
         const primaryAvgItemsScannedElement = document.getElementById("primary-avg-items-scanned");
         const primaryAvgScanTimeElement = document.getElementById("primary-avg-scan-time");
         
-        if (primaryIndexQueryCount > 0) {
-          const avgItemsScanned = Math.round(primaryIndexTotalItemsScanned / primaryIndexQueryCount);
-          const avgScanTime = Math.round(primaryIndexTotalScanTime / primaryIndexQueryCount);
+        if (primaryIndexCount > 0) {
+          const avgItemsScanned = Math.round(totalPrimaryItemsScanned / primaryIndexCount);
+          const avgScanTime = Math.round(totalPrimaryScanTime / primaryIndexCount);
           
           if (primaryAvgItemsScannedElement) {
             primaryAvgItemsScannedElement.textContent = avgItemsScanned.toLocaleString();
