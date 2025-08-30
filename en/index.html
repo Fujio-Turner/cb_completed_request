@@ -1991,6 +1991,52 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         });
         return maxKernTime;
       }
+      
+      // Calculate the sum of all execTimes from service operations
+      function calculateTotalServiceExecTime(plan) {
+        if (!plan) return 0;
+        
+        try {
+          const planObj = typeof plan === "string" ? JSON.parse(plan) : plan;
+          let totalServiceExecTime = 0;
+          
+          function sumExecTimesRecursively(operator) {
+            if (!operator) return;
+            
+            // Sum execTime from operations that interact with services (index, fetch, etc.)
+            const opType = operator["#operator"];
+            const isServiceOperation = opType === "IndexScan3" || 
+                                     opType === "PrimaryScan3" || 
+                                     opType === "KeyScan" ||
+                                     opType === "Fetch" ||
+                                     opType === "Join" ||
+                                     opType === "Nest";
+            
+            if (isServiceOperation && operator["#stats"] && operator["#stats"]["execTime"]) {
+              const execTime = parseTime(operator["#stats"]["execTime"]);
+              if (!isNaN(execTime)) {
+                totalServiceExecTime += execTime;
+              }
+            }
+            
+            // Recursively check child operators
+            if (operator["~child"]) {
+              sumExecTimesRecursively(operator["~child"]);
+            }
+            if (operator["~children"]) {
+              for (const child of operator["~children"]) {
+                sumExecTimesRecursively(child);
+              }
+            }
+          }
+          
+          sumExecTimesRecursively(planObj);
+          return totalServiceExecTime;
+        } catch (e) {
+          console.error("Error calculating total service exec time:", e);
+          return 0;
+        }
+      }
 
       // Calculate the total memory usage from all operators in the plan
       function calculateTotalMemoryUsage(plan) {
@@ -3282,6 +3328,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           "service\nTime",
           "kern\nTime",
           "KernTime\n%",
+          "Svc Exec\nTime",
+          "SvcExec/\nKern %",
           "cpu\nTime",
           "memory\n(MB)",
           "result\nCount",
@@ -3360,6 +3408,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             "serviceTime",
             "kernTime",
             "KernTime %",
+            "Svc Exec Time",
+            "SvcExec/Kern %",
             "cpuTime",
             "memory (MB)",
             "resultCount",
@@ -3397,6 +3447,19 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               value =
                 elapsedTimeMs > 0 && totalKernTimeMs > 0
                   ? ((totalKernTimeMs / elapsedTimeMs) * 100).toFixed(2) + "%"
+                  : "N/A";
+            } else if (col === "Svc Exec Time") {
+              // Calculate total service execution time from plan
+              const totalServiceExecTime = calculateTotalServiceExecTime(request.plan);
+              console.log(`Svc Exec Time for row ${index}: ${totalServiceExecTime}ms`);
+              value = totalServiceExecTime > 0 ? formatTime(totalServiceExecTime) : "N/A";
+            } else if (col === "SvcExec/Kern %") {
+              // Calculate percentage of Service Exec Time vs kernTime
+              const totalServiceExecTime = calculateTotalServiceExecTime(request.plan);
+              console.log(`SvcExec/Kern % for row ${index}: svcExec=${totalServiceExecTime}ms, kern=${totalKernTimeMs}ms`);
+              value =
+                totalKernTimeMs > 0 && totalServiceExecTime > 0
+                  ? ((totalServiceExecTime / totalKernTimeMs) * 100).toFixed(2) + "%"
                   : "N/A";
             } else if (col === "memory (MB)") {
               value =
@@ -3465,6 +3528,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           "service\nTime",
           "kern\nTime",
           "KernTime\n%",
+          "Svc Exec\nTime",
+          "SvcExec/\nKern %",
           "cpu\nTime",
           "memory\n(MB)",
           "result\nCount",
@@ -3500,6 +3565,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             else if (col === "service\nTime") dataField = "serviceTime";
             else if (col === "kern\nTime") dataField = "kernTime";
             else if (col === "KernTime\n%") dataField = "KernTime %";
+            else if (col === "Svc Exec\nTime") dataField = "Svc Exec Time";
+            else if (col === "SvcExec/\nKern %") dataField = "SvcExec/Kern %";
             else if (col === "cpu\nTime") dataField = "cpuTime";
             else if (col === "memory\n(MB)") dataField = "memory (MB)";
             else if (col === "result\nCount") dataField = "resultCount";
