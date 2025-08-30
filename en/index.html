@@ -266,6 +266,19 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
            display: inline-block;
          }
          
+         /* Beta insight badge */
+         .beta-badge {
+           background: #007bff;
+           color: white;
+           padding: 2px 6px;
+           border-radius: 12px;
+           font-size: 10px;
+           font-weight: bold;
+           text-transform: uppercase;
+           margin-left: 8px;
+           display: inline-block;
+         }
+         
          
          /* Accordion styles */
          .category-title {
@@ -635,7 +648,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             🚧 INSIGHTS IN DEVELOPMENT 🚧
           </h2>
           <p style="color: #856404; text-align: center; margin: 0;">
-            Some insights show <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold;">LIVE</span> data, others display placeholder content. Look for the green "Live" badges!
+            Some insights show <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold;">LIVE</span> data, <span style="background: #007bff; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold;">BETA</span> insights are work in progress (might have false positives), others display placeholder content.
           </p>
         </div>
 
@@ -727,10 +740,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             <div class="insight-category-content" id="resource-issues-content">
             
             <div class="insight-item">
-              <h4 class="insight-title" onclick="toggleInsight('high-kernel-time-queries')">High Kernel Time in Queries<span class="dev-badge">Dev</span></h4>
+              <h4 class="insight-title" onclick="toggleInsight('high-kernel-time-queries')">High Kernel Time in Queries<span class="beta-badge">Beta</span></h4>
               <div class="insight-content" id="high-kernel-time-queries-content">
                 <p class="insight-description">
-                  Analysis indicates <span class="highlight-number">300 queries</span> where CPU time constitutes <span class="highlight-number">≤10%</span> of the total execution time, while kernel time accounts for <span class="highlight-number">≥90%</span> of the execution time.
+                  <span class="highlight-number" id="high-kernel-time-queries-count">0 queries</span> with <span class="highlight-number" id="high-kernel-time-count">0 operations</span> where execTime is <span class="highlight-number">20% or more</span> of servTime, indicating potential kernel/service waiting time.
                 </p>
                 <div class="learn-more-section">
                   <div class="learn-more-item">
@@ -8070,6 +8083,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         let inefficientLikeCount = 0;
         let inefficientIndexScansCount = 0;
         let highMemoryCount = 0;
+        let highKernelTimeCount = 0;
+        let highKernelTimeQueriesCount = 0;
+        
+        // Configurable threshold for kernel time detection
+        const KERNEL_TIME_THRESHOLD_PERCENT = 20;
         
         requests.forEach((request) => {
           const statement = (request.statement || "").toUpperCase();
@@ -8108,6 +8126,22 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           const usedMemoryGB = usedMemory / (1024 * 1024 * 1024); // Convert bytes to GB
           if (usedMemoryGB >= 1) {
             highMemoryCount++;
+          }
+          
+          // Count high kernel time operations
+          if (request.plan) {
+            try {
+              const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
+              const operationsWithKernelTime = analyzeKernelTime(planObj, KERNEL_TIME_THRESHOLD_PERCENT);
+              highKernelTimeCount += operationsWithKernelTime;
+              
+              // Count queries that have at least one operation with kernel time issues
+              if (operationsWithKernelTime > 0) {
+                highKernelTimeQueriesCount++;
+              }
+            } catch (e) {
+              console.error("Error parsing plan for kernel time analysis:", e);
+            }
           }
           
           // Count inefficient index scans
@@ -8195,6 +8229,20 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           highMemoryCountElement.className = highMemoryCount > 0 ? "highlight-number" : "";
         }
         
+        // Update the high kernel time insight
+        const highKernelTimeQueriesCountElement = document.getElementById("high-kernel-time-queries-count");
+        const highKernelTimeCountElement = document.getElementById("high-kernel-time-count");
+        
+        if (highKernelTimeQueriesCountElement) {
+          highKernelTimeQueriesCountElement.textContent = `${highKernelTimeQueriesCount} queries`;
+          highKernelTimeQueriesCountElement.className = highKernelTimeQueriesCount > 0 ? "highlight-number" : "";
+        }
+        
+        if (highKernelTimeCountElement) {
+          highKernelTimeCountElement.textContent = `${highKernelTimeCount} operations`;
+          highKernelTimeCountElement.className = highKernelTimeCount > 0 ? "highlight-number" : "";
+        }
+        
         // Update the inefficient index scans insight
         const inefficientIndexScansCountElement = document.getElementById("inefficient-index-scans-count");
         const avgScanCountElement = document.getElementById("avg-scan-count");
@@ -8252,6 +8300,52 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         
         // Update navigation counts and accordion states
         updateInsightNavigation();
+      }
+      
+      // Analyze kernel time in query plan operations
+      function analyzeKernelTime(operator, thresholdPercent) {
+        if (!operator) return 0;
+        
+        let kernelTimeCount = 0;
+        
+        // Check current operator for kernel time issues
+        if (operator["#stats"] && operator["#stats"]["servTime"] && operator["#stats"]["execTime"]) {
+          const servTime = parseTime(operator["#stats"]["servTime"]);
+          const execTime = parseTime(operator["#stats"]["execTime"]);
+          
+          if (servTime > 0 && execTime > 0) {
+            const execToServRatio = (execTime / servTime) * 100;
+            
+            // If execTime is threshold% or more of servTime, it indicates waiting
+            if (execToServRatio >= thresholdPercent) {
+              kernelTimeCount++;
+              console.log(`High kernel time found: execTime=${execTime}ms, servTime=${servTime}ms, ratio=${execToServRatio.toFixed(1)}%`);
+            }
+          }
+        }
+        
+        // Recursively check child operators
+        if (operator["~child"]) {
+          kernelTimeCount += analyzeKernelTime(operator["~child"], thresholdPercent);
+        }
+        if (operator["~children"]) {
+          for (const child of operator["~children"]) {
+            kernelTimeCount += analyzeKernelTime(child, thresholdPercent);
+          }
+        }
+        
+        // Check other operator properties for completeness
+        if (operator.input) {
+          kernelTimeCount += analyzeKernelTime(operator.input, thresholdPercent);
+        }
+        if (operator.left) {
+          kernelTimeCount += analyzeKernelTime(operator.left, thresholdPercent);
+        }
+        if (operator.right) {
+          kernelTimeCount += analyzeKernelTime(operator.right, thresholdPercent);
+        }
+        
+        return kernelTimeCount;
       }
       
       // Toggle accordion category
@@ -8323,6 +8417,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           { id: 'inefficient-index-scans', checkElement: 'inefficient-index-scans-count' },
           { id: 'slow-index-scan-times', checkElements: ['slow-indexes-2-10s', 'slow-indexes-10s-plus', 'slow-primary-indexes'] },
           { id: 'primary-index-over-usage', checkElement: 'primary-avg-items-scanned' },
+          { id: 'high-kernel-time-queries', checkElement: 'high-kernel-time-queries-count' },
           { id: 'high-memory-usage', checkElement: 'high-memory-count' },
           { id: 'slow-use-key-queries', checkElement: 'slow-use-keys-count' },
           { id: 'missing-where-clauses', checkElement: 'missing-where-count' },
@@ -8377,6 +8472,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           if (titleElement) titleElement.classList.add('collapsed');
           if (contentElement) contentElement.classList.add('collapsed');
         });
+        
+        // Handle beta insights - collapsed by default, but can be expanded based on results
+        // (Beta insights are included in the main insights array above)
       }
       
       // Update slow index scan times insight

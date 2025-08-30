@@ -1056,5 +1056,174 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-02T16:45:30.790Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"6.789µs\",\"servTime\":\"34.567µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:employees\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"12.345µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":500000,\"#itemsOut\":500000,\"#phaseSwitches\":2000000,\"execTime\":\"3456.789ms\",\"kernTime\":\"3123.456ms\",\"servTime\":\"3289.012ms\"},\"index\":\"idx_employees_year\",\"keyspace\":\"employees\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"2024\\\"\",\"inclusion\":3,\"low\":\"\\\"2024\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":500,\"#itemsIn\":500000,\"#itemsOut\":500000,\"#phaseSwitches\":2000500,\"execTime\":\"2789.123ms\",\"kernTime\":\"2456.789ms\",\"servTime\":\"2623.456ms\"},\"keyspace\":\"employees\",\"namespace\":\"default\"},{\"#operator\":\"InitialGroup\",\"#stats\":{\"#itemsIn\":500000,\"#itemsOut\":25000,\"#phaseSwitches\":525000,\"execTime\":\"1567.890ms\",\"kernTime\":\"1345.678ms\"},\"aggregates\":[\"count(*)\",\"avg((`employees`.`salary`))\",\"sum((`employees`.`total_comp`))\"],\"group_keys\":[\"(`employees`.`department`)\"]},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":25000,\"#itemsOut\":25000,\"#phaseSwitches\":50000,\"execTime\":\"456.789ms\",\"kernTime\":\"398.012ms\"},\"result_terms\":[{\"as\":\"department\",\"expr\":\"(`employees`.`department`)\"},{\"as\":\"count\",\"expr\":\"count(*)\"},{\"as\":\"avg_salary\",\"expr\":\"avg((`employees`.`salary`))\"},{\"as\":\"total_comp\",\"expr\":\"sum((`employees`.`total_comp`))\"}]},{\"#operator\":\"Order\",\"#stats\":{\"#itemsIn\":25000,\"#itemsOut\":25000,\"#phaseSwitches\":75000,\"execTime\":\"234.567ms\",\"kernTime\":\"198.432ms\"},\"sort_terms\":[{\"desc\":\"\\\"desc\\\"\",\"expr\":\"(`count`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":25000,\"#itemsOut\":25000,\"#phaseSwitches\":25001,\"execTime\":\"234.567ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "high-kernel-cpu-intensive-query-1",
+      "cpuTime": "1.234567s",
+      "elapsedTime": "2.345678s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$department": "engineering"
+      },
+      "phaseCounts": {
+        "indexScan": 80000,
+        "fetch": 80000,
+        "filter": 80000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "23.456µs",
+        "instantiate": "34.567µs",
+        "parse": "456.789µs",
+        "plan": "89.012µs",
+        "plan.index.metadata": "45.678µs",
+        "plan.keyspace.metadata": "32.345µs",
+        "indexScan": "1.567890s",
+        "fetch": "456.789ms",
+        "filter": "234.567ms",
+        "project": "123.456ms",
+        "run": "2.234567s",
+        "stream": "67.890ms"
+      },
+      "remoteAddr": "127.0.0.1:61234",
+      "requestId": "high-kernel-cpu-intensive-query-1",
+      "requestTime": "2025-08-03T10:30:15.456Z",
+      "resultCount": 2500,
+      "resultSize": 7864320,
+      "scanConsistency": "request_plus",
+      "serviceTime": "2.345612s",
+      "state": "completed",
+      "statement": "SELECT * FROM `staff` WHERE department = $department AND active = true AND salary > 75000",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 9437184,
+      "userAgent": "java-hr-system/2.4.1",
+      "users": "local:hr_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-03T10:30:15.457Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"5.678µs\",\"servTime\":\"21.234µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:staff\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"9.876µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":80000,\"#itemsOut\":80000,\"#phaseSwitches\":320000,\"execTime\":\"1567.890ms\",\"kernTime\":\"1398.765ms\",\"servTime\":\"1489.012ms\"},\"index\":\"idx_staff_department\",\"keyspace\":\"staff\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"engineering\\\"\",\"inclusion\":3,\"low\":\"\\\"engineering\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":160,\"#itemsIn\":80000,\"#itemsOut\":80000,\"#phaseSwitches\":320160,\"execTime\":\"1456.789ms\",\"kernTime\":\"1234.567ms\",\"servTime\":\"456.789ms\"},\"keyspace\":\"staff\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":80000,\"#itemsOut\":2500,\"#phaseSwitches\":82500,\"execTime\":\"734.567ms\",\"kernTime\":\"645.123ms\",\"servTime\":\"234.567ms\"},\"condition\":\"(((`staff`.`active`) = true) AND ((`staff`.`salary`) > 75000))\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":2500,\"#itemsOut\":2500,\"#phaseSwitches\":5000,\"execTime\":\"123.456ms\",\"kernTime\":\"98.765ms\",\"servTime\":\"89.012ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":2500,\"#itemsOut\":2500,\"#phaseSwitches\":2501,\"execTime\":\"67.890ms\",\"servTime\":\"45.678ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "high-kernel-cpu-intensive-query-2",
+      "cpuTime": "2.567891s",
+      "elapsedTime": "3.789123s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$category": "premium",
+        "$minPrice": 5000
+      },
+      "phaseCounts": {
+        "primaryScan": 120000,
+        "fetch": 120000,
+        "filter": 120000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "primaryScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "34.567µs",
+        "instantiate": "45.678µs",
+        "parse": "567.890µs",
+        "plan": "123.456µs",
+        "plan.keyspace.metadata": "56.789µs",
+        "primaryScan": "2.123456s",
+        "fetch": "789.123ms",
+        "filter": "345.678ms",
+        "project": "198.765ms",
+        "run": "3.678901s",
+        "stream": "89.234ms"
+      },
+      "remoteAddr": "127.0.0.1:62345",
+      "requestId": "high-kernel-cpu-intensive-query-2",
+      "requestTime": "2025-08-04T14:15:30.789Z",
+      "resultCount": 450,
+      "resultSize": 1474560,
+      "scanConsistency": "unbounded",
+      "serviceTime": "3.789067s",
+      "state": "completed",
+      "statement": "SELECT * FROM `luxury_items` WHERE category = $category AND price > $minPrice AND in_stock = true",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 6291456,
+      "userAgent": "python-luxury-catalog/1.8.2",
+      "users": "local:catalog_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-04T14:15:30.790Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"8.901µs\",\"servTime\":\"32.456µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:luxury_items\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"15.678µs\"},\"~children\":[{\"#operator\":\"PrimaryScan3\",\"#stats\":{\"#heartbeatYields\":120,\"#itemsIn\":120000,\"#itemsOut\":120000,\"#phaseSwitches\":480000,\"execTime\":\"2123.456ms\",\"kernTime\":\"1876.543ms\",\"servTime\":\"1789.012ms\"},\"index\":\"#primary\",\"index_projection\":{\"primary_key\":true},\"keyspace\":\"luxury_items\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":240,\"#itemsIn\":120000,\"#itemsOut\":120000,\"#phaseSwitches\":480240,\"execTime\":\"1789.123ms\",\"kernTime\":\"1567.890ms\",\"servTime\":\"789.123ms\"},\"keyspace\":\"luxury_items\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":120000,\"#itemsOut\":450,\"#phaseSwitches\":120450,\"execTime\":\"845.678ms\",\"kernTime\":\"723.456ms\",\"servTime\":\"345.678ms\"},\"condition\":\"((((`luxury_items`.`category`) = 'premium') AND ((`luxury_items`.`price`) > 5000)) AND ((`luxury_items`.`in_stock`) = true))\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":450,\"#itemsOut\":450,\"#phaseSwitches\":900,\"execTime\":\"198.765ms\",\"kernTime\":\"156.789ms\",\"servTime\":\"134.567ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":450,\"#itemsOut\":450,\"#phaseSwitches\":451,\"execTime\":\"89.234ms\",\"servTime\":\"67.890ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "high-kernel-cpu-intensive-query-3",
+      "cpuTime": "3.456789s",
+      "elapsedTime": "4.567891s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$region": "north-america",
+        "$year": "2024"
+      },
+      "phaseCounts": {
+        "indexScan": 200000,
+        "fetch": 200000,
+        "group": 200000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "group": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "45.678µs",
+        "instantiate": "56.789µs",
+        "parse": "678.901µs",
+        "plan": "134.567µs",
+        "plan.index.metadata": "67.890µs",
+        "plan.keyspace.metadata": "43.567µs",
+        "indexScan": "2.789123s",
+        "fetch": "1.234567s",
+        "group": "567.890ms",
+        "project": "234.567ms",
+        "run": "4.456789s",
+        "stream": "123.456ms"
+      },
+      "remoteAddr": "127.0.0.1:63456",
+      "requestId": "high-kernel-cpu-intensive-query-3",
+      "requestTime": "2025-08-05T09:45:15.123Z",
+      "resultCount": 8750,
+      "resultSize": 28311552,
+      "scanConsistency": "request_plus",
+      "serviceTime": "4.567823s",
+      "state": "completed",
+      "statement": "SELECT region, SUM(revenue) as total_revenue, COUNT(*) as store_count FROM `stores` WHERE region = $region AND year = $year GROUP BY region",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 12582912,
+      "userAgent": "node-regional-analytics/3.1.4",
+      "users": "local:regional_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-05T09:45:15.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"12.345µs\",\"servTime\":\"43.567µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:stores\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"18.901µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":200000,\"#itemsOut\":200000,\"#phaseSwitches\":800000,\"execTime\":\"2789.123ms\",\"kernTime\":\"2456.789ms\",\"servTime\":\"2345.678ms\"},\"index\":\"idx_stores_region\",\"keyspace\":\"stores\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"north-america\\\"\",\"inclusion\":3,\"low\":\"\\\"north-america\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":400,\"#itemsIn\":200000,\"#itemsOut\":200000,\"#phaseSwitches\":800400,\"execTime\":\"2234.567ms\",\"kernTime\":\"1987.654ms\",\"servTime\":\"1234.567ms\"},\"keyspace\":\"stores\",\"namespace\":\"default\"},{\"#operator\":\"InitialGroup\",\"#stats\":{\"#itemsIn\":200000,\"#itemsOut\":8750,\"#phaseSwitches\":208750,\"execTime\":\"1567.890ms\",\"kernTime\":\"1345.678ms\",\"servTime\":\"567.890ms\"},\"aggregates\":[\"sum((`stores`.`revenue`))\",\"count(*)\"],\"group_keys\":[\"(`stores`.`region`)\"]},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":8750,\"#itemsOut\":8750,\"#phaseSwitches\":17500,\"execTime\":\"634.567ms\",\"kernTime\":\"523.456ms\",\"servTime\":\"234.567ms\"},\"result_terms\":[{\"as\":\"region\",\"expr\":\"(`stores`.`region`)\"},{\"as\":\"total_revenue\",\"expr\":\"sum((`stores`.`revenue`))\"},{\"as\":\"store_count\",\"expr\":\"count(*)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":8750,\"#itemsOut\":8750,\"#phaseSwitches\":8751,\"execTime\":\"423.456ms\",\"servTime\":\"123.456ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
   }
 ]
