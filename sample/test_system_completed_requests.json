@@ -379,5 +379,185 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-24T10:30:15.790Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"1.234µs\",\"servTime\":\"7.0µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:orders\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"4.567µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":45000,\"#itemsOut\":45000,\"#phaseSwitches\":90000,\"execTime\":\"45.678ms\",\"kernTime\":\"42.3ms\",\"servTime\":\"38.9ms\"},\"index\":\"idx_orders_created_date\",\"keyspace\":\"orders\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"2024-12-31\\\"\",\"inclusion\":3,\"low\":\"\\\"2024-01-01\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":45000,\"#itemsOut\":45000,\"#phaseSwitches\":90000,\"execTime\":\"67.890ms\",\"kernTime\":\"63.4ms\",\"servTime\":\"59.8ms\"},\"keyspace\":\"orders\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":45000,\"#itemsOut\":45000,\"#phaseSwitches\":90000,\"execTime\":\"23.456ms\",\"kernTime\":\"21.8ms\"},\"result_terms\":[{\"expr\":\"(`orders`.`orderId`)\"},{\"expr\":\"(`orders`.`customerId`)\"},{\"expr\":\"(`orders`.`orderDate`)\"},{\"expr\":\"(`orders`.`total`)\"},{\"expr\":\"(`orders`.`items`)\"}]},{\"#operator\":\"Order\",\"#stats\":{\"#itemsIn\":45000,\"#itemsOut\":45000,\"#phaseSwitches\":135000,\"execTime\":\"34.567ms\",\"kernTime\":\"32.1ms\"},\"sort_terms\":[{\"desc\":true,\"expr\":\"(`orders`.`orderDate`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":45000,\"#itemsOut\":45000,\"#phaseSwitches\":45001,\"execTime\":\"1943.456ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "fast-lookup-12345-gsi-efficient-FATAL-BEFORE",
+      "cpuTime": "2.345ms",
+      "elapsedTime": "15.234ms",
+      "errorCount": 1,
+      "errors": [
+        {
+          "code": 3000,
+          "msg": "syntax error - at end of input"
+        }
+      ],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$userId": "user123",
+        "$startDate": "2025-01-01"
+      },
+      "phaseCounts": {
+        "indexScan": 5,
+        "fetch": 5
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "12.456µs",
+        "instantiate": "8.901µs",
+        "parse": "123.456µs",
+        "plan": "45.678µs",
+        "plan.index.metadata": "23.456µs",
+        "plan.keyspace.metadata": "12.345µs",
+        "indexScan": "2.345ms",
+        "fetch": "8.901ms",
+        "project": "1.234ms",
+        "run": "14.567ms",
+        "stream": "0.456ms"
+      },
+      "remoteAddr": "127.0.0.1:43318",
+      "requestId": "fast-lookup-12345-gsi-efficient-FATAL-BEFORE",
+      "requestTime": "2025-07-13T10:12:22.123Z",
+      "resultCount": 0,
+      "resultSize": 0,
+      "scanConsistency": "request_plus",
+      "serviceTime": "15.123ms",
+      "state": "fatal",
+      "statement": "SELECT u.name, u.email, u.profile FROM `users` u WHERE u.userId = $userId AND u.registrationDate >= $startDate",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 1024,
+      "userAgent": "node-couchbase/4.1.2",
+      "users": "local:app_service_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-13T10:12:22.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.06µs\",\"servTime\":\"10.45µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:users\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"3.456µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":20,\"execTime\":\"2.345ms\",\"kernTime\":\"2.1ms\",\"servTime\":\"1.8ms\"},\"index\":\"idx_user_registration\",\"keyspace\":\"users\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"user123\\\"\",\"inclusion\":3,\"low\":\"\\\"user123\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"8.901ms\",\"kernTime\":\"8.2ms\",\"servTime\":\"7.8ms\"},\"keyspace\":\"users\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"1.234ms\",\"kernTime\":\"1.1ms\"},\"result_terms\":[{\"expr\":\"(`u`.`name`)\"},{\"expr\":\"(`u`.`email`)\"},{\"expr\":\"(`u`.`profile`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":6,\"execTime\":\"0.456ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "fast-lookup-12345-gsi-efficient-FATAL-AFTER",
+      "cpuTime": "2.345ms",
+      "elapsedTime": "15.234ms",
+      "errorCount": 1,
+      "errors": [
+        {
+          "code": 4040,
+          "msg": "keyspace not found - cause: No bucket named 'missing_bucket'"
+        }
+      ],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$userId": "user123",
+        "$startDate": "2025-01-01"
+      },
+      "phaseCounts": {
+        "indexScan": 5,
+        "fetch": 5
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "12.456µs",
+        "instantiate": "8.901µs",
+        "parse": "123.456µs",
+        "plan": "45.678µs",
+        "plan.index.metadata": "23.456µs",
+        "plan.keyspace.metadata": "12.345µs",
+        "indexScan": "2.345ms",
+        "fetch": "8.901ms",
+        "project": "1.234ms",
+        "run": "14.567ms",
+        "stream": "0.456ms"
+      },
+      "remoteAddr": "127.0.0.1:43318",
+      "requestId": "fast-lookup-12345-gsi-efficient-FATAL-AFTER",
+      "requestTime": "2025-07-13T10:18:22.123Z",
+      "resultCount": 0,
+      "resultSize": 0,
+      "scanConsistency": "request_plus",
+      "serviceTime": "15.123ms",
+      "state": "fatal",
+      "statement": "SELECT u.name, u.email, u.profile FROM `users` u WHERE u.userId = $userId AND u.registrationDate >= $startDate",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 1024,
+      "userAgent": "node-couchbase/4.1.2",
+      "users": "local:app_service_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-13T10:18:22.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.06µs\",\"servTime\":\"10.45µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:users\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"3.456µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":20,\"execTime\":\"2.345ms\",\"kernTime\":\"2.1ms\",\"servTime\":\"1.8ms\"},\"index\":\"idx_user_registration\",\"keyspace\":\"users\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"user123\\\"\",\"inclusion\":3,\"low\":\"\\\"user123\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"8.901ms\",\"kernTime\":\"8.2ms\",\"servTime\":\"7.8ms\"},\"keyspace\":\"users\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"1.234ms\",\"kernTime\":\"1.1ms\"},\"result_terms\":[{\"expr\":\"(`u`.`name`)\"},{\"expr\":\"(`u`.`email`)\"},{\"expr\":\"(`u`.`profile`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":6,\"execTime\":\"0.456ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "analytics-report-fatal-memory-limit",
+      "cpuTime": "234.567ms",
+      "elapsedTime": "5.789123s",
+      "errorCount": 1,
+      "errors": [
+        {
+          "code": 1065,
+          "msg": "Request cancelled - memory limit exceeded during processing"
+        }
+      ],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$reportDate": "2025-06-01",
+        "$department": "engineering"
+      },
+      "phaseCounts": {
+        "indexScan": 150000,
+        "fetch": 150000,
+        "group": 150000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "group": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "15.234µs",
+        "instantiate": "23.456µs",
+        "parse": "456.789µs",
+        "plan": "89.012µs",
+        "plan.index.metadata": "34.567µs",
+        "plan.keyspace.metadata": "23.456µs",
+        "indexScan": "234.567ms",
+        "fetch": "1.234567s",
+        "group": "3.456789s",
+        "project": "0.567ms",
+        "run": "5.678901s",
+        "stream": "0.123ms"
+      },
+      "remoteAddr": "127.0.0.1:54789",
+      "requestId": "analytics-report-fatal-memory-limit",
+      "requestTime": "2025-07-15T14:45:33.789Z",
+      "resultCount": 0,
+      "resultSize": 0,
+      "scanConsistency": "request_plus",
+      "serviceTime": "5.789012s",
+      "state": "fatal",
+      "statement": "SELECT department, COUNT(*) as employee_count, AVG(salary) as avg_salary, SUM(total_expenses) as total_expenses FROM `employees` WHERE hire_date >= $reportDate AND department = $department GROUP BY department, location, team, sub_department ORDER BY total_expenses DESC",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 67108864,
+      "userAgent": "analytics-service/2.1.0",
+      "users": "local:analytics_service_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-15T14:45:33.790Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"3.456µs\",\"servTime\":\"12.778µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:employees\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"8.901µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":600000,\"execTime\":\"234.567ms\",\"kernTime\":\"198.432ms\",\"servTime\":\"210.123ms\"},\"index\":\"idx_employees_hire_date\",\"keyspace\":\"employees\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"null\",\"inclusion\":1,\"low\":\"\\\"2025-06-01\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":125,\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":600125,\"execTime\":\"1234.567ms\",\"kernTime\":\"1123.219ms\",\"servTime\":\"1187.678ms\"},\"keyspace\":\"employees\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":300000,\"execTime\":\"89.123ms\",\"kernTime\":\"82.456ms\"},\"condition\":\"((`employees`.`department`) = 'engineering')\"},{\"#operator\":\"InitialGroup\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":0,\"#phaseSwitches\":150000,\"execTime\":\"3456.789ms\",\"kernTime\":\"3234.567ms\"},\"aggregates\":[\"count(*)\",\"avg((`employees`.`salary`))\",\"sum((`employees`.`total_expenses`))\"],\"group_keys\":[\"(`employees`.`department`)\",\"(`employees`.`location`)\",\"(`employees`.`team`)\",\"(`employees`.`sub_department`)\"]},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":0,\"#itemsOut\":0,\"#phaseSwitches\":0,\"execTime\":\"0.567ms\",\"kernTime\":\"0.5ms\"},\"result_terms\":[{\"as\":\"department\",\"expr\":\"(`employees`.`department`)\"},{\"as\":\"employee_count\",\"expr\":\"count(*)\"},{\"as\":\"avg_salary\",\"expr\":\"avg((`employees`.`salary`))\"},{\"as\":\"total_expenses\",\"expr\":\"sum((`employees`.`total_expenses`))\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":0,\"#itemsOut\":0,\"#phaseSwitches\":1,\"execTime\":\"0.123ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
   }
 ]

@@ -5149,7 +5149,20 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             timeGroups[key] = {
               timestamp: timeKey,
               statementTypes: {},
+              fatalCount: 0,
             };
+          }
+
+          // Track fatal queries separately
+          if (request.state && request.state.toLowerCase() === 'fatal') {
+            timeGroups[key].fatalCount++;
+            if (!timeGroups[key].fatalElapsedTimes) {
+              timeGroups[key].fatalElapsedTimes = [];
+            }
+            // Get duration in milliseconds and convert to seconds
+            const elapsedTimeMs = parseTime(request.elapsedTime);
+            const durationSeconds = elapsedTimeMs / 1000;
+            timeGroups[key].fatalElapsedTimes.push(durationSeconds);
           }
 
           // Use consistent statement type parsing
@@ -5262,6 +5275,46 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           };
         });
 
+        // Add fatal queries dataset for right Y-axis
+        const fatalData = [];
+        let maxFatalCount = 0;
+        
+        Object.values(timeGroups).forEach((group) => {
+          if (group.fatalCount > 0) {
+            maxFatalCount = Math.max(maxFatalCount, group.fatalCount);
+            // Calculate average elapsed time for fatal queries in this time period
+            const avgElapsedTime = group.fatalElapsedTimes && group.fatalElapsedTimes.length > 0
+              ? group.fatalElapsedTimes.reduce((sum, time) => sum + time, 0) / group.fatalElapsedTimes.length
+              : 0;
+            fatalData.push({
+              x: group.timestamp,
+              y: group.fatalCount,
+              count: group.fatalCount,
+              avgElapsedTime: avgElapsedTime,
+            });
+          }
+        });
+
+        if (fatalData.length > 0) {
+          datasets.push({
+            label: `Fatal Queries (${fatalData.reduce((sum, point) => sum + point.count, 0)} total)`,
+            data: fatalData.map(point => ({
+              x: point.x,
+              y: point.y,
+              count: point.count,
+              avgElapsedTime: point.avgElapsedTime
+            })),
+            type: 'scatter', // Use scatter instead of bubble for different point style
+            backgroundColor: '#FF0000', // Bright red
+            borderColor: '#FF0000', // Red outline to match fatal styling
+            borderWidth: 3,
+            pointRadius: fatalData.map(point => Math.min(20, Math.max(8, point.count * 3))), // Larger and more variable sizing
+            pointStyle: 'crossRot', // X shape instead of circle
+            yAxisID: 'y1', // Use right Y-axis
+            showLine: false, // Don't connect points with lines
+          });
+        }
+
         // Create bubble chart
         window.queryTypesChart = new Chart(ctx, {
           type: "bubble",
@@ -5283,14 +5336,26 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 callbacks: {
                   label: function (context) {
                     const dataPoint = context.raw;
-                    const statementType = context.dataset.label.split(" (")[0];
-                    return [
-                      `${statementType}`,
-                      `Count: ${dataPoint.count}`,
-                      `Avg Duration: ${dataPoint.y.toFixed(3)}s`,
-                      `Min Duration: ${dataPoint.minDuration.toFixed(3)}s`,
-                      `Max Duration: ${dataPoint.maxDuration.toFixed(3)}s`,
-                    ];
+                    const datasetLabel = context.dataset.label;
+                    const statementType = datasetLabel.split(" (")[0];
+                    
+                    // Handle fatal queries dataset differently
+                    if (statementType === "Fatal Queries") {
+                      return [
+                        `${statementType}`,
+                        `Fatal Count: ${dataPoint.count}`,
+                        `Avg Elapsed Time: ${dataPoint.avgElapsedTime.toFixed(3)}s`,
+                      ];
+                    } else {
+                      // Handle regular statement type datasets
+                      return [
+                        `${statementType}`,
+                        `Count: ${dataPoint.count}`,
+                        `Avg Duration: ${dataPoint.y.toFixed(3)}s`,
+                        `Min Duration: ${dataPoint.minDuration.toFixed(3)}s`,
+                        `Max Duration: ${dataPoint.maxDuration.toFixed(3)}s`,
+                      ];
+                    }
                   },
                 },
               },
@@ -5399,6 +5464,19 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                   text: "Average Duration (seconds)",
                 },
                 beginAtZero: true,
+                position: "left",
+              },
+              y1: {
+                type: "linear",
+                position: "right",
+                title: {
+                  display: true,
+                  text: "Fatal Query Count",
+                },
+                beginAtZero: true,
+                grid: {
+                  drawOnChartArea: false,
+                },
               },
             },
             interaction: {
