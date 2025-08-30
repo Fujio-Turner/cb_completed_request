@@ -3,19 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Couchbase Slow Query Analysis Tool - Quick Start Guide</title>
+    <title>Couchbase Slow Query Analyzer Tool - Free Guide & Analysis</title>
+    <meta name="description" content="Free Couchbase slow query analyzer tool for performance optimization and execution plans. Compatible with Capella. Quick start guide to analyze N1QL queries.">
+    <meta name="keywords" content="Couchbase slow query analyzer, N1QL performance analysis, Couchbase query optimization, system:completed_requests, Capella query tool">
+    <link rel="canonical" href="https://cb.fuj.io/en/">
     <style>
-body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5}.guide-container{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}.guide-step{background:white;padding:15px;border:1px solid #ccc;border-radius:5px}.guide-step h3{margin-top:0;font-size:18px;color:#333}.guide-step p,.guide-step ul{font-size:14px;color:#666;line-height:1.5}.guide-step pre{background:#f8f9fa;padding:10px;border-radius:4px;font-size:12px;overflow-x:auto}.guide-step a{color:#007bff;text-decoration:none}.guide-step a:hover{text-decoration:underline}.guide-step img{max-width:100%;height:auto}.video-placeholder{background:#e9ecef;padding:15px;border-radius:4px;text-align:center;color:#666;font-size:14px}.sql-query-box{background:#f8f9fa;border:1px solid #dee2e6;border-radius:6px;padding:15px;margin:15px 0;position:relative}.sql-query-box pre{background:#ffffff;border:1px solid #e9ecef;border-radius:4px;padding:10px;margin:10px 0;font-family:monospace;font-size:12px;overflow-x:auto}.sql-copy-btn{position:absolute;top:10px;right:10px;background:#007bff;color:white;border:none;border-radius:4px;padding:6px 12px;font-size:11px;cursor:pointer}.sql-copy-btn:hover{background:#0056b3}.version-info{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.1);color:#333;padding:4px 8px;border-radius:4px;font-size:0.75em;font-family:monospace;z-index:999;opacity:0.7;transition:opacity 0.3s ease}.version-info:hover{opacity:1;background:rgba(0,0,0,0.2)}footer{position:fixed;bottom:10px;right:10px;z-index:999;text-align:center}
+body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5}.guide-container{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}.guide-step{background:white;padding:15px;border:1px solid #ccc;border-radius:5px}.guide-step h3{margin-top:0;font-size:18px;color:#333}.guide-step p,.guide-step ul{font-size:14px;color:#666;line-height:1.5}.guide-step pre{background:#f8f9fa;padding:10px;border-radius:4px;font-size:12px;overflow-x:auto}.guide-step a{color:#007bff;text-decoration:none}.guide-step a:hover{text-decoration:underline}.guide-step img{max-width:100%;height:auto}.video-placeholder{background:#e9ecef;padding:15px;border-radius:4px;text-align:center;color:#666;font-size:14px}.sql-query-box{background:#f8f9fa;border:1px solid #dee2e6;border-radius:6px;padding:15px;margin:15px 0;position:relative}.sql-query-box pre{background:#ffffff;border:1px solid #e9ecef;border-radius:4px;padding:10px;margin:10px 0;font-family:monospace;font-size:12px;overflow-x:auto}.sql-copy-btn{position:absolute;top:10px;right:10px;background:#007bff;color:white;border:none;border-radius:4px;padding:6px 12px;font-size:11px;cursor:pointer}.sql-copy-btn:hover{background:#0056b3}.version-info{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.1);color:#333;padding:4px 8px;border-radius:4px;font-size:0.75em;font-family:monospace;z-index:999;opacity:0.7;transition:opacity 0.3s ease}.version-info:hover{opacity:1;background:rgba(0,0,0,0.2)}footer{position:fixed;bottom:10px;right:10px;z-index:999;text-align:center}.faq-item{border-bottom:1px solid #e9ecef;margin-bottom:10px}.faq-question{width:100%;text-align:left;background:none;border:none;padding:15px 0;font-size:16px;font-weight:bold;color:#333;cursor:pointer;display:flex;justify-content:space-between;align-items:center}.faq-question:hover{color:#007bff}.faq-toggle{font-size:18px;font-weight:bold;transition:transform 0.3s ease}.faq-answer{color:#666;line-height:1.5;display:none;padding:0 0 15px 0;transition:all 0.3s ease}.faq-answer.active{display:block}.faq-item:last-child{border-bottom:none}
     </style>
 </head>
 <body>
-    <h1>Couchbase Slow Query Analysis Tool - Quick Start Guide</h1>
-    <p>A comprehensive web-based tool for analyzing Couchbase query performance and execution plans. (Capella compatible)</p>
+    <h1>Couchbase Slow Query Analyzer Tool - Quick Start Guide</h1>
+    <p>A free Couchbase slow query analyzer tool for optimizing N1QL query performance and analyzing execution plans (Capella compatible). Supports Couchbase 7.6+ and Capella with timeline charts for query execution plans.</p>
 
+    <h2>Step 1: Extract Couchbase Query Data for Slow Query Analysis</h2>
     <div class="guide-container">
-        <!-- Step 1 -->
         <div class="guide-step">
-            <h3>Step 1: Extract Query Data</h3>
+            <h3>Extract Query Data from System:Completed_Requests</h3>
             <p>Run the below query in your Couchbase Query Workbench or <code>cbq</code>.</p> 
             <p>You will want to copy or save the JSON output.</p>
             <div class="sql-query-box">
@@ -26,12 +29,14 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
             <p><a href="sql_queries.md">Advanced Query Options</a></p>
         </div>
         <div class="guide-step">
-            <img src="img/completed_request_json.png" alt="Query output JSON" style="width: 550px;">
+            <img src="img/completed_request_json.png" alt="Couchbase system:completed_requests query output JSON for slow query analysis" style="width: 550px;">
         </div>
+    </div>
 
-        <!-- Step 2 -->
+    <h2>Step 2: Access Couchbase Query Analyzer Tool</h2>
+    <div class="guide-container">
         <div class="guide-step">
-            <h3>Step 2: Access Hosted Tool</h3>
+            <h3>Access the Free Hosted Analyzer Tool</h3>
             <p>Click the link below to go to the web based query analyzer tool. Pick by <strong>Language-Specific:</strong></p>
             <ul>
                 <li><span style="font-size: large;"><a href="https://cb.fuj.io/en/" target="_blank" rel="noopener noreferrer">https://cb.fuj.io/en/ (English)</a></span></li>
@@ -42,23 +47,27 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
             <p>  <img src="img/firefox.png" alt="FireFox" style="width: 30px;"> <em>Firefox</em> renders data the fastest.</p>
         </div>
         <div class="guide-step">
-       <img src="img/copy_paste_side_by_side.png" alt="Steps from Query to Analyze" style="width: 650px;" >
+       <img src="img/copy_paste_side_by_side.png" alt="Steps to analyze Couchbase slow queries from extraction to visualization" style="width: 650px;" >
         </div>
+    </div>
 
-        <!-- Step 3 -->
+    <h2>Step 3: Parse and Analyze Query Performance Data</h2>
+    <div class="guide-container">
         <div class="guide-step">
-            <h3>Step 3: Paste & Analyze</h3>
+            <h3>Paste JSON Data and Parse for Analysis</h3>
             <p>Copy the JSON output from Step 1 and paste it into the <span style="font-size: large; color: black;"><b>Upper Left</b></span> text box, then click the <strong>Parse JSON</strong> button.</p>
-            <img src="img/paste_json.png" alt="Paste JSON and click Parse JSON">
-            <p><strong>Need Help?</strong> <a href="analysis_hub.html" target="_blank" rel="noopener noreferrer">📚 Analysis Hub - Debugging Guide & Glossary</a></p>
+            <img src="img/paste_json.png" alt="Paste JSON into Couchbase slow query analyzer tool and parse for performance insights" loading="lazy">
+            <p><strong>Need Help?</strong> <a href="analysis_hub.html" target="_blank" rel="noopener noreferrer">📚 Analysis Hub - Couchbase N1QL Query Optimization Guide & Glossary</a></p>
         </div>
         <div class="guide-step">
-            <img src="img/timeline.png" alt="Timeline Charts">
+            <img src="img/timeline.png" alt="Timeline charts for Couchbase N1QL query execution plan analysis" loading="lazy">
         </div>
+    </div>
 
-        <!-- Step 4 -->
+    <h2>Step 4: Advanced Query Filtering and Index Analysis</h2>
+    <div class="guide-container">
         <div class="guide-step">
-            <h3>Step 4: Filter and Index Analysis (Optional)</h3>
+            <h3>Filter Query Data for Targeted Analysis</h3>
             <p><strong>Filter by:</strong></p>
             <ul>
                 <li><strong>Auto-population:</strong> Date fields populate with your data's full time range.</li>
@@ -108,10 +117,12 @@ LET bid = CONCAT("", s.bucket_id, ""),
   "indexString": "CREATE INDEX #primary ON customer_addresses;"
 }]</pre>
         </div>
+    </div>
 
-        <!-- Step 5: Download -->
+    <h2>Step 5: Download for Local Use (Optional)</h2>
+    <div class="guide-container">
         <div class="guide-step">
-            <h3>Download the Tool (Optional)</h3>
+            <h3>Download Couchbase Query Analyzer for Offline Analysis</h3>
             <p>If you prefer to use the tool locally you can get the raw HTML BELOW , copy/paste HTML and save it as index.html :</p>
             <ul>
                 <li><a href="https://raw.githubusercontent.com/Fujio-Turner/cb_completed_request/main/en/index.html">English (index.html)</a></li>
@@ -127,15 +138,90 @@ LET bid = CONCAT("", s.bucket_id, ""),
         </div>
     </div>
 
+    <h2>Why Analyze Couchbase Slow Queries?</h2>
+    <p>Identifying and tuning slow queries in Couchbase can reduce execution time by up to 75%, as seen in real-world optimizations. Our tool visualizes data from system:completed_requests, helping with index analysis, query filtering, and performance bottlenecks for better Couchbase performance tuning.</p>
+
+    <h2>FAQs on Couchbase Query Performance</h2>
+    <div class="faq-container" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <div class="faq-item">
+            <button class="faq-question">What causes slow queries in Couchbase? <span class="faq-toggle">+</span></button>
+            <div class="faq-answer">Poor indexing, large datasets, or inefficient N1QL statements. Use our analyzer to diagnose performance bottlenecks and identify optimization opportunities. <br><a href="analysis_hub.html#optimizer" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">📚 Learn More: Query Optimization Guide</a></div>
+        </div>
+        
+        <div class="faq-item">
+            <button class="faq-question">How do I fix slow queries in Couchbase? <span class="faq-toggle">+</span></button>
+            <div class="faq-answer">Start with proper indexing strategies, use covering indexes when possible, and analyze execution plans. Our tool provides visual insights into query performance patterns. <br><a href="analysis_hub.html#optimizer" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">🎯 Get Help: Crawl, Walk, Run Optimization Approach</a></div>
+        </div>
+        
+        <div class="faq-item">
+            <button class="faq-question">What is system:completed_requests? <span class="faq-toggle">+</span></button>
+            <div class="faq-answer">A Couchbase system catalog that contains historical query execution data including timing metrics, execution plans, and performance statistics. <br><a href="analysis_hub.html#readStats" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">📊 Learn More: Understanding Query Statistics</a></div>
+        </div>
+        
+        <div class="faq-item">
+            <button class="faq-question">Is this tool compatible with Couchbase Capella? <span class="faq-toggle">+</span></button>
+            <div class="faq-answer">Yes, the analyzer works with both Couchbase Server 7.6+ and Couchbase Capella cloud database deployments. <br><a href="analysis_hub.html" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">🔍 Get Help: Analysis Hub & Debugging Guide</a></div>
+        </div>
+        
+        <div class="faq-item">
+            <button class="faq-question">How often should I analyze query performance? <span class="faq-toggle">+</span></button>
+            <div class="faq-answer">Regular analysis is recommended, especially after data growth, schema changes, or when users report performance issues. Weekly or monthly reviews help maintain optimal performance. <br><a href="analysis_hub.html#bestPractices" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">✨ Learn More: Query Tuning Best Practices</a></div>
+        </div>
+    </div>
+
+    <p><strong>Last updated:</strong> August 29, 2025</p>
+
     <div class="version-info">Couchbase Slow Query Analysis Tool v3.9.0</div>
 
     <footer>
         <a href="https://github.com/Fujio-Turner/cb_completed_request" target="_blank" rel="noopener noreferrer">
-            <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub Repository for Couchbase Slow Query Analysis Tool" width="40" height="40">
+            <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub repository for Couchbase slow query analysis tool" width="40" height="40">
         </a>
     </footer>
 
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "Couchbase Slow Query Analysis Guide",
+      "description": "Step-by-step guide to using the free Couchbase slow query analyzer tool for performance optimization.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Extract Couchbase Query Data",
+          "text": "Run the SQL query in Couchbase Query Workbench to get JSON output from system:completed_requests.",
+          "url": "#step1"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Access the Analyzer Tool",
+          "text": "Visit cb.fuj.io in your preferred language and access the free hosted analyzer tool.",
+          "url": "#step2"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Parse JSON Data",
+          "text": "Paste the JSON output into the tool and click Parse JSON to analyze query performance.",
+          "url": "#step3"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Filter and Analyze",
+          "text": "Use advanced filtering options and index analysis to identify performance bottlenecks.",
+          "url": "#step4"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Download for Offline Use",
+          "text": "Optionally download the tool for local analysis and offline usage.",
+          "url": "#step5"
+        }
+      ]
+    }
+    </script>
+
     <script>
+        // SQL Copy functionality
         document.querySelectorAll('.sql-copy-btn').forEach(button => {
             button.addEventListener('click', () => {
                 const code = button.parentElement.querySelector('pre').textContent;
@@ -147,6 +233,34 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 }).catch(err => {
                     console.error('Failed to copy: ', err);
                 });
+            });
+        });
+
+        // FAQ Accordion functionality
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const answer = question.nextElementSibling;
+                const toggle = question.querySelector('.faq-toggle');
+                
+                if (answer.classList.contains('active')) {
+                    answer.classList.remove('active');
+                    toggle.textContent = '+';
+                    toggle.style.transform = 'rotate(0deg)';
+                } else {
+                    // Close all other FAQ items
+                    document.querySelectorAll('.faq-answer').forEach(otherAnswer => {
+                        otherAnswer.classList.remove('active');
+                    });
+                    document.querySelectorAll('.faq-toggle').forEach(otherToggle => {
+                        otherToggle.textContent = '+';
+                        otherToggle.style.transform = 'rotate(0deg)';
+                    });
+                    
+                    // Open this FAQ item
+                    answer.classList.add('active');
+                    toggle.textContent = '−';
+                    toggle.style.transform = 'rotate(180deg)';
+                }
             });
         });
     </script>
