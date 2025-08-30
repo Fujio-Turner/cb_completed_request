@@ -1499,8 +1499,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const sqlFilter = document.getElementById("sql-statement-filter");
         const sqlFilterText = sqlFilter ? sqlFilter.value.trim().toLowerCase() : "";
         
-        console.log("🔍 SQL Filter text:", sqlFilterText);
-        console.log("📝 Original requests:", requests.length);
+
         
         const filtered = requests.filter((request) => {
           // Apply system query exclusion first
@@ -1519,7 +1518,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           return true;
         });
         
-        console.log("✅ Filtered requests:", filtered.length);
+
         return filtered;
       }
 
@@ -5175,11 +5174,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           });
         });
 
-        // Console log all statement types found
-        console.log(
-          "Statement types found:",
-          Array.from(allStatementTypes).sort()
-        );
+        // Log all statement types found (removed for production)
 
         // Predefined colors for all statement types found
         const colorMap = {
@@ -5427,10 +5422,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         // Group requests by time and duration buckets
         const timeGroups = {};
 
-        console.log(
-          "Duration buckets chart - processing requests:",
-          requests.length
-        );
+
 
         requests.forEach((request) => {
           const requestDate = new Date(request.requestTime);
@@ -8401,24 +8393,20 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             
             // Always check Index/Query Flow tab (not just first time)
             if (tabId === "index-query-flow" && originalRequests.length > 0) {
-              console.log("🎯 Index/Query Flow tab activated (always rebuild)");
-              console.log("🎯 indexQueryFlowData.indexes size:", indexQueryFlowData.indexes.size);
-              console.log("🎯 indexQueryFlowData.queries size:", indexQueryFlowData.queries.size);
+              
               
               // Full render from existing indexQueryFlowData (create DIVs + SVG)
               setTimeout(() => {
-                console.log("🔄 Tab activation: Full render from existing indexQueryFlowData");
-                console.log("🔄 Tab activation timeout - about to render");
                 
                 // Convert indexQueryFlowData back to arrays for renderIndexQueryFlow
                 const indexes = Array.from(indexQueryFlowData.indexes.values());
                 const queries = Array.from(indexQueryFlowData.queries.values());
                 
-                console.log("  📊 Rendering with - Indexes:", indexes.length, "Queries:", queries.length);
+
                 
                 // Do full render (creates DIVs and SVG)
                 renderIndexQueryFlow(indexes, queries);
-                console.log("✅ Index/Query Flow full render complete");
+
               }, 150);
             }
           },
@@ -8456,8 +8444,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       // Process Index/Query data without DOM rendering (for hidden tabs)
       function processIndexQueryData(requests) {
-        console.log("📊 Processing Index/Query data structures only (no DOM rendering)");
-        console.log("📊 processIndexQueryData received requests:", requests?.length || 0);
+
         
         // Clear and rebuild data structures
         indexQueryFlowData.indexes.clear();
@@ -8531,7 +8518,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                       indexName.includes("primary") ||
                       indexName.endsWith("_primary");
               
-              console.log(`🔍 processIndexQueryData - Index "${indexName}": isPrimary check = ${isPrimaryCheck}`);
+  
               
               allIndexes.set(indexName, {
                 name: indexName,
@@ -8550,9 +8537,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             // Collect statistics from the request
             const request = requests[requestIndex];
             if (request) {
-              console.log("DEBUG: request keys:", Object.keys(request));
-              console.log("DEBUG: request.plan exists:", !!request.plan);
-              console.log("DEBUG: typeof request.plan:", typeof request.plan);
+              
               // Extract actual index scan service time and items data from plan data  
               const indexData = extractIndexScanDataFromPlan(request.plan, indexName);
               if (indexData.scanTime > 0) {
@@ -8569,15 +8554,23 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         });
 
         // CRITICAL: Populate indexQueryFlowData with processed data for SVG rendering
-        // Sort indexes by totalUsage (descending) to match full rendering behavior
-        const sortedIndexes = Array.from(allIndexes.values()).sort((a, b) => b.totalUsage - a.totalUsage);
+        // Sort indexes by totalUsage (descending) and filter out indexes with no real usage data
+        const sortedIndexes = Array.from(allIndexes.values())
+          .filter(index => {
+            // Only show indexes that have actual performance data
+            const hasStats = index.scanTimes.length > 0 || index.itemsScanned.length > 0 || index.itemsFetched.length > 0;
+            if (!hasStats) {
+  
+            }
+            return hasStats;
+          })
+          .sort((a, b) => b.totalUsage - a.totalUsage);
         const sortedQueries = Array.from(queryGroups.values()).sort((a, b) => b.count - a.count);
         
         indexQueryFlowData.indexes = new Map(sortedIndexes.map(idx => [idx.name, idx]));
         indexQueryFlowData.queries = new Map(sortedQueries.map(q => [q.normalizedStatement, q]));
         
-        console.log("📊 processIndexQueryData: Sorted indexes by totalUsage");
-        console.log("📊 processIndexQueryData: Sorted queries by count");
+
         
         // Rebuild connections data
         requestIndexMap.forEach((indexSet, requestIndex) => {
@@ -8605,8 +8598,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         if (indexCountEl) indexCountEl.textContent = allIndexes.size;
         if (queryCountEl) queryCountEl.textContent = queryGroups.size;
         
-        console.log("📊 Updated counts - Indexes:", allIndexes.size, "Queries:", queryGroups.size);
-        console.log("📊 Populated indexQueryFlowData for SVG rendering");
+
       }
 
       // Helper function to resolve #primary to actual primary index name
@@ -8634,11 +8626,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         // Use provided requests or fall back to original requests
         const requestsToUse = requests || originalRequests;
 
-        console.log("🔧 buildIndexQueryFlow called with requests:", requestsToUse?.length || 0);
-        console.log("🔧 buildIndexQueryFlow called from:", new Error().stack.split('\n')[1]);
+
 
         if (!requestsToUse || requestsToUse.length === 0) {
-          console.log("❌ No requests available for Index/Query Flow");
+
           return;
         }
 
@@ -8646,19 +8637,19 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const activeTabIndex = $("#tabs").tabs("option", "active");
         const indexQueryFlowTabIndex = 4; // Index/Query Flow is the 5th tab (0-indexed)
         
-        console.log(`📊 Active tab index: ${activeTabIndex}, Index/Query Flow tab index: ${indexQueryFlowTabIndex}`);
+
         
         // Always clear first to ensure clean state
         clearIndexQueryFlow();
         
         // Process data but skip DOM rendering when tab is hidden
         if (activeTabIndex !== indexQueryFlowTabIndex) {
-          console.log("⏸️ Index/Query Flow tab hidden, processing data only - CALLING processIndexQueryData");
+
           processIndexQueryData(requestsToUse);
           return;
         }
 
-        console.log("✅ Index/Query Flow tab is visible, proceeding with FULL rendering");
+
 
         // Step 1: Track which indexes each request uses (by request index)
         const requestIndexMap = new Map(); // requestIndex -> Set of index names
@@ -8755,7 +8746,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                       indexName.includes("primary") ||
                       indexName.endsWith("_primary");
                   
-                  console.log(`🔍 Index "${indexName}": isPrimary check = ${isPrimaryCheck}`);
                   
                   allIndexes.set(indexName, {
                     name: indexName,
@@ -8774,9 +8764,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 const request = requestsToUse[requestIndex];
                 if (request) {
                   // Extract actual index scan service time and items data from plan data
-                  console.log(`Processing request for index ${indexName}:`, typeof request.plan);
                   const indexData = extractIndexScanDataFromPlan(request.plan, indexName);
-                  console.log(`Index: ${indexName}, Scan Time: ${indexData.scanTime}ms, Items: ${indexData.itemsScanned}`);
                   if (indexData.scanTime > 0) {
                     indexObj.scanTimes.push(indexData.scanTime);
                   }
@@ -8804,10 +8792,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           });
         });
 
-        // Convert to sorted arrays
-        const sortedIndexes = Array.from(allIndexes.values()).sort(
-          (a, b) => b.totalUsage - a.totalUsage
-        );
+        // Convert to sorted arrays and filter out indexes with no real usage data
+        const sortedIndexes = Array.from(allIndexes.values())
+          .filter(index => {
+            // Only show indexes that have actual performance data
+            const hasStats = index.scanTimes.length > 0 || index.itemsScanned.length > 0 || index.itemsFetched.length > 0;
+            return hasStats;
+          })
+          .sort((a, b) => b.totalUsage - a.totalUsage);
         const sortedQueries = Array.from(queryGroups.values()).sort(
           (a, b) => b.count - a.count
         );
@@ -8818,10 +8810,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           sortedQueries.map((q) => [q.normalizedStatement, q])
         );
 
-        console.log("🚀 About to call renderIndexQueryFlow with:");
-        console.log("  📋 sortedIndexes:", sortedIndexes.length);
-        console.log("  📋 sortedQueries:", sortedQueries.length);
-        console.log("  📋 indexQueryFlowData.connections:", indexQueryFlowData.connections.size);
         
         renderIndexQueryFlow(sortedIndexes, sortedQueries);
       }
@@ -8858,13 +8846,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               // Extract servTime and items data from this operator's stats
               if (operator["#stats"]) {
                 const stats = operator["#stats"];
+                
                 if (stats["servTime"]) {
                   result.scanTime = parseTime(stats["servTime"]);
-                  console.log(`Found matching operator for ${indexName}: servTime = ${stats["servTime"]}`);
                 }
                 if (stats["#itemsOut"]) {
                   result.itemsScanned = stats["#itemsOut"];
-                  console.log(`Found items scanned for ${indexName}: ${stats["#itemsOut"]}`);
                 }
                 if (stats["#itemsIn"]) {
                   result.itemsFetched = stats["#itemsIn"];
@@ -8882,9 +8869,48 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 searchOperatorForIndex(child);
               }
             }
+            
+            // Also search scan property (used in DistinctScan)
+            if (operator["scan"]) {
+              searchOperatorForIndex(operator["scan"]);
+            }
+            
+            // Search other nested operator properties
+            if (operator["input"]) {
+              searchOperatorForIndex(operator["input"]);
+            }
+            
+            if (operator["inputs"] && Array.isArray(operator["inputs"])) {
+              for (const input of operator["inputs"]) {
+                searchOperatorForIndex(input);
+              }
+            }
+            
+            if (operator["left"]) {
+              searchOperatorForIndex(operator["left"]);
+            }
+            
+            if (operator["right"]) {
+              searchOperatorForIndex(operator["right"]);
+            }
+            
+            if (operator["first"]) {
+              searchOperatorForIndex(operator["first"]);
+            }
+            
+            if (operator["second"]) {
+              searchOperatorForIndex(operator["second"]);
+            }
+            
+            if (operator["scans"] && Array.isArray(operator["scans"])) {
+              for (const scan of operator["scans"]) {
+                searchOperatorForIndex(scan);
+              }
+            }
           }
           
           searchOperatorForIndex(plan);
+          console.log(`[${indexName}] FINAL RESULT: scanTime=${result.scanTime}ms, itemsScanned=${result.itemsScanned}, itemsFetched=${result.itemsFetched}`);
           return result;
         } catch (e) {
           console.warn("Failed to process plan data:", e);
@@ -9173,14 +9199,20 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
         const stats = calculateIndexStats(index);
 
-        // Check if avg scan time >= 10 seconds for red/bold styling
+        // Check avg scan time for styling:
+        // 2-10 seconds: USE KEYS color (orange) and bold
+        // 10+ seconds: Red and bold
         const scanTimes = index.scanTimes || [];
         const avgScanTimeMs = scanTimes.length
           ? scanTimes.reduce((a, b) => a + b, 0) / scanTimes.length
           : 0;
         const avgScanTimeSeconds = avgScanTimeMs / 1000;
-        const avgScanTimeStyle =
-          avgScanTimeSeconds >= 10 ? "font-weight: bold; color: red;" : "";
+        let avgScanTimeStyle = "";
+        if (avgScanTimeSeconds >= 10) {
+          avgScanTimeStyle = "font-weight: bold; color: red;";
+        } else if (avgScanTimeSeconds >= 2) {
+          avgScanTimeStyle = "font-weight: bold; color: #ff9800;";
+        }
 
         div.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center;">
