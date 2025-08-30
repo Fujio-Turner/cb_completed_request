@@ -743,7 +743,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               <h4 class="insight-title" onclick="toggleInsight('high-kernel-time-queries')">High Kernel Time in Queries<span class="beta-badge">Beta</span></h4>
               <div class="insight-content" id="high-kernel-time-queries-content">
                 <p class="insight-description">
-                  <span class="highlight-number" id="high-kernel-time-queries-count">0 queries</span> with <span class="highlight-number" id="high-kernel-time-count">0 operations</span> where execTime is <span class="highlight-number">20% or more</span> of servTime, indicating potential kernel/service waiting time.
+                  <span class="highlight-number" id="high-kernel-time-queries-count">0 queries</span> whose average percentage of sum of their <b title="Sum of all execTime minus Stream's execTime">core execTime</b> / kernTime is <span class="highlight-number" id="avg-core-kernel-ratio">0%</span>.
                 </p>
                 <div class="learn-more-section">
                   <div class="learn-more-item">
@@ -832,10 +832,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             <div class="insight-category-content" id="performance-opportunities-content">
             
             <div class="insight-item">
-              <h4 class="insight-title" onclick="toggleInsight('large-payload-streaming')">Large Payload Streaming<span class="dev-badge">Dev</span></h4>
+              <h4 class="insight-title" onclick="toggleInsight('large-payload-streaming')">Large Payload Streaming<span class="live-badge">Live</span></h4>
               <div class="insight-content" id="large-payload-streaming-content">
                 <p class="insight-description">
-                  <span class="highlight-number">250 queries</span> return <span class="highlight-number">100,000+ items</span>, with an overall average payload of <span class="highlight-number">15 MB+</span> and <span class="highlight-number">40%</span> of query time dedicated to streaming data to the client.
+                  <span class="highlight-number" id="large-payload-count">0 queries</span> with avg size: <span class="highlight-number" id="avg-payload-size">0MB</span> with <span class="highlight-number" id="avg-stream-ratio">0%</span> of the time of the query was streaming data out to the application.
                 </p>
                 <div class="learn-more-section">
                   <div class="learn-more-item">
@@ -8083,11 +8083,15 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         let inefficientLikeCount = 0;
         let inefficientIndexScansCount = 0;
         let highMemoryCount = 0;
-        let highKernelTimeCount = 0;
         let highKernelTimeQueriesCount = 0;
+        let totalCoreKernelRatio = 0;
+        let largePayloadStreamingCount = 0;
+        let largePayloadTotalResultSize = 0;
+        let largePayloadTotalStreamRatio = 0;
         
         // Configurable threshold for kernel time detection
         const KERNEL_TIME_THRESHOLD_PERCENT = 20;
+        const STREAM_KERNEL_THRESHOLD_PERCENT = 10;
         
         requests.forEach((request) => {
           const statement = (request.statement || "").toUpperCase();
@@ -8128,19 +8132,51 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             highMemoryCount++;
           }
           
-          // Count high kernel time operations
+          // Analyze core execTime vs kernel time (two-stage check)
           if (request.plan) {
             try {
               const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
-              const operationsWithKernelTime = analyzeKernelTime(planObj, KERNEL_TIME_THRESHOLD_PERCENT);
-              highKernelTimeCount += operationsWithKernelTime;
+              const elapsedTimeMs = parseTime(request.elapsedTime);
               
-              // Count queries that have at least one operation with kernel time issues
-              if (operationsWithKernelTime > 0) {
-                highKernelTimeQueriesCount++;
+              // Stage 1: Check if kernTime is at least 50% of elapsedTime
+              const kernTimeAnalysis = calculateTotalKernTime(request.plan);
+              const kernToElapsedRatio = elapsedTimeMs > 0 ? (kernTimeAnalysis / elapsedTimeMs) * 100 : 0;
+              
+              if (kernToElapsedRatio >= 50) {
+                // Stage 2: Analyze core execTime vs kernel time ratio
+                const coreKernelAnalysis = analyzeCoreExecToKernelRatio(planObj);
+                
+                // If core execTime is 50%+ of kernel time, flag as high kernel time
+                if (coreKernelAnalysis.coreToKernelRatio >= 50) {
+                  highKernelTimeQueriesCount++;
+                  totalCoreKernelRatio += coreKernelAnalysis.coreToKernelRatio;
+                  console.log(`Query qualifies: kernToElapsed=${kernToElapsedRatio.toFixed(1)}%, coreToKernel=${coreKernelAnalysis.coreToKernelRatio.toFixed(1)}%`);
+                }
               }
             } catch (e) {
               console.error("Error parsing plan for kernel time analysis:", e);
+            }
+          }
+          
+          // Analyze large payload streaming
+          const payloadSize = request.resultSize || 0;
+          const payloadSizeMB = payloadSize / (1024 * 1024); // Convert to MB
+          
+          if (payloadSizeMB >= 1) { // Result size >= 1MB
+            if (request.plan) {
+              try {
+                const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
+                const elapsedTimeMs = parseTime(request.elapsedTime);
+                const streamAnalysis = analyzeStreamToElapsedRatio(planObj, elapsedTimeMs, STREAM_KERNEL_THRESHOLD_PERCENT);
+                
+                if (streamAnalysis.qualifies) {
+                  largePayloadStreamingCount++;
+                  largePayloadTotalResultSize += payloadSizeMB;
+                  largePayloadTotalStreamRatio += streamAnalysis.streamRatio;
+                }
+              } catch (e) {
+                console.error("Error analyzing large payload streaming:", e);
+              }
             }
           }
           
@@ -8213,6 +8249,43 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           largeResultsCountElement.className = largeResultsCount > 0 ? "highlight-number" : "";
         }
         
+        // Update the large payload streaming insight
+        const largePayloadCountElement = document.getElementById("large-payload-count");
+        const avgPayloadSizeElement = document.getElementById("avg-payload-size");
+        const avgStreamRatioElement = document.getElementById("avg-stream-ratio");
+        
+        if (largePayloadStreamingCount > 0) {
+          const avgPayloadSize = (largePayloadTotalResultSize / largePayloadStreamingCount).toFixed(1);
+          const avgStreamRatio = (largePayloadTotalStreamRatio / largePayloadStreamingCount).toFixed(1);
+          
+          if (largePayloadCountElement) {
+            largePayloadCountElement.textContent = `${largePayloadStreamingCount} queries`;
+            largePayloadCountElement.className = "highlight-number";
+          }
+          if (avgPayloadSizeElement) {
+            avgPayloadSizeElement.textContent = `${avgPayloadSize}MB`;
+            avgPayloadSizeElement.className = "highlight-number";
+          }
+          if (avgStreamRatioElement) {
+            avgStreamRatioElement.textContent = `${avgStreamRatio}%`;
+            avgStreamRatioElement.className = "highlight-number";
+          }
+        } else {
+          // Reset to defaults
+          if (largePayloadCountElement) {
+            largePayloadCountElement.textContent = "0 queries";
+            largePayloadCountElement.className = "";
+          }
+          if (avgPayloadSizeElement) {
+            avgPayloadSizeElement.textContent = "0MB";
+            avgPayloadSizeElement.className = "";
+          }
+          if (avgStreamRatioElement) {
+            avgStreamRatioElement.textContent = "0%";
+            avgStreamRatioElement.className = "";
+          }
+        }
+        
         // Update the inefficient LIKE operations insight
         const inefficientLikeCountElement = document.getElementById("inefficient-like-count");
         
@@ -8231,16 +8304,29 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         
         // Update the high kernel time insight
         const highKernelTimeQueriesCountElement = document.getElementById("high-kernel-time-queries-count");
-        const highKernelTimeCountElement = document.getElementById("high-kernel-time-count");
+        const avgCoreKernelRatioElement = document.getElementById("avg-core-kernel-ratio");
         
-        if (highKernelTimeQueriesCountElement) {
-          highKernelTimeQueriesCountElement.textContent = `${highKernelTimeQueriesCount} queries`;
-          highKernelTimeQueriesCountElement.className = highKernelTimeQueriesCount > 0 ? "highlight-number" : "";
-        }
-        
-        if (highKernelTimeCountElement) {
-          highKernelTimeCountElement.textContent = `${highKernelTimeCount} operations`;
-          highKernelTimeCountElement.className = highKernelTimeCount > 0 ? "highlight-number" : "";
+        if (highKernelTimeQueriesCount > 0) {
+          const avgCoreKernelRatio = (totalCoreKernelRatio / highKernelTimeQueriesCount).toFixed(1);
+          
+          if (highKernelTimeQueriesCountElement) {
+            highKernelTimeQueriesCountElement.textContent = `${highKernelTimeQueriesCount} queries`;
+            highKernelTimeQueriesCountElement.className = "highlight-number";
+          }
+          if (avgCoreKernelRatioElement) {
+            avgCoreKernelRatioElement.textContent = `${avgCoreKernelRatio}%`;
+            avgCoreKernelRatioElement.className = "highlight-number";
+          }
+        } else {
+          // Reset to defaults
+          if (highKernelTimeQueriesCountElement) {
+            highKernelTimeQueriesCountElement.textContent = "0 queries";
+            highKernelTimeQueriesCountElement.className = "";
+          }
+          if (avgCoreKernelRatioElement) {
+            avgCoreKernelRatioElement.textContent = "0%";
+            avgCoreKernelRatioElement.className = "";
+          }
         }
         
         // Update the inefficient index scans insight
@@ -8302,50 +8388,110 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         updateInsightNavigation();
       }
       
-      // Analyze kernel time in query plan operations
-      function analyzeKernelTime(operator, thresholdPercent) {
-        if (!operator) return 0;
+      // Analyze core execTime vs kernel time ratio
+      function analyzeCoreExecToKernelRatio(operator) {
+        if (!operator) return { coreToKernelRatio: 0 };
         
-        let kernelTimeCount = 0;
+        let totalExecTime = 0;
+        let streamExecTime = 0;
+        let highestKernelTime = 0;
         
-        // Check current operator for kernel time issues
-        if (operator["#stats"] && operator["#stats"]["servTime"] && operator["#stats"]["execTime"]) {
-          const servTime = parseTime(operator["#stats"]["servTime"]);
-          const execTime = parseTime(operator["#stats"]["execTime"]);
+        function sumExecAndKernelTimes(op) {
+          if (!op) return;
           
-          if (servTime > 0 && execTime > 0) {
-            const execToServRatio = (execTime / servTime) * 100;
+          if (op["#stats"]) {
+            const stats = op["#stats"];
             
-            // If execTime is threshold% or more of servTime, it indicates waiting
-            if (execToServRatio >= thresholdPercent) {
-              kernelTimeCount++;
-              console.log(`High kernel time found: execTime=${execTime}ms, servTime=${servTime}ms, ratio=${execToServRatio.toFixed(1)}%`);
+            // Sum all execTime
+            if (stats["execTime"]) {
+              const execTime = parseTime(stats["execTime"]);
+              if (!isNaN(execTime)) {
+                totalExecTime += execTime;
+                
+                // Track stream execTime separately
+                if (op["#operator"] === "Stream") {
+                  streamExecTime += execTime;
+                }
+              }
+            }
+            
+            // Track highest kernel time
+            if (stats["kernTime"]) {
+              const kernTime = parseTime(stats["kernTime"]);
+              if (!isNaN(kernTime)) {
+                highestKernelTime = Math.max(highestKernelTime, kernTime);
+              }
+            }
+          }
+          
+          // Recursively check child operators
+          if (op["~child"]) {
+            sumExecAndKernelTimes(op["~child"]);
+          }
+          if (op["~children"]) {
+            for (const child of op["~children"]) {
+              sumExecAndKernelTimes(child);
             }
           }
         }
         
-        // Recursively check child operators
-        if (operator["~child"]) {
-          kernelTimeCount += analyzeKernelTime(operator["~child"], thresholdPercent);
-        }
-        if (operator["~children"]) {
-          for (const child of operator["~children"]) {
-            kernelTimeCount += analyzeKernelTime(child, thresholdPercent);
+        sumExecAndKernelTimes(operator);
+        
+        // Calculate core execTime (total minus stream) vs kernel time ratio
+        const coreExecTime = totalExecTime - streamExecTime;
+        const coreToKernelRatio = highestKernelTime > 0 ? (coreExecTime / highestKernelTime) * 100 : 0;
+        
+        console.log(`Core kernel analysis: totalExec=${totalExecTime}ms, streamExec=${streamExecTime}ms, coreExec=${coreExecTime}ms, highestKernel=${highestKernelTime}ms, ratio=${coreToKernelRatio.toFixed(1)}%`);
+        
+        return {
+          coreToKernelRatio: coreToKernelRatio
+        };
+      }
+      
+      // Analyze stream execution time vs elapsed time
+      function analyzeStreamToElapsedRatio(operator, elapsedTimeMs, thresholdPercent) {
+        if (!operator) return { qualifies: false, streamRatio: 0 };
+        
+        let streamExecTime = 0;
+        
+        function findStreamTimes(op) {
+          if (!op) return;
+          
+          if (op["#stats"]) {
+            const stats = op["#stats"];
+            
+            // Find Stream operations
+            if (op["#operator"] === "Stream" && stats["execTime"]) {
+              const execTime = parseTime(stats["execTime"]);
+              if (!isNaN(execTime)) {
+                streamExecTime += execTime;
+              }
+            }
+          }
+          
+          // Recursively check child operators
+          if (op["~child"]) {
+            findStreamTimes(op["~child"]);
+          }
+          if (op["~children"]) {
+            for (const child of op["~children"]) {
+              findStreamTimes(child);
+            }
           }
         }
         
-        // Check other operator properties for completeness
-        if (operator.input) {
-          kernelTimeCount += analyzeKernelTime(operator.input, thresholdPercent);
-        }
-        if (operator.left) {
-          kernelTimeCount += analyzeKernelTime(operator.left, thresholdPercent);
-        }
-        if (operator.right) {
-          kernelTimeCount += analyzeKernelTime(operator.right, thresholdPercent);
-        }
+        findStreamTimes(operator);
         
-        return kernelTimeCount;
+        // Calculate stream to elapsed time ratio
+        const streamRatio = elapsedTimeMs > 0 ? (streamExecTime / elapsedTimeMs) * 100 : 0;
+        const qualifies = streamRatio >= thresholdPercent;
+        
+        console.log(`Stream analysis: streamExec=${streamExecTime}ms, elapsedTime=${elapsedTimeMs}ms, ratio=${streamRatio.toFixed(1)}%, qualifies=${qualifies}`);
+        
+        return {
+          qualifies: qualifies,
+          streamRatio: streamRatio
+        };
       }
       
       // Toggle accordion category
@@ -8422,7 +8568,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           { id: 'slow-use-key-queries', checkElement: 'slow-use-keys-count' },
           { id: 'missing-where-clauses', checkElement: 'missing-where-count' },
           { id: 'inefficient-like-operations', checkElement: 'inefficient-like-count' },
-          { id: 'large-result-set-queries', checkElement: 'large-results-count' }
+          { id: 'large-result-set-queries', checkElement: 'large-results-count' },
+          { id: 'large-payload-streaming', checkElement: 'large-payload-count' }
         ];
         
         insights.forEach(insight => {

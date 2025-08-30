@@ -1225,5 +1225,61 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-05T09:45:15.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"12.345µs\",\"servTime\":\"43.567µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:stores\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"18.901µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":200000,\"#itemsOut\":200000,\"#phaseSwitches\":800000,\"execTime\":\"2789.123ms\",\"kernTime\":\"2456.789ms\",\"servTime\":\"2345.678ms\"},\"index\":\"idx_stores_region\",\"keyspace\":\"stores\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"north-america\\\"\",\"inclusion\":3,\"low\":\"\\\"north-america\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":400,\"#itemsIn\":200000,\"#itemsOut\":200000,\"#phaseSwitches\":800400,\"execTime\":\"2234.567ms\",\"kernTime\":\"1987.654ms\",\"servTime\":\"1234.567ms\"},\"keyspace\":\"stores\",\"namespace\":\"default\"},{\"#operator\":\"InitialGroup\",\"#stats\":{\"#itemsIn\":200000,\"#itemsOut\":8750,\"#phaseSwitches\":208750,\"execTime\":\"1567.890ms\",\"kernTime\":\"1345.678ms\",\"servTime\":\"567.890ms\"},\"aggregates\":[\"sum((`stores`.`revenue`))\",\"count(*)\"],\"group_keys\":[\"(`stores`.`region`)\"]},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":8750,\"#itemsOut\":8750,\"#phaseSwitches\":17500,\"execTime\":\"634.567ms\",\"kernTime\":\"523.456ms\",\"servTime\":\"234.567ms\"},\"result_terms\":[{\"as\":\"region\",\"expr\":\"(`stores`.`region`)\"},{\"as\":\"total_revenue\",\"expr\":\"sum((`stores`.`revenue`))\"},{\"as\":\"store_count\",\"expr\":\"count(*)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":8750,\"#itemsOut\":8750,\"#phaseSwitches\":8751,\"execTime\":\"423.456ms\",\"servTime\":\"123.456ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
-  }
-]
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "large-streaming-payload-test",
+      "cpuTime": "567.890ms",
+      "elapsedTime": "3.234567s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$exportDate": "2025-08-01"
+      },
+      "phaseCounts": {
+        "indexScan": 150000,
+        "fetch": 150000,
+        "sort": 150000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "sort": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "34.567µs",
+        "instantiate": "45.678µs",
+        "parse": "567.890µs",
+        "plan": "123.456µs",
+        "plan.index.metadata": "67.890µs",
+        "plan.keyspace.metadata": "45.678µs",
+        "indexScan": "1.234567s",
+        "fetch": "1.567890s",
+        "project": "234.567ms",
+        "sort": "345.678ms",
+        "run": "3.123456s",
+        "stream": "456.789ms"
+      },
+      "remoteAddr": "127.0.0.1:65678",
+      "requestId": "large-streaming-payload-test",
+      "requestTime": "2025-08-07T18:30:45.678Z",
+      "resultCount": 150000,
+      "resultSize": 52428800,
+      "scanConsistency": "request_plus",
+      "serviceTime": "3.234523s",
+      "state": "completed",
+      "statement": "SELECT * FROM `transaction_logs` WHERE export_date = $exportDate ORDER BY timestamp ASC",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 25165824,
+      "userAgent": "python-data-export/4.2.1",
+      "users": "local:export_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-07T18:30:45.679Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"8.901µs\",\"servTime\":\"32.456µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:transaction_logs\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"15.678µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":600000,\"execTime\":\"1234.567ms\",\"kernTime\":\"3456.789ms\",\"servTime\":\"1089.012ms\"},\"index\":\"idx_transaction_logs_export_date\",\"keyspace\":\"transaction_logs\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"2025-08-01\\\"\",\"inclusion\":3,\"low\":\"\\\"2025-08-01\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":300,\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":600300,\"execTime\":\"1567.890ms\",\"kernTime\":\"2987.654ms\",\"servTime\":\"1345.678ms\"},\"keyspace\":\"transaction_logs\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":300000,\"execTime\":\"234.567ms\",\"kernTime\":\"198.765ms\",\"servTime\":\"189.012ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Order\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":450000,\"execTime\":\"345.678ms\",\"kernTime\":\"289.012ms\",\"servTime\":\"267.890ms\"},\"sort_terms\":[{\"expr\":\"(`transaction_logs`.`timestamp`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":150001,\"execTime\":\"456.789ms\",\"kernTime\":\"398.765ms\",\"servTime\":\"378.901ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+   }
+ ]
