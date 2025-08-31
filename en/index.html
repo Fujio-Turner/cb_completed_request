@@ -1656,7 +1656,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         return filtered;
       }
 
-      // Parse time strings to milliseconds
+      // Parse time strings to milliseconds (with caching)
       function parseTime(timeStr) {
         if (!timeStr) {
           return 0;
@@ -1666,6 +1666,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         timeStr = timeStr.trim();
         if (!timeStr) {
           return 0;
+        }
+
+        // Check cache first
+        if (parseTimeCache.has(timeStr)) {
+          return parseTimeCache.get(timeStr);
         }
 
         // Try different regex patterns for different time formats
@@ -1713,6 +1718,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         totalMs += minutes * 60 * 1000; // Minutes to milliseconds
         totalMs += seconds * 1000; // Seconds to milliseconds
 
+        // Cache the result before returning
+        parseTimeCache.set(timeStr, totalMs);
         return totalMs;
       }
 
@@ -1773,9 +1780,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       function normalizeStatement(statement) {
         if (!statement) return "";
 
-        // Check cache first
+        // Check both caches (legacy and new)
         if (normalizeCache.has(statement)) {
           return normalizeCache.get(statement);
+        }
+        if (normalizeStatementCache.has(statement)) {
+          return normalizeStatementCache.get(statement);
         }
 
         let normalized = statement
@@ -1790,6 +1800,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           normalizeCache.delete(firstKey);
         }
         normalizeCache.set(statement, normalized);
+        
+        // Also cache in the new cache
+        normalizeStatementCache.set(statement, normalized);
 
         return normalized;
       }
@@ -1845,8 +1858,18 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         }
       }
 
-      // Cache for operators to avoid reprocessing the same plans
+      // Caches for performance optimization to avoid reprocessing
       const operatorsCache = new WeakMap();
+      const parseTimeCache = new Map();
+      const normalizeStatementCache = new Map();
+      const planStatsCache = new WeakMap();
+      
+      // Clear caches to prevent memory leaks
+      function clearCaches() {
+        parseTimeCache.clear();
+        normalizeStatementCache.clear();
+        // WeakMaps clean themselves automatically
+      }
 
       // Recursively extract operators from the plan
       function getOperators(
@@ -1938,8 +1961,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         return operators;
       }
 
-      // Calculate the maximum of all kernTimes
+      // Calculate the maximum of all kernTimes (optimized with cache)
       function calculateTotalKernTime(plan) {
+        // Try to get from cache first
+        if (planStatsCache.has(plan)) {
+          return planStatsCache.get(plan).maxKernTime;
+        }
+        
+        // Fallback to original calculation if not cached
         const operators = getOperators(plan);
         let maxKernTime = 0;
         operators.forEach((operator, index) => {
@@ -1954,8 +1983,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       
 
 
-      // Calculate the total memory usage from all operators in the plan
+      // Calculate the total memory usage from all operators in the plan (optimized with cache)
       function calculateTotalMemoryUsage(plan) {
+        // Try to get from cache first
+        if (planStatsCache.has(plan)) {
+          return planStatsCache.get(plan).totalMemoryUsage;
+        }
+        
+        // Fallback to original calculation
         const operators = getOperators(plan);
         let totalMemory = 0;
 
@@ -1969,8 +2004,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         return totalMemory;
       }
 
-      // Calculate the sum of all execution times for percentage calculation
+      // Calculate the sum of all execution times for percentage calculation (optimized with cache)
       function calculateTotalExecTime(plan) {
+        // Try to get from cache first
+        if (planStatsCache.has(plan)) {
+          return planStatsCache.get(plan).totalExecTime;
+        }
+        
+        // Fallback to original calculation if not cached
         const operators = getOperators(plan);
         let totalExecTime = 0;
         operators.forEach((operator, index) => {
@@ -1983,8 +2024,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         return totalExecTime;
       }
 
-      // Calculate the sum of all service times from all operators in the plan
+      // Calculate the sum of all service times from all operators in the plan (optimized with cache)
       function calculateTotalServiceTime(plan) {
+        // Try to get from cache first
+        if (planStatsCache.has(plan)) {
+          return planStatsCache.get(plan).totalServiceTime;
+        }
+        
+        // Fallback to original calculation if not cached
         const operators = getOperators(plan);
         let totalServiceTime = 0;
         operators.forEach((operator, index) => {
@@ -6899,15 +6946,26 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         updateInsights(requests);
       }
 
-      // Check if a query uses primary index by analyzing the plan
+      // Check if a query uses primary index by analyzing the plan (optimized with cache)
       function usesPrimaryIndex(request) {
         if (!request.plan) return false;
+
+        // Check if we have cached metadata first
+        if (request._planMetadata) {
+          return request._planMetadata.usesPrimary;
+        }
 
         try {
           const planObj =
             typeof request.plan === "string"
               ? JSON.parse(request.plan)
               : request.plan;
+          
+          // Check plan cache
+          if (planStatsCache.has(planObj)) {
+            return planStatsCache.get(planObj).usesPrimary;
+          }
+          
           return checkOperatorForPrimary(planObj);
         } catch (e) {
           return false;
@@ -9124,7 +9182,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         return { valid: true };
       }
 
-      // Optimized request data processor
+      // Centralized request data processor with single-pass optimization
       function processRequestData(item) {
         const request = item.completed_requests || item;
 
@@ -9144,21 +9202,107 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           }
         }
 
-        // Pre-calculate commonly used values
+        // Get operators once and cache all derived values
+        let operators = [];
+        let planMetadata = null;
+        
+        if (plan) {
+          // Check if we already cached the plan stats
+          if (planStatsCache.has(plan)) {
+            planMetadata = planStatsCache.get(plan);
+            operators = planMetadata.operators;
+          } else {
+            // Single pass through operators to extract all needed data
+            operators = getOperators(plan);
+            
+            // Calculate all time values in one pass
+            let maxKernTime = 0;
+            let totalExecTime = 0;
+            let totalServiceTime = 0;
+            let totalMemoryUsage = 0;
+            let totalItemsIn = 0;
+            let totalItemsOut = 0;
+            const indexes = [];
+            const stats = { primaryScan: 0, indexScan: 0, fetch: 0 };
+            let usesPrimaryFlag = false;
+            
+            operators.forEach((operator) => {
+              const operatorStats = operator["#stats"] || {};
+              const operatorType = operator["#operator"];
+              
+              // Parse times once
+              const kernTime = parseTime(operatorStats.kernTime);
+              const execTime = parseTime(operatorStats.execTime);
+              const servTime = parseTime(operatorStats.servTime);
+              const usedMemory = operatorStats.usedMemory || 0;
+              
+              // Aggregate times and stats
+              if (!isNaN(kernTime)) maxKernTime = Math.max(maxKernTime, kernTime);
+              if (!isNaN(execTime)) totalExecTime += execTime;
+              if (!isNaN(servTime)) totalServiceTime += servTime;
+              if (!isNaN(usedMemory)) totalMemoryUsage += usedMemory;
+              
+              // Aggregate items in/out
+              totalItemsIn += operatorStats["#itemsIn"] || 0;
+              totalItemsOut += operatorStats["#itemsOut"] || 0;
+              
+              // Extract index information
+              if (operator.index) {
+                indexes.push(operator.index);
+              }
+              
+              // Check for primary index usage
+              if (operatorType === "PrimaryScan" || 
+                  operatorType === "PrimaryScan3" || 
+                  operator.index === "#primary" ||
+                  (operator.spans && operator.spans.length === 0)) {
+                usesPrimaryFlag = true;
+              }
+              
+              // Update stats counters
+              if (operatorType === "PrimaryScan" || operatorType === "PrimaryScan3") {
+                stats.primaryScan++;
+              } else if (operatorType === "IndexScan" || operatorType === "IndexScan3") {
+                stats.indexScan++;
+              } else if (operatorType === "Fetch") {
+                stats.fetch++;
+              }
+            });
+            
+            // Cache all computed values
+            planMetadata = {
+              operators: operators,
+              maxKernTime: maxKernTime,
+              totalExecTime: totalExecTime,
+              totalServiceTime: totalServiceTime,
+              totalMemoryUsage: totalMemoryUsage,
+              totalItemsIn: totalItemsIn,
+              totalItemsOut: totalItemsOut,
+              indexes: indexes,
+              stats: stats,
+              usesPrimary: usesPrimaryFlag,
+              indexInfo: { indexes: indexes, stats: stats }
+            };
+            
+            planStatsCache.set(plan, planMetadata);
+          }
+        }
+
+        // Pre-calculate commonly used values using cached data
         const processedRequest = {
           ...request,
           plan: plan,
-          // Pre-calculate time values
+          // Use cached time values or fallback to direct parsing
           elapsedTimeMs: parseTime(request.elapsedTime),
-          serviceTimeMs: plan ? calculateTotalServiceTime(plan) : parseTime(request.serviceTime || '0ms'),
-          kernTimeMs: plan ? calculateTotalKernTime(plan) : 0,
-          memoryBytes: request.usedMemory || 0,
-          // Pre-calculate boolean flags
-          usesPrimary: plan ? usesPrimaryIndex({ plan: plan }) : false,
-          // Pre-extract index information
-          indexInfo: plan ? extractIndexInfo(plan) : null,
-          // Pre-calculate aggregations
-          planStats: plan ? extractPlanStats(plan) : null,
+          serviceTimeMs: planMetadata ? planMetadata.totalServiceTime : parseTime(request.serviceTime || '0ms'),
+          kernTimeMs: planMetadata ? planMetadata.maxKernTime : 0,
+          memoryBytes: planMetadata ? planMetadata.totalMemoryUsage : (request.usedMemory || 0),
+          // Use cached boolean flags
+          usesPrimary: planMetadata ? planMetadata.usesPrimary : false,
+          // Use cached index information
+          indexInfo: planMetadata ? planMetadata.indexInfo : null,
+          // Store metadata for quick access
+          _planMetadata: planMetadata,
           // Ensure we have a statement type (derive if not present)
           statementType: request.statementType || deriveStatementType(request.statement),
         };
@@ -9166,8 +9310,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         return processedRequest;
       }
 
-      // Fast index information extraction
+      // Fast index information extraction (optimized with cache)
       function extractIndexInfo(plan) {
+        // Check plan cache first
+        if (planStatsCache.has(plan)) {
+          return planStatsCache.get(plan).indexInfo;
+        }
+        
+        // Fallback to original calculation
         const operators = getOperators(plan);
         const indexes = [];
         const stats = { primaryScan: 0, indexScan: 0, fetch: 0 };
@@ -9202,6 +9352,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       // Fast plan stats extraction
       function extractPlanStats(plan) {
+        // Check cache first
+        if (planStatsCache.has(plan)) {
+          const metadata = planStatsCache.get(plan);
+          return { totalItemsIn: metadata.totalItemsIn || 0, totalItemsOut: metadata.totalItemsOut || 0 };
+        }
+        
+        // Fallback calculation
         const operators = getOperators(plan);
         let totalItemsIn = 0;
         let totalItemsOut = 0;
@@ -9217,6 +9374,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       // Parse JSON input - Optimized
       function parseJSON() {
+        // Clear caches at start of new parse to prevent memory leaks
+        clearCaches();
+        
+        // Start performance timing
+        const parseStartTime = performance.now();
+        
         const jsonInput = document.getElementById("json-input").value.trim();
         const startDateInput = document.getElementById("start-date");
         const endDateInput = document.getElementById("end-date");
@@ -9307,6 +9470,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 });
               } else {
                 // All batches processed
+                const parseEndTime = performance.now();
+                console.log(`Parse performance: ${Math.round(parseEndTime - parseStartTime)}ms for ${processedRequests.length} requests`);
                 finishProcessing(processedRequests);
               }
             }
