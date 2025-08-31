@@ -299,6 +299,22 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
            padding: 0 !important;
            margin: 0 !important;
          }
+         
+         /* Index breakdown styling */
+         .index-breakdown {
+           margin: 15px 0;
+           padding-left: 30px;
+         }
+         
+         .index-breakdown-item {
+           margin-bottom: 12px;
+           padding: 8px 0;
+           line-height: 1.4;
+         }
+         
+         .index-breakdown-item:last-child {
+           margin-bottom: 0;
+         }
     </style>
     <!-- Include Panzoom, jQuery, and jQuery UI -->
     <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.2/dist/panzoom.min.js?v=362"></script>
@@ -606,7 +622,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               <h4 class="insight-title" onclick="toggleInsight('inefficient-index-scans')">Inefficient Index Scans<span class="live-badge">Live</span></h4>
               <div class="insight-content" id="inefficient-index-scans-content">
                 <p class="insight-description">
-                  <span class="highlight-number" id="inefficient-index-scans-count">0 queries</span> scan an average of <span class="highlight-number" id="avg-scan-count">0</span> index entries but returned back avg <span class="highlight-number" id="avg-result-count">0</span> records per query or a selectivity of <span class="highlight-number" id="avg-selectivity">0%</span> (excluding aggregate functions like COUNT, AVG, MIN, MAX).
+                  <span class="highlight-number" id="inefficient-index-scans-count">0 queries</span> scan an average of <span class="highlight-number" id="avg-scan-count">0</span> index entries but returned back an avg <span class="highlight-number" id="avg-result-count">0</span> records per query or a selectivity of <span class="highlight-number" id="avg-selectivity">0%</span> (excluding aggregate functions like COUNT(), AVG(), MIN(), MAX()).
                 </p>
                 <div class="learn-more-section">
                   <div class="learn-more-item">
@@ -621,8 +637,19 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               <h4 class="insight-title" onclick="toggleInsight('slow-index-scan-times')">Slow Index Scan Times<span class="live-badge">Live</span></h4>
               <div class="insight-content" id="slow-index-scan-times-content">
                 <p class="insight-description">
-                  <span class="highlight-number" id="total-indexes-count">0</span> total indexes: <span class="highlight-number" id="slow-indexes-2-10s">0</span> indexes with an avg scan time between 2-10 seconds, <span class="highlight-number" id="slow-indexes-10s-plus">0</span> indexes with an avg scan time greater than 10 seconds, <span class="highlight-number" id="slow-primary-indexes">0</span> #primary indexes with an avg scan time of 2+ seconds.
+                  <span class="highlight-number" id="total-indexes-count">0</span> total indexes:
                 </p>
+                <div class="index-breakdown">
+                  <div class="index-breakdown-item">
+                    <span class="highlight-number" id="slow-indexes-2-10s">0</span> indexes with an avg scan time between 2-10 seconds
+                  </div>
+                  <div class="index-breakdown-item">
+                    <span class="highlight-number" id="slow-indexes-10s-plus">0</span> indexes with an avg scan time of 10+ seconds
+                  </div>
+                  <div class="index-breakdown-item">
+                    <span class="highlight-number" id="slow-primary-indexes">0</span> #primary indexes with an avg scan time of 2+ seconds
+                  </div>
+                </div>
                 <div class="learn-more-section">
                   <div class="learn-more-item">
                     <span class="learn-more-icon">💡</span>
@@ -769,7 +796,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               <h4 class="insight-title" onclick="toggleInsight('large-result-set-queries')">Large Result Set Queries<span class="live-badge">Live</span></h4>
               <div class="insight-content" id="large-result-set-queries-content">
                 <p class="insight-description">
-                  <span class="highlight-number" id="large-results-count">0 queries</span> return result sets larger than <span class="highlight-number">5 MB</span>, which can consume significant memory and network resources.
+                  <span class="highlight-number" id="large-results-count">0 queries</span> return result sets with avg size of <span class="highlight-number" id="avg-large-result-size">0MB</span>, which can consume significant memory and network resources.
                 </p>
                 <div class="learn-more-section">
                   <div class="learn-more-item">
@@ -842,7 +869,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               <option value="optimizer">By Optimizer (...)</option>
               <option value="day">By Day</option>
               <option value="hour">By Hour</option>
-              <option value="5min">By 5 Minute</option>
+              <option value="5min">By 5 Minutes</option>
               <option value="minute">By Minute</option>
               <option value="second">By Second</option>
             </select>
@@ -8002,6 +8029,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         let slowUseKeysCount = 0;
         let slowUseKeysTotalTime = 0;
         let largeResultsCount = 0;
+        let largeResultsTotalMB = 0;
         let inefficientLikeCount = 0;
         let inefficientIndexScansCount = 0;
         let highMemoryCount = 0;
@@ -8038,6 +8066,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           const resultSizeMB = resultSize / (1024 * 1024); // Convert bytes to MB
           if (resultSizeMB > 5) {
             largeResultsCount++;
+            largeResultsTotalMB += resultSizeMB;
           }
           
           // Count inefficient LIKE operations with leading wildcards
@@ -8187,10 +8216,29 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         
         // Update the large result sets insight
         const largeResultsCountElement = document.getElementById("large-results-count");
+        const avgLargeResultSizeElement = document.getElementById("avg-large-result-size");
         
-        if (largeResultsCountElement) {
-          largeResultsCountElement.textContent = `${largeResultsCount} queries`;
-          largeResultsCountElement.className = largeResultsCount > 0 ? "highlight-number" : "";
+        if (largeResultsCount > 0) {
+          const avgLargeResultSize = (largeResultsTotalMB / largeResultsCount).toFixed(1);
+          
+          if (largeResultsCountElement) {
+            largeResultsCountElement.textContent = `${largeResultsCount} queries`;
+            largeResultsCountElement.className = "highlight-number";
+          }
+          if (avgLargeResultSizeElement) {
+            avgLargeResultSizeElement.textContent = `${avgLargeResultSize}MB`;
+            avgLargeResultSizeElement.className = "highlight-number";
+          }
+        } else {
+          // Reset to defaults
+          if (largeResultsCountElement) {
+            largeResultsCountElement.textContent = "0 queries";
+            largeResultsCountElement.className = "";
+          }
+          if (avgLargeResultSizeElement) {
+            avgLargeResultSizeElement.textContent = "0MB";
+            avgLargeResultSizeElement.className = "";
+          }
         }
         
         // Update the large payload streaming insight
