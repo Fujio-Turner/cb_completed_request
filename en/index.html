@@ -2134,10 +2134,13 @@
                 </div>
             </div>
 
-            <!-- CPU/Kernel/Elapsed Time Analysis Chart -->
+            <!-- CPU/Kernel/Elapsed Time Analysis Charts -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400">
                     <canvas id="cpu-time-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400">
+                    <canvas id="exec-analysis-chart"></canvas>
                 </div>
             </div>
         </div>
@@ -6365,6 +6368,9 @@
 
             // Create CPU/Kernel/Elapsed Time Chart
             createCpuTimeChart(requests, grouping);
+
+            // Create Execution Analysis Chart
+            createExecAnalysisChart(requests, grouping);
         }
 
         // Create Query Types Scatter Plot Chart
@@ -7735,8 +7741,7 @@
 
             // Calculate percentage data for line graphs
             const cpuKernPercentData = sortedData.map((item) => {
-                const total = item.avgCpuTime + item.avgKernTime;
-                return total > 0 ? ((item.avgCpuTime + item.avgKernTime) / total) * 100 : 0;
+                return item.avgKernTime > 0 ? (item.avgCpuTime / item.avgKernTime) * 100 : 0;
             });
 
             const cpuElapsedPercentData = sortedData.map((item) => {
@@ -7895,7 +7900,8 @@
                                 text: "Percentage (%)",
                             },
                             beginAtZero: true,
-                            max: 100, // Cap at 100%
+                            suggestedMin: 0,
+                            suggestedMax: 100, // Always show 0-100% range, scale higher if needed
                             grid: {
                                 drawOnChartArea: false,
                             },
@@ -7911,6 +7917,317 @@
 
             // Register chart for crosshair synchronization
             registerTimelineChart(window.cpuTimeChart, ctx);
+        }
+
+        // Create Execution Analysis Chart (ExecTime vs ServTime/KernTime percentages)
+        function createExecAnalysisChart(requests, grouping) {
+            const canvas = document.getElementById("exec-analysis-chart");
+            if (!canvas) return;
+
+            const ctx = canvas.getContext("2d");
+
+            // Destroy existing chart if it exists
+            if (window.execAnalysisChart) {
+                window.execAnalysisChart.destroy();
+            }
+
+            // Group requests by time
+            const timeGroups = {};
+
+            requests.forEach((request) => {
+                const requestDate = new Date(request.requestTime);
+                const timeKey = roundTimestamp(requestDate, grouping, requests);
+                const key = timeKey.toISOString();
+
+                if (!timeGroups[key]) {
+                    timeGroups[key] = {
+                        timestamp: timeKey,
+                        authorizeData: [],
+                        parseData: [],
+                        planData: [],
+                        indexScanData: [],
+                        fetchData: [],
+                        filterData: [],
+                        streamData: [],
+                        kernTimeData: [],
+                        queryCount: 0,
+                    };
+                }
+
+                timeGroups[key].queryCount++;
+
+                // Extract data from phaseTimes and plan operators
+                if (request.phaseTimes) {
+                    const parseTimeMs = parseTime(request.phaseTimes.parse) || 0;
+                    const planTimeMs = parseTime(request.phaseTimes.plan) || 0;
+                    timeGroups[key].parseData.push(parseTimeMs);
+                    timeGroups[key].planData.push(planTimeMs);
+                }
+
+                // Extract kernel time from plan
+                const kernTimeMs = calculateTotalKernTime(request.plan) || 0;
+                timeGroups[key].kernTimeData.push(kernTimeMs);
+
+                // Extract operator-specific data from plan
+                if (request.plan) {
+                    try {
+                        const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
+                        const operators = getOperators(planObj);
+
+                        operators.forEach((operator) => {
+                            const operatorType = operator["#operator"];
+                            const stats = operator["#stats"] || {};
+                            const execTime = parseTime(stats.execTime) || 0;
+                            const servTime = parseTime(stats.servTime) || 0;
+
+                            switch (operatorType) {
+                                case "Authorize":
+                                    timeGroups[key].authorizeData.push({ execTime, servTime });
+                                    break;
+                                case "IndexScan3":
+                                    timeGroups[key].indexScanData.push({ execTime, servTime });
+                                    break;
+                                case "Fetch":
+                                    timeGroups[key].fetchData.push({ execTime, servTime });
+                                    break;
+                                case "Filter":
+                                    timeGroups[key].filterData.push({ execTime });
+                                    break;
+                                case "Stream":
+                                    timeGroups[key].streamData.push({ execTime });
+                                    break;
+                            }
+                        });
+                    } catch (e) {
+                        console.warn("Error parsing plan for exec analysis:", e);
+                    }
+                }
+            });
+
+            // Convert to sorted array and calculate averages and percentages
+            const sortedData = Object.values(timeGroups).sort((a, b) => a.timestamp - b.timestamp);
+
+            // Calculate percentage data for each metric
+            const authorizePercentData = sortedData.map((item) => {
+                if (item.authorizeData.length === 0) return 0;
+                const avgExecTime = item.authorizeData.reduce((sum, d) => sum + d.execTime, 0) / item.authorizeData.length;
+                const avgServTime = item.authorizeData.reduce((sum, d) => sum + d.servTime, 0) / item.authorizeData.length;
+                return avgServTime > 0 ? (avgExecTime / avgServTime) * 100 : 0;
+            });
+
+            const parseVsKernPercentData = sortedData.map((item) => {
+                if (item.parseData.length === 0 || item.kernTimeData.length === 0) return 0;
+                const avgParseTime = item.parseData.reduce((sum, d) => sum + d, 0) / item.parseData.length;
+                const avgKernTime = item.kernTimeData.reduce((sum, d) => sum + d, 0) / item.kernTimeData.length;
+                return avgKernTime > 0 ? (avgParseTime / avgKernTime) * 100 : 0;
+            });
+
+            const planVsKernPercentData = sortedData.map((item) => {
+                if (item.planData.length === 0 || item.kernTimeData.length === 0) return 0;
+                const avgPlanTime = item.planData.reduce((sum, d) => sum + d, 0) / item.planData.length;
+                const avgKernTime = item.kernTimeData.reduce((sum, d) => sum + d, 0) / item.kernTimeData.length;
+                return avgKernTime > 0 ? (avgPlanTime / avgKernTime) * 100 : 0;
+            });
+
+            const indexScanPercentData = sortedData.map((item) => {
+                if (item.indexScanData.length === 0) return 0;
+                const avgExecTime = item.indexScanData.reduce((sum, d) => sum + d.execTime, 0) / item.indexScanData.length;
+                const avgServTime = item.indexScanData.reduce((sum, d) => sum + d.servTime, 0) / item.indexScanData.length;
+                return avgServTime > 0 ? (avgExecTime / avgServTime) * 100 : 0;
+            });
+
+            const fetchPercentData = sortedData.map((item) => {
+                if (item.fetchData.length === 0) return 0;
+                const avgExecTime = item.fetchData.reduce((sum, d) => sum + d.execTime, 0) / item.fetchData.length;
+                const avgServTime = item.fetchData.reduce((sum, d) => sum + d.servTime, 0) / item.fetchData.length;
+                return avgServTime > 0 ? (avgExecTime / avgServTime) * 100 : 0;
+            });
+
+            const filterVsKernPercentData = sortedData.map((item) => {
+                if (item.filterData.length === 0 || item.kernTimeData.length === 0) return 0;
+                const avgFilterExecTime = item.filterData.reduce((sum, d) => sum + d.execTime, 0) / item.filterData.length;
+                const avgKernTime = item.kernTimeData.reduce((sum, d) => sum + d, 0) / item.kernTimeData.length;
+                return avgKernTime > 0 ? (avgFilterExecTime / avgKernTime) * 100 : 0;
+            });
+
+            const streamVsKernPercentData = sortedData.map((item) => {
+                if (item.streamData.length === 0 || item.kernTimeData.length === 0) return 0;
+                const avgStreamExecTime = item.streamData.reduce((sum, d) => sum + d.execTime, 0) / item.streamData.length;
+                const avgKernTime = item.kernTimeData.reduce((sum, d) => sum + d, 0) / item.kernTimeData.length;
+                return avgKernTime > 0 ? (avgStreamExecTime / avgKernTime) * 100 : 0;
+            });
+
+            // Prepare chart data
+            const labels = sortedData.map((item) => item.timestamp);
+
+            window.execAnalysisChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Authorize: ExecTime vs ServTime (%)",
+                            data: authorizePercentData,
+                            backgroundColor: "rgba(54, 162, 235, 0.8)", // Blue
+                            borderColor: "rgba(54, 162, 235, 1)",
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.3,
+                        },
+                        {
+                            label: "Parse vs Kernel Time (%)",
+                            data: parseVsKernPercentData,
+                            backgroundColor: "rgba(255, 99, 132, 0.8)", // Red
+                            borderColor: "rgba(255, 99, 132, 1)",
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.3,
+                        },
+                        {
+                            label: "Plan vs Kernel Time (%)",
+                            data: planVsKernPercentData,
+                            backgroundColor: "rgba(75, 192, 192, 0.8)", // Teal
+                            borderColor: "rgba(75, 192, 192, 1)",
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.3,
+                        },
+                        {
+                            label: "IndexScan: ExecTime vs ServTime (%)",
+                            data: indexScanPercentData,
+                            backgroundColor: "rgba(255, 206, 86, 0.8)", // Yellow
+                            borderColor: "rgba(255, 206, 86, 1)",
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.3,
+                        },
+                        {
+                            label: "Fetch: ExecTime vs ServTime (%)",
+                            data: fetchPercentData,
+                            backgroundColor: "rgba(153, 102, 255, 0.8)", // Purple
+                            borderColor: "rgba(153, 102, 255, 1)",
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.3,
+                        },
+                        {
+                            label: "Filter vs Kernel Time (%)",
+                            data: filterVsKernPercentData,
+                            backgroundColor: "rgba(255, 159, 64, 0.8)", // Orange
+                            borderColor: "rgba(255, 159, 64, 1)",
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.3,
+                        },
+                        {
+                            label: "Stream vs Kernel Time (%)",
+                            data: streamVsKernPercentData,
+                            backgroundColor: "rgba(201, 203, 207, 0.8)", // Gray
+                            borderColor: "rgba(201, 203, 207, 1)",
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.3,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "Execution Step Analysis: ExecTime vs ServTime/KernTime (%) - (Beta)",
+                        },
+                        legend: {
+                            display: true,
+                            position: "top",
+                        },
+                        tooltip: {
+                            callbacks: {
+                                afterBody: function(tooltipItems) {
+                                    const dataIndex = tooltipItems[0].dataIndex;
+                                    const data = sortedData[dataIndex];
+                                    return [
+                                        `# of queries: ${data.queryCount}`,
+                                        `Analyze individual execution step performance`,
+                                        `Higher % = execTime takes more relative to servTime/kernTime`
+                                    ];
+                                }
+                            }
+                        },
+                        zoom: {
+                            limits: {
+                                x: { min: "original", max: "original" },
+                                y: { min: "original", max: "original" },
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: "xy",
+                                onPan: function ({ chart }) {
+                                    // Update current time range
+                                    currentTimeRange.min = new Date(chart.scales.x.min);
+                                    currentTimeRange.max = new Date(chart.scales.x.max);
+                                    updateTimeRangeDisplay();
+                                    // Sync pan with other charts
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                },
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: false,
+                                },
+                                pinch: {
+                                    enabled: true,
+                                },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: "rgba(100,100,100,0.4)",
+                                    borderColor: "rgba(50,50,50,0.8)",
+                                    borderWidth: 2,
+                                },
+                                mode: "xy",
+                                onZoom: function ({ chart }) {
+                                    // Update current time range
+                                    currentTimeRange.min = new Date(chart.scales.x.min);
+                                    currentTimeRange.max = new Date(chart.scales.x.max);
+                                    updateTimeRangeDisplay();
+                                    // Sync zoom with other charts
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            type: "time",
+                            time: getCurrentTimeConfig(requests),
+                            title: {
+                                display: true,
+                                text: "Request Time",
+                            },
+                        },
+                        y: {
+                            type: "linear",
+                            position: "left",
+                            title: {
+                                display: true,
+                                text: "Percentage (%)",
+                            },
+                            beginAtZero: true,
+                            suggestedMin: 0,
+                            suggestedMax: 100, // Always show 0-100% range, scale higher if needed
+                        },
+                    },
+                    interaction: {
+                        mode: "index",
+                        intersect: false,
+                    },
+                },
+                plugins: [verticalLinePlugin]
+            });
+
+            // Register chart for crosshair synchronization
+            registerTimelineChart(window.execAnalysisChart, ctx);
         }
 
         // Reset timeline chart zoom
@@ -7940,8 +8257,11 @@
                 window.resultSizeChart.resetZoom();
             }
             if (window.cpuTimeChart) {
-                window.cpuTimeChart.resetZoom();
+            window.cpuTimeChart.resetZoom();
             }
+        if (window.execAnalysisChart) {
+          window.execAnalysisChart.resetZoom();
+        }
 
             // Reset to original time range
             currentTimeRange = { ...originalTimeRange };
@@ -8107,6 +8427,19 @@
                     delete window.cpuTimeChart.options.scales.y1.min;
                 }
                 window.cpuTimeChart.update();
+            }
+
+            // Update execution analysis chart Y-axis scale
+            if (window.execAnalysisChart) {
+                window.execAnalysisChart.options.scales.y.type = scaleType;
+                if (scaleType === "logarithmic") {
+                    window.execAnalysisChart.options.scales.y.beginAtZero = false;
+                    window.execAnalysisChart.options.scales.y.min = 0.001; // Avoid log(0) for small percentages
+                } else {
+                    window.execAnalysisChart.options.scales.y.beginAtZero = true;
+                    delete window.execAnalysisChart.options.scales.y.min;
+                }
+                window.execAnalysisChart.update();
             }
 
         }
