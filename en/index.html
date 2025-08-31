@@ -7735,8 +7735,7 @@
 
             // Calculate percentage data for line graphs
             const cpuKernPercentData = sortedData.map((item) => {
-                const total = item.avgCpuTime + item.avgKernTime;
-                return total > 0 ? ((item.avgCpuTime + item.avgKernTime) / total) * 100 : 0;
+                return item.avgKernTime > 0 ? (item.avgCpuTime / item.avgKernTime) * 100 : 0;
             });
 
             const cpuElapsedPercentData = sortedData.map((item) => {
@@ -7776,7 +7775,7 @@
                     order: 3,
                     },
                         {
-                            label: "(CPU + Kernel) as % of Total",
+                            label: "CPU as % of Kernel",
                             data: cpuKernPercentData,
                             type: "line",
                             backgroundColor: "rgba(255, 206, 86, 0.8)", // Yellow
