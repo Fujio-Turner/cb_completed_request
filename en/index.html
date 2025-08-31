@@ -6613,17 +6613,17 @@
                                     if (statementType === "Fatal Queries") {
                                         return [
                                             `${statementType}`,
-                                            `Fatal Count: ${dataPoint.count}`,
-                                            `Avg Elapsed Time: ${dataPoint.avgElapsedTime.toFixed(3)}s`,
+                                            `Fatal: ${dataPoint.count}`,
+                                            `Elapsed: ${dataPoint.avgElapsedTime.toFixed(3)}s`,
                                         ];
                                     } else {
                                         // Handle regular statement type datasets
                                         return [
                                             `${statementType}`,
                                             `Count: ${dataPoint.count}`,
-                                            `Avg Duration: ${dataPoint.y.toFixed(3)}s`,
-                                            `Min Duration: ${dataPoint.minDuration.toFixed(3)}s`,
-                                            `Max Duration: ${dataPoint.maxDuration.toFixed(3)}s`,
+                                            `Avg: ${dataPoint.y.toFixed(3)}s`,
+                                            `Min: ${dataPoint.minDuration.toFixed(3)}s`,
+                                            `Max: ${dataPoint.maxDuration.toFixed(3)}s`,
                                         ];
                                     }
                                 },
@@ -6972,9 +6972,9 @@
                                     const dataPoint = context.raw;
                                     const bucket = context.dataset.label.split(" (")[0];
                                     return [
-                                        `Duration: ${bucket}`,
+                                        `${bucket}`,
                                         `Count: ${dataPoint.count}`,
-                                        `Time: ${new Date(dataPoint.x).toLocaleString()}`,
+                                        `${new Date(dataPoint.x).toLocaleString()}`,
                                     ];
                                 },
                             },
@@ -7848,10 +7848,10 @@
                                     const dataIndex = tooltipItems[0].dataIndex;
                                     const data = sortedData[dataIndex];
                                     return [
-                                        `# of queries: ${data.queryCount}`,
-                                        `Avg CPU Time per query: ${data.avgCpuTime.toFixed(2)}ms`,
-                                        `Avg Kernel Time per query: ${data.avgKernTime.toFixed(2)}ms`,
-                                        `Avg Elapsed Time per query: ${data.avgElapsedTime.toFixed(2)}ms`
+                                        `Queries: ${data.queryCount}`,
+                                        `CPU: ${data.avgCpuTime.toFixed(2)}ms`,
+                                        `Kernel: ${data.avgKernTime.toFixed(2)}ms`,
+                                        `Elapsed: ${data.avgElapsedTime.toFixed(2)}ms`
                                     ];
                                 }
                             }
@@ -8185,19 +8185,28 @@
                         },
                         tooltip: {
                             callbacks: {
+                                beforeBody: function() {
+                                    return 'ExecTime vs Highest Kernel Time (%):';
+                                },
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    if (value === null || value === undefined) return null;
+                                    // Extract just the operator name from various label formats
+                                    let operatorName = context.dataset.label;
+                                    if (operatorName.includes(':')) {
+                                        operatorName = operatorName.split(':')[0];
+                                    } else if (operatorName.includes(' vs ')) {
+                                        operatorName = operatorName.split(' vs ')[0];
+                                    }
+                                    return `  ${operatorName}: ${value.toFixed(2)}%`;
+                                },
                                 afterBody: function(tooltipItems) {
                                     const dataIndex = tooltipItems[0].dataIndex;
                                     const data = sortedData[dataIndex];
                                     return [
-                                        `# of queries: ${data.queryCount}`,
-                                        `Avg Authorize ExecTime: ${data.avgAuthorizeExecTime.toFixed(3)}ms`,
-                                        `Avg Parse Time: ${data.avgParseTime.toFixed(3)}ms`,
-                                        `Avg Plan Time: ${data.avgPlanTime.toFixed(3)}ms`,
-                                        `Avg IndexScan ExecTime: ${data.avgIndexScanExecTime.toFixed(3)}ms`,
-                                        `Avg Fetch ExecTime: ${data.avgFetchExecTime.toFixed(3)}ms`,
-                                        `Avg Filter ExecTime: ${data.avgFilterExecTime.toFixed(3)}ms`,
-                                        `Avg Stream ExecTime: ${data.avgStreamExecTime.toFixed(3)}ms`,
-                                        `Avg Kernel Time: ${data.avgKernTime.toFixed(3)}ms`
+                                        '',
+                                        `Queries: ${data.queryCount}`,
+                                        `Kernel Time: ${data.avgKernTime.toFixed(1)}ms`
                                     ];
                                 }
                             }
@@ -8425,17 +8434,28 @@
                         },
                         tooltip: {
                             callbacks: {
+                                beforeBody: function() {
+                                    return 'ExecTime vs ServTime (%):';
+                                },
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    if (value === null || value === undefined) return null;
+                                    // Extract just the operator name from various label formats
+                                    let operatorName = context.dataset.label;
+                                    if (operatorName.includes(':')) {
+                                        operatorName = operatorName.split(':')[0];
+                                    } else if (operatorName.includes(' vs ')) {
+                                        operatorName = operatorName.split(' vs ')[0];
+                                    }
+                                    return `  ${operatorName}: ${value.toFixed(2)}%`;
+                                },
                                 afterBody: function(tooltipItems) {
                                     const dataIndex = tooltipItems[0].dataIndex;
                                     const data = sortedData[dataIndex];
                                     return [
-                                        `# of queries: ${data.queryCount}`,
-                                        `Avg Authorize ExecTime: ${data.avgAuthorizeExecTime.toFixed(3)}ms`,
-                                        `Avg Authorize ServTime: ${data.avgAuthorizeServTime.toFixed(3)}ms`,
-                                        `Avg IndexScan ExecTime: ${data.avgIndexScanExecTime.toFixed(3)}ms`,
-                                        `Avg IndexScan ServTime: ${data.avgIndexScanServTime.toFixed(3)}ms`,
-                                        `Avg Fetch ExecTime: ${data.avgFetchExecTime.toFixed(3)}ms`,
-                                        `Avg Fetch ServTime: ${data.avgFetchServTime.toFixed(3)}ms`
+                                        '',
+                                        `Queries: ${data.queryCount}`,
+                                        `Service Time: ${(data.avgAuthorizeServTime + data.avgIndexScanServTime + data.avgFetchServTime).toFixed(1)}ms`
                                     ];
                                 }
                             }
@@ -8739,19 +8759,28 @@
                         },
                         tooltip: {
                             callbacks: {
+                                beforeBody: function() {
+                                    return 'ExecTime vs Elapsed Time (%):';
+                                },
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    if (value === null || value === undefined) return null;
+                                    // Extract just the operator name from various label formats
+                                    let operatorName = context.dataset.label;
+                                    if (operatorName.includes(':')) {
+                                        operatorName = operatorName.split(':')[0];
+                                    } else if (operatorName.includes(' vs ')) {
+                                        operatorName = operatorName.split(' vs ')[0];
+                                    }
+                                    return `  ${operatorName}: ${value.toFixed(2)}%`;
+                                },
                                 afterBody: function(tooltipItems) {
                                     const dataIndex = tooltipItems[0].dataIndex;
                                     const data = sortedData[dataIndex];
                                     return [
-                                        `# of queries: ${data.queryCount}`,
-                                        `Avg Authorize ExecTime: ${data.avgAuthorizeExecTime.toFixed(3)}ms`,
-                                        `Avg Parse Time: ${data.avgParseTime.toFixed(3)}ms`,
-                                        `Avg Plan Time: ${data.avgPlanTime.toFixed(3)}ms`,
-                                        `Avg IndexScan ExecTime: ${data.avgIndexScanExecTime.toFixed(3)}ms`,
-                                        `Avg Fetch ExecTime: ${data.avgFetchExecTime.toFixed(3)}ms`,
-                                        `Avg Filter ExecTime: ${data.avgFilterExecTime.toFixed(3)}ms`,
-                                        `Avg Stream ExecTime: ${data.avgStreamExecTime.toFixed(3)}ms`,
-                                        `Avg Elapsed Time: ${data.avgElapsedTime.toFixed(3)}ms`
+                                        '',
+                                        `Queries: ${data.queryCount}`,
+                                        `Elapsed Time: ${data.avgElapsedTime.toFixed(1)}ms`
                                     ];
                                 }
                             }
