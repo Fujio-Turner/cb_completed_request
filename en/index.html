@@ -7432,7 +7432,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const consistencyCounts = {};
 
         requests.forEach((request) => {
-          const consistency = request.scanConsistency || "not_bounded";
+          const consistency = request.scanConsistency || "unbounded";
           consistencyCounts[consistency] = (consistencyCounts[consistency] || 0) + 1;
         });
 
@@ -7447,9 +7447,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const colors = labels.map(consistency => {
           const lowerConsistency = consistency.toLowerCase();
           switch (lowerConsistency) {
-            case "not_bounded":
+            case "unbounded":
               return "#007bff"; // Blue
-            case "at_plus":
+            case "scan_plus":
               return "#28a745"; // Green
             case "request_plus":
               return "#fd7e14"; // Orange
