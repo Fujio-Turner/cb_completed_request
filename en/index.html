@@ -81,6 +81,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           background-color: #f1f1f1;
         }
 
+        /* Add grid-3-col for scan consistency chart */
+        .grid-3-col {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+        }
+
 
 
         .insight-category {
@@ -579,7 +585,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             </div>
           </div>
         </div>
-        <div class="grid-2-col gap-20 margin-bottom-20">
+        <div class="grid-3-col gap-20 margin-bottom-20">
           <!-- Statement Type Pie Chart -->
           <div class="chart-card">
             <h3 class="chart-card-header">Statement Type</h3>
@@ -593,6 +599,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             <h3 class="chart-card-header">Query State</h3>
             <div class="chart-card-content">
               <canvas id="state-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Scan Consistency Pie Chart -->
+          <div class="chart-card">
+            <h3 class="chart-card-header">Index Scan Consistency</h3>
+            <div class="chart-card-content">
+              <canvas id="scan-consistency-chart"></canvas>
             </div>
           </div>
         </div>
@@ -6877,6 +6891,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         generatePrimaryScanChart(requests);
         generateStateChart(requests);
         generateStatementTypeChart(requests);
+        generateScanConsistencyChart(requests);
         generateElapsedTimeChart(requests);
         generateQueryPatternChart(requests);
         generateUserCountTable(requests);
@@ -7342,6 +7357,122 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               {
                 data: data,
                 backgroundColor: colors.slice(0, labels.length),
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  generateLabels: function (chart) {
+                    const data = chart.data;
+                    return data.labels.map((label, index) => ({
+                      text: label,
+                      fillStyle: data.datasets[0].backgroundColor[index],
+                      strokeStyle: data.datasets[0].backgroundColor[index],
+                      lineWidth: 1,
+                      hidden: false,
+                      index: index,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    const percent =
+                      total > 0
+                        ? ((context.parsed / total) * 100).toFixed(1)
+                        : 0;
+                    return (
+                      context.label +
+                      ": " +
+                      context.parsed +
+                      " (" +
+                      percent +
+                      "%)"
+                    );
+                  },
+                },
+              },
+            },
+          },
+          plugins: [
+            {
+              beforeDraw: function (chart) {
+                const ctx = chart.ctx;
+                ctx.save();
+                chart.data.datasets[0].data.forEach((value, index) => {
+                  const meta = chart.getDatasetMeta(0);
+                  const arc = meta.data[index];
+                  const percent =
+                    total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+
+                  if (value > 0 && percent >= 5) {
+                    ctx.fillStyle = "white";
+                    ctx.font = "bold 12px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(percent + "%", arc.x, arc.y);
+                  }
+                });
+                ctx.restore();
+              },
+            },
+          ],
+        });
+      }
+
+      // Scan Consistency Pie Chart
+      function generateScanConsistencyChart(requests) {
+        const consistencyCounts = {};
+
+        requests.forEach((request) => {
+          const consistency = request.scanConsistency || "not_bounded";
+          consistencyCounts[consistency] = (consistencyCounts[consistency] || 0) + 1;
+        });
+
+        const total = Object.values(consistencyCounts).reduce(
+          (sum, count) => sum + count,
+          0
+        );
+        const labels = Object.keys(consistencyCounts);
+        const data = Object.values(consistencyCounts);
+        
+        // Specific colors for scan consistency types
+        const colors = labels.map(consistency => {
+          const lowerConsistency = consistency.toLowerCase();
+          switch (lowerConsistency) {
+            case "not_bounded":
+              return "#007bff"; // Blue
+            case "at_plus":
+              return "#28a745"; // Green
+            case "request_plus":
+              return "#fd7e14"; // Orange
+            default:
+              return "#6c757d"; // Gray for unknown
+          }
+        });
+
+        const ctx = document
+          .getElementById("scan-consistency-chart")
+          .getContext("2d");
+        if (window.scanConsistencyChart) {
+          window.scanConsistencyChart.destroy();
+        }
+
+        window.scanConsistencyChart = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                data: data,
+                backgroundColor: colors,
                 borderWidth: 1,
               },
             ],
