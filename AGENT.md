@@ -41,6 +41,31 @@ The `sample/` folder contains test JSON files for development and testing:
 - Modular functions for parsing, analysis, and UI generation
 - Comments explain complex logic (especially time parsing and SQL++ filtering)
 
+## Internationalization Guidelines (v3.10.0+)
+- **ALWAYS use TEXT_CONSTANTS** for user-facing strings in JavaScript
+- **NEVER hardcode English text** in console.log, showToast, alert, or template literals
+- **DO NOT translate** technical constants like "N/A" used in logic checks
+- **Use descriptive constant names** (e.g., COPY_STATS not CS)
+
+### ✅ Correct Internationalization Pattern:
+```javascript
+// GOOD: Translation-safe
+console.log(`${TEXT_CONSTANTS.PARSE_PERFORMANCE} ${timing}ms`);
+showToast(TEXT_CONSTANTS.PASTE_JSON_FIRST, "warning");
+html += `<button onclick="copy()">${TEXT_CONSTANTS.COPY}</button>`;
+
+// BAD: Will break during translation  
+console.log("Parse performance: " + timing + "ms");
+showToast("Please paste your JSON data first", "warning");
+html += '<button onclick="copy()">Copy</button>';
+```
+
+### Adding New Translatable Text:
+1. **Add to TEXT_CONSTANTS** with descriptive key name
+2. **Replace hardcoded string** with `TEXT_CONSTANTS.KEY_NAME`
+3. **Update settings/LOCALIZATION_GUIDE.md** translation template
+4. **Test in browser** to ensure no JavaScript errors
+
 ## Key Components
 - JSON parser for Couchbase completed_requests data
 - Query normalization (replaces literals with ? for grouping)
@@ -49,5 +74,26 @@ The `sample/` folder contains test JSON files for development and testing:
 - Enhanced modal dialogs with indexes/keys extraction and visual execution plans
 - Timeline charts with dual y-axis and performance indicators
 - Index/Query Flow visualization with performance highlighting
+
+## Documentation and Workflow Tools
+
+### Process Visualization
+- **Use https://mermaid.live/** for creating graphs and flowcharts of JavaScript processes
+- Create diagrams for complex workflows like JSON parsing, chart generation, or data processing flows
+- Document function call relationships and data transformation pipelines
+- Visualize caching strategies and optimization workflows
+
+### Markdown Documentation
+- **README files**: Use clear structure with Quick Start sections at top, Release Notes at bottom
+- **Technical guides**: Include code examples with proper syntax highlighting
+- **Workflow documentation**: Use numbered steps and checkboxes for processes
+- **Cross-references**: Link between related files (LOCALIZATION_GUIDE.md, VERSION_UPDATE_GUIDE.md)
+- **Language navigation**: Include 🌍 language links in all README files
+
+### Code Analysis and Optimization Workflows
+- **Performance optimization**: Use browser dev tools profiling with sample data multiplied x1000
+- **Dead code detection**: Use `analyze_dead_code.py` and `quick_dead_code_cleanup.py` scripts
+- **CSS optimization**: Use `optimize_css.py` for minification and deduplication
+- **Translation safety**: Use `find_hardcoded_strings.py` to identify text needing TEXT_CONSTANTS
 
 

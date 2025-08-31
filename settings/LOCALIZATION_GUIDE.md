@@ -71,9 +71,140 @@ Each README should specify the correct HTML file:
 
 ## HTML Tool Updates (Index Files)
 
-### **Step 3: Quick Update Process for HTML Tools (RECOMMENDED METHOD)**
+### **Step 3: New Global Constants Approach (PREFERRED METHOD v3.10.0+)**
 
-**🚀 SIMPLIFIED APPROACH**: When `index.html` is working correctly and localized versions have issues, use this backup-and-copy method:
+**🚀 NEW INTERNATIONALIZATION SYSTEM**: Starting with v3.10.0, we use global `TEXT_CONSTANTS` to prevent JavaScript translation breakage:
+
+#### **How Global Constants Work:**
+```javascript
+// SAFE: Only translate the TEXT_CONSTANTS object
+const TEXT_CONSTANTS = {
+  PARSE_PERFORMANCE: "Parse performance:",           // English
+  PARSE_PERFORMANCE: "Rendimiento de análisis:",    // Spanish
+  PARSE_PERFORMANCE: "Parse-Leistung:",             // German
+  PASTE_JSON_FIRST: "Please paste your JSON data first",
+  ERROR_PARSING_JSON: "Error parsing JSON:"
+};
+
+// PROTECTED: JavaScript logic stays identical across languages
+console.log(`${TEXT_CONSTANTS.PARSE_PERFORMANCE} ${timing}ms`);
+showToast(TEXT_CONSTANTS.PASTE_JSON_FIRST, "warning");
+```
+
+#### **Translation Process with Global Constants:**
+1. **Copy `/en/index.html`** → `/es/index.html`, `/de/index.html`, `/pt/index.html`
+2. **Only translate the `TEXT_CONSTANTS` object** (lines ~333-372)
+3. **JavaScript functionality remains 100% intact** - no broken syntax
+4. **Template literals auto-update** with translated constants
+
+#### **Benefits:**
+- ✅ **Zero JavaScript breakage** - syntax stays intact
+- ✅ **95% faster translation** - only one object to translate
+- ✅ **Consistent terminology** - same constant used everywhere
+- ✅ **Easy maintenance** - add new text to constants, auto-propagates
+
+#### **Managing TEXT_CONSTANTS:**
+
+**Finding the Constants Section:**
+```bash
+# Locate TEXT_CONSTANTS in any file
+grep -n "const TEXT_CONSTANTS" */index.html
+
+# Extract just the constants for translation
+sed -n '/const TEXT_CONSTANTS/,/};/p' en/index.html > /tmp/text_constants.js
+```
+
+**Translation Template for TEXT_CONSTANTS:**
+```javascript
+// ENGLISH (en/index.html)
+const TEXT_CONSTANTS = {
+  PARSE_PERFORMANCE: "Parse performance:",
+  CACHE_STATS: "Cache stats - parseTime:",
+  PASTE_JSON_FIRST: "Please paste your JSON data first",
+  INPUT_TOO_LARGE: "Input too large. Please use smaller datasets.",
+  SHOWING_TOP: "Showing top",
+  OF_TOTAL: "of",
+  USERS: "users",
+  INDEXES: "indexes"
+};
+
+// SPANISH (es/index.html) 
+const TEXT_CONSTANTS = {
+  PARSE_PERFORMANCE: "Rendimiento de análisis:",
+  CACHE_STATS: "Estadísticas de caché - parseTime:",
+  PASTE_JSON_FIRST: "Por favor, pegue sus datos JSON primero",
+  INPUT_TOO_LARGE: "Entrada demasiado grande. Use conjuntos de datos más pequeños.",
+  SHOWING_TOP: "Mostrando los primeros",
+  OF_TOTAL: "de",
+  USERS: "usuarios", 
+  INDEXES: "índices"
+};
+
+// GERMAN (de/index.html)
+const TEXT_CONSTANTS = {
+  PARSE_PERFORMANCE: "Parse-Leistung:",
+  CACHE_STATS: "Cache-Statistiken - parseTime:",
+  PASTE_JSON_FIRST: "Bitte fügen Sie zuerst Ihre JSON-Daten ein",
+  INPUT_TOO_LARGE: "Eingabe zu groß. Verwenden Sie kleinere Datensätze.",
+  SHOWING_TOP: "Zeige die ersten",
+  OF_TOTAL: "von",
+  USERS: "Benutzer",
+  INDEXES: "Indizes"
+};
+```
+
+**Validation Commands for Global Constants:**
+```bash
+# Verify TEXT_CONSTANTS exists and is translated
+grep -A 20 "const TEXT_CONSTANTS" */index.html | grep -E "(English|Spanish|German|Portuguese)"
+
+# Check that constants are being used (not hardcoded strings)
+grep -n "TEXT_CONSTANTS\." */index.html | wc -l  # Should be >20 
+
+# Find remaining hardcoded strings that should use constants
+grep -n "console\.log.*['\"]" */index.html | grep -v "TEXT_CONSTANTS"
+```
+
+#### **When to Add New Constants:**
+
+**🔴 ALWAYS add constants for:**
+- User-facing error messages: `showToast()` calls
+- Performance/debug logging that users might see
+- Table notices: "Showing top X of Y items"
+- Chart sampling messages
+- Progress and status updates
+
+**🟡 CONSIDER adding constants for:**
+- Developer console logs (if users might see them)
+- Chart titles and axis labels (if not in HTML already)
+- Modal dialog text
+- Tooltip content
+
+**🟢 KEEP as-is:**
+- Technical variable names and CSS classes
+- HTML IDs and data attributes
+- JavaScript function/property names
+- Internal debugging (not user-visible)
+
+#### **Adding New Constants Workflow:**
+1. **Identify hardcoded strings** during development
+2. **Add to English TEXT_CONSTANTS** with descriptive key name
+3. **Replace hardcoded string** with `TEXT_CONSTANTS.KEY_NAME`
+4. **Update translation template** in this guide
+5. **Apply to all language files** during next release
+
+**Example Pattern:**
+```javascript
+// BEFORE (risky for translation)
+console.log("Timeline charts: Using " + count + " of " + total + " requests for performance");
+
+// AFTER (translation-safe)  
+console.log(`${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${count} ${TEXT_CONSTANTS.OF_TOTAL} ${total} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
+```
+
+### **Step 4: Legacy Update Process for HTML Tools (FALLBACK METHOD)**
+
+**🚀 SIMPLIFIED APPROACH**: When global constants aren't sufficient and you need full file translation, use this backup-and-copy method:
 
 **📝 RELEASE LOG REMINDER**: If this is part of a release process, update your settings/release_YYYYMMDD_HHMMSS.txt file with each HTML file updated.
 
