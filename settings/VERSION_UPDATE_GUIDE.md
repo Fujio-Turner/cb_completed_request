@@ -140,7 +140,7 @@ docker rmi fujioturner/couchbase-query-analyzer:dev-<old-sha>
 
 ## 🔄 Step-by-Step Update Process
 
-### Step 0: Create Release Log
+### **Step 1: Create Release Log**
 Before starting any updates, create a copy of the release template to track all changes:
 ```bash
 # Copy template with current datetime
@@ -151,8 +151,8 @@ cp settings/release.template settings/release_$(date +%Y%m%d_%H%M%S).txt
 
 **📝 IMPORTANT**: Update the release log file after each step to document what changes were made and to which files.
 
-### Step 1: Determine Version Type
-**FIRST:** Use [VERSION_CALCULATION_GUIDE.md](VERSION_CALCULATION_GUIDE.md) to analyze your changes and determine the appropriate version number.
+### **Step 2: Determine Version Type**
+**FIRST:** Use [VERSION_CALCULATION_GUIDE.md](VERSION_CALCULATION_GUIDE.md) Step 1 through Step 4 to analyze your changes and determine the appropriate version number.
 
 The VERSION_CALCULATION_GUIDE.md provides:
 - Current version detection commands
@@ -167,9 +167,9 @@ The VERSION_CALCULATION_GUIDE.md provides:
 - Version type: `[MAJOR/MINOR/PATCH]`
 - Documented reasoning for the version choice
 
-**Proceed with the steps below only after you have determined your version numbers using VERSION_CALCULATION_GUIDE.md.**
+**Proceed with the steps below only after you have completed VERSION_CALCULATION_GUIDE.md Step 1 through Step 4.**
 
-### Step 2: Update HTML Files
+### **Step 3: Update HTML Files**
 For each HTML file (`index.html`, `de_index.html`, `es_index.html`, `pt_index.html`):
 
 1. **Update meta version tag:**
@@ -200,9 +200,20 @@ For each HTML file (`index.html`, `de_index.html`, `es_index.html`, `pt_index.ht
    const LAST_UPDATED = "YYYY-MM-DD";
    ```
 
-### Step 3: Update Documentation
+### **Step 4: Update Documentation**
 
-1. **Update AGENT.md:**
+1. **Add Release Notes to All README Files:** 
+   ```bash
+   # Use the release notes automation script
+   python3 settings/add_release_notes.py
+   # OR manually add release notes to:
+   # - README.md
+   # - de/README.de.md  
+   # - es/README.es.md
+   # - pt/README.pt.md
+   ```
+
+2. **Update AGENT.md:**
    - Main heading
    - Version Management section
    - Example version references
@@ -213,14 +224,14 @@ For each HTML file (`index.html`, `de_index.html`, `es_index.html`, `pt_index.ht
    - Perform spell checking on all README files
    - Update Release Notes section with new version information (reverse chronological order)
 
-### Step 4: Update Release Log
+### **Step 5: Update Release Log**
 After completing all version updates, update your release log file with:
 - Final version numbers
 - List of all files modified
 - Date of completion
 - Any special notes or issues encountered
 
-### Step 5: Verification
+### **Step 6: Verification**
 
 Run these checks to ensure all versions are updated:
 

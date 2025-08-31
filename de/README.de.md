@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.9.0
+# Couchbase Slow Query Analysis Tool v3.10.0
 
 **🌍 Sprachen:** [🇺🇸 English](../README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](../es/README.es.md) | [🇵🇹 Português](../pt/README.pt.md)
 
@@ -156,6 +156,27 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 **⚠️ Warnung**: Große Datumsbereiche mit feinkörnigen Gruppierungen können zu Diagramm-Rendering-Fehlern führen. Das Tool wird Sie warnen und bessere Kombinationen vorschlagen.
 
 ## 📋 Versionshinweise
+
+### Version 3.10.0 (30. August 2025)
+#### 🚀 Neue Funktionen
+- **Erweitertes Insights-Dashboard**: Das Insights-Tab wurde mit umfassender Performance-Analyse und automatischen Query-Optimierungsempfehlungen erweitert
+- **Verbesserte Benutzeroberfläche**: Raketen-Emoji zum Haupttitel und Gradient-Banner hinzugefügt, die die neuen Insights-Fähigkeiten hervorheben
+- **Erweiterte Dokumentation**: Schritt 4-Anleitung aktualisiert, um das neue Insights-Dashboard prominent mit detaillierten Funktionsbeschreibungen zu zeigen
+
+#### 🛡️ Übersetzungs- und Lokalisierungsverbesserungen
+- **Geschütztes Übersetzungssystem**: Umfassendes Übersetzungsschutzsystem implementiert, um JavaScript-Syntaxfehler und HTML-Attributkorruption zu verhindern
+- **Duales Validierungssystem**: Sowohl JavaScript-Syntaxvalidierung als auch HTML-Attributvalidierung hinzugefügt, um Übersetzungsqualität sicherzustellen
+- **Vollständige Insights-Lokalisierung**: Alle Insights-Inhalte sind jetzt vollständig in deutsche, spanische und portugiesische Versionen übersetzt
+
+#### 🔧 Technische Verbesserungen
+- **JavaScript-Syntaxschutz**: Validierungstools erstellt, um übersetzungsbedingte JavaScript-Fehler zu verhindern
+- **HTML-Attributschutz**: Schutzmaßnahmen implementiert, um Übersetzungen kritischer HTML-IDs und -Klassen zu verhindern
+- **Schritt-nummerierte Prozessanweisungen**: Nummerierte Schritte zu allen Anweisungsdokumenten hinzugefügt für einfachere partielle Wiederausführungen ("nur Schritt X wiederholen")
+
+#### 📚 Entwicklererfahrung
+- **Erweiterte Release-Prozess**: Umfassender Release-Workflow mit detaillierten Validierungsschritten erstellt
+- **Übersetzungsschutzregeln**: Dokumentiert, was niemals übersetzt werden sollte, um zukünftige Probleme zu verhindern
+- **Automatisierte Validierungstools**: Tools erstellt, um Übersetzungsprobleme vor der Bereitstellung zu erkennen
 
 ### Version 3.9.0 (28. August 2025)
 #### 🔧 Fehlerbehebungen

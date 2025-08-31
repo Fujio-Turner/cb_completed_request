@@ -17,7 +17,7 @@ This guide helps you analyze your code changes and determine what version number
 
 ## 📊 Current Version Detection
 
-### Step 1: Find Current Version
+### **Step 1: Find Current Version**
 Run these commands to detect your current version:
 
 ```bash
@@ -43,7 +43,7 @@ Date Last Updated: ___________________
 
 ## 🔍 Change Analysis Framework
 
-### Step 2: Analyze Your Changes
+### **Step 2: Analyze Your Changes**
 Review what has changed since the last version using these categories:
 
 **💡 TIP**: Check git history for issue-related merges:
@@ -113,7 +113,7 @@ Check if you have made any of these changes:
 
 ## 📈 Version Decision Matrix
 
-### Step 3: Determine Version Type
+### **Step 3: Determine Version Type**
 
 Based on your analysis above, determine version type:
 
@@ -131,7 +131,7 @@ ELSE
     → No version change needed
 ```
 
-### Step 4: Calculate New Version Number
+### **Step 4: Calculate New Version Number**
 
 **Current Version:** `_______________` (from Step 1)
 

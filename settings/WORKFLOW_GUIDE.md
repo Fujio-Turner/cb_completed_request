@@ -19,7 +19,7 @@ This guide documents the complete development workflow from issue creation to pr
 
 ### Phase 1: Release Planning & Branch Creation
 
-#### Step 1: Create Release Branch
+#### **Step 1: Create Release Branch**
 ```bash
 # Start from latest main
 git checkout main
@@ -38,7 +38,7 @@ Issues Planned: #17, #19, #23
 Release Character: Snake (Metal Gear Solid)
 ```
 
-#### Step 2: Identify Issues for Release
+#### **Step 2: Identify Issues for Release**
 Review GitHub issues and select which ones to include:
 - [ ] **Bug fixes:** Critical and important bugs
 - [ ] **New features:** Planned enhancements  
@@ -56,7 +56,7 @@ ISSUES SELECTED FOR THIS RELEASE:
 
 ### Phase 2: Development & Issue Resolution
 
-#### Step 3: Work on Individual Issues
+#### **Step 3: Work on Individual Issues**
 
 **For each issue, repeat this process:**
 
@@ -99,7 +99,7 @@ git push origin --delete fix/issue-17
 
 ### Phase 3: Release Preparation
 
-#### Step 4: Final Preparation on Release Branch
+#### **Step 4: Final Preparation on Release Branch**
 ```bash
 # Stay on release branch for final changes
 git checkout release-snake
@@ -119,14 +119,15 @@ git commit -m "prep: final preparation for release
 - Updated sample data files"
 ```
 
-#### Step 5: Determine Version Number (DRY RUN)
+#### **Step 5: Determine Version Number (DRY RUN)**
 Now use the VERSION_CALCULATION_GUIDE.md to determine version:
 
 1. **Open:** [VERSION_CALCULATION_GUIDE.md](VERSION_CALCULATION_GUIDE.md)
-2. **Analyze changes made:** Review all commits in release-snake branch
-3. **Determine version type:** Based on issues resolved (bugs = PATCH, new features = MINOR, breaking changes = MAJOR)
-4. **Calculate version:** Use the guide's formulas
-5. **Document decision:** Complete the Version Decision Record
+2. **Follow:** VERSION_CALCULATION_GUIDE.md Step 1 through Step 4
+3. **Analyze changes made:** Review all commits in release-snake branch
+4. **Determine version type:** Based on issues resolved (bugs = PATCH, new features = MINOR, breaking changes = MAJOR)
+5. **Calculate version:** Use the guide's formulas
+6. **Document decision:** Complete the Version Decision Record
 
 **Example Analysis:**
 ```
@@ -166,11 +167,11 @@ Next Steps:
 
 ### Phase 4: Version Updates & Release
 
-#### Step 6: Apply Version Updates
+#### **Step 6: Apply Version Updates**
 **Still on release-snake branch:**
 
-1. **Use VERSION_UPDATE_GUIDE.md:** Apply all version updates using your calculated version
-2. **Use LOCALIZATION_GUIDE.md:** Ensure all translations are current  
+1. **Use VERSION_UPDATE_GUIDE.md:** Apply VERSION_UPDATE_GUIDE.md Step 2 through Step 6 using your calculated version
+2. **Use LOCALIZATION_GUIDE.md:** Apply LOCALIZATION_GUIDE.md Step 1 through Step 6 to ensure all translations are current  
 3. **Use release.template:** Create release log to track all changes
 
 ```bash
@@ -182,7 +183,7 @@ cp settings/release.template settings/release_snake_$(date +%Y%m%d_%H%M%S).txt
 # Update release log throughout the process
 ```
 
-#### Step 7: Final Release Commit
+#### **Step 7: Final Release Commit**
 ```bash
 # Final commit on release branch with version and issue closures
 git add .
@@ -199,7 +200,7 @@ Closes #17, Closes #19, Closes #23, Closes #25"
 git push origin release-snake
 ```
 
-#### Step 8: Merge to Main & Deploy
+#### **Step 8: Merge to Main & Deploy**
 ```bash
 # Switch to main and merge release branch
 git checkout main
@@ -229,13 +230,13 @@ git push origin --delete release-snake
 
 ### Phase 5: Post-Release
 
-#### Step 9: Verify Deployment
+#### **Step 9: Verify Deployment**
 - [ ] **Cloudflare Pages:** Verify new version deployed successfully
 - [ ] **DockerHub:** Verify new image tags created
 - [ ] **GitHub:** Verify issues are closed and release tag exists
 - [ ] **Functionality:** Test all language versions work correctly
 
-#### Step 10: Prepare for Next Release
+#### **Step 10: Prepare for Next Release**
 ```bash
 # Plan next release
 # Review remaining GitHub issues

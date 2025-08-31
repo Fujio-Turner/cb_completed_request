@@ -35,7 +35,7 @@ def apply_comprehensive_translations(html_content, translations, language_code):
             # 2. Button text inside button tags
             html_content = re.sub(
                 f'(<button[^>]*>){re.escape(english)}(</button>)',
-                rf'\1{target_lang}\2',
+                r'\1' + target_lang + r'\2',
                 html_content
             )
             
@@ -65,45 +65,45 @@ def apply_comprehensive_translations(html_content, translations, language_code):
             # 9. JavaScript textContent assignments
             html_content = re.sub(
                 f'(textContent\\s*=\\s*)"{re.escape(english)}"',
-                rf'\1"{target_lang}"',
+                r'\1"' + target_lang + r'"',
                 html_content
             )
             html_content = re.sub(
                 f"(textContent\\s*=\\s*)'{re.escape(english)}'",
-                rf"\1'{target_lang}'",
+                r"\1'" + target_lang + r"'",
                 html_content
             )
             
             # 10. JavaScript innerHTML assignments
             html_content = re.sub(
                 f'(innerHTML\\s*=\\s*)"{re.escape(english)}"',
-                rf'\1"{target_lang}"',
+                r'\1"' + target_lang + r'"',
                 html_content
             )
             html_content = re.sub(
                 f"(innerHTML\\s*=\\s*)'{re.escape(english)}'",
-                rf"\1'{target_lang}'",
+                r"\1'" + target_lang + r"'",
                 html_content
             )
             
             # 11. Template literals with HTML inside (CRITICAL pattern)
             html_content = re.sub(
                 f'(`[^`]*){re.escape(english)}([^`]*`)',
-                rf'\1{target_lang}\2',
+                r'\1' + target_lang + r'\2',
                 html_content
             )
             
             # 12. HTML generation in JavaScript strings
             html_content = re.sub(
                 f'(<[^>]*>){re.escape(english)}(<[^>]*>)',
-                rf'\1{target_lang}\2',
+                r'\1' + target_lang + r'\2',
                 html_content
             )
             
             # 13. Console messages and alerts
-            html_content = re.sub(f'(console\\.log\\([\'"]){re.escape(english)}([\'"]\\))', rf'\1{target_lang}\2', html_content)
-            html_content = re.sub(f'(alert\\([\'"]){re.escape(english)}([\'"]\\))', rf'\1{target_lang}\2', html_content)
-            html_content = re.sub(f'(confirm\\([\'"]){re.escape(english)}([\'"]\\))', rf'\1{target_lang}\2', html_content)
+            html_content = re.sub(f'(console\\.log\\([\'"]){re.escape(english)}([\'"]\\))', r'\1' + target_lang + r'\2', html_content)
+            html_content = re.sub(f'(alert\\([\'"]){re.escape(english)}([\'"]\\))', r'\1' + target_lang + r'\2', html_content)
+            html_content = re.sub(f'(confirm\\([\'"]){re.escape(english)}([\'"]\\))', r'\1' + target_lang + r'\2', html_content)
     
     # Apply JavaScript variable translations
     for var_name, translations_dict in translations['javascript_variables'].items():

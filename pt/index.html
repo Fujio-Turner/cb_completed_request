@@ -2,8 +2,8 @@
 <html lang="pt">
   <!--
     Couchbase Query Analyzer
-    Version: 3.6.2
-    Last Updated: 2025-08-23
+    Version: 3.10.0
+    Last Updated: 2025-08-28
     
     🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
     This guide covers all HTML elements, JavaScript variables, and documentation files that need updating.
@@ -20,9 +20,9 @@
 
   <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.9.0" />
-    <meta name="last-updated" content="2025-08-28" />
-    <title>Query Analyzer v3.9.0</title>
+    <meta name="version" content="3.10.0" />
+    <meta name="last-updated" content="2025-08-30" />
+<title>Analisador de Consultas v3.10.0</title>
     <!-- Include jQuery UI CSS -->
     <link
       rel="stylesheet"
@@ -81,66 +81,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           background-color: #f1f1f1;
         }
 
-        /* Insights Tab Styles */
-        .insights-navigation {
-          display: flex;
-          gap: 10px;
-          margin-bottom: 20px;
-          padding: 8px 12px;
-          background: #f8f9fa;
-          border-radius: 6px;
-          border: 1px solid #dee2e6;
-          flex-wrap: wrap;
-          justify-content: center;
+        /* Add grid-3-col for scan consistency chart */
+        .grid-3-col {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
         }
 
-        .nav-category-link {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          background: #fff;
-          border: 1px solid #dee2e6;
-          border-radius: 4px;
-          text-decoration: none;
-          color: #495057;
-          font-weight: 500;
-          font-size: 12px;
-          transition: all 0.2s ease;
-          min-width: 100px;
-          justify-content: center;
-        }
 
-        .nav-category-link:hover {
-          background: #e3f2fd;
-          border-color: #90caf9;
-          color: #1565c0;
-          text-decoration: none;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .nav-emoji {
-          font-size: 16px;
-        }
-
-        .nav-text {
-          flex: 1;
-          text-align: center;
-        }
-
-        .nav-count {
-          background: #6c757d;
-          color: white;
-          padding: 2px 6px;
-          border-radius: 10px;
-          font-size: 11px;
-          font-weight: bold;
-        }
-
-        .nav-category-link:hover .nav-count {
-          background: #1565c0;
-        }
 
         .insight-category {
           margin-bottom: 40px;
@@ -229,10 +176,151 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         }
 
         .insight-link:hover {
-          color: #0d47a1;
-          text-decoration: none;
-          border-bottom: 1px solid #0d47a1;
+        color: #0d47a1;
+        text-decoration: none;
+        border-bottom: 1px solid #0d47a1;
         }
+         
+         /* Status counts styling */
+         .fatal-count {
+           font-weight: bold;
+           color: #dc3545;
+         }
+         
+         /* Live insight badge */
+         .live-badge {
+           background: #28a745;
+           color: white;
+           padding: 2px 6px;
+           border-radius: 12px;
+           font-size: 10px;
+           font-weight: bold;
+           text-transform: uppercase;
+           margin-left: 8px;
+           display: inline-block;
+         }
+         
+         /* Non-working insight badge */
+         .dev-badge {
+           background: #fd7e14;
+           color: white;
+           padding: 2px 6px;
+           border-radius: 12px;
+           font-size: 10px;
+           font-weight: bold;
+           text-transform: uppercase;
+           margin-left: 8px;
+           display: inline-block;
+         }
+         
+         /* Beta insight badge */
+         .beta-badge {
+           background: #007bff;
+           color: white;
+           padding: 2px 6px;
+           border-radius: 12px;
+           font-size: 10px;
+           font-weight: bold;
+           text-transform: uppercase;
+           margin-left: 8px;
+           display: inline-block;
+         }
+         
+         
+         /* Accordion styles */
+         .category-title {
+           cursor: pointer;
+           transition: all 0.3s ease;
+           position: relative;
+           padding-right: 30px;
+         }
+         
+         .category-title:hover {
+           background: rgba(0,123,255,0.1);
+           border-radius: 6px;
+           padding: 10px;
+           margin: -10px 0 10px -10px;
+         }
+         
+         .category-title::after {
+           content: "▼";
+           position: absolute;
+           right: 10px;
+           top: 50%;
+           transform: translateY(-50%);
+           transition: transform 0.3s ease;
+           font-size: 16px;
+         }
+         
+         .category-title.collapsed::after {
+           transform: translateY(-50%) rotate(-90deg);
+         }
+         
+         .insight-category-content {
+           overflow: hidden;
+           transition: max-height 0.3s ease;
+         }
+         
+         .insight-category-content.collapsed {
+           max-height: 0 !important;
+         }
+         
+         /* Individual insight accordion */
+         .insight-title {
+           cursor: pointer;
+           position: relative;
+           padding-right: 30px;
+           transition: all 0.3s ease;
+         }
+         
+         .insight-title:hover {
+           background: rgba(0,123,255,0.05);
+           border-radius: 4px;
+           padding: 5px;
+           margin: -5px;
+         }
+         
+         .insight-title::after {
+           content: "▼";
+           position: absolute;
+           right: 10px;
+           top: 50%;
+           transform: translateY(-50%);
+           transition: transform 0.3s ease;
+           font-size: 12px;
+           color: #666;
+         }
+         
+         .insight-title.collapsed::after {
+           transform: translateY(-50%) rotate(-90deg);
+         }
+         
+         .insight-content {
+           overflow: hidden;
+           transition: max-height 0.3s ease;
+         }
+         
+         .insight-content.collapsed {
+           max-height: 0 !important;
+           padding: 0 !important;
+           margin: 0 !important;
+         }
+         
+         /* Index breakdown styling */
+         .index-breakdown {
+           margin: 15px 0;
+           padding-left: 30px;
+         }
+         
+         .index-breakdown-item {
+           margin-bottom: 12px;
+           padding: 8px 0;
+           line-height: 1.4;
+         }
+         
+         .index-breakdown-item:last-child {
+           margin-bottom: 0;
+         }
     </style>
     <!-- Include Panzoom, jQuery, and jQuery UI -->
     <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.2/dist/panzoom.min.js?v=362"></script>
@@ -243,7 +331,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
   <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-    v3.9.0
+    v3.10.0
     </div>
 
     <!-- Input Section (outside tabs) -->
@@ -252,13 +340,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         <textarea
           id="json-input"
           placeholder="Cole sua saída JSON de: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;"
-          aria-label="Campo de entrada JSON para dados de consulta do Couchbase"
+          aria-label="JSON input field for Couchbase query data"
           role="textbox"
         ></textarea>
         <textarea
           id="indexJsonInput"
           placeholder="Clique na aba 'Índices' abaixo para obter a consulta SQL para executar. Cole os resultados aqui..."
-          aria-label="Campo de entrada JSON de índices"
+          aria-label="Index JSON input field"
           role="textbox"
         ></textarea>
       </div>
@@ -269,11 +357,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           <button
             id="parse-json-btn"
             onclick="parseJSON()"
-            aria-label="Analisar e analisar dados JSON"
+            aria-label="Parse and analyze JSON data"
             tabindex="0"
             role="button"
           >
-            Parse JSON
+            Analisar JSON
           </button>
           <div id="progress-container">
             <div class="progress-background">
@@ -291,7 +379,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               id="exclude-system-queries"
               checked
               title="Exclui declarações INFER, ADVISE, CREATE, ALTER INDEX e consultas de keyspaces do sistema:"
-              aria-label="Excluir consultas do sistema da análise"
+              aria-label="Exclude system queries from analysis"
             />
             <span
               class="checkbox-label-text"
@@ -339,13 +427,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             Original
           </button>
           <button onclick="setTimeRange('1week')" class="cursor-pointer border-none border-radius-3 btn-gray" style="font-size: 11px; padding: 4px 8px;">
-            1 Week
+            1 Semana
           </button>
           <button onclick="setTimeRange('1day')" class="cursor-pointer border-none border-radius-3 btn-gray" style="font-size: 11px; padding: 4px 8px;">
-            1 Day
+            1 Dia
           </button>
           <button onclick="setTimeRange('1hour')" class="cursor-pointer border-none border-radius-3 btn-gray" style="font-size: 11px; padding: 4px 8px;">
-            1 Hour
+            1 Hora
           </button>
         </div>
 
@@ -354,7 +442,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         <!-- Help Link (Right Side) -->
         <div style="margin-left: auto;">
           <a href="https://cb.fuj.io/analysis_hub#readStats" target="_blank" style="text-decoration: none; color: #007bff; font-size: 14px;">
-            NEED HELP? Debugging + Tool Tips
+            PRECISA DE AJUDA? Depuração + Dicas da Ferramenta
           </a>
         </div>
       </div>
@@ -370,14 +458,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           >
         </li>
         <li role="tab">
-          <a href="#insights" aria-controls="insights" tabindex="0">Insights</a>
+          <a href="#insights" aria-controls="insights" tabindex="0">Insights <span class="beta-badge">Beta</span></a>
         </li>
         <li role="tab">
-          <a href="#timeline" aria-controls="timeline" tabindex="0">Cronograma</a>
+          <a href="#timeline" aria-controls="timeline" tabindex="0">Linha do Tempo</a>
         </li>
         <li role="tab">
           <a href="#analysis" aria-controls="analysis" tabindex="0"
-            >Análise</a
+            >Grupos de Consulta</a
           >
         </li>
         <li role="tab">
@@ -398,19 +486,19 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         </li>
       </ul>
 
-      <!-- Dashboard Tab Content -->
+      <!-- Painel de Controle Tab Content -->
       <div id="dashboard">
         <div class="dashboard-grid">
           <!-- Elapsed Time Distribution Bar Chart -->
           <div class="chart-container height-300">
             <h3 class="chart-title fixed-height">
-              Query Duration Distribution
+              Distribuição de Duração de Consultas
             </h3>
             <div class="height-250-relative">
               <canvas id="elapsed-time-chart"></canvas>
             </div>
           </div>
-          <!-- Primary Index(es) Scan Used Chart -->
+          <!-- Primary Index(es) Scan Usado Chart -->
           <div class="chart-container height-300">
             <h3 class="chart-title fixed-height">Index Type Usage</h3>
             <div class="chart-flex-container">
@@ -432,7 +520,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     target="_blank"
                     class="warning-link"
                   >
-                    📖 Learn More
+                    📖 Saiba Mais
                   </a>
                 </div>
               </div>
@@ -440,9 +528,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           </div>
         </div>
 
-        <!-- Query Pattern Analysis Row -->
+        <!-- Query Pattern Análise Row -->
         <div class="pattern-analysis-grid">
-          <!-- Query Pattern Features Bar Chart -->
+          <!-- Características do Padrão de Consulta Bar Chart -->
           <div class="chart-container with-margin-top-20">
             <h3 class="chart-title fixed-height">Características do Padrão de Consulta</h3>
             <div class="height-350-relative">
@@ -453,7 +541,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
         <!-- Data Tables Row -->
         <div class="dashboard-tables-grid">
-          <!-- User Query Count Table -->
+          <!-- User Contagem de Consultas Table -->
           <div class="table-container with-margin-top-40">
             <h3 class="chart-title">Usuários por Contagem de Consultas</h3>
             <div class="table-scroll">
@@ -469,11 +557,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             </div>
           </div>
 
-          <!-- Index Usage Count Table -->
+          <!-- Contagem de Uso de Índices Table -->
           <div class="table-container with-margin-top-40">
             <h3 class="chart-title">Contagem de Uso de Índices</h3>
             <div class="table-subheader">
-              Note: #primary count shows total operations, not unique queries
+              Nãote: #primary count shows total operations, not unique consultas
             </div>
             <div class="table-scroll">
               <table id="index-count-table" class="table-full">
@@ -497,8 +585,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             </div>
           </div>
         </div>
-        <div class="grid-2-col gap-20 margin-bottom-20">
-          <!-- Statement Type Pie Chart -->
+        <div class="grid-3-col gap-20 margin-bottom-20">
+          <!-- Tipo de Declaração Pie Chart -->
           <div class="chart-card">
             <h3 class="chart-card-header">Tipo de Declaração</h3>
             <div class="chart-card-content">
@@ -506,11 +594,19 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             </div>
           </div>
 
-          <!-- Query State Pie Chart -->
+          <!-- Estado da Consulta Pie Chart -->
           <div class="chart-card">
             <h3 class="chart-card-header">Estado da Consulta</h3>
             <div class="chart-card-content">
               <canvas id="state-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Consistência de Verificação Pie Chart -->
+          <div class="chart-card">
+            <h3 class="chart-card-header">Index Consistência de Verificação</h3>
+            <div class="chart-card-content">
+              <canvas id="scan-consistency-chart"></canvas>
             </div>
           </div>
         </div>
@@ -520,202 +616,244 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       <div id="insights">
         <div style="padding: 20px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; margin-bottom: 20px;">
           <h2 style="color: #856404; margin-top: 0; font-size: 24px; font-weight: bold; text-align: center;">
-            ⚠️ NON-WORKING STATIC DUMMY DATA ⚠️
+            🚧 INSIGHTS EM DESENVOLVIMENTO 🚧
           </h2>
           <p style="color: #856404; text-align: center; margin: 0;">
-            This is placeholder content for future insights functionality
+            Alguns insights mostram <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold;">LIVE</span> dados, <span style="background: #007bff; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold;">BETA</span> os insights estão em desenvolvimento (podem ter falsos positivos), outros exibem conteúdo de placeholder.
           </p>
         </div>
 
         <div style="background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
 
-          <!-- Category Navigation -->
-          <div class="insights-navigation">
-            <a href="#index-issues" class="nav-category-link">
-              <span class="nav-emoji">🔍</span>
-              <span class="nav-text">Index Issues</span>
-              <span class="nav-count">(3)</span>
-            </a>
-            <a href="#resource-issues" class="nav-category-link">
-              <span class="nav-emoji">⚡</span>
-              <span class="nav-text">Resource Issues</span>
-              <span class="nav-count">(3)</span>
-            </a>
-            <a href="#pattern-analysis" class="nav-category-link">
-              <span class="nav-emoji">🔄</span>
-              <span class="nav-text">Query Patterns</span>
-              <span class="nav-count">(3)</span>
-            </a>
-            <a href="#performance-opportunities" class="nav-category-link">
-              <span class="nav-emoji">🚀</span>
-              <span class="nav-text">Performance</span>
-              <span class="nav-count">(3)</span>
-            </a>
-          </div>
 
-          <!-- Indexes Category -->
+
+          <!-- Índices Category -->
           <div id="index-issues" class="insight-category">
-            <h3 class="category-title">🔍 Index Performance Issues</h3>
+            <h3 class="category-title" onclick="toggleCategory('index-issues')">🔍 Problemas de Performance do Índice</h3>
+            <div class="insight-category-content" id="index-issues-content">
             
             <div class="insight-item">
-              <h4 class="insight-title">Inefficient Index Scans</h4>
-              <p class="insight-description">
-                There are <span class="highlight-number">200 queries</span> that scan <span class="highlight-number">1 million+</span> entries from the index but return <span class="highlight-number">≤10 items</span>, and these are not aggregate functions such as COUNT, AVG, MIN, or MAX.
-              </p>
-            </div>
-
-            <div class="insight-item">
-              <h4 class="insight-title">Delayed Index Responses</h4>
-              <p class="insight-description">
-                <span class="highlight-number">300 queries</span> involve indexes that take more than <span class="highlight-number">10 seconds</span> to respond, yet on average return fewer than <span class="highlight-number">50,000 items</span>, with many occurring concurrently.
-              </p>
-              <div class="learn-more-section">
-                <div class="learn-more-item">
-                  <span class="learn-more-icon">💡</span>
-                  Are the Index and Query services co-located? <a href="#" class="insight-link">Learn more</a>
-                </div>
-                <div class="learn-more-item">
-                  <span class="learn-more-icon">💡</span>
-                  What percentage of your index is stored in memory? <a href="#" class="insight-link">Learn more</a>
+              <h4 class="insight-title" onclick="toggleInsight('inefficient-index-scans')">Varreduras de Índice Ineficientes<span class="live-badge">Ao Vivo</span></h4>
+              <div class="insight-content" id="inefficient-index-scans-content">
+                <p class="insight-description">
+                  <span class="highlight-number" id="inefficient-index-scans-count">0 consultas</span> verificam uma média de <span class="highlight-number" id="avg-scan-count">0</span> entradas de índice mas retornaram uma média de <span class="highlight-number" id="avg-result-count">0</span> registros por consulta ou uma seletividade de <span class="highlight-number" id="avg-selectivity">0%</span> (excluindo funções agregadas como COUNT(), AVG(), MIN(), MAX()).
+                </p>
+                <div class="learn-more-section">
+                  <div class="learn-more-item">
+                    <span class="learn-more-icon">💡</span>
+                    Considere criar índices mais seletivos para reduzir a sobrecarga de varredura <a href="https://cb.fuj.io/analysis_hub.html#indexes" class="insight-link">Saiba mais</a>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div class="insight-item">
-              <h4 class="insight-title">Primary Index Over-Usage</h4>
-              <p class="insight-description">
-                <span class="highlight-number">85 queries</span> are using primary index scans which represent <span class="highlight-number">34%</span> of all slow queries. These could benefit from secondary indexes.
-              </p>
-              <div class="learn-more-section">
-                <div class="learn-more-item">
-                  <span class="learn-more-icon">💡</span>
-                  Review your indexing strategy for better performance <a href="#" class="insight-link">Learn more</a>
+              <h4 class="insight-title" onclick="toggleInsight('slow-index-scan-times')">Tempos Lentos de Varredura de Índice<span class="live-badge">Ao Vivo</span></h4>
+              <div class="insight-content" id="slow-index-scan-times-content">
+                <p class="insight-description">
+                  <span class="highlight-number" id="total-indexes-count">0</span> índices totais:
+                </p>
+                <div class="index-breakdown">
+                  <div class="index-breakdown-item">
+                    <span class="highlight-number" id="slow-indexes-2-10s">0</span> índices com tempo médio de varredura entre 2-10 segundos
+                  </div>
+                  <div class="index-breakdown-item">
+                    <span class="highlight-number" id="slow-indexes-10s-plus">0</span> índices com tempo médio de varredura de 10+ segundos
+                  </div>
+                  <div class="index-breakdown-item">
+                    <span class="highlight-number" id="slow-primary-indexes">0</span> índices #primary com tempo médio de varredura de 2+ segundos
+                  </div>
+                </div>
+                <div class="learn-more-section">
+                  <div class="learn-more-item">
+                    <span class="learn-more-icon">💡</span>
+                    Verifique o tempo de kernel nos nós de índice - alto tempo de kernel pode indicar contenção de recursos <a href="https://cb.fuj.io/analysis_hub.html#systemMetrics" class="insight-link">Saiba mais</a>
+                  </div>
+                  <div class="learn-more-item">
+                    <span class="learn-more-icon">💡</span>
+                    Índice retornando milhões de registros? Crie índices compostos mais seletivos <a href="https://cb.fuj.io/analysis_hub.html#indexes" class="insight-link">Saiba mais</a>
+                  </div>
                 </div>
               </div>
+            </div>
+
+            <div class="insight-item">
+              <h4 class="insight-title" onclick="toggleInsight('primary-index-over-usage')">Uso Excessivo de Índice Primário<span class="live-badge">Ao Vivo</span></h4>
+              <div class="insight-content" id="primary-index-over-usage-content">
+                <p class="insight-description">
+                  Os índices primários em média estão verificando <span class="highlight-number" id="primary-avg-items-scanned">0</span> itens com tempo médio de varredura de <span class="highlight-number" id="primary-avg-scan-time">0ms</span>. Estes poderiam se beneficiar de índices secundários.
+                </p>
+                <div class="learn-more-section">
+                  <div class="learn-more-item">
+                    <span class="learn-more-icon">💡</span>
+                    Revise sua estratégia de indexação - crie índices secundários seletivos <a href="https://cb.fuj.io/analysis_hub.html#optimizer" class="insight-link">Saiba mais</a>
+                  </div>
+                </div>
+              </div>
+            </div>
             </div>
           </div>
 
           <!-- Resources Category -->
           <div id="resource-issues" class="insight-category">
-            <h3 class="category-title">⚡ Resource Utilization Issues</h3>
+            <h3 class="category-title" onclick="toggleCategory('resource-issues')">⚡ Problemas de Utilização de Recursos</h3>
+            <div class="insight-category-content" id="resource-issues-content">
             
             <div class="insight-item">
-              <h4 class="insight-title">High Kernel Time in Queries</h4>
-              <p class="insight-description">
-                Analysis indicates <span class="highlight-number">300 queries</span> where CPU time constitutes <span class="highlight-number">≤10%</span> of the total execution time, while kernel time accounts for <span class="highlight-number">≥90%</span> of the execution time.
-              </p>
-              <div class="learn-more-section">
-                <div class="learn-more-item">
-                  <span class="learn-more-icon">💡</span>
-                  Is the Query Service co-located with other services? <a href="#" class="insight-link">Learn more</a>
+              <h4 class="insight-title" onclick="toggleInsight('high-kernel-time-queries')">Alto Tempo de Kernel em Consultas<span class="beta-badge">Beta</span></h4>
+              <div class="insight-content" id="high-kernel-time-queries-content">
+                <p class="insight-description">
+                  <span class="highlight-number" id="high-kernel-time-queries-count">0 consultas</span> cuja porcentagem média da soma de seu <b title="Soma de todo o tempo de execução menos o tempo de execução do Stream">tempo de execução principal</b> / tempo de kernel é <span class="highlight-number" id="avg-core-kernel-ratio">0%</span>.
+                </p>
+                <div class="learn-more-section">
+                  <div class="learn-more-item">
+                    <span class="learn-more-icon">💡</span>
+                    O Serviço de Consultas está co-localizado com outros serviços? <a href="https://cb.fuj.io/analysis_hub.html#kernTime" class="insight-link">Saiba mais</a>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div class="insight-item">
-              <h4 class="insight-title">Memory Pressure Detected</h4>
-              <p class="insight-description">
-                <span class="highlight-number">127 queries</span> are using more than <span class="highlight-number">100MB</span> of memory each, with <span class="highlight-number">23 queries</span> exceeding <span class="highlight-number">500MB</span> memory usage.
-              </p>
-              <div class="learn-more-section">
-                <div class="learn-more-item">
-                  <span class="learn-more-icon">💡</span>
-                  Consider increasing query memory limits or optimizing queries <a href="#" class="insight-link">Learn more</a>
+              <h4 class="insight-title" onclick="toggleInsight('high-memory-usage')">Alto Uso de Memória Detectado<span class="live-badge">Ao Vivo</span></h4>
+              <div class="insight-content" id="high-memory-usage-content">
+                <p class="insight-description">
+                  <span class="highlight-number" id="high-memory-count">0 consultas</span> estão usando uma média de <span class="highlight-number" id="avg-memory-usage">0GB</span> de memória cada, indicando oportunidades potenciais de otimização de memória.
+                </p>
+                <div class="learn-more-section">
+                  <div class="learn-more-item">
+                    <span class="learn-more-icon">💡</span>
+                    Considere aumentar os limites de memória de consulta ou otimizar consultas <a href="https://cb.fuj.io/analysis_hub.html#usedMemory" class="insight-link">Saiba mais</a>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div class="insight-item">
-              <h4 class="insight-title">Slow USE KEY Queries</h4>
-              <p class="insight-description">
-                <span class="highlight-number">50 USE KEY queries</span> exceed <span class="highlight-number">1 second</span> in execution time, suggesting potential KV service bottlenecks.
-              </p>
-              <div class="learn-more-section">
-                <div class="learn-more-item">
-                  <span class="learn-more-icon">💡</span>
-                  Is the Data Service and/or Query Service co-located with other services? <a href="#" class="insight-link">Learn more</a>
+              <h4 class="insight-title" onclick="toggleInsight('slow-use-key-queries')">Consultas USE KEY Lentas<span class="live-badge">Ao Vivo</span></h4>
+              <div class="insight-content" id="slow-use-key-queries-content">
+                <p class="insight-description">
+                  <span class="highlight-number" id="slow-use-keys-count">0 USE KEY consultas</span> com tempo médio de consulta de <span class="highlight-number" id="avg-use-keys-time">0ms</span>, sugerindo possíveis gargalos do serviço KV.
+                </p>
+                <div class="learn-more-section">
+                  <div class="learn-more-item">
+                    <span class="learn-more-icon">💡</span>
+                    O Serviço de Dados e/ou Serviço de Consultas está co-localizado com outros serviços? <a href="https://cb.fuj.io/analysis_hub.html#systemMetrics" class="insight-link">Saiba mais</a>
+                  </div>
                 </div>
               </div>
+            </div>
             </div>
           </div>
 
           <!-- Query Patterns Category -->
           <div id="pattern-analysis" class="insight-category">
-            <h3 class="category-title">🔄 Query Pattern Analysis</h3>
+            <h3 class="category-title" onclick="toggleCategory('pattern-analysis')">🔄 Query Pattern Análise</h3>
+            <div class="insight-category-content" id="pattern-analysis-content">
             
             <div class="insight-item">
-              <h4 class="insight-title">Missing WHERE Clauses</h4>
-              <p class="insight-description">
-                <span class="highlight-number">156 queries</span> (<span class="highlight-number">18.3%</span>) lack WHERE clauses, potentially scanning entire collections unnecessarily.
-              </p>
+              <h4 class="insight-title" onclick="toggleInsight('missing-where-clauses')">Cláusulas WHERE Ausentes<span class="live-badge">Ao Vivo</span></h4>
+              <div class="insight-content" id="missing-where-clauses-content">
+                <p class="insight-description">
+                  <span class="highlight-number" id="missing-where-count">0 consultas</span> (<span class="highlight-number" id="missing-where-percent">0%</span>) carecem de cláusulas WHERE, potencialmente verificando coleções inteiras desnecessariamente.
+                </p>
+              </div>
             </div>
 
             <div class="insight-item">
-              <h4 class="insight-title">Complex JOIN Operations</h4>
-              <p class="insight-description">
-                <span class="highlight-number">89 JOIN queries</span> are taking an average of <span class="highlight-number">4.2 seconds</span> each, with <span class="highlight-number">67%</span> showing suboptimal join patterns.
-              </p>
-              <div class="learn-more-section">
-                <div class="learn-more-item">
-                  <span class="learn-more-icon">💡</span>
-                  Consider denormalizing frequently joined data <a href="#" class="insight-link">Learn more</a>
+              <h4 class="insight-title" onclick="toggleInsight('complex-join-operations')">Operações JOIN Complexas<span class="dev-badge">Desenvolvimento</span></h4>
+              <div class="insight-content" id="complex-join-operations-content">
+                <p class="insight-description">
+                  <span class="highlight-number">0 JOIN consultas</span> estão levando uma média de <span class="highlight-number">0 seconds</span> each, com <span class="highlight-number">0%</span> mostrando padrões de junção subótimos.
+                </p>
+                <div class="learn-more-section">
+                  <div class="learn-more-item">
+                    <span class="learn-more-icon">💡</span>
+                    Considere desnormalizar dados frequentemente unidos <a href="https://cb.fuj.io/analysis_hub.html#bestPractices" class="insight-link">Saiba mais</a>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div class="insight-item">
-              <h4 class="insight-title">Inefficient LIKE Operations</h4>
-              <p class="insight-description">
-                <span class="highlight-number">234 queries</span> use LIKE operations with leading wildcards (<code>%text</code>), preventing index usage and causing full scans.
-              </p>
+              <h4 class="insight-title" onclick="toggleInsight('inefficient-like-operations')">Operações LIKE Ineficientes<span class="live-badge">Ao Vivo</span></h4>
+              <div class="insight-content" id="inefficient-like-operations-content">
+                <p class="insight-description">
+                  <span class="highlight-number" id="inefficient-like-count">0 consultas</span> usam operações LIKE com wildcards iniciais (<code>%text</code>), impedindo o uso de índices e causando varreduras completas.
+                </p>
+              </div>
+            </div>
             </div>
           </div>
 
           <!-- Performance Category -->
           <div id="performance-opportunities" class="insight-category">
-            <h3 class="category-title">🚀 Performance Optimization Opportunities</h3>
+            <h3 class="category-title" onclick="toggleCategory('performance-opportunities')">🚀 Oportunidades de Otimização de Performance</h3>
+            <div class="insight-category-content" id="performance-opportunities-content">
             
             <div class="insight-item">
-              <h4 class="insight-title">Large Payload Streaming</h4>
-              <p class="insight-description">
-                <span class="highlight-number">250 queries</span> return <span class="highlight-number">100,000+ items</span>, with an overall average payload of <span class="highlight-number">15 MB+</span> and <span class="highlight-number">40%</span> of query time dedicated to streaming data to the client.
-              </p>
-              <div class="learn-more-section">
-                <div class="learn-more-item">
-                  <span class="learn-more-icon">💡</span>
-                  Consider implementing pagination for large result sets <a href="#" class="insight-link">Learn more</a>
+              <h4 class="insight-title" onclick="toggleInsight('large-payload-streaming')">Streaming de Payload Grande<span class="live-badge">Ao Vivo</span></h4>
+              <div class="insight-content" id="large-payload-streaming-content">
+                <p class="insight-description">
+                  <span class="highlight-number" id="large-payload-count">0 consultas</span> com tamanho médio: <span class="highlight-number" id="avg-payload-size">0MB</span> com <span class="highlight-number" id="avg-stream-ratio">0%</span> do tempo da consulta foi gasto transmitindo dados para a aplicação.
+                </p>
+                <div class="learn-more-section">
+                  <div class="learn-more-item">
+                    <span class="learn-more-icon">💡</span>
+                    Considere implementar paginação para conjuntos de resultados grandes <a href="https://cb.fuj.io/analysis_hub.html#practicalAnálise" class="insight-link">Saiba mais</a>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div class="insight-item">
-              <h4 class="insight-title">Timeout-Prone Queries</h4>
-              <p class="insight-description">
-                <span class="highlight-number">43 queries</span> are consistently approaching timeout thresholds, with <span class="highlight-number">12 queries</span> actually timing out in the analyzed period.
-              </p>
+              <h4 class="insight-title" onclick="toggleInsight('large-result-set-queries')">Consultas com Conjunto de Resultados Grandes<span class="live-badge">Ao Vivo</span></h4>
+              <div class="insight-content" id="large-result-set-queries-content">
+                <p class="insight-description">
+                  <span class="highlight-number" id="large-results-count">0 consultas</span> return result sets com avg size of <span class="highlight-number" id="avg-large-result-size">0MB</span>, o que pode consumir memória significativa e recursos de rede.
+                </p>
+                <div class="learn-more-section">
+                  <div class="learn-more-item">
+                    <span class="learn-more-icon">💡</span>
+                    Conjuntos de resultados grandes podem impactar a performance e uso de recursos <a href="https://cb.fuj.io/analysis_hub.html#practicalAnálise" class="insight-link">Saiba mais</a>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="insight-item">
-              <h4 class="insight-title">Concurrent Query Conflicts</h4>
-              <p class="insight-description">
-                <span class="highlight-number">178 queries</span> show evidence of resource contention, with execution times varying by more than <span class="highlight-number">300%</span> during peak hours.
-              </p>
-              <div class="learn-more-section">
-                <div class="learn-more-item">
-                  <span class="learn-more-icon">💡</span>
-                  Review query scheduling and resource allocation <a href="#" class="insight-link">Learn more</a>
+              <h4 class="insight-title" onclick="toggleInsight('timeout-prone-queries')">Consultas Propensas a Timeout<span class="dev-badge">Desenvolvimento</span></h4>
+              <div class="insight-content" id="timeout-prone-queries-content">
+                <p class="insight-description">
+                  <span class="highlight-number">0 consultas</span> are consistently approaching timeout thresholds, com <span class="highlight-number">0 consultas</span> realmente expirando no período analisado.
+                </p>
+              </div>
+            </div>
+
+            <div class="insight-item">
+              <h4 class="insight-title" onclick="toggleInsight('concurrent-query-conflicts')">Conflitos de Consultas Concorrentes<span class="dev-badge">Desenvolvimento</span></h4>
+              <div class="insight-content" id="concurrent-query-conflicts-content">
+                <p class="insight-description">
+                  <span class="highlight-number">0 consultas</span> show evidence of resource contention, com execution times varying by more than <span class="highlight-number">0%</span> durante as horas de pico.
+                </p>
+                <div class="learn-more-section">
+                  <div class="learn-more-item">
+                    <span class="learn-more-icon">💡</span>
+                    Revise o agendamento de consultas e alocação de recursos <a href="https://cb.fuj.io/analysis_hub.html#elapsedTime" class="insight-link">Saiba mais</a>
+                  </div>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Timeline Tab Content -->
+      <!-- Linha do Tempo Tab Content -->
       <div id="timeline">
         <div class="margin-bottom-10">
           <button id="reset-zoom-btn" onclick="resetTimelineZoom()" class="cursor-pointer border-none border-radius-3 btn-gray">
-            Reset Zoom
+            Redefinir Zoom
           </button>
           <div class="margin-left-20" style="display: inline-block; background: #f8f9fa; padding: 6px 10px; border-radius: 4px; border: 1px solid #dee2e6;">
             <label style="font-weight: bold; margin-right: 8px; color: #495057;">Escala do Eixo Y:</label>
@@ -736,27 +874,29 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 value="logarithmic"
                 onchange="changeYAxisScale()"
               />
-              Logarithmic</label
+              Logarítmico</label
             >
           </div>
           <span class="margin-left-30">
             <label style="font-weight: bold; margin-right: 8px; color: #495057;">Agrupamento de Tempo:</label>
             <select id="time-grouping-select" onchange="changeTimeGrouping()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px;">
-              <option value="optimizer">By Optimizer (...)</option>
+              <option value="optimizer">Por Otimizador (...)</option>
+              <option value="day">By Day</option>
               <option value="hour">Por Hora</option>
+              <option value="5min">By 5 Minutes</option>
               <option value="minute">Por Minuto</option>
               <option value="second">Por Segundo</option>
             </select>
           </span>
           <span class="color-666 font-size-12 margin-left-20">
-            Drag box to zoom area
+            Arraste caixa para ampliar área
           </span>
           <button
             id="use-time-range-btn"
             onclick="useCurrentTimeRange()"
             class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray"
           >
-            Use Charts Current X-Axis Date Range
+            Usar Intervalo de Datas do Eixo X dos Gráficos Atuais
           </button>
         </div>
         <div class="display-flex gap-20 margin-bottom-20">
@@ -796,7 +936,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         </div>
       </div>
 
-      <!-- Analysis Tab Content -->
+      <!-- Análise Tab Content -->
       <div id="analysis">
         <!--
         <div id="charts-placeholder">
@@ -805,7 +945,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         </div>
       -->
         <div id="analysis-table-section">
-          <!-- Search Controls for Analysis Table -->
+          <!-- Search Controls for Análise Table -->
           <div
             id="analysis-search-controls"
             class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd"
@@ -841,7 +981,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 id="analysis-clear-search"
                 class="cursor-pointer border-none border-radius-3 btn-gray"
               >
-                Clear All
+                Limpar Tudo
               </button>
               <div
                 id="analysis-search-results-info"
@@ -858,7 +998,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         </div>
       </div>
 
-      <!-- Every Query Tab Content -->
+      <!-- Cada Consulta Tab Content -->
       <div id="every-query">
         <div id="flow-diagram-section">
           <div id="flow-diagram"></div>
@@ -896,7 +1036,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 id="clear-search"
                 class="cursor-pointer border-none border-radius-3 btn-gray"
               >
-                Clear All
+                Limpar Tudo
               </button>
               <div id="search-results-info" class="color-666 font-bold"></div>
             </div>
@@ -910,7 +1050,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         </div>
       </div>
 
-      <!-- Index/Query Flow Tab Content -->
+      <!-- Fluxo de Índice/Consulta Tab Content -->
       <div id="index-query-flow">
         <div
           class="height-100 position-relative background-f8 border-radius-8 overflow-hidden"
@@ -921,10 +1061,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             class="position-relative z-index-3 background-white padding-10-20 border-bottom display-flex justify-space-between align-center"
           >
             <div class="font-bold color-333">
-              Indexes Used: <span id="index-count">0</span>
+              Índices Utilizados: <span id="index-count">0</span>
             </div>
             <div class="font-bold color-333">
-              Queries Executed: <span id="query-count">0</span>
+              Consultas Executadas: <span id="query-count">0</span>
             </div>
           </div>
           <div
@@ -943,7 +1083,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         </div>
       </div>
 
-      <!-- Indexes Tab Content -->
+      <!-- Índices Tab Content -->
       <div id="indexes">
         <!-- Filter Controls -->
         <div class="margin-bottom-20 padding-15 background-f8 border-radius-6">
@@ -959,7 +1099,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               <input
                 type="text"
                 id="indexSearch"
-                placeholder="Buscar índices..."
+                placeholder="Search indexes..."
                 class="width-90 padding-8 border-radius-4 font-size-14"
                 style="border: 1px solid #ccc"
               />
@@ -1004,7 +1144,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             </div>
             <div>
               <label for="sortBy" class="margin-bottom-5 font-bold-block"
-                >Sort By:</label
+                >Ordenar Por:</label
               >
               <select
                 id="sortBy"
@@ -1039,14 +1179,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             "
           >
             <div>
-              <strong>Total Indexes:</strong> <span id="stat-indexes">0</span>
+              <strong>Total de Índices:</strong> <span id="stat-indexes">0</span>
             </div>
             <div>
               <strong>Buckets:</strong> <span id="stat-buckets">0</span>
             </div>
-            <div><strong>Scopes:</strong> <span id="stat-scopes">0</span></div>
+            <div><strong>Escopos:</strong> <span id="stat-scopes">0</span></div>
             <div>
-              <strong>Collections:</strong> <span id="stat-collections">0</span>
+              <strong>Coleções:</strong> <span id="stat-collections">0</span>
             </div>
           </div>
           <div
@@ -1059,7 +1199,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           >
             <div style="display: flex; align-items: center; gap: 8px">
               <span
-                ><strong>Primary Indexes:</strong>
+                ><strong>Índices Primários:</strong>
                 <span id="stat-primary">0</span></span
               >
               <label
@@ -1071,12 +1211,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 "
               >
                 <input type="checkbox" id="filter-primary" style="margin: 0" />
-                Primary Only
+                Apenas Primários
               </label>
             </div>
             <div style="display: flex; align-items: center; gap: 8px">
               <span
-                ><strong>Used/Total Indexes:</strong>
+                ><strong>Usado/Total de Índices:</strong>
                 <span id="stat-used-total">0/0</span></span
               >
               <label
@@ -1088,7 +1228,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 "
               >
                 <input type="checkbox" id="filter-used" style="margin: 0" />
-                Used Only
+                Apenas Usados
               </label>
             </div>
           </div>
@@ -1102,7 +1242,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           >
             <div style="display: flex; align-items: center; gap: 8px">
               <span
-                ><strong>Without/With Replica:</strong>
+                ><strong>Sem/Com Réplica:</strong>
                 <span id="stat-replica-info">0/0</span></span
               >
               <label
@@ -1118,12 +1258,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                   id="filter-no-replica"
                   style="margin: 0"
                 />
-                No Replicas Only
+                Apenas Sem Réplicas
               </label>
             </div>
             <div style="display: flex; align-items: center; gap: 8px">
               <span
-                ><strong>Never Scanned Indexes:</strong>
+                ><strong>Índices Nunca Verificados:</strong>
                 <span id="stat-never-scanned">0</span></span
               >
               <label
@@ -1139,7 +1279,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                   id="filter-never-scanned"
                   style="margin: 0"
                 />
-                Never Scanned Only
+                Apenas Nunca Verificados
               </label>
             </div>
           </div>
@@ -1169,7 +1309,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                   id="filter-exclude-mobile"
                   style="margin: 0"
                 />
-                Exclude Mobile Indexes
+                Excluir Índices Móveis
               </label>
             </div>
             <div></div>
@@ -1189,7 +1329,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         >
           <div class="text-align-center" style="margin-top: 30px">
             <h4 style="color: #495057; margin-bottom: 20px">
-              No Index Data Loaded
+              Não Index Data Loaded
             </h4>
             <p class="color-666" style="margin-bottom: 20px">
               To analyze indexes, run this query in your Couchbase Query
@@ -1200,14 +1340,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 class="btn-standard sql-copy-btn"
                 onclick="copyIndexQuery(event)"
               >
-                Copy Query
+                Copiar Query
               </button>
               <pre>
                           SELECT 
                             s.name,
                             s.id,
-                            s.metadata,
-                            s.state,
+                            s.metadados,
+                            s.estado,
                             s.num_replica,
                             CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
                             FROM system:indexes AS s
@@ -1223,9 +1363,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             </div>
             <p style="color: #666; font-size: 13px; margin-top: 15px">
               <strong>Steps:</strong><br />
-              1. Copy the query above<br />
+              1. Copiar the query above<br />
               2. Run it in Couchbase Query Workbench<br />
-              3. Copy the JSON results<br />
+              3. Copiar the JSON results<br />
               4. Paste into the second textarea ,on the right, at the top<br />
               5. Click "Analisar JSON" again
             </p>
@@ -1386,7 +1526,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           }
 
           // Validate required fields
-          const requiredFields = ["requestTime", "declaração"];
+          const requiredFields = ["requestTime", "statement"];
           for (const field of requiredFields) {
             if (!(field in requestData)) {
               console.warn(`Missing required field: ${field}`);
@@ -1493,8 +1633,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const sqlFilter = document.getElementById("sql-statement-filter");
         const sqlFilterText = sqlFilter ? sqlFilter.value.trim().toLowerCase() : "";
         
-        console.log("🔍 SQL Filter text:", sqlFilterText);
-        console.log("📝 Original requests:", requests.length);
+
         
         const filtered = requests.filter((request) => {
           // Apply system query exclusion first
@@ -1513,7 +1652,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           return true;
         });
         
-        console.log("✅ Filtered requests:", filtered.length);
+
         return filtered;
       }
 
@@ -1694,11 +1833,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             border: "#fd7e14" 
           };
         } else {
-          // 90-100%: Light red to bright red
+          // 90-100%: Light red to darker red (less bright for readability)
           const intensity = (percent - 90) / 10; // 0 to 1
-          const red = Math.floor(255);
-          const green = Math.floor(205 - (205 * intensity)); // 205 to 0
-          const blue = Math.floor(210 - (210 * intensity)); // 210 to 0
+          const red = Math.floor(220 - (20 * intensity)); // 220 to 200 (less bright)
+          const green = Math.floor(180 - (120 * intensity)); // 180 to 60
+          const blue = Math.floor(180 - (120 * intensity)); // 180 to 60
           return { 
             bg: `rgb(${red}, ${green}, ${blue})`, 
             border: "#dc3545" 
@@ -1812,6 +1951,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         });
         return maxKernTime;
       }
+      
+
 
       // Calculate the total memory usage from all operators in the plan
       function calculateTotalMemoryUsage(plan) {
@@ -1862,7 +2003,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         let html = `<h3>Operator: ${operatorType}</h3>`;
 
         // Add copy button
-        html += `<button class="btn-standard" onclick="copyOperatorStats(this)">Copiar Estatísticas</button>`;
+        html += `<button class="btn-standard" onclick="copyOperatorStats(this)">Copy Stats</button>`;
 
         // Show index name for specific operators
         if (
@@ -1910,9 +2051,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           navigator.clipboard
             .writeText(text)
             .then(() => {
-              button.textContent = "Copiado!";
+              button.textContent = "Copied!";
               setTimeout(() => {
-                button.textContent = "Copiar Estatísticas";
+                button.textContent = "Copy Stats";
               }, 2000);
             })
             .catch((err) => {
@@ -2201,7 +2342,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             /'/g,
             "\\'"
           )}', event)" 
-                        class="btn-standard" style="background: #4CAF50;">Copiar Tudo</button>`;
+                        class="btn-standard" style="background: #4CAF50;">Copy All</button>`;
           html += "</div>";
           html += '<div style="display: flex; flex-wrap: wrap; gap: 10px;">';
           indexesAndKeys.indexes.forEach((index) => {
@@ -2227,7 +2368,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               /'/g,
               "\\'"
             )}', event)" 
-                            class="btn-standard" style="background: #ff9800;">Copiar Tudo</button>`;
+                            class="btn-standard" style="background: #ff9800;">Copy All</button>`;
             html += "</div>";
 
             const maxKeysToShow = 15;
@@ -2660,21 +2801,21 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           column === "Primary Scan Used" ||
           cleanColumn === "Primary Scan Used"
         ) {
-          return value === "Sim" ? 1 : 0;
+          return value === "Yes" ? 1 : 0;
         }
         if (column === "statementType" || cleanColumn === "statement Type") {
           return String(value || "").toLowerCase();
         }
-        if (column === "estado") {
+        if (column === "state") {
           // Sort fatal states first, then by alphabetical order
           if (value === "fatal") return "aaa_fatal";
           if (value === "completed") return "bbb_completed";
           return String(value || "zzz_unknown").toLowerCase();
         }
-        if (column === "declaração") {
+        if (column === "statement") {
           return String(value || "").toLowerCase();
         }
-        if (column === "usuários") {
+        if (column === "users") {
           return String(value || "").toLowerCase();
         }
 
@@ -2779,35 +2920,22 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Map display column names to data field names
       function getDataFieldName(displayColumn) {
         // Map display names back to data field names (same logic as in populateEveryQueryTable)
-        if (displayColumn === "tempo de " +
-"solicitação") return "requestTime";
-        else if (displayColumn === "Tipo de " +
-"Declaração") return "statementType";
-        else if (displayColumn === "Tempo " +
-"Decorrido") return "elapsedTime";
-        else if (displayColumn === "Tempo de " +
-"Serviço") return "serviceTime";
-        else if (displayColumn === "Tempo de " +
-"Kernel") return "kernTime";
-        else if (displayColumn === "% Tempo " +
-"Kernel") return "KernTime %";
-        else if (displayColumn === "Tempo de " +
-"CPU") return "cpuTime";
-        else if (displayColumn === "memória " +
-"(MB)") return "memory (MB)";
-        else if (displayColumn === "Contagem de " +
-"Resultados") return "resultCount";
-        else if (displayColumn === "Tamanho de " +
-"Resultados") return "resultSize";
-        else if (displayColumn === "Itens da " +
-"Verificação de Índice")
+        if (displayColumn === "request\nTime") return "requestTime";
+        else if (displayColumn === "statement\nType") return "statementType";
+        else if (displayColumn === "elapsed\nTime") return "elapsedTime";
+        else if (displayColumn === "service\nTime") return "serviceTime";
+        else if (displayColumn === "kern\nTime") return "kernTime";
+        else if (displayColumn === "KernTime\n%") return "KernTime %";
+        else if (displayColumn === "cpu\nTime") return "cpuTime";
+        else if (displayColumn === "memory\n(MB)") return "memory (MB)";
+        else if (displayColumn === "result\nCount") return "resultCount";
+        else if (displayColumn === "result\nSize") return "resultSize";
+        else if (displayColumn === "Items from\nIndex Scan")
           return "Items from Index Scan";
-        else if (displayColumn === "Contagem de " +
-"Recuperação") return "Doc Fetch Count";
-        else if (displayColumn === "Verificação Primária " +
-"Utilizada")
+        else if (displayColumn === "Doc Fetch\nCount") return "Doc Fetch Count";
+        else if (displayColumn === "Primary Scan\nUsed")
           return "Primary Scan Used";
-        else return displayColumn; // For columns without newlines like "#", "estado", "declaração", "usuários"
+        else return displayColumn; // For columns without newlines like "#", "state", "statement", "users"
       }
 
       // Handle column sort click
@@ -3110,37 +3238,23 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
         const columns = [
           "#",
-          "tempo de " +
-"solicitação",
-          "Tipo de " +
-"Declaração",
-          "Tempo " +
-"Decorrido",
-          "Tempo de " +
-"Serviço",
-          "Tempo de " +
-"Kernel",
-          "% Tempo " +
-"Kernel",
-          "Tempo de " +
-"CPU",
-          "memória " +
-"(MB)",
-          "Contagem de " +
-"Resultados",
-          "Tamanho de " +
-"Resultados",
-          "Contagem de " +
-"Recuperação",
-          "Itens da " +
-"Verificação de Índice",
-          "Verificação Primária " +
-"Utilizada",
-          "estado",
-          "declaração",
-          "Consistência " +
-"de Verificação",
-          "usuários",
+          "request\nTime",
+          "statement\nType",
+          "elapsed\nTime",
+          "service\nTime",
+          "kern\nTime",
+          "KernTime\n%",
+          "cpu\nTime",
+          "memory\n(MB)",
+          "result\nCount",
+          "result\nSize",
+          "Doc Fetch\nCount",
+          "Items from\nIndex Scan",
+          "Primary Scan\nUsed",
+          "state",
+          "statement",
+          "Scan\nConsistency",
+          "users",
         ];
 
         const headerRow = document.createElement("tr");
@@ -3165,7 +3279,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             th.style.backgroundColor = "#f8f9fa";
           });
 
-          if (col === "declaração") {
+          if (col === "statement") {
             th.style.width = "300px";
             th.style.maxWidth = "300px";
           }
@@ -3215,13 +3329,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             "Items from Index Scan",
             "Doc Fetch Count",
             "Primary Scan Used",
-            "estado",
-            "declaração",
-            "usuários",
+            "state",
+            "statement",
+            "users",
           ].forEach((col) => {
             let value;
             if (col === "Primary Scan Used") {
-              value = request.usesPrimary ? "Sim" : "Não";
+              value = request.usesPrimary ? "Yes" : "No";
             } else if (col === "Items from Index Scan") {
               if (request.indexInfo) {
                 const stats = request.indexInfo.stats;
@@ -3307,37 +3421,23 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
         const columns = [
           "#",
-          "tempo de " +
-"solicitação",
-          "Tipo de " +
-"Declaração",
-          "Tempo " +
-"Decorrido",
-          "Tempo de " +
-"Serviço",
-          "Tempo de " +
-"Kernel",
-          "% Tempo " +
-"Kernel",
-          "Tempo de " +
-"CPU",
-          "memória " +
-"(MB)",
-          "Contagem de " +
-"Resultados",
-          "Tamanho de " +
-"Resultados",
-          "Contagem de " +
-"Recuperação",
-          "Itens da " +
-"Verificação de Índice",
-          "Verificação Primária " +
-"Utilizada",
-          "estado",
-          "declaração",
-          "Consistência " +
-"de Verificação",
-          "usuários",
+          "request\nTime",
+          "statement\nType",
+          "elapsed\nTime",
+          "service\nTime",
+          "kern\nTime",
+          "KernTime\n%",
+          "cpu\nTime",
+          "memory\n(MB)",
+          "result\nCount",
+          "result\nSize",
+          "Doc Fetch\nCount",
+          "Items from\nIndex Scan",
+          "Primary Scan\nUsed",
+          "state",
+          "statement",
+          "Scan\nConsistency",
+          "users",
         ];
 
         // Pagination: get only the current page data
@@ -3356,52 +3456,36 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             const td = document.createElement("td");
             // Map display names back to data field names
             let dataField;
-            if (col === "tempo de " +
-"solicitação") dataField = "requestTime";
-            else if (col === "Tipo de " +
-"Declaração") dataField = "statementType";
-            else if (col === "Tempo " +
-"Decorrido") dataField = "elapsedTime";
-            else if (col === "Tempo de " +
-"Serviço") dataField = "serviceTime";
-            else if (col === "Tempo de " +
-"Kernel") dataField = "kernTime";
-            else if (col === "% Tempo " +
-"Kernel") dataField = "KernTime %";
-            else if (col === "Tempo de " +
-"CPU") dataField = "cpuTime";
-            else if (col === "memória " +
-"(MB)") dataField = "memory (MB)";
-            else if (col === "Contagem de " +
-"Resultados") dataField = "resultCount";
-            else if (col === "Tamanho de " +
-"Resultados") dataField = "resultSize";
-            else if (col === "Itens da " +
-"Verificação de Índice")
+            if (col === "request\nTime") dataField = "requestTime";
+            else if (col === "statement\nType") dataField = "statementType";
+            else if (col === "elapsed\nTime") dataField = "elapsedTime";
+            else if (col === "service\nTime") dataField = "serviceTime";
+            else if (col === "kern\nTime") dataField = "kernTime";
+            else if (col === "KernTime\n%") dataField = "KernTime %";
+            else if (col === "cpu\nTime") dataField = "cpuTime";
+            else if (col === "memory\n(MB)") dataField = "memory (MB)";
+            else if (col === "result\nCount") dataField = "resultCount";
+            else if (col === "result\nSize") dataField = "resultSize";
+            else if (col === "Items from\nIndex Scan")
               dataField = "Items from Index Scan";
-            else if (col === "Contagem de " +
-"Recuperação") dataField = "Doc Fetch Count";
-            else if (col === "Verificação Primária " +
-"Utilizada")
+            else if (col === "Doc Fetch\nCount") dataField = "Doc Fetch Count";
+            else if (col === "Primary Scan\nUsed")
               dataField = "Primary Scan Used";
-            else if (col === "Consistência " +
-"de Verificação") dataField = "scanConsistency";
+            else if (col === "Scan\nConsistency") dataField = "scanConsistency";
             else dataField = col;
 
             // Use globalIndex for row number to maintain correct numbering across pages
             let value;
             if (col === "#") {
               value = globalIndex + 1;
-            } else if (col === "Consistência " +
-            "de Verificação") {
+            } else if (col === "Scan\nConsistency") {
               // scanConsistency is nested under request object
               value = rowData.request && rowData.request.scanConsistency ? rowData.request.scanConsistency : "N/A";
             } else {
               value = rowData[dataField];
             }
 
-            if (col === "tempo de " +
-            "solicitação") {
+            if (col === "request\nTime") {
               // Set fixed width for requestTime column to handle long ISO-8601 timestamps
               td.style.width = "120px";
               td.style.maxWidth = "120px";
@@ -3409,7 +3493,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               td.style.wordWrap = "break-word";
               td.style.fontSize = "11px";
               td.textContent = value || "";
-            } else if (col === "declaração") {
+            } else if (col === "statement") {
               // Set fixed width for statement column
               td.style.width = "300px";
               td.style.maxWidth = "300px";
@@ -3431,17 +3515,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <span>${truncated}...</span>
                     <br>
                     <button onclick="toggleStatement('${statementId}', true)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Mostrar Mais</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Show More</button>
                     <button onclick="copyStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
+                            class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                   <div id="${statementId}-full" style="display: none;">
                     <span>${statement}</span>
                     <br>
                     <button onclick="toggleStatement('${statementId}', false)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Ocultar</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Hide</button>
                     <button onclick="copyStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
+                            class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                 `;
               } else {
@@ -3451,16 +3535,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <span>${statement}</span>
                     <br>
                     <button onclick="copyStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
+                            class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                 `;
               }
             } else if (
-              ["Contagem de " +
-              "Resultados", "Tamanho de " +
-              "Resultados", "Contagem de " +
-              "Recuperação", "Itens da " +
-              "Verificação de Índice"].includes(col)
+              ["result\nCount", "result\nSize", "Doc Fetch\nCount", "Items from\nIndex Scan"].includes(col)
             ) {
               // Format numeric columns with commas
               const numValue = Number(value);
@@ -3470,14 +3550,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             }
 
             if (
-              col === "Verificação Primária " +
-              "Utilizada" &&
-              (value === "Sim" || value === "True" || value === true)
+              col === "Primary Scan\nUsed" &&
+              (value === "Yes" || value === "True" || value === true)
             ) {
               td.classList.add("primary-scan-yes");
             }
 
-            if (col === "estado" && value === "fatal") {
+            if (col === "state" && value === "fatal") {
               td.classList.add("fatal-state");
             }
             row.appendChild(td);
@@ -3536,7 +3615,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             // Show brief feedback
             const button = event.target;
             const originalText = button.textContent;
-            button.textContent = "copiado!";
+            button.textContent = "copied!";
             button.style.backgroundColor = "#4CAF50";
             setTimeout(() => {
               button.textContent = originalText;
@@ -3580,7 +3659,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             // Show brief feedback
             const button = event.target;
             const originalText = button.textContent;
-            button.textContent = "copiado!";
+            button.textContent = "copied!";
             button.style.backgroundColor = "#4CAF50";
             setTimeout(() => {
               button.textContent = originalText;
@@ -3638,6 +3717,27 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           user_query_counts[user] = users_agg.filter((v) => v === user).length;
         });
 
+        // Calculate status counts
+        const status_counts = {
+          completed: 0,
+          fatal: 0,
+          cancelled: 0,
+          other: 0
+        };
+        
+        groupedRequests.forEach((r) => {
+          const state = r.state ? r.state.toLowerCase() : 'completed';
+          if (state === 'completed') {
+            status_counts.completed++;
+          } else if (state === 'fatal') {
+            status_counts.fatal++;
+          } else if (state === 'cancelled') {
+            status_counts.cancelled++;
+          } else {
+            status_counts.other++;
+          }
+        });
+
         return {
           normalized_statement,
           user_query_counts,
@@ -3649,6 +3749,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           avg_fetch: Math.round(avg_fetch),
           avg_primaryScan: Math.round(avg_primaryScan),
           avg_indexScan: Math.round(avg_indexScan),
+          status_counts,
         };
       }
 
@@ -3692,6 +3793,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           "avg_fetch",
           "avg_primaryScan",
           "avg_indexScan",
+          "status_counts",
           "normalized_statement",
           "user_query_counts",
         ];
@@ -3705,6 +3807,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             .replace("in seconds", " (mm:ss.sss)");
           if (col === "user_query_counts") {
             displayName = "user: (count)";
+          }
+          if (col === "status_counts") {
+            displayName = "state\nfatal";
           }
           th.textContent = displayName;
           th.style.textAlign = "center";
@@ -3722,6 +3827,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               value = Object.entries(group.user_query_counts)
                 .map(([user, count]) => `${user}: (${count})`)
                 .join(", ");
+            } else if (col === "status_counts") {
+              const counts = group.status_counts;
+              value = counts.fatal;
             } else if (col === "total_count") {
               value = group.total_count;
             } else if (
@@ -3799,6 +3907,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           "avg_fetch",
           "avg_primaryScan",
           "avg_indexScan",
+          "status_counts",
           "normalized_statement",
           "user_query_counts",
         ];
@@ -3826,17 +3935,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <span>${truncated}...</span>
                     <br>
                     <button onclick="toggleAnalysisStatement('${statementId}', true)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Mostrar Mais</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Show More</button>
                     <button onclick="copyAnalysisStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
+                            class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                   <div id="${statementId}-full" style="display: none;">
                     <span>${statement}</span>
                     <br>
                     <button onclick="toggleAnalysisStatement('${statementId}', false)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Ocultar</button>
+                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Hide</button>
                     <button onclick="copyAnalysisStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
+                            class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                 `;
               } else {
@@ -3846,7 +3955,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                     <span>${statement}</span>
                     <br>
                     <button onclick="copyAnalysisStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copiar</button>
+                            class="btn-standard" style="margin-top: 5px;">Copy</button>
                   </div>
                 `;
               }
@@ -3854,6 +3963,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               // Bold the counts in parentheses
               const formattedValue = value.replace(/\((\d+)\)/g, "<b>($1)</b>");
               td.innerHTML = formattedValue;
+            } else if (col === "status_counts") {
+              // Show fatal count, make it bold and red if > 0
+              if (value > 0) {
+                td.innerHTML = `<span class="fatal-count">${value}</span>`;
+              } else {
+                td.textContent = value;
+              }
             } else if (col === "total_count") {
               // Format total_count with commas
               const numValue = Number(value);
@@ -3901,6 +4017,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         switch (actualUnit) {
           case "second":
             date.setMilliseconds(0);
+            break;
+          case "5min":
+            const minutes5 = Math.floor(date.getMinutes() / 5) * 5;
+            date.setMinutes(minutes5, 0, 0);
             break;
           case "minute":
             date.setSeconds(0, 0);
@@ -4357,7 +4477,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 order: 2,
               },
               {
-                label: "Varreduras de Índice Médias por Consulta",
+                label: "Avg Index Scans per Query",
                 data: avgIndexScanData,
                 type: "line",
                 backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
@@ -4376,7 +4496,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Linha do Tempo de Operações de Banco de Dados: Varreduras de Índice vs Recuperação de Documentos",
+                text: "Database Operations Timeline: Index Scans vs Document Fetches",
               },
               legend: {
                 display: true,
@@ -4499,7 +4619,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 time: getCurrentTimeConfig(requests),
                 title: {
                   display: true,
-                  text: "Tempo de Solicitação",
+                  text: "Request Time",
                 },
               },
               y: {
@@ -4516,7 +4636,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "right",
                 title: {
                   display: true,
-                  text: "Varreduras de Índice Médias por Consulta",
+                  text: "Avg Index Scans per Query",
                 },
                 beginAtZero: true,
                 grid: {
@@ -4648,7 +4768,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Linha do Tempo de Operações de Filtro: Análise de Eficiência (ENTRADA vs SAÍDA)",
+                text: "Filter Operations Timeline: Efficiency Analysis (IN vs OUT)",
               },
               legend: {
                 display: true,
@@ -4744,7 +4864,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 time: getCurrentTimeConfig(requests),
                 title: {
                   display: true,
-                  text: "Tempo de Solicitação",
+                  text: "Request Time",
                 },
               },
               y: {
@@ -5007,7 +5127,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Linha do Tempo de Desempenho de Consultas: % de KernTime do Tempo de Execução",
+                text: "Query Performance Timeline: KernTime % of ExecutionTime",
               },
               legend: {
                 display: true,
@@ -5099,14 +5219,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 time: getCurrentTimeConfig(requests),
                 title: {
                   display: true,
-                  text: "Tempo de Solicitação",
+                  text: "Request Time",
                 },
                 stacked: true,
               },
               y: {
                 title: {
                   display: true,
-                  text: "Contagem de Consultas",
+                  text: "Query Count",
                 },
                 stacked: true,
                 beginAtZero: true,
@@ -5163,7 +5283,20 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             timeGroups[key] = {
               timestamp: timeKey,
               statementTypes: {},
+              fatalCount: 0,
             };
+          }
+
+          // Track fatal queries separately
+          if (request.state && request.state.toLowerCase() === 'fatal') {
+            timeGroups[key].fatalCount++;
+            if (!timeGroups[key].fatalElapsedTimes) {
+              timeGroups[key].fatalElapsedTimes = [];
+            }
+            // Get duration in milliseconds and convert to seconds
+            const elapsedTimeMs = parseTime(request.elapsedTime);
+            const durationSeconds = elapsedTimeMs / 1000;
+            timeGroups[key].fatalElapsedTimes.push(durationSeconds);
           }
 
           // Use consistent statement type parsing
@@ -5194,11 +5327,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           });
         });
 
-        // Console log all statement types found
-        console.log(
-          "Statement types found:",
-          Array.from(allStatementTypes).sort()
-        );
+        // Log all statement types found (removed for production)
 
         // Predefined colors for all statement types found
         const colorMap = {
@@ -5280,6 +5409,46 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           };
         });
 
+        // Add fatal queries dataset for right Y-axis
+        const fatalData = [];
+        let maxFatalCount = 0;
+        
+        Object.values(timeGroups).forEach((group) => {
+          if (group.fatalCount > 0) {
+            maxFatalCount = Math.max(maxFatalCount, group.fatalCount);
+            // Calculate average elapsed time for fatal queries in this time period
+            const avgElapsedTime = group.fatalElapsedTimes && group.fatalElapsedTimes.length > 0
+              ? group.fatalElapsedTimes.reduce((sum, time) => sum + time, 0) / group.fatalElapsedTimes.length
+              : 0;
+            fatalData.push({
+              x: group.timestamp,
+              y: group.fatalCount,
+              count: group.fatalCount,
+              avgElapsedTime: avgElapsedTime,
+            });
+          }
+        });
+
+        if (fatalData.length > 0) {
+          datasets.push({
+            label: `Fatal Queries (${fatalData.reduce((sum, point) => sum + point.count, 0)} total)`,
+            data: fatalData.map(point => ({
+              x: point.x,
+              y: point.y,
+              count: point.count,
+              avgElapsedTime: point.avgElapsedTime
+            })),
+            type: 'scatter', // Use scatter instead of bubble for different point style
+            backgroundColor: '#FF0000', // Bright red
+            borderColor: '#FF0000', // Red outline to match fatal styling
+            borderWidth: 3,
+            pointRadius: fatalData.map(point => Math.min(20, Math.max(8, point.count * 3))), // Larger and more variable sizing
+            pointStyle: 'crossRot', // X shape instead of circle
+            yAxisID: 'y1', // Use right Y-axis
+            showLine: false, // Don't connect points with lines
+          });
+        }
+
         // Create bubble chart
         window.queryTypesChart = new Chart(ctx, {
           type: "bubble",
@@ -5301,14 +5470,26 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 callbacks: {
                   label: function (context) {
                     const dataPoint = context.raw;
-                    const statementType = context.dataset.label.split(" (")[0];
-                    return [
-                      `${statementType}`,
-                      `Count: ${dataPoint.count}`,
-                      `Avg Duration: ${dataPoint.y.toFixed(3)}s`,
-                      `Min Duration: ${dataPoint.minDuration.toFixed(3)}s`,
-                      `Max Duration: ${dataPoint.maxDuration.toFixed(3)}s`,
-                    ];
+                    const datasetLabel = context.dataset.label;
+                    const statementType = datasetLabel.split(" (")[0];
+                    
+                    // Handle fatal queries dataset differently
+                    if (statementType === "Fatal Queries") {
+                      return [
+                        `${statementType}`,
+                        `Fatal Count: ${dataPoint.count}`,
+                        `Avg Elapsed Time: ${dataPoint.avgElapsedTime.toFixed(3)}s`,
+                      ];
+                    } else {
+                      // Handle regular statement type datasets
+                      return [
+                        `${statementType}`,
+                        `Count: ${dataPoint.count}`,
+                        `Avg Duration: ${dataPoint.y.toFixed(3)}s`,
+                        `Min Duration: ${dataPoint.minDuration.toFixed(3)}s`,
+                        `Max Duration: ${dataPoint.maxDuration.toFixed(3)}s`,
+                      ];
+                    }
                   },
                 },
               },
@@ -5408,7 +5589,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 time: getCurrentTimeConfig(requests),
                 title: {
                   display: true,
-                  text: "Tempo de Solicitação",
+                  text: "Request Time",
                 },
               },
               y: {
@@ -5417,6 +5598,19 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                   text: "Average Duration (seconds)",
                 },
                 beginAtZero: true,
+                position: "left",
+              },
+              y1: {
+                type: "linear",
+                position: "right",
+                title: {
+                  display: true,
+                  text: "Fatal Query Count",
+                },
+                beginAtZero: true,
+                grid: {
+                  drawOnChartArea: false,
+                },
               },
             },
             interaction: {
@@ -5446,10 +5640,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         // Group requests by time and duration buckets
         const timeGroups = {};
 
-        console.log(
-          "Duration buckets chart - processing requests:",
-          requests.length
-        );
+
 
         requests.forEach((request) => {
           const requestDate = new Date(request.requestTime);
@@ -5760,7 +5951,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 },
                 title: {
                   display: true,
-                  text: "Tempo de Solicitação",
+                  text: "Request Time",
                 },
               },
               y: {
@@ -5870,7 +6061,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 order: 2,
               },
               {
-                label: "Média por Consulta (MB)",
+                label: "Avg per Query (MB)",
                 data: avgMemoryData,
                 type: "line",
                 backgroundColor: "#fd7e14", // Orange
@@ -5888,7 +6079,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Uso Total de Memória do Processo de Consultas",
+                text: "Total Query Process Memory Usage",
               },
               legend: {
                 display: true,
@@ -6004,7 +6195,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 time: getCurrentTimeConfig(requests),
                 title: {
                   display: true,
-                  text: "Tempo de Solicitação",
+                  text: "Request Time",
                 },
               },
               y: {
@@ -6021,7 +6212,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "right",
                 title: {
                   display: true,
-                  text: "Média por Consulta (MB)",
+                  text: "Avg per Query (MB)",
                 },
                 beginAtZero: true,
                 grid: {
@@ -6092,7 +6283,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             labels: labels,
             datasets: [
               {
-                label: "Contagem Total de Resultados",
+                label: "Total Result Count",
                 data: resultCountData,
                 backgroundColor: "rgba(144, 238, 144, 0.8)", // Light green
                 borderColor: "rgba(144, 238, 144, 1)",
@@ -6101,7 +6292,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 order: 2,
               },
               {
-                label: "Contagem Média de Resultados por Consulta",
+                label: "Avg Result Count per Query",
                 data: avgResultCountData,
                 type: "line",
                 backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
@@ -6120,7 +6311,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Análise de Contagem de Resultados: Total vs Média por Consulta",
+                text: "Result Count Analysis: Total vs Average per Query",
               },
               legend: {
                 display: true,
@@ -6173,7 +6364,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 time: getCurrentTimeConfig(requests),
                 title: {
                   display: true,
-                  text: "Tempo de Solicitação",
+                  text: "Request Time",
                 },
               },
               y: {
@@ -6181,7 +6372,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "left",
                 title: {
                   display: true,
-                  text: "Contagem Total de Resultados",
+                  text: "Total Result Count",
                 },
                 beginAtZero: true,
               },
@@ -6261,7 +6452,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             labels: labels,
             datasets: [
               {
-                label: "Tamanho Total de Resultados (MB)",
+                label: "Total Result Size (MB)",
                 data: resultSizeData,
                 backgroundColor: "rgba(0, 100, 0, 0.8)", // Dark green
                 borderColor: "rgba(0, 100, 0, 1)",
@@ -6270,7 +6461,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 order: 2,
               },
               {
-                label: "Tamanho Médio de Resultados por Consulta (MB)",
+                label: "Avg Result Size per Query (MB)",
                 data: avgResultSizeData,
                 type: "line",
                 backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
@@ -6289,7 +6480,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             plugins: {
               title: {
                 display: true,
-                text: "Análise de Tamanho de Resultados: Total vs Média por Consulta",
+                text: "Result Size Analysis: Total vs Average per Query",
               },
               legend: {
                 display: true,
@@ -6342,7 +6533,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 time: getCurrentTimeConfig(requests),
                 title: {
                   display: true,
-                  text: "Tempo de Solicitação",
+                  text: "Request Time",
                 },
               },
               y: {
@@ -6350,7 +6541,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "left",
                 title: {
                   display: true,
-                  text: "Tamanho Total de Resultados (MB)",
+                  text: "Total Result Size (MB)",
                 },
                 beginAtZero: true,
               },
@@ -6359,7 +6550,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 position: "right",
                 title: {
                   display: true,
-                  text: "Média por Consulta (MB)",
+                  text: "Avg per Query (MB)",
                 },
                 beginAtZero: true,
                 grid: {
@@ -6700,10 +6891,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         generatePrimaryScanChart(requests);
         generateStateChart(requests);
         generateStatementTypeChart(requests);
+        generateScanConsistencyChart(requests);
         generateElapsedTimeChart(requests);
         generateQueryPatternChart(requests);
         generateUserCountTable(requests);
         generateIndexCountTable(requests);
+        updateInsights(requests);
       }
 
       // Check if a query uses primary index by analyzing the plan
@@ -7234,6 +7427,122 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         });
       }
 
+      // Scan Consistency Pie Chart
+      function generateScanConsistencyChart(requests) {
+        const consistencyCounts = {};
+
+        requests.forEach((request) => {
+          const consistency = request.scanConsistency || "unbounded";
+          consistencyCounts[consistency] = (consistencyCounts[consistency] || 0) + 1;
+        });
+
+        const total = Object.values(consistencyCounts).reduce(
+          (sum, count) => sum + count,
+          0
+        );
+        const labels = Object.keys(consistencyCounts);
+        const data = Object.values(consistencyCounts);
+        
+        // Specific colors for scan consistency types
+        const colors = labels.map(consistency => {
+          const lowerConsistency = consistency.toLowerCase();
+          switch (lowerConsistency) {
+            case "unbounded":
+              return "#007bff"; // Blue
+            case "scan_plus":
+              return "#28a745"; // Green
+            case "request_plus":
+              return "#fd7e14"; // Orange
+            default:
+              return "#6c757d"; // Gray for unknown
+          }
+        });
+
+        const ctx = document
+          .getElementById("scan-consistency-chart")
+          .getContext("2d");
+        if (window.scanConsistencyChart) {
+          window.scanConsistencyChart.destroy();
+        }
+
+        window.scanConsistencyChart = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                data: data,
+                backgroundColor: colors,
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  generateLabels: function (chart) {
+                    const data = chart.data;
+                    return data.labels.map((label, index) => ({
+                      text: label,
+                      fillStyle: data.datasets[0].backgroundColor[index],
+                      strokeStyle: data.datasets[0].backgroundColor[index],
+                      lineWidth: 1,
+                      hidden: false,
+                      index: index,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    const percent =
+                      total > 0
+                        ? ((context.parsed / total) * 100).toFixed(1)
+                        : 0;
+                    return (
+                      context.label +
+                      ": " +
+                      context.parsed +
+                      " (" +
+                      percent +
+                      "%)"
+                    );
+                  },
+                },
+              },
+            },
+          },
+          plugins: [
+            {
+              beforeDraw: function (chart) {
+                const ctx = chart.ctx;
+                ctx.save();
+                chart.data.datasets[0].data.forEach((value, index) => {
+                  const meta = chart.getDatasetMeta(0);
+                  const arc = meta.data[index];
+                  const percent =
+                    total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+
+                  if (value > 0 && percent >= 5) {
+                    ctx.fillStyle = "white";
+                    ctx.font = "bold 12px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(percent + "%", arc.x, arc.y);
+                  }
+                });
+                ctx.restore();
+              },
+            },
+          ],
+        });
+      }
+
       // Elapsed Time Distribution Bar Chart
       function generateElapsedTimeChart(requests) {
         const timeBuckets = {
@@ -7283,7 +7592,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             labels: Object.keys(timeBuckets),
             datasets: [
               {
-                label: "Contagem de Consultas",
+                label: "Query Count",
                 data: Object.values(timeBuckets),
                 backgroundColor: "#36a2eb",
                 borderColor: "#36a2eb",
@@ -7311,13 +7620,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 beginAtZero: true,
                 title: {
                   display: true,
-                  text: "Número de Consultas",
+                  text: "Number of Queries",
                 },
               },
               x: {
                 title: {
                   display: true,
-                  text: "Intervalo de Tempo Decorrido",
+                  text: "Elapsed Time Range",
                 },
               },
             },
@@ -7483,7 +7792,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             labels: Object.keys(patternCounts),
             datasets: [
               {
-                label: "Contagem de Consultas",
+                label: "Query Count",
                 data: Object.values(patternCounts),
                 backgroundColor: colors,
                 borderColor: colors,
@@ -7511,13 +7820,13 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 beginAtZero: true,
                 title: {
                   display: true,
-                  text: "Número de Consultas",
+                  text: "Number of Queries",
                 },
               },
               x: {
                 title: {
                   display: true,
-                  text: "Características do Padrão de Consulta",
+                  text: "Query Pattern Features",
                 },
                 ticks: {
                   maxRotation: 45,
@@ -7743,7 +8052,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             if (!indexData[resolvedName]) {
               indexData[resolvedName] = {
                 count: 0,
-                bucketScopeCollection: bucketScopeCollection || "desconhecido",
+                bucketScopeCollection: bucketScopeCollection || "unknown",
               };
             }
             indexData[resolvedName].count++;
@@ -7841,6 +8150,858 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         }
       }
 
+      // Update Insights tab with live data
+      function updateInsights(requests) {
+        // Reset metrics tracking
+        window.inefficientScanMetrics = [];
+        
+        // Count queries with no WHERE clauses
+        let noWhereCount = 0;
+        let slowUseKeysCount = 0;
+        let slowUseKeysTotalTime = 0;
+        let largeResultsCount = 0;
+        let largeResultsTotalMB = 0;
+        let inefficientLikeCount = 0;
+        let inefficientIndexScansCount = 0;
+        let highMemoryCount = 0;
+        let highMemoryTotalGB = 0;
+        let highKernelTimeQueriesCount = 0;
+        let totalCoreKernelRatio = 0;
+        let largePayloadStreamingCount = 0;
+        let largePayloadTotalResultSize = 0;
+        let largePayloadTotalStreamRatio = 0;
+        
+        // Configurable threshold for kernel time detection
+        const KERNEL_TIME_THRESHOLD_PERCENT = 20;
+        const STREAM_KERNEL_THRESHOLD_PERCENT = 10;
+        
+        requests.forEach((request) => {
+          const statement = (request.statement || "").toUpperCase();
+          
+          // Count missing WHERE clauses
+          if (!statement.includes(" WHERE ")) {
+            noWhereCount++;
+          }
+          
+          // Count slow USE KEYS queries (> 1 second)
+          if (statement.includes("USE KEYS")) {
+            const elapsedTime = parseTime(request.elapsedTime);
+            if (elapsedTime > 1000) { // 1 second = 1000ms
+              slowUseKeysCount++;
+              slowUseKeysTotalTime += elapsedTime;
+            }
+          }
+          
+          // Count large result size queries (> 5MB)
+          const resultSize = request.resultSize || 0;
+          const resultSizeMB = resultSize / (1024 * 1024); // Convert bytes to MB
+          if (resultSizeMB > 5) {
+            largeResultsCount++;
+            largeResultsTotalMB += resultSizeMB;
+          }
+          
+          // Count inefficient LIKE operations with leading wildcards
+          if (statement.includes(" LIKE ")) {
+            // Look for patterns like LIKE '%text' or LIKE "%text"
+            const likeMatches = statement.match(/ LIKE\s+['"]%[^'"]*['"]?/g);
+            if (likeMatches && likeMatches.length > 0) {
+              inefficientLikeCount++;
+            }
+          }
+          
+          // Count high memory usage queries (>= 1GB)
+          const usedMemory = request.usedMemory || 0;
+          const usedMemoryGB = usedMemory / (1024 * 1024 * 1024); // Convert bytes to GB
+          if (usedMemoryGB >= 1) {
+            highMemoryCount++;
+            highMemoryTotalGB += usedMemoryGB;
+          }
+          
+          // Analyze core execTime vs kernel time (two-stage check)
+          if (request.plan) {
+            try {
+              const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
+              const elapsedTimeMs = parseTime(request.elapsedTime);
+              
+              // Stage 1: Check if kernTime is at least 50% of elapsedTime
+              const kernTimeAnalysis = calculateTotalKernTime(request.plan);
+              const kernToElapsedRatio = elapsedTimeMs > 0 ? (kernTimeAnalysis / elapsedTimeMs) * 100 : 0;
+              
+              if (kernToElapsedRatio >= 50) {
+                // Stage 2: Analyze core execTime vs kernel time ratio
+                const coreKernelAnalysis = analyzeCoreExecToKernelRatio(planObj);
+                
+                // If core execTime is 50%+ of kernel time, flag as high kernel time
+                if (coreKernelAnalysis.coreToKernelRatio >= 50) {
+                  highKernelTimeQueriesCount++;
+                  totalCoreKernelRatio += coreKernelAnalysis.coreToKernelRatio;
+                  console.log(`Query qualifies: kernToElapsed=${kernToElapsedRatio.toFixed(1)}%, coreToKernel=${coreKernelAnalysis.coreToKernelRatio.toFixed(1)}%`);
+                }
+              }
+            } catch (e) {
+              console.error("Error parsing plan for kernel time analysis:", e);
+            }
+          }
+          
+          // Analyze large payload streaming
+          const payloadSize = request.resultSize || 0;
+          const payloadSizeMB = payloadSize / (1024 * 1024); // Convert to MB
+          
+          if (payloadSizeMB >= 1) { // Result size >= 1MB
+            if (request.plan) {
+              try {
+                const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
+                const elapsedTimeMs = parseTime(request.elapsedTime);
+                const streamAnalysis = analyzeStreamToElapsedRatio(planObj, elapsedTimeMs, STREAM_KERNEL_THRESHOLD_PERCENT);
+                
+                if (streamAnalysis.qualifies) {
+                  largePayloadStreamingCount++;
+                  largePayloadTotalResultSize += payloadSizeMB;
+                  largePayloadTotalStreamRatio += streamAnalysis.streamRatio;
+                }
+              } catch (e) {
+                console.error("Error analyzing large payload streaming:", e);
+              }
+            }
+          }
+          
+          // Count inefficient index scans
+          // Check if query has aggregate functions (exclude them)
+          const hasAggregates = /\b(COUNT|AVG|MIN|MAX|SUM)\s*\(/i.test(statement);
+          
+          if (!hasAggregates) {
+            const resultCount = request.resultCount || 0;
+            const phaseCounts = request.phaseCounts || {};
+            
+            // Check various types of index scans
+            let totalScanned = 0;
+            if (phaseCounts.primaryScan) totalScanned += phaseCounts.primaryScan;
+            if (phaseCounts.indexScan) totalScanned += phaseCounts.indexScan;
+            if (phaseCounts['primaryScan.GSI']) totalScanned += phaseCounts['primaryScan.GSI'];
+            if (phaseCounts['indexScan.GSI']) totalScanned += phaseCounts['indexScan.GSI'];
+            
+            // Check if scanned >= 50,000 and efficiency < 10%
+            if (totalScanned >= 50000) {
+              const efficiency = totalScanned > 0 ? (resultCount / totalScanned) * 100 : 0;
+              if (efficiency < 10) {
+                inefficientIndexScansCount++;
+                // Track metrics for average calculation
+                if (!window.inefficientScanMetrics) window.inefficientScanMetrics = [];
+                window.inefficientScanMetrics.push({
+                  scanned: totalScanned,
+                  resultCount: resultCount,
+                  selectivity: efficiency
+                });
+              }
+            }
+          }
+        });
+        
+        const totalQueries = requests.length;
+        const noWherePercent = totalQueries > 0 ? ((noWhereCount / totalQueries) * 100).toFixed(1) : 0;
+        
+        // Update the missing WHERE clauses insight
+        const missingWhereCountElement = document.getElementById("missing-where-count");
+        const missingWherePercentElement = document.getElementById("missing-where-percent");
+        
+        if (missingWhereCountElement && missingWherePercentElement) {
+          missingWhereCountElement.textContent = `${noWhereCount} queries`;
+          missingWherePercentElement.textContent = `${noWherePercent}%`;
+          
+          // Only highlight if there are issues
+          if (noWhereCount > 0) {
+            missingWhereCountElement.className = "highlight-number";
+            missingWherePercentElement.className = "highlight-number";
+          } else {
+            missingWhereCountElement.className = "";
+            missingWherePercentElement.className = "";
+          }
+        }
+        
+        // Update the slow USE KEYS queries insight
+        const slowUseKeysCountElement = document.getElementById("slow-use-keys-count");
+        const avgUseKeysTimeElement = document.getElementById("avg-use-keys-time");
+        
+        if (slowUseKeysCount > 0) {
+          const avgUseKeysTime = slowUseKeysTotalTime / slowUseKeysCount;
+          
+          if (slowUseKeysCountElement) {
+            slowUseKeysCountElement.textContent = `${slowUseKeysCount} USE KEY queries`;
+            slowUseKeysCountElement.className = "highlight-number";
+          }
+          if (avgUseKeysTimeElement) {
+            avgUseKeysTimeElement.textContent = formatTime(avgUseKeysTime);
+            avgUseKeysTimeElement.className = "highlight-number";
+          }
+        } else {
+          // Reset to defaults
+          if (slowUseKeysCountElement) {
+            slowUseKeysCountElement.textContent = "0 USE KEY queries";
+            slowUseKeysCountElement.className = "";
+          }
+          if (avgUseKeysTimeElement) {
+            avgUseKeysTimeElement.textContent = "0ms";
+            avgUseKeysTimeElement.className = "";
+          }
+        }
+        
+        // Update the large result sets insight
+        const largeResultsCountElement = document.getElementById("large-results-count");
+        const avgLargeResultSizeElement = document.getElementById("avg-large-result-size");
+        
+        if (largeResultsCount > 0) {
+          const avgLargeResultSize = (largeResultsTotalMB / largeResultsCount).toFixed(1);
+          
+          if (largeResultsCountElement) {
+            largeResultsCountElement.textContent = `${largeResultsCount} queries`;
+            largeResultsCountElement.className = "highlight-number";
+          }
+          if (avgLargeResultSizeElement) {
+            avgLargeResultSizeElement.textContent = `${avgLargeResultSize}MB`;
+            avgLargeResultSizeElement.className = "highlight-number";
+          }
+        } else {
+          // Reset to defaults
+          if (largeResultsCountElement) {
+            largeResultsCountElement.textContent = "0 queries";
+            largeResultsCountElement.className = "";
+          }
+          if (avgLargeResultSizeElement) {
+            avgLargeResultSizeElement.textContent = "0MB";
+            avgLargeResultSizeElement.className = "";
+          }
+        }
+        
+        // Update the large payload streaming insight
+        const largePayloadCountElement = document.getElementById("large-payload-count");
+        const avgPayloadSizeElement = document.getElementById("avg-payload-size");
+        const avgStreamRatioElement = document.getElementById("avg-stream-ratio");
+        
+        if (largePayloadStreamingCount > 0) {
+          const avgPayloadSize = (largePayloadTotalResultSize / largePayloadStreamingCount).toFixed(1);
+          const avgStreamRatio = (largePayloadTotalStreamRatio / largePayloadStreamingCount).toFixed(1);
+          
+          if (largePayloadCountElement) {
+            largePayloadCountElement.textContent = `${largePayloadStreamingCount} queries`;
+            largePayloadCountElement.className = "highlight-number";
+          }
+          if (avgPayloadSizeElement) {
+            avgPayloadSizeElement.textContent = `${avgPayloadSize}MB`;
+            avgPayloadSizeElement.className = "highlight-number";
+          }
+          if (avgStreamRatioElement) {
+            avgStreamRatioElement.textContent = `${avgStreamRatio}%`;
+            avgStreamRatioElement.className = "highlight-number";
+          }
+        } else {
+          // Reset to defaults
+          if (largePayloadCountElement) {
+            largePayloadCountElement.textContent = "0 queries";
+            largePayloadCountElement.className = "";
+          }
+          if (avgPayloadSizeElement) {
+            avgPayloadSizeElement.textContent = "0MB";
+            avgPayloadSizeElement.className = "";
+          }
+          if (avgStreamRatioElement) {
+            avgStreamRatioElement.textContent = "0%";
+            avgStreamRatioElement.className = "";
+          }
+        }
+        
+        // Update the inefficient LIKE operations insight
+        const inefficientLikeCountElement = document.getElementById("inefficient-like-count");
+        
+        if (inefficientLikeCountElement) {
+          inefficientLikeCountElement.textContent = `${inefficientLikeCount} queries`;
+          inefficientLikeCountElement.className = inefficientLikeCount > 0 ? "highlight-number" : "";
+        }
+        
+        // Update the high memory usage insight
+        const highMemoryCountElement = document.getElementById("high-memory-count");
+        const avgMemoryUsageElement = document.getElementById("avg-memory-usage");
+        
+        if (highMemoryCount > 0) {
+          const avgMemoryGB = (highMemoryTotalGB / highMemoryCount).toFixed(1);
+          
+          if (highMemoryCountElement) {
+            highMemoryCountElement.textContent = `${highMemoryCount} queries`;
+            highMemoryCountElement.className = "highlight-number";
+          }
+          if (avgMemoryUsageElement) {
+            avgMemoryUsageElement.textContent = `${avgMemoryGB}GB`;
+            avgMemoryUsageElement.className = "highlight-number";
+          }
+        } else {
+          // Reset to defaults
+          if (highMemoryCountElement) {
+            highMemoryCountElement.textContent = "0 queries";
+            highMemoryCountElement.className = "";
+          }
+          if (avgMemoryUsageElement) {
+            avgMemoryUsageElement.textContent = "0GB";
+            avgMemoryUsageElement.className = "";
+          }
+        }
+        
+        // Update the high kernel time insight
+        const highKernelTimeQueriesCountElement = document.getElementById("high-kernel-time-queries-count");
+        const avgCoreKernelRatioElement = document.getElementById("avg-core-kernel-ratio");
+        
+        if (highKernelTimeQueriesCount > 0) {
+          const avgCoreKernelRatio = (totalCoreKernelRatio / highKernelTimeQueriesCount).toFixed(1);
+          
+          if (highKernelTimeQueriesCountElement) {
+            highKernelTimeQueriesCountElement.textContent = `${highKernelTimeQueriesCount} queries`;
+            highKernelTimeQueriesCountElement.className = "highlight-number";
+          }
+          if (avgCoreKernelRatioElement) {
+            avgCoreKernelRatioElement.textContent = `${avgCoreKernelRatio}%`;
+            avgCoreKernelRatioElement.className = "highlight-number";
+          }
+        } else {
+          // Reset to defaults
+          if (highKernelTimeQueriesCountElement) {
+            highKernelTimeQueriesCountElement.textContent = "0 queries";
+            highKernelTimeQueriesCountElement.className = "";
+          }
+          if (avgCoreKernelRatioElement) {
+            avgCoreKernelRatioElement.textContent = "0%";
+            avgCoreKernelRatioElement.className = "";
+          }
+        }
+        
+        // Update the inefficient index scans insight
+        const inefficientIndexScansCountElement = document.getElementById("inefficient-index-scans-count");
+        const avgScanCountElement = document.getElementById("avg-scan-count");
+        const avgResultCountElement = document.getElementById("avg-result-count");
+        const avgSelectivityElement = document.getElementById("avg-selectivity");
+        
+        if (inefficientIndexScansCountElement) {
+          inefficientIndexScansCountElement.textContent = `${inefficientIndexScansCount} queries`;
+          inefficientIndexScansCountElement.className = inefficientIndexScansCount > 0 ? "highlight-number" : "";
+        }
+        
+        // Calculate and display averages
+        if (window.inefficientScanMetrics && window.inefficientScanMetrics.length > 0) {
+          const totalScanned = window.inefficientScanMetrics.reduce((sum, metric) => sum + metric.scanned, 0);
+          const totalResults = window.inefficientScanMetrics.reduce((sum, metric) => sum + metric.resultCount, 0);
+          const totalSelectivity = window.inefficientScanMetrics.reduce((sum, metric) => sum + metric.selectivity, 0);
+          
+          const avgScanned = Math.round(totalScanned / window.inefficientScanMetrics.length);
+          const avgResults = Math.round(totalResults / window.inefficientScanMetrics.length);
+          const avgSelectivity = (totalSelectivity / window.inefficientScanMetrics.length).toFixed(2);
+          
+          if (avgScanCountElement) {
+            avgScanCountElement.textContent = avgScanned.toLocaleString();
+            avgScanCountElement.className = "highlight-number";
+          }
+          if (avgResultCountElement) {
+            avgResultCountElement.textContent = avgResults.toLocaleString();
+            avgResultCountElement.className = "highlight-number";
+          }
+          if (avgSelectivityElement) {
+            avgSelectivityElement.textContent = `${avgSelectivity}%`;
+            avgSelectivityElement.className = "highlight-number";
+          }
+        } else {
+          // Reset to defaults when no inefficient queries
+          if (avgScanCountElement) {
+            avgScanCountElement.textContent = "0";
+            avgScanCountElement.className = "";
+          }
+          if (avgResultCountElement) {
+            avgResultCountElement.textContent = "0";
+            avgResultCountElement.className = "";
+          }
+          if (avgSelectivityElement) {
+            avgSelectivityElement.textContent = "0%";
+            avgSelectivityElement.className = "";
+          }
+        }
+        
+        // Reset metrics for next parse
+        window.inefficientScanMetrics = [];
+        
+        // Update slow index scan times insight
+        updateSlowIndexScanTimes(requests);
+        
+        // Update navigation counts and accordion states
+        updateInsightNavigation();
+      }
+      
+      // Analyze core execTime vs kernel time ratio
+      function analyzeCoreExecToKernelRatio(operator) {
+        if (!operator) return { coreToKernelRatio: 0 };
+        
+        let totalExecTime = 0;
+        let streamExecTime = 0;
+        let highestKernelTime = 0;
+        
+        function sumExecAndKernelTimes(op) {
+          if (!op) return;
+          
+          if (op["#stats"]) {
+            const stats = op["#stats"];
+            
+            // Sum all execTime
+            if (stats["execTime"]) {
+              const execTime = parseTime(stats["execTime"]);
+              if (!isNaN(execTime)) {
+                totalExecTime += execTime;
+                
+                // Track stream execTime separately
+                if (op["#operator"] === "Stream") {
+                  streamExecTime += execTime;
+                }
+              }
+            }
+            
+            // Track highest kernel time
+            if (stats["kernTime"]) {
+              const kernTime = parseTime(stats["kernTime"]);
+              if (!isNaN(kernTime)) {
+                highestKernelTime = Math.max(highestKernelTime, kernTime);
+              }
+            }
+          }
+          
+          // Recursively check child operators
+          if (op["~child"]) {
+            sumExecAndKernelTimes(op["~child"]);
+          }
+          if (op["~children"]) {
+            for (const child of op["~children"]) {
+              sumExecAndKernelTimes(child);
+            }
+          }
+        }
+        
+        sumExecAndKernelTimes(operator);
+        
+        // Calculate core execTime (total minus stream) vs kernel time ratio
+        const coreExecTime = totalExecTime - streamExecTime;
+        const coreToKernelRatio = highestKernelTime > 0 ? (coreExecTime / highestKernelTime) * 100 : 0;
+        
+        console.log(`Core kernel analysis: totalExec=${totalExecTime}ms, streamExec=${streamExecTime}ms, coreExec=${coreExecTime}ms, highestKernel=${highestKernelTime}ms, ratio=${coreToKernelRatio.toFixed(1)}%`);
+        
+        return {
+          coreToKernelRatio: coreToKernelRatio
+        };
+      }
+      
+      // Analyze stream execution time vs elapsed time
+      function analyzeStreamToElapsedRatio(operator, elapsedTimeMs, thresholdPercent) {
+        if (!operator) return { qualifies: false, streamRatio: 0 };
+        
+        let streamExecTime = 0;
+        
+        function findStreamTimes(op) {
+          if (!op) return;
+          
+          if (op["#stats"]) {
+            const stats = op["#stats"];
+            
+            // Find Stream operations
+            if (op["#operator"] === "Stream" && stats["execTime"]) {
+              const execTime = parseTime(stats["execTime"]);
+              if (!isNaN(execTime)) {
+                streamExecTime += execTime;
+              }
+            }
+          }
+          
+          // Recursively check child operators
+          if (op["~child"]) {
+            findStreamTimes(op["~child"]);
+          }
+          if (op["~children"]) {
+            for (const child of op["~children"]) {
+              findStreamTimes(child);
+            }
+          }
+        }
+        
+        findStreamTimes(operator);
+        
+        // Calculate stream to elapsed time ratio
+        const streamRatio = elapsedTimeMs > 0 ? (streamExecTime / elapsedTimeMs) * 100 : 0;
+        const qualifies = streamRatio >= thresholdPercent;
+        
+        console.log(`Stream analysis: streamExec=${streamExecTime}ms, elapsedTime=${elapsedTimeMs}ms, ratio=${streamRatio.toFixed(1)}%, qualifies=${qualifies}`);
+        
+        return {
+          qualifies: qualifies,
+          streamRatio: streamRatio
+        };
+      }
+      
+      // Toggle accordion category
+      function toggleCategory(categoryId) {
+        const title = document.querySelector(`#${categoryId} .category-title`);
+        const content = document.getElementById(`${categoryId}-content`);
+        
+        if (title && content) {
+          title.classList.toggle('collapsed');
+          content.classList.toggle('collapsed');
+        }
+      }
+      
+      // Toggle individual insight
+      function toggleInsight(insightId) {
+        const title = document.querySelector(`[onclick="toggleInsight('${insightId}')"]`);
+        const content = document.getElementById(`${insightId}-content`);
+        
+        if (title && content) {
+          title.classList.toggle('collapsed');
+          content.classList.toggle('collapsed');
+        }
+      }
+      
+      // Update insight accordion states
+      function updateInsightNavigation() {
+        // Always show all categories and expand them
+        const categories = ['index-issues', 'resource-issues', 'pattern-analysis', 'performance-opportunities'];
+        
+        categories.forEach(categoryId => {
+          const categoryElement = document.getElementById(categoryId);
+          const titleElement = categoryElement?.querySelector('.category-title');
+          const contentElement = document.getElementById(`${categoryId}-content`);
+          
+          // Show category and expand accordion
+          if (categoryElement) categoryElement.style.display = 'block';
+          if (titleElement) titleElement.classList.remove('collapsed');
+          if (contentElement) contentElement.classList.remove('collapsed');
+        });
+        
+        // Auto-expand individual insights that have issues (non-zero values)
+        autoExpandInsightsWithIssues();
+      }
+      
+      // Auto-expand insights with actual issues found
+      function autoExpandInsightsWithIssues() {
+        const insights = [
+          { id: 'inefficient-index-scans', checkElement: 'inefficient-index-scans-count' },
+          { id: 'slow-index-scan-times', checkElements: ['slow-indexes-2-10s', 'slow-indexes-10s-plus', 'slow-primary-indexes'] },
+          { id: 'primary-index-over-usage', checkElement: 'primary-avg-items-scanned' },
+          { id: 'high-kernel-time-queries', checkElement: 'high-kernel-time-queries-count' },
+          { id: 'high-memory-usage', checkElement: 'high-memory-count' },
+          { id: 'slow-use-key-queries', checkElement: 'slow-use-keys-count' },
+          { id: 'missing-where-clauses', checkElement: 'missing-where-count' },
+          { id: 'inefficient-like-operations', checkElement: 'inefficient-like-count' },
+          { id: 'large-result-set-queries', checkElement: 'large-results-count' },
+          { id: 'large-payload-streaming', checkElement: 'large-payload-count' }
+        ];
+        
+        insights.forEach(insight => {
+          const titleElement = document.querySelector(`[onclick="toggleInsight('${insight.id}')"]`);
+          const contentElement = document.getElementById(`${insight.id}-content`);
+          
+          let hasIssues = false;
+          
+          // Check if insight has issues (non-zero values)
+          if (insight.checkElement) {
+            const element = document.getElementById(insight.checkElement);
+            if (element && element.textContent) {
+              const value = element.textContent.match(/\d+/);
+              hasIssues = value && parseInt(value[0]) > 0;
+            }
+          }
+          
+          if (insight.checkElements) {
+            hasIssues = insight.checkElements.some(elementId => {
+              const element = document.getElementById(elementId);
+              if (element && element.textContent) {
+                const value = element.textContent.match(/\d+/);
+                return value && parseInt(value[0]) > 0;
+              }
+              return false;
+            });
+          }
+          
+          // Set accordion state based on whether issues were found
+          if (hasIssues) {
+            // Expand insight with issues
+            if (titleElement) titleElement.classList.remove('collapsed');
+            if (contentElement) contentElement.classList.remove('collapsed');
+          } else {
+            // Collapse insight with no issues
+            if (titleElement) titleElement.classList.add('collapsed');
+            if (contentElement) contentElement.classList.add('collapsed');
+          }
+        });
+        
+        // Handle dev insights - always collapsed since they don't have real data
+        const devInsights = document.querySelectorAll('.insight-item:has(.dev-badge)');
+        devInsights.forEach(devInsight => {
+          const titleElement = devInsight.querySelector('.insight-title');
+          const contentElement = devInsight.querySelector('.insight-content');
+          
+          if (titleElement) titleElement.classList.add('collapsed');
+          if (contentElement) contentElement.classList.add('collapsed');
+        });
+        
+        // Handle beta insights - collapsed by default, but can be expanded based on results
+        // (Beta insights are included in the main insights array above)
+      }
+      
+      // Update slow index scan times insight
+      function updateSlowIndexScanTimes(requests) {
+        const indexData = {};
+        let totalIndexes = 0;
+        let slowIndexes2to10s = 0;
+        let slowIndexes10sPlus = 0;
+        let slowPrimaryIndexes = 0;
+        
+        // Collect index data using same logic as Index/Query Flow
+        requests.forEach((request) => {
+          if (request.plan) {
+            try {
+              const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
+              
+              // Extract index names and collect timing data
+              extractIndexNamesAndData(planObj, (indexName) => {
+                if (!indexData[indexName]) {
+                  indexData[indexName] = {
+                    name: indexName,
+                    scanTimes: [],
+                    totalUsage: 0
+                  };
+                }
+                
+                const indexScanData = extractIndexScanDataFromPlan(request.plan, indexName);
+                console.log(`Extracted data for ${indexName}:`, indexScanData);
+                if (indexScanData.scanTime > 0) {
+                  indexData[indexName].scanTimes.push(indexScanData.scanTime);
+                  indexData[indexName].totalUsage++;
+                }
+              });
+            } catch (e) {
+              console.error("Error parsing plan for index timing:", e);
+            }
+          }
+        });
+        
+        // Helper function to extract index names
+        function extractIndexNamesAndData(operator, callback) {
+          if (!operator) return;
+          
+          const opType = operator["#operator"];
+          
+          if ((opType === "IndexScan3" || opType === "PrimaryScan3" || opType === "KeyScan") && operator.index) {
+            callback(operator.index);
+          }
+          
+          // Recursively search child operators
+          if (operator["~child"]) {
+            extractIndexNamesAndData(operator["~child"], callback);
+          }
+          if (operator["~children"]) {
+            for (const child of operator["~children"]) {
+              extractIndexNamesAndData(child, callback);
+            }
+          }
+        }
+        
+        // Use the same aggregated index data as Index/Query Flow
+        updatePrimaryIndexOverUsageFromAggregatedData(requests);
+        
+        // Debug: Log the collected index data
+        console.log("Collected index data for timing analysis:", indexData);
+        
+        // Analyze timing data for each index
+        Object.values(indexData).forEach((index) => {
+          totalIndexes++;
+          
+          console.log(`Analyzing index: ${index.name}, scanTimes:`, index.scanTimes);
+          
+          if (index.scanTimes && index.scanTimes.length > 0) {
+            const avgScanTimeMs = index.scanTimes.reduce((a, b) => a + b, 0) / index.scanTimes.length;
+            const avgScanTimeSeconds = avgScanTimeMs / 1000;
+            
+            console.log(`Index ${index.name}: avgScanTimeMs=${avgScanTimeMs}, avgScanTimeSeconds=${avgScanTimeSeconds}`);
+            
+            if (avgScanTimeSeconds >= 10) {
+              slowIndexes10sPlus++;
+              console.log(`${index.name} is 10+ seconds`);
+            } else if (avgScanTimeSeconds >= 2) {
+              slowIndexes2to10s++;
+              console.log(`${index.name} is 2-10 seconds`);
+            }
+            
+            // Check if it's a primary index with 2+ seconds
+            if ((index.name.includes("primary") || index.name === "#primary" || index.name === "def_primary") && avgScanTimeSeconds >= 2) {
+              slowPrimaryIndexes++;
+              console.log(`${index.name} is a slow primary index`);
+            }
+          }
+        });
+        
+        console.log(`Final counts: total=${totalIndexes}, 2-10s=${slowIndexes2to10s}, 10+s=${slowIndexes10sPlus}, slow primary=${slowPrimaryIndexes}`);
+        
+        // Update display elements for slow index scan times
+        const totalIndexesElement = document.getElementById("total-indexes-count");
+        const slowIndexes2to10sElement = document.getElementById("slow-indexes-2-10s");
+        const slowIndexes10sPlusElement = document.getElementById("slow-indexes-10s-plus");
+        const slowPrimaryIndexesElement = document.getElementById("slow-primary-indexes");
+        
+        if (totalIndexesElement) totalIndexesElement.textContent = totalIndexes;
+        if (slowIndexes2to10sElement) slowIndexes2to10sElement.textContent = slowIndexes2to10s;
+        if (slowIndexes10sPlusElement) slowIndexes10sPlusElement.textContent = slowIndexes10sPlus;
+        if (slowPrimaryIndexesElement) slowPrimaryIndexesElement.textContent = slowPrimaryIndexes;
+      }
+      
+      // Update Primary Index Over-Usage using same aggregated data as Index/Query Flow
+      function updatePrimaryIndexOverUsageFromAggregatedData(requests) {
+        const allIndexes = new Map();
+        
+        // Use the exact same logic as Index/Query Flow to build aggregated index data
+        requests.forEach((request) => {
+          if (request.plan) {
+            try {
+              const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
+              extractIndexNamesForFlow(planObj, allIndexes, request);
+            } catch (e) {
+              console.error("Error parsing plan for aggregated index data:", e);
+            }
+          }
+        });
+        
+        // Helper function (simplified version of existing Index/Query Flow logic)
+        function extractIndexNamesForFlow(operator, allIndexes, request) {
+          if (!operator) return;
+          
+          const opType = operator["#operator"];
+          
+          if ((opType === "IndexScan3" || opType === "PrimaryScan3" || opType === "KeyScan") && operator.index) {
+            const indexName = operator.index;
+            
+            if (!allIndexes.has(indexName)) {
+              allIndexes.set(indexName, {
+                name: indexName,
+                totalUsage: 0,
+                scanTimes: [],
+                itemsScanned: [],
+                itemsFetched: []
+              });
+            }
+            
+            const indexObj = allIndexes.get(indexName);
+            indexObj.totalUsage++;
+            
+            // Extract data using same function as Index/Query Flow
+            const indexData = extractIndexScanDataFromPlan(request.plan, indexName);
+            if (indexData.scanTime > 0) {
+              indexObj.scanTimes.push(indexData.scanTime);
+            }
+            if (indexData.itemsScanned > 0) {
+              indexObj.itemsScanned.push(indexData.itemsScanned);
+            }
+            if (indexData.itemsFetched > 0) {
+              indexObj.itemsFetched.push(indexData.itemsFetched);
+            }
+          }
+          
+          // Recursively search child operators (same as existing logic)
+          if (operator["~child"]) {
+            extractIndexNamesForFlow(operator["~child"], allIndexes, request);
+          }
+          if (operator["~children"]) {
+            for (const child of operator["~children"]) {
+              extractIndexNamesForFlow(child, allIndexes, request);
+            }
+          }
+        }
+        
+        // Now analyze primary indexes using aggregated data
+        let totalPrimaryItemsScanned = 0;
+        let totalPrimaryScanTime = 0;
+        let primaryIndexCount = 0;
+        
+        allIndexes.forEach((index) => {
+          const isPrimary = index.name.includes("primary") || index.name === "#primary" || index.name === "def_primary";
+          
+          if (isPrimary && index.itemsScanned.length > 0) {
+            // Calculate aggregated stats using same logic as Index/Query Flow
+            const avgItemsScanned = Math.round(
+              index.itemsScanned.reduce((a, b) => a + b, 0) / index.itemsScanned.length
+            );
+            const avgScanTime = index.scanTimes.length > 0 
+              ? Math.round(index.scanTimes.reduce((a, b) => a + b, 0) / index.scanTimes.length)
+              : 0;
+            
+            if (avgItemsScanned > 10000) {
+              totalPrimaryItemsScanned += avgItemsScanned;
+              totalPrimaryScanTime += avgScanTime;
+              primaryIndexCount++;
+            }
+          }
+        });
+        
+        // Update primary index over-usage insight display
+        const primaryAvgItemsScannedElement = document.getElementById("primary-avg-items-scanned");
+        const primaryAvgScanTimeElement = document.getElementById("primary-avg-scan-time");
+        
+        if (primaryIndexCount > 0) {
+          const avgItemsScanned = Math.round(totalPrimaryItemsScanned / primaryIndexCount);
+          const avgScanTime = Math.round(totalPrimaryScanTime / primaryIndexCount);
+          
+          if (primaryAvgItemsScannedElement) {
+            primaryAvgItemsScannedElement.textContent = avgItemsScanned.toLocaleString();
+            primaryAvgItemsScannedElement.className = "highlight-number";
+          }
+          if (primaryAvgScanTimeElement) {
+            primaryAvgScanTimeElement.textContent = `${avgScanTime}ms`;
+            primaryAvgScanTimeElement.className = "highlight-number";
+          }
+        } else {
+          // Reset to defaults
+          if (primaryAvgItemsScannedElement) {
+            primaryAvgItemsScannedElement.textContent = "0";
+            primaryAvgItemsScannedElement.className = "";
+          }
+          if (primaryAvgScanTimeElement) {
+            primaryAvgScanTimeElement.textContent = "0ms";
+            primaryAvgScanTimeElement.className = "";
+          }
+        }
+      }
+      
+      // Extract index data for timing analysis (simplified version of existing logic)
+      function extractIndexDataForTiming(operator, indexData) {
+        if (!operator) return;
+        
+        const opType = operator["#operator"];
+        
+        if ((opType === "IndexScan3" || opType === "PrimaryScan3" || opType === "KeyScan") && operator.index) {
+          const indexName = operator.index;
+          
+          if (!indexData[indexName]) {
+            indexData[indexName] = {
+              name: indexName,
+              scanTimes: [],
+              totalUsage: 0
+            };
+          }
+          
+          if (operator["#stats"] && operator["#stats"]["servTime"]) {
+            const scanTime = parseTime(operator["#stats"]["servTime"]);
+            indexData[indexName].scanTimes.push(scanTime);
+            indexData[indexName].totalUsage++;
+          }
+        }
+        
+        // Recursively search child operators
+        if (operator["~child"]) {
+          extractIndexDataForTiming(operator["~child"], indexData);
+        }
+        if (operator["~children"]) {
+          for (const child of operator["~children"]) {
+            extractIndexDataForTiming(child, indexData);
+          }
+        }
+      }
+
       // Copy to clipboard function with improved fallback and security
       function copyToClipboard(text, button) {
         // Sanitize the text being copied
@@ -7853,7 +9014,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             .writeText(sanitizedText)
             .then(() => {
               const originalText = button.textContent;
-              button.textContent = "Copiado!";
+              button.textContent = "Copied!";
               button.style.background = "#28a745";
               showToast("Copied to clipboard", "success");
               setTimeout(() => {
@@ -7867,7 +9028,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               button.style.background = "#dc3545";
               showToast("Failed to copy to clipboard", "error");
               setTimeout(() => {
-                button.textContent = "Copiar";
+                button.textContent = "Copy";
                 button.style.background = "#007bff";
               }, 1000);
             });
@@ -7887,7 +9048,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
             if (successful) {
               const originalText = button.textContent;
-              button.textContent = "Copiado!";
+              button.textContent = "Copied!";
               button.style.background = "#28a745";
               showToast("Copied to clipboard", "success");
               setTimeout(() => {
@@ -7903,7 +9064,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             button.style.background = "#dc3545";
             showToast("Failed to copy to clipboard", "error");
             setTimeout(() => {
-              button.textContent = "Copiar";
+              button.textContent = "Copy";
               button.style.background = "#007bff";
             }, 1000);
           }
@@ -7912,7 +9073,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       // Validate date range for time grouping
       function validateDateRangeForGrouping(startDate, endDate, grouping) {
-        if (!startDate || !endDate || grouping === "optimizer")
+        if (!startDate || !endDate || grouping === "optimizer" || grouping === "day")
           return { valid: true };
 
         const diffMs = endDate.getTime() - startDate.getTime();
@@ -7935,6 +9096,16 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 valid: false,
                 message:
                   'For "by Minute" grouping, please restrict the date range to 1 day or less to avoid chart rendering issues.',
+              };
+            }
+            break;
+          case "5min":
+            const diffWeeks5min = diffDays / 7;
+            if (diffWeeks5min > 1) {
+              return {
+                valid: false,
+                message:
+                  'For "by 5min" grouping, please restrict the date range to 1 week or less to avoid chart rendering issues.',
               };
             }
             break;
@@ -8289,7 +9460,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           // Only reset flow diagram if no query was previously selected
           const flowDiagramValidation = document.getElementById("flow-diagram");
           if (!flowDiagramValidation.hasChildNodes() || flowDiagramValidation.children.length === 0) {
-            flowDiagramValidation.innerHTML = "Selecione uma consulta da tabela para visualizar o diagrama de fluxo.";
+            flowDiagramValidation.innerHTML = "Select a query from the table to view the flow diagram.";
           }
           return;
         }
@@ -8320,7 +9491,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         // Only reset flow diagram if no query was previously selected
         const flowDiagram = document.getElementById("flow-diagram");
         if (!flowDiagram.hasChildNodes() || flowDiagram.children.length === 0) {
-          flowDiagram.innerHTML = "Selecione uma consulta da tabela para visualizar o diagrama de fluxo.";
+          flowDiagram.innerHTML = "Select a query from the table to view the flow diagram.";
         }
       }
 
@@ -8399,7 +9570,46 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Track which tabs have been loaded
       let loadedTabs = new Set();
 
+      // Initialize jQuery UI Tabs with lazy loading
+      $(function () {
+        $("#tabs").tabs({
+          activate: function (event, ui) {
+            const tabId = ui.newPanel.attr("id");
 
+            // Lazy load charts when tabs are first activated
+            if (!loadedTabs.has(tabId)) {
+              loadedTabs.add(tabId);
+
+              if (tabId === "timeline" && originalRequests.length > 0) {
+                // Generate timeline charts only when tab is activated
+                generateTimelineChart(originalRequests);
+              } else if (tabId === "dashboard" && originalRequests.length > 0) {
+                // Generate dashboard charts only when tab is activated
+                generateDashboardCharts(originalRequests);
+              }
+            }
+            
+            // Always check Index/Query Flow tab (not just first time)
+            if (tabId === "index-query-flow" && originalRequests.length > 0) {
+              
+              
+              // Full render from existing indexQueryFlowData (create DIVs + SVG)
+              setTimeout(() => {
+                
+                // Convert indexQueryFlowData back to arrays for renderIndexQueryFlow
+                const indexes = Array.from(indexQueryFlowData.indexes.values());
+                const queries = Array.from(indexQueryFlowData.queries.values());
+                
+
+                
+                // Do full render (creates DIVs and SVG)
+                renderIndexQueryFlow(indexes, queries);
+
+              }, 150);
+            }
+          },
+        });
+      });
 
       // Index/Query Flow functionality
       let indexQueryFlowData = {
@@ -8432,8 +9642,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       // Process Index/Query data without DOM rendering (for hidden tabs)
       function processIndexQueryData(requests) {
-        console.log("📊 Processing Index/Query data structures only (no DOM rendering)");
-        console.log("📊 processIndexQueryData received requests:", requests?.length || 0);
+
         
         // Clear and rebuild data structures
         indexQueryFlowData.indexes.clear();
@@ -8507,7 +9716,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                       indexName.includes("primary") ||
                       indexName.endsWith("_primary");
               
-              console.log(`🔍 processIndexQueryData - Index "${indexName}": isPrimary check = ${isPrimaryCheck}`);
+  
               
               allIndexes.set(indexName, {
                 name: indexName,
@@ -8526,9 +9735,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             // Collect statistics from the request
             const request = requests[requestIndex];
             if (request) {
-              console.log("DEBUG: request keys:", Object.keys(request));
-              console.log("DEBUG: request.plan exists:", !!request.plan);
-              console.log("DEBUG: typeof request.plan:", typeof request.plan);
+              
               // Extract actual index scan service time and items data from plan data  
               const indexData = extractIndexScanDataFromPlan(request.plan, indexName);
               if (indexData.scanTime > 0) {
@@ -8545,15 +9752,23 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         });
 
         // CRITICAL: Populate indexQueryFlowData with processed data for SVG rendering
-        // Sort indexes by totalUsage (descending) to match full rendering behavior
-        const sortedIndexes = Array.from(allIndexes.values()).sort((a, b) => b.totalUsage - a.totalUsage);
+        // Sort indexes by totalUsage (descending) and filter out indexes with no real usage data
+        const sortedIndexes = Array.from(allIndexes.values())
+          .filter(index => {
+            // Only show indexes that have actual performance data
+            const hasStats = index.scanTimes.length > 0 || index.itemsScanned.length > 0 || index.itemsFetched.length > 0;
+            if (!hasStats) {
+  
+            }
+            return hasStats;
+          })
+          .sort((a, b) => b.totalUsage - a.totalUsage);
         const sortedQueries = Array.from(queryGroups.values()).sort((a, b) => b.count - a.count);
         
         indexQueryFlowData.indexes = new Map(sortedIndexes.map(idx => [idx.name, idx]));
         indexQueryFlowData.queries = new Map(sortedQueries.map(q => [q.normalizedStatement, q]));
         
-        console.log("📊 processIndexQueryData: Sorted indexes by totalUsage");
-        console.log("📊 processIndexQueryData: Sorted queries by count");
+
         
         // Rebuild connections data
         requestIndexMap.forEach((indexSet, requestIndex) => {
@@ -8581,8 +9796,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         if (indexCountEl) indexCountEl.textContent = allIndexes.size;
         if (queryCountEl) queryCountEl.textContent = queryGroups.size;
         
-        console.log("📊 Updated counts - Indexes:", allIndexes.size, "Queries:", queryGroups.size);
-        console.log("📊 Populated indexQueryFlowData for SVG rendering");
+
       }
 
       // Helper function to resolve #primary to actual primary index name
@@ -8610,11 +9824,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         // Use provided requests or fall back to original requests
         const requestsToUse = requests || originalRequests;
 
-        console.log("🔧 buildIndexQueryFlow called with requests:", requestsToUse?.length || 0);
-        console.log("🔧 buildIndexQueryFlow called from:", new Error().stack.split('\n')[1]);
+
 
         if (!requestsToUse || requestsToUse.length === 0) {
-          console.log("❌ No requests available for Index/Query Flow");
+
           return;
         }
 
@@ -8622,19 +9835,19 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const activeTabIndex = $("#tabs").tabs("option", "active");
         const indexQueryFlowTabIndex = 4; // Index/Query Flow is the 5th tab (0-indexed)
         
-        console.log(`📊 Active tab index: ${activeTabIndex}, Index/Query Flow tab index: ${indexQueryFlowTabIndex}`);
+
         
         // Always clear first to ensure clean state
         clearIndexQueryFlow();
         
         // Process data but skip DOM rendering when tab is hidden
         if (activeTabIndex !== indexQueryFlowTabIndex) {
-          console.log("⏸️ Index/Query Flow tab hidden, processing data only - CALLING processIndexQueryData");
+
           processIndexQueryData(requestsToUse);
           return;
         }
 
-        console.log("✅ Index/Query Flow tab is visible, proceeding with FULL rendering");
+
 
         // Step 1: Track which indexes each request uses (by request index)
         const requestIndexMap = new Map(); // requestIndex -> Set of index names
@@ -8731,7 +9944,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                       indexName.includes("primary") ||
                       indexName.endsWith("_primary");
                   
-                  console.log(`🔍 Index "${indexName}": isPrimary check = ${isPrimaryCheck}`);
                   
                   allIndexes.set(indexName, {
                     name: indexName,
@@ -8750,9 +9962,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 const request = requestsToUse[requestIndex];
                 if (request) {
                   // Extract actual index scan service time and items data from plan data
-                  console.log(`Processing request for index ${indexName}:`, typeof request.plan);
                   const indexData = extractIndexScanDataFromPlan(request.plan, indexName);
-                  console.log(`Index: ${indexName}, Scan Time: ${indexData.scanTime}ms, Items: ${indexData.itemsScanned}`);
                   if (indexData.scanTime > 0) {
                     indexObj.scanTimes.push(indexData.scanTime);
                   }
@@ -8780,10 +9990,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           });
         });
 
-        // Convert to sorted arrays
-        const sortedIndexes = Array.from(allIndexes.values()).sort(
-          (a, b) => b.totalUsage - a.totalUsage
-        );
+        // Convert to sorted arrays and filter out indexes with no real usage data
+        const sortedIndexes = Array.from(allIndexes.values())
+          .filter(index => {
+            // Only show indexes that have actual performance data
+            const hasStats = index.scanTimes.length > 0 || index.itemsScanned.length > 0 || index.itemsFetched.length > 0;
+            return hasStats;
+          })
+          .sort((a, b) => b.totalUsage - a.totalUsage);
         const sortedQueries = Array.from(queryGroups.values()).sort(
           (a, b) => b.count - a.count
         );
@@ -8794,10 +10008,6 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           sortedQueries.map((q) => [q.normalizedStatement, q])
         );
 
-        console.log("🚀 About to call renderIndexQueryFlow with:");
-        console.log("  📋 sortedIndexes:", sortedIndexes.length);
-        console.log("  📋 sortedQueries:", sortedQueries.length);
-        console.log("  📋 indexQueryFlowData.connections:", indexQueryFlowData.connections.size);
         
         renderIndexQueryFlow(sortedIndexes, sortedQueries);
       }
@@ -8834,13 +10044,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               // Extract servTime and items data from this operator's stats
               if (operator["#stats"]) {
                 const stats = operator["#stats"];
+                
                 if (stats["servTime"]) {
                   result.scanTime = parseTime(stats["servTime"]);
-                  console.log(`Found matching operator for ${indexName}: servTime = ${stats["servTime"]}`);
                 }
                 if (stats["#itemsOut"]) {
                   result.itemsScanned = stats["#itemsOut"];
-                  console.log(`Found items scanned for ${indexName}: ${stats["#itemsOut"]}`);
                 }
                 if (stats["#itemsIn"]) {
                   result.itemsFetched = stats["#itemsIn"];
@@ -8858,9 +10067,48 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 searchOperatorForIndex(child);
               }
             }
+            
+            // Also search scan property (used in DistinctScan)
+            if (operator["scan"]) {
+              searchOperatorForIndex(operator["scan"]);
+            }
+            
+            // Search other nested operator properties
+            if (operator["input"]) {
+              searchOperatorForIndex(operator["input"]);
+            }
+            
+            if (operator["inputs"] && Array.isArray(operator["inputs"])) {
+              for (const input of operator["inputs"]) {
+                searchOperatorForIndex(input);
+              }
+            }
+            
+            if (operator["left"]) {
+              searchOperatorForIndex(operator["left"]);
+            }
+            
+            if (operator["right"]) {
+              searchOperatorForIndex(operator["right"]);
+            }
+            
+            if (operator["first"]) {
+              searchOperatorForIndex(operator["first"]);
+            }
+            
+            if (operator["second"]) {
+              searchOperatorForIndex(operator["second"]);
+            }
+            
+            if (operator["scans"] && Array.isArray(operator["scans"])) {
+              for (const scan of operator["scans"]) {
+                searchOperatorForIndex(scan);
+              }
+            }
           }
           
           searchOperatorForIndex(plan);
+          console.log(`[${indexName}] FINAL RESULT: scanTime=${result.scanTime}ms, itemsScanned=${result.itemsScanned}, itemsFetched=${result.itemsFetched}`);
           return result;
         } catch (e) {
           console.warn("Failed to process plan data:", e);
@@ -9149,14 +10397,20 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
         const stats = calculateIndexStats(index);
 
-        // Check if avg scan time >= 10 seconds for red/bold styling
+        // Check avg scan time for styling:
+        // 2-10 seconds: USE KEYS color (orange) and bold
+        // 10+ seconds: Red and bold
         const scanTimes = index.scanTimes || [];
         const avgScanTimeMs = scanTimes.length
           ? scanTimes.reduce((a, b) => a + b, 0) / scanTimes.length
           : 0;
         const avgScanTimeSeconds = avgScanTimeMs / 1000;
-        const avgScanTimeStyle =
-          avgScanTimeSeconds >= 10 ? "font-weight: bold; color: red;" : "";
+        let avgScanTimeStyle = "";
+        if (avgScanTimeSeconds >= 10) {
+          avgScanTimeStyle = "font-weight: bold; color: red;";
+        } else if (avgScanTimeSeconds >= 2) {
+          avgScanTimeStyle = "font-weight: bold; color: #ff9800;";
+        }
 
         div.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -9166,7 +10420,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             <button onclick="copyIndexName('${index.name.replace(
               /'/g,
               "\\'"
-            )}', event)" class="btn-standard" style="font-size: 11px;">Copiar</button>
+            )}', event)" class="btn-standard" style="font-size: 11px;">Copy</button>
           </div>
           <div class="index-stats" style="font-size: 13px; margin-top: 8px;">
             Avg Scan Time: <span style="${avgScanTimeStyle}">${
@@ -9225,10 +10479,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             <button onclick="toggleQueryText('${query.normalizedStatement.replace(
               /[^a-zA-Z0-9]/g,
               ""
-            )}')" class="btn-standard">Mostrar Mais</button>
+            )}')" class="btn-standard">Show More</button>
             <button class="btn-standard query-copy-btn" data-query-statement="${encodeURIComponent(
               query.statement
-            )}">Copiar</button>
+            )}">Copy</button>
           </div>
         `;
 
@@ -9505,10 +10759,10 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
         if (element.classList.contains("expanded")) {
           element.classList.remove("expanded");
-          button.textContent = "Mostrar Mais";
+          button.textContent = "Show More";
         } else {
           element.classList.add("expanded");
-          button.textContent = "Ocultar";
+          button.textContent = "Hide";
         }
       }
 
@@ -9517,7 +10771,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           // Brief visual feedback
           const button = event ? event.target : window.event.target;
           const originalText = button.textContent;
-          button.textContent = "Copiado!";
+          button.textContent = "Copied!";
           button.style.backgroundColor = "#4CAF50";
           setTimeout(() => {
             button.textContent = originalText;
@@ -9532,7 +10786,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           const button = event.target;
           const originalText = button.textContent;
           const originalBg = button.style.backgroundColor;
-          button.textContent = "Copiado!";
+          button.textContent = "Copied!";
           button.style.backgroundColor = "#4CAF50";
           setTimeout(() => {
             button.textContent = originalText;
@@ -9548,7 +10802,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           const button = event.target;
           const originalText = button.textContent;
           const originalBg = button.style.backgroundColor;
-          button.textContent = "Copiado!";
+          button.textContent = "Copied!";
           button.style.backgroundColor = "#28a745";
           setTimeout(() => {
             button.textContent = originalText;
@@ -9580,8 +10834,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
       // Version management
-      const APP_VERSION = "3.9.0";
-const LAST_UPDATED = "2025-08-28";
+      const APP_VERSION = "3.10.0";
+const LAST_UPDATED = "2025-08-30";
 
       function getVersionInfo() {
         return {
@@ -9636,11 +10890,11 @@ const LAST_UPDATED = "2025-08-28";
             ? "state-online"
             : state === "offline"
             ? "state-offline"
-            : state === "construindo"
+            : state === "building"
             ? "state-building"
             : "state-offline";
         return `<span class="state-badge ${stateClass}">${
-          state || "desconhecido"
+          state || "unknown"
         }</span>`;
       }
 
@@ -9677,7 +10931,7 @@ const LAST_UPDATED = "2025-08-28";
                 `⚠️ Failed to parse plan JSON for request: ${
                   processedRequest.clientContextID ||
                   processedRequest.requestId ||
-                  "desconhecido"
+                  "unknown"
                 }`,
                 e
               );
@@ -9849,7 +11103,7 @@ const LAST_UPDATED = "2025-08-28";
       function parseIndexTarget(indexString) {
         const match = indexString.match(/\bON\s+([^\s(;]+)/i);
         if (!match)
-          return { bucket: "desconhecido", scope: "desconhecido", collection: "desconhecido" };
+          return { bucket: "unknown", scope: "unknown", collection: "unknown" };
 
         // Clean up the target string - remove backticks, leading dots, trailing semicolons
         let target = match[1]
@@ -9871,9 +11125,9 @@ const LAST_UPDATED = "2025-08-28";
         }
 
         return {
-          bucket: parts[0] || "desconhecido",
-          scope: parts[1] || "desconhecido",
-          collection: parts[2] || "desconhecido",
+          bucket: parts[0] || "unknown",
+          scope: parts[1] || "unknown",
+          collection: parts[2] || "unknown",
         };
       }
 
@@ -10070,7 +11324,7 @@ const LAST_UPDATED = "2025-08-28";
                                 To analyze indexes, run this query in your Couchbase Query Workbench and paste the results in the second textarea above:
                             </p>
                             <div class="sql-query-box">
-                                <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">Copiar Consulta</button>
+                                <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">Copy Query</button>
                                 <pre>SELECT 
  s.name,
  s.id,
@@ -10094,7 +11348,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                                 2. Run it in Couchbase Query Workbench<br>
                                 3. Copy the JSON results<br>
                                 4. Paste into the second textarea at the top<br>
-                                5. Click "Analisar JSON" again
+                                5. Click "Parse JSON" again
                             </p>
                         </div>
                     `;
@@ -10173,7 +11427,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
           index.name.includes("primary") || index.name.includes("#primary");
         const lastScan = index.metadata?.last_scan_time || "Never";
         const replica = index.metadata?.num_replica || 0;
-        const state = index.state || "desconhecido";
+        const state = index.state || "unknown";
         const timeSince = getTimeSince(lastScan);
         const lastScanFormatted =
           lastScan === "Never" ? "Never" : new Date(lastScan).toLocaleString();
@@ -10203,7 +11457,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
           }
         }
 
-        const usedBadge = isUsed ? '<span class="used-badge">Usado</span>' : "";
+        const usedBadge = isUsed ? '<span class="used-badge">Used</span>' : "";
 
         return `
                 <div class="index-item ${isPrimary ? "primary" : ""}">
@@ -10221,7 +11475,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         <button class="btn-standard copy-btn" onclick="copyIndexDefinition('${index.indexString.replace(
                           /'/g,
                           "\\'"
-                        )}', event)">Copiar</button>
+                        )}', event)">Copy</button>
                     </div>
                 </div>
             `;
@@ -10234,7 +11488,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
           .then(() => {
             const button = event.target;
             const originalText = button.textContent;
-            button.textContent = "Copiado!";
+            button.textContent = "Copied!";
             button.style.backgroundColor = "#28a745";
             setTimeout(() => {
               button.textContent = originalText;
@@ -10270,7 +11524,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
           .then(() => {
             const button = event.target;
             const originalText = button.textContent;
-            button.textContent = "Copiado!";
+            button.textContent = "Copied!";
             button.style.backgroundColor = "#28a745";
             setTimeout(() => {
               button.textContent = originalText;

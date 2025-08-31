@@ -17,7 +17,7 @@ This guide orchestrates a full release process by combining all other guides and
 
 ## 🔄 Complete Release Process
 
-### Step 0: Initialize Release Log
+### **Step 1: Initialize Release Log**
 ```bash
 # Create timestamped release log from template
 cp settings/release.template settings/release_$(date +%Y%m%d_%H%M%S).txt
@@ -27,21 +27,22 @@ cp settings/release.template settings/release_$(date +%Y%m%d_%H%M%S).txt
 
 **📝 CRITICAL:** Keep your release log file open and update it after each major step. This creates a permanent record of your release process.
 
-### Step 1: Determine Version Number  
+### **Step 2: Determine Version Number**  
 First, calculate what version number you'll be releasing:
 
 1. **Open:** [VERSION_CALCULATION_GUIDE.md](VERSION_CALCULATION_GUIDE.md)
-2. **Analyze Git History:** Check for recent issue-related merges using the git commands in the guide
-3. **Read GitHub Issues:** Review issues at https://github.com/Fujio-Turner/cb_completed_request/issues for context on recent fixes/features
-4. **Complete:** Full change analysis and version calculation with issue references
-5. **Document:** Your version decision, reasoning, and GitHub issue links
-6. **Result:** You should have your old and new version numbers ready with issue-based context
+2. **Follow:** VERSION_CALCULATION_GUIDE.md Step 1 through Step 4
+3. **Analyze Git History:** Check for recent issue-related merges using the git commands in the guide
+4. **Read GitHub Issues:** Review issues at https://github.com/Fujio-Turner/cb_completed_request/issues for context on recent fixes/features
+5. **Complete:** Full change analysis and version calculation with issue references
+6. **Document:** Your version decision, reasoning, and GitHub issue links
+7. **Result:** You should have your old and new version numbers ready with issue-based context
 
-### Step 2: Follow VERSION_UPDATE_GUIDE.md
+### **Step 3: Follow VERSION_UPDATE_GUIDE.md**
 Execute the complete version update process:
 
 1. **Open:** [VERSION_UPDATE_GUIDE.md](VERSION_UPDATE_GUIDE.md)
-2. **Follow:** All steps from "Step 2: Update HTML Files" through "Step 5: Verification" (Step 1 is now done)
+2. **Follow:** VERSION_UPDATE_GUIDE.md Step 2 through Step 6 (Step 1 is now done from our Step 2 above)
 3. **Update release log:** Check off each item in the "HTML Files Updates" and "Documentation Updates" sections
 4. **Important:** The VERSION_UPDATE_GUIDE already includes release log instructions
 
@@ -51,18 +52,19 @@ Execute the complete version update process:
 - Docker files updated with new version
 - All version consistency checks passed
 
-### Step 3: Follow LOCALIZATION_GUIDE.md
+### **Step 4: Follow LOCALIZATION_GUIDE.md**
 Ensure all localizations are current and complete:
 
 1. **Open:** [LOCALIZATION_GUIDE.md](LOCALIZATION_GUIDE.md)
-2. **Execute:** README Files maintenance (if needed)
-3. **Execute:** HTML Tools synchronization using **COMPLETE REPLACEMENT METHOD**:
+2. **Execute:** LOCALIZATION_GUIDE.md Step 1-2 for README Files maintenance (if needed)
+3. **Execute:** LOCALIZATION_GUIDE.md Step 3-4 for HTML Tools synchronization using **COMPLETE REPLACEMENT METHOD**:
    - **Create backups** of existing localized files: `cp de/index.html de/index.html.backup`
    - **Copy en/index.html** to all language directories: `cp en/index.html de/index.html`
    - **Re-translate entire files** using translation system (do NOT try to selectively copy features)
    - **Verify functionality** is identical across all language versions
-4. **Run:** Post-translation audit system to verify completeness
-5. **Update release log:** Check off localization verification items
+4. **🚨 CRITICAL:** JavaScript Syntax Validation: `python3 settings/validate_js_syntax.py`
+5. **Run:** LOCALIZATION_GUIDE.md Step 5-6 for comprehensive verification including post-translation audit system
+6. **Update release log:** Check off localization verification items
 
 **⚠️ CRITICAL:** When new features are added to en/index.html, localized versions MUST be completely replaced and re-translated, not selectively updated.
 
@@ -73,7 +75,7 @@ Ensure all localizations are current and complete:
 - All language versions tested and functional
 - **All language versions contain the same features as English version**
 
-### Step 4: Comprehensive Release Testing
+### **Step 5: Comprehensive Release Testing**
 Using your release log file, verify all components:
 
 #### Version Consistency Verification
@@ -106,21 +108,28 @@ grep -n "Copy</button>" */index.html
 grep -n ">Copy<\|>Show<\|>Hide<\|>Reset<" */index.html
 ```
 
-### Step 5: Docker & Deployment
+### **Step 6: Docker & Deployment**
 Complete the deployment preparation:
 
 1. **Verify Docker files:** Check Dockerfile and GitHub Actions workflow versions
 2. **Plan Docker Hub cleanup:** Note old versions to remove in release log
 3. **Update release log:** Complete "Docker & Deployment Updates" section
 
-### Step 6: Final Release Documentation
-Complete your release log:
+### **Step 7: Final Release Documentation**
+Complete your release log and documentation:
 
-1. **Fill Additional Notes:** Document any issues or special considerations, including GitHub issue references
-2. **Complete Files Modified:** Check off all modified files
-3. **Add GitHub Context:** Document which GitHub issues were resolved or addressed in this release
-4. **Finalize Release Complete section:** Add your name and completion date
-5. **Save release log:** This becomes your permanent release record with issue tracking
+1. **🚨 CRITICAL - Add Release Notes to All README Files:**
+   ```bash
+   # Use automated release notes script (recommended)
+   python3 settings/add_release_notes.py
+   # OR manually add to README.md, de/README.de.md, es/README.es.md, pt/README.pt.md
+   ```
+
+2. **Fill Additional Notes:** Document any issues or special considerations, including GitHub issue references
+3. **Complete Files Modified:** Check off all modified files including README files
+4. **Add GitHub Context:** Document which GitHub issues were resolved or addressed in this release
+5. **Finalize Release Complete section:** Add your name and completion date
+6. **Save release log:** This becomes your permanent release record with issue tracking
 
 ## 🚨 Release Quality Gates
 
@@ -147,7 +156,7 @@ Before marking a release complete, ALL of these must pass:
 - [ ] All search and filter functions work
 
 ### ✅ Documentation Quality
-- [ ] Release notes added to all README files
+- [ ] **🚨 CRITICAL: Release notes added to all README files** (README.md, de/README.de.md, es/README.es.md, pt/README.pt.md)
 - [ ] Quick Start sections positioned correctly
 - [ ] Language navigation links functional
 - [ ] Spell checking completed on all files

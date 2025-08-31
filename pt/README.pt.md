@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.9.0
+# Couchbase Slow Query Analysis Tool v3.10.0
 
 **🌍 Idiomas:** [🇺🇸 English](../README.md) | [🇩🇪 Deutsch](../de/README.de.md) | [🇪🇸 Español](../es/README.es.md) | **🇵🇹 Português**
 
@@ -156,6 +156,27 @@ Ao analisar gráficos de linha do tempo, escolha intervalos de data apropriados 
 **⚠️ Aviso**: Intervalos de data grandes com agrupamentos de granularidade fina podem causar erros de renderização de gráficos. A ferramenta alertará você e sugerirá melhores combinações.
 
 ## 📋 Notas de Lançamento
+
+### Versão 3.10.0 (30 de agosto de 2025)
+#### 🚀 Novos Recursos
+- **Dashboard de Insights Aprimorado**: Expandiu a aba Insights com análise de performance abrangente e recomendações automáticas de otimização de consultas
+- **Interface de Usuário Melhorada**: Adicionado emoji de foguete ao título principal e banner gradiente destacando as novas capacidades de Insights
+- **Documentação Aprimorada**: Atualizado guia do Passo 4 para destacar proeminentemente o novo dashboard de Insights com descrições detalhadas de recursos
+
+#### 🛡️ Melhorias de Tradução e Localização
+- **Sistema de Tradução Protegido**: Implementado sistema abrangente de proteção de tradução para prevenir erros de sintaxe JavaScript e corrupção de atributos HTML
+- **Sistema de Validação Dupla**: Adicionado validação de sintaxe JavaScript e validação de atributos HTML para garantir qualidade de tradução
+- **Localização Completa de Insights**: Todo conteúdo de Insights agora totalmente traduzido nas versões alemã, espanhola e portuguesa
+
+#### 🔧 Melhorias Técnicas
+- **Proteção de Sintaxe JavaScript**: Criadas ferramentas de validação para prevenir erros JavaScript induzidos por tradução
+- **Proteção de Atributos HTML**: Implementadas salvaguardas para prevenir tradução de IDs e classes HTML críticos
+- **Guias de Processo Numerados**: Adicionados passos numerados a todos os documentos de guia para re-execuções parciais mais fáceis ("refazer apenas passo X")
+
+#### 📚 Experiência do Desenvolvedor
+- **Processo de Lançamento Aprimorado**: Criado fluxo de trabalho de lançamento abrangente com etapas de validação detalhadas
+- **Regras de Proteção de Tradução**: Documentado o que nunca deve ser traduzido para prevenir problemas futuros
+- **Ferramentas de Validação Automatizadas**: Construídas ferramentas para capturar problemas de tradução antes da implantação
 
 ### Versão 3.9.0 (28 de agosto de 2025)
 #### 🔧 Correções de Bugs

@@ -21,7 +21,7 @@ This project now uses **separate files** for different aspects:
 
 ## Documentation Updates (README Files)
 
-### Quick Update Process for README Files
+### **Step 1: Quick Update Process for README Files**
 
 When making changes to `README.md`, use this process to update the localized versions:
 
@@ -46,7 +46,7 @@ Please ensure:
 Check the settings/translations.json file for consistent terminology.
 ```
 
-### README File Maintenance
+### **Step 2: README File Maintenance**
 
 #### Language Navigation Links
 Each README file should have navigation links at the top:
@@ -71,7 +71,7 @@ Each README should specify the correct HTML file:
 
 ## HTML Tool Updates (Index Files)
 
-### Quick Update Process for HTML Tools (RECOMMENDED METHOD)
+### **Step 3: Quick Update Process for HTML Tools (RECOMMENDED METHOD)**
 
 **🚀 SIMPLIFIED APPROACH**: When `index.html` is working correctly and localized versions have issues, use this backup-and-copy method:
 
@@ -90,10 +90,10 @@ I need to synchronize the localized HTML files with the working en/index.html. P
    - Copy en/index.html → es/index.html  
    - Copy en/index.html → pt/index.html
 
-3. **Apply Localization Using translations.json:**
-   - Update language attributes: <html lang="en"> → <html lang="de|es|pt">
-   - Apply all translations from settings/translations.json using find/replace
-   - Follow the systematic translation process below
+3. **Apply Protected Localization:**
+   - **🛡️ RECOMMENDED:** `python3 settings/translate_protected.py` (protects HTML attributes and JavaScript)
+   - **Alternative:** Apply translations from settings/translations.json manually with extreme care
+   - **⚠️ WARNING:** Never translate HTML IDs, CSS classes, or JavaScript identifiers
 
 4. **Verification:**
    - Use old_index.html files to double-check that all translations are preserved
@@ -126,7 +126,7 @@ grep -n '"[^"]*$' */index.html | grep -v "style=\|href=\|src=\|class=\|id="
 ```
 If this finds any results in JavaScript code sections, they need string concatenation fixes.
 
-### Alternative: Individual Function Sync Process
+### **Step 4: Alternative Individual Function Sync Process**
 
 If you prefer to sync individual changes, use this chat prompt template:
 
@@ -261,6 +261,45 @@ grep -n "function.*[áéíóúâêîôûäöüß]" [lang]/index.html
 grep -n "const.*[áéíóúâêîôûäöüß]" [lang]/index.html  
 grep -n "let.*[áéíóúâêîôûäöüß]" [lang]/index.html
 ```
+
+## ⚠️ **DUAL VALIDATION SYSTEM (CRITICAL)**
+
+**🚨 MANDATORY STEPS:** Run both validations after translation to prevent runtime errors:
+
+### Step 9A: JavaScript Syntax Validation
+```bash
+# Validate JavaScript syntax in all HTML files  
+python3 settings/validate_js_syntax.py
+```
+
+### Step 9B: HTML Attribute Validation  
+```bash
+# Validate HTML attributes weren't translated (prevents DOM errors)
+python3 settings/validate_html_attributes.py
+```
+
+**Expected Output:**
+```
+🔍 JavaScript Syntax Validation
+========================================
+index.html           ✅ PASS
+en/index.html        ✅ PASS  
+de/index.html        ✅ PASS
+es/index.html        ✅ PASS
+pt/index.html        ✅ PASS
+========================================
+🎉 All files passed JavaScript syntax validation!
+```
+
+**If any files FAIL:**
+1. **STOP the release process immediately**
+2. **Fix JavaScript syntax errors** before proceeding
+3. **Re-run validation** until all files pass
+
+**Common JavaScript Issues After Translation:**
+- String literals with actual line breaks instead of `\n` escape sequences
+- Column names in arrays that span multiple lines incorrectly
+- Conditional statements with broken string comparisons
 
 ## 🔍 **POST-TRANSLATION AUDIT SYSTEM**
 
@@ -840,7 +879,7 @@ diff /tmp/index_classes.txt /tmp/lang_classes.txt
 - 🔧 **Better Maintenance**: No scattered inline styles
 - 🚀 **Improved Performance**: CSS reusability and caching
 
-### Step 4: Language-Specific Considerations
+### **Step 5: Language-Specific Considerations**
 
 #### German (de)
 - Compound words: "Abfragemuster-Eigenschaften" 
@@ -857,7 +896,7 @@ diff /tmp/index_classes.txt /tmp/lang_classes.txt
 - Brazilian vs European differences
 - Nasal sounds: "Não", "Índices"
 
-### Step 5: Comprehensive Translation Verification
+### **Step 6: Comprehensive Translation Verification**
 
 #### A. Pre-Translation Search
 Before marking translation as complete, search for these patterns:

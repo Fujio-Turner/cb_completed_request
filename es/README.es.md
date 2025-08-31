@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.9.0
+# Couchbase Slow Query Analysis Tool v3.10.0
 
 **🌍 Idiomas:** [🇺🇸 English](../README.md) | [🇩🇪 Deutsch](../de/README.de.md) | **🇪🇸 Español** | [🇵🇹 Português](../pt/README.pt.md)
 
@@ -156,6 +156,27 @@ Al analizar gráficos de línea de tiempo, elija rangos de fecha apropiados para
 **⚠️ Advertencia**: Rangos de fecha grandes con agrupaciones de grano fino pueden causar errores de renderizado de gráficos. La herramienta le alertará y sugerirá mejores combinaciones.
 
 ## 📋 Notas de Lanzamiento
+
+### Versión 3.10.0 (30 de agosto de 2025)
+#### 🚀 Nuevas Características
+- **Dashboard de Insights Mejorado**: Se expandió la pestaña Insights con análisis de rendimiento integral y recomendaciones automáticas de optimización de consultas
+- **Interfaz de Usuario Mejorada**: Se agregó emoji de cohete al título principal y banner de gradiente que destaca las nuevas capacidades de Insights
+- **Documentación Mejorada**: Se actualizó la guía del Paso 4 para destacar prominentemente el nuevo dashboard de Insights con descripciones detalladas de características
+
+#### 🛡️ Mejoras de Traducción y Localización
+- **Sistema de Traducción Protegido**: Se implementó un sistema integral de protección de traducciones para prevenir errores de sintaxis JavaScript y corrupción de atributos HTML
+- **Sistema de Validación Dual**: Se agregó validación de sintaxis JavaScript y validación de atributos HTML para asegurar calidad de traducción
+- **Localización Completa de Insights**: Todo el contenido de Insights ahora está completamente traducido en las versiones alemana, española y portuguesa
+
+#### 🔧 Mejoras Técnicas
+- **Protección de Sintaxis JavaScript**: Se crearon herramientas de validación para prevenir errores JavaScript inducidos por traducción
+- **Protección de Atributos HTML**: Se implementaron salvaguardas para prevenir la traducción de IDs y clases HTML críticos
+- **Guías de Proceso Numeradas**: Se agregaron pasos numerados a todos los documentos de guía para reejecutar parcialmente más fácil ("repetir solo el paso X")
+
+#### 📚 Experiencia del Desarrollador
+- **Proceso de Lanzamiento Mejorado**: Se creó un flujo de trabajo de lanzamiento integral con pasos de validación detallados
+- **Reglas de Protección de Traducción**: Se documentó qué nunca debe ser traducido para prevenir problemas futuros
+- **Herramientas de Validación Automatizadas**: Se construyeron herramientas para detectar problemas de traducción antes del despliegue
 
 ### Versión 3.9.0 (28 de agosto de 2025)
 #### 🔧 Corrección de Errores

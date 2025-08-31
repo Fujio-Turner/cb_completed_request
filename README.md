@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.9.0
+# Couchbase Slow Query Analysis Tool v3.10.0
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](de/README.de.md) | [🇪🇸 Español](es/README.es.md) | [🇵🇹 Português](pt/README.pt.md)
 
@@ -158,6 +158,27 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 **⚠️ Warning**: Large date ranges with fine-grained groupings may cause chart rendering errors. The tool will alert you and suggest better combinations.
 
 ## Release Notes
+
+### Version 3.10.0 (August 30, 2025)
+#### 🚀 New Features
+- **Enhanced Insights Dashboard**: Expanded the Insights tab with comprehensive performance analysis and automated query optimization recommendations
+- **Improved User Interface**: Added rocket emoji to main title and gradient banner highlighting the new Insights capabilities
+- **Enhanced Documentation**: Updated Step 4 guide to prominently feature the new Insights dashboard with detailed feature descriptions
+
+#### 🛡️ Translation & Localization Improvements
+- **Protected Translation System**: Implemented comprehensive translation protection to prevent JavaScript syntax errors and HTML attribute corruption
+- **Dual Validation System**: Added both JavaScript syntax validation and HTML attribute validation to ensure translation quality
+- **Complete Insights Localization**: All Insights content now fully translated across German, Spanish, and Portuguese versions
+
+#### 🔧 Technical Improvements
+- **JavaScript Syntax Protection**: Created validation tools to prevent translation-induced JavaScript errors
+- **HTML Attribute Protection**: Implemented safeguards to prevent translation of critical HTML IDs and classes
+- **Step-Numbered Process Guides**: Added numbered steps to all guide documents for easier partial re-runs ("redo step X only")
+
+#### 📚 Developer Experience
+- **Enhanced Release Process**: Created comprehensive release workflow with detailed validation steps
+- **Translation Protection Rules**: Documented what should never be translated to prevent future issues
+- **Automated Validation Tools**: Built tools to catch translation issues before deployment
 
 ### Version 3.9.0 (August 28, 2025)
 #### 🔧 Bug Fixes
