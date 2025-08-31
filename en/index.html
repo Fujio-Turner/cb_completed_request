@@ -7,15 +7,13 @@
     
     🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
     This guide covers all HTML elements, JavaScript variables, and documentation files that need updating.
-    
+    Load and do what the AGENT.md file before working on this file.
+
     Use semantic versioning: MAJOR.MINOR.PATCH
     - MAJOR: Breaking changes or complete rewrites
     - MINOR: New features, significant enhancements  
     - PATCH: Bug fixes, small improvements
     
-    🌍 LOCALIZATION NOTE: This file has Spanish (es_index.html), Portuguese (pt_index.html), and German (de_index.html) versions.
-    When making changes to index.html, please also update all localized versions to maintain sync.
-    See LOCALIZATION_GUIDE.md and translations.json for detailed instructions.
 -->
 
   <head>
@@ -2524,7 +2522,16 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       // Get sortable value for a column
       function getSortableValue(item, column) {
-        let value = item[column];
+        let value;
+        
+        // Handle special nested data fields first
+        if (column === "scanConsistency") {
+          value = item.request && item.request.scanConsistency ? item.request.scanConsistency : "N/A";
+        } else {
+          value = item[column];
+        }
+        
+
 
         // Handle columns with newlines in their names
         const cleanColumn = column.replace(/\n/g, " ");
@@ -2584,6 +2591,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           if (value === "fatal") return "aaa_fatal";
           if (value === "completed") return "bbb_completed";
           return String(value || "zzz_unknown").toLowerCase();
+        }
+        if (column === "scanConsistency" || column === "Scan\nConsistency" || cleanColumn === "Scan Consistency") {
+          // Handle scan consistency values - data is nested under request object
+          const scanValue = item.request && item.request.scanConsistency ? item.request.scanConsistency : (value || "N/A");
+          return String(scanValue).toLowerCase();
         }
         if (column === "statement") {
           return String(value || "").toLowerCase();
@@ -2650,10 +2662,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             .trim();
           const columnText = column.replace(/\n/g, " ").trim();
 
-          if (
-            headerText.includes(columnText) ||
-            columnText.includes(headerText)
-          ) {
+          if (headerText === columnText) {
             // Remove the old sort hint and add prominent arrow
             const oldHint = th.querySelector("div");
             if (oldHint && oldHint.textContent === "↕ Sort") {
@@ -2708,6 +2717,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         else if (displayColumn === "Doc Fetch\nCount") return "Doc Fetch Count";
         else if (displayColumn === "Primary Scan\nUsed")
           return "Primary Scan Used";
+        else if (displayColumn === "Scan\nConsistency")
+          return "scanConsistency";
         else return displayColumn; // For columns without newlines like "#", "state", "statement", "users"
       }
 
