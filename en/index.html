@@ -5824,9 +5824,9 @@
 
                         if (itemsIn !== undefined && itemsOut !== undefined) {
                             if (itemsIn === itemsOut) {
-                                timeGroups[key].filtersEqual++;
+                                timeGroups[key].filtersEqual += itemsOut;
                             } else {
-                                timeGroups[key].filtersNotEqual++;
+                                timeGroups[key].filtersNotEqual += itemsOut;
                             }
                         }
                     }
@@ -11493,13 +11493,13 @@
                             usesPrimaryFlag = true;
                         }
 
-                        // Update stats counters and extract phase times
+                        // Update stats counters with actual items and extract phase times
                         if (operatorType === "PrimaryScan" || operatorType === "PrimaryScan3") {
-                            stats.primaryScan++;
+                            stats.primaryScan += operatorStats["#itemsOut"] || 0;
                         } else if (operatorType === "IndexScan" || operatorType === "IndexScan3") {
-                            stats.indexScan++;
+                            stats.indexScan += operatorStats["#itemsOut"] || 0;
                         } else if (operatorType === "Fetch") {
-                            stats.fetch++;
+                            stats.fetch += operatorStats["#itemsOut"] || 0;
                             fetchTime += execTime;
                         } else if (operatorType === "Stream") {
                             streamTime += execTime;
@@ -11650,15 +11650,18 @@
                     try {
                         switch (tabId) {
                             case 'timeline':
-                                // Use sampled data for timeline charts to improve performance
+                                // For aggregation-based charts (operations, filter), use full data
+                                // For timeline chart (individual request visualization), use sampling for performance
                                 const sampleSize = Math.min(500, filteredRequests.length);
                                 const sampleStep = Math.max(1, Math.floor(filteredRequests.length / sampleSize));
                                 const timelineSample = filteredRequests.filter((_, i) => i % sampleStep === 0);
 
                                 console.log(`${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${timelineSample.length} ${TEXT_CONSTANTS.OF_TOTAL} ${filteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
 
-                                generateOperationsChart(timelineSample);
-                                generateFilterChart(timelineSample);
+                                // Use full data for aggregation charts that sum/count data
+                                generateOperationsChart(filteredRequests);
+                                generateFilterChart(filteredRequests);
+                                // Use sampled data only for individual request timeline
                                 generateTimelineChart(timelineSample);
                                 break;
                             case 'index-query-flow':
