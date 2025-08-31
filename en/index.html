@@ -81,66 +81,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           background-color: #f1f1f1;
         }
 
-        /* Insights Tab Styles */
-        .insights-navigation {
-          display: flex;
-          gap: 10px;
-          margin-bottom: 20px;
-          padding: 8px 12px;
-          background: #f8f9fa;
-          border-radius: 6px;
-          border: 1px solid #dee2e6;
-          flex-wrap: wrap;
-          justify-content: center;
-        }
 
-        .nav-category-link {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          background: #fff;
-          border: 1px solid #dee2e6;
-          border-radius: 4px;
-          text-decoration: none;
-          color: #495057;
-          font-weight: 500;
-          font-size: 12px;
-          transition: all 0.2s ease;
-          min-width: 100px;
-          justify-content: center;
-        }
-
-        .nav-category-link:hover {
-          background: #e3f2fd;
-          border-color: #90caf9;
-          color: #1565c0;
-          text-decoration: none;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .nav-emoji {
-          font-size: 16px;
-        }
-
-        .nav-text {
-          flex: 1;
-          text-align: center;
-        }
-
-        .nav-count {
-          background: #6c757d;
-          color: white;
-          padding: 2px 6px;
-          border-radius: 10px;
-          font-size: 11px;
-          font-weight: bold;
-        }
-
-        .nav-category-link:hover .nav-count {
-          background: #1565c0;
-        }
 
         .insight-category {
           margin-bottom: 40px;
@@ -495,7 +436,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           >
         </li>
         <li role="tab">
-          <a href="#insights" aria-controls="insights" tabindex="0">Insights</a>
+          <a href="#insights" aria-controls="insights" tabindex="0">Insights <span class="beta-badge">Beta</span></a>
         </li>
         <li role="tab">
           <a href="#timeline" aria-controls="timeline" tabindex="0">Timeline</a>
@@ -654,29 +595,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
         <div style="background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
 
-          <!-- Category Navigation -->
-          <div class="insights-navigation">
-            <a href="#index-issues" class="nav-category-link">
-              <span class="nav-emoji">🔍</span>
-              <span class="nav-text">Index Issues</span>
-              <span class="nav-count">(3)</span>
-            </a>
-            <a href="#resource-issues" class="nav-category-link">
-              <span class="nav-emoji">⚡</span>
-              <span class="nav-text">Resource Issues</span>
-              <span class="nav-count">(3)</span>
-            </a>
-            <a href="#pattern-analysis" class="nav-category-link">
-              <span class="nav-emoji">🔄</span>
-              <span class="nav-text">Query Patterns</span>
-              <span class="nav-count">(3)</span>
-            </a>
-            <a href="#performance-opportunities" class="nav-category-link">
-              <span class="nav-emoji">🚀</span>
-              <span class="nav-text">Performance</span>
-              <span class="nav-count">(3)</span>
-            </a>
-          </div>
+
 
           <!-- Indexes Category -->
           <div id="index-issues" class="insight-category">
@@ -702,7 +621,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               <h4 class="insight-title" onclick="toggleInsight('slow-index-scan-times')">Slow Index Scan Times<span class="live-badge">Live</span></h4>
               <div class="insight-content" id="slow-index-scan-times-content">
                 <p class="insight-description">
-                  Out of <span class="highlight-number" id="total-indexes-count">0</span> indexes: <span class="highlight-number" id="slow-indexes-2-10s">0</span> are between 2-10 seconds, <span class="highlight-number" id="slow-indexes-10s-plus">0</span> are greater than 10 seconds, <span class="highlight-number" id="slow-primary-indexes">0</span> are #primary indexes with 2+ seconds.
+                  <span class="highlight-number" id="total-indexes-count">0</span> total indexes: <span class="highlight-number" id="slow-indexes-2-10s">0</span> indexes with an avg scan time between 2-10 seconds, <span class="highlight-number" id="slow-indexes-10s-plus">0</span> indexes with an avg scan time greater than 10 seconds, <span class="highlight-number" id="slow-primary-indexes">0</span> #primary indexes with an avg scan time of 2+ seconds.
                 </p>
                 <div class="learn-more-section">
                   <div class="learn-more-item">
@@ -758,7 +677,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               <h4 class="insight-title" onclick="toggleInsight('high-memory-usage')">High Memory Usage Detected<span class="live-badge">Live</span></h4>
               <div class="insight-content" id="high-memory-usage-content">
                 <p class="insight-description">
-                  <span class="highlight-number" id="high-memory-count">0 queries</span> are using <span class="highlight-number">1GB or more</span> of memory each, indicating potential memory optimization opportunities.
+                  <span class="highlight-number" id="high-memory-count">0 queries</span> are using avg <span class="highlight-number" id="avg-memory-usage">0GB</span> of memory each, indicating potential memory optimization opportunities.
                 </p>
                 <div class="learn-more-section">
                   <div class="learn-more-item">
@@ -773,7 +692,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               <h4 class="insight-title" onclick="toggleInsight('slow-use-key-queries')">Slow USE KEY Queries<span class="live-badge">Live</span></h4>
               <div class="insight-content" id="slow-use-key-queries-content">
                 <p class="insight-description">
-                  <span class="highlight-number" id="slow-use-keys-count">0 USE KEY queries</span> exceed <span class="highlight-number">1 second</span> in execution time, suggesting potential KV service bottlenecks.
+                  <span class="highlight-number" id="slow-use-keys-count">0 USE KEY queries</span> with avg query time of <span class="highlight-number" id="avg-use-keys-time">0ms</span>, suggesting potential KV service bottlenecks.
                 </p>
                 <div class="learn-more-section">
                   <div class="learn-more-item">
@@ -804,7 +723,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               <h4 class="insight-title" onclick="toggleInsight('complex-join-operations')">Complex JOIN Operations<span class="dev-badge">Dev</span></h4>
               <div class="insight-content" id="complex-join-operations-content">
                 <p class="insight-description">
-                  <span class="highlight-number">89 JOIN queries</span> are taking an average of <span class="highlight-number">4.2 seconds</span> each, with <span class="highlight-number">67%</span> showing suboptimal join patterns.
+                  <span class="highlight-number">0 JOIN queries</span> are taking an average of <span class="highlight-number">0 seconds</span> each, with <span class="highlight-number">0%</span> showing suboptimal join patterns.
                 </p>
                 <div class="learn-more-section">
                   <div class="learn-more-item">
@@ -865,7 +784,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               <h4 class="insight-title" onclick="toggleInsight('timeout-prone-queries')">Timeout-Prone Queries<span class="dev-badge">Dev</span></h4>
               <div class="insight-content" id="timeout-prone-queries-content">
                 <p class="insight-description">
-                  <span class="highlight-number">43 queries</span> are consistently approaching timeout thresholds, with <span class="highlight-number">12 queries</span> actually timing out in the analyzed period.
+                  <span class="highlight-number">0 queries</span> are consistently approaching timeout thresholds, with <span class="highlight-number">0 queries</span> actually timing out in the analyzed period.
                 </p>
               </div>
             </div>
@@ -874,7 +793,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               <h4 class="insight-title" onclick="toggleInsight('concurrent-query-conflicts')">Concurrent Query Conflicts<span class="dev-badge">Dev</span></h4>
               <div class="insight-content" id="concurrent-query-conflicts-content">
                 <p class="insight-description">
-                  <span class="highlight-number">178 queries</span> show evidence of resource contention, with execution times varying by more than <span class="highlight-number">300%</span> during peak hours.
+                  <span class="highlight-number">0 queries</span> show evidence of resource contention, with execution times varying by more than <span class="highlight-number">0%</span> during peak hours.
                 </p>
                 <div class="learn-more-section">
                   <div class="learn-more-item">
@@ -8081,10 +8000,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         // Count queries with no WHERE clauses
         let noWhereCount = 0;
         let slowUseKeysCount = 0;
+        let slowUseKeysTotalTime = 0;
         let largeResultsCount = 0;
         let inefficientLikeCount = 0;
         let inefficientIndexScansCount = 0;
         let highMemoryCount = 0;
+        let highMemoryTotalGB = 0;
         let highKernelTimeQueriesCount = 0;
         let totalCoreKernelRatio = 0;
         let largePayloadStreamingCount = 0;
@@ -8108,6 +8029,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             const elapsedTime = parseTime(request.elapsedTime);
             if (elapsedTime > 1000) { // 1 second = 1000ms
               slowUseKeysCount++;
+              slowUseKeysTotalTime += elapsedTime;
             }
           }
           
@@ -8132,6 +8054,7 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           const usedMemoryGB = usedMemory / (1024 * 1024 * 1024); // Convert bytes to GB
           if (usedMemoryGB >= 1) {
             highMemoryCount++;
+            highMemoryTotalGB += usedMemoryGB;
           }
           
           // Analyze core execTime vs kernel time (two-stage check)
@@ -8237,10 +8160,29 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         
         // Update the slow USE KEYS queries insight
         const slowUseKeysCountElement = document.getElementById("slow-use-keys-count");
+        const avgUseKeysTimeElement = document.getElementById("avg-use-keys-time");
         
-        if (slowUseKeysCountElement) {
-          slowUseKeysCountElement.textContent = `${slowUseKeysCount} USE KEY queries`;
-          slowUseKeysCountElement.className = slowUseKeysCount > 0 ? "highlight-number" : "";
+        if (slowUseKeysCount > 0) {
+          const avgUseKeysTime = slowUseKeysTotalTime / slowUseKeysCount;
+          
+          if (slowUseKeysCountElement) {
+            slowUseKeysCountElement.textContent = `${slowUseKeysCount} USE KEY queries`;
+            slowUseKeysCountElement.className = "highlight-number";
+          }
+          if (avgUseKeysTimeElement) {
+            avgUseKeysTimeElement.textContent = formatTime(avgUseKeysTime);
+            avgUseKeysTimeElement.className = "highlight-number";
+          }
+        } else {
+          // Reset to defaults
+          if (slowUseKeysCountElement) {
+            slowUseKeysCountElement.textContent = "0 USE KEY queries";
+            slowUseKeysCountElement.className = "";
+          }
+          if (avgUseKeysTimeElement) {
+            avgUseKeysTimeElement.textContent = "0ms";
+            avgUseKeysTimeElement.className = "";
+          }
         }
         
         // Update the large result sets insight
@@ -8298,10 +8240,29 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         
         // Update the high memory usage insight
         const highMemoryCountElement = document.getElementById("high-memory-count");
+        const avgMemoryUsageElement = document.getElementById("avg-memory-usage");
         
-        if (highMemoryCountElement) {
-          highMemoryCountElement.textContent = `${highMemoryCount} queries`;
-          highMemoryCountElement.className = highMemoryCount > 0 ? "highlight-number" : "";
+        if (highMemoryCount > 0) {
+          const avgMemoryGB = (highMemoryTotalGB / highMemoryCount).toFixed(1);
+          
+          if (highMemoryCountElement) {
+            highMemoryCountElement.textContent = `${highMemoryCount} queries`;
+            highMemoryCountElement.className = "highlight-number";
+          }
+          if (avgMemoryUsageElement) {
+            avgMemoryUsageElement.textContent = `${avgMemoryGB}GB`;
+            avgMemoryUsageElement.className = "highlight-number";
+          }
+        } else {
+          // Reset to defaults
+          if (highMemoryCountElement) {
+            highMemoryCountElement.textContent = "0 queries";
+            highMemoryCountElement.className = "";
+          }
+          if (avgMemoryUsageElement) {
+            avgMemoryUsageElement.textContent = "0GB";
+            avgMemoryUsageElement.className = "";
+          }
         }
         
         // Update the high kernel time insight
@@ -8518,29 +8479,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         }
       }
       
-      // Update navigation counts and show/hide categories based on live insights
+      // Update insight accordion states
       function updateInsightNavigation() {
-        // Count all insights (both live and dev) in each category
-        const indexIssuesCount = document.querySelectorAll('#index-issues .insight-item').length;
-        const resourceIssuesCount = document.querySelectorAll('#resource-issues .insight-item').length;
-        const patternAnalysisCount = document.querySelectorAll('#pattern-analysis .insight-item').length;
-        const performanceCount = document.querySelectorAll('#performance-opportunities .insight-item').length;
-        
-        // Update navigation counts
-        const navLinks = document.querySelectorAll('.nav-category-link');
-        navLinks.forEach(link => {
-          const countSpan = link.querySelector('.nav-count');
-          if (link.href.includes('#index-issues')) {
-            countSpan.textContent = `(${indexIssuesCount})`;
-          } else if (link.href.includes('#resource-issues')) {
-            countSpan.textContent = `(${resourceIssuesCount})`;
-          } else if (link.href.includes('#pattern-analysis')) {
-            countSpan.textContent = `(${patternAnalysisCount})`;
-          } else if (link.href.includes('#performance-opportunities')) {
-            countSpan.textContent = `(${performanceCount})`;
-          }
-        });
-        
         // Always show all categories and expand them
         const categories = ['index-issues', 'resource-issues', 'pattern-analysis', 'performance-opportunities'];
         
