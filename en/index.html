@@ -7735,7 +7735,8 @@
 
             // Calculate percentage data for line graphs
             const cpuKernPercentData = sortedData.map((item) => {
-                return item.avgKernTime > 0 ? (item.avgCpuTime / item.avgKernTime) * 100 : 0;
+                const total = item.avgCpuTime + item.avgKernTime;
+                return total > 0 ? ((item.avgCpuTime + item.avgKernTime) / total) * 100 : 0;
             });
 
             const cpuElapsedPercentData = sortedData.map((item) => {
@@ -7747,33 +7748,33 @@
                 data: {
                     labels: labels,
                     datasets: [
-                    {
-                    label: "Avg CPU Time (ms)",
-                    data: avgCpuTimeData,
-                    backgroundColor: "rgba(54, 162, 235, 0.8)", // Blue
-                    borderColor: "rgba(54, 162, 235, 1)",
-                    borderWidth: 1,
-                    yAxisID: "y",
-                    order: 1,
-                    },
-                    {
-                    label: "Avg Kernel Time (ms)",
-                    data: avgKernTimeData,
-                    backgroundColor: "rgba(255, 99, 132, 0.8)", // Red
-                    borderColor: "rgba(255, 99, 132, 1)",
-                    borderWidth: 1,
-                    yAxisID: "y",
-                    order: 2,
-                    },
-                    {
-                    label: "Avg Elapsed Time (ms)",
-                    data: avgElapsedTimeData,
-                    backgroundColor: "rgba(75, 192, 192, 0.8)", // Teal
-                    borderColor: "rgba(75, 192, 192, 1)",
-                    borderWidth: 1,
-                    yAxisID: "y",
-                    order: 3,
-                    },
+                        {
+                            label: "Avg CPU Time (ms)",
+                            data: avgCpuTimeData,
+                            backgroundColor: "rgba(54, 162, 235, 0.8)", // Blue
+                            borderColor: "rgba(54, 162, 235, 1)",
+                            borderWidth: 1,
+                            yAxisID: "y",
+                            order: 1,
+                        },
+                        {
+                            label: "Avg Kernel Time (ms)",
+                            data: avgKernTimeData,
+                            backgroundColor: "rgba(255, 99, 132, 0.8)", // Red
+                            borderColor: "rgba(255, 99, 132, 1)",
+                            borderWidth: 1,
+                            yAxisID: "y",
+                            order: 2,
+                        },
+                        {
+                            label: "Avg Elapsed Time (ms)",
+                            data: avgElapsedTimeData,
+                            backgroundColor: "rgba(75, 192, 192, 0.8)", // Teal
+                            borderColor: "rgba(75, 192, 192, 1)",
+                            borderWidth: 1,
+                            yAxisID: "y",
+                            order: 3,
+                        },
                         {
                             label: "CPU as % of Kernel",
                             data: cpuKernPercentData,
@@ -7783,7 +7784,7 @@
                             borderWidth: 2,
                             fill: false,
                             yAxisID: "y1",
-                            order: 4,
+                            order: 1,
                             tension: 0.3,
                         },
                         {
@@ -7796,7 +7797,7 @@
                             borderDash: [5, 5], // Dotted line
                             fill: false,
                             yAxisID: "y1",
-                            order: 5,
+                            order: 0,
                             tension: 0.3,
                         },
                     ],
@@ -7807,7 +7808,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: "CPU/Kernel/Elapsed Time Analysis",
+                            text: "CPU/Kernel/Elapsed Time Analysis - (Beta)",
                         },
                         legend: {
                             display: true,
