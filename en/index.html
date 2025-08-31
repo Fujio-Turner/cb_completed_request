@@ -1870,6 +1870,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         normalizeStatementCache.clear();
         // WeakMaps clean themselves automatically
       }
+      
+      // Performance benchmarking helper
+      function logCacheStats() {
+        console.log(`Cache stats - parseTime: ${parseTimeCache.size}, normalizeStatement: ${normalizeStatementCache.size}`);
+      }
 
       // Recursively extract operators from the plan
       function getOperators(
@@ -9372,6 +9377,47 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         return { totalItemsIn, totalItemsOut };
       }
 
+      // Lazy chart loading setup - generate charts only when tabs are activated
+      function setupLazyChartLoading(filteredRequests) {
+        // Track which tabs have been loaded
+        const loadedTabs = new Set();
+        
+        // Generate dashboard charts immediately (user sees this first)
+        generateDashboardCharts(filteredRequests);
+        loadedTabs.add('dashboard');
+        
+        // Set up lazy loading for other tabs
+        $('#tabs').on('tabsactivate', function(event, ui) {
+          const tabId = ui.newPanel.attr('id');
+          
+          if (!loadedTabs.has(tabId)) {
+            const loadStart = performance.now();
+            
+            try {
+              switch(tabId) {
+                case 'timeline':
+                  generateOperationsChart(filteredRequests);
+                  generateFilterChart(filteredRequests);  
+                  generateTimelineChart(filteredRequests);
+                  break;
+                case 'index-query-flow':
+                  buildIndexQueryFlow(filteredRequests);
+                  break;
+                case 'insights':
+                  // Insights don't need chart generation, they use cached data
+                  break;
+              }
+              
+              loadedTabs.add(tabId);
+              const loadEnd = performance.now();
+              console.log(`Lazy loaded ${tabId} tab in ${Math.round(loadEnd - loadStart)}ms`);
+            } catch (e) {
+              console.error(`Error lazy loading ${tabId} tab:`, e);
+            }
+          }
+        });
+      }
+
       // Parse JSON input - Optimized
       function parseJSON() {
         // Clear caches at start of new parse to prevent memory leaks
@@ -9429,10 +9475,23 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             // Process data in batches to avoid blocking UI
             const batchSize = 200; // Reduced from 1000 for better responsiveness
             const processedRequests = [];
+            let skippedCount = 0; // Track filtered out requests
 
             // Show progress bar
             document.getElementById("progress-container").style.display =
               "block";
+
+            // Get filter settings once outside the loop for performance
+            const excludeCheckbox = document.getElementById("exclude-system-queries");
+            const isExcluding = excludeCheckbox && excludeCheckbox.checked;
+            const sqlFilter = document.getElementById("sql-statement-filter");
+            const sqlFilterText = sqlFilter ? sqlFilter.value.trim().toLowerCase() : "";
+            
+            // Get date filter settings
+            const startDateInput = document.getElementById("start-date");
+            const endDateInput = document.getElementById("end-date");
+            const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+            const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
 
             function processBatch(startIndex) {
               const endIndex = Math.min(
@@ -9442,7 +9501,41 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
               for (let i = startIndex; i < endIndex; i++) {
                 try {
-                  processedRequests.push(processRequestData(processData[i]));
+                  const item = processData[i];
+                  const request = item.completed_requests || item;
+                  
+                  // Early filtering - skip expensive processing for filtered requests
+                  if (isExcluding && shouldExcludeSystemQuery(request)) {
+                    skippedCount++;
+                    continue; // Skip this request
+                  }
+                  
+                  // Apply SQL statement filtering early
+                  if (sqlFilterText && sqlFilterText.length > 0) {
+                    const statement = (request.statement || "").toLowerCase();
+                    if (!statement.includes(sqlFilterText)) {
+                      skippedCount++;
+                      continue; // Skip this request
+                    }
+                  }
+                  
+                  // Apply date filtering early
+                  if (startDate || endDate) {
+                    const requestDate = parseCouchbaseDateTime(request.requestTime);
+                    if (requestDate) {
+                      if (startDate && requestDate < startDate) {
+                        skippedCount++;
+                        continue;
+                      }
+                      if (endDate && requestDate > endDate) {
+                        skippedCount++;
+                        continue;
+                      }
+                    }
+                  }
+                  
+                  // Only process requests that pass all filters
+                  processedRequests.push(processRequestData(item));
                 } catch (e) {
                   console.warn(
                     `Error processing request ${i}:`,
@@ -9471,7 +9564,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               } else {
                 // All batches processed
                 const parseEndTime = performance.now();
-                console.log(`Parse performance: ${Math.round(parseEndTime - parseStartTime)}ms for ${processedRequests.length} requests`);
+                console.log(`Parse performance: ${Math.round(parseEndTime - parseStartTime)}ms for ${processedRequests.length} requests (${skippedCount} filtered out early)`);
+                logCacheStats();
                 finishProcessing(processedRequests);
               }
             }
@@ -9556,8 +9650,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           normalizeCache.clear();
         }
 
-        // Apply global system query filtering
-        const filteredAllRequests = filterSystemQueries(allRequests);
+        // Filtering now happens during parsing, so we can use requests directly
+        const filteredAllRequests = allRequests;
 
         // If this is the first parse (no date filters set), populate date range
         if (
@@ -9630,27 +9724,29 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           return;
         }
 
+        // Store filtered data globally for lazy loading
+        window.currentFilteredRequests = filteredRequests;
+        
         // Update UI with filtered data
         updateFilterInfo(filteredAllRequests.length, filteredRequests.length);
         try {
+          // Only generate essential tables immediately - defer charts until tab activation
           generateTable(filteredRequests);
           generateAnalysisTable(filteredRequests);
           updateOptimizerLabel(filteredRequests);
-          generateOperationsChart(filteredRequests);
-          generateFilterChart(filteredRequests);
-          generateTimelineChart(filteredRequests);
-          generateDashboardCharts(filteredRequests);
-          buildIndexQueryFlow(filteredRequests);
-
+          
           // Extract used indexes from the query data
           extractUsedIndexes(filteredRequests);
 
           // Also parse index data if available
           parseIndexJSON();
+          
+          // Set up lazy loading for charts
+          setupLazyChartLoading(filteredRequests);
         } catch (e) {
-          console.error("Error generating charts:", e);
+          console.error("Error generating UI:", e);
           alert(
-            "Error generating charts. Try reducing the date range or selecting a coarser time grouping."
+            "Error generating UI. Try reducing the date range or selecting a coarser time grouping."
           );
         }
         // Only reset flow diagram if no query was previously selected
