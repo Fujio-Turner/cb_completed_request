@@ -3110,22 +3110,14 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             if (col === "Primary Scan Used") {
               value = request.usesPrimary ? "Yes" : "No";
             } else if (col === "Items from Index Scan") {
-              if (request.indexInfo) {
-                const stats = request.indexInfo.stats;
-                if (stats.primaryScan > 0) {
-                  value = stats.primaryScan;
-                } else if (stats.indexScan > 0) {
-                  value = stats.indexScan;
-                } else {
-                  value = "N/A";
-                }
-              } else {
-                value = "N/A";
-              }
+              // Use phaseCounts for actual item counts, not operator counts
+              const indexScanCount = request.phaseCounts?.indexScan || 
+                                   request.phaseCounts?.primaryScan || 0;
+              value = indexScanCount > 0 ? indexScanCount : "N/A";
             } else if (col === "Doc Fetch Count") {
-              value = request.indexInfo
-                ? request.indexInfo.stats.fetch || "N/A"
-                : "N/A";
+              // Use phaseCounts for actual fetch counts
+              const fetchCount = request.phaseCounts?.fetch || 0;
+              value = fetchCount > 0 ? fetchCount : "N/A";
             } else if (col === "kernTime") {
               value = totalKernTimeMs > 0 ? formatTime(totalKernTimeMs) : "N/A";
             } else if (col === "KernTime %") {
