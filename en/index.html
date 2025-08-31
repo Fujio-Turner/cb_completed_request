@@ -1863,17 +1863,21 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
       const parseTimeCache = new Map();
       const normalizeStatementCache = new Map();
       const planStatsCache = new WeakMap();
+      const timeUnitCache = new WeakMap(); // Cache optimal time units per request array
+      const timestampRoundingCache = new Map(); // Cache rounded timestamps
       
-      // Clear caches to prevent memory leaks
+      // Clear caches to prevent memory leaks and stale data between parses
       function clearCaches() {
         parseTimeCache.clear();
         normalizeStatementCache.clear();
-        // WeakMaps clean themselves automatically
+        timestampRoundingCache.clear(); // Critical for Timeline tab performance
+        // WeakMaps (operatorsCache, planStatsCache, timeUnitCache) clean themselves automatically
+        console.log('All caches cleared for new JSON parse');
       }
       
       // Performance benchmarking helper
       function logCacheStats() {
-        console.log(`Cache stats - parseTime: ${parseTimeCache.size}, normalizeStatement: ${normalizeStatementCache.size}`);
+        console.log(`Cache stats - parseTime: ${parseTimeCache.size}, normalizeStatement: ${normalizeStatementCache.size}, timestampRounding: ${timestampRoundingCache.size}`);
       }
 
       // Recursively extract operators from the plan
@@ -3964,86 +3968,124 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           "user_query_counts",
         ];
 
-        data.forEach((rowData, index) => {
-          const row = document.createElement("tr");
-          analysisColumns.forEach((col) => {
-            const td = document.createElement("td");
-            const value = rowData[col];
+        // Use DocumentFragment for smooth table rendering with batching
+        const batchSize = 50; // Process rows in batches for large datasets
+        const fragment = document.createDocumentFragment();
+        let processed = 0;
 
-            if (col === "normalized_statement") {
-              // Handle normalized_statement column with truncation and controls
-              const statement = value || "";
-              const statementId = `analysis-statement-${index}`;
-
-              // Store the statement safely
-              analysisStatementStore[statementId] = statement;
-
-              if (statement.length > 500) {
-                // Create truncated version
-                const truncated = statement.substring(0, 500);
-
-                td.innerHTML = `
-                  <div id="${statementId}-truncated">
-                    <span>${truncated}...</span>
-                    <br>
-                    <button onclick="toggleAnalysisStatement('${statementId}', true)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Show More</button>
-                    <button onclick="copyAnalysisStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
-                  </div>
-                  <div id="${statementId}-full" style="display: none;">
-                    <span>${statement}</span>
-                    <br>
-                    <button onclick="toggleAnalysisStatement('${statementId}', false)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Hide</button>
-                    <button onclick="copyAnalysisStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
-                  </div>
-                `;
-              } else {
-                // Short statement - just show it with copy button
-                td.innerHTML = `
-                  <div>
-                    <span>${statement}</span>
-                    <br>
-                    <button onclick="copyAnalysisStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">Copy</button>
-                  </div>
-                `;
+        function processBatch(startIndex) {
+          const endIndex = Math.min(startIndex + batchSize, data.length);
+          
+          for (let index = startIndex; index < endIndex; index++) {
+            const rowData = data[index];
+            const row = document.createElement("tr");
+            
+            analysisColumns.forEach((col) => {
+              const td = document.createElement("td");
+              let value = rowData[col];
+              
+              // Apply thresholding for extreme values
+              if (typeof value === 'number' && value > 1000000) {
+                value = `${Math.round(value / 1000000)}M+`;
               }
-            } else if (col === "user_query_counts") {
-              // Bold the counts in parentheses
-              const formattedValue = value.replace(/\((\d+)\)/g, "<b>($1)</b>");
-              td.innerHTML = formattedValue;
-            } else if (col === "status_counts") {
-              // Show fatal count, make it bold and red if > 0
-              if (value > 0) {
-                td.innerHTML = `<span class="fatal-count">${value}</span>`;
+
+              if (col === "normalized_statement") {
+                // Handle normalized_statement column with truncation and controls
+                const statement = value || "";
+                const statementId = `analysis-statement-${index}`;
+
+                // Store the statement safely
+                analysisStatementStore[statementId] = statement;
+
+                if (statement.length > 500) {
+                  // Create truncated version
+                  const truncated = statement.substring(0, 500);
+
+                  td.innerHTML = `
+                    <div id="${statementId}-truncated">
+                      <span>${truncated}...</span>
+                      <br>
+                      <button onclick="toggleAnalysisStatement('${statementId}', true)" 
+                              class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Show More</button>
+                      <button onclick="copyAnalysisStatement('${statementId}', event)" 
+                              class="btn-standard" style="margin-top: 5px;">Copy</button>
+                    </div>
+                    <div id="${statementId}-full" style="display: none;">
+                      <span>${statement}</span>
+                      <br>
+                      <button onclick="toggleAnalysisStatement('${statementId}', false)" 
+                              class="btn-standard" style="margin-top: 5px; margin-right: 5px;">Hide</button>
+                      <button onclick="copyAnalysisStatement('${statementId}', event)" 
+                              class="btn-standard" style="margin-top: 5px;">Copy</button>
+                    </div>
+                  `;
+                } else {
+                  // Short statement - just show it with copy button
+                  td.innerHTML = `
+                    <div>
+                      <span>${statement}</span>
+                      <br>
+                      <button onclick="copyAnalysisStatement('${statementId}', event)" 
+                              class="btn-standard" style="margin-top: 5px;">Copy</button>
+                    </div>
+                  `;
+                }
+              } else if (col === "user_query_counts") {
+                // Bold the counts in parentheses
+                const formattedValue = value.replace(/\((\d+)\)/g, "<b>($1)</b>");
+                td.innerHTML = formattedValue;
+              } else if (col === "status_counts") {
+                // Show fatal count, make it bold and red if > 0
+                if (value > 0) {
+                  td.innerHTML = `<span class="fatal-count">${value}</span>`;
+                } else {
+                  td.textContent = value;
+                }
+              } else if (col === "total_count") {
+                // Format total_count with commas, cap at 999K+
+                const numValue = Number(value);
+                if (!isNaN(numValue)) {
+                  if (numValue > 999999) {
+                    td.textContent = "999K+";
+                  } else {
+                    td.textContent = numValue.toLocaleString();
+                  }
+                } else {
+                  td.textContent = value;
+                }
               } else {
                 td.textContent = value;
               }
-            } else if (col === "total_count") {
-              // Format total_count with commas
-              const numValue = Number(value);
-              td.textContent = isNaN(numValue) ? value : numValue.toLocaleString();
-            } else {
-              td.textContent = value;
-            }
 
-            // Style avg primaryScan when > 0 (red and bold)
-            if (col === "avg_primaryScan") {
-              // Handle comma-formatted numbers by removing commas first
-              const cleanValue = String(value).replace(/,/g, '');
-              const originalValue = Number(cleanValue);
-              if (!isNaN(originalValue) && originalValue > 0) {
-                td.classList.add("primary-scan-yes");
+              // Style avg primaryScan when > 0 (red and bold)
+              if (col === "avg_primaryScan") {
+                // Handle comma-formatted numbers by removing commas first
+                const cleanValue = String(value).replace(/,/g, '');
+                const originalValue = Number(cleanValue);
+                if (!isNaN(originalValue) && originalValue > 0) {
+                  td.classList.add("primary-scan-yes");
+                }
               }
-            }
 
-            row.appendChild(td);
-          });
-          analysisTableBody.appendChild(row);
-        });
+              row.appendChild(td);
+            });
+            fragment.appendChild(row);
+          }
+          
+          // Append batch to DOM
+          if (endIndex >= data.length) {
+            analysisTableBody.appendChild(fragment);
+          } else {
+            // Process next batch asynchronously
+            analysisTableBody.appendChild(fragment);
+            setTimeout(() => processBatch(endIndex), 0);
+          }
+        }
+
+        // Start batch processing if we have data
+        if (data.length > 0) {
+          processBatch(0);
+        }
       }
 
       // Helper function to get time grouping settings
@@ -4054,12 +4096,24 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
 
       // Helper function to round timestamp based on grouping and optimal unit
       function roundTimestamp(timestamp, grouping, requests) {
+        // Create cache key for this specific timestamp+grouping combination
+        const cacheKey = `${timestamp.getTime()}-${grouping}`;
+        if (timestampRoundingCache.has(cacheKey)) {
+          return timestampRoundingCache.get(cacheKey);
+        }
+        
         const date = new Date(timestamp);
 
-        // Determine actual unit to use
+        // Determine actual unit to use with caching
         let actualUnit;
         if (grouping === "optimizer") {
-          actualUnit = getOptimalTimeUnit(requests);
+          // Cache the optimal unit per request array to avoid repeated analysis
+          if (timeUnitCache.has(requests)) {
+            actualUnit = timeUnitCache.get(requests);
+          } else {
+            actualUnit = getOptimalTimeUnit(requests);
+            timeUnitCache.set(requests, actualUnit);
+          }
         } else {
           // Use exactly what the user selected
           actualUnit = grouping;
@@ -4099,8 +4153,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           default:
             date.setSeconds(0, 0);
         }
-        return date;
-      }
+        
+          // Cache the result
+         timestampRoundingCache.set(cacheKey, date);
+         return date;
+       }
 
       // Helper function to automatically determine optimal time unit based on data span
       function getOptimalTimeUnit(requests) {
@@ -7917,11 +7974,20 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const tbody = document.getElementById("user-count-body");
         tbody.innerHTML = "";
 
-        sortedUsers.forEach(([user, count]) => {
+        // Use DocumentFragment for smooth rendering with caps
+        const fragment = document.createDocumentFragment();
+        const maxDisplayUsers = 500; // Cap for performance
+        const usersToShow = sortedUsers.slice(0, maxDisplayUsers);
+
+        usersToShow.forEach(([user, count]) => {
           const row = document.createElement("tr");
           row.style.borderBottom = "1px solid #eee";
+          
+          // Apply count thresholding
+          const displayCount = count > 99999 ? "99K+" : count;
+          
           row.innerHTML = `
-              <td class="padding-8 text-align-center" style="font-weight: bold;">${count}</td>
+              <td class="padding-8 text-align-center" style="font-weight: bold;">${displayCount}</td>
               <td class="padding-8" style="word-break: break-word;">
                 ${user}
                 <button onclick="copyToClipboard('${user.replace(
@@ -7933,8 +7999,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 </button>
               </td>
             `;
-          tbody.appendChild(row);
+          fragment.appendChild(row);
         });
+        
+        tbody.appendChild(fragment);
+        
+        // Add notice if users were capped
+        if (sortedUsers.length > maxDisplayUsers) {
+          const noticeRow = document.createElement("tr");
+          noticeRow.innerHTML = `<td colspan="2" style="text-align: center; color: #666; font-style: italic; padding: 10px;">Showing top ${maxDisplayUsers} of ${sortedUsers.length} users</td>`;
+          tbody.appendChild(noticeRow);
+        }
       }
 
       // Parse FROM clause to extract bucket.scope.collection
@@ -8057,13 +8132,20 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         const tbody = document.getElementById("index-count-body");
         tbody.innerHTML = "";
 
-        sortedIndexes.forEach(([indexName, data]) => {
+        // Use DocumentFragment for smooth rendering with caps
+        const fragment = document.createDocumentFragment();
+        const maxDisplayIndexes = 200; // Cap for performance
+        const indexesToShow = sortedIndexes.slice(0, maxDisplayIndexes);
+
+        indexesToShow.forEach(([indexName, data]) => {
           const row = document.createElement("tr");
           row.style.borderBottom = "1px solid #eee";
+          
+          // Apply count thresholding
+          const displayCount = data.count > 99999 ? "99K+" : data.count;
+          
           row.innerHTML = `
-              <td class="padding-8 text-align-center" style="font-weight: bold;">${
-                data.count
-              }</td>
+              <td class="padding-8 text-align-center" style="font-weight: bold;">${displayCount}</td>
               <td class="padding-8" style="word-break: break-word;">
                 ${indexName}
                 <button onclick="copyToClipboard('${indexName.replace(
@@ -8078,8 +8160,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 ${data.bucketScopeCollection}
               </td>
             `;
-          tbody.appendChild(row);
+          fragment.appendChild(row);
         });
+        
+        tbody.appendChild(fragment);
+        
+        // Add notice if indexes were capped
+        if (sortedIndexes.length > maxDisplayIndexes) {
+          const noticeRow = document.createElement("tr");
+          noticeRow.innerHTML = `<td colspan="3" style="text-align: center; color: #666; font-style: italic; padding: 10px;">Showing top ${maxDisplayIndexes} of ${sortedIndexes.length} indexes</td>`;
+          tbody.appendChild(noticeRow);
+        }
       }
 
       // Recursively extract index names from plan operators with improved error handling
@@ -9227,6 +9318,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             let totalMemoryUsage = 0;
             let totalItemsIn = 0;
             let totalItemsOut = 0;
+            let streamTime = 0;
+            let fetchTime = 0;
+            let sortTime = 0;
             const indexes = [];
             const stats = { primaryScan: 0, indexScan: 0, fetch: 0 };
             let usesPrimaryFlag = false;
@@ -9264,17 +9358,26 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                 usesPrimaryFlag = true;
               }
               
-              // Update stats counters
+              // Update stats counters and extract phase times
               if (operatorType === "PrimaryScan" || operatorType === "PrimaryScan3") {
                 stats.primaryScan++;
               } else if (operatorType === "IndexScan" || operatorType === "IndexScan3") {
                 stats.indexScan++;
               } else if (operatorType === "Fetch") {
                 stats.fetch++;
+                fetchTime += execTime;
+              } else if (operatorType === "Stream") {
+                streamTime += execTime;
+              } else if (operatorType === "Order" || operatorType === "Sort") {
+                sortTime += execTime;
               }
             });
             
-            // Cache all computed values
+            // Cache all computed values including performance ratios
+            const elapsedTimeMs = parseTime(request.elapsedTime);
+            const streamRatio = elapsedTimeMs > 0 ? (streamTime / elapsedTimeMs) * 100 : 0;
+            const fetchRatio = elapsedTimeMs > 0 ? (fetchTime / elapsedTimeMs) * 100 : 0;
+            
             planMetadata = {
               operators: operators,
               maxKernTime: maxKernTime,
@@ -9283,6 +9386,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               totalMemoryUsage: totalMemoryUsage,
               totalItemsIn: totalItemsIn,
               totalItemsOut: totalItemsOut,
+              streamTime: streamTime,
+              fetchTime: fetchTime,
+              sortTime: sortTime,
+              streamRatio: streamRatio,
+              fetchRatio: fetchRatio,
               indexes: indexes,
               stats: stats,
               usesPrimary: usesPrimaryFlag,
@@ -9294,11 +9402,12 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         }
 
         // Pre-calculate commonly used values using cached data
+        const elapsedTimeMs = parseTime(request.elapsedTime);
         const processedRequest = {
           ...request,
           plan: plan,
           // Use cached time values or fallback to direct parsing
-          elapsedTimeMs: parseTime(request.elapsedTime),
+          elapsedTimeMs: elapsedTimeMs,
           serviceTimeMs: planMetadata ? planMetadata.totalServiceTime : parseTime(request.serviceTime || '0ms'),
           kernTimeMs: planMetadata ? planMetadata.maxKernTime : 0,
           memoryBytes: planMetadata ? planMetadata.totalMemoryUsage : (request.usedMemory || 0),
@@ -9306,6 +9415,11 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           usesPrimary: planMetadata ? planMetadata.usesPrimary : false,
           // Use cached index information
           indexInfo: planMetadata ? planMetadata.indexInfo : null,
+          // Store performance insights
+          streamRatio: planMetadata ? planMetadata.streamRatio : 0,
+          fetchRatio: planMetadata ? planMetadata.fetchRatio : 0,
+          isStreamHeavy: planMetadata ? planMetadata.streamRatio > 50 : false,
+          isLargePayload: (request.resultSize || 0) > 50000000 || (request.resultCount || 0) > 10000,
           // Store metadata for quick access
           _planMetadata: planMetadata,
           // Ensure we have a statement type (derive if not present)
@@ -9377,6 +9491,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         return { totalItemsIn, totalItemsOut };
       }
 
+
+
       // Lazy chart loading setup - generate charts only when tabs are activated
       function setupLazyChartLoading(filteredRequests) {
         // Track which tabs have been loaded
@@ -9385,6 +9501,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
         // Generate dashboard charts immediately (user sees this first)
         generateDashboardCharts(filteredRequests);
         loadedTabs.add('dashboard');
+        
+        // Pre-aggregate timeline data once for all timeline charts
+        let timelineData = null;
         
         // Set up lazy loading for other tabs
         $('#tabs').on('tabsactivate', function(event, ui) {
@@ -9396,9 +9515,16 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
             try {
               switch(tabId) {
                 case 'timeline':
-                  generateOperationsChart(filteredRequests);
-                  generateFilterChart(filteredRequests);  
-                  generateTimelineChart(filteredRequests);
+                  // Use sampled data for timeline charts to improve performance
+                  const sampleSize = Math.min(500, filteredRequests.length);
+                  const sampleStep = Math.max(1, Math.floor(filteredRequests.length / sampleSize));
+                  const timelineSample = filteredRequests.filter((_, i) => i % sampleStep === 0);
+                  
+                  console.log(`Timeline charts: Using ${timelineSample.length} of ${filteredRequests.length} requests for performance`);
+                  
+                  generateOperationsChart(timelineSample);
+                  generateFilterChart(timelineSample);  
+                  generateTimelineChart(timelineSample);
                   break;
                 case 'index-query-flow':
                   buildIndexQueryFlow(filteredRequests);
@@ -9472,8 +9598,8 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           }
 
           if (Array.isArray(processData)) {
-            // Process data in batches to avoid blocking UI
-            const batchSize = 200; // Reduced from 1000 for better responsiveness
+            // Process data in smaller batches for maximum UI responsiveness
+            const batchSize = 75; // Further reduced for smoother progress updates
             const processedRequests = [];
             let skippedCount = 0; // Track filtered out requests
 
@@ -9536,6 +9662,16 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
                   
                   // Only process requests that pass all filters
                   processedRequests.push(processRequestData(item));
+                  
+                  // Yield every 25 processed items within batch for ultra-smooth progress
+                  if ((i - startIndex) % 25 === 24 && i < endIndex - 1) {
+                    // Update progress more frequently for smoother bar
+                    const currentProgress = Math.round(
+                      ((i + 1) / processData.length) * 100
+                    );
+                    document.getElementById("progress-bar").style.width = `${currentProgress}%`;
+                    document.getElementById("progress-text").textContent = `${currentProgress}%`;
+                  }
                 } catch (e) {
                   console.warn(
                     `Error processing request ${i}:`,
@@ -9557,9 +9693,9 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
               ).textContent = `${progress}%`;
 
               if (endIndex < processData.length) {
-                // Process next batch asynchronously with optimized timing
+                // Process next batch with dual yielding for maximum responsiveness
                 requestAnimationFrame(() => {
-                  setTimeout(() => processBatch(endIndex), 10);
+                  setTimeout(() => processBatch(endIndex), 5); // Reduced delay for faster processing
                 });
               } else {
                 // All batches processed
@@ -9741,8 +9877,17 @@ body{font-family:Arial,sans-serif;display:flex;flex-direction:column;height:100v
           // Also parse index data if available
           parseIndexJSON();
           
-          // Set up lazy loading for charts
-          setupLazyChartLoading(filteredRequests);
+          // Set up lazy loading for charts with sampling for large datasets
+          const sampleRequests = filteredRequests.length > 1000 ? 
+            filteredRequests.filter((_, i) => i % Math.ceil(filteredRequests.length / 1000) === 0) : 
+            filteredRequests;
+          
+          // Show sampling notice if data was sampled for charts
+          if (filteredRequests.length > 1000) {
+            console.log(`Chart sampling: Using ${sampleRequests.length} of ${filteredRequests.length} requests for chart performance`);
+          }
+          
+          setupLazyChartLoading(sampleRequests);
         } catch (e) {
           console.error("Error generating UI:", e);
           alert(
