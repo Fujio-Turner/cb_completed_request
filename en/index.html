@@ -2581,6 +2581,7 @@
                 window.execVsKernelChart,
                 window.execVsServChart,
                 window.execVsElapsedChart,
+                window.enhancedOperationsChart,
             ];
 
             charts.forEach((chart) => {
@@ -2642,6 +2643,7 @@
                 "execVsKernelChart",
                 "execVsServChart",
                 "execVsElapsedChart",
+                "enhancedOperationsChart",
             ];
 
             chartNames.forEach((chartName) => {
@@ -9469,6 +9471,9 @@
         }
         if (window.execVsElapsedChart) {
           window.execVsElapsedChart.resetZoom();
+        }
+        if (window.enhancedOperationsChart) {
+          window.enhancedOperationsChart.resetZoom();
         }
 
             // Reset to original time range
