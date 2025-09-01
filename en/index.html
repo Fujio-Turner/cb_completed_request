@@ -8037,6 +8037,7 @@
                         filterData: [],
                         streamData: [],
                         kernTimeData: [],
+                        elapsedTimeData: [],
                         queryCount: 0,
                     };
                 }
@@ -8054,6 +8055,10 @@
                 // Extract kernel time from plan
                 const kernTimeMs = calculateTotalKernTime(request.plan) || 0;
                 timeGroups[key].kernTimeData.push(kernTimeMs);
+
+                // Extract elapsed time for ratio calculation
+                const elapsedTimeMs = parseTime(request.elapsedTime) || 0;
+                timeGroups[key].elapsedTimeData.push(elapsedTimeMs);
 
                 // Extract operator-specific data from plan
                 if (request.plan) {
@@ -8162,6 +8167,15 @@
                 return avgKernTime > 0 ? (avgStreamExecTime / avgKernTime) * 100 : 0;
             });
 
+            // Calculate KernTime vs ElapsedTime percentage for new red dotted line
+            const kernVsElapsedPercentData = sortedData.map((item) => {
+                const avgKernTime = item.kernTimeData.length > 0 ? 
+                    item.kernTimeData.reduce((sum, d) => sum + d, 0) / item.kernTimeData.length : 0;
+                const avgElapsedTime = item.elapsedTimeData.length > 0 ? 
+                    item.elapsedTimeData.reduce((sum, d) => sum + d, 0) / item.elapsedTimeData.length : 0;
+                return avgElapsedTime > 0 ? (avgKernTime / avgElapsedTime) * 100 : 0;
+            });
+
             const labels = sortedData.map((item) => item.timestamp);
 
             window.execVsKernelChart = new Chart(ctx, {
@@ -8232,6 +8246,18 @@
                             fill: false,
                             tension: 0.3,
                         },
+                        {
+                            label: "Kernel vs Elapsed Time (%)",
+                            data: kernVsElapsedPercentData,
+                            backgroundColor: "rgba(255, 0, 0, 0.8)", // Bright Red
+                            borderColor: "rgba(255, 0, 0, 1)",
+                            borderWidth: 3,
+                            borderDash: [20, 3, 3, 3, 3, 3, 3, 3], // Custom dash pattern
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 0, // No points
+                            pointHoverRadius: 0, // No hover points
+                        },
                     ],
                 },
                 options: {
@@ -8240,7 +8266,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: "ExecTime vs Highest Kernel Time (%) - (Beta)",
+                            text: "ExecTime vs Highest Kernel Time (%) By Query Steps - (Beta)",
                         },
                         legend: {
                             display: true,
@@ -8266,8 +8292,12 @@
                                 afterBody: function(tooltipItems) {
                                     const dataIndex = tooltipItems[0].dataIndex;
                                     const data = sortedData[dataIndex];
+                                    const avgElapsedTime = data.elapsedTimeData.length > 0 ? 
+                                        data.elapsedTimeData.reduce((sum, d) => sum + d, 0) / data.elapsedTimeData.length : 0;
+                                    const kernElapsedRatio = avgElapsedTime > 0 ? (data.avgKernTime / avgElapsedTime) * 100 : 0;
                                     return [
                                         '',
+                                        `Kernel vs Elapsed: ${kernElapsedRatio.toFixed(1)}%`,
                                         `Queries: ${data.queryCount}`,
                                         `Kernel Time: ${data.avgKernTime.toFixed(1)}ms`
                                     ];
@@ -8371,11 +8401,19 @@
                         authorizeData: [],
                         indexScanData: [],
                         fetchData: [],
+                        kernTimeData: [],
+                        elapsedTimeData: [],
                         queryCount: 0,
                     };
                 }
 
                 timeGroups[key].queryCount++;
+
+                // Extract kernel and elapsed time for ratio calculation
+                const kernTimeMs = calculateTotalKernTime(request.plan) || 0;
+                const elapsedTimeMs = parseTime(request.elapsedTime) || 0;
+                timeGroups[key].kernTimeData.push(kernTimeMs);
+                timeGroups[key].elapsedTimeData.push(elapsedTimeMs);
 
                 // Extract operator-specific data from plan
                 if (request.plan) {
@@ -8445,6 +8483,15 @@
                 const avgExecTime = item.fetchData.reduce((sum, d) => sum + d.execTime, 0) / item.fetchData.length;
                 const avgServTime = item.fetchData.reduce((sum, d) => sum + d.servTime, 0) / item.fetchData.length;
                 return avgServTime > 0 ? (avgExecTime / avgServTime) * 100 : 0;
+            });
+
+            // Calculate KernTime vs ElapsedTime percentage for new red dotted line
+            const kernVsElapsedPercentData = sortedData.map((item) => {
+                const avgKernTime = item.kernTimeData.length > 0 ? 
+                    item.kernTimeData.reduce((sum, d) => sum + d, 0) / item.kernTimeData.length : 0;
+                const avgElapsedTime = item.elapsedTimeData.length > 0 ? 
+                    item.elapsedTimeData.reduce((sum, d) => sum + d, 0) / item.elapsedTimeData.length : 0;
+                return avgElapsedTime > 0 ? (avgKernTime / avgElapsedTime) * 100 : 0;
             });
 
             const labels = sortedData.map((item) => item.timestamp);
@@ -8517,6 +8564,19 @@
                             tension: 0.3,
                             yAxisID: 'y1'
                         },
+                        {
+                            label: "Kernel vs Elapsed Time (%)",
+                            data: kernVsElapsedPercentData,
+                            backgroundColor: "rgba(255, 0, 0, 0.8)", // Bright Red
+                            borderColor: "rgba(255, 0, 0, 1)",
+                            borderWidth: 3,
+                            borderDash: [20, 3, 3, 3, 3, 3, 3, 3], // Custom dash pattern
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 0, // No points
+                            pointHoverRadius: 0, // No hover points
+                            yAxisID: 'y'
+                        },
                     ],
                 },
                 options: {
@@ -8525,7 +8585,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: "ExecTime vs ServTime (%) - (Beta)",
+                            text: "ExecTime vs ServTime (%) by Services in Query Execution - (Beta)",
                         },
                         legend: {
                             display: true,
@@ -8569,8 +8629,14 @@
                                 afterBody: function(tooltipItems) {
                                 const dataIndex = tooltipItems[0].dataIndex;
                                 const data = sortedData[dataIndex];
+                                const avgKernTime = data.kernTimeData.length > 0 ? 
+                                    data.kernTimeData.reduce((sum, d) => sum + d, 0) / data.kernTimeData.length : 0;
+                                const avgElapsedTime = data.elapsedTimeData.length > 0 ? 
+                                    data.elapsedTimeData.reduce((sum, d) => sum + d, 0) / data.elapsedTimeData.length : 0;
+                                const kernElapsedRatio = avgElapsedTime > 0 ? (avgKernTime / avgElapsedTime) * 100 : 0;
                                 return [
                                    '',
+                                   `Kernel vs Elapsed: ${kernElapsedRatio.toFixed(1)}%`,
                                    `Queries: ${data.queryCount}`
                                    ];
                                 }
@@ -8767,6 +8833,7 @@
                         fetchData: [],
                         filterData: [],
                         streamData: [],
+                        kernTimeData: [],
                         elapsedTimeData: [],
                         queryCount: 0,
                     };
@@ -8782,8 +8849,10 @@
                     timeGroups[key].planData.push(planTimeMs);
                 }
 
-                // Extract elapsed time
+                // Extract kernel and elapsed time
+                const kernTimeMs = calculateTotalKernTime(request.plan) || 0;
                 const elapsedTimeMs = parseTime(request.elapsedTime) || 0;
+                timeGroups[key].kernTimeData.push(kernTimeMs);
                 timeGroups[key].elapsedTimeData.push(elapsedTimeMs);
 
                 // Extract operator-specific data from plan
@@ -8893,6 +8962,15 @@
                 return avgElapsedTime > 0 ? (avgStreamExecTime / avgElapsedTime) * 100 : 0;
             });
 
+            // Calculate KernTime vs ElapsedTime percentage for new red dotted line
+            const kernVsElapsedPercentData = sortedData.map((item) => {
+                const avgKernTime = item.kernTimeData.length > 0 ? 
+                    item.kernTimeData.reduce((sum, d) => sum + d, 0) / item.kernTimeData.length : 0;
+                const avgElapsedTime = item.elapsedTimeData.length > 0 ? 
+                    item.elapsedTimeData.reduce((sum, d) => sum + d, 0) / item.elapsedTimeData.length : 0;
+                return avgElapsedTime > 0 ? (avgKernTime / avgElapsedTime) * 100 : 0;
+            });
+
             const labels = sortedData.map((item) => item.timestamp);
 
             window.execVsElapsedChart = new Chart(ctx, {
@@ -8963,6 +9041,18 @@
                             fill: false,
                             tension: 0.3,
                         },
+                        {
+                            label: "Kernel vs Elapsed Time (%)",
+                            data: kernVsElapsedPercentData,
+                            backgroundColor: "rgba(255, 0, 0, 0.8)", // Bright Red
+                            borderColor: "rgba(255, 0, 0, 1)",
+                            borderWidth: 3,
+                            borderDash: [20, 3, 3, 3, 3, 3, 3, 3], // Custom dash pattern
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 0, // No points
+                            pointHoverRadius: 0, // No hover points
+                        },
                     ],
                 },
                 options: {
@@ -8971,7 +9061,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: "ExecTime vs Elapsed Time (%) - (Beta)",
+                            text: "ExecTime vs Elapsed Time (%) By Query Steps - (Beta)",
                         },
                         legend: {
                             display: true,
@@ -8997,8 +9087,12 @@
                                 afterBody: function(tooltipItems) {
                                     const dataIndex = tooltipItems[0].dataIndex;
                                     const data = sortedData[dataIndex];
+                                    const avgKernTime = data.kernTimeData.length > 0 ? 
+                                        data.kernTimeData.reduce((sum, d) => sum + d, 0) / data.kernTimeData.length : 0;
+                                    const kernElapsedRatio = data.avgElapsedTime > 0 ? (avgKernTime / data.avgElapsedTime) * 100 : 0;
                                     return [
                                         '',
+                                        `Kernel vs Elapsed: ${kernElapsedRatio.toFixed(1)}%`,
                                         `Queries: ${data.queryCount}`,
                                         `Elapsed Time: ${data.avgElapsedTime.toFixed(1)}ms`
                                     ];
