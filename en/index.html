@@ -2212,6 +2212,14 @@
                     <canvas id="cpu-time-chart"></canvas>
                 </div>
             </div>
+
+            <!-- Enhanced Operations Chart - Full Width -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div style="width: 100%; height: 400px;" class="chart-container draggable-chart" data-chart-id="enhanced-operations" data-position="bottom-full">
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="enhanced-operations-chart"></canvas>
+                </div>
+            </div>
         </div>
 
         <!-- Analysis Tab Content -->
@@ -5645,22 +5653,22 @@
                     labels: labels,
                     datasets: [
                         {
-                            label: "Fetch Documents",
-                            data: fetchData,
-                            backgroundColor: "#28a745", // Green
-                            borderColor: "#1e7e34",
-                            borderWidth: 1,
-                            yAxisID: "y",
-                            order: 2,
-                        },
-                        {
                             label: "Index Scan Items",
                             data: indexScanData,
                             backgroundColor: "#007bff", // Blue
                             borderColor: "#0056b3",
                             borderWidth: 1,
                             yAxisID: "y",
-                            order: 2,
+                            order: 1, // Blue bars on left
+                        },
+                        {
+                            label: "Fetch Documents",
+                            data: fetchData,
+                            backgroundColor: "#28a745", // Green
+                            borderColor: "#1e7e34",
+                            borderWidth: 1,
+                            yAxisID: "y",
+                            order: 2, // Green bars on right
                         },
                         {
                             label: "Avg Index Scans per Query",
@@ -5840,6 +5848,258 @@
 
             // Register chart for crosshair synchronization
             registerTimelineChart(window.operationsChart, ctx);
+        }
+
+        // Generate enhanced operations chart with detailed In/Out tracking
+        function generateEnhancedOperationsChart(requests) {
+            // Destroy existing chart if it exists
+            if (window.enhancedOperationsChart) {
+                window.enhancedOperationsChart.destroy();
+                window.enhancedOperationsChart = null;
+            }
+
+            const canvas = document.getElementById("enhanced-operations-chart");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+
+            // Group requests by selected time unit
+            const timeGroups = {};
+            const grouping = getTimeGrouping();
+
+            requests.forEach((request) => {
+                if (!request.requestTime || !request.plan) return;
+
+                // Parse requestTime and round based on selected grouping
+                const requestDate = new Date(request.requestTime);
+                const timeKey = roundTimestamp(requestDate, grouping, requests);
+
+                const key = timeKey.toISOString();
+
+                if (!timeGroups[key]) {
+                    timeGroups[key] = {
+                        timestamp: timeKey,
+                        totalIndexIn: 0,
+                        totalIndexOut: 0,
+                        totalFetchIn: 0,
+                        totalFetchOut: 0,
+                        indexQueryCount: 0,
+                        fetchQueryCount: 0,
+                    };
+                }
+
+                // Extract detailed operator statistics from plan
+                try {
+                    const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
+                    const operators = getOperators(planObj);
+
+                    let hasIndexOps = false;
+                    let hasFetchOps = false;
+
+                    operators.forEach((operator) => {
+                        const operatorType = operator["#operator"];
+                        const stats = operator["#stats"] || {};
+                        const itemsIn = stats["#itemsIn"] || 0;
+                        const itemsOut = stats["#itemsOut"] || 0;
+
+                        if (operatorType === "IndexScan" || operatorType === "IndexScan3" || 
+                            operatorType === "PrimaryScan" || operatorType === "PrimaryScan3") {
+                            timeGroups[key].totalIndexIn += itemsIn;
+                            timeGroups[key].totalIndexOut += itemsOut;
+                            hasIndexOps = true;
+                        } else if (operatorType === "Fetch") {
+                            timeGroups[key].totalFetchIn += itemsIn;
+                            timeGroups[key].totalFetchOut += itemsOut;
+                            hasFetchOps = true;
+                        }
+                    });
+
+                    // Count queries that had these operations
+                    if (hasIndexOps) {
+                        timeGroups[key].indexQueryCount++;
+                    }
+                    if (hasFetchOps) {
+                        timeGroups[key].fetchQueryCount++;
+                    }
+                } catch (e) {
+                    console.warn("Error parsing plan for enhanced operations chart:", e);
+                }
+            });
+
+            // Convert to sorted array
+            const sortedData = Object.values(timeGroups).sort(
+                (a, b) => a.timestamp - b.timestamp
+            );
+
+            // Prepare chart data
+            const labels = sortedData.map((item) => item.timestamp);
+            const indexInData = sortedData.map((item) => item.totalIndexIn);
+            const indexOutData = sortedData.map((item) => item.totalIndexOut);
+            const fetchInData = sortedData.map((item) => item.totalFetchIn);
+            const fetchOutData = sortedData.map((item) => item.totalFetchOut);
+            
+            // Calculate averages for line charts
+            const avgIndexOutData = sortedData.map((item) =>
+                item.indexQueryCount > 0 ? item.totalIndexOut / item.indexQueryCount : null
+            );
+            const avgFetchOutData = sortedData.map((item) =>
+                item.fetchQueryCount > 0 ? item.totalFetchOut / item.fetchQueryCount : null
+            );
+
+            // Create enhanced operations chart
+            window.enhancedOperationsChart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Index In",
+                            data: indexInData,
+                            backgroundColor: "rgba(173, 216, 230, 0.8)", // Light Blue
+                            borderColor: "rgba(135, 206, 235, 1)",
+                            borderWidth: 1,
+                            yAxisID: "y",
+                            order: 1, // First bar (leftmost)
+                        },
+                        {
+                            label: "Index Out",
+                            data: indexOutData,
+                            backgroundColor: "#007bff", // Blue
+                            borderColor: "#0056b3",
+                            borderWidth: 1,
+                            yAxisID: "y",
+                            order: 2, // Second bar
+                        },
+                        {
+                            label: "Document Fetch In",
+                            data: fetchInData,
+                            backgroundColor: "rgba(144, 238, 144, 0.8)", // Light Green
+                            borderColor: "rgba(124, 252, 124, 1)",
+                            borderWidth: 1,
+                            yAxisID: "y",
+                            order: 3, // Third bar
+                        },
+                        {
+                            label: "Document Fetch Out",
+                            data: fetchOutData,
+                            backgroundColor: "#28a745", // Green
+                            borderColor: "#1e7e34",
+                            borderWidth: 1,
+                            yAxisID: "y",
+                            order: 4, // Fourth bar (rightmost)
+                        },
+                        {
+                            label: "Avg Index Out per Query",
+                            data: avgIndexOutData,
+                            type: "line",
+                            backgroundColor: "rgba(0, 123, 255, 0.8)", // Blue
+                            borderColor: "rgba(0, 123, 255, 1)",
+                            borderWidth: 2,
+                            // No borderDash - solid line
+                            fill: false,
+                            yAxisID: "y1",
+                            order: 0,
+                            spanGaps: false,
+                            tension: 0.3,
+                            pointRadius: 3, // Show points
+                            pointHoverRadius: 5,
+                        },
+                        {
+                            label: "Avg Document Out per Query",
+                            data: avgFetchOutData,
+                            type: "line",
+                            backgroundColor: "rgba(40, 167, 69, 0.8)", // Green
+                            borderColor: "rgba(40, 167, 69, 1)",
+                            borderWidth: 2,
+                            borderDash: [5, 5], // Dotted line
+                            fill: false,
+                            yAxisID: "y1",
+                            order: 0,
+                            spanGaps: false,
+                            tension: 0.3,
+                            pointRadius: 3, // Show points
+                            pointHoverRadius: 5,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "Enhanced Database Operations: Detailed In/Out Analysis - (Beta)",
+                        },
+                        legend: {
+                            display: true,
+                            position: "top",
+                        },
+                        zoom: {
+                            limits: {
+                                x: { min: "original", max: "original" },
+                                y: { min: "original", max: "original" },
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: "xy",
+                                onPan: function ({ chart }) {
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                },
+                            },
+                            zoom: {
+                                wheel: { enabled: false },
+                                pinch: { enabled: true },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: "rgba(100,100,100,0.4)",
+                                    borderColor: "rgba(50,50,50,0.8)",
+                                    borderWidth: 2,
+                                },
+                                mode: "xy",
+                                onZoom: function ({ chart }) {
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            type: "time",
+                            time: getCurrentTimeConfig(requests),
+                            title: {
+                                display: true,
+                                text: "Request Time",
+                            },
+                        },
+                        y: {
+                            type: "linear",
+                            position: "left",
+                            title: {
+                                display: true,
+                                text: "Operation Count",
+                            },
+                            beginAtZero: true,
+                        },
+                        y1: {
+                            type: "linear",
+                            position: "right",
+                            title: {
+                                display: true,
+                                text: "Avg Items per Query",
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        },
+                    },
+                    interaction: {
+                        mode: "index",
+                        intersect: false,
+                    },
+                },
+                plugins: [verticalLinePlugin]
+            });
+
+            registerTimelineChart(window.enhancedOperationsChart, ctx);
         }
 
         // Generate filter chart showing filter efficiency (IN vs OUT)
@@ -6455,6 +6715,9 @@
 
             // Create ExecTime vs Elapsed Time Chart
             createExecVsElapsedChart(requests, grouping);
+
+            // Create Enhanced Operations Chart
+            generateEnhancedOperationsChart(requests);
 
             // Initialize drag and drop for execution analysis charts
             setupChartDragAndDrop();
@@ -8726,7 +8989,8 @@
                 'exec-vs-kernel': () => window.execVsKernelChart,
                 'exec-vs-serv': () => window.execVsServChart,
                 'cpu-time': () => window.cpuTimeChart,
-                'exec-vs-elapsed': () => window.execVsElapsedChart
+                'exec-vs-elapsed': () => window.execVsElapsedChart,
+                'enhanced-operations': () => window.enhancedOperationsChart
             };
 
             // Make charts draggable
