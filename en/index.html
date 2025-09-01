@@ -5964,6 +5964,38 @@
                     labels: labels,
                     datasets: [
                         {
+                            label: "Avg Index In per Query (with inefficiency fill)",
+                            data: avgIndexInData,
+                            type: "line",
+                            backgroundColor: "rgba(255, 165, 0, 0.25)", // Transparent Orange for fill
+                            borderColor: "rgba(0, 123, 255, 1)", // Blue border
+                            borderWidth: 2,
+                            // No borderDash - solid line
+                            fill: '+1', // Fill to next dataset (Document Out line)
+                            yAxisID: "y1",
+                            order: 0,
+                            spanGaps: false,
+                            tension: 0.3,
+                            pointRadius: 3, // Show points
+                            pointHoverRadius: 5,
+                        },
+                        {
+                            label: "Avg Document Out per Query",
+                            data: avgFetchOutData,
+                            type: "line",
+                            backgroundColor: "rgba(40, 167, 69, 0.8)", // Green
+                            borderColor: "rgba(40, 167, 69, 1)",
+                            borderWidth: 2,
+                            borderDash: [5, 5], // Dotted line
+                            fill: false,
+                            yAxisID: "y1",
+                            order: 1,
+                            spanGaps: false,
+                            tension: 0.3,
+                            pointRadius: 3, // Show points
+                            pointHoverRadius: 5,
+                        },
+                        {
                             label: "Index In",
                             data: indexInData,
                             backgroundColor: "rgba(173, 216, 230, 0.8)", // Light Blue
@@ -5998,38 +6030,6 @@
                             borderWidth: 1,
                             yAxisID: "y",
                             order: 4, // Fourth bar (rightmost)
-                        },
-                        {
-                            label: "Avg Document Out per Query",
-                            data: avgFetchOutData,
-                            type: "line",
-                            backgroundColor: "rgba(40, 167, 69, 0.8)", // Green
-                            borderColor: "rgba(40, 167, 69, 1)",
-                            borderWidth: 2,
-                            borderDash: [5, 5], // Dotted line
-                            fill: false,
-                            yAxisID: "y1",
-                            order: 1,
-                            spanGaps: false,
-                            tension: 0.3,
-                            pointRadius: 3, // Show points
-                            pointHoverRadius: 5,
-                        },
-                        {
-                            label: "Avg Index In per Query (with inefficiency fill)",
-                            data: conditionalIndexInData,
-                            type: "line",
-                            backgroundColor: "rgba(255, 165, 0, 0.25)", // Transparent Orange for fill
-                            borderColor: "rgba(0, 123, 255, 1)", // Blue border
-                            borderWidth: 2,
-                            // No borderDash - solid line
-                            fill: '-1', // Fill to previous dataset (Document Out line)
-                            yAxisID: "y1",
-                            order: 0,
-                            spanGaps: false,
-                            tension: 0.3,
-                            pointRadius: 3, // Show points
-                            pointHoverRadius: 5,
                         },
                     ],
                 },
