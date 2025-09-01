@@ -1281,5 +1281,256 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-07T18:30:45.679Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"8.901µs\",\"servTime\":\"32.456µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:transaction_logs\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"15.678µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":600000,\"execTime\":\"1234.567ms\",\"kernTime\":\"3456.789ms\",\"servTime\":\"1089.012ms\"},\"index\":\"idx_transaction_logs_export_date\",\"keyspace\":\"transaction_logs\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"2025-08-01\\\"\",\"inclusion\":3,\"low\":\"\\\"2025-08-01\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":300,\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":600300,\"execTime\":\"1567.890ms\",\"kernTime\":\"2987.654ms\",\"servTime\":\"1345.678ms\"},\"keyspace\":\"transaction_logs\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":300000,\"execTime\":\"234.567ms\",\"kernTime\":\"198.765ms\",\"servTime\":\"189.012ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Order\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":450000,\"execTime\":\"345.678ms\",\"kernTime\":\"289.012ms\",\"servTime\":\"267.890ms\"},\"sort_terms\":[{\"expr\":\"(`transaction_logs`.`timestamp`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":150001,\"execTime\":\"456.789ms\",\"kernTime\":\"398.765ms\",\"servTime\":\"378.901ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
-   }
+   },
+   {
+    "completed_requests": {
+      "clientContextID": "document-only-query-use-keys-1",
+      "cpuTime": "0.123ms",
+      "elapsedTime": "2.456ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$docKeys": ["product::12345", "product::67890", "product::99999"]
+      },
+      "phaseCounts": {
+        "fetch": 3
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "1.234µs",
+        "instantiate": "0.567µs",
+        "parse": "8.901µs",
+        "plan": "3.456µs",
+        "fetch": "1.789ms",
+        "project": "0.234ms",
+        "run": "2.345ms",
+        "stream": "0.123ms"
+      },
+      "remoteAddr": "127.0.0.1:54321",
+      "requestId": "document-only-query-use-keys-1",
+      "requestTime": "2025-08-08T10:15:00.123Z",
+      "resultCount": 3,
+      "resultSize": 1536,
+      "scanConsistency": "unbounded",
+      "serviceTime": "2.445ms",
+      "state": "completed",
+      "statement": "SELECT * FROM `products` USE KEYS $docKeys",
+      "statementType": "SELECT",
+      "useCBO": false,
+      "usedMemory": 512,
+      "userAgent": "node-couchbase/4.1.2",
+      "users": "local:product_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-08T10:15:00.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"0.234µs\",\"servTime\":\"1.123µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:products\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"0.567µs\"},\"~children\":[{\"#operator\":\"KeyScan\",\"#stats\":{\"#itemsIn\":3,\"#itemsOut\":3,\"#phaseSwitches\":6,\"execTime\":\"0.123ms\",\"kernTime\":\"0.1ms\",\"servTime\":\"0.09ms\"},\"keys\":[\"\\\"product::12345\\\"\",\"\\\"product::67890\\\"\",\"\\\"product::99999\\\"\"],\"keyspace\":\"products\",\"namespace\":\"default\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":3,\"#itemsOut\":3,\"#phaseSwitches\":6,\"execTime\":\"1.789ms\",\"kernTime\":\"1.5ms\",\"servTime\":\"1.4ms\"},\"keyspace\":\"products\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":3,\"#itemsOut\":3,\"#phaseSwitches\":6,\"execTime\":\"0.234ms\",\"kernTime\":\"0.2ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":3,\"#itemsOut\":3,\"#phaseSwitches\":4,\"execTime\":\"0.123ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "inefficient-index-scan-low-output",
+      "cpuTime": "234.567ms",
+      "elapsedTime": "3.456789s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$category": "rare_items",
+        "$minPrice": 50000
+      },
+      "phaseCounts": {
+        "indexScan": 500000,
+        "fetch": 25
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "12.345µs",
+        "instantiate": "8.901µs",
+        "parse": "234.567µs",
+        "plan": "89.012µs",
+        "indexScan": "2345.678ms",
+        "fetch": "89.123ms",
+        "filter": "567.890ms",
+        "project": "23.456ms",
+        "run": "3.234567s",
+        "stream": "12.345ms"
+      },
+      "remoteAddr": "127.0.0.1:43210",
+      "requestId": "inefficient-index-scan-low-output",
+      "requestTime": "2025-08-08T12:30:00.456Z",
+      "resultCount": 25,
+      "resultSize": 12800,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "3.445678s",
+      "state": "completed",
+      "statement": "SELECT * FROM `luxury_products` WHERE category = $category AND price >= $minPrice",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 18432,
+      "userAgent": "java-luxury-search/2.1.0",
+      "users": "local:search_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-08T12:30:00.457Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"3.456µs\",\"servTime\":\"11.789µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:luxury_products\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"6.789µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":500000,\"#itemsOut\":25000,\"#phaseSwitches\":1000000,\"execTime\":\"2345.678ms\",\"kernTime\":\"2123.456ms\",\"servTime\":\"2034.567ms\"},\"index\":\"idx_luxury_category\",\"keyspace\":\"luxury_products\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"rare_items\\\"\",\"inclusion\":3,\"low\":\"\\\"rare_items\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":25000,\"#itemsOut\":25000,\"#phaseSwitches\":50000,\"execTime\":\"89.123ms\",\"kernTime\":\"78.901ms\",\"servTime\":\"75.234ms\"},\"keyspace\":\"luxury_products\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":25000,\"#itemsOut\":25,\"#phaseSwitches\":25025,\"execTime\":\"567.890ms\",\"kernTime\":\"523.456ms\"},\"condition\":\"((`luxury_products`.`price`) >= 50000)\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"#phaseSwitches\":50,\"execTime\":\"23.456ms\",\"kernTime\":\"21.234ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"#phaseSwitches\":26,\"execTime\":\"12.345ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "document-only-query-use-keys-2",
+      "cpuTime": "0.234ms",
+      "elapsedTime": "3.789ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$orderIds": ["order::2025::123456", "order::2025::789012"]
+      },
+      "phaseCounts": {
+        "fetch": 2
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "1.567µs",
+        "instantiate": "0.789µs",
+        "parse": "12.345µs",
+        "plan": "4.567µs",
+        "fetch": "2.891ms",
+        "project": "0.345ms",
+        "run": "3.678ms",
+        "stream": "0.156ms"
+      },
+      "remoteAddr": "127.0.0.1:65432",
+      "requestId": "document-only-query-use-keys-2",
+      "requestTime": "2025-08-08T14:45:00.789Z",
+      "resultCount": 2,
+      "resultSize": 1024,
+      "scanConsistency": "unbounded",
+      "serviceTime": "3.778ms",
+      "state": "completed",
+      "statement": "SELECT orderId, customerId, total, status FROM `orders` USE KEYS $orderIds",
+      "statementType": "SELECT",
+      "useCBO": false,
+      "usedMemory": 256,
+      "userAgent": "dotnet-order-api/3.2.1",
+      "users": "local:order_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-08T14:45:00.790Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"0.345µs\",\"servTime\":\"1.456µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:orders\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"0.789µs\"},\"~children\":[{\"#operator\":\"KeyScan\",\"#stats\":{\"#itemsIn\":2,\"#itemsOut\":2,\"#phaseSwitches\":4,\"execTime\":\"0.234ms\",\"kernTime\":\"0.2ms\",\"servTime\":\"0.18ms\"},\"keys\":[\"\\\"order::2025::123456\\\"\",\"\\\"order::2025::789012\\\"\"],\"keyspace\":\"orders\",\"namespace\":\"default\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":2,\"#itemsOut\":2,\"#phaseSwitches\":4,\"execTime\":\"2.891ms\",\"kernTime\":\"2.5ms\",\"servTime\":\"2.3ms\"},\"keyspace\":\"orders\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":2,\"#itemsOut\":2,\"#phaseSwitches\":4,\"execTime\":\"0.345ms\",\"kernTime\":\"0.3ms\"},\"result_terms\":[{\"expr\":\"(`orders`.`orderId`)\"},{\"expr\":\"(`orders`.`customerId`)\"},{\"expr\":\"(`orders`.`total`)\"},{\"expr\":\"(`orders`.`status`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":2,\"#itemsOut\":2,\"#phaseSwitches\":3,\"execTime\":\"0.156ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "very-inefficient-index-scan",
+      "cpuTime": "456.789ms",
+      "elapsedTime": "5.678901s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$searchTerm": "special_item_xyz"
+      },
+      "phaseCounts": {
+        "indexScan": 1000000,
+        "fetch": 5
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "15.678µs",
+        "instantiate": "12.345µs",
+        "parse": "456.789µs",
+        "plan": "123.456µs",
+        "indexScan": "4567.890ms",
+        "fetch": "12.345ms",
+        "filter": "890.123ms",
+        "project": "34.567ms",
+        "run": "5.567890s",
+        "stream": "23.456ms"
+      },
+      "remoteAddr": "127.0.0.1:12345",
+      "requestId": "very-inefficient-index-scan",
+      "requestTime": "2025-08-08T16:20:00.567Z",
+      "resultCount": 5,
+      "resultSize": 2560,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "5.667890s",
+      "state": "completed",
+      "statement": "SELECT * FROM `inventory` WHERE description LIKE '%special_item_xyz%'",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 32768,
+      "userAgent": "python-inventory-search/1.5.2",
+      "users": "local:inventory_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-08T16:20:00.568Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"4.567µs\",\"servTime\":\"14.234µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:inventory\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"9.012µs\"},\"~children\":[{\"#operator\":\"PrimaryScan3\",\"#stats\":{\"#itemsIn\":1000000,\"#itemsOut\":150000,\"#phaseSwitches\":2000000,\"execTime\":\"4567.890ms\",\"kernTime\":\"4234.567ms\",\"servTime\":\"4123.456ms\"},\"index\":\"def_primary\",\"keyspace\":\"inventory\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"#phaseSwitches\":300000,\"execTime\":\"12.345ms\",\"kernTime\":\"10.234ms\",\"servTime\":\"9.567ms\"},\"keyspace\":\"inventory\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":5,\"#phaseSwitches\":150005,\"execTime\":\"890.123ms\",\"kernTime\":\"823.456ms\"},\"condition\":\"((`inventory`.`description`) LIKE '%special_item_xyz%')\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"34.567ms\",\"kernTime\":\"31.234ms\"},\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":6,\"execTime\":\"23.456ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "document-only-multi-keys",
+      "cpuTime": "0.345ms",
+      "elapsedTime": "4.567ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$userKeys": ["user::premium::alice", "user::premium::bob", "user::premium::carol", "user::premium::dave", "user::premium::eve"]
+      },
+      "phaseCounts": {
+        "fetch": 5
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "2.345µs",
+        "instantiate": "1.234µs",
+        "parse": "15.678µs",
+        "plan": "6.789µs",
+        "fetch": "3.456ms",
+        "project": "0.567ms",
+        "run": "4.456ms",
+        "stream": "0.234ms"
+      },
+      "remoteAddr": "127.0.0.1:98765",
+      "requestId": "document-only-multi-keys",
+      "requestTime": "2025-08-08T18:10:00.234Z",
+      "resultCount": 5,
+      "resultSize": 2560,
+      "scanConsistency": "unbounded",
+      "serviceTime": "4.556ms",
+      "state": "completed",
+      "statement": "SELECT userId, name, email, premiumLevel FROM `users` USE KEYS $userKeys",
+      "statementType": "SELECT",
+      "useCBO": false,
+      "usedMemory": 1024,
+      "userAgent": "go-user-api/1.8.3",
+      "users": "local:user_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-08T18:10:00.235Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"0.567µs\",\"servTime\":\"2.234µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:users\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"1.123µs\"},\"~children\":[{\"#operator\":\"KeyScan\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"0.456ms\",\"kernTime\":\"0.4ms\",\"servTime\":\"0.35ms\"},\"keys\":[\"\\\"user::premium::alice\\\"\",\"\\\"user::premium::bob\\\"\",\"\\\"user::premium::carol\\\"\",\"\\\"user::premium::dave\\\"\",\"\\\"user::premium::eve\\\"\"],\"keyspace\":\"users\",\"namespace\":\"default\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"3.456ms\",\"kernTime\":\"3.1ms\",\"servTime\":\"2.9ms\"},\"keyspace\":\"users\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"0.567ms\",\"kernTime\":\"0.5ms\"},\"result_terms\":[{\"expr\":\"(`users`.`userId`)\"},{\"expr\":\"(`users`.`name`)\"},{\"expr\":\"(`users`.`email`)\"},{\"expr\":\"(`users`.`premiumLevel`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":6,\"execTime\":\"0.234ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  }
  ]

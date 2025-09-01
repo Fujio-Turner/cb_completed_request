@@ -5938,12 +5938,24 @@
             const fetchOutData = sortedData.map((item) => item.totalFetchOut);
             
             // Calculate averages for line charts
-            const avgIndexOutData = sortedData.map((item) =>
-                item.indexQueryCount > 0 ? item.totalIndexOut / item.indexQueryCount : null
+            const avgIndexInData = sortedData.map((item) =>
+                item.indexQueryCount > 0 ? item.totalIndexIn / item.indexQueryCount : null
             );
             const avgFetchOutData = sortedData.map((item) =>
                 item.fetchQueryCount > 0 ? item.totalFetchOut / item.fetchQueryCount : null
             );
+
+            // Create inefficiency fill data - only when Index In > Document Out
+            const inefficiencyFillData = sortedData.map((item, index) => {
+                const indexIn = avgIndexInData[index];
+                const fetchOut = avgFetchOutData[index];
+                
+                // Only show fill area when Index In > Document Out (inefficient scanning)
+                if (indexIn !== null && fetchOut !== null && indexIn > fetchOut) {
+                    return indexIn; // Fill from Document Out up to Index In
+                }
+                return null; // No fill when efficient or no data
+            });
 
             // Create enhanced operations chart
             window.enhancedOperationsChart = new Chart(ctx, {
@@ -5988,22 +6000,6 @@
                             order: 4, // Fourth bar (rightmost)
                         },
                         {
-                            label: "Avg Index Out per Query",
-                            data: avgIndexOutData,
-                            type: "line",
-                            backgroundColor: "rgba(0, 123, 255, 0.8)", // Blue
-                            borderColor: "rgba(0, 123, 255, 1)",
-                            borderWidth: 2,
-                            // No borderDash - solid line
-                            fill: false,
-                            yAxisID: "y1",
-                            order: 0,
-                            spanGaps: false,
-                            tension: 0.3,
-                            pointRadius: 3, // Show points
-                            pointHoverRadius: 5,
-                        },
-                        {
                             label: "Avg Document Out per Query",
                             data: avgFetchOutData,
                             type: "line",
@@ -6012,6 +6008,22 @@
                             borderWidth: 2,
                             borderDash: [5, 5], // Dotted line
                             fill: false,
+                            yAxisID: "y1",
+                            order: 1,
+                            spanGaps: false,
+                            tension: 0.3,
+                            pointRadius: 3, // Show points
+                            pointHoverRadius: 5,
+                        },
+                        {
+                            label: "Avg Index In per Query (with inefficiency fill)",
+                            data: conditionalIndexInData,
+                            type: "line",
+                            backgroundColor: "rgba(255, 165, 0, 0.25)", // Transparent Orange for fill
+                            borderColor: "rgba(0, 123, 255, 1)", // Blue border
+                            borderWidth: 2,
+                            // No borderDash - solid line
+                            fill: '-1', // Fill to previous dataset (Document Out line)
                             yAxisID: "y1",
                             order: 0,
                             spanGaps: false,
