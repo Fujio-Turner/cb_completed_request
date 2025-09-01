@@ -2720,8 +2720,9 @@
 
                 // Apply SQL statement filtering only if filter text is not empty
                 if (sqlFilterText && sqlFilterText.length > 0) {
-                    const statement = (request.statement || "").toLowerCase();
-                    if (!statement.includes(sqlFilterText)) {
+                    const statement = (request.statement || "").toLowerCase().replace(/\s+/g, ' ').trim();
+                    const filterText = sqlFilterText.replace(/\s+/g, ' ').trim();
+                    if (!statement.includes(filterText)) {
                         return false;
                     }
                 }
@@ -11959,8 +11960,9 @@
 
                                 // Apply SQL statement filtering early
                                 if (sqlFilterText && sqlFilterText.length > 0) {
-                                    const statement = (request.statement || "").toLowerCase();
-                                    if (!statement.includes(sqlFilterText)) {
+                                    const statement = (request.statement || "").toLowerCase().replace(/\s+/g, ' ').trim();
+                                    const filterText = sqlFilterText.replace(/\s+/g, ' ').trim();
+                                    if (!statement.includes(filterText)) {
                                         skippedCount++;
                                         continue; // Skip this request
                                     }
