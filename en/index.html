@@ -2203,13 +2203,13 @@
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="exec-vs-serv-chart"></canvas>
                 </div>
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="cpu-time" data-position="bottom-left">
-                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <canvas id="cpu-time-chart"></canvas>
-                </div>
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-elapsed" data-position="bottom-right">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-elapsed" data-position="bottom-left">
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="exec-vs-elapsed-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="cpu-time" data-position="bottom-right">
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="cpu-time-chart"></canvas>
                 </div>
             </div>
         </div>
@@ -8454,32 +8454,68 @@
                 data: {
                     labels: labels,
                     datasets: [
+                    {
+                    label: "Authorize: ExecTime vs ServTime (%)",
+                    data: authorizePercentData,
+                    backgroundColor: "rgba(54, 162, 235, 0.8)", // Blue
+                    borderColor: "rgba(54, 162, 235, 1)",
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.3,
+                        yAxisID: 'y'
+                    },
+                    {
+                    label: "IndexScan: ExecTime vs ServTime (%)",
+                    data: indexScanPercentData,
+                    backgroundColor: "rgba(255, 206, 86, 0.8)", // Yellow
+                    borderColor: "rgba(255, 206, 86, 1)",
+                    borderWidth: 2,
+                    fill: false,
+                        tension: 0.3,
+                        yAxisID: 'y'
+                    },
+                    {
+                    label: "Fetch: ExecTime vs ServTime (%)",
+                    data: fetchPercentData,
+                    backgroundColor: "rgba(153, 102, 255, 0.8)", // Purple
+                    borderColor: "rgba(153, 102, 255, 1)",
+                    borderWidth: 2,
+                        fill: false,
+                            tension: 0.3,
+                            yAxisID: 'y'
+                        },
                         {
-                            label: "Authorize: ExecTime vs ServTime (%)",
-                            data: authorizePercentData,
+                            label: "Authorize: Avg ServTime (ms)",
+                            data: sortedData.map(item => item.avgAuthorizeServTime),
                             backgroundColor: "rgba(54, 162, 235, 0.8)", // Blue
                             borderColor: "rgba(54, 162, 235, 1)",
                             borderWidth: 2,
+                            borderDash: [5, 5],
                             fill: false,
                             tension: 0.3,
+                            yAxisID: 'y1'
                         },
                         {
-                            label: "IndexScan: ExecTime vs ServTime (%)",
-                            data: indexScanPercentData,
+                            label: "IndexScan: Avg ServTime (ms)",
+                            data: sortedData.map(item => item.avgIndexScanServTime),
                             backgroundColor: "rgba(255, 206, 86, 0.8)", // Yellow
                             borderColor: "rgba(255, 206, 86, 1)",
                             borderWidth: 2,
+                            borderDash: [5, 5],
                             fill: false,
                             tension: 0.3,
+                            yAxisID: 'y1'
                         },
                         {
-                            label: "Fetch: ExecTime vs ServTime (%)",
-                            data: fetchPercentData,
+                            label: "Fetch: Avg ServTime (ms)",
+                            data: sortedData.map(item => item.avgFetchServTime),
                             backgroundColor: "rgba(153, 102, 255, 0.8)", // Purple
                             borderColor: "rgba(153, 102, 255, 1)",
                             borderWidth: 2,
+                            borderDash: [5, 5],
                             fill: false,
                             tension: 0.3,
+                            yAxisID: 'y1'
                         },
                     ],
                 },
@@ -8498,28 +8534,45 @@
                         tooltip: {
                             callbacks: {
                                 beforeBody: function() {
-                                    return 'ExecTime vs ServTime (%):';
+                                    return 'ExecTime Vs ServTime (%) | Avg ServTime';
                                 },
                                 label: function(context) {
-                                    const value = context.parsed.y;
-                                    if (value === null || value === undefined) return null;
-                                    // Extract just the operator name from various label formats
-                                    let operatorName = context.dataset.label;
-                                    if (operatorName.includes(':')) {
-                                        operatorName = operatorName.split(':')[0];
-                                    } else if (operatorName.includes(' vs ')) {
-                                        operatorName = operatorName.split(' vs ')[0];
-                                    }
-                                    return `  ${operatorName}: ${value.toFixed(2)}%`;
-                                },
+                                const value = context.parsed.y;
+                                if (value === null || value === undefined) return null;
+                                    
+                                    // Only show labels for percentage datasets, skip service time datasets
+                                if (context.dataset.label.includes('Avg ServTime')) return null;
+                                
+                                const dataIndex = context.dataIndex;
+                                const data = sortedData[dataIndex];
+                                
+                                // Extract just the operator name from various label formats
+                                let operatorName = context.dataset.label;
+                                if (operatorName.includes(':')) {
+                                    operatorName = operatorName.split(':')[0];
+                                } else if (operatorName.includes(' vs ')) {
+                                operatorName = operatorName.split(' vs ')[0];
+                                }
+                                
+                                    // Get the corresponding service time for this operator
+                                     let servTime = 0;
+                                     if (operatorName === 'Authorize') {
+                                         servTime = data.avgAuthorizeServTime;
+                                     } else if (operatorName === 'IndexScan') {
+                                         servTime = data.avgIndexScanServTime;
+                                     } else if (operatorName === 'Fetch') {
+                                         servTime = data.avgFetchServTime;
+                                     }
+                                     
+                                     return `  ${operatorName}: ${value.toFixed(2)}% | ${servTime.toFixed(1)}ms`;
+                                 },
                                 afterBody: function(tooltipItems) {
-                                    const dataIndex = tooltipItems[0].dataIndex;
-                                    const data = sortedData[dataIndex];
-                                    return [
-                                        '',
-                                        `Queries: ${data.queryCount}`,
-                                        `Service Time: ${(data.avgAuthorizeServTime + data.avgIndexScanServTime + data.avgFetchServTime).toFixed(1)}ms`
-                                    ];
+                                const dataIndex = tooltipItems[0].dataIndex;
+                                const data = sortedData[dataIndex];
+                                return [
+                                   '',
+                                   `Queries: ${data.queryCount}`
+                                   ];
                                 }
                             }
                         },
@@ -8558,20 +8611,29 @@
                         },
                     },
                     scales: {
-                        x: {
-                            type: "time",
-                            time: getCurrentTimeConfig(requests),
-                            title: { display: true, text: "Request Time" },
-                        },
-                        y: {
-                            type: "linear",
-                            position: "left",
-                            title: { display: true, text: "Percentage (%)" },
-                            beginAtZero: true,
-                            suggestedMin: 0,
-                            suggestedMax: 100,
-                        },
+                    x: {
+                    type: "time",
+                    time: getCurrentTimeConfig(requests),
+                    title: { display: true, text: "Request Time" },
                     },
+                    y: {
+                    type: "linear",
+                    position: "left",
+                    title: { display: true, text: "Percentage (%)" },
+                    beginAtZero: true,
+                    suggestedMin: 0,
+                    suggestedMax: 100,
+                    },
+                        y1: {
+                             type: "linear",
+                             position: "right",
+                             title: { display: true, text: "Avg ServTime (ms)" },
+                             beginAtZero: true,
+                             grid: {
+                                 drawOnChartArea: false,
+                             },
+                         },
+                     },
                     interaction: { mode: "index", intersect: false },
                 },
                 plugins: [verticalLinePlugin]
