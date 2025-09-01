@@ -10777,7 +10777,6 @@
                             if (coreKernelAnalysis.coreToKernelRatio >= 50) {
                                 highKernelTimeQueriesCount++;
                                 totalCoreKernelRatio += coreKernelAnalysis.coreToKernelRatio;
-                                console.log(`Query qualifies: kernToElapsed=${kernToElapsedRatio.toFixed(1)}%, coreToKernel=${coreKernelAnalysis.coreToKernelRatio.toFixed(1)}%`);
                             }
                         }
                     } catch (e) {
@@ -11125,7 +11124,7 @@
             const coreExecTime = totalExecTime - streamExecTime;
             const coreToKernelRatio = highestKernelTime > 0 ? (coreExecTime / highestKernelTime) * 100 : 0;
 
-            console.log(`Core kernel analysis: totalExec=${totalExecTime}ms, streamExec=${streamExecTime}ms, coreExec=${coreExecTime}ms, highestKernel=${highestKernelTime}ms, ratio=${coreToKernelRatio.toFixed(1)}%`);
+
 
             return {
                 coreToKernelRatio: coreToKernelRatio
@@ -11170,7 +11169,7 @@
             const streamRatio = elapsedTimeMs > 0 ? (streamExecTime / elapsedTimeMs) * 100 : 0;
             const qualifies = streamRatio >= thresholdPercent;
 
-            console.log(`Stream analysis: streamExec=${streamExecTime}ms, elapsedTime=${elapsedTimeMs}ms, ratio=${streamRatio.toFixed(1)}%, qualifies=${qualifies}`);
+
 
             return {
                 qualifies: qualifies,
@@ -11312,7 +11311,6 @@
                             }
 
                             const indexScanData = extractIndexScanDataFromPlan(request.plan, indexName);
-                            console.log(`Extracted data for ${indexName}:`, indexScanData);
                             if (indexScanData.scanTime > 0) {
                                 indexData[indexName].scanTimes.push(indexScanData.scanTime);
                                 indexData[indexName].totalUsage++;
@@ -11355,13 +11353,9 @@
             Object.values(indexData).forEach((index) => {
                 totalIndexes++;
 
-                console.log(`Analyzing index: ${index.name}, scanTimes:`, index.scanTimes);
-
                 if (index.scanTimes && index.scanTimes.length > 0) {
                     const avgScanTimeMs = index.scanTimes.reduce((a, b) => a + b, 0) / index.scanTimes.length;
                     const avgScanTimeSeconds = avgScanTimeMs / 1000;
-
-                    console.log(`Index ${index.name}: avgScanTimeMs=${avgScanTimeMs}, avgScanTimeSeconds=${avgScanTimeSeconds}`);
 
                     if (avgScanTimeSeconds >= 10) {
                         slowIndexes10sPlus++;
@@ -11379,7 +11373,7 @@
                 }
             });
 
-            console.log(`Final counts: total=${totalIndexes}, 2-10s=${slowIndexes2to10s}, 10+s=${slowIndexes10sPlus}, slow primary=${slowPrimaryIndexes}`);
+
 
             // Update display elements for slow index scan times
             const totalIndexesElement = document.getElementById("total-indexes-count");
@@ -12319,21 +12313,11 @@
 
                     // Always check Index/Query Flow tab (not just first time)
                     if (tabId === "index-query-flow" && originalRequests.length > 0) {
-
-
-                        // Full render from existing indexQueryFlowData (create DIVs + SVG)
-                        setTimeout(() => {
-
-                            // Convert indexQueryFlowData back to arrays for renderIndexQueryFlow
-                            const indexes = Array.from(indexQueryFlowData.indexes.values());
-                            const queries = Array.from(indexQueryFlowData.queries.values());
-
-
-
-                            // Do full render (creates DIVs and SVG)
-                            renderIndexQueryFlow(indexes, queries);
-
-                        }, 150);
+                        // Use current filtered requests, not cached data
+                        const currentFilteredRequests = window.filteredRequests || window.currentFilteredRequests || originalRequests;
+                        
+                        // Rebuild Index/Query Flow with current filtered data
+                        buildIndexQueryFlow(currentFilteredRequests);
                     }
                 },
             });
@@ -12561,7 +12545,7 @@
 
             // Check if Index/Query Flow tab is currently visible using jQuery UI tabs
             const activeTabIndex = $("#tabs").tabs("option", "active");
-            const indexQueryFlowTabIndex = 4; // Index/Query Flow is the 5th tab (0-indexed)
+            const indexQueryFlowTabIndex = 5; // Index/Query Flow is the 6th tab (0-indexed)
 
 
 
@@ -12836,7 +12820,6 @@
                 }
 
                 searchOperatorForIndex(plan);
-                console.log(`[${indexName}] FINAL RESULT: scanTime=${result.scanTime}ms, itemsScanned=${result.itemsScanned}, itemsFetched=${result.itemsFetched}`);
                 return result;
             } catch (e) {
                 console.warn("Failed to process plan data:", e);
@@ -13010,11 +12993,6 @@
         }
 
         function renderIndexQueryFlow(indexes, queries) {
-            console.log("🎨 renderIndexQueryFlow called with:");
-            console.log("  📋 Indexes:", indexes.length, "items");
-            console.log("  📋 Queries:", queries.length, "items");
-            console.log("  📋 indexQueryFlowData.connections size:", indexQueryFlowData.connections.size);
-            console.log("🎨 renderIndexQueryFlow called from:", new Error().stack.split('\n')[1]);
 
             const flowElements = document.getElementById("flow-elements");
 
@@ -13097,14 +13075,10 @@
         }
 
         function createIndexDiv(index, color, x, y) {
-            console.log(`🎨 createIndexDiv for "${index.name}": isPrimary=${index.isPrimary}, totalUsage=${index.totalUsage}`);
-
             const div = document.createElement("div");
             let className = "index-item";
             if (index.isPrimary) className += " primary";
             if (index.name === "#sequentialscan") className += " sequential-scan";
-
-            console.log(`🎨 createIndexDiv className: "${className}"`);
 
             div.className = className;
             div.style.borderColor = color;
