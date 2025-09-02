@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.10.0
+# Couchbase Slow Query Analysis Tool v3.11.0
 
 **🌍 Idiomas:** [🇺🇸 English](../README.md) | [🇩🇪 Deutsch](../de/README.de.md) | **🇪🇸 Español** | [🇵🇹 Português](../pt/README.pt.md)
 
@@ -156,6 +156,20 @@ Al analizar gráficos de línea de tiempo, elija rangos de fecha apropiados para
 **⚠️ Advertencia**: Rangos de fecha grandes con agrupaciones de grano fino pueden causar errores de renderizado de gráficos. La herramienta le alertará y sugerirá mejores combinaciones.
 
 ## 📋 Notas de Lanzamiento
+
+### Versión 3.11.0 (1 de septiembre de 2025)
+#### 🚀 Nuevas Características
+- **Visualización de Timeline Mejorada**: Se agregó nueva funcionalidad de gráficos índice/documento para análisis de rendimiento integral
+- **Análisis de KernTime**: Se implementaron gráficos de comparación kernTime vs ElapsedTime para insights de utilización de CPU
+- **Mejoras Multi-Gráfico**: Se agregaron múltiples tipos de gráficos nuevos con funcionalidad de zoom y arrastrar sincronizada
+- **Características de Gráficos Interactivos**: Se mejoraron todos los gráficos con interfaces arrastrables y navegación sincronizada
+- **Optimizaciones de Rendimiento**: Se implementaron mejoras de velocidad 10x con optimización de parsing y caché
+
+#### 🔧 Mejoras Técnicas
+- **Sincronización de Gráficos**: Todos los gráficos ahora sincronizan zoom y filtrado de rango de fechas en la pestaña Timeline
+- **Arrastrar-para-Zoom**: Selección de caja interactiva para hacer zoom en áreas de gráficos
+- **Reordenación de Gráficos**: Organización de dataset mejorada para mejor análisis visual
+- **Relleno entre Líneas**: Visualización de gráficos mejorada con relleno de área para mejor análisis de tendencias
 
 ### Versión 3.10.0 (30 de agosto de 2025)
 #### 🚀 Nuevas Características

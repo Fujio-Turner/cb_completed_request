@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.10.0
+# Couchbase Slow Query Analysis Tool v3.11.0
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](de/README.de.md) | [🇪🇸 Español](es/README.es.md) | [🇵🇹 Português](pt/README.pt.md)
 
@@ -158,6 +158,20 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 **⚠️ Warning**: Large date ranges with fine-grained groupings may cause chart rendering errors. The tool will alert you and suggest better combinations.
 
 ## Release Notes
+
+### Version 3.11.0 (September 1, 2025)
+#### 🚀 New Features
+- **Enhanced Timeline Visualization**: Added new index/doc chart functionality for comprehensive performance analysis
+- **KernTime Analysis**: Implemented kernTime vs ElapsedTime comparison charts for CPU utilization insights
+- **Multi-Chart Enhancements**: Added multiple new chart types with synchronized zoom and drag functionality
+- **Interactive Chart Features**: Enhanced all charts with draggable interfaces and synchronized navigation
+- **Performance Optimizations**: Implemented 10x speed improvements with parsing optimization and caching
+
+#### 🔧 Technical Improvements
+- **Chart Synchronization**: All charts now sync zoom and date range filtering across Timeline tab
+- **Drag-to-Zoom**: Interactive box selection for zooming chart areas
+- **Chart Reordering**: Improved dataset organization for better visual analysis
+- **Fill Between Lines**: Enhanced chart visualization with area filling for better trend analysis
 
 ### Version 3.10.0 (August 30, 2025)
 #### 🚀 New Features

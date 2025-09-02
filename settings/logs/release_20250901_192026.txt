@@ -1,0 +1,213 @@
+
+
+
+# Release Log - Version 3.11.0
+**Release Date:** 2025-09-01  
+**Previous Version:** 3.10.0  
+**New Version:** 3.11.0
+
+This file tracks all changes made during the release process. Update each section as you complete the corresponding operations from the VERSION_UPDATE_GUIDE.md and LOCALIZATION_GUIDE.md files.
+
+## 📋 Release Checklist Progress
+
+### ✅ Branch & Issue Information
+- [ ] **Release Branch:** release-{character name}
+- [ ] **Base Commit:** {commit hash from main}
+- [ ] **Issues Resolved:** #{issue1}, #{issue2}, #{issue3}
+- [ ] **Metal Gear Character:** {character name}
+
+### ✅ Version Information  
+- [x] **Previous Version:** 3.10.0
+- [x] **New Version:** 3.11.0
+- [x] **Release Date:** 2025-09-01
+- [x] **Version Type:** MINOR - Added major new chart functionality, kernTime analysis, and performance optimizations
+
+---
+
+## 🌐 HTML Files Updates (All Language Versions)
+
+### ✅ English (index.html)
+- [ ] **Meta version tag:** `<meta name="version" content="{old version}" />` → `<meta name="version" content="{new version}" />`
+- [ ] **Meta last-updated tag:** `<meta name="last-updated" content="{old date}" />` → `<meta name="last-updated" content="{today date}" />`
+- [ ] **Title tag:** `<title>Query Analyzer v{old version}</title>` → `<title>Query Analyzer v{new version}</title>`
+- [ ] **Version info display:** `<div class="version-info">v{old version}</div>` → `<div class="version-info">v{new version}</div>`
+- [ ] **JavaScript APP_VERSION:** `const APP_VERSION = "{old version}";` → `const APP_VERSION = "{new version}";`
+- [ ] **JavaScript LAST_UPDATED:** `const LAST_UPDATED = "{old date}";` → `const LAST_UPDATED = "{today date}";`
+
+### ✅ German (de/index.html)
+- [ ] **Meta version tag:** `<meta name="version" content="{old version}" />` → `<meta name="version" content="{new version}" />`
+- [ ] **Meta last-updated tag:** `<meta name="last-updated" content="{old date}" />` → `<meta name="last-updated" content="{today date}" />`
+- [ ] **Title tag:** `<title>Query Analyzer v{old version}</title>` → `<title>Query Analyzer v{new version}</title>`
+- [ ] **Version info display:** Updated to v{new version}
+- [ ] **JavaScript constants:** APP_VERSION and LAST_UPDATED updated
+- [ ] **Localization verification:** All German translations maintained
+
+### ✅ Spanish (es/index.html)
+- [ ] **Meta version tag:** Updated to {new version}
+- [ ] **Meta last-updated tag:** Updated to {today date}
+- [ ] **Title tag:** `<title>Analizador de Consultas v{old version}</title>` → `<title>Analizador de Consultas v{new version}</title>`
+- [ ] **Version info display:** Updated to v{new version}
+- [ ] **JavaScript constants:** APP_VERSION and LAST_UPDATED updated
+- [ ] **Localization verification:** All Spanish translations maintained
+
+### ✅ Portuguese (pt/index.html)
+- [ ] **Meta version tag:** Updated to {new version}
+- [ ] **Meta last-updated tag:** Updated to {today date}
+- [ ] **Title tag:** `<title>Analisador de Consultas v{old version}</title>` → `<title>Analisador de Consultas v{new version}</title>`
+- [ ] **Version info display:** Updated to v{new version}
+- [ ] **JavaScript constants:** APP_VERSION and LAST_UPDATED updated
+- [ ] **Localization verification:** All Portuguese translations maintained
+
+---
+
+## 📚 Documentation Updates
+
+### ✅ AGENT.md
+- [ ] **Main heading:** `# Couchbase Slow Query Analysis Tool v{old version}` → `# Couchbase Slow Query Analysis Tool v{new version}`
+- [ ] **Version Management section:** Current Version updated to {new version} (Last Updated: {today date})
+- [ ] **Title Updates examples:** Updated version references in examples
+- [ ] **File Path:** /AGENT.md
+
+### ✅ README Files
+
+#### ✅ English README.md
+- [ ] **Main heading:** `# Couchbase Slow Query Analysis Tool v{old version}` → `# Couchbase Slow Query Analysis Tool v{new version}`
+- [ ] **Content organization:** Quick Start section positioned high up
+- [ ] **Release Notes section:** Added v{new version} entry with date {today date}
+- [ ] **Spell checking:** Completed
+- [ ] **File Path:** /README.md
+
+#### ✅ German README.de.md
+- [ ] **Main heading:** Updated to v{new version}
+- [ ] **Language navigation:** Links updated and functional
+- [ ] **Download instructions:** References de/index.html correctly
+- [ ] **Release Notes:** Added v{new version} entry in German
+- [ ] **Content synchronization:** Matches English structure
+- [ ] **Spell checking:** Completed
+- [ ] **File Path:** /README.de.md
+
+#### ✅ Spanish README.es.md
+- [ ] **Main heading:** Updated to v{new version}
+- [ ] **Language navigation:** Links updated and functional
+- [ ] **Download instructions:** References es/index.html correctly
+- [ ] **Release Notes:** Added v{new version} entry in Spanish
+- [ ] **Content synchronization:** Matches English structure
+- [ ] **Spell checking:** Completed
+- [ ] **File Path:** /README.es.md
+
+#### ✅ Portuguese README.pt.md
+- [ ] **Main heading:** Updated to v{new version}
+- [ ] **Language navigation:** Links updated and functional
+- [ ] **Download instructions:** References pt/index.html correctly
+- [ ] **Release Notes:** Added v{new version} entry in Portuguese
+- [ ] **Content synchronization:** Matches English structure
+- [ ] **Spell checking:** Completed
+- [ ] **File Path:** /README.pt.md
+
+---
+
+## 🐳 Docker & Deployment Updates
+
+### ✅ Dockerfile
+- [ ] **Version label:** `LABEL version="{old version}"` → `LABEL version="{new version}"`
+- [ ] **File Path:** /Dockerfile
+
+### ✅ GitHub Actions Workflow
+- [ ] **Version tags updated:**
+  - `type=raw,value={old version},enable={{is_default_branch}}` → `type=raw,value={new version},enable={{is_default_branch}}`
+  - `type=raw,value=v{old version},enable={{is_default_branch}}` → `type=raw,value=v{new version},enable={{is_default_branch}}`
+- [ ] **File Path:** /.github/workflows/docker-build-push.yml
+
+---
+
+## 🔍 Verification & Testing
+
+### ✅ Version Consistency Checks
+```bash
+# Run these commands to verify consistency:
+- [ ] `grep -r "name=\"version\"" */index.html` - All language directories show {new version}
+- [ ] `grep -r "<title>" */index.html` - All show v{new version} 
+- [ ] `grep -r "version-info" */index.html` - All show v{new version}
+- [ ] `grep -r "APP_VERSION" */index.html` - All show "{new version}"
+- [ ] `grep -r "APP_VERSION" */old_index.html` - Check old_index.html versions for reference
+- [ ] `grep -r "# Couchbase Slow Query Analysis Tool" README*.md AGENT.md` - All show v{new version}
+- [ ] **Localization Check:** Verify /en/index.html was copied to /*/index.html properly
+```
+
+### ✅ Functional Testing
+- [ ] **English (index.html):** Loads and functions correctly
+- [ ] **German (de/index.html):** Loads with German translations
+- [ ] **Spanish (es/index.html):** Loads with Spanish translations
+- [ ] **Portuguese (pt/index.html):** Loads with Portuguese translations
+- [ ] **All charts:** Display correctly with proper colors and labels
+- [ ] **All buttons:** Function properly ("Copy", "Reset Zoom", etc.)
+- [ ] **All dynamic content:** Shows in correct languages
+- [ ] **No JavaScript errors:** Console is clean
+
+### ✅ Localization Verification
+```bash
+# Run these commands to check for missed English text:
+- [ ] `grep -n ">Dashboard<\|>Timeline<\|>Analysis<" de/index.html` - Should show German
+- [ ] `grep -n ">Dashboard<\|>Timeline<\|>Analysis<" es/index.html` - Should show Spanish  
+- [ ] `grep -n ">Dashboard<\|>Timeline<\|>Analysis<" pt/index.html` - Should show Portuguese
+- [ ] `grep -n "Copy</button>" */index.html` - Should return ZERO results
+- [ ] `grep -n ">Copy<\|>Show<\|>Hide<\|>Reset<" */index.html` - Should return ZERO results
+```
+
+---
+
+## 📝 Additional Notes
+
+### Issues Encountered:
+{Document any problems encountered during the release}
+
+### Special Considerations:
+{Note any special circumstances or deviations from standard process}
+
+### Development Workflow Details:
+**Release Branch:** release-{character name}
+**Individual Branches Created:**
+- fix/issue-{number}: {brief description}
+- feature/issue-{number}: {brief description}  
+- docs/issue-{number}: {brief description}
+
+**Commit Messages Used:**
+- Individual fixes: {paste commit messages}
+- Final release commit: "release: version {new version} - Closes #{issue1}, Closes #{issue2}"
+
+**Git Tag Created:** v{new version}
+**Deployment Verification:**
+- [ ] Cloudflare Pages deployed successfully
+- [ ] DockerHub image created with correct tags
+- [ ] GitHub issues closed automatically
+
+### Files Modified (Summary):
+- [ ] index.html
+- [ ] de/index.html  
+- [ ] es/index.html
+- [ ] pt/index.html
+- [ ] AGENT.md
+- [ ] README.md
+- [ ] README.de.md
+- [ ] README.es.md  
+- [ ] README.pt.md
+- [ ] Dockerfile
+- [ ] .github/workflows/docker-build-push.yml
+
+### Docker Hub Cleanup:
+- [ ] **Old version tags removed:** {list old versions removed}
+- [ ] **Development SHA tags cleaned:** {note any dev tags removed}
+- [ ] **Current tags verified:** latest, {new version}, v{new version}
+
+---
+
+## ✅ Release Complete
+- [ ] **All version updates:** Complete and verified
+- [ ] **All tests passed:** Functional and visual testing complete
+- [ ] **Documentation updated:** All README files and guides current
+- [ ] **Docker deployment:** Tags pushed and verified
+- [ ] **Release notes:** Added to all language versions
+- [ ] **This log completed:** All sections filled out
+
+**Release Completed By:** {Your name}  
+**Release Completion Date:** {Final completion date and time}

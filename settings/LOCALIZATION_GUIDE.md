@@ -97,6 +97,22 @@ showToast(TEXT_CONSTANTS.PASTE_JSON_FIRST, "warning");
 3. **JavaScript functionality remains 100% intact** - no broken syntax
 4. **Template literals auto-update** with translated constants
 
+#### 🚨 **MANDATORY: JavaScript Syntax Validation**
+**AFTER EVERY TRANSLATION, you MUST run:**
+```bash
+python3 settings/validate_js_syntax.py
+```
+
+**If validation fails:**
+1. **NEVER manually edit JavaScript** - this breaks translations
+2. **Run the string fixer:** `python3 fix_js_strings.py`
+3. **Re-validate:** `python3 settings/validate_js_syntax.py`
+4. **If still broken:** Start over with clean English files:
+   ```bash
+   cp en/index.html de/index.html es/index.html pt/index.html
+   python3 apply_safe_translations.py
+   ```
+
 #### **Benefits:**
 - ✅ **Zero JavaScript breakage** - syntax stays intact
 - ✅ **95% faster translation** - only one object to translate

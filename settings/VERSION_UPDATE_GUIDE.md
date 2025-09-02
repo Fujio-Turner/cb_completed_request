@@ -231,29 +231,45 @@ After completing all version updates, update your release log file with:
 - Date of completion
 - Any special notes or issues encountered
 
-### **Step 6: Verification**
+### **Step 6: Mandatory Verification**
 
-Run these checks to ensure all versions are updated:
+🚨 **REQUIRED**: Run the automated verification script:
+```bash
+python3 settings/RELEASE_WORK_CHECK.py [YOUR_VERSION]
+```
+
+**If the script reports any issues, you MUST fix them before proceeding.**
+
+#### **Manual Verification Commands** (for debugging)
+If you need to debug specific issues, use these commands:
 
 ```bash
-# Check HTML meta tags
-grep -r "name=\"version\"" *.html
+# Check HTML meta tags (should ALL show same version)
+grep -r "name=\"version\"" *.html */index.html
 
-# Check HTML titles  
-grep -r "<title>" *.html
+# Check HTML titles (should ALL show same version)
+grep -r "<title>" *.html */index.html
 
-# Check version info display divs
-grep -r "version-info" *.html
+# Check version info display divs (should ALL show same version)
+grep -r "version-info" *.html */index.html
 
-# Check JavaScript constants
-grep -r "APP_VERSION" *.html
+# Check JavaScript constants (should ALL show same version)
+grep -r "APP_VERSION" *.html */index.html
 
-# Check README headings
-grep -r "# Couchbase Slow Query Analysis Tool" README*.md
+# Check README headings (should ALL show same version)
+grep -r "# Couchbase Slow Query Analysis Tool" README*.md */README*.md AGENT.md
 
-# Check AGENT.md
-grep -r "# Couchbase Slow Query Analysis Tool" AGENT.md
+# Check Docker files
+grep "version=" Dockerfile
+grep "type=raw,value=" .github/workflows/docker-build-push.yml
 ```
+
+#### **Expected Results**
+- **All meta tags show:** `content="X.X.X"`
+- **All JavaScript constants show:** `APP_VERSION = "X.X.X"`  
+- **All README files show:** `Tool vX.X.X`
+- **All language files have consistent versions**
+- **Docker files show:** `version="X.X.X"`
 
 ## 📋 Version Update Checklist
 

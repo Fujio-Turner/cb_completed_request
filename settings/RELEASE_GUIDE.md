@@ -76,37 +76,73 @@ Ensure all localizations are current and complete:
 - **All language versions contain the same features as English version**
 
 ### **Step 5: Comprehensive Release Testing**
-Using your release log file, verify all components:
+🚨 **MANDATORY:** Run the complete verification script before proceeding:
 
-#### Version Consistency Verification
-Run the commands from your release log's "Version Consistency Checks" section:
 ```bash
-grep -r "name=\"version\"" *.html
-grep -r "<title>" *.html  
-grep -r "version-info" *.html
-grep -r "APP_VERSION" *.html
-grep -r "# Couchbase Slow Query Analysis Tool" README*.md AGENT.md
+# Run the comprehensive verification tool
+python3 settings/RELEASE_WORK_CHECK.py
 ```
 
-#### Functional Testing
-Test each component listed in your release log's "Functional Testing" section:
-- [ ] English (index.html) loads and functions
-- [ ] German (de/index.html) loads with translations
-- [ ] Spanish (es/index.html) loads with translations  
-- [ ] Portuguese (pt/index.html) loads with translations
-- [ ] All charts display correctly
-- [ ] All buttons function properly
-- [ ] No JavaScript console errors
+If ANY issues are found, **STOP** and fix them before continuing. Common issues to expect:
 
-#### Localization Verification
-Run the commands from your release log's "Localization Verification" section:
+#### 🔧 **Expected Issue 1: Version Inconsistencies**
+**Symptom:** Different version numbers across files
+**Fix:** Update all files to match target version:
 ```bash
-grep -n ">Dashboard<\|>Timeline<\|>Analysis<" de/index.html
-grep -n ">Dashboard<\|>Timeline<\|>Analysis<" es/index.html
-grep -n ">Dashboard<\|>Timeline<\|>Analysis<" pt/index.html
-grep -n "Copy</button>" */index.html
-grep -n ">Copy<\|>Show<\|>Hide<\|>Reset<" */index.html
+# Fix meta version tags
+sed -i '' 's/content="OLD_VERSION"/content="NEW_VERSION"/g' */index.html
+# Fix JavaScript constants  
+sed -i '' 's/APP_VERSION = "OLD_VERSION"/APP_VERSION = "NEW_VERSION"/g' */index.html
+# Fix last-updated dates
+sed -i '' 's/LAST_UPDATED = "OLD_DATE"/LAST_UPDATED = "NEW_DATE"/g' */index.html
 ```
+
+#### 🔧 **Expected Issue 2: Missing Version Meta Tags**
+**Symptom:** Main index.html missing version/last-updated meta tags
+**Fix:** Add required meta tags to main index.html:
+```html
+<meta name="version" content="X.X.X" />
+<meta name="last-updated" content="YYYY-MM-DD" />
+```
+
+#### 🔧 **Expected Issue 3: JavaScript Syntax Errors**
+**Symptom:** Translation scripts break JavaScript syntax
+**Fix:** Always validate and fix after translations:
+```bash
+python3 settings/validate_js_syntax.py
+python3 fix_js_strings.py  # If validation fails
+```
+
+#### 🔧 **Expected Issue 4: English Text in Non-English Files**  
+**Symptom:** Buttons, labels, constants still in English
+**Fix:** Apply comprehensive translations:
+```bash
+# Method 1: Copy English files and re-translate (RECOMMENDED)
+cp en/index.html de/index.html es/index.html pt/index.html
+python3 apply_safe_translations.py
+
+# Method 2: Apply comprehensive translations to existing files
+python3 apply_comprehensive_insights_translations.py
+```
+
+#### 🔧 **Expected Issue 5: HTML Structure Inconsistencies**
+**Symptom:** Script tag mismatches or missing elements
+**Fix:** Verify HTML structure after translations:
+```bash
+for file in *.html */index.html; do
+  echo "=== $file ==="
+  echo "DOCTYPE: $(grep -c DOCTYPE "$file")"
+  echo "Script open: $(grep -c "<script" "$file")"  
+  echo "Script close: $(grep -c "</script>" "$file")"
+done
+```
+
+#### **MANDATORY Re-Verification**
+After fixing issues, **MUST** re-run verification:
+```bash
+python3 settings/RELEASE_WORK_CHECK.py
+```
+**Only proceed when ALL checks pass.**
 
 ### **Step 6: Docker & Deployment**
 Complete the deployment preparation:
@@ -170,15 +206,21 @@ This release guide coordinates these files:
 - **[VERSION_CALCULATION_GUIDE.md](VERSION_CALCULATION_GUIDE.md)** - Determine version numbers (dry run)
 - **[VERSION_UPDATE_GUIDE.md](VERSION_UPDATE_GUIDE.md)** - Version number updates
 - **[LOCALIZATION_GUIDE.md](LOCALIZATION_GUIDE.md)** - Translation maintenance
+- **[RELEASE_TROUBLESHOOTING_GUIDE.md](RELEASE_TROUBLESHOOTING_GUIDE.md)** - Common issues and fixes
 - **[settings/translations.json](translations.json)** - Translation mappings
+
+### Verification Tools
+- **[RELEASE_WORK_CHECK.py](RELEASE_WORK_CHECK.py)** - 🚨 Automated verification script (MANDATORY)
+- **[validate_js_syntax.py](validate_js_syntax.py)** - JavaScript syntax validation
+- **[../fix_js_strings.py](../fix_js_strings.py)** - JavaScript syntax repair tool
 
 ### Templates & Logs
 - **[release.template](release.template)** - Release log template (copied, not modified)
 - **release_YYYYMMDD_HHMMSS.txt** - Your specific release log (created from template)
 
 ### Target Files (Updated During Release)
-- **HTML Files:** `index.html`, `de/index.html`, `es/index.html`, `pt/index.html`
-- **Documentation:** `AGENT.md`, `README.md`, `README.de.md`, `README.es.md`, `README.pt.md`
+- **HTML Files:** `index.html`, `en/index.html`, `de/index.html`, `es/index.html`, `pt/index.html`
+- **Documentation:** `AGENT.md`, `README.md`, `de/README.de.md`, `es/README.es.md`, `pt/README.pt.md`
 - **Docker:** `Dockerfile`, `.github/workflows/docker-build-push.yml`
 
 ## 🔄 Workflow Summary
@@ -192,11 +234,13 @@ graph TD
     E --> F[Update Release Log - Versions]
     F --> G[Follow LOCALIZATION_GUIDE.md] 
     G --> H[Update Release Log - Localizations]
-    H --> I[Run Comprehensive Testing]
-    I --> J[Update Release Log - Testing]
-    J --> K[Complete Docker & Deployment]
-    K --> L[Finalize Release Log]
-    L --> M[Release Complete]
+    H --> I[🚨 MANDATORY: Run RELEASE_WORK_CHECK.py]
+    I --> J{All Checks Pass?}
+    J -->|❌ NO| K[Fix Issues]
+    K --> I
+    J -->|✅ YES| L[Complete Docker & Deployment]
+    L --> M[Finalize Release Log]
+    M --> N[Release Complete]
 ```
 
 ## 🎯 Success Criteria
@@ -212,22 +256,39 @@ A successful release using this guide will have:
 
 ## 🔧 Troubleshooting
 
-### If VERSION_UPDATE_GUIDE.md fails:
-- Check your release log to see which step failed
-- Fix the issue and resume from that step
-- Update release log with notes about the problem
+**🚨 For detailed troubleshooting with specific fixes, see [RELEASE_TROUBLESHOOTING_GUIDE.md](RELEASE_TROUBLESHOOTING_GUIDE.md)**
 
-### If LOCALIZATION_GUIDE.md fails:
-- Use the translation audit system to identify missing translations
-- Update settings/translations.json if needed
-- Re-run the localization process
-- Document issues in release log
+### Quick Fixes for Common Issues:
 
-### If testing fails:
-- Check JavaScript console for errors
-- Verify file paths and references are correct
-- Test each language version individually
-- Document failures and fixes in release log
+#### VERSION_UPDATE_GUIDE.md fails:
+```bash
+# Fix version inconsistencies across all files
+sed -i '' 's/content="OLD_VERSION"/content="NEW_VERSION"/g' *.html */index.html
+sed -i '' 's/APP_VERSION = "OLD_VERSION"/APP_VERSION = "NEW_VERSION"/g' */index.html
+```
+
+#### LOCALIZATION_GUIDE.md fails:
+```bash
+# Nuclear option: Start fresh with clean translations
+cp en/index.html de/index.html es/index.html pt/index.html
+python3 apply_safe_translations.py
+python3 settings/validate_js_syntax.py
+```
+
+#### JavaScript syntax errors:
+```bash
+# Fix broken strings from translations
+python3 fix_js_strings.py
+python3 settings/validate_js_syntax.py
+```
+
+#### Comprehensive issues:
+```bash
+# Run full verification and get specific error details
+python3 settings/RELEASE_WORK_CHECK.py [VERSION]
+```
+
+**📚 See [RELEASE_TROUBLESHOOTING_GUIDE.md](RELEASE_TROUBLESHOOTING_GUIDE.md) for complete solutions to all known issues.**
 
 ### If localized HTML files are missing new features:
 **🚨 COMMON ISSUE:** Localized files (de/index.html, es/index.html, pt/index.html) missing functionality that exists in en/index.html
