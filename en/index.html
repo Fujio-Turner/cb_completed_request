@@ -2081,7 +2081,7 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title" onclick="toggleInsight('timeout-prone-queries')">Timeout-Prone
-                                Queries<span class="dev-badge">Dev</span></h4>
+                                Queries<span class="beta-badge">Beta</span></h4>
                             <div class="insight-content" id="timeout-prone-queries-content">
                                 <p class="insight-description">
                                     <span class="highlight-number">0 queries</span> are consistently approaching timeout
@@ -11152,6 +11152,8 @@
             let largePayloadStreamingCount = 0;
             let largePayloadTotalResultSize = 0;
             let largePayloadTotalStreamRatio = 0;
+            let approachingTimeoutCount = 0;
+            let actualTimeoutCount = 0;
 
             // Configurable threshold for kernel time detection
             const KERNEL_TIME_THRESHOLD_PERCENT = 20;
@@ -11159,6 +11161,20 @@
 
             requests.forEach((request) => {
                 const statement = (request.statement || "").toUpperCase();
+                const elapsedTime = parseTime(request.elapsedTime);
+                const elapsedTimeSeconds = elapsedTime / 1000; // Convert to seconds
+                const state = (request.state || "").toLowerCase();
+
+                // Count timeout-prone queries
+                // Approaching timeout: 1 minute (60s) to 1m15s (75s) AND state is "completed"
+                if (elapsedTimeSeconds >= 60 && elapsedTimeSeconds <= 75 && state === "completed") {
+                    approachingTimeoutCount++;
+                }
+                
+                // Actual timeout: 1m14s (74s) to 1m16s (76s) AND state is "fatal"  
+                if (elapsedTimeSeconds >= 74 && elapsedTimeSeconds <= 76 && state === "fatal") {
+                    actualTimeoutCount++;
+                }
 
                 // Count missing WHERE clauses
                 if (!statement.includes(" WHERE ")) {
@@ -11501,6 +11517,21 @@
                 }
             }
 
+            // Update the timeout-prone queries insight
+            const timeoutProneContent = document.getElementById("timeout-prone-queries-content");
+            if (timeoutProneContent) {
+                const approachingHighlight = approachingTimeoutCount > 0 ? "highlight-number" : "";
+                const actualHighlight = actualTimeoutCount > 0 ? "highlight-number" : "";
+                
+                timeoutProneContent.innerHTML = `
+                    <p class="insight-description">
+                        <span id="approaching-timeout-count" class="${approachingHighlight}">${approachingTimeoutCount} queries</span> are consistently approaching timeout
+                        thresholds, with <span id="actual-timeout-count" class="${actualHighlight}">${actualTimeoutCount} queries</span> actually timing out
+                        in the analyzed period. <em>(Default query timeout: 75 seconds / 1m15s)</em>
+                    </p>
+                `;
+            }
+
             // Reset metrics for next parse
             window.inefficientScanMetrics = [];
 
@@ -11671,7 +11702,8 @@
                 { id: 'missing-where-clauses', checkElement: 'missing-where-count' },
                 { id: 'inefficient-like-operations', checkElement: 'inefficient-like-count' },
                 { id: 'large-result-set-queries', checkElement: 'large-results-count' },
-                { id: 'large-payload-streaming', checkElement: 'large-payload-count' }
+                { id: 'large-payload-streaming', checkElement: 'large-payload-count' },
+                { id: 'timeout-prone-queries', checkElements: ['approaching-timeout-count', 'actual-timeout-count'] }
             ];
 
             insights.forEach(insight => {

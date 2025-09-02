@@ -1532,5 +1532,189 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-08T18:10:00.235Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"0.567µs\",\"servTime\":\"2.234µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:users\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"1.123µs\"},\"~children\":[{\"#operator\":\"KeyScan\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"0.456ms\",\"kernTime\":\"0.4ms\",\"servTime\":\"0.35ms\"},\"keys\":[\"\\\"user::premium::alice\\\"\",\"\\\"user::premium::bob\\\"\",\"\\\"user::premium::carol\\\"\",\"\\\"user::premium::dave\\\"\",\"\\\"user::premium::eve\\\"\"],\"keyspace\":\"users\",\"namespace\":\"default\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"3.456ms\",\"kernTime\":\"3.1ms\",\"servTime\":\"2.9ms\"},\"keyspace\":\"users\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"0.567ms\",\"kernTime\":\"0.5ms\"},\"result_terms\":[{\"expr\":\"(`users`.`userId`)\"},{\"expr\":\"(`users`.`name`)\"},{\"expr\":\"(`users`.`email`)\"},{\"expr\":\"(`users`.`premiumLevel`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":6,\"execTime\":\"0.234ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "approaching-timeout-query-1",
+      "cpuTime": "45.234s",
+      "elapsedTime": "62.500s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "primaryScan": 1500000,
+        "fetch": 1500000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "primaryScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "12.456µs",
+        "instantiate": "8.901µs",
+        "parse": "345.678µs",
+        "plan": "123.456µs",
+        "primaryScan": "45.234s",
+        "fetch": "15.789s",
+        "project": "1.234s",
+        "run": "62.345s",
+        "stream": "0.123s"
+      },
+      "remoteAddr": "127.0.0.1:12345",
+      "requestId": "approaching-timeout-query-1",
+      "requestTime": "2025-07-20T16:30:45.123Z",
+      "resultCount": 125000,
+      "resultSize": 52428800,
+      "scanConsistency": "unbounded",
+      "serviceTime": "62.456s",
+      "state": "completed",
+      "statement": "SELECT * FROM `orders` WHERE orderDate >= '2020-01-01' AND totalAmount > 100",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 2147483648,
+      "userAgent": "analytics-service/2.1.0",
+      "users": "local:analytics_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-20T16:30:45.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.06µs\",\"servTime\":\"10.45µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:orders\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"3.456µs\"},\"~children\":[{\"#operator\":\"PrimaryScan\",\"#stats\":{\"#itemsIn\":1500000,\"#itemsOut\":1500000,\"#phaseSwitches\":20000,\"execTime\":\"45.234s\",\"kernTime\":\"44.1s\",\"servTime\":\"43.8s\"},\"keyspace\":\"orders\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":1500000,\"#itemsOut\":125000,\"#phaseSwitches\":15000,\"execTime\":\"15.789s\",\"kernTime\":\"15.2s\",\"servTime\":\"14.8s\"},\"keyspace\":\"orders\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":125000,\"#itemsOut\":125000,\"#phaseSwitches\":1250,\"execTime\":\"1.234s\",\"kernTime\":\"1.1s\"},\"result_terms\":[{\"expr\":\"*\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":125000,\"#itemsOut\":125000,\"#phaseSwitches\":600,\"execTime\":\"0.123s\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "approaching-timeout-query-2",
+      "cpuTime": "52.789s",
+      "elapsedTime": "72.345s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 2000000,
+        "fetch": 2000000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "15.234µs",
+        "instantiate": "12.456µs",
+        "parse": "567.890µs",
+        "plan": "234.567µs",
+        "indexScan": "52.789s",
+        "fetch": "18.456s",
+        "project": "0.987s",
+        "run": "72.234s",
+        "stream": "0.098s"
+      },
+      "remoteAddr": "127.0.0.1:54321",
+      "requestId": "approaching-timeout-query-2",
+      "requestTime": "2025-07-21T09:45:12.456Z",
+      "resultCount": 89000,
+      "resultSize": 71680000,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "72.298s",
+      "state": "completed",
+      "statement": "SELECT c.*, o.* FROM `customers` c JOIN `orders` o ON c.customerId = o.customerId WHERE c.country = 'USA'",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 3221225472,
+      "userAgent": "reporting-service/1.5.2",
+      "users": "local:report_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-21T09:45:12.457Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"1.89µs\",\"servTime\":\"8.76µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:customers\",\"Priv\":7,\"Props\":0},{\"Target\":\"default:orders\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"2.345µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":2000000,\"#itemsOut\":2000000,\"#phaseSwitches\":25000,\"execTime\":\"52.789s\",\"kernTime\":\"51.9s\",\"servTime\":\"51.2s\"},\"index\":\"idx_customer_country\",\"keyspace\":\"customers\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"USA\\\"\",\"inclusion\":3,\"low\":\"\\\"USA\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":2000000,\"#itemsOut\":89000,\"#phaseSwitches\":20000,\"execTime\":\"18.456s\",\"kernTime\":\"17.8s\",\"servTime\":\"17.2s\"},\"keyspace\":\"customers\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":89000,\"#itemsOut\":89000,\"#phaseSwitches\":890,\"execTime\":\"0.987s\",\"kernTime\":\"0.9s\"},\"result_terms\":[{\"expr\":\"(`c`.*)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":89000,\"#itemsOut\":89000,\"#phaseSwitches\":445,\"execTime\":\"0.098s\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "actual-timeout-query-1",
+      "cpuTime": "58.234s",
+      "elapsedTime": "75.123s",
+      "errorCount": 1,
+      "errors": [{"code":1080,"msg":"Timeout 75s exceeded"}],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "primaryScan": 3000000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "primaryScan": 1
+      },
+      "phaseTimes": {
+        "authorize": "18.345µs",
+        "instantiate": "15.678µs",
+        "parse": "789.012µs",
+        "plan": "345.678µs",
+        "primaryScan": "75.000s",
+        "run": "75.123s"
+      },
+      "remoteAddr": "127.0.0.1:9876",
+      "requestId": "actual-timeout-query-1",
+      "requestTime": "2025-07-22T14:20:33.789Z",
+      "resultCount": 0,
+      "resultSize": 0,
+      "scanConsistency": "unbounded",
+      "serviceTime": "75.123s",
+      "state": "fatal",
+      "statement": "SELECT * FROM `large_dataset` WHERE metadata.processed = false",
+      "statementType": "SELECT",
+      "useCBO": false,
+      "usedMemory": 4294967296,
+      "userAgent": "batch-processor/3.0.1",
+      "users": "local:batch_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-22T14:20:33.790Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.34µs\",\"servTime\":\"12.67µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:large_dataset\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"1.789µs\"},\"~children\":[{\"#operator\":\"PrimaryScan\",\"#stats\":{\"#itemsIn\":3000000,\"#itemsOut\":0,\"#phaseSwitches\":30000,\"execTime\":\"75.000s\",\"kernTime\":\"74.5s\",\"servTime\":\"74.2s\"},\"keyspace\":\"large_dataset\",\"namespace\":\"default\",\"using\":\"gsi\"}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "actual-timeout-query-2",
+      "cpuTime": "61.456s",
+      "elapsedTime": "75.987s",
+      "errorCount": 1,
+      "errors": [{"code":1080,"msg":"Timeout 75s exceeded"}],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$threshold": 0.5
+      },
+      "phaseCounts": {
+        "indexScan": 2500000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1
+      },
+      "phaseTimes": {
+        "authorize": "21.456µs",
+        "instantiate": "18.901µs",
+        "parse": "901.234µs",
+        "plan": "456.789µs",
+        "indexScan": "75.900s",
+        "run": "75.987s"
+      },
+      "remoteAddr": "127.0.0.1:5432",
+      "requestId": "actual-timeout-query-2",
+      "requestTime": "2025-07-23T11:15:20.012Z",
+      "resultCount": 0,
+      "resultSize": 0,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "75.987s",
+      "state": "fatal",
+      "statement": "SELECT AVG(score) FROM `analytics` a WHERE a.confidence > $threshold AND a.processed_date IS NULL",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 5368709120,
+      "userAgent": "ml-analytics/2.3.0",
+      "users": "local:ml_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-23T11:15:20.013Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"1.67µs\",\"servTime\":\"9.34µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:analytics\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"0.987µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":2500000,\"#itemsOut\":0,\"#phaseSwitches\":25000,\"execTime\":\"75.900s\",\"kernTime\":\"75.1s\",\"servTime\":\"74.8s\"},\"index\":\"idx_analytics_confidence\",\"keyspace\":\"analytics\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"null\",\"inclusion\":0,\"low\":\"0.5\"}]}],\"using\":\"gsi\"}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
   }
  ]
