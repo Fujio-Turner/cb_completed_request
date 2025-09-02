@@ -12285,9 +12285,17 @@
             // Track which tabs have been loaded
             const loadedTabs = new Set();
 
-            // Generate dashboard charts immediately (user sees this first)
-            generateDashboardCharts(filteredRequests);
-            loadedTabs.add('dashboard');
+            // Check if dashboard tab is currently active and load it immediately
+            const activeTab = $('#tabs').tabs('option', 'active');
+            const activeTabId = $('#tabs > div').eq(activeTab).attr('id');
+            
+            if (activeTabId === 'dashboard') {
+                // Generate dashboard charts with complete dataset if dashboard is currently active
+                generateDashboardCharts(filteredRequests);
+                loadedTabs.add('dashboard');
+                // Initialize drag and drop for dashboard charts
+                setTimeout(() => setupChartDragAndDrop(), 100);
+            }
             
             // Initialize drag and drop for all charts
             setTimeout(() => setupChartDragAndDrop(), 100);
@@ -12304,6 +12312,12 @@
 
                     try {
                         switch (tabId) {
+                            case 'dashboard':
+                                // Generate dashboard charts with complete dataset
+                                generateDashboardCharts(filteredRequests);
+                                // Re-initialize drag and drop for dashboard charts
+                                setTimeout(() => setupChartDragAndDrop(), 100);
+                                break;
                             case 'timeline':
                                 // For aggregation-based charts (operations, filter), use full data
                                 // For timeline chart (individual request visualization), use sampling for performance
@@ -12642,7 +12656,7 @@
                 updateFilterInfo(filteredAllRequests.length, filteredRequests.length);
                 generateTable(filteredRequests);
                 generateAnalysisTable(filteredRequests);
-                buildIndexQueryFlow(filteredRequests);
+                // buildIndexQueryFlow will be lazy loaded when index-query-flow tab is activated
                 // Only reset flow diagram if no query was previously selected
                 const flowDiagramValidation = document.getElementById("flow-diagram");
                 if (!flowDiagramValidation.hasChildNodes() || flowDiagramValidation.children.length === 0) {
