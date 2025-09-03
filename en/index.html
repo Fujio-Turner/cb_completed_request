@@ -10881,13 +10881,10 @@
                     patternCounts["ARRAY QUERY"]++;
                 }
 
-                // SELECT * (between SELECT and FROM)
-                const selectMatch = upperStatement.match(/SELECT\s+(.+?)\s+FROM/);
-                if (selectMatch) {
-                    const selectPart = selectMatch[1].trim();
-                    if (selectPart === "*" || selectPart.includes(".*")) {
-                        patternCounts["SELECT *"]++;
-                    }
+                // SELECT * (only pure SELECT * queries, not qualified wildcards like c.*)
+                const selectStarMatch = upperStatement.match(/SELECT\s+\*\s+FROM/);
+                if (selectStarMatch) {
+                    patternCounts["SELECT *"]++;
                 }
 
                 // LIKE (ensure it's an operator, not a backticked field name)
@@ -12595,17 +12592,12 @@
             // Track which tabs have been loaded
             const loadedTabs = new Set();
 
-            // Check if dashboard tab is currently active and load it immediately
-            const activeTab = $('#tabs').tabs('option', 'active');
-            const activeTabId = $('#tabs > div').eq(activeTab).attr('id');
-            
-            if (activeTabId === 'dashboard') {
-                // Generate dashboard charts with FULL dataset (not sampled)
-                generateDashboardCharts(fullDataset || filteredRequests);
-                loadedTabs.add('dashboard');
-                // Initialize drag and drop for dashboard charts
-                setTimeout(() => setupChartDragAndDrop(), 100);
-            }
+            // ALWAYS generate dashboard charts immediately after parsing (not lazy)
+            // This ensures fresh data every time, regardless of which tab is active
+            generateDashboardCharts(fullDataset || filteredRequests);
+            loadedTabs.add('dashboard');
+            // Initialize drag and drop for dashboard charts
+            setTimeout(() => setupChartDragAndDrop(), 100);
             
             // Initialize drag and drop for all charts
             setTimeout(() => setupChartDragAndDrop(), 100);
@@ -12623,10 +12615,8 @@
                     try {
                         switch (tabId) {
                             case 'dashboard':
-                                // Generate dashboard charts with FULL dataset (not sampled)
-                                generateDashboardCharts(fullDataset || filteredRequests);
-                                // Re-initialize drag and drop for dashboard charts
-                                setTimeout(() => setupChartDragAndDrop(), 100);
+                                // Dashboard charts are now always generated immediately after parsing
+                                // No need to regenerate when switching tabs
                                 break;
                             case 'timeline':
                                 // For aggregation-based charts (operations, filter), use full data
