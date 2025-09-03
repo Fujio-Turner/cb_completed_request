@@ -2856,7 +2856,7 @@
 
             // Apply same filtering logic as Query Groups tab
             // Get derived statement type and normalize underscores to spaces
-            const statementType = request.statementType || deriveStatementType(request.statement) || "";
+            const statementType = request.statementType || deriveStatementType(request.statement || request.preparedText) || "";
             const normalizedType = statementType.replace(/_/g, " ").toUpperCase();
 
             // Define system query patterns (both with and without underscores)
@@ -2900,7 +2900,7 @@
 
                 // Apply SQL statement filtering only if filter text is not empty
                 if (sqlFilterText && sqlFilterText.length > 0) {
-                    const statement = (request.statement || "").toLowerCase().replace(/\s+/g, ' ').trim();
+                    const statement = (request.statement || request.preparedText || "").toLowerCase().replace(/\s+/g, ' ').trim();
                     const filterText = sqlFilterText.replace(/\s+/g, ' ').trim();
                     if (!statement.includes(filterText)) {
                         return false;
@@ -6955,7 +6955,7 @@
                 }
 
                 // Use consistent statement type parsing
-                let statementType = request.statementType || deriveStatementType(request.statement) || "UNKNOWN";
+                let statementType = request.statementType || deriveStatementType(request.statement || request.preparedText) || "UNKNOWN";
 
                 if (!timeGroups[key].statementTypes[statementType]) {
                     timeGroups[key].statementTypes[statementType] = {
@@ -10443,8 +10443,8 @@
             const typeCounts = {};
 
             requests.forEach((request) => {
-                // First try the statementType field, then derive from statement
-                const type = request.statementType || deriveStatementType(request.statement) || "UNKNOWN";
+                // First try the statementType field, then derive from statement or preparedText
+                const type = request.statementType || deriveStatementType(request.statement || request.preparedText) || "UNKNOWN";
                 typeCounts[type] = (typeCounts[type] || 0) + 1;
             });
 
@@ -10786,7 +10786,7 @@
             };
 
             requests.forEach((request) => {
-                const statement = (request.statement || "").toUpperCase();
+                const statement = (request.statement || request.preparedText || "").toUpperCase();
 
                 // No WHERE
                 if (!statement.includes(" WHERE ")) {
@@ -11080,7 +11080,7 @@
             const indexData = {};
 
             requests.forEach((request) => {
-                const bucketScopeCollection = parseFromClause(request.statement);
+                const bucketScopeCollection = parseFromClause(request.statement || request.preparedText);
 
                 // Debug problematic parsing
                 if (
@@ -11088,7 +11088,7 @@
                     bucketScopeCollection.includes("(")
                 ) {
                     console.warn("Potentially incorrect bucket parsing:", {
-                        statement: request.statement?.substring(0, 100) + "...",
+                        statement: (request.statement || request.preparedText)?.substring(0, 100) + "...",
                         parsed: bucketScopeCollection,
                     });
                     // Use default for obviously wrong parsing
@@ -11346,7 +11346,7 @@
             const STREAM_KERNEL_THRESHOLD_PERCENT = 10;
 
             requests.forEach((request) => {
-                const statement = (request.statement || "").toUpperCase();
+                const statement = (request.statement || request.preparedText || "").toUpperCase();
                 const elapsedTime = parseTime(request.elapsedTime);
                 const elapsedTimeSeconds = elapsedTime / 1000; // Convert to seconds
                 const state = (request.state || "").toLowerCase();
@@ -11356,10 +11356,10 @@
                 if (elapsedTimeSeconds >= 60 && elapsedTimeSeconds <= 75 && state === "completed") {
                     approachingTimeoutCount++;
                     if (approachingTimeoutsSamples.length < 5 && 
-                        !approachingTimeoutsSamples.some(s => s.statement === request.statement)) {
+                        !approachingTimeoutsSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                         approachingTimeoutsSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement,
+                            statement: request.statement || request.preparedText,
                             elapsedTime: request.elapsedTime
                         });
                     }
@@ -11369,10 +11369,10 @@
                 if (elapsedTimeSeconds >= 74 && elapsedTimeSeconds <= 76 && state === "fatal") {
                     actualTimeoutCount++;
                     if (actualTimeoutsSamples.length < 5 && 
-                        !actualTimeoutsSamples.some(s => s.statement === request.statement)) {
+                        !actualTimeoutsSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                         actualTimeoutsSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement,
+                            statement: request.statement || request.preparedText,
                             elapsedTime: request.elapsedTime
                         });
                     }
@@ -11384,10 +11384,10 @@
                 if (!/\bWHERE\b/.test(statement)) {
                     noWhereCount++;
                     if (missingWhereClausesSamples.length < 5 && 
-                        !missingWhereClausesSamples.some(s => s.statement === request.statement)) {
+                        !missingWhereClausesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                         missingWhereClausesSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement
+                            statement: request.statement || request.preparedText
                         });
                     }
                 }
@@ -11399,10 +11399,10 @@
                         slowUseKeysCount++;
                         slowUseKeysTotalTime += elapsedTime;
                         if (slowUseKeyQueriesSamples.length < 5 && 
-                            !slowUseKeyQueriesSamples.some(s => s.statement === request.statement)) {
+                            !slowUseKeyQueriesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                             slowUseKeyQueriesSamples.push({
                                 requestTime: request.requestTime,
-                                statement: request.statement
+                                statement: request.statement || request.preparedText
                             });
                         }
                     }
@@ -11415,10 +11415,10 @@
                     largeResultsCount++;
                     largeResultsTotalMB += resultSizeMB;
                     if (largeResultSetQueriesSamples.length < 5 && 
-                        !largeResultSetQueriesSamples.some(s => s.statement === request.statement)) {
+                        !largeResultSetQueriesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                         largeResultSetQueriesSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement
+                            statement: request.statement || request.preparedText
                         });
                     }
                 }
@@ -11430,10 +11430,10 @@
                     if (likeMatches && likeMatches.length > 0) {
                         inefficientLikeCount++;
                         if (inefficientLikeOperationsSamples.length < 5 && 
-                            !inefficientLikeOperationsSamples.some(s => s.statement === request.statement)) {
+                            !inefficientLikeOperationsSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                             inefficientLikeOperationsSamples.push({
                                 requestTime: request.requestTime,
-                                statement: request.statement
+                                statement: request.statement || request.preparedText
                             });
                         }
                     }
@@ -11446,10 +11446,10 @@
                     highMemoryCount++;
                     highMemoryTotalGB += usedMemoryGB;
                     if (highMemoryUsageSamples.length < 5 && 
-                        !highMemoryUsageSamples.some(s => s.statement === request.statement)) {
+                        !highMemoryUsageSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                         highMemoryUsageSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement
+                            statement: request.statement || request.preparedText
                         });
                     }
                 }
@@ -11473,10 +11473,10 @@
                                 highKernelTimeQueriesCount++;
                                 totalCoreKernelRatio += coreKernelAnalysis.coreToKernelRatio;
                                 if (highKernelTimeQueriesSamples.length < 5 && 
-                                    !highKernelTimeQueriesSamples.some(s => s.statement === request.statement)) {
+                                    !highKernelTimeQueriesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                                     highKernelTimeQueriesSamples.push({
                                         requestTime: request.requestTime,
-                                        statement: request.statement
+                                        statement: request.statement || request.preparedText
                                     });
                                 }
                             }
@@ -11502,10 +11502,10 @@
                                 largePayloadTotalResultSize += payloadSizeMB;
                                 largePayloadTotalStreamRatio += streamAnalysis.streamRatio;
                                 if (largePayloadStreamingSamples.length < 5 && 
-                                    !largePayloadStreamingSamples.some(s => s.statement === request.statement)) {
+                                    !largePayloadStreamingSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                                     largePayloadStreamingSamples.push({
                                         requestTime: request.requestTime,
-                                        statement: request.statement
+                                        statement: request.statement || request.preparedText
                                     });
                                 }
                             }
@@ -12727,7 +12727,7 @@
 
                                 // Apply SQL statement filtering early
                                 if (sqlFilterText && sqlFilterText.length > 0) {
-                                    const statement = (request.statement || "").toLowerCase().replace(/\s+/g, ' ').trim();
+                                    const statement = (request.statement || request.preparedText || "").toLowerCase().replace(/\s+/g, ' ').trim();
                                     const filterText = sqlFilterText.replace(/\s+/g, ' ').trim();
                                     if (!statement.includes(filterText)) {
                                         skippedCount++;
@@ -13073,7 +13073,7 @@
             for (const request of requests) {
                 if (sampleQueries.length >= 5) break;
                 
-                const statement = request.statement || '';
+                const statement = request.statement || request.preparedText || '';
                 if (!statement || seenStatements.has(statement)) continue;
                 
                 seenStatements.add(statement);
