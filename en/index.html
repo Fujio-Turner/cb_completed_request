@@ -1586,6 +1586,26 @@
             STATEMENT: "Statement",
             STATEMENT_UNIQUE: "Statement (unique)",
 
+            // Console log messages
+            COLLECTED_INDEX_DATA: "Collected index data for timing analysis:",
+            INDEX_ANALYSIS_INITIALIZED: "✅ Index analysis initialized",
+            INITIALIZING_ANALYZER: "🚀 Initializing Couchbase Query Analyzer...",
+            FEATURES: "🔧 Features:",
+            ANALYZER_INITIALIZED: "✅ Query Analyzer initialized successfully",
+            TIP_ABOUT: "💡 Tip: Type QueryAnalyzer.about() for full app info",
+
+            // Chart and table labels
+            QUERY_DURATION_CHART_TITLE: "Query Duration by Statement Type (Bubble Size = Query Count)",
+            USER_COUNT: "user: (count)",
+            STATE_FATAL: "state\nfatal",
+            COUNT_LABEL: "Count:",
+            AVG_LABEL: "Avg:",
+            MIN_LABEL: "Min:",
+            MAX_LABEL: "Max:",
+            FATAL_LABEL: "Fatal:",
+            ELAPSED_LABEL: "Elapsed:",
+            SWITCHED_TO: "Switched to",
+
             // Technical constants (DO NOT TRANSLATE - used in logic checks)
             N_A: "N/A",
             NO_DATA: "No data",
@@ -3403,9 +3423,9 @@
             try {
                 const successful = document.execCommand("copy");
                 if (successful) {
-                    showToast("Copied to clipboard!");
+                    showToast(TEXT_CONSTANTS.COPIED_CLIPBOARD);
                 } else {
-                    showToast("Failed to copy to clipboard", "error");
+                    showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
                 }
             } catch (err) {
                 console.error("Fallback: Oops, unable to copy", err);
@@ -4925,7 +4945,7 @@
             const statement = statementStore[statementId];
             if (!statement) {
                 console.error("Statement not found in store:", statementId);
-                alert("Statement not found");
+                alert(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
                 return;
             }
 
@@ -4944,7 +4964,7 @@
                 })
                 .catch((err) => {
                     console.error("Failed to copy statement:", err);
-                    alert("Failed to copy to clipboard");
+                    alert(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD);
                 });
         }
 
@@ -4969,7 +4989,7 @@
             const statement = analysisStatementStore[statementId];
             if (!statement) {
                 console.error("Statement not found in store:", statementId);
-                alert("Statement not found");
+                alert(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
                 return;
             }
 
@@ -4988,7 +5008,7 @@
                 })
                 .catch((err) => {
                     console.error("Failed to copy statement:", err);
-                    alert("Failed to copy to clipboard");
+                    alert(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD);
                 });
         }
 
@@ -5126,10 +5146,10 @@
                     .replace(/_/g, " ")
                     .replace("in seconds", " (mm:ss.sss)");
                 if (col === "user_query_counts") {
-                    displayName = "user: (count)";
+                    displayName = TEXT_CONSTANTS.USER_COUNT;
                 }
                 if (col === "status_counts") {
-                    displayName = "state\nfatal";
+                    displayName = TEXT_CONSTANTS.STATE_FATAL;
                 }
                 th.textContent = displayName;
                 th.style.textAlign = "center";
@@ -7113,7 +7133,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: "Query Duration by Statement Type (Bubble Size = Query Count)",
+                            text: TEXT_CONSTANTS.QUERY_DURATION_CHART_TITLE,
                         },
                         legend: {
                             display: true,
@@ -7130,17 +7150,17 @@
                                     if (statementType === "Fatal Queries") {
                                         return [
                                             `${statementType}`,
-                                            `Fatal: ${dataPoint.count}`,
-                                            `Elapsed: ${dataPoint.avgElapsedTime.toFixed(3)}s`,
+                                            `${TEXT_CONSTANTS.FATAL_LABEL} ${dataPoint.count}`,
+                                            `${TEXT_CONSTANTS.ELAPSED_LABEL} ${dataPoint.avgElapsedTime.toFixed(3)}s`,
                                         ];
                                     } else {
                                         // Handle regular statement type datasets
                                         return [
                                             `${statementType}`,
-                                            `Count: ${dataPoint.count}`,
-                                            `Avg: ${dataPoint.y.toFixed(3)}s`,
-                                            `Min: ${dataPoint.minDuration.toFixed(3)}s`,
-                                            `Max: ${dataPoint.maxDuration.toFixed(3)}s`,
+                                            `${TEXT_CONSTANTS.COUNT_LABEL} ${dataPoint.count}`,
+                                            `${TEXT_CONSTANTS.AVG_LABEL} ${dataPoint.y.toFixed(3)}s`,
+                                            `${TEXT_CONSTANTS.MIN_LABEL} ${dataPoint.minDuration.toFixed(3)}s`,
+                                            `${TEXT_CONSTANTS.MAX_LABEL} ${dataPoint.maxDuration.toFixed(3)}s`,
                                         ];
                                     }
                                 },
@@ -12101,7 +12121,7 @@
             updatePrimaryIndexOverUsageFromAggregatedData(requests);
 
             // Debug: Log the collected index data
-            console.log("Collected index data for timing analysis:", indexData);
+            console.log(`${TEXT_CONSTANTS.COLLECTED_INDEX_DATA}`, indexData);
 
             // Analyze timing data for each index
             Object.values(indexData).forEach((index) => {
@@ -12942,7 +12962,7 @@
                 // Only reset flow diagram if no query was previously selected
                 const flowDiagramValidation = document.getElementById("flow-diagram");
                 if (!flowDiagramValidation.hasChildNodes() || flowDiagramValidation.children.length === 0) {
-                    flowDiagramValidation.innerHTML = "Select a query from the table to view the flow diagram.";
+                    flowDiagramValidation.innerHTML = TEXT_CONSTANTS.SELECT_QUERY_FLOW;
                 }
                 return;
             }
@@ -15484,13 +15504,13 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 }
             });
 
-            console.log("✅ Index analysis initialized");
+            console.log(TEXT_CONSTANTS.INDEX_ANALYSIS_INITIALIZED);
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            console.log("🚀 Initializing Couchbase Query Analyzer...");
+            console.log(TEXT_CONSTANTS.INITIALIZING_ANALYZER);
             console.log(`📦 Version: ${APP_VERSION} (Updated: ${LAST_UPDATED})`);
-            console.log("🔧 Features:", getVersionInfo().features.join(", "));
+            console.log(`${TEXT_CONSTANTS.FEATURES}`, getVersionInfo().features.join(", "));
 
             // Initialize theme from localStorage
 
@@ -15502,7 +15522,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 activate: function (event, ui) {
                     // Announce tab change to screen readers
                     const tabName = ui.newTab.find("a").text();
-                    showToast(`Switched to ${tabName}`, "info");
+                    showToast(`${TEXT_CONSTANTS.SWITCHED_TO} ${tabName}`, "info");
                 },
             });
 
@@ -15530,7 +15550,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 });
             }
 
-            console.log("✅ Query Analyzer initialized successfully");
+            console.log(TEXT_CONSTANTS.ANALYZER_INITIALIZED);
 
             // Initialize index analysis
             initializeIndexAnalysis();
@@ -15553,7 +15573,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 },
             };
 
-            console.log("💡 Tip: Type QueryAnalyzer.about() for full app info");
+            console.log(TEXT_CONSTANTS.TIP_ABOUT);
         });
     </script>
 </body>
