@@ -1003,6 +1003,57 @@
   },
   {
     "completed_requests": {
+      "clientContextID": "full-table-scan-no-filtering",
+      "cpuTime": "234.567ms",
+      "elapsedTime": "1.876543s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "primaryScan": 15000,
+        "fetch": 15000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "primaryScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "8.901µs",
+        "instantiate": "6.543µs",
+        "parse": "123.456µs",
+        "plan": "34.567µs",
+        "plan.index.metadata": "12.345µs",
+        "plan.keyspace.metadata": "8.901µs",
+        "primaryScan": "567.890ms",
+        "fetch": "1.234567s",
+        "project": "45.678ms",
+        "run": "1.867890s",
+        "stream": "23.456ms"
+      },
+      "remoteAddr": "127.0.0.1:54123",
+      "requestId": "full-table-scan-no-filtering",
+      "requestTime": "2025-07-25T02:15:30.456Z",
+      "resultCount": 15000,
+      "resultSize": 4800000,
+      "scanConsistency": "unbounded",
+      "serviceTime": "1.876234s",
+      "state": "completed",
+      "statement": "SELECT COUNT(*) as total_count FROM `statistics`",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 8192,
+      "userAgent": "python-analytics/2.5.1",
+      "users": "local:analytics_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-25T02:15:30.457Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.345µs\",\"servTime\":\"7.890µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:statistics\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"4.567µs\"},\"~children\":[{\"#operator\":\"PrimaryScan3\",\"#stats\":{\"#heartbeatYields\":30,\"#itemsIn\":15000,\"#itemsOut\":15000,\"#phaseSwitches\":60000,\"execTime\":\"567.890ms\",\"kernTime\":\"523.456ms\",\"servTime\":\"498.765ms\"},\"index\":\"def_primary\",\"index_projection\":{\"primary_key\":true},\"keyspace\":\"statistics\",\"namespace\":\"default\",\"optimizer_estimates\":{\"cardinality\":15000,\"cost\":750.45,\"fr_cost\":5.2,\"size\":12},\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#heartbeatYields\":45,\"#itemsIn\":15000,\"#itemsOut\":15000,\"#phaseSwitches\":60045,\"execTime\":\"1234.567ms\",\"kernTime\":\"1156.789ms\",\"servTime\":\"1123.456ms\"},\"keyspace\":\"statistics\",\"namespace\":\"default\",\"optimizer_estimates\":{\"cardinality\":15000,\"cost\":2250.67,\"fr_cost\":8.9,\"size\":320}},{\"#operator\":\"InitialGroup\",\"#stats\":{\"#itemsIn\":15000,\"#itemsOut\":1,\"#phaseSwitches\":15001,\"execTime\":\"45.678ms\",\"kernTime\":\"42.345ms\"},\"aggregates\":[\"count(*)\"]},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":1,\"#itemsOut\":1,\"#phaseSwitches\":2,\"execTime\":\"0.234ms\",\"kernTime\":\"0.2ms\"},\"result_terms\":[{\"as\":\"total_count\",\"expr\":\"count(*)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":1,\"#itemsOut\":1,\"#phaseSwitches\":2,\"execTime\":\"0.123ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
       "clientContextID": "high-memory-analytics-query",
       "cpuTime": "678.901ms",
       "elapsedTime": "8.567891s",

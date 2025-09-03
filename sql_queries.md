@@ -53,5 +53,20 @@ SELECT
 FROM 
     system:completed_requests 
 WHERE  
-CONTAINS(`statement`,"SELECT *");
+CONTAINS(`statement`,"SELECT *")
+OR
+CONTAINS(preparedText,"SELECT *");
+```
+
+
+#### Query to find records between two dates
+
+```sql
+SELECT
+    *, 
+    meta().plan
+FROM 
+    system:completed_requests 
+WHERE  
+requestTime BETWEEN "2025-06-01" AND "2025-08-02"
 ```
