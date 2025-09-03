@@ -12281,7 +12281,7 @@
 
 
         // Lazy chart loading setup - generate charts only when tabs are activated
-        function setupLazyChartLoading(filteredRequests) {
+        function setupLazyChartLoading(filteredRequests, fullDataset) {
             // Track which tabs have been loaded
             const loadedTabs = new Set();
 
@@ -12290,8 +12290,8 @@
             const activeTabId = $('#tabs > div').eq(activeTab).attr('id');
             
             if (activeTabId === 'dashboard') {
-                // Generate dashboard charts with complete dataset if dashboard is currently active
-                generateDashboardCharts(filteredRequests);
+                // Generate dashboard charts with FULL dataset (not sampled)
+                generateDashboardCharts(fullDataset || filteredRequests);
                 loadedTabs.add('dashboard');
                 // Initialize drag and drop for dashboard charts
                 setTimeout(() => setupChartDragAndDrop(), 100);
@@ -12313,8 +12313,8 @@
                     try {
                         switch (tabId) {
                             case 'dashboard':
-                                // Generate dashboard charts with complete dataset
-                                generateDashboardCharts(filteredRequests);
+                                // Generate dashboard charts with FULL dataset (not sampled)
+                                generateDashboardCharts(fullDataset || filteredRequests);
                                 // Re-initialize drag and drop for dashboard charts
                                 setTimeout(() => setupChartDragAndDrop(), 100);
                                 break;
@@ -12692,7 +12692,7 @@
                     console.log(`${TEXT_CONSTANTS.CHART_SAMPLING} ${sampleRequests.length} ${TEXT_CONSTANTS.OF_TOTAL} ${filteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
                 }
 
-                setupLazyChartLoading(sampleRequests);
+                setupLazyChartLoading(sampleRequests, filteredRequests);
             } catch (e) {
                 console.error(`${TEXT_CONSTANTS.ERROR_GENERATING_UI}`, e);
                 alert(`${TEXT_CONSTANTS.ERROR_GENERATING_UI} Try reducing the date range or selecting a coarser time grouping.`);
