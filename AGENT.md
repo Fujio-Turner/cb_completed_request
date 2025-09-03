@@ -1,7 +1,7 @@
-# Couchbase Slow Query Analysis Tool v3.11.0
+# Couchbase Slow Query Analysis Tool v3.12.0
 
 ## Version Management
-- **Current Version**: 3.11.0 (Last Updated: 2025-09-01)
+- **Current Version**: 3.12.0 (Last Updated: 2025-09-03)
 
 ### Workflow Order for Updates
 When making changes, follow this order:
@@ -11,9 +11,9 @@ When making changes, follow this order:
 
 ### Version Update Process
 - **Title Updates**: When updating versions, remember to update:
-  - `<title>Query Analyzer v3.11.0</title>` in index.html header
-  - `<meta name="version" content="3.11.0" />` in index.html meta tags
-  - `APP_VERSION = '3.11.0';` in JavaScript constants
+  - `<title>Query Analyzer v3.12.0</title>` in index.html header
+  - `<meta name="version" content="3.12.0" />` in index.html meta tags
+  - `APP_VERSION = '3.12.0';` in JavaScript constants
   - Version number in this AGENT.md file header
 
 ## Architecture
@@ -27,11 +27,27 @@ When making changes, follow this order:
 - Open `index.html` directly in web browser
 - Input: JSON from `SELECT *, meta().plan FROM system:completed_requests WHERE node = NODE_NAME();`
 
-## Sample Data
+## File Organization
+
+### Directory Structure
+- **`/python/`** - Python utility scripts for development and maintenance
+- **`/logs/release/`** - Release reports and verification documentation
+- **`/sample/`** - Test JSON files for development and testing
+- **`/settings/`** - Configuration files and guides
+
+### Sample Data
 The `sample/` folder contains test JSON files for development and testing:
 - **test_system_completed_requests.json**: Sample completed request query output for LEFT TOP input box
 - **test_system_indexes.json**: Sample system:indexes query output for RIGHT TOP input box
 - Use these files for testing functionality or as reference for expected schema/data format
+
+### Python Scripts Location
+All Python utility scripts are located in the **`/python/`** folder:
+- **Translation scripts**: apply_*.py files for localization
+- **Development tools**: analyze_*, optimize_*, validate_* scripts
+- **Maintenance utilities**: fix_*, find_*, convert_* scripts
+
+When creating new Python scripts, place them in `/python/` folder
 
 ## Code Style
 - Vanilla JavaScript with jQuery for DOM manipulation
@@ -92,8 +108,8 @@ html += '<button onclick="copy()">Copy</button>';
 
 ### Code Analysis and Optimization Workflows
 - **Performance optimization**: Use browser dev tools profiling with sample data multiplied x1000
-- **Dead code detection**: Use `analyze_dead_code.py` and `quick_dead_code_cleanup.py` scripts
-- **CSS optimization**: Use `optimize_css.py` for minification and deduplication
-- **Translation safety**: Use `find_hardcoded_strings.py` to identify text needing TEXT_CONSTANTS
+- **Dead code detection**: Use `python/analyze_dead_code.py` and `python/quick_dead_code_cleanup.py` scripts
+- **CSS optimization**: Use `python/optimize_css.py` for minification and deduplication
+- **Translation safety**: Use `python/find_hardcoded_strings.py` to identify text needing TEXT_CONSTANTS
 
 

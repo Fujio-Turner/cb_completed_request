@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.11.0
+# Couchbase Slow Query Analysis Tool v3.12.0
 
 **🌍 Sprachen:** [🇺🇸 English](../README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](../es/README.es.md) | [🇵🇹 Português](../pt/README.pt.md)
 
@@ -156,6 +156,27 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 **⚠️ Warnung**: Große Datumsbereiche mit feinkörnigen Gruppierungen können zu Diagramm-Rendering-Fehlern führen. Das Tool wird Sie warnen und bessere Kombinationen vorschlagen.
 
 ## 📋 Versionshinweise
+
+### Version 3.12.0 (September 3, 2025)
+#### 🚀 Neue Funktionen
+- **Timeout-anfällige Abfragen-Analyse**: Umfassende Timeout-Erkennung und -Analyse für Abfragen hinzugefügt, die sich der 75-Sekunden-Schwelle nähern oder diese überschreiten
+- **Erweitertes Insights-Dashboard**: Neue Einsicht zur Verfolgung von Abfragen, die konsistent Timeout-Limits erreichen, mit detaillierter Kategorisierung
+- **Erweiterte Abfrage-Klassifizierung**: Sophisticated Analyse zur Unterscheidung zwischen sich nähernden Timeouts (60-75s abgeschlossen) und tatsächlichen Timeouts (74-76s fatal)
+
+#### 🔧 Performance-Verbesserungen
+- **Optimierte Abfrageverarbeitung**: Verbesserte Zwischenspeicherung und Deduplizierung von SQL-Anweisungen für schnellere Analyse
+- **Verbesserte Datenparsierung**: Optimierte Verarbeitungs-Pipeline mit Performance-Optimierungen
+- **Speicherverwaltung**: Bessere Handhabung großer Datensätze mit verbesserter Speichernutzung
+
+#### 📊 Beispieldaten-Verbesserungen
+- **Umfassende Testdaten**: Extensive Timeout-Szenario-Testdaten für Entwicklung und Testen hinzugefügt
+- **Realitätsnahe Beispiele**: Verbesserte Beispieldaten mit authentischen Timeout-Mustern und Grenzfällen
+- **Testabdeckung**: Verbesserte Testabdeckung für Timeout-Erkennungsalgorithmen
+
+#### 🛡️ Code-Qualitätsverbesserungen
+- **JavaScript-Wartung**: Code-Bereinigung und -Optimierung für bessere Wartbarkeit
+- **Verbesserte Validierung**: Verbesserte Fehlerbehandlung und Datenvalidierungsprozesse
+- **Performance-Überwachung**: Bessere Verfolgung und Protokollierung von Analyse-Performance-Metriken
 
 ### Version 3.11.0 (1. September 2025)
 #### 🚀 Neue Funktionen

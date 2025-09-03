@@ -5,7 +5,7 @@ Release Work Check Script
 Comprehensive verification tool for release quality gates.
 This script performs all the checks from RELEASE_WORK_CHECK.md automatically.
 
-Usage: python3 settings/RELEASE_WORK_CHECK.py [VERSION]
+Usage: python3 python/RELEASE_WORK_CHECK.py [VERSION]
 """
 import sys
 import os
@@ -29,7 +29,7 @@ def run_command(cmd, quiet=False):
 def detect_version():
     """Detect the current version from release log or AGENT.md"""
     # Try to find latest release log
-    release_logs = glob.glob("settings/release_*.txt")
+    release_logs = glob.glob("settings/logs/release_*.txt")
     if release_logs:
         latest_log = max(release_logs, key=os.path.getctime)
         with open(latest_log, 'r') as f:
@@ -65,9 +65,9 @@ def check_version_consistency(expected_version):
         issues.append("No version meta tags found in HTML files")
     
     # Check JavaScript constants
-    output, _ = run_command('grep -r "APP_VERSION" *.html */index.html 2>/dev/null', quiet=True)
+    output, _ = run_command('grep -r "APP_VERSION.*=" *.html */index.html 2>/dev/null', quiet=True)
     for line in output.split('\n'):
-        if line and expected_version not in line and 'APP_VERSION' in line:
+        if line and expected_version not in line and 'APP_VERSION' in line and '=' in line:
             issues.append(f"Version mismatch in JavaScript constant: {line}")
     
     # Check README files
@@ -86,7 +86,7 @@ def check_version_consistency(expected_version):
 def check_javascript_syntax():
     """Check JavaScript syntax in all HTML files"""
     print("🔍 Checking JavaScript Syntax...")
-    output, returncode = run_command('python3 settings/validate_js_syntax.py')
+    output, returncode = run_command('python3 python/validate_js_syntax.py')
     
     if returncode != 0:
         return ["JavaScript syntax errors found - run validate_js_syntax.py for details"]

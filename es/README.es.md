@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.11.0
+# Couchbase Slow Query Analysis Tool v3.12.0
 
 **🌍 Idiomas:** [🇺🇸 English](../README.md) | [🇩🇪 Deutsch](../de/README.de.md) | **🇪🇸 Español** | [🇵🇹 Português](../pt/README.pt.md)
 
@@ -156,6 +156,27 @@ Al analizar gráficos de línea de tiempo, elija rangos de fecha apropiados para
 **⚠️ Advertencia**: Rangos de fecha grandes con agrupaciones de grano fino pueden causar errores de renderizado de gráficos. La herramienta le alertará y sugerirá mejores combinaciones.
 
 ## 📋 Notas de Lanzamiento
+
+### Versión 3.12.0 (September 3, 2025)
+#### 🚀 Nuevas Características
+- **Análisis de Consultas Propensas a Timeout**: Agregada detección y análisis integral de timeout para consultas que se acercan o exceden el umbral de 75 segundos
+- **Dashboard de Insights Mejorado**: Nueva perspectiva que rastrea consultas que consistentemente se acercan a límites de timeout con categorización detallada
+- **Clasificación Avanzada de Consultas**: Análisis sofisticado que distingue entre timeouts que se acercan (60-75s completadas) y timeouts reales (74-76s fatales)
+
+#### 🔧 Mejoras de Rendimiento
+- **Procesamiento de Consultas Optimizado**: Mejorado almacenamiento en caché y deduplicación de declaraciones SQL para análisis más rápido
+- **Análisis de Datos Mejorado**: Pipeline de procesamiento optimizado con mejoras de rendimiento
+- **Gestión de Memoria**: Mejor manejo de conjuntos de datos grandes con utilización de memoria mejorada
+
+#### 📊 Mejoras en Datos de Ejemplo
+- **Datos de Prueba Integrales**: Agregados datos de prueba extensivos de escenarios de timeout para desarrollo y testing
+- **Ejemplos del Mundo Real**: Datos de ejemplo mejorados con patrones de timeout auténticos y casos extremos
+- **Cobertura de Pruebas**: Mejorada cobertura de pruebas para algoritmos de detección de timeout
+
+#### 🛡️ Mejoras en Calidad de Código
+- **Mantenimiento de JavaScript**: Limpieza y optimización de código para mejor mantenibilidad
+- **Validación Mejorada**: Mejorado manejo de errores y procesos de validación de datos
+- **Monitoreo de Rendimiento**: Mejor seguimiento y registro de métricas de rendimiento de análisis
 
 ### Versión 3.11.0 (1 de septiembre de 2025)
 #### 🚀 Nuevas Características

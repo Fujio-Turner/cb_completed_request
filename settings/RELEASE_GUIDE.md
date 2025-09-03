@@ -19,8 +19,8 @@ This guide orchestrates a full release process by combining all other guides and
 
 ### **Step 1: Initialize Release Log**
 ```bash
-# Create timestamped release log from template
-cp settings/release.template settings/release_$(date +%Y%m%d_%H%M%S).txt
+# Create timestamped release log from template in logs folder
+cp settings/release.template settings/logs/release_$(date +%Y%m%d_%H%M%S).txt
 
 # Open the release log file - you'll update this throughout the process
 ```
@@ -62,7 +62,7 @@ Ensure all localizations are current and complete:
    - **Copy en/index.html** to all language directories: `cp en/index.html de/index.html`
    - **Re-translate entire files** using translation system (do NOT try to selectively copy features)
    - **Verify functionality** is identical across all language versions
-4. **🚨 CRITICAL:** JavaScript Syntax Validation: `python3 settings/validate_js_syntax.py`
+4. **🚨 CRITICAL:** JavaScript Syntax Validation: `python3 python/validate_js_syntax.py`
 5. **Run:** LOCALIZATION_GUIDE.md Step 5-6 for comprehensive verification including post-translation audit system
 6. **Update release log:** Check off localization verification items
 
@@ -80,7 +80,7 @@ Ensure all localizations are current and complete:
 
 ```bash
 # Run the comprehensive verification tool
-python3 settings/RELEASE_WORK_CHECK.py
+python3 python/RELEASE_WORK_CHECK.py
 ```
 
 If ANY issues are found, **STOP** and fix them before continuing. Common issues to expect:
@@ -109,8 +109,8 @@ sed -i '' 's/LAST_UPDATED = "OLD_DATE"/LAST_UPDATED = "NEW_DATE"/g' */index.html
 **Symptom:** Translation scripts break JavaScript syntax
 **Fix:** Always validate and fix after translations:
 ```bash
-python3 settings/validate_js_syntax.py
-python3 fix_js_strings.py  # If validation fails
+python3 python/validate_js_syntax.py
+python3 python/fix_js_strings.py  # If validation fails
 ```
 
 #### 🔧 **Expected Issue 4: English Text in Non-English Files**  
@@ -119,10 +119,10 @@ python3 fix_js_strings.py  # If validation fails
 ```bash
 # Method 1: Copy English files and re-translate (RECOMMENDED)
 cp en/index.html de/index.html es/index.html pt/index.html
-python3 apply_safe_translations.py
+python3 python/apply_safe_translations.py
 
 # Method 2: Apply comprehensive translations to existing files
-python3 apply_comprehensive_insights_translations.py
+python3 python/apply_comprehensive_insights_translations.py
 ```
 
 #### 🔧 **Expected Issue 5: HTML Structure Inconsistencies**
@@ -140,7 +140,7 @@ done
 #### **MANDATORY Re-Verification**
 After fixing issues, **MUST** re-run verification:
 ```bash
-python3 settings/RELEASE_WORK_CHECK.py
+python3 python/RELEASE_WORK_CHECK.py
 ```
 **Only proceed when ALL checks pass.**
 
@@ -157,7 +157,7 @@ Complete your release log and documentation:
 1. **🚨 CRITICAL - Add Release Notes to All README Files:**
    ```bash
    # Use automated release notes script (recommended)
-   python3 settings/add_release_notes.py
+   python3 python/add_release_notes.py
    # OR manually add to README.md, de/README.de.md, es/README.es.md, pt/README.pt.md
    ```
 
@@ -210,13 +210,13 @@ This release guide coordinates these files:
 - **[settings/translations.json](translations.json)** - Translation mappings
 
 ### Verification Tools
-- **[RELEASE_WORK_CHECK.py](RELEASE_WORK_CHECK.py)** - 🚨 Automated verification script (MANDATORY)
-- **[validate_js_syntax.py](validate_js_syntax.py)** - JavaScript syntax validation
-- **[../fix_js_strings.py](../fix_js_strings.py)** - JavaScript syntax repair tool
+- **[../python/RELEASE_WORK_CHECK.py](../python/RELEASE_WORK_CHECK.py)** - 🚨 Automated verification script (MANDATORY)
+- **[../python/validate_js_syntax.py](../python/validate_js_syntax.py)** - JavaScript syntax validation
+- **[../python/fix_js_strings.py](../python/fix_js_strings.py)** - JavaScript syntax repair tool
 
 ### Templates & Logs
 - **[release.template](release.template)** - Release log template (copied, not modified)
-- **release_YYYYMMDD_HHMMSS.txt** - Your specific release log (created from template)
+- **logs/release_YYYYMMDD_HHMMSS.txt** - Your specific release log (created from template in logs folder)
 
 ### Target Files (Updated During Release)
 - **HTML Files:** `index.html`, `en/index.html`, `de/index.html`, `es/index.html`, `pt/index.html`
@@ -271,21 +271,21 @@ sed -i '' 's/APP_VERSION = "OLD_VERSION"/APP_VERSION = "NEW_VERSION"/g' */index.
 ```bash
 # Nuclear option: Start fresh with clean translations
 cp en/index.html de/index.html es/index.html pt/index.html
-python3 apply_safe_translations.py
-python3 settings/validate_js_syntax.py
+python3 python/apply_safe_translations.py
+python3 python/validate_js_syntax.py
 ```
 
 #### JavaScript syntax errors:
 ```bash
 # Fix broken strings from translations
-python3 fix_js_strings.py
-python3 settings/validate_js_syntax.py
+python3 python/fix_js_strings.py
+python3 python/validate_js_syntax.py
 ```
 
 #### Comprehensive issues:
 ```bash
 # Run full verification and get specific error details
-python3 settings/RELEASE_WORK_CHECK.py [VERSION]
+python3 python/RELEASE_WORK_CHECK.py [VERSION]
 ```
 
 **📚 See [RELEASE_TROUBLESHOOTING_GUIDE.md](RELEASE_TROUBLESHOOTING_GUIDE.md) for complete solutions to all known issues.**

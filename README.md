@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.11.0
+# Couchbase Slow Query Analysis Tool v3.12.0
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](de/README.de.md) | [🇪🇸 Español](es/README.es.md) | [🇵🇹 Português](pt/README.pt.md)
 
@@ -159,6 +159,27 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 
 ## Release Notes
 
+
+### Version 3.12.0 (September 3, 2025)
+#### 🚀 New Features
+- **Timeout-Prone Queries Analysis**: Added comprehensive timeout detection and analysis for queries approaching or exceeding the 75-second threshold
+- **Enhanced Insights Dashboard**: New insight tracking queries that consistently approach timeout limits with detailed categorization
+- **Advanced Query Classification**: Sophisticated analysis distinguishing between approaching timeouts (60-75s completed) and actual timeouts (74-76s fatal)
+
+#### 🔧 Performance Improvements
+- **Optimized Query Processing**: Improved caching and deduplication of SQL statements for faster analysis
+- **Enhanced Data Parsing**: Streamlined processing pipeline with performance optimizations
+- **Memory Management**: Better handling of large datasets with improved memory utilization
+
+#### 📊 Sample Data Enhancement
+- **Comprehensive Test Data**: Added extensive timeout scenario test data for development and testing
+- **Real-world Examples**: Enhanced sample data with authentic timeout patterns and edge cases
+- **Testing Coverage**: Improved test coverage for timeout detection algorithms
+
+#### 🛡️ Code Quality Improvements
+- **JavaScript Housekeeping**: Code cleanup and optimization for better maintainability
+- **Enhanced Validation**: Improved error handling and data validation processes
+- **Performance Monitoring**: Better tracking and logging of analysis performance metrics
 ### Version 3.11.0 (September 1, 2025)
 #### 🚀 New Features
 - **Enhanced Timeline Visualization**: Added new index/doc chart functionality for comprehensive performance analysis

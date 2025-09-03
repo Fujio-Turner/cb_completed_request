@@ -205,7 +205,7 @@ For each HTML file (`index.html`, `de_index.html`, `es_index.html`, `pt_index.ht
 1. **Add Release Notes to All README Files:** 
    ```bash
    # Use the release notes automation script
-   python3 settings/add_release_notes.py
+   python3 python/add_release_notes.py
    # OR manually add release notes to:
    # - README.md
    # - de/README.de.md  
@@ -235,7 +235,7 @@ After completing all version updates, update your release log file with:
 
 🚨 **REQUIRED**: Run the automated verification script:
 ```bash
-python3 settings/RELEASE_WORK_CHECK.py [YOUR_VERSION]
+python3 python/RELEASE_WORK_CHECK.py [YOUR_VERSION]
 ```
 
 **If the script reports any issues, you MUST fix them before proceeding.**

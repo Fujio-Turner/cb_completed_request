@@ -24,9 +24,19 @@ function parseJSON()              → function analizarJSON()
 getElementById("statement-search") → getElementById("estadoment-search")
 "request\nTime"                   → "tiempo de\nsolicitud" (breaks \n escaping)
 
+❌ NEVER translate JavaScript API properties:
+.data           → .Daten/.datos/.dados
+.dataset        → .Datenset/.conjuntoDatos/.conjuntoDados
+.dataIndex      → .DatenIndex/.índiceDatos/.índiceDados
+.options        → .Optionen/.opciones/.opções
+.plugins        → .Plugins/.plugins/.plugins
+.forEach        → .paraCada/.paraCada/.paraCada
+.map/.filter    → .mapa/.filtro/.mapa/.filtro
+
 ✅ DO translate (with care):
 console.log("Initializing...")    → console.log("Inicializando...")
 // Comments are safe to translate
+TEXT_CONSTANTS values (user-facing strings only)
 ```
 
 ### CSS Classes and Selectors
