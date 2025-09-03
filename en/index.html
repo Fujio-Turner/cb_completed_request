@@ -11379,7 +11379,9 @@
                 }
 
                 // Count missing WHERE clauses
-                if (!statement.includes(" WHERE ")) {
+                // Note: statement is already converted to uppercase, so check for uppercase WHERE
+                // Use regex to match WHERE as a complete word with word boundaries
+                if (!/\bWHERE\b/.test(statement)) {
                     noWhereCount++;
                     if (missingWhereClausesSamples.length < 5 && 
                         !missingWhereClausesSamples.some(s => s.statement === request.statement)) {
