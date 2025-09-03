@@ -1584,7 +1584,7 @@
             HIDE_SAMPLE_QUERIES: "Hide Sample Queries",
             REQUEST_DATE: "Request Date",
             STATEMENT: "Statement",
-            COPY_STATEMENT: "Copy",
+            STATEMENT_UNIQUE: "Statement (unique)",
 
             // Technical constants (DO NOT TRANSLATE - used in logic checks)
             N_A: "N/A",
@@ -1885,7 +1885,7 @@
                                            <thead>
                                                <tr>
                                                    <th>Request Date</th>
-                                                   <th>Statement</th>
+                                                   <th>Statement (unique)</th>
                                                </tr>
                                            </thead>
                                            <tbody id="sample-queries-tbody">
@@ -1990,7 +1990,7 @@
                                         <thead>
                                             <tr>
                                                 <th>Request Date</th>
-                                                <th>Statement</th>
+                                                <th>Statement (unique)</th>
                                             </tr>
                                         </thead>
                                         <tbody id="high-kernel-time-queries-sample-queries-tbody">
@@ -2027,7 +2027,7 @@
                                         <thead>
                                             <tr>
                                                 <th>Request Date</th>
-                                                <th>Statement</th>
+                                                <th>Statement (unique)</th>
                                             </tr>
                                         </thead>
                                         <tbody id="high-memory-usage-sample-queries-tbody">
@@ -2064,7 +2064,7 @@
                                         <thead>
                                             <tr>
                                                 <th>Request Date</th>
-                                                <th>Statement</th>
+                                                <th>Statement (unique)</th>
                                             </tr>
                                         </thead>
                                         <tbody id="slow-use-key-queries-sample-queries-tbody">
@@ -2109,7 +2109,7 @@
                                         <thead>
                                             <tr>
                                                 <th>Request Date</th>
-                                                <th>Statement</th>
+                                                <th>Statement (unique)</th>
                                             </tr>
                                         </thead>
                                         <tbody id="missing-where-clauses-sample-queries-tbody">
@@ -2157,7 +2157,7 @@
                                         <thead>
                                             <tr>
                                                 <th>Request Date</th>
-                                                <th>Statement</th>
+                                                <th>Statement (unique)</th>
                                             </tr>
                                         </thead>
                                         <tbody id="inefficient-like-operations-sample-queries-tbody">
@@ -2194,7 +2194,7 @@
                                         <thead>
                                             <tr>
                                                 <th>Request Date</th>
-                                                <th>Statement</th>
+                                                <th>Statement (unique)</th>
                                             </tr>
                                         </thead>
                                         <tbody id="large-payload-streaming-sample-queries-tbody">
@@ -2232,7 +2232,7 @@
                                         <thead>
                                             <tr>
                                                 <th>Request Date</th>
-                                                <th>Statement</th>
+                                                <th>Statement (unique)</th>
                                             </tr>
                                         </thead>
                                         <tbody id="large-result-set-queries-sample-queries-tbody">
@@ -11355,7 +11355,8 @@
                 // Approaching timeout: 1 minute (60s) to 1m15s (75s) AND state is "completed"
                 if (elapsedTimeSeconds >= 60 && elapsedTimeSeconds <= 75 && state === "completed") {
                     approachingTimeoutCount++;
-                    if (approachingTimeoutsSamples.length < 5) {
+                    if (approachingTimeoutsSamples.length < 5 && 
+                        !approachingTimeoutsSamples.some(s => s.statement === request.statement)) {
                         approachingTimeoutsSamples.push({
                             requestTime: request.requestTime,
                             statement: request.statement,
@@ -11367,7 +11368,8 @@
                 // Actual timeout: 1m14s (74s) to 1m16s (76s) AND state is "fatal"  
                 if (elapsedTimeSeconds >= 74 && elapsedTimeSeconds <= 76 && state === "fatal") {
                     actualTimeoutCount++;
-                    if (actualTimeoutsSamples.length < 5) {
+                    if (actualTimeoutsSamples.length < 5 && 
+                        !actualTimeoutsSamples.some(s => s.statement === request.statement)) {
                         actualTimeoutsSamples.push({
                             requestTime: request.requestTime,
                             statement: request.statement,
@@ -11379,7 +11381,8 @@
                 // Count missing WHERE clauses
                 if (!statement.includes(" WHERE ")) {
                     noWhereCount++;
-                    if (missingWhereClausesSamples.length < 5) {
+                    if (missingWhereClausesSamples.length < 5 && 
+                        !missingWhereClausesSamples.some(s => s.statement === request.statement)) {
                         missingWhereClausesSamples.push({
                             requestTime: request.requestTime,
                             statement: request.statement
@@ -11393,7 +11396,8 @@
                     if (elapsedTime > 1000) { // 1 second = 1000ms
                         slowUseKeysCount++;
                         slowUseKeysTotalTime += elapsedTime;
-                        if (slowUseKeyQueriesSamples.length < 5) {
+                        if (slowUseKeyQueriesSamples.length < 5 && 
+                            !slowUseKeyQueriesSamples.some(s => s.statement === request.statement)) {
                             slowUseKeyQueriesSamples.push({
                                 requestTime: request.requestTime,
                                 statement: request.statement
@@ -11408,7 +11412,8 @@
                 if (resultSizeMB > 5) {
                     largeResultsCount++;
                     largeResultsTotalMB += resultSizeMB;
-                    if (largeResultSetQueriesSamples.length < 5) {
+                    if (largeResultSetQueriesSamples.length < 5 && 
+                        !largeResultSetQueriesSamples.some(s => s.statement === request.statement)) {
                         largeResultSetQueriesSamples.push({
                             requestTime: request.requestTime,
                             statement: request.statement
@@ -11422,7 +11427,8 @@
                     const likeMatches = statement.match(/ LIKE\s+['"]%[^'"]*['"]?/g);
                     if (likeMatches && likeMatches.length > 0) {
                         inefficientLikeCount++;
-                        if (inefficientLikeOperationsSamples.length < 5) {
+                        if (inefficientLikeOperationsSamples.length < 5 && 
+                            !inefficientLikeOperationsSamples.some(s => s.statement === request.statement)) {
                             inefficientLikeOperationsSamples.push({
                                 requestTime: request.requestTime,
                                 statement: request.statement
@@ -11437,7 +11443,8 @@
                 if (usedMemoryGB >= 1) {
                     highMemoryCount++;
                     highMemoryTotalGB += usedMemoryGB;
-                    if (highMemoryUsageSamples.length < 5) {
+                    if (highMemoryUsageSamples.length < 5 && 
+                        !highMemoryUsageSamples.some(s => s.statement === request.statement)) {
                         highMemoryUsageSamples.push({
                             requestTime: request.requestTime,
                             statement: request.statement
@@ -11463,7 +11470,8 @@
                             if (coreKernelAnalysis.coreToKernelRatio >= 50) {
                                 highKernelTimeQueriesCount++;
                                 totalCoreKernelRatio += coreKernelAnalysis.coreToKernelRatio;
-                                if (highKernelTimeQueriesSamples.length < 5) {
+                                if (highKernelTimeQueriesSamples.length < 5 && 
+                                    !highKernelTimeQueriesSamples.some(s => s.statement === request.statement)) {
                                     highKernelTimeQueriesSamples.push({
                                         requestTime: request.requestTime,
                                         statement: request.statement
@@ -11491,7 +11499,8 @@
                                 largePayloadStreamingCount++;
                                 largePayloadTotalResultSize += payloadSizeMB;
                                 largePayloadTotalStreamRatio += streamAnalysis.streamRatio;
-                                if (largePayloadStreamingSamples.length < 5) {
+                                if (largePayloadStreamingSamples.length < 5 && 
+                                    !largePayloadStreamingSamples.some(s => s.statement === request.statement)) {
                                     largePayloadStreamingSamples.push({
                                         requestTime: request.requestTime,
                                         statement: request.statement
@@ -11780,7 +11789,7 @@
                             <thead>
                                 <tr>
                                     <th>Request Date</th>
-                                    <th>Statement</th>
+                                    <th>Statement (unique)</th>
                                     <th>Elapsed Time</th>
                                 </tr>
                             </thead>
@@ -13100,10 +13109,7 @@
             tbody.innerHTML = '';
             
             sampleQueries.forEach((query, index) => {
-                const date = parseCouchbaseDateTime(query.requestTime);
-                const formattedDate = date ? 
-                    `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}, ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}:${date.getSeconds().toString().padStart(2,'0')}` : 
-                    query.requestTime;
+                const formattedDate = query.requestTime || "";
                 
                 const statementId = `sample-statement-${index}`;
                 const isLongStatement = query.statement.length > 500;
@@ -13232,10 +13238,7 @@
             insightSampleQueries[insightId] = queries;
             
             queries.forEach((query, index) => {
-                const date = parseCouchbaseDateTime(query.requestTime);
-                const formattedDate = date ? 
-                    `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}, ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}:${date.getSeconds().toString().padStart(2,'0')}` : 
-                    query.requestTime;
+                const formattedDate = query.requestTime || "";
                 
                 const statementId = `${insightId}-statement-${index}`;
                 const isLongStatement = query.statement.length > 500;
@@ -13262,7 +13265,7 @@
                             <button onclick="toggleInsightStatement('${statementId}', true)" 
                                     class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.SHOW_MORE}</button>
                             <button onclick="copyInsightStatement('${insightId}', ${index}, event)" 
-                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY_STATEMENT}</button>
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
                         </div>
                         <div id="${statementId}-full" style="display: none;">
                             <span>${escapeHtml(query.statement)}</span>
@@ -13270,7 +13273,7 @@
                             <button onclick="toggleInsightStatement('${statementId}', false)" 
                                     class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.HIDE}</button>
                             <button onclick="copyInsightStatement('${insightId}', ${index}, event)" 
-                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY_STATEMENT}</button>
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
                         </div>
                     `;
                 } else {
@@ -13279,7 +13282,7 @@
                             <span>${escapeHtml(query.statement)}</span>
                             <br>
                             <button onclick="copyInsightStatement('${insightId}', ${index}, event)" 
-                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY_STATEMENT}</button>
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
                         </div>
                     `;
                 }
@@ -13382,10 +13385,7 @@
 
         // Create a timeout query table row
         function createTimeoutQueryRow(query, index, type) {
-            const date = parseCouchbaseDateTime(query.requestTime);
-            const formattedDate = date ? 
-                `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}, ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}:${date.getSeconds().toString().padStart(2,'0')}` : 
-                query.requestTime;
+            const formattedDate = query.requestTime || "";
             
             const statementId = `timeout-${type}-statement-${index}`;
             const isLongStatement = query.statement.length > 500;
@@ -13412,7 +13412,7 @@
                         <button onclick="toggleInsightStatement('${statementId}', true)" 
                                 class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.SHOW_MORE}</button>
                         <button onclick="copyTimeoutStatement('${type}', ${index}, event)" 
-                                class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY_STATEMENT}</button>
+                                class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
                     </div>
                     <div id="${statementId}-full" style="display: none;">
                         <span>${escapeHtml(query.statement)}</span>
@@ -13420,7 +13420,7 @@
                         <button onclick="toggleInsightStatement('${statementId}', false)" 
                                 class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.HIDE}</button>
                         <button onclick="copyTimeoutStatement('${type}', ${index}, event)" 
-                                class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY_STATEMENT}</button>
+                                class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
                     </div>
                 `;
             } else {
@@ -13429,7 +13429,7 @@
                         <span>${escapeHtml(query.statement)}</span>
                         <br>
                         <button onclick="copyTimeoutStatement('${type}', ${index}, event)" 
-                                class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY_STATEMENT}</button>
+                                class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
                     </div>
                 `;
             }
