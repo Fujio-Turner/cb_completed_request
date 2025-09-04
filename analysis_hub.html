@@ -7,41 +7,7 @@
     <meta name="keywords" content="Couchbase debugging, N1QL performance tuning, query optimization guide, Couchbase metrics glossary, database performance analysis">
     <link rel="canonical" href="https://cb.fuj.io/analysis_hub.html">
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; line-height: 1.6; color: #333; }
-        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
-        h2 { color: #34495e; margin-top: 40px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
-        h3 { color: #2980b9; margin-top: 30px; }
-        p { margin-bottom: 15px; }
-        ul { list-style-type: disc; margin-left: 20px; margin-bottom: 15px; }
-        code { background-color: #f8f9fa; padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #e74c3c; }
-        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 250px; background: #fff; padding: 20px; overflow-y: auto; border-right: 1px solid #ccc; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
-        .sidebar h2 { font-size: 18px; color: #2c3e50; margin-bottom: 10px; }
-        .sidebar ul { list-style: none; margin: 0; padding: 0; }
-        .sidebar li { margin-bottom: 10px; }
-        .sidebar a { text-decoration: none; color: #2980b9; font-weight: bold; }
-        .sidebar a:hover { text-decoration: underline; }
-        .main-content { margin-left: 270px; max-width: 800px; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .guide-step { margin-bottom: 40px; padding: 20px; background: #fff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .guide-step p, .guide-step ul { color: #555; }
-        .guide-step strong { color: #333; }
-        .version-info { position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.1); color: #333; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; font-family: monospace; z-index: 999; opacity: 0.7; transition: opacity 0.3s ease; }
-        .version-info:hover { opacity: 1; background: rgba(0,0,0,0.2); }
-        footer { position: fixed; bottom: 10px; right: 10px; z-index: 999; text-align: center; font-size: 0.8em; color: #777; }
-        .sql-code { background: #f6f8fa; color: #24292e; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.4; margin: 15px 0; overflow-x: auto; border-left: 4px solid #0366d6; }
-        .sql-keyword { color: #0366d6; font-weight: bold; }
-        .sql-string { color: #032f62; }
-        .sql-comment { color: #6a737d; font-style: italic; }
-        .performance-level { margin: 20px 0; padding: 20px; border-radius: 8px; border-left: 5px solid; }
-        .walk-level { background: #fff5f5; border-color: #fc8181; }
-        .crawl-level { background: #fffaf0; border-color: #f6ad55; }
-        .run-level { background: #f0fff4; border-color: #68d391; }
-        .level-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; }
-        .level-icon { margin-right: 10px; font-size: 20px; }
-        img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .timing-thumbnail { width: 120px; height: auto; margin: 0 5px 0 0; border: 2px solid #03a9f4; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; display: inline-block; vertical-align: middle; }
-        .timing-thumbnail:hover { transform: scale(6); z-index: 1000; position: relative; box-shadow: 0 8px 25px rgba(0,0,0,0.3); border-color: #0277bd; }
-        .thumbnail-container { display: inline-flex; align-items: center; margin: 5px 0; }
-        .thumbnail-text { color: #0277bd; font-weight: bold; margin-left: 8px; }
+body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5;line-height:1.6;color:#333}h1{color:#2c3e50;border-bottom:2px solid #eee;padding-bottom:10px;margin-bottom:20px}h2{color:#34495e;margin-top:40px;border-bottom:1px solid #ddd;padding-bottom:5px}h3{color:#2980b9;margin-top:30px}p{margin-bottom:15px}ul{list-style-type:disc;margin-left:20px;margin-bottom:15px}code{background-color:#f8f9fa;padding:2px 6px;border-radius:4px;font-family:monospace;color:#e74c3c}img{max-width:100%;height:auto;border:1px solid #ddd;border-radius:8px;margin:15px 0;box-shadow:0 2px 8px rgba(0,0,0,0.1)}.sidebar{position:fixed;left:0;top:0;bottom:0;width:250px;background:#fff;padding:20px;overflow-y:auto;border-right:1px solid #ccc;box-shadow:2px 0 5px rgba(0,0,0,0.1)}.sidebar h2{font-size:18px;color:#2c3e50;margin-bottom:10px}.sidebar ul{list-style:none;margin:0;padding:0}.sidebar li{margin-bottom:10px}.sidebar a{text-decoration:none;color:#2980b9;font-weight:bold}.sidebar a:hover{text-decoration:underline}.main-content{margin-left:270px;max-width:800px;background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.05)}.guide-step{margin-bottom:40px;padding:20px;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}.guide-step p,.guide-step ul{color:#555}.guide-step strong{color:#333}.version-info{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.1);color:#333;padding:4px 8px;border-radius:4px;font-size:0.75em;font-family:monospace;z-index:999;opacity:0.7;transition:opacity 0.3s ease}.version-info:hover{opacity:1;background:rgba(0,0,0,0.2)}footer{position:fixed;bottom:10px;right:10px;z-index:999;text-align:center;font-size:0.8em;color:#777}.sql-code{background:#f6f8fa;color:#24292e;padding:15px;border-radius:8px;font-family:'Courier New',monospace;font-size:14px;line-height:1.4;margin:15px 0;overflow-x:auto;border-left:4px solid #0366d6}.sql-keyword{color:#0366d6;font-weight:bold}.sql-string{color:#032f62}.sql-comment{color:#6a737d;font-style:italic}.performance-level{margin:20px 0;padding:20px;border-radius:8px;border-left:5px solid}.walk-level{background:#fff5f5;border-color:#fc8181}.crawl-level{background:#fffaf0;border-color:#f6ad55}.run-level{background:#f0fff4;border-color:#68d391}.level-title{font-size:18px;font-weight:bold;margin-bottom:10px;display:flex;align-items:center}.level-icon{margin-right:10px;font-size:20px}.timing-thumbnail{width:120px;height:auto;margin:0 5px 0 0;border:2px solid #03a9f4;border-radius:6px;cursor:pointer;transition:all 0.3s ease;display:inline-block;vertical-align:middle}.timing-thumbnail:hover{transform:scale(6);z-index:1000;position:relative;box-shadow:0 8px 25px rgba(0,0,0,0.3);border-color:#0277bd}.thumbnail-container{display:inline-flex;align-items:center;margin:5px 0}.thumbnail-text{color:#0277bd;font-weight:bold;margin-left:8px}
     </style>
 </head>
 <body>

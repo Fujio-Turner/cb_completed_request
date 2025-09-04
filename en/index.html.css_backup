@@ -18,9 +18,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.11.0" />
-    <meta name="last-updated" content="2025-08-30" />
-    <title>Query Analyzer v3.11.0</title>
+    <meta name="version" content="3.12.0" />
+    <meta name="last-updated" content="2025-09-03" />
+    <title>Query Analyzer v3.12.0</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/themes/base/jquery-ui.min.css" integrity="sha512-TFee0335YRJoyiqz8hA8KV3P0tXa5CpRBSoM0Wnkn7JoJx1kaq1yXL/rb8YFpWXkMOjRcv5txv+C6UluttluCQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -1259,6 +1259,37 @@
             background-color: #f1f1f1;
         }
 
+        .sample-queries-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .sample-queries-table th {
+            background-color: #f8f9fa;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-weight: bold;
+        }
+
+        .sample-queries-table td {
+            padding: 6px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+        }
+
+        .sample-queries-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .statement-cell {
+            max-width: 400px;
+            word-wrap: break-word;
+            text-align: left;
+        }
+
         .grid-3-col {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -1508,6 +1539,7 @@
             NO_DATA_FOUND: "No data found in the JSON",
             UNEXPECTED_DATA_FORMAT: "Unexpected data format in JSON",
             ERROR_PARSING_JSON: "Error parsing JSON:",
+            FILTERS_CHANGED_REMINDER: "⚠️ Filters changed. Click \"Parse JSON\" to apply changes.",
 
             // Chart and table captions
             SHOWING_TOP: "Showing top",
@@ -1547,6 +1579,33 @@
             USE_KEYS_HEADER: "🔑 USE KEYS:",
             EXECUTION_PLAN_HEADER: "⚙️ Execution Plan:",
             KEYS_NOT_EXTRACTED: "Keys could not be extracted from the query",
+            
+            // Sample queries functionality
+            SHOW_SAMPLE_QUERIES: "Show Sample Queries",
+            HIDE_SAMPLE_QUERIES: "Hide Sample Queries",
+            REQUEST_DATE: "Request Date",
+            STATEMENT: "Statement",
+            STATEMENT_UNIQUE: "Statement (unique)",
+
+            // Console log messages
+            COLLECTED_INDEX_DATA: "Collected index data for timing analysis:",
+            INDEX_ANALYSIS_INITIALIZED: "✅ Index analysis initialized",
+            INITIALIZING_ANALYZER: "🚀 Initializing Couchbase Query Analyzer...",
+            FEATURES: "🔧 Features:",
+            ANALYZER_INITIALIZED: "✅ Query Analyzer initialized successfully",
+            TIP_ABOUT: "💡 Tip: Type QueryAnalyzer.about() for full app info",
+
+            // Chart and table labels
+            QUERY_DURATION_CHART_TITLE: "Query Duration by Statement Type (Bubble Size = Query Count)",
+            USER_COUNT: "user: (count)",
+            STATE_FATAL: "state\nfatal",
+            COUNT_LABEL: "Count:",
+            AVG_LABEL: "Avg:",
+            MIN_LABEL: "Min:",
+            MAX_LABEL: "Max:",
+            FATAL_LABEL: "Fatal:",
+            ELAPSED_LABEL: "Elapsed:",
+            SWITCHED_TO: "Switched to",
 
             // Technical constants (DO NOT TRANSLATE - used in logic checks)
             N_A: "N/A",
@@ -1684,7 +1743,6 @@
             <div class="dashboard-grid">
                 <!-- Elapsed Time Distribution Bar Chart -->
                 <div class="chart-container height-300 draggable-chart" data-chart-id="elapsed-time" data-position="dashboard-1">
-                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <h3 class="chart-title fixed-height">
                         Query Duration Distribution
                     </h3>
@@ -1694,7 +1752,6 @@
                 </div>
                 <!-- Primary Index(es) Scan Used Chart -->
                 <div class="chart-container height-300 draggable-chart" data-chart-id="primary-scan" data-position="dashboard-2">
-                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <h3 class="chart-title fixed-height">Index Type Usage</h3>
                     <div class="chart-flex-container">
                         <div class="flex-1 position-relative">
@@ -1722,7 +1779,6 @@
             <div class="pattern-analysis-grid">
                 <!-- Query Pattern Features Bar Chart -->
                 <div class="chart-container with-margin-top-20 draggable-chart" data-chart-id="query-pattern" data-position="dashboard-3">
-                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <h3 class="chart-title fixed-height">Query Pattern Features</h3>
                     <div class="height-350-relative">
                         <canvas id="query-pattern-chart"></canvas>
@@ -1838,6 +1894,23 @@
                                         class="highlight-number" id="avg-selectivity">0%</span> (excluding aggregate
                                     functions like COUNT(), AVG(), MIN(), MAX()).
                                 </p>
+
+                                   <button id="toggle-sample-queries-btn" onclick="toggleSampleQueries()" class="btn-standard">
+                                       <span id="sample-queries-btn-text">Show Sample Queries</span>
+                                   </button>
+                                   <div id="sample-queries-container" style="display: none; margin-top: 10px;">
+                                       <table class="sample-queries-table">
+                                           <thead>
+                                               <tr>
+                                                   <th>Request Date</th>
+                                                   <th>Statement (unique)</th>
+                                               </tr>
+                                           </thead>
+                                           <tbody id="sample-queries-tbody">
+                                           </tbody>
+                                       </table>
+                                   </div> 
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
@@ -1926,6 +1999,23 @@
                                         title="Sum of all execTime minus Stream's execTime">core execTime</b> / kernTime
                                     is <span class="highlight-number" id="avg-core-kernel-ratio">0%</span>.
                                 </p>
+
+                                <button id="toggle-high-kernel-time-queries-sample-queries-btn" onclick="toggleInsightSampleQueries('high-kernel-time-queries')" class="btn-standard">
+                                    <span id="high-kernel-time-queries-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="high-kernel-time-queries-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="high-kernel-time-queries-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
@@ -1946,6 +2036,23 @@
                                     <span class="highlight-number" id="avg-memory-usage">0GB</span> of memory each,
                                     indicating potential memory optimization opportunities.
                                 </p>
+
+                                <button id="toggle-high-memory-usage-sample-queries-btn" onclick="toggleInsightSampleQueries('high-memory-usage')" class="btn-standard">
+                                    <span id="high-memory-usage-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="high-memory-usage-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="high-memory-usage-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
@@ -1966,6 +2073,23 @@
                                     with avg query time of <span class="highlight-number"
                                         id="avg-use-keys-time">0ms</span>, suggesting potential KV service bottlenecks.
                                 </p>
+
+                                <button id="toggle-slow-use-key-queries-sample-queries-btn" onclick="toggleInsightSampleQueries('slow-use-key-queries')" class="btn-standard">
+                                    <span id="slow-use-key-queries-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="slow-use-key-queries-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="slow-use-key-queries-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
@@ -1992,8 +2116,24 @@
                                 <p class="insight-description">
                                     <span class="highlight-number" id="missing-where-count">0 queries</span> (<span
                                         class="highlight-number" id="missing-where-percent">0%</span>) lack WHERE
-                                    clauses, potentially scanning entire collections unnecessarily.
+                                    clauses, potentially scanning entire collections unnecessarily. <em>possibily a query with `USE KEYS()`</em>
                                 </p>
+
+                                <button id="toggle-missing-where-clauses-sample-queries-btn" onclick="toggleInsightSampleQueries('missing-where-clauses')" class="btn-standard">
+                                    <span id="missing-where-clauses-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="missing-where-clauses-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="missing-where-clauses-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
 
@@ -2026,6 +2166,22 @@
                                     operations with leading wildcards (<code>%text</code>), preventing index usage and
                                     causing full scans.
                                 </p>
+
+                                <button id="toggle-inefficient-like-operations-sample-queries-btn" onclick="toggleInsightSampleQueries('inefficient-like-operations')" class="btn-standard">
+                                    <span id="inefficient-like-operations-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="inefficient-like-operations-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="inefficient-like-operations-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2047,6 +2203,23 @@
                                         class="highlight-number" id="avg-stream-ratio">0%</span> of the time of the
                                     query was streaming data out to the application.
                                 </p>
+
+                                <button id="toggle-large-payload-streaming-sample-queries-btn" onclick="toggleInsightSampleQueries('large-payload-streaming')" class="btn-standard">
+                                    <span id="large-payload-streaming-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="large-payload-streaming-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="large-payload-streaming-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
@@ -2068,6 +2241,23 @@
                                         id="avg-large-result-size">0MB</span>, which can consume significant memory and
                                     network resources.
                                 </p>
+
+                                <button id="toggle-large-result-set-queries-sample-queries-btn" onclick="toggleInsightSampleQueries('large-result-set-queries')" class="btn-standard">
+                                    <span id="large-result-set-queries-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="large-result-set-queries-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="large-result-set-queries-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
@@ -2081,13 +2271,9 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title" onclick="toggleInsight('timeout-prone-queries')">Timeout-Prone
-                                Queries<span class="dev-badge">Dev</span></h4>
+                                Queries<span class="beta-badge">Beta</span></h4>
                             <div class="insight-content" id="timeout-prone-queries-content">
-                                <p class="insight-description">
-                                    <span class="highlight-number">0 queries</span> are consistently approaching timeout
-                                    thresholds, with <span class="highlight-number">0 queries</span> actually timing out
-                                    in the analyzed period.
-                                </p>
+
                             </div>
                         </div>
 
@@ -2688,7 +2874,7 @@
 
             // Apply same filtering logic as Query Groups tab
             // Get derived statement type and normalize underscores to spaces
-            const statementType = request.statementType || deriveStatementType(request.statement) || "";
+            const statementType = request.statementType || deriveStatementType(request.statement || request.preparedText) || "";
             const normalizedType = statementType.replace(/_/g, " ").toUpperCase();
 
             // Define system query patterns (both with and without underscores)
@@ -2732,7 +2918,7 @@
 
                 // Apply SQL statement filtering only if filter text is not empty
                 if (sqlFilterText && sqlFilterText.length > 0) {
-                    const statement = (request.statement || "").toLowerCase().replace(/\s+/g, ' ').trim();
+                    const statement = (request.statement || request.preparedText || "").toLowerCase().replace(/\s+/g, ' ').trim();
                     const filterText = sqlFilterText.replace(/\s+/g, ' ').trim();
                     if (!statement.includes(filterText)) {
                         return false;
@@ -2747,6 +2933,13 @@
         }
 
         // Parse time strings to milliseconds (with caching)
+        // HTML escape utility function
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         function parseTime(timeStr) {
             if (!timeStr) {
                 return 0;
@@ -2895,6 +3088,14 @@
             normalizeStatementCache.set(statement, normalized);
 
             return normalized;
+        }
+
+        // Check if a query statement has filtering mechanism (WHERE clause or USE KEYS)
+        function hasFilteringMechanism(statement) {
+            if (!statement) return false;
+            const upperStatement = statement.toUpperCase();
+            // Check for WHERE clause or USE KEYS using word boundaries for precise matching
+            return /\bWHERE\b/.test(upperStatement) || /\bUSE\s+KEYS\b/.test(upperStatement);
         }
 
         // Get color class based on percentage
@@ -3228,9 +3429,9 @@
             try {
                 const successful = document.execCommand("copy");
                 if (successful) {
-                    showToast("Copied to clipboard!");
+                    showToast(TEXT_CONSTANTS.COPIED_CLIPBOARD);
                 } else {
-                    showToast("Failed to copy to clipboard", "error");
+                    showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
                 }
             } catch (err) {
                 console.error("Fallback: Oops, unable to copy", err);
@@ -4750,7 +4951,7 @@
             const statement = statementStore[statementId];
             if (!statement) {
                 console.error("Statement not found in store:", statementId);
-                alert("Statement not found");
+                alert(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
                 return;
             }
 
@@ -4769,7 +4970,7 @@
                 })
                 .catch((err) => {
                     console.error("Failed to copy statement:", err);
-                    alert("Failed to copy to clipboard");
+                    alert(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD);
                 });
         }
 
@@ -4794,7 +4995,7 @@
             const statement = analysisStatementStore[statementId];
             if (!statement) {
                 console.error("Statement not found in store:", statementId);
-                alert("Statement not found");
+                alert(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
                 return;
             }
 
@@ -4813,7 +5014,7 @@
                 })
                 .catch((err) => {
                     console.error("Failed to copy statement:", err);
-                    alert("Failed to copy to clipboard");
+                    alert(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD);
                 });
         }
 
@@ -4951,10 +5152,10 @@
                     .replace(/_/g, " ")
                     .replace("in seconds", " (mm:ss.sss)");
                 if (col === "user_query_counts") {
-                    displayName = "user: (count)";
+                    displayName = TEXT_CONSTANTS.USER_COUNT;
                 }
                 if (col === "status_counts") {
-                    displayName = "state\nfatal";
+                    displayName = TEXT_CONSTANTS.STATE_FATAL;
                 }
                 th.textContent = displayName;
                 th.style.textAlign = "center";
@@ -6780,7 +6981,7 @@
                 }
 
                 // Use consistent statement type parsing
-                let statementType = request.statementType || deriveStatementType(request.statement) || "UNKNOWN";
+                let statementType = request.statementType || deriveStatementType(request.statement || request.preparedText) || "UNKNOWN";
 
                 if (!timeGroups[key].statementTypes[statementType]) {
                     timeGroups[key].statementTypes[statementType] = {
@@ -6938,7 +7139,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: "Query Duration by Statement Type (Bubble Size = Query Count)",
+                            text: TEXT_CONSTANTS.QUERY_DURATION_CHART_TITLE,
                         },
                         legend: {
                             display: true,
@@ -6955,17 +7156,17 @@
                                     if (statementType === "Fatal Queries") {
                                         return [
                                             `${statementType}`,
-                                            `Fatal: ${dataPoint.count}`,
-                                            `Elapsed: ${dataPoint.avgElapsedTime.toFixed(3)}s`,
+                                            `${TEXT_CONSTANTS.FATAL_LABEL} ${dataPoint.count}`,
+                                            `${TEXT_CONSTANTS.ELAPSED_LABEL} ${dataPoint.avgElapsedTime.toFixed(3)}s`,
                                         ];
                                     } else {
                                         // Handle regular statement type datasets
                                         return [
                                             `${statementType}`,
-                                            `Count: ${dataPoint.count}`,
-                                            `Avg: ${dataPoint.y.toFixed(3)}s`,
-                                            `Min: ${dataPoint.minDuration.toFixed(3)}s`,
-                                            `Max: ${dataPoint.maxDuration.toFixed(3)}s`,
+                                            `${TEXT_CONSTANTS.COUNT_LABEL} ${dataPoint.count}`,
+                                            `${TEXT_CONSTANTS.AVG_LABEL} ${dataPoint.y.toFixed(3)}s`,
+                                            `${TEXT_CONSTANTS.MIN_LABEL} ${dataPoint.minDuration.toFixed(3)}s`,
+                                            `${TEXT_CONSTANTS.MAX_LABEL} ${dataPoint.maxDuration.toFixed(3)}s`,
                                         ];
                                     }
                                 },
@@ -9009,8 +9210,8 @@
                 'enhanced-operations': () => window.enhancedOperationsChart
             };
 
-            // Make charts draggable
-            $('.draggable-chart').draggable({
+            // Make charts draggable (excluding dashboard charts)
+            $('.draggable-chart').not('[data-position^="dashboard"]').draggable({
                 handle: '.chart-drag-handle',
                 revert: 'invalid',
                 helper: 'clone',
@@ -10268,8 +10469,8 @@
             const typeCounts = {};
 
             requests.forEach((request) => {
-                // First try the statementType field, then derive from statement
-                const type = request.statementType || deriveStatementType(request.statement) || "UNKNOWN";
+                // First try the statementType field, then derive from statement or preparedText
+                const type = request.statementType || deriveStatementType(request.statement || request.preparedText) || "UNKNOWN";
                 typeCounts[type] = (typeCounts[type] || 0) + 1;
             });
 
@@ -10611,79 +10812,77 @@
             };
 
             requests.forEach((request) => {
-                const statement = (request.statement || "").toUpperCase();
+                const statement = request.statement || request.preparedText || "";
+                const upperStatement = statement.toUpperCase();
 
                 // No WHERE
-                if (!statement.includes(" WHERE ")) {
+                if (!hasFilteringMechanism(statement)) {
                     patternCounts["No WHERE"]++;
                 }
 
                 // GROUP BY
-                if (statement.includes(" GROUP BY ")) {
+                if (upperStatement.includes(" GROUP BY ")) {
                     patternCounts["GROUP BY"]++;
                 }
 
                 // ORDER BY
-                if (statement.includes(" ORDER BY ")) {
+                if (upperStatement.includes(" ORDER BY ")) {
                     patternCounts["ORDER BY"]++;
                 }
 
                 // USE INDEX
-                if (statement.includes("USE INDEX")) {
+                if (upperStatement.includes("USE INDEX")) {
                     patternCounts["USE INDEX"]++;
                 }
 
                 // USE KEYS
-                if (statement.includes("USE KEYS")) {
+                if (upperStatement.includes("USE KEYS")) {
                     patternCounts["USE KEYS"]++;
                 }
 
                 // JOIN
-                if (statement.includes(" JOIN ")) {
+                if (upperStatement.includes(" JOIN ")) {
                     patternCounts["JOIN"]++;
                 }
 
                 // NEST
-                if (statement.includes(" NEST ")) {
+                if (upperStatement.includes(" NEST ")) {
                     patternCounts["NEST"]++;
                 }
 
                 // UNNEST
-                if (statement.includes(" UNNEST ")) {
+                if (upperStatement.includes(" UNNEST ")) {
                     patternCounts["UNNEST"]++;
                 }
 
                 // OFFSET
-                if (statement.includes(" OFFSET ")) {
+                if (upperStatement.includes(" OFFSET ")) {
                     patternCounts["OFFSET"]++;
                 }
 
                 // SEARCH
-                if (statement.includes(" SEARCH(")) {
+                if (upperStatement.includes(" SEARCH(")) {
                     patternCounts["SEARCH"]++;
                 }
 
                 // WITH (ensure it's a SQL clause, not a backticked field name)
-                if ((statement.startsWith("WITH ") || statement.includes(" WITH ")) && !statement.includes("`WITH`")) {
+                if ((upperStatement.startsWith("WITH ") || upperStatement.includes(" WITH ")) && !upperStatement.includes("`WITH`")) {
                     patternCounts["WITH"]++;
                 }
 
                 // ARRAY QUERY (has ANY/EVERY + SATISFIES + END)
                 if (
-                    (statement.includes(" ANY ") || statement.includes(" EVERY ") || statement.includes("ANY AND EVERY")) &&
-                    statement.includes(" SATISFIES ") &&
-                    (statement.includes(" END ") || statement.endsWith(" END"))
+                    (upperStatement.includes(" ANY ") || upperStatement.includes(" EVERY ") || upperStatement.includes("ANY AND EVERY")) &&
+                    upperStatement.includes(" SATISFIES ") &&
+                    (upperStatement.includes(" END ") || upperStatement.endsWith(" END"))
                 ) {
                     patternCounts["ARRAY QUERY"]++;
                 }
 
-                // SELECT * (between SELECT and FROM)
-                const selectMatch = statement.match(/SELECT\s+(.+?)\s+FROM/);
-                if (selectMatch) {
-                    const selectPart = selectMatch[1].trim();
-                    if (selectPart === "*" || selectPart.includes(".*")) {
-                        patternCounts["SELECT *"]++;
-                    }
+                // SELECT * (only pure SELECT * queries, not qualified wildcards like c.*)
+                const selectStarMatch = upperStatement.match(/SELECT\s+\*\s+FROM/);
+                if (selectStarMatch) {
+                    patternCounts["SELECT *"]++;
                 }
 
                 // LIKE (ensure it's an operator, not a backticked field name)
@@ -10905,7 +11104,7 @@
             const indexData = {};
 
             requests.forEach((request) => {
-                const bucketScopeCollection = parseFromClause(request.statement);
+                const bucketScopeCollection = parseFromClause(request.statement || request.preparedText);
 
                 // Debug problematic parsing
                 if (
@@ -10913,7 +11112,7 @@
                     bucketScopeCollection.includes("(")
                 ) {
                     console.warn("Potentially incorrect bucket parsing:", {
-                        statement: request.statement?.substring(0, 100) + "...",
+                        statement: (request.statement || request.preparedText)?.substring(0, 100) + "...",
                         parsed: bucketScopeCollection,
                     });
                     // Use default for obviously wrong parsing
@@ -11152,17 +11351,68 @@
             let largePayloadStreamingCount = 0;
             let largePayloadTotalResultSize = 0;
             let largePayloadTotalStreamRatio = 0;
+            let approachingTimeoutCount = 0;
+            let actualTimeoutCount = 0;
+
+            // Sample queries arrays for insights
+            let missingWhereClausesSamples = [];
+            let slowUseKeyQueriesSamples = [];
+            let largeResultSetQueriesSamples = [];
+            let inefficientLikeOperationsSamples = [];
+            let highMemoryUsageSamples = [];
+            let highKernelTimeQueriesSamples = [];
+            let largePayloadStreamingSamples = [];
+            let actualTimeoutsSamples = [];
+            let approachingTimeoutsSamples = [];
 
             // Configurable threshold for kernel time detection
             const KERNEL_TIME_THRESHOLD_PERCENT = 20;
             const STREAM_KERNEL_THRESHOLD_PERCENT = 10;
 
             requests.forEach((request) => {
-                const statement = (request.statement || "").toUpperCase();
+                const statement = (request.statement || request.preparedText || "").toUpperCase();
+                const elapsedTime = parseTime(request.elapsedTime);
+                const elapsedTimeSeconds = elapsedTime / 1000; // Convert to seconds
+                const state = (request.state || "").toLowerCase();
+
+                // Count timeout-prone queries
+                // Approaching timeout: 1 minute (60s) to 1m15s (75s) AND state is "completed"
+                if (elapsedTimeSeconds >= 60 && elapsedTimeSeconds <= 75 && state === "completed") {
+                    approachingTimeoutCount++;
+                    if (approachingTimeoutsSamples.length < 5 && 
+                        !approachingTimeoutsSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        approachingTimeoutsSamples.push({
+                            requestTime: request.requestTime,
+                            statement: request.statement || request.preparedText,
+                            elapsedTime: request.elapsedTime
+                        });
+                    }
+                }
+                
+                // Actual timeout: 1m14s (74s) to 1m16s (76s) AND state is "fatal"  
+                if (elapsedTimeSeconds >= 74 && elapsedTimeSeconds <= 76 && state === "fatal") {
+                    actualTimeoutCount++;
+                    if (actualTimeoutsSamples.length < 5 && 
+                        !actualTimeoutsSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        actualTimeoutsSamples.push({
+                            requestTime: request.requestTime,
+                            statement: request.statement || request.preparedText,
+                            elapsedTime: request.elapsedTime
+                        });
+                    }
+                }
 
                 // Count missing WHERE clauses
-                if (!statement.includes(" WHERE ")) {
+                // Use consolidated function to check for filtering mechanisms (WHERE or USE KEYS)
+                if (!hasFilteringMechanism(request.statement || request.preparedText)) {
                     noWhereCount++;
+                    if (missingWhereClausesSamples.length < 5 && 
+                        !missingWhereClausesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        missingWhereClausesSamples.push({
+                            requestTime: request.requestTime,
+                            statement: request.statement || request.preparedText
+                        });
+                    }
                 }
 
                 // Count slow USE KEYS queries (> 1 second)
@@ -11171,6 +11421,13 @@
                     if (elapsedTime > 1000) { // 1 second = 1000ms
                         slowUseKeysCount++;
                         slowUseKeysTotalTime += elapsedTime;
+                        if (slowUseKeyQueriesSamples.length < 5 && 
+                            !slowUseKeyQueriesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                            slowUseKeyQueriesSamples.push({
+                                requestTime: request.requestTime,
+                                statement: request.statement || request.preparedText
+                            });
+                        }
                     }
                 }
 
@@ -11180,6 +11437,13 @@
                 if (resultSizeMB > 5) {
                     largeResultsCount++;
                     largeResultsTotalMB += resultSizeMB;
+                    if (largeResultSetQueriesSamples.length < 5 && 
+                        !largeResultSetQueriesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        largeResultSetQueriesSamples.push({
+                            requestTime: request.requestTime,
+                            statement: request.statement || request.preparedText
+                        });
+                    }
                 }
 
                 // Count inefficient LIKE operations with leading wildcards
@@ -11188,6 +11452,13 @@
                     const likeMatches = statement.match(/ LIKE\s+['"]%[^'"]*['"]?/g);
                     if (likeMatches && likeMatches.length > 0) {
                         inefficientLikeCount++;
+                        if (inefficientLikeOperationsSamples.length < 5 && 
+                            !inefficientLikeOperationsSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                            inefficientLikeOperationsSamples.push({
+                                requestTime: request.requestTime,
+                                statement: request.statement || request.preparedText
+                            });
+                        }
                     }
                 }
 
@@ -11197,6 +11468,13 @@
                 if (usedMemoryGB >= 1) {
                     highMemoryCount++;
                     highMemoryTotalGB += usedMemoryGB;
+                    if (highMemoryUsageSamples.length < 5 && 
+                        !highMemoryUsageSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        highMemoryUsageSamples.push({
+                            requestTime: request.requestTime,
+                            statement: request.statement || request.preparedText
+                        });
+                    }
                 }
 
                 // Analyze core execTime vs kernel time (two-stage check)
@@ -11217,6 +11495,13 @@
                             if (coreKernelAnalysis.coreToKernelRatio >= 50) {
                                 highKernelTimeQueriesCount++;
                                 totalCoreKernelRatio += coreKernelAnalysis.coreToKernelRatio;
+                                if (highKernelTimeQueriesSamples.length < 5 && 
+                                    !highKernelTimeQueriesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                                    highKernelTimeQueriesSamples.push({
+                                        requestTime: request.requestTime,
+                                        statement: request.statement || request.preparedText
+                                    });
+                                }
                             }
                         }
                     } catch (e) {
@@ -11239,6 +11524,13 @@
                                 largePayloadStreamingCount++;
                                 largePayloadTotalResultSize += payloadSizeMB;
                                 largePayloadTotalStreamRatio += streamAnalysis.streamRatio;
+                                if (largePayloadStreamingSamples.length < 5 && 
+                                    !largePayloadStreamingSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                                    largePayloadStreamingSamples.push({
+                                        requestTime: request.requestTime,
+                                        statement: request.statement || request.preparedText
+                                    });
+                                }
                             }
                         } catch (e) {
                             console.error("Error analyzing large payload streaming:", e);
@@ -11501,11 +11793,55 @@
                 }
             }
 
+            // Update the timeout-prone queries insight
+            const timeoutProneContent = document.getElementById("timeout-prone-queries-content");
+            if (timeoutProneContent) {
+                const approachingHighlight = approachingTimeoutCount > 0 ? "highlight-number" : "";
+                const actualHighlight = actualTimeoutCount > 0 ? "highlight-number" : "";
+                
+                timeoutProneContent.innerHTML = `
+                    <p class="insight-description">
+                        <span id="approaching-timeout-count" class="${approachingHighlight}">${approachingTimeoutCount} queries</span> are consistently approaching timeout
+                        thresholds, with <span id="actual-timeout-count" class="${actualHighlight}">${actualTimeoutCount} queries</span> actually timing out
+                        in the analyzed period. <em>(Default query timeout: 75 seconds / 1m15s)</em>
+                    </p>
+
+                    <button id="toggle-timeout-prone-queries-sample-queries-btn" onclick="toggleTimeoutQueriesTable()" class="btn-standard" style="margin-top: 10px;">
+                        <span id="timeout-prone-queries-sample-queries-btn-text">Show Sample Queries</span>
+                    </button>
+                    <div id="timeout-prone-queries-sample-queries-container" style="display: none; margin-top: 10px;">
+                        <table class="sample-queries-table">
+                            <thead>
+                                <tr>
+                                    <th>Request Date</th>
+                                    <th>Statement (unique)</th>
+                                    <th>Elapsed Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timeout-prone-queries-sample-queries-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
             // Reset metrics for next parse
             window.inefficientScanMetrics = [];
 
             // Update slow index scan times insight
             updateSlowIndexScanTimes(requests);
+
+            // Update sample queries for each insight
+            updateInsightSampleQueries('missing-where-clauses', missingWhereClausesSamples);
+            updateInsightSampleQueries('slow-use-key-queries', slowUseKeyQueriesSamples);
+            updateInsightSampleQueries('large-result-set-queries', largeResultSetQueriesSamples);
+            updateInsightSampleQueries('inefficient-like-operations', inefficientLikeOperationsSamples);
+            updateInsightSampleQueries('high-memory-usage', highMemoryUsageSamples);
+            updateInsightSampleQueries('high-kernel-time-queries', highKernelTimeQueriesSamples);
+            updateInsightSampleQueries('large-payload-streaming', largePayloadStreamingSamples);
+
+            // Special handling for timeout queries (3-column table with 10 entries)
+            updateTimeoutQueriesTable(actualTimeoutsSamples, approachingTimeoutsSamples);
 
             // Update navigation counts and accordion states
             updateInsightNavigation();
@@ -11671,7 +12007,8 @@
                 { id: 'missing-where-clauses', checkElement: 'missing-where-count' },
                 { id: 'inefficient-like-operations', checkElement: 'inefficient-like-count' },
                 { id: 'large-result-set-queries', checkElement: 'large-results-count' },
-                { id: 'large-payload-streaming', checkElement: 'large-payload-count' }
+                { id: 'large-payload-streaming', checkElement: 'large-payload-count' },
+                { id: 'timeout-prone-queries', checkElements: ['approaching-timeout-count', 'actual-timeout-count'] }
             ];
 
             insights.forEach(insight => {
@@ -11787,7 +12124,7 @@
             updatePrimaryIndexOverUsageFromAggregatedData(requests);
 
             // Debug: Log the collected index data
-            console.log("Collected index data for timing analysis:", indexData);
+            console.log(`${TEXT_CONSTANTS.COLLECTED_INDEX_DATA}`, indexData);
 
             // Analyze timing data for each index
             Object.values(indexData).forEach((index) => {
@@ -12249,13 +12586,16 @@
 
 
         // Lazy chart loading setup - generate charts only when tabs are activated
-        function setupLazyChartLoading(filteredRequests) {
+        function setupLazyChartLoading(filteredRequests, fullDataset) {
             // Track which tabs have been loaded
             const loadedTabs = new Set();
 
-            // Generate dashboard charts immediately (user sees this first)
-            generateDashboardCharts(filteredRequests);
+            // ALWAYS generate dashboard charts immediately after parsing (not lazy)
+            // This ensures fresh data every time, regardless of which tab is active
+            generateDashboardCharts(fullDataset || filteredRequests);
             loadedTabs.add('dashboard');
+            // Initialize drag and drop for dashboard charts
+            setTimeout(() => setupChartDragAndDrop(), 100);
             
             // Initialize drag and drop for all charts
             setTimeout(() => setupChartDragAndDrop(), 100);
@@ -12272,6 +12612,10 @@
 
                     try {
                         switch (tabId) {
+                            case 'dashboard':
+                                // Dashboard charts are now always generated immediately after parsing
+                                // No need to regenerate when switching tabs
+                                break;
                             case 'timeline':
                                 // For aggregation-based charts (operations, filter), use full data
                                 // For timeline chart (individual request visualization), use sampling for performance
@@ -12308,8 +12652,86 @@
             });
         }
 
+        // Filter reminder toast notification
+        let filterReminderTimeout = null;
+
+        function showFilterReminder() {
+            // Clear any existing timeout
+            if (filterReminderTimeout) {
+                clearTimeout(filterReminderTimeout);
+            }
+
+            // Remove any existing filter reminder toasts
+            const existingFilterToasts = document.querySelectorAll(".filter-reminder-toast");
+            existingFilterToasts.forEach((toast) => toast.remove());
+
+            // Create the toast
+            const toast = document.createElement("div");
+            toast.className = "filter-reminder-toast";
+            toast.textContent = TEXT_CONSTANTS.FILTERS_CHANGED_REMINDER;
+            toast.style.cssText = `
+                position: fixed;
+                top: -50px;
+                left: 20px;
+                padding: 12px 20px;
+                border-radius: 6px;
+                background: #fff3cd;
+                border: 1px solid #ffeaa7;
+                color: #856404;
+                font-size: 13px;
+                font-weight: 500;
+                z-index: 10001;
+                max-width: 320px;
+                word-wrap: break-word;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transition: all 0.4s ease-out;
+                transform: translateY(0px);
+            `;
+
+            document.body.appendChild(toast);
+
+            // Animate slide down from top
+            setTimeout(() => {
+                toast.style.top = "20px";
+                toast.style.transform = "translateY(0px)";
+            }, 10);
+
+            // Auto-hide after 10 seconds
+            filterReminderTimeout = setTimeout(() => {
+                toast.style.opacity = "0";
+                toast.style.transform = "translateY(-10px)";
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 400);
+                filterReminderTimeout = null;
+            }, 10000);
+        }
+
+        function hideFilterReminder() {
+            // Clear timeout and remove any existing filter reminder toasts
+            if (filterReminderTimeout) {
+                clearTimeout(filterReminderTimeout);
+                filterReminderTimeout = null;
+            }
+            const existingFilterToasts = document.querySelectorAll(".filter-reminder-toast");
+            existingFilterToasts.forEach((toast) => {
+                toast.style.opacity = "0";
+                toast.style.transform = "translateY(-10px)";
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 400);
+            });
+        }
+
         // Parse JSON input - Optimized
         function parseJSON() {
+            // Hide filter reminder when parsing
+            hideFilterReminder();
+            
             // Clear caches at start of new parse to prevent memory leaks
             clearCaches();
 
@@ -12399,7 +12821,7 @@
 
                                 // Apply SQL statement filtering early
                                 if (sqlFilterText && sqlFilterText.length > 0) {
-                                    const statement = (request.statement || "").toLowerCase().replace(/\s+/g, ' ').trim();
+                                    const statement = (request.statement || request.preparedText || "").toLowerCase().replace(/\s+/g, ' ').trim();
                                     const filterText = sqlFilterText.replace(/\s+/g, ' ').trim();
                                     if (!statement.includes(filterText)) {
                                         skippedCount++;
@@ -12610,11 +13032,11 @@
                 updateFilterInfo(filteredAllRequests.length, filteredRequests.length);
                 generateTable(filteredRequests);
                 generateAnalysisTable(filteredRequests);
-                buildIndexQueryFlow(filteredRequests);
+                // buildIndexQueryFlow will be lazy loaded when index-query-flow tab is activated
                 // Only reset flow diagram if no query was previously selected
                 const flowDiagramValidation = document.getElementById("flow-diagram");
                 if (!flowDiagramValidation.hasChildNodes() || flowDiagramValidation.children.length === 0) {
-                    flowDiagramValidation.innerHTML = "Select a query from the table to view the flow diagram.";
+                    flowDiagramValidation.innerHTML = TEXT_CONSTANTS.SELECT_QUERY_FLOW;
                 }
                 return;
             }
@@ -12633,6 +13055,9 @@
                 // Extract used indexes from the query data
                 extractUsedIndexes(filteredRequests);
 
+                // Extract sample queries for display
+                extractSampleQueries(filteredRequests);
+
                 // Also parse index data if available
                 parseIndexJSON();
 
@@ -12646,7 +13071,7 @@
                     console.log(`${TEXT_CONSTANTS.CHART_SAMPLING} ${sampleRequests.length} ${TEXT_CONSTANTS.OF_TOTAL} ${filteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
                 }
 
-                setupLazyChartLoading(sampleRequests);
+                setupLazyChartLoading(sampleRequests, filteredRequests);
             } catch (e) {
                 console.error(`${TEXT_CONSTANTS.ERROR_GENERATING_UI}`, e);
                 alert(`${TEXT_CONSTANTS.ERROR_GENERATING_UI} Try reducing the date range or selecting a coarser time grouping.`);
@@ -12708,26 +13133,434 @@
                 startDateInput.value = toDateTimeLocal(startDate);
             }
 
-            // Trigger filtering with new date range
+            // Show reminder to click Parse JSON
             if (originalRequests.length > 0) {
-                const startDate = startDateInput.value
-                    ? new Date(startDateInput.value)
-                    : null;
-                const endDate = endDateInput.value
-                    ? new Date(endDateInput.value)
-                    : null;
-                const filteredRequests = filterRequestsByDateRange(
-                    originalRequests,
-                    startDate,
-                    endDate
-                );
-
-                updateFilterInfo(originalRequests.length, filteredRequests.length);
-                generateTable(filteredRequests);
-                generateTimeline(filteredRequests);
-                generateAnalysis(filteredRequests);
-                buildIndexQueryFlow(filteredRequests);
+                showFilterReminder();
             }
+        }
+
+        // Sample queries storage
+        let sampleQueries = [];
+        let sampleQueriesVisible = false;
+
+        // Extract sample queries from requests for display
+        function extractSampleQueries(requests) {
+            sampleQueries = [];
+            const seenStatements = new Set();
+            
+            for (const request of requests) {
+                if (sampleQueries.length >= 5) break;
+                
+                const statement = request.statement || request.preparedText || '';
+                if (!statement || seenStatements.has(statement)) continue;
+                
+                seenStatements.add(statement);
+                sampleQueries.push({
+                    requestTime: request.requestTime,
+                    statement: statement
+                });
+            }
+            
+            // Update the sample queries table
+            updateSampleQueriesTable();
+        }
+
+        // Toggle sample queries visibility
+        function toggleSampleQueries() {
+            const container = document.getElementById('sample-queries-container');
+            const btnText = document.getElementById('sample-queries-btn-text');
+            
+            sampleQueriesVisible = !sampleQueriesVisible;
+            
+            if (sampleQueriesVisible) {
+                container.style.display = 'block';
+                btnText.textContent = TEXT_CONSTANTS.HIDE_SAMPLE_QUERIES;
+            } else {
+                container.style.display = 'none';
+                btnText.textContent = TEXT_CONSTANTS.SHOW_SAMPLE_QUERIES;
+            }
+        }
+
+        // Update sample queries table content
+        function updateSampleQueriesTable() {
+            const tbody = document.getElementById('sample-queries-tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            sampleQueries.forEach((query, index) => {
+                const formattedDate = query.requestTime || "";
+                
+                const statementId = `sample-statement-${index}`;
+                const isLongStatement = query.statement.length > 500;
+                
+                const row = document.createElement('tr');
+                
+                // Create date cell
+                const dateCell = document.createElement('td');
+                dateCell.style.whiteSpace = 'nowrap';
+                dateCell.style.textAlign = 'center';
+                dateCell.style.fontSize = '11px';
+                dateCell.textContent = formattedDate;
+                
+                // Create statement cell
+                const statementCell = document.createElement('td');
+                statementCell.className = 'statement-cell';
+                
+                if (isLongStatement) {
+                    const truncated = query.statement.substring(0, 500);
+                    statementCell.innerHTML = `
+                        <div id="${statementId}-truncated">
+                            <span>${escapeHtml(truncated)}...</span>
+                            <br>
+                            <button onclick="toggleSampleStatement('${statementId}', true)" 
+                                    class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.SHOW_MORE}</button>
+                            <button onclick="copySampleStatement('${statementId}', event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                        <div id="${statementId}-full" style="display: none;">
+                            <span>${escapeHtml(query.statement)}</span>
+                            <br>
+                            <button onclick="toggleSampleStatement('${statementId}', false)" 
+                                    class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.HIDE}</button>
+                            <button onclick="copySampleStatement('${statementId}', event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                    `;
+                } else {
+                    statementCell.innerHTML = `
+                        <div>
+                            <span>${escapeHtml(query.statement)}</span>
+                            <br>
+                            <button onclick="copySampleStatement('${statementId}', event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                    `;
+                }
+                
+                row.appendChild(dateCell);
+                row.appendChild(statementCell);
+                tbody.appendChild(row);
+            });
+        }
+
+        // Toggle between truncated and full statement view
+        function toggleSampleStatement(statementId, showFull) {
+            const truncatedDiv = document.getElementById(statementId + '-truncated');
+            const fullDiv = document.getElementById(statementId + '-full');
+            
+            if (showFull) {
+                truncatedDiv.style.display = 'none';
+                fullDiv.style.display = 'block';
+            } else {
+                truncatedDiv.style.display = 'block';
+                fullDiv.style.display = 'none';
+            }
+        }
+
+        // Copy sample statement to clipboard
+        function copySampleStatement(statementId, event) {
+            const index = parseInt(statementId.replace('sample-statement-', ''));
+            const statement = sampleQueries[index]?.statement;
+            
+            if (!statement) {
+                console.error(TEXT_CONSTANTS.STATEMENT_NOT_FOUND, statementId);
+                showToast(TEXT_CONSTANTS.STATEMENT_NOT_FOUND, "error");
+                return;
+            }
+            
+            navigator.clipboard.writeText(statement)
+                .then(() => {
+                    const button = event.target;
+                    const originalText = button.textContent;
+                    button.textContent = TEXT_CONSTANTS.COPIED;
+                    button.style.backgroundColor = '#4CAF50';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.backgroundColor = '';
+                    }, 1000);
+                })
+                .catch((err) => {
+                    console.error(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, err);
+                    showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
+                });
+        }
+
+        // Storage for insight-specific sample queries
+        let insightSampleQueries = {};
+        let insightSampleQueriesVisible = {};
+
+        // Toggle insight-specific sample queries visibility
+        function toggleInsightSampleQueries(insightId) {
+            const container = document.getElementById(`${insightId}-sample-queries-container`);
+            const btnText = document.getElementById(`${insightId}-sample-queries-btn-text`);
+            
+            if (!container || !btnText) return;
+            
+            const isVisible = insightSampleQueriesVisible[insightId] || false;
+            insightSampleQueriesVisible[insightId] = !isVisible;
+            
+            if (!isVisible) {
+                container.style.display = 'block';
+                btnText.textContent = TEXT_CONSTANTS.HIDE_SAMPLE_QUERIES;
+            } else {
+                container.style.display = 'none';
+                btnText.textContent = TEXT_CONSTANTS.SHOW_SAMPLE_QUERIES;
+            }
+        }
+
+        // Update insight-specific sample queries table
+        function updateInsightSampleQueries(insightId, queries) {
+            const tbody = document.getElementById(`${insightId}-sample-queries-tbody`);
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            insightSampleQueries[insightId] = queries;
+            
+            queries.forEach((query, index) => {
+                const formattedDate = query.requestTime || "";
+                
+                const statementId = `${insightId}-statement-${index}`;
+                const isLongStatement = query.statement.length > 500;
+                
+                const row = document.createElement('tr');
+                
+                // Create date cell
+                const dateCell = document.createElement('td');
+                dateCell.style.whiteSpace = 'nowrap';
+                dateCell.style.textAlign = 'center';
+                dateCell.style.fontSize = '11px';
+                dateCell.textContent = formattedDate;
+                
+                // Create statement cell
+                const statementCell = document.createElement('td');
+                statementCell.className = 'statement-cell';
+                
+                if (isLongStatement) {
+                    const truncated = query.statement.substring(0, 500);
+                    statementCell.innerHTML = `
+                        <div id="${statementId}-truncated">
+                            <span>${escapeHtml(truncated)}...</span>
+                            <br>
+                            <button onclick="toggleInsightStatement('${statementId}', true)" 
+                                    class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.SHOW_MORE}</button>
+                            <button onclick="copyInsightStatement('${insightId}', ${index}, event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                        <div id="${statementId}-full" style="display: none;">
+                            <span>${escapeHtml(query.statement)}</span>
+                            <br>
+                            <button onclick="toggleInsightStatement('${statementId}', false)" 
+                                    class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.HIDE}</button>
+                            <button onclick="copyInsightStatement('${insightId}', ${index}, event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                    `;
+                } else {
+                    statementCell.innerHTML = `
+                        <div>
+                            <span>${escapeHtml(query.statement)}</span>
+                            <br>
+                            <button onclick="copyInsightStatement('${insightId}', ${index}, event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                    `;
+                }
+                
+                row.appendChild(dateCell);
+                row.appendChild(statementCell);
+                tbody.appendChild(row);
+            });
+        }
+
+        // Toggle insight statement truncation
+        function toggleInsightStatement(statementId, showFull) {
+            const truncatedDiv = document.getElementById(statementId + '-truncated');
+            const fullDiv = document.getElementById(statementId + '-full');
+            
+            if (showFull) {
+                truncatedDiv.style.display = 'none';
+                fullDiv.style.display = 'block';
+            } else {
+                truncatedDiv.style.display = 'block';
+                fullDiv.style.display = 'none';
+            }
+        }
+
+        // Copy insight statement to clipboard
+        function copyInsightStatement(insightId, index, event) {
+            const statement = insightSampleQueries[insightId]?.[index]?.statement;
+            
+            if (!statement) {
+                console.error(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
+                showToast(TEXT_CONSTANTS.STATEMENT_NOT_FOUND, "error");
+                return;
+            }
+            
+            navigator.clipboard.writeText(statement)
+                .then(() => {
+                    const button = event.target;
+                    const originalText = button.textContent;
+                    button.textContent = TEXT_CONSTANTS.COPIED;
+                    button.style.backgroundColor = '#4CAF50';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.backgroundColor = '';
+                    }, 1000);
+                })
+                .catch((err) => {
+                    console.error(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, err);
+                    showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
+                });
+        }
+
+        // Storage for timeout queries
+        let timeoutQueriesData = {
+            actualTimeouts: [],
+            approachingTimeouts: []
+        };
+        let timeoutQueriesVisible = false;
+
+        // Toggle timeout queries table visibility
+        function toggleTimeoutQueriesTable() {
+            const container = document.getElementById('timeout-prone-queries-sample-queries-container');
+            const btnText = document.getElementById('timeout-prone-queries-sample-queries-btn-text');
+            
+            if (!container || !btnText) return;
+            
+            timeoutQueriesVisible = !timeoutQueriesVisible;
+            
+            if (timeoutQueriesVisible) {
+                container.style.display = 'block';
+                btnText.textContent = TEXT_CONSTANTS.HIDE_SAMPLE_QUERIES;
+            } else {
+                container.style.display = 'none';
+                btnText.textContent = TEXT_CONSTANTS.SHOW_SAMPLE_QUERIES;
+            }
+        }
+
+        // Update timeout queries table with special 3-column format
+        function updateTimeoutQueriesTable(actualTimeouts, approachingTimeouts) {
+            const tbody = document.getElementById('timeout-prone-queries-sample-queries-tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            timeoutQueriesData.actualTimeouts = actualTimeouts;
+            timeoutQueriesData.approachingTimeouts = approachingTimeouts;
+            
+            // First add actual timeouts (up to 5)
+            actualTimeouts.forEach((query, index) => {
+                const row = createTimeoutQueryRow(query, index, 'actual');
+                row.style.backgroundColor = '#ffebee'; // Light red background for timeouts
+                tbody.appendChild(row);
+            });
+            
+            // Then add approaching timeouts (up to 5)
+            approachingTimeouts.forEach((query, index) => {
+                const row = createTimeoutQueryRow(query, index + actualTimeouts.length, 'approaching');
+                row.style.backgroundColor = '#fff3e0'; // Light orange background for approaching
+                tbody.appendChild(row);
+            });
+        }
+
+        // Create a timeout query table row
+        function createTimeoutQueryRow(query, index, type) {
+            const formattedDate = query.requestTime || "";
+            
+            const statementId = `timeout-${type}-statement-${index}`;
+            const isLongStatement = query.statement.length > 500;
+            
+            const row = document.createElement('tr');
+            
+            // Create date cell
+            const dateCell = document.createElement('td');
+            dateCell.style.whiteSpace = 'nowrap';
+            dateCell.style.textAlign = 'center';
+            dateCell.style.fontSize = '11px';
+            dateCell.textContent = formattedDate;
+            
+            // Create statement cell
+            const statementCell = document.createElement('td');
+            statementCell.className = 'statement-cell';
+            
+            if (isLongStatement) {
+                const truncated = query.statement.substring(0, 500);
+                statementCell.innerHTML = `
+                    <div id="${statementId}-truncated">
+                        <span>${escapeHtml(truncated)}...</span>
+                        <br>
+                        <button onclick="toggleInsightStatement('${statementId}', true)" 
+                                class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.SHOW_MORE}</button>
+                        <button onclick="copyTimeoutStatement('${type}', ${index}, event)" 
+                                class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                    </div>
+                    <div id="${statementId}-full" style="display: none;">
+                        <span>${escapeHtml(query.statement)}</span>
+                        <br>
+                        <button onclick="toggleInsightStatement('${statementId}', false)" 
+                                class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.HIDE}</button>
+                        <button onclick="copyTimeoutStatement('${type}', ${index}, event)" 
+                                class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                    </div>
+                `;
+            } else {
+                statementCell.innerHTML = `
+                    <div>
+                        <span>${escapeHtml(query.statement)}</span>
+                        <br>
+                        <button onclick="copyTimeoutStatement('${type}', ${index}, event)" 
+                                class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                    </div>
+                `;
+            }
+            
+            // Create elapsed time cell
+            const elapsedTimeCell = document.createElement('td');
+            elapsedTimeCell.style.whiteSpace = 'nowrap';
+            elapsedTimeCell.style.textAlign = 'center';
+            elapsedTimeCell.style.fontSize = '11px';
+            elapsedTimeCell.textContent = query.elapsedTime || 'N/A';
+            if (type === 'actual') {
+                elapsedTimeCell.style.fontWeight = 'bold';
+                elapsedTimeCell.style.color = '#d32f2f'; // Red for timeouts
+            } else {
+                elapsedTimeCell.style.color = '#f57c00'; // Orange for approaching
+            }
+            
+            row.appendChild(dateCell);
+            row.appendChild(statementCell);
+            row.appendChild(elapsedTimeCell);
+            
+            return row;
+        }
+
+        // Copy timeout statement to clipboard
+        function copyTimeoutStatement(type, index, event) {
+            const statement = type === 'actual' ? 
+                timeoutQueriesData.actualTimeouts[index]?.statement : 
+                timeoutQueriesData.approachingTimeouts[index - timeoutQueriesData.actualTimeouts.length]?.statement;
+            
+            if (!statement) {
+                console.error(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
+                showToast(TEXT_CONSTANTS.STATEMENT_NOT_FOUND, "error");
+                return;
+            }
+            
+            navigator.clipboard.writeText(statement)
+                .then(() => {
+                    const button = event.target;
+                    const originalText = button.textContent;
+                    button.textContent = TEXT_CONSTANTS.COPIED;
+                    button.style.backgroundColor = '#4CAF50';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.backgroundColor = '';
+                    }, 1000);
+                })
+                .catch((err) => {
+                    console.error(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, err);
+                    showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
+                });
         }
 
         // Track which tabs have been loaded
@@ -13973,8 +14806,8 @@
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = "3.11.0";
-        const LAST_UPDATED = "2025-09-01";
+        const APP_VERSION = "3.12.0";
+        const LAST_UPDATED = "2025-09-03";
 
         function getVersionInfo() {
             return {
@@ -14729,13 +15562,13 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 }
             });
 
-            console.log("✅ Index analysis initialized");
+            console.log(TEXT_CONSTANTS.INDEX_ANALYSIS_INITIALIZED);
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            console.log("🚀 Initializing Couchbase Query Analyzer...");
+            console.log(TEXT_CONSTANTS.INITIALIZING_ANALYZER);
             console.log(`📦 Version: ${APP_VERSION} (Updated: ${LAST_UPDATED})`);
-            console.log("🔧 Features:", getVersionInfo().features.join(", "));
+            console.log(`${TEXT_CONSTANTS.FEATURES}`, getVersionInfo().features.join(", "));
 
             // Initialize theme from localStorage
 
@@ -14747,7 +15580,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 activate: function (event, ui) {
                     // Announce tab change to screen readers
                     const tabName = ui.newTab.find("a").text();
-                    showToast(`Switched to ${tabName}`, "info");
+                    showToast(`${TEXT_CONSTANTS.SWITCHED_TO} ${tabName}`, "info");
                 },
             });
 
@@ -14758,24 +15591,40 @@ LET bid = CONCAT("", s.bucket_id, ""),
             if (excludeCheckbox) {
                 excludeCheckbox.addEventListener("change", function () {
                     console.log(`System query exclusion changed to: ${this.checked}`);
-                    // Only reprocess if we have JSON data
                     const jsonInput = document.getElementById("json-input").value;
                     if (jsonInput.trim()) {
-                        // Clear existing processed data AND date inputs to force complete reparse
-                        originalRequests = [];
-                        const startDateInput = document.getElementById("start-date");
-                        const endDateInput = document.getElementById("end-date");
-                        startDateInput.value = "";
-                        endDateInput.value = "";
-                        console.log(
-                            "Clearing existing data, date filters, and reprocessing..."
-                        );
-                        parseJSON();
+                        showFilterReminder();
                     }
                 });
             }
 
-            console.log("✅ Query Analyzer initialized successfully");
+            // Add event listeners for date/time filter controls
+            const startDateInput = document.getElementById("start-date");
+            const endDateInput = document.getElementById("end-date");
+            const sqlFilterInput = document.getElementById("sql-statement-filter");
+
+            if (startDateInput) {
+                startDateInput.addEventListener("change", function () {
+                    console.log(`Start date changed to: ${this.value}`);
+                    showFilterReminder();
+                });
+            }
+
+            if (endDateInput) {
+                endDateInput.addEventListener("change", function () {
+                    console.log(`End date changed to: ${this.value}`);
+                    showFilterReminder();
+                });
+            }
+
+            if (sqlFilterInput) {
+                sqlFilterInput.addEventListener("input", function () {
+                    console.log(`SQL filter changed to: ${this.value}`);
+                    showFilterReminder();
+                });
+            }
+
+            console.log(TEXT_CONSTANTS.ANALYZER_INITIALIZED);
 
             // Initialize index analysis
             initializeIndexAnalysis();
@@ -14798,7 +15647,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 },
             };
 
-            console.log("💡 Tip: Type QueryAnalyzer.about() for full app info");
+            console.log(TEXT_CONSTANTS.TIP_ABOUT);
         });
     </script>
 </body>
