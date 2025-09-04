@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.12.0
+# Couchbase Slow Query Analysis Tool v3.12.1
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](de/README.de.md) | [🇪🇸 Español](es/README.es.md) | [🇵🇹 Português](pt/README.pt.md)
 
@@ -159,6 +159,21 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 
 ## Release Notes
 
+### Version 3.12.1 (September 3, 2025)
+#### 🔧 Performance & Optimization
+- **CSS Minification**: Optimized CSS for improved load times and performance
+- **Code Enhancements**: Various code improvements and optimizations
+- **Translation System Fix**: Fixed critical JavaScript syntax preservation issues in localization
+
+#### 🛡️ Bug Fixes
+- **Issue #61**: Resolved (details in commit 1a49dd0)
+- **Issue #32**: Merged feature improvements (commit 267a48b)  
+- **Issue #35**: Localization updates (commit 241d3a6)
+
+#### 🌍 Localization Updates
+- **Translation Protection**: Improved JavaScript keyword protection during translation
+- **Syntax Validation**: Enhanced validation scripts to prevent JavaScript breakage
+- **Language Files**: Updated all language versions with proper syntax preservation
 
 ### Version 3.12.0 (September 3, 2025)
 #### 🚀 New Features

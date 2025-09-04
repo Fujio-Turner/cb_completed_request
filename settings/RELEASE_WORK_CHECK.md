@@ -202,7 +202,7 @@ echo "=========================="
 
 # Check for version mismatches
 echo "1. Checking for old version remnants..."
-OLD_VERSIONS=$(grep -r "3\.7\.[0-1]" *.html */index.html *.md AGENT.md Dockerfile 2>/dev/null | grep -v release_ || true)
+OLD_VERSIONS=$(grep -r "3\.7\.[0-1]" *.html */index.html *.md AGENT.md Dockerfile 2>/dev/null | grep -v release_ | grep -v "cdnjs.cloudflare.com" | grep -v "integrity=" | grep -v "crossorigin=" || true)
 if [ -n "$OLD_VERSIONS" ]; then
   echo "❌ Found old version numbers:"
   echo "$OLD_VERSIONS"

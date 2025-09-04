@@ -81,6 +81,20 @@ def check_version_consistency(expected_version):
     if output and expected_version not in output:
         issues.append(f"Version mismatch in Dockerfile: {output}")
     
+    # Check for old application versions (excluding external libraries)
+    major, minor, _ = expected_version.split('.')
+    if int(minor) > 0:
+        older_minor = int(minor) - 1
+        older_versions_pattern = f"{major}\\.{older_minor}\\.[0-9]"
+        
+        cmd = f'grep -r "{older_versions_pattern}" *.html */index.html *.md AGENT.md Dockerfile 2>/dev/null | grep -v "cdnjs.cloudflare.com" | grep -v "cdn.jsdelivr.net" | grep -v "integrity=" | grep -v "crossorigin=" | grep -v "release_" | grep -v "\\.min\\.js" | grep -v "\\.min\\.css" | head -5'
+        output, _ = run_command(cmd, quiet=True)
+        if output:
+            # Only report if the matches look like application versions, not library versions
+            non_library_matches = [line for line in output.split('\n') if line and 'src=' not in line and 'href=' not in line]
+            if non_library_matches:
+                issues.append(f"Found potential old application versions: {len(non_library_matches)} instances")
+    
     return issues
 
 def check_javascript_syntax():

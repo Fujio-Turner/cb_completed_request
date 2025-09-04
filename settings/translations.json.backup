@@ -1,0 +1,1524 @@
+{
+  "ui_strings": {
+    "Query Analyzer v3.10.0": {
+      "es": "Analizador de Consultas v3.10.0",
+      "pt": "Analisador de Consultas v3.10.0",
+      "de": "Query Analyzer v3.10.0"
+    },
+    "Query Analyzer v3.7.2": {
+      "es": "Analizador de Consultas v3.7.2",
+      "pt": "Analisador de Consultas v3.7.2",
+      "de": "Query Analyzer v3.7.2"
+    },
+    "Query Analyzer v3.7.0": {
+      "es": "Analizador de Consultas v3.7.0",
+      "pt": "Analisador de Consultas v3.7.0",
+      "de": "Query Analyzer v3.7.0"
+    },
+    "Dashboard": {
+      "es": "Panel de Control",
+      "pt": "Painel de Controle",
+      "de": "Instrumententafel"
+    },
+    "Timeline": {
+      "es": "Línea de Tiempo",
+      "pt": "Linha do Tempo",
+      "de": "Zeitverlauf"
+    },
+    "Analysis": {
+      "es": "Análisis",
+      "pt": "Análise",
+      "de": "Analysieren"
+    },
+    "Parse JSON": {
+      "es": "Analizar JSON",
+      "pt": "Analisar JSON",
+      "de": "JSON Analysieren"
+    },
+    "⚠️ Filters changed. Click \"Parse JSON\" to apply changes.": {
+      "es": "⚠️ Filtros cambiados. Haga clic en \"Analizar JSON\" para aplicar cambios.",
+      "pt": "⚠️ Filtros alterados. Clique em \"Analisar JSON\" para aplicar alterações.",
+      "de": "⚠️ Filter geändert. Klicken Sie auf \"JSON Analysieren\" um Änderungen anzuwenden."
+    },
+    "Copy": {
+      "es": "Copiar",
+      "pt": "Copiar",
+      "de": "Kopieren"
+    },
+    "Copy All": {
+      "es": "Copiar Todo",
+      "pt": "Copiar Tudo",
+      "de": "Alle Kopieren"
+    },
+    "Clear All": {
+      "es": "Limpiar Todo",
+      "pt": "Limpar Tudo",
+      "de": "Alle Löschen"
+    },
+    "From:": {
+      "es": "Desde:",
+      "pt": "De:",
+      "de": "Von:"
+    },
+    "To:": {
+      "es": "Hasta:",
+      "pt": "Até:",
+      "de": "Bis:"
+    },
+    "Use Charts Current X-Axis Date Range": {
+      "es": "Usar Rango de Fechas del Eje X de los Gráficos Actuales",
+      "pt": "Usar Intervalo de Datas do Eixo X dos Gráficos Atuais",
+      "de": "Aktuellen X-Achsen Datumsbereich der Diagramme Verwenden"
+    },
+    "Search Statement:": {
+      "es": "Buscar Declaración:",
+      "pt": "Buscar Declaração:",
+      "de": "Anweisung Suchen:"
+    },
+    "Search Username:": {
+      "es": "Buscar Usuario:",
+      "pt": "Buscar Usuário:",
+      "de": "Benutzername Suchen:"
+    },
+    "Search indexes:": {
+      "es": "Buscar índices:",
+      "pt": "Buscar índices:",
+      "de": "Indizes suchen:"
+    },
+    "Query Duration Distribution": {
+      "es": "Distribución de Duración de Consultas",
+      "pt": "Distribuição de Duração de Consultas",
+      "de": "Verteilung der Abfragedauer"
+    },
+    "Primary Indexes Used": {
+      "es": "Índices Primarios Utilizados",
+      "pt": "Índices Primários Utilizados",
+      "de": "Verwendete Primäre Indizes"
+    },
+    "Query Pattern Features": {
+      "es": "Características del Patrón de Consulta",
+      "pt": "Características do Padrão de Consulta",
+      "de": "Abfragemuster-Eigenschaften"
+    },
+    "Total Indexes": {
+      "es": "Total de Índices",
+      "pt": "Total de Índices",
+      "de": "Gesamte Indizes"
+    },
+    "Buckets": {
+      "es": "Buckets",
+      "pt": "Buckets",
+      "de": "Buckets"
+    },
+    "Scopes": {
+      "es": "Ámbitos",
+      "pt": "Escopos",
+      "de": "Bereiche"
+    },
+    "Collections": {
+      "es": "Colecciones",
+      "pt": "Coleções",
+      "de": "Sammlungen"
+    },
+    "Primary Indexes": {
+      "es": "Índices Primarios",
+      "pt": "Índices Primários",
+      "de": "Primäre Indizes"
+    },
+    "Used/Total Indexes": {
+      "es": "Índices Usados/Total",
+      "pt": "Índices Usados/Total",
+      "de": "Verwendete/Gesamte Indizes"
+    },
+    "Without/With Replica": {
+      "es": "Sin/Con Réplica",
+      "pt": "Sem/Com Réplica",
+      "de": "Ohne/Mit Replikat"
+    },
+    "Never Scanned Indexes": {
+      "es": "Índices Nunca Escaneados",
+      "pt": "Índices Nunca Verificados",
+      "de": "Nie Gescannte Indizes"
+    },
+    "Primary Only": {
+      "es": "Solo Primarios",
+      "pt": "Apenas Primários",
+      "de": "Nur Primäre"
+    },
+    "Used Only": {
+      "es": "Solo Usados",
+      "pt": "Apenas Usados",
+      "de": "Nur Verwendete"
+    },
+    "No Replicas Only": {
+      "es": "Solo Sin Réplicas",
+      "pt": "Apenas Sem Réplicas",
+      "de": "Nur Ohne Replikate"
+    },
+    "Never Scanned Only": {
+      "es": "Solo Nunca Escaneados",
+      "pt": "Apenas Nunca Verificados",
+      "de": "Nur Nie Gescannte"
+    },
+    "Learn More": {
+      "es": "Aprender Más",
+      "pt": "Saiba Mais",
+      "de": "Mehr Erfahren"
+    },
+    "⚠️ WARNING ⚠️": {
+      "es": "⚠️ ADVERTENCIA ⚠️",
+      "pt": "⚠️ AVISO ⚠️",
+      "de": "⚠️ WARNUNG ⚠️"
+    },
+    "Primary index scans in production can cause full bucket scans leading to severe performance issues": {
+      "es": "Los escaneos de índices primarios en producción pueden causar escaneos completos de buckets llevando a problemas de rendimiento severos",
+      "pt": "Verificações de índice primário em produção podem causar verificações completas de bucket levando a problemas graves de desempenho",
+      "de": "Primäre Index-Scans in der Produktion können vollständige Bucket-Scans verursachen, die zu schwerwiegenden Leistungsproblemen führen"
+    },
+    "Select a query from the table to view the flow diagram.": {
+      "es": "Seleccione una consulta de la tabla para ver el diagrama de flujo.",
+      "pt": "Selecione uma consulta da tabela para visualizar o diagrama de fluxo.",
+      "de": "Wählen Sie eine Abfrage aus der Tabelle, um das Flussdiagramm anzuzeigen."
+    },
+    "Yes": {
+      "es": "Sí",
+      "pt": "Sim",
+      "de": "Ja"
+    },
+    "No": {
+      "es": "No",
+      "pt": "Não",
+      "de": "Nein"
+    },
+    "Showing all": {
+      "es": "Mostrando todos los",
+      "pt": "Mostrando todos os",
+      "de": "Zeige alle"
+    },
+    "records": {
+      "es": "registros",
+      "pt": "registros",
+      "de": "Datensätze"
+    },
+    "groups": {
+      "es": "grupos",
+      "pt": "grupos",
+      "de": "Gruppen"
+    },
+    "Search in SQL++ statements...": {
+      "es": "Buscar en declaraciones SQL++...",
+      "pt": "Buscar em declarações SQL++...",
+      "de": "In SQL++ Anweisungen suchen..."
+    },
+    "Search In SQL++ Statements:": {
+      "es": "Buscar en Declaraciones SQL++:",
+      "pt": "Buscar em Declarações SQL++:",
+      "de": "In SQL++ Anweisungen Suchen:"
+    },
+    "Filter statements during parse...": {
+      "es": "Filtrar declaraciones durante el análisis...",
+      "pt": "Filtrar declarações durante a análise...",
+      "de": "Anweisungen während der Analyse filtern..."
+    },
+    "Note: #primary count shows total operations, not unique queries": {
+      "es": "Nota: el conteo #primary muestra operaciones totales, no consultas únicas",
+      "pt": "Nota: a contagem #primary mostra operações totais, não consultas únicas",
+      "de": "Hinweis: #primary Anzahl zeigt Gesamtoperationen, nicht eindeutige Abfragen"
+    },
+    "Reset Zoom": {
+      "es": "Restablecer Zoom",
+      "pt": "Redefinir Zoom",
+      "de": "Zoom Zurücksetzen"
+    },
+    "Copy Query": {
+      "es": "Copiar Consulta",
+      "pt": "Copiar Consulta",
+      "de": "Abfrage Kopieren"
+    },
+    "Copy the query above": {
+      "es": "Copie la consulta anterior",
+      "pt": "Copie a consulta acima",
+      "de": "Kopieren Sie die obige Abfrage"
+    },
+    "Copy the JSON results": {
+      "es": "Copie los resultados JSON",
+      "pt": "Copie os resultados JSON",
+      "de": "Kopieren Sie die JSON-Ergebnisse"
+    },
+    "Result Count Analysis: Total vs Average per Query": {
+      "es": "Análisis de Conteo de Resultados: Total vs Promedio por Consulta",
+      "pt": "Análise de Contagem de Resultados: Total vs Média por Consulta",
+      "de": "Ergebnisanzahl-Analyse: Gesamt vs. Durchschnitt pro Abfrage"
+    },
+    "Result Size Analysis: Total vs Average per Query": {
+      "es": "Análisis de Tamaño de Resultados: Total vs Promedio por Consulta",
+      "pt": "Análise de Tamanho de Resultados: Total vs Média por Consulta",
+      "de": "Ergebnisgröße-Analyse: Gesamt vs. Durchschnitt pro Abfrage"
+    },
+    "Total Result Count": {
+      "es": "Conteo Total de Resultados",
+      "pt": "Contagem Total de Resultados",
+      "de": "Gesamte Ergebnisanzahl"
+    },
+    "Total Result Size (MB)": {
+      "es": "Tamaño Total de Resultados (MB)",
+      "pt": "Tamanho Total de Resultados (MB)",
+      "de": "Gesamte Ergebnisgröße (MB)"
+    },
+    "Avg Result Count per Query": {
+      "es": "Conteo Promedio de Resultados por Consulta",
+      "pt": "Contagem Média de Resultados por Consulta",
+      "de": "Durchschnittliche Ergebnisanzahl pro Abfrage"
+    },
+    "Avg Result Size per Query (MB)": {
+      "es": "Tamaño Promedio de Resultados por Consulta (MB)",
+      "pt": "Tamanho Médio de Resultados por Consulta (MB)",
+      "de": "Durchschnittliche Ergebnisgröße pro Abfrage (MB)"
+    },
+    "Avg per Query (MB)": {
+      "es": "Promedio por Consulta (MB)",
+      "pt": "Média por Consulta (MB)",
+      "de": "Durchschnitt pro Abfrage (MB)"
+    },
+    "Avg Index Scans per Query": {
+      "es": "Escaneos de Índice Promedio por Consulta",
+      "pt": "Varreduras de Índice Médias por Consulta",
+      "de": "Durchschnittliche Index-Scans pro Abfrage"
+    },
+    "Database Operations Timeline: Index Scans vs Document Fetches": {
+      "es": "Línea de Tiempo de Operaciones de Base de Datos: Escaneos de Índice vs Recuperación de Documentos",
+      "pt": "Linha do Tempo de Operações de Banco de Dados: Varreduras de Índice vs Recuperação de Documentos",
+      "de": "Datenbank-Operationen Timeline: Index-Scans vs Dokument-Abrufe"
+    },
+    "Filter Operations Timeline: Efficiency Analysis (IN vs OUT)": {
+      "es": "Línea de Tiempo de Operaciones de Filtro: Análisis de Eficiencia (ENTRADA vs SALIDA)",
+      "pt": "Linha do Tempo de Operações de Filtro: Análise de Eficiência (ENTRADA vs SAÍDA)",
+      "de": "Filter-Operationen Timeline: Effizienz-Analyse (EINGANG vs AUSGANG)"
+    },
+    "Users by Query Count": {
+      "es": "Usuarios por Conteo de Consultas",
+      "pt": "Usuários por Contagem de Consultas",
+      "de": "Benutzer nach Abfrageanzahl"
+    },
+    "Index Usage Count": {
+      "es": "Conteo de Uso de Índices",
+      "pt": "Contagem de Uso de Índices",
+      "de": "Index-Nutzungsanzahl"
+    },
+    "Query Performance Timeline: KernTime % of ExecutionTime": {
+      "es": "Línea de Tiempo de Rendimiento de Consultas: % de KernTime del Tiempo de Ejecución",
+      "pt": "Linha do Tempo de Desempenho de Consultas: % de KernTime do Tempo de Execução",
+      "de": "Abfrage-Performance Timeline: KernTime % der Ausführungszeit"
+    },
+    "Total Query Process Memory Usage": {
+      "es": "Uso Total de Memoria del Proceso de Consultas",
+      "pt": "Uso Total de Memória do Processo de Consultas",
+      "de": "Gesamter Abfrageprozess-Speicherverbrauch"
+    },
+    "Exclude System Queries": {
+      "es": "Excluir Consultas del Sistema",
+      "pt": "Excluir Consultas do Sistema",
+      "de": "Systemabfragen Ausschließen"
+    },
+    "To analyze indexes, run this query in your Couchbase Query Workbench and paste the results in the second textarea above:": {
+      "es": "Para analizar índices, ejecute esta consulta en su Couchbase Query Workbench y pegue los resultados en el segundo área de texto de arriba:",
+      "pt": "Para analisar índices, execute esta consulta em seu Couchbase Query Workbench e cole os resultados na segunda área de texto acima:",
+      "de": "Um Indizes zu analysieren, führen Sie diese Abfrage in Ihrer Couchbase Query Workbench aus und fügen Sie die Ergebnisse in das zweite Textfeld oben ein:"
+    },
+    "Sort By": {
+      "es": "Ordenar Por",
+      "pt": "Ordenar Por",
+      "de": "Sortieren Nach"
+    },
+    "Indexes Used:": {
+      "es": "Índices Utilizados:",
+      "pt": "Índices Utilizados:",
+      "de": "Verwendete Indizes:"
+    },
+    "Queries Executed:": {
+      "es": "Consultas Ejecutadas:",
+      "pt": "Consultas Executadas:",
+      "de": "Ausgeführte Abfragen:"
+    },
+    "Drag box to zoom area": {
+      "es": "Arrastrar caja para ampliar área",
+      "pt": "Arraste caixa para ampliar área",
+      "de": "Kasten ziehen zum Zoomen des Bereichs"
+    },
+    "Linear": {
+      "es": "Lineal",
+      "pt": "Linear",
+      "de": "Linear"
+    },
+    "Logarithmic": {
+      "es": "Logarítmico",
+      "pt": "Logarítmico",
+      "de": "Logarithmisch"
+    },
+    "By Optimizer": {
+      "es": "Por Optimizador",
+      "pt": "Por Otimizador",
+      "de": "Nach Optimierer"
+    },
+    "By Minute": {
+      "es": "Por Minuto",
+      "pt": "Por Minuto",
+      "de": "Nach Minute"
+    },
+    "By Second": {
+      "es": "Por Segundo",
+      "pt": "Por Segundo",
+      "de": "Nach Sekunde"
+    },
+    "Original": {
+      "es": "Original",
+      "pt": "Original",
+      "de": "Original"
+    },
+    "1 Day": {
+      "es": "1 Día",
+      "pt": "1 Dia",
+      "de": "1 Tag"
+    },
+    "1 Hour": {
+      "es": "1 Hora",
+      "pt": "1 Hora",
+      "de": "1 Stunde"
+    },
+    "1 Week": {
+      "es": "1 Semana",
+      "pt": "1 Semana",
+      "de": "1 Woche"
+    },
+    "By Hour": {
+      "es": "Por Hora",
+      "pt": "Por Hora",
+      "de": "Nach Stunde"
+    },
+    "Y-Axis Scale:": {
+      "es": "Escala del Eje Y:",
+      "pt": "Escala do Eixo Y:",
+      "de": "Y-Achsen-Skalierung:"
+    },
+    "Time Grouping:": {
+      "es": "Agrupación de Tiempo:",
+      "pt": "Agrupamento de Tempo:",
+      "de": "Zeit-Gruppierung:"
+    },
+    "Statement Type": {
+      "es": "Tipo de Declaración",
+      "pt": "Tipo de Declaração",
+      "de": "Anweisungstyp"
+    },
+    "Query State": {
+      "es": "Estado de Consulta",
+      "pt": "Estado da Consulta",
+      "de": "Abfragestatus"
+    },
+    "Scanned:": {
+      "es": "Escaneado:",
+      "pt": "Verificado:",
+      "de": "Gescannt:"
+    },
+    "Executions:": {
+      "es": "Ejecuciones:",
+      "pt": "Execuções:",
+      "de": "Ausführungen:"
+    },
+    "Click the 'Indexes' tab below to get the SQL query to run. Paste the results here...": {
+      "es": "Haga clic en la pestaña 'Índices' a continuación para obtener la consulta SQL para ejecutar. Pegue los resultados aquí...",
+      "pt": "Clique na aba 'Índices' abaixo para obter a consulta SQL para executar. Cole os resultados aqui...",
+      "de": "Klicken Sie auf die Registerkarte 'Indizes' unten, um die auszuführende SQL-Abfrage zu erhalten. Fügen Sie die Ergebnisse hier ein..."
+    },
+    "Sync Gateway Indexes:": {
+      "es": "Índices de Sync Gateway:",
+      "pt": "Índices do Sync Gateway:",
+      "de": "Sync Gateway Indizes:"
+    },
+    "Exclude Mobile Indexes": {
+      "es": "Excluir Índices Móviles",
+      "pt": "Excluir Índices Móveis", 
+      "de": "Mobile Indizes Ausschließen"
+    },
+    "Scan Consistency": {
+      "es": "Consistencia de Escaneo",
+      "pt": "Consistência de Verificação",
+      "de": "Scan-Konsistenz"
+    },
+    "NEED HELP? Debugging + Tool Tips": {
+      "es": "¿NECESITAS AYUDA? Depuración + Consejos de Herramienta",
+      "pt": "PRECISA DE AJUDA? Depuração + Dicas da Ferramenta",
+      "de": "BRAUCHEN SIE HILFE? Fehlersuche + Tool-Tipps"
+    },
+    "Copy Stats": {
+      "es": "Copiar Estadísticas",
+      "pt": "Copiar Estatísticas",
+      "de": "Statistiken Kopieren"
+    },
+    "Show More": {
+      "es": "Mostrar Más",
+      "pt": "Mostrar Mais",
+      "de": "Mehr Anzeigen"
+    },
+    "Hide": {
+      "es": "Ocultar",
+      "pt": "Ocultar",
+      "de": "Ausblenden"
+    },
+    "Query Groups": {
+      "es": "Grupos de Consulta",
+      "pt": "Grupos de Consulta",
+      "de": "Abfragegruppen"
+    },
+    "Every Query": {
+      "es": "Cada Consulta",
+      "pt": "Cada Consulta",
+      "de": "Jede Abfrage"
+    },
+    "Index/Query Flow": {
+      "es": "Flujo de Índice/Consulta",
+      "pt": "Fluxo de Índice/Consulta",
+      "de": "Index/Abfrage-Fluss"
+    },
+    "Indexes": {
+      "es": "Índices",
+      "pt": "Índices",
+      "de": "Indizes"
+    },
+    "Filter SQL++ Statement Contains": {
+      "es": "Filtrar Declaración SQL++ Contiene",
+      "pt": "Filtrar Declaração SQL++ Contém",
+      "de": "SQL++ Anweisung Filter Enthält"
+    },
+    "Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;": {
+      "es": "Pegue su salida JSON de: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;",
+      "pt": "Cole sua saída JSON de: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;",
+      "de": "Fügen Sie Ihre JSON-Ausgabe ein von: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;"
+    },
+    "JSON input field for Couchbase query data": {
+      "es": "Campo de entrada JSON para datos de consulta de Couchbase",
+      "pt": "Campo de entrada JSON para dados de consulta do Couchbase",
+      "de": "JSON-Eingabefeld für Couchbase-Abfragedaten"
+    },
+    "Index JSON input field": {
+      "es": "Campo de entrada JSON de índices",
+      "pt": "Campo de entrada JSON de índices",
+      "de": "Index JSON-Eingabefeld"
+    },
+    "Parse and analyze JSON data": {
+      "es": "Analizar y analizar datos JSON",
+      "pt": "Analisar e analisar dados JSON",
+      "de": "JSON-Daten parsen und analysieren"
+    },
+    "Exclude system queries from analysis": {
+      "es": "Excluir consultas del sistema del análisis",
+      "pt": "Excluir consultas do sistema da análise",
+      "de": "Systemabfragen von der Analyse ausschließen"
+    },
+    "Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces": {
+      "es": "Excluye declaraciones INFER, ADVISE, CREATE, ALTER INDEX y consultas de keyspaces del sistema:",
+      "pt": "Exclui declarações INFER, ADVISE, CREATE, ALTER INDEX e consultas de keyspaces do sistema:",
+      "de": "Schließt INFER, ADVISE, CREATE, ALTER INDEX Anweisungen und Abfragen von System-Keyspaces aus:"
+    },
+    "Start date/time for filtering": {
+      "es": "Fecha/hora de inicio para filtrar",
+      "pt": "Data/hora de início para filtragem",
+      "de": "Startdatum/-zeit für Filterung"
+    },
+    "End date/time for filtering": {
+      "es": "Fecha/hora de fin para filtrar",
+      "pt": "Data/hora de fim para filtragem",
+      "de": "Enddatum/-zeit für Filterung"
+    },
+    "Filter SQL++ statements during JSON parsing": {
+      "es": "Filtrar declaraciones SQL++ durante el análisis JSON",
+      "pt": "Filtrar declarações SQL++ durante a análise JSON",
+      "de": "SQL++ Anweisungen während JSON-Parsing filtern"
+    },
+    "request\\nTime": {
+      "es": "tiempo de\\nsolicitud",
+      "pt": "tempo de\\nsolicitação",
+      "de": "Anfrage-\\nzeit"
+    },
+    "statement\\nType": {
+      "es": "Tipo de\\nDeclaración",
+      "pt": "Tipo de\\nDeclaração",
+      "de": "Anweisungs-\\ntyp"
+    },
+    "elapsed\\nTime": {
+      "es": "Tiempo\\nTranscurrido",
+      "pt": "Tempo\\nDecorrido",
+      "de": "Verstrichene\\nZeit"
+    },
+    "service\\nTime": {
+      "es": "Tiempo de\\nServicio",
+      "pt": "Tempo de\\nServiço",
+      "de": "Service-\\nzeit"
+    },
+    "kern\\nTime": {
+      "es": "Tiempo de\\nKernel",
+      "pt": "Tempo de\\nKernel",
+      "de": "Kernel-\\nzeit"
+    },
+    "KernTime\\n%": {
+      "es": "% Tiempo\\nKernel",
+      "pt": "% Tempo\\nKernel",
+      "de": "KernZeit\\n%"
+    },
+    "cpu\\nTime": {
+      "es": "Tiempo de\\nCPU",
+      "pt": "Tempo de\\nCPU",
+      "de": "CPU-\\nzeit"
+    },
+    "memory\\n(MB)": {
+      "es": "memoria\\n(MB)",
+      "pt": "memória\\n(MB)",
+      "de": "Speicher\\n(MB)"
+    },
+    "result\\nCount": {
+      "es": "Conteo de\\nResultados",
+      "pt": "Contagem de\\nResultados",
+      "de": "Ergebnis-\\nanzahl"
+    },
+    "result\\nSize": {
+      "es": "Tamaño de\\nResultados",
+      "pt": "Tamanho de\\nResultados",
+      "de": "Ergebnis-\\ngröße"
+    },
+    "Doc Fetch\\nCount": {
+      "es": "Conteo de\\nRecuperación",
+      "pt": "Contagem de\\nRecuperação",
+      "de": "Dokument-\\nAbruf-Anzahl"
+    },
+    "Items from\\nIndex Scan": {
+      "es": "Elementos del\\nEscaneo de Índice",
+      "pt": "Itens da\\nVerificação de Índice",
+      "de": "Elemente vom\\nIndex-Scan"
+    },
+    "Primary Scan\\nUsed": {
+      "es": "Escaneo Primario\\nUtilizado",
+      "pt": "Verificação Primária\\nUtilizada",
+      "de": "Primärer Scan\\nVerwendet"
+    },
+    "state": {
+      "es": "estado",
+      "pt": "estado",
+      "de": "Status"
+    },
+    "statement": {
+      "es": "declaración",
+      "pt": "declaração",
+      "de": "Anweisung"
+    },
+    "Scan\\nConsistency": {
+      "es": "Consistencia\\nde Escaneo",
+      "pt": "Consistência\\nde Verificação",
+      "de": "Scan-\\nKonsistenz"
+    },
+    "users": {
+      "es": "usuarios",
+      "pt": "usuários",
+      "de": "Benutzer"
+    },
+    "copied!": {
+      "es": "¡copiado!",
+      "pt": "copiado!",
+      "de": "kopiert!"
+    },
+    "Copied!": {
+      "es": "¡Copiado!",
+      "pt": "Copiado!",
+      "de": "Kopiert!"
+    },
+    "Used": {
+      "es": "Usado",
+      "pt": "Usado",
+      "de": "Verwendet"
+    },
+    "online": {
+      "es": "en línea",
+      "pt": "online",
+      "de": "online"
+    },
+    "offline": {
+      "es": "fuera de línea",
+      "pt": "offline",
+      "de": "offline"
+    },
+    "building": {
+      "es": "construyendo",
+      "pt": "construindo",
+      "de": "wird erstellt"
+    },
+    "unknown": {
+      "es": "desconocido",
+      "pt": "desconhecido",
+      "de": "unbekannt"
+    },
+    "Query Count": {
+      "es": "Conteo de Consultas",
+      "pt": "Contagem de Consultas",
+      "de": "Abfrageanzahl"
+    },
+    "Number of Queries": {
+      "es": "Número de Consultas",
+      "pt": "Número de Consultas",
+      "de": "Anzahl der Abfragen"
+    },
+    "Elapsed Time Range": {
+      "es": "Rango de Tiempo Transcurrido",
+      "pt": "Intervalo de Tempo Decorrido",
+      "de": "Verstrichene Zeitspanne"
+    },
+    "Request Time": {
+      "es": "Tiempo de Solicitud",
+      "pt": "Tempo de Solicitação",
+      "de": "Anfragezeit"
+    },
+    "Copy Query": {
+      "es": "Copiar Consulta",
+      "pt": "Copiar Consulta",
+      "de": "Abfrage Kopieren"
+    },
+    "Show More": {
+      "es": "Mostrar Más",
+      "pt": "Mostrar Mais",
+      "de": "Mehr Anzeigen"
+    },
+    "Hide": {
+      "es": "Ocultar",
+      "pt": "Ocultar",
+      "de": "Ausblenden"
+    },
+    "Search Statement:": {
+      "es": "Buscar Declaración:",
+      "pt": "Buscar Declaração:",
+      "de": "Anweisung Suchen:"
+    },
+    "Search Username:": {
+      "es": "Buscar Usuario:",
+      "pt": "Buscar Usuário:",
+      "de": "Benutzername Suchen:"
+    },
+    "Search in SQL++ statements...": {
+      "es": "Buscar en declaraciones SQL++...",
+      "pt": "Buscar em declarações SQL++...",
+      "de": "In SQL++ Anweisungen suchen..."
+    },
+    "Search usernames...": {
+      "es": "Buscar usuarios...",
+      "pt": "Buscar usuários...",
+      "de": "Benutzernamen suchen..."
+    },
+    "🚧 INSIGHTS IN DEVELOPMENT 🚧": {
+      "es": "🚧 INSIGHTS EN DESARROLLO 🚧",
+      "pt": "🚧 INSIGHTS EM DESENVOLVIMENTO 🚧",
+      "de": "🚧 EINBLICKE IN ENTWICKLUNG 🚧"
+    },
+    "Index Performance Issues": {
+      "es": "Problemas de Rendimiento del Índice",
+      "pt": "Problemas de Performance do Índice",
+      "de": "Index-Leistungsprobleme"
+    },
+    "High Kernel Time in Queries": {
+      "es": "Alto Tiempo de Kernel en Consultas",
+      "pt": "Alto Tempo de Kernel em Consultas",
+      "de": "Hohe Kernel-Zeit in Abfragen"
+    },
+    "High Memory Usage Detected": {
+      "es": "Alto Uso de Memoria Detectado",
+      "pt": "Alto Uso de Memória Detectado", 
+      "de": "Hoher Speicherverbrauch Erkannt"
+    },
+    "Inefficient Index Scans": {
+      "es": "Escaneos de Índice Ineficientes",
+      "pt": "Varreduras de Índice Ineficientes",
+      "de": "Ineffiziente Index-Scans"
+    },
+    "Slow Index Scan Times": {
+      "es": "Tiempos Lentos de Escaneo de Índice",
+      "pt": "Tempos Lentos de Varredura de Índice",
+      "de": "Langsame Index-Scan-Zeiten"
+    },
+    "Some insights show": {
+      "es": "Algunas perspectivas muestran",
+      "pt": "Alguns insights mostram",
+      "de": "Einige Erkenntnisse zeigen"
+    },
+    "insights are work in progress (might have false positives), others display placeholder content.": {
+      "es": "las perspectivas están en progreso (pueden tener falsos positivos), otras muestran contenido de marcador de posición.",
+      "pt": "os insights estão em desenvolvimento (podem ter falsos positivos), outros exibem conteúdo de placeholder.",
+      "de": "Einblicke sind in Arbeit (können falsche Positive haben), andere zeigen Platzhalterinhalt."
+    },
+    "🔍 Index Performance Issues": {
+      "es": "🔍 Problemas de Rendimiento del Índice",
+      "pt": "🔍 Problemas de Performance do Índice",
+      "de": "🔍 Index-Leistungsprobleme"
+    },
+    "⚡ Resource Utilization Issues": {
+      "es": "⚡ Problemas de Utilización de Recursos",
+      "pt": "⚡ Problemas de Utilização de Recursos",
+      "de": "⚡ Ressourcennutzungsprobleme"
+    },
+    "🔄 Query Pattern Analysis": {
+      "es": "🔄 Análisis de Patrones de Consulta",
+      "pt": "🔄 Análise de Padrões de Consulta",
+      "de": "🔄 Abfragemuster-Analyse"
+    },
+    "🚀 Performance Optimization Opportunities": {
+      "es": "🚀 Oportunidades de Optimización de Rendimiento",
+      "pt": "🚀 Oportunidades de Otimização de Performance",
+      "de": "🚀 Performance-Optimierungsmöglichkeiten"
+    },
+    "Primary Index Over-Usage": {
+      "es": "Uso Excesivo de Índice Primario",
+      "pt": "Uso Excessivo de Índice Primário",
+      "de": "Übermäßige Primärindex-Nutzung"
+    },
+    "Slow USE KEY Queries": {
+      "es": "Consultas USE KEY Lentas",
+      "pt": "Consultas USE KEY Lentas",
+      "de": "Langsame USE KEY Abfragen"
+    },
+    "Missing WHERE Clauses": {
+      "es": "Cláusulas WHERE Faltantes",
+      "pt": "Cláusulas WHERE Ausentes",
+      "de": "Fehlende WHERE-Klauseln"
+    },
+    "Complex JOIN Operations": {
+      "es": "Operaciones JOIN Complejas",
+      "pt": "Operações JOIN Complexas",
+      "de": "Komplexe JOIN-Operationen"
+    },
+    "Inefficient LIKE Operations": {
+      "es": "Operaciones LIKE Ineficientes",
+      "pt": "Operações LIKE Ineficientes",
+      "de": "Ineffiziente LIKE-Operationen"
+    },
+    "Large Payload Streaming": {
+      "es": "Transmisión de Carga Útil Grande",
+      "pt": "Streaming de Payload Grande",
+      "de": "Große Nutzdaten-Streaming"
+    },
+    "Large Result Set Queries": {
+      "es": "Consultas con Conjunto de Resultados Grandes",
+      "pt": "Consultas com Conjunto de Resultados Grandes",
+      "de": "Abfragen mit großen Ergebnissätzen"
+    },
+    "Timeout-Prone Queries": {
+      "es": "Consultas Propensas a Timeout",
+      "pt": "Consultas Propensas a Timeout",
+      "de": "Timeout-anfällige Abfragen"
+    },
+    "Concurrent Query Conflicts": {
+      "es": "Conflictos de Consultas Concurrentes",
+      "pt": "Conflitos de Consultas Concorrentes",
+      "de": "Gleichzeitige Abfragekonflikte"
+    },
+    "scan an average of": {
+      "es": "escanean un promedio de",
+      "pt": "verificam uma média de",
+      "de": "scannen durchschnittlich"
+    },
+    "index entries but returned back an avg": {
+      "es": "entradas de índice pero devolvieron un promedio de",
+      "pt": "entradas de índice mas retornaram uma média de",
+      "de": "Index-Einträge, gaben aber durchschnittlich zurück"
+    },
+    "records per query or a selectivity of": {
+      "es": "registros por consulta o una selectividad de",
+      "pt": "registros por consulta ou uma seletividade de",
+      "de": "Datensätze pro Abfrage oder eine Selektivität von"
+    },
+    "(excluding aggregate functions like COUNT(), AVG(), MIN(), MAX()).": {
+      "es": "(excluyendo funciones agregadas como COUNT(), AVG(), MIN(), MAX()).",
+      "pt": "(excluindo funções agregadas como COUNT(), AVG(), MIN(), MAX()).",
+      "de": "(außer Aggregatfunktionen wie COUNT(), AVG(), MIN(), MAX())."
+    },
+    "Consider creating more selective indexes to reduce scan overhead": {
+      "es": "Considere crear índices más selectivos para reducir la sobrecarga de escaneo",
+      "pt": "Considere criar índices mais seletivos para reduzir a sobrecarga de varredura",
+      "de": "Erwägen Sie die Erstellung selektiverer Indizes zur Reduzierung der Scan-Überlastung"
+    },
+    "total indexes:": {
+      "es": "índices totales:",
+      "pt": "índices totais:",
+      "de": "Indizes insgesamt:"
+    },
+    "indexes with an avg scan time between 2-10 seconds": {
+      "es": "índices con un tiempo promedio de escaneo entre 2-10 segundos",
+      "pt": "índices com tempo médio de varredura entre 2-10 segundos",
+      "de": "Indizes mit einer durchschnittlichen Scan-Zeit zwischen 2-10 Sekunden"
+    },
+    "indexes with an avg scan time of 10+ seconds": {
+      "es": "índices con un tiempo promedio de escaneo de 10+ segundos",
+      "pt": "índices com tempo médio de varredura de 10+ segundos",
+      "de": "Indizes mit einer durchschnittlichen Scan-Zeit von 10+ Sekunden"
+    },
+    "#primary indexes with an avg scan time of 2+ seconds": {
+      "es": "índices #primary con un tiempo promedio de escaneo de 2+ segundos",
+      "pt": "índices #primary com tempo médio de varredura de 2+ segundos",
+      "de": "#primary Indizes mit einer durchschnittlichen Scan-Zeit von 2+ Sekunden"
+    },
+    "Check kernel time on index nodes - high kernel time may indicate resource contention": {
+      "es": "Verifique el tiempo de kernel en los nodos de índice - un alto tiempo de kernel puede indicar contención de recursos",
+      "pt": "Verifique o tempo de kernel nos nós de índice - alto tempo de kernel pode indicar contenção de recursos",
+      "de": "Überprüfen Sie die Kernel-Zeit auf Index-Knoten - hohe Kernel-Zeit kann auf Ressourcenkonflikte hindeuten"
+    },
+    "Index returning millions of records? Create more selective compound indexes": {
+      "es": "¿Índice devolviendo millones de registros? Cree índices compuestos más selectivos",
+      "pt": "Índice retornando milhões de registros? Crie índices compostos mais seletivos",
+      "de": "Index gibt Millionen von Datensätzen zurück? Erstellen Sie selektivere zusammengesetzte Indizes"
+    },
+    "Primary indexes on avg are scanning": {
+      "es": "Los índices primarios en promedio están escaneando",
+      "pt": "Os índices primários em média estão verificando",
+      "de": "Primäre Indizes scannen durchschnittlich"
+    },
+    "items with an avg scan time of": {
+      "es": "elementos con un tiempo promedio de escaneo de",
+      "pt": "itens com tempo médio de varredura de",
+      "de": "Elemente mit einer durchschnittlichen Scan-Zeit von"
+    },
+    ". These could benefit from secondary indexes.": {
+      "es": ". Estos podrían beneficiarse de índices secundarios.",
+      "pt": ". Estes poderiam se beneficiar de índices secundários.",
+      "de": ". Diese könnten von sekundären Indizes profitieren."
+    },
+    "Review your indexing strategy - create selective secondary indexes": {
+      "es": "Revise su estrategia de indexación - cree índices secundarios selectivos",
+      "pt": "Revise sua estratégia de indexação - crie índices secundários seletivos",
+      "de": "Überprüfen Sie Ihre Indexierungsstrategie - erstellen Sie selektive sekundäre Indizes"
+    },
+    "whose average percentage of sum of their": {
+      "es": "cuyo porcentaje promedio de la suma de su",
+      "pt": "cuja porcentagem média da soma de seu",
+      "de": "deren durchschnittlicher Prozentsatz der Summe ihrer"
+    },
+    "core execTime": {
+      "es": "tiempo de ejecución principal",
+      "pt": "tempo de execução principal",
+      "de": "Kern-Ausführungszeit"
+    },
+    "Sum of all execTime minus Stream's execTime": {
+      "es": "Suma de todo el tiempo de ejecución menos el tiempo de ejecución del Stream",
+      "pt": "Soma de todo o tempo de execução menos o tempo de execução do Stream",
+      "de": "Summe aller Ausführungszeiten minus Stream-Ausführungszeit"
+    },
+    "/ kernTime is": {
+      "es": "/ tiempo de kernel es",
+      "pt": "/ tempo de kernel é",
+      "de": "/ Kernel-Zeit ist"
+    },
+    "Is the Query Service co-located with other services?": {
+      "es": "¿Está el Servicio de Consultas co-ubicado con otros servicios?",
+      "pt": "O Serviço de Consultas está co-localizado com outros serviços?",
+      "de": "Ist der Abfragedienst mit anderen Diensten zusammengelegt?"
+    },
+    "are using avg": {
+      "es": "están usando un promedio de",
+      "pt": "estão usando uma média de",
+      "de": "verwenden durchschnittlich"
+    },
+    "of memory each, indicating potential memory optimization opportunities.": {
+      "es": "de memoria cada una, indicando oportunidades potenciales de optimización de memoria.",
+      "pt": "de memória cada, indicando oportunidades potenciais de otimização de memória.",
+      "de": "Speicher jeweils, was auf potenzielle Speicheroptimierungsmöglichkeiten hinweist."
+    },
+    "Consider increasing query memory limits or optimizing queries": {
+      "es": "Considere aumentar los límites de memoria de consulta u optimizar consultas",
+      "pt": "Considere aumentar os limites de memória de consulta ou otimizar consultas",
+      "de": "Erwägen Sie eine Erhöhung der Abfrage-Speicherlimits oder Optimierung der Abfragen"
+    },
+    "with avg query time of": {
+      "es": "con tiempo promedio de consulta de",
+      "pt": "com tempo médio de consulta de",
+      "de": "mit durchschnittlicher Abfragezeit von"
+    },
+    ", suggesting potential KV service bottlenecks.": {
+      "es": ", sugiriendo posibles cuellos de botella del servicio KV.",
+      "pt": ", sugerindo possíveis gargalos do serviço KV.",
+      "de": ", was auf potenzielle KV-Service-Engpässe hindeutet."
+    },
+    "Is the Data Service and/or Query Service co-located with other services?": {
+      "es": "¿Está el Servicio de Datos y/o el Servicio de Consultas co-ubicado con otros servicios?",
+      "pt": "O Serviço de Dados e/ou Serviço de Consultas está co-localizado com outros serviços?",
+      "de": "Sind der Datendienst und/oder Abfragedienst mit anderen Diensten zusammengelegt?"
+    },
+    "lack WHERE clauses, potentially scanning entire collections unnecessarily.": {
+      "es": "carecen de cláusulas WHERE, potencialmente escaneando colecciones enteras innecesariamente.",
+      "pt": "carecem de cláusulas WHERE, potencialmente verificando coleções inteiras desnecessariamente.",
+      "de": "fehlen WHERE-Klauseln und scannen möglicherweise unnötig ganze Sammlungen."
+    },
+    "are taking an average of": {
+      "es": "están tomando un promedio de",
+      "pt": "estão levando uma média de",
+      "de": "dauern durchschnittlich"
+    },
+    "seconds each, with": {
+      "es": "segundos cada una, con",
+      "pt": "segundos cada, com",
+      "de": "Sekunden jeweils, wobei"
+    },
+    "showing suboptimal join patterns.": {
+      "es": "mostrando patrones de unión subóptimos.",
+      "pt": "mostrando padrões de junção subótimos.",
+      "de": "suboptimale Join-Muster zeigen."
+    },
+    "Consider denormalizing frequently joined data": {
+      "es": "Considere desnormalizar datos frecuentemente unidos",
+      "pt": "Considere desnormalizar dados frequentemente unidos",
+      "de": "Erwägen Sie die Denormalisierung häufig verknüpfter Daten"
+    },
+    "use LIKE operations with leading wildcards": {
+      "es": "usan operaciones LIKE con comodines al inicio",
+      "pt": "usam operações LIKE com wildcards iniciais",
+      "de": "verwenden LIKE-Operationen mit führenden Wildcards"
+    },
+    ", preventing index usage and causing full scans.": {
+      "es": ", impidiendo el uso de índices y causando escaneos completos.",
+      "pt": ", impedindo o uso de índices e causando varreduras completas.",
+      "de": ", verhindern die Indexnutzung und verursachen vollständige Scans."
+    },
+    "with avg size:": {
+      "es": "con tamaño promedio:",
+      "pt": "com tamanho médio:",
+      "de": "mit durchschnittlicher Größe:"
+    },
+    "with": {
+      "es": "con",
+      "pt": "com",
+      "de": "mit"
+    },
+    "of the time of the query was streaming data out to the application.": {
+      "es": "del tiempo de la consulta se dedicó a transmitir datos a la aplicación.",
+      "pt": "do tempo da consulta foi gasto transmitindo dados para a aplicação.",
+      "de": "der Abfragezeit wurde für das Streaming von Daten zur Anwendung verwendet."
+    },
+    "Consider implementing pagination for large result sets": {
+      "es": "Considere implementar paginación para conjuntos de resultados grandes",
+      "pt": "Considere implementar paginação para conjuntos de resultados grandes",
+      "de": "Erwägen Sie die Implementierung von Paginierung für große Ergebnissätze"
+    },
+    "return result sets with avg size of": {
+      "es": "devuelven conjuntos de resultados con tamaño promedio de",
+      "pt": "retornam conjuntos de resultados com tamanho médio de",
+      "de": "geben Ergebnissätze mit durchschnittlicher Größe von zurück"
+    },
+    ", which can consume significant memory and network resources.": {
+      "es": ", lo que puede consumir memoria significativa y recursos de red.",
+      "pt": ", o que pode consumir memória significativa e recursos de rede.",
+      "de": ", was erheblichen Speicher und Netzwerkressourcen verbrauchen kann."
+    },
+    "Large result sets can impact performance and resource usage": {
+      "es": "Los conjuntos de resultados grandes pueden impactar el rendimiento y el uso de recursos",
+      "pt": "Conjuntos de resultados grandes podem impactar a performance e uso de recursos",
+      "de": "Große Ergebnissätze können die Leistung und Ressourcennutzung beeinträchtigen"
+    },
+    "are consistently approaching timeout thresholds, with": {
+      "es": "se acercan consistentemente a los umbrales de timeout, con",
+      "pt": "estão consistentemente se aproximando dos limites de timeout, com",
+      "de": "nähern sich konsistent den Timeout-Schwellenwerten, wobei"
+    },
+    "actually timing out in the analyzed period.": {
+      "es": "realmente expirando en el período analizado.",
+      "pt": "realmente expirando no período analisado.",
+      "de": "tatsächlich im analysierten Zeitraum das Timeout erreichen."
+    },
+    "show evidence of resource contention, with execution times varying by more than": {
+      "es": "muestran evidencia de contención de recursos, con tiempos de ejecución variando en más de",
+      "pt": "mostram evidência de contenção de recursos, com tempos de execução variando em mais de",
+      "de": "zeigen Anzeichen von Ressourcenkonflikten, wobei die Ausführungszeiten um mehr als"
+    },
+    "during peak hours.": {
+      "es": "durante las horas pico.",
+      "pt": "durante as horas de pico.",
+      "de": "während der Spitzenzeiten variieren."
+    },
+    "Review query scheduling and resource allocation": {
+      "es": "Revise la programación de consultas y la asignación de recursos",
+      "pt": "Revise o agendamento de consultas e alocação de recursos",
+      "de": "Überprüfen Sie die Abfrageplanung und Ressourcenzuteilung"
+    },
+    "queries": {
+      "es": "consultas",
+      "pt": "consultas",
+      "de": "Abfragen"
+    },
+    "Live": {
+      "es": "En Vivo",
+      "pt": "Ao Vivo",
+      "de": "Live"
+    },
+    "Dev": {
+      "es": "Desarrollo",
+      "pt": "Desenvolvimento",
+      "de": "Entwicklung"
+    },
+    "data,": {
+      "es": "datos,",
+      "pt": "dados,",
+      "de": "Daten,"
+    },
+    "USE KEY queries": {
+      "es": "consultas USE KEY",
+      "pt": "consultas USE KEY",
+      "de": "USE KEY Abfragen"
+    },
+    "JOIN queries": {
+      "es": "consultas JOIN",
+      "pt": "consultas JOIN",
+      "de": "JOIN Abfragen"
+    },
+    "per query or a selectivity of": {
+      "es": "por consulta o una selectividad de",
+      "pt": "por consulta ou uma seletividade de",
+      "de": "pro Abfrage oder eine Selektivität von"
+    },
+    "Learn more": {
+      "es": "Aprender más",
+      "pt": "Saiba mais",
+      "de": "Mehr erfahren"
+    },
+    "Index returning millions of": {
+      "es": "Índice devolviendo millones de",
+      "pt": "Índice retornando milhões de",
+      "de": "Index gibt Millionen von zurück"
+    },
+    "? Create more selective compound indexes": {
+      "es": "? Cree índices compuestos más selectivos",
+      "pt": "? Crie índices compostos mais seletivos", 
+      "de": "? Erstellen Sie selektivere zusammengesetzte Indizes"
+    },
+    "seconds each, with": {
+      "es": "segundos cada una, con",
+      "pt": "segundos cada, com",
+      "de": "Sekunden jeweils, wobei"
+    },
+    "return result sets with avg size of": {
+      "es": "devuelven conjuntos de resultados con tamaño promedio de",
+      "pt": "retornam conjuntos de resultados com tamanho médio de",
+      "de": "geben Ergebnissätze mit durchschnittlicher Größe von zurück"
+    },
+    "are consistently approaching timeout thresholds, with": {
+      "es": "se acercan consistentemente a los umbrales de timeout, con",
+      "pt": "estão consistentemente se aproximando dos limites de timeout, com",
+      "de": "nähern sich konsistent den Timeout-Schwellenwerten, wobei"
+    },
+    "show evidence of resource contention, with execution times varying by more than": {
+      "es": "muestran evidencia de contención de recursos, con tiempos de ejecución variando en más de",
+      "pt": "mostram evidência de contenção de recursos, com tempos de execução variando em mais de",
+      "de": "zeigen Anzeichen von Ressourcenkonflikten, wobei die Ausführungszeiten um mehr als variieren"
+    },
+    ">Insights <": {
+      "es": ">Perspectivas <",
+      "pt": ">Insights <",
+      "de": ">Erkenntnisse <"
+    },
+    "All caches cleared for new JSON parse": {
+      "es": "Todos los cachés limpiados para nuevo análisis JSON",
+      "pt": "Todos os caches limpos para nova análise JSON",
+      "de": "Alle Caches für neue JSON-Analyse geleert"
+    },
+    "Failed to copy to clipboard": {
+      "es": "Error al copiar al portapapeles",
+      "pt": "Falha ao copiar para a área de transferência",
+      "de": "Fehler beim Kopieren in die Zwischenablage"
+    },
+    "Show Sample Queries": {
+      "es": "Mostrar Consultas de Ejemplo",
+      "pt": "Mostrar Consultas de Exemplo",
+      "de": "Beispiel-Abfragen Anzeigen"
+    },
+    "Please paste your JSON data first": {
+      "es": "Por favor, pegue primero sus datos JSON",
+      "pt": "Por favor, cole primeiro seus dados JSON",
+      "de": "Bitte fügen Sie zuerst Ihre JSON-Daten ein"
+    },
+    "Analyze Another Query": {
+      "es": "Analizar Otra Consulta",
+      "pt": "Analisar Outra Consulta",
+      "de": "Andere Abfrage Analysieren"
+    },
+    "Query data parsed successfully": {
+      "es": "Datos de consulta analizados exitosamente",
+      "pt": "Dados de consulta analisados com sucesso",
+      "de": "Abfragedaten erfolgreich analysiert"
+    },
+    "No JSON data to analyze": {
+      "es": "No hay datos JSON para analizar",
+      "pt": "Não há dados JSON para analisar",
+      "de": "Keine JSON-Daten zum Analysieren"
+    },
+    "Export Data": {
+      "es": "Exportar Datos",
+      "pt": "Exportar Dados",
+      "de": "Daten Exportieren"
+    },
+    "Clear Data": {
+      "es": "Limpiar Datos",
+      "pt": "Limpar Dados", 
+      "de": "Daten Löschen"
+    },
+    "Download": {
+      "es": "Descargar",
+      "pt": "Baixar",
+      "de": "Herunterladen"
+    },
+    "Print": {
+      "es": "Imprimir",
+      "pt": "Imprimir",
+      "de": "Drucken"
+    },
+    "Error": {
+      "es": "Error",
+      "pt": "Erro",
+      "de": "Fehler"
+    },
+    "Warning": {
+      "es": "Advertencia",
+      "pt": "Aviso",
+      "de": "Warnung"
+    },
+    "Success": {
+      "es": "Éxito",
+      "pt": "Sucesso",
+      "de": "Erfolg"
+    },
+    "Loading": {
+      "es": "Cargando",
+      "pt": "Carregando",
+      "de": "Laden"
+    },
+    "Error generating UI:": {
+      "es": "Error generando interfaz:",
+      "pt": "Erro gerando interface:",
+      "de": "Fehler bei der UI-Generierung:"
+    },
+    "Statement not found": {
+      "es": "Declaración no encontrada",
+      "pt": "Declaração não encontrada", 
+      "de": "Anweisung nicht gefunden"
+    },
+    "JSON parsing error:": {
+      "es": "Error de análisis JSON:",
+      "pt": "Erro de análise JSON:",
+      "de": "JSON-Parse-Fehler:"
+    },
+    "Error processing request": {
+      "es": "Error procesando solicitud",
+      "pt": "Erro processando solicitação",
+      "de": "Fehler bei der Anfrageverarbeitung"
+    },
+    "Error lazy loading": {
+      "es": "Error de carga diferida",
+      "pt": "Erro de carregamento lazy",
+      "de": "Fehler beim Lazy Loading"
+    },
+    "No execution plan available.": {
+      "es": "No hay plan de ejecución disponible.",
+      "pt": "Nenhum plano de execução disponível.",
+      "de": "Kein Ausführungsplan verfügbar."
+    },
+    "No operators found in the execution plan.": {
+      "es": "No se encontraron operadores en el plan de ejecución.",
+      "pt": "Nenhum operador encontrado no plano de execução.",
+      "de": "Keine Operatoren im Ausführungsplan gefunden."
+    },
+    "Index Type Usage": {
+      "es": "Uso por Tipo de Índice",
+      "pt": "Uso por Tipo de Índice",
+      "de": "Index-Typ-Nutzung"
+    },
+    "Index Scan Consistency": {
+      "es": "Consistencia de Escaneo de Índice",
+      "pt": "Consistência de Varredura de Índice", 
+      "de": "Index-Scan-Konsistenz"
+    },
+    "Please enter date in YYYY-MM-DD format": {
+      "es": "Por favor ingrese fecha en formato AAAA-MM-DD",
+      "pt": "Por favor digite data no formato AAAA-MM-DD",
+      "de": "Bitte Datum im Format JJJJ-MM-TT eingeben"
+    },
+    "Invalid date format": {
+      "es": "Formato de fecha inválido",
+      "pt": "Formato de data inválido",
+      "de": "Ungültiges Datumsformat"
+    },
+    "Start date cannot be after end date": {
+      "es": "La fecha de inicio no puede ser posterior a la fecha final",
+      "pt": "Data de início não pode ser posterior à data final",
+      "de": "Startdatum darf nicht nach dem Enddatum liegen"
+    },
+    "🚧 INSIGHTS IN DEVELOPMENT 🚧": {
+      "es": "🚧 INSIGHTS EN DESARROLLO 🚧",
+      "pt": "🚧 INSIGHTS EM DESENVOLVIMENTO 🚧",
+      "de": "🚧 INSIGHTS IN ENTWICKLUNG 🚧"
+    },
+    "LIVE data": {
+      "es": "datos EN VIVO",
+      "pt": "dados AO VIVO",
+      "de": "LIVE-Daten"
+    },
+    "BETA insights are work in progress": {
+      "es": "Los insights BETA están en desarrollo",
+      "pt": "Os insights BETA estão em desenvolvimento",
+      "de": "BETA-Insights sind in Entwicklung"
+    },
+    "might have false positives": {
+      "es": "pueden tener falsos positivos",
+      "pt": "podem ter falsos positivos",
+      "de": "können falsche Positive haben"
+    },
+    "others display placeholder content": {
+      "es": "otros muestran contenido de marcador de posición",
+      "pt": "outros exibem conteúdo de placeholder",
+      "de": "andere zeigen Platzhalterinhalt"
+    },
+    "Consider creating more selective indexes to reduce scan overhead": {
+      "es": "Considere crear índices más selectivos para reducir la sobrecarga de escaneo",
+      "pt": "Considere criar índices mais seletivos para reduzir a sobrecarga de varredura",
+      "de": "Erwägen Sie die Erstellung selektiverer Indizes zur Reduzierung der Scan-Überlastung"
+    },
+    "Check kernel time on index nodes - high kernel time may indicate resource contention": {
+      "es": "Verifique el tiempo de kernel en los nodos de índice - un alto tiempo de kernel puede indicar contención de recursos",
+      "pt": "Verifique o tempo de kernel nos nós de índice - alto tempo de kernel pode indicar contenção de recursos",
+      "de": "Überprüfen Sie die Kernel-Zeit auf Index-Knoten - hohe Kernel-Zeit kann auf Ressourcenkonflikte hindeuten"
+    },
+    "Review your indexing strategy - create selective secondary indexes": {
+      "es": "Revise su estrategia de indexación - cree índices secundarios selectivos",
+      "pt": "Revise sua estratégia de indexação - crie índices secundários seletivos",
+      "de": "Überprüfen Sie Ihre Indexierungsstrategie - erstellen Sie selektive sekundäre Indizes"
+    },
+    "Is the Query Service co-located with other services?": {
+      "es": "¿Está el Servicio de Consultas co-ubicado con otros servicios?",
+      "pt": "O Serviço de Consultas está co-localizado com outros serviços?",
+      "de": "Ist der Abfragedienst mit anderen Diensten zusammengelegt?"
+    },
+    "Consider increasing query memory limits or optimizing queries": {
+      "es": "Considere aumentar los límites de memoria de consulta u optimizar consultas",
+      "pt": "Considere aumentar os limites de memória de consulta ou otimizar consultas",
+      "de": "Erwägen Sie eine Erhöhung der Abfrage-Speicherlimits oder Optimierung der Abfragen"
+    },
+    "Is the Data Service and/or Query Service co-located with other services?": {
+      "es": "¿Está el Servicio de Datos y/o el Servicio de Consultas co-ubicado con otros servicios?",
+      "pt": "O Serviço de Dados e/ou Serviço de Consultas está co-localizado com outros serviços?",
+      "de": "Sind der Datendienst und/oder Abfragedienst mit anderen Diensten zusammengelegt?"
+    },
+    "Consider denormalizing frequently joined data": {
+      "es": "Considere desnormalizar datos frecuentemente unidos",
+      "pt": "Considere desnormalizar dados frequentemente unidos",
+      "de": "Erwägen Sie die Denormalisierung häufig verknüpfter Daten"
+    },
+    "Consider implementing pagination for large result sets": {
+      "es": "Considere implementar paginación para conjuntos de resultados grandes",
+      "pt": "Considere implementar paginação para conjuntos de resultados grandes",
+      "de": "Erwägen Sie die Implementierung von Paginierung für große Ergebnissätze"
+    },
+    "Large result sets can impact performance and resource usage": {
+      "es": "Los conjuntos de resultados grandes pueden impactar el rendimiento y el uso de recursos",
+      "pt": "Conjuntos de resultados grandes podem impactar a performance e uso de recursos",
+      "de": "Große Ergebnissätze können die Leistung und Ressourcennutzung beeinträchtigen"
+    },
+    "Review query scheduling and resource allocation": {
+      "es": "Revise la programación de consultas y la asignación de recursos",
+      "pt": "Revise o agendamento de consultas e alocação de recursos",
+      "de": "Überprüfen Sie die Abfrageplanung und Ressourcenzuteilung"
+    },
+    "No Index Data Loaded": {
+      "es": "No hay datos de índice cargados",
+      "pt": "Nenhum dado de índice carregado",
+      "de": "Keine Index-Daten geladen"
+    },
+    "Steps:": {
+      "es": "Pasos:",
+      "pt": "Passos:",
+      "de": "Schritte:"
+    },
+    "Copy the query above": {
+      "es": "Copie la consulta anterior",
+      "pt": "Copie a consulta acima",
+      "de": "Kopieren Sie die obige Abfrage"
+    },
+    "Run it in Couchbase Query Workbench": {
+      "es": "Ejecútelo en Couchbase Query Workbench",
+      "pt": "Execute no Couchbase Query Workbench",
+      "de": "Führen Sie es in Couchbase Query Workbench aus"
+    },
+    "Copy the JSON results": {
+      "es": "Copie los resultados JSON",
+      "pt": "Copie os resultados JSON",
+      "de": "Kopieren Sie die JSON-Ergebnisse"
+    },
+    "Paste into the second textarea at the top": {
+      "es": "Pegue en la segunda área de texto en la parte superior",
+      "pt": "Cole na segunda área de texto no topo",
+      "de": "Fügen Sie in das zweite Textfeld oben ein"
+    },
+    "Click": {
+      "es": "Haga clic en",
+      "pt": "Clique em",
+      "de": "Klicken Sie auf"
+    },
+    "again": {
+      "es": "nuevamente",
+      "pt": "novamente",
+      "de": "erneut"
+    },
+    "To analyze indexes, run this query in your Couchbase Query Workbench and paste the results in the second textarea above:": {
+      "es": "Para analizar índices, ejecute esta consulta en su Couchbase Query Workbench y pegue los resultados en la segunda área de texto de arriba:",
+      "pt": "Para analisar índices, execute esta consulta em seu Couchbase Query Workbench e cole os resultados na segunda área de texto acima:",
+      "de": "Um Indizes zu analysieren, führen Sie diese Abfrage in Ihrer Couchbase Query Workbench aus und fügen Sie die Ergebnisse in das zweite Textfeld oben ein:"
+    },
+    "🚀 Initializing Couchbase Query Analyzer...": {
+      "es": "🚀 Inicializando Analizador de Consultas Couchbase...",
+      "pt": "🚀 Inicializando Analisador de Consultas Couchbase...",
+      "de": "🚀 Initialisierung Couchbase Query Analyzer..."
+    },
+    "📦 Version:": {
+      "es": "📦 Versión:",
+      "pt": "📦 Versão:",
+      "de": "📦 Version:"
+    },
+    "Updated:": {
+      "es": "Actualizado:",
+      "pt": "Atualizado:",
+      "de": "Aktualisiert:"
+    },
+    "🔧 Features: Global system query exclusion, Enhanced accessibility (ARIA), Chart performance optimizations, Time range filtering with buffers, Index/Query Flow analysis, Toast notification system": {
+      "es": "🔧 Características: Exclusión global de consultas del sistema, Accesibilidad mejorada (ARIA), Optimizaciones de rendimiento de gráficos, Filtrado de rango de tiempo con buffers, Análisis de flujo de índice/consulta, Sistema de notificaciones toast",
+      "pt": "🔧 Recursos: Exclusão global de consultas do sistema, Acessibilidade aprimorada (ARIA), Otimizações de performance de gráficos, Filtragem de intervalo de tempo com buffers, Análise de fluxo de índice/consulta, Sistema de notificações toast",
+      "de": "🔧 Features: Globaler Systemabfrage-Ausschluss, Verbesserte Barrierefreiheit (ARIA), Chart-Performance-Optimierungen, Zeitbereich-Filterung mit Puffern, Index/Abfrage-Flussanalyse, Toast-Benachrichtigungssystem"
+    },
+    "✅ Query Analyzer initialized successfully": {
+      "es": "✅ Analizador de consultas inicializado exitosamente",
+      "pt": "✅ Analisador de consultas inicializado com sucesso",
+      "de": "✅ Query Analyzer erfolgreich initialisiert"
+    },
+    "✅ Index analysis initialized": {
+      "es": "✅ Análisis de índices inicializado",
+      "pt": "✅ Análise de índices inicializada",
+      "de": "✅ Index-Analyse initialisiert"
+    },
+    "💡 Tip: Type QueryAnalyzer.about() for full app info": {
+      "es": "💡 Consejo: Escriba QueryAnalyzer.about() para información completa de la aplicación",
+      "pt": "💡 Dica: Digite QueryAnalyzer.about() para informações completas do aplicativo",
+      "de": "💡 Tipp: Geben Sie QueryAnalyzer.about() für vollständige App-Informationen ein"
+    },
+    "Parse performance:": {
+      "es": "Rendimiento de análisis:",
+      "pt": "Performance de análise:",
+      "de": "Analyse-Performance:"
+    },
+    "for": {
+      "es": "para",
+      "pt": "para", 
+      "de": "für"
+    },
+    "requests": {
+      "es": "solicitudes",
+      "pt": "solicitações",
+      "de": "Anfragen"
+    },
+    "filtered out early": {
+      "es": "filtradas temprano",
+      "pt": "filtradas cedo",
+      "de": "früh herausgefiltert"
+    },
+    "Cache stats - parseTime:": {
+      "es": "Estadísticas de caché - tiempoAnálisis:",
+      "pt": "Estatísticas de cache - tempoAnálise:",
+      "de": "Cache-Statistiken - parseTime:"
+    },
+    "✅ Index extraction complete:": {
+      "es": "✅ Extracción de índices completa:",
+      "pt": "✅ Extração de índices completa:",
+      "de": "✅ Index-Extraktion abgeschlossen:"
+    },
+    "unique indexes": {
+      "es": "índices únicos",
+      "pt": "índices únicos",
+      "de": "eindeutige Indizes"
+    },
+    "total references": {
+      "es": "referencias totales",
+      "pt": "referências totais",
+      "de": "Gesamtreferenzen"
+    },
+    "ms for": {
+      "es": "ms para",
+      "pt": "ms para",
+      "de": "ms für"
+    },
+    "filtered out early": {
+      "es": "filtradas temprano",
+      "pt": "filtradas cedo",
+      "de": "früh herausgefiltert"
+    }
+  },
+  "javascript_variables": {
+    "scanCounts_yes": {
+      "es": "Sí",
+      "pt": "Sim",
+      "de": "Ja"
+    },
+    "scanCounts_no": {
+      "es": "No",
+      "pt": "Não",
+      "de": "Nein"
+    },
+    "Insights": {
+      "es": "Perspectivas",
+      "pt": "Insights",
+      "de": "Erkenntnisse"
+    },
+    "Beta": {
+      "es": "Beta",
+      "pt": "Beta",
+      "de": "Beta"
+    }
+  },
+  "time_units": {
+    "second": {
+      "es": "segundo",
+      "pt": "segundo",
+      "de": "Sekunde"
+    },
+    "minute": {
+      "es": "minuto",
+      "pt": "minuto",
+      "de": "Minute"
+    },
+    "hour": {
+      "es": "hora",
+      "pt": "hora",
+      "de": "Stunde"
+    },
+    "day": {
+      "es": "día",
+      "pt": "dia",
+      "de": "Tag"
+    },
+    "week": {
+      "es": "semana",
+      "pt": "semana",
+      "de": "Woche"
+    },
+    "month": {
+      "es": "mes",
+      "pt": "mês",
+      "de": "Monat"
+    },
+    "year": {
+      "es": "año",
+      "pt": "ano",
+      "de": "Jahr"
+    }
+  },
+  "notes": {
+    "purpose": "Translation mapping for Couchbase Query Analyzer localization",
+    "languages": ["es", "pt", "de"],
+    "last_updated": "2025-01-24",
+    "instructions": "When updating en/index.html, use this file to automatically translate de/index.html, es/index.html, and pt/index.html"
+  }
+}

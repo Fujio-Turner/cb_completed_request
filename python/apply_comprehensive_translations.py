@@ -30,6 +30,54 @@ def is_protected_context(content, start_pos, end_pos):
     before = content[:start_pos]
     after = content[end_pos:]
     
+    # Get the word being translated
+    translated_word = content[start_pos:end_pos]
+    
+    # Get wider context for analysis
+    context_before = before[-100:] if len(before) > 100 else before
+    context_after = after[:100] if len(after) > 100 else after
+    full_context = context_before + translated_word + context_after
+    
+    # CRITICAL: Protect JavaScript function names and method calls
+    # Check if this word is part of a JavaScript function name
+    if re.search(r'(function\s+\w*' + re.escape(translated_word) + r'\w*\s*\()', full_context):
+        return True
+    
+    # Protect JavaScript method calls (.method or object.method)
+    if re.search(r'\.\s*' + re.escape(translated_word) + r'[A-Z]', full_context):
+        return True
+        
+    # Protect camelCase function names that contain the word
+    if re.search(r'\w+' + re.escape(translated_word) + r'[A-Z]\w*\s*\(', full_context):
+        return True
+        
+    # Protect JavaScript keywords in code context
+    js_contexts = [
+        r'\s+for\s*\(',                    # for loops
+        r'\.forEach\s*\(',                 # forEach method calls
+        r'\.for[A-Z]\w*\s*\(',            # any for* method calls
+        r'function\s+\w*for\w*\s*\(',     # functions containing "for"
+        r'function\s+\w*Timeline\w*\s*\(',# functions containing "Timeline"
+        r'function\s+\w*Error\w*\s*\(',   # functions containing "Error"
+        r'clear\w*Timeline\w*\s*\(',      # clear*Timeline* functions
+        r'generate\w*Timeline\w*\s*\(',   # generate*Timeline* functions
+    ]
+    
+    for js_pattern in js_contexts:
+        if re.search(js_pattern, full_context, re.IGNORECASE):
+            return True
+    
+    # CRITICAL: Protect JavaScript method names and keywords
+    js_keywords = ['for', 'forEach', 'if', 'else', 'function', 'const', 'let', 'var']
+    if translated_word in js_keywords:
+        # Protect JavaScript for loops
+        if translated_word == 'for' and re.search(r'\s*\(\s*(const|let|var)\s+', context_after):
+            return True
+        
+        # Protect JavaScript for-in/for-of loops  
+        if translated_word == 'for' and re.search(r'\s*\(\s*\w+\s+(in|of)\s+', context_after):
+            return True
+    
     # Protected patterns - DO NOT translate these contexts
     protected_patterns = [
         r'function\s+\w+\s*\(',         # Function definitions
@@ -46,10 +94,6 @@ def is_protected_context(content, start_pos, end_pos):
     ]
     
     # Check if we're inside any protected pattern
-    context_before = before[-100:] if len(before) > 100 else before
-    context_after = after[:100] if len(after) > 100 else after
-    full_context = context_before + content[start_pos:end_pos] + context_after
-    
     for pattern in protected_patterns:
         if re.search(pattern, full_context):
             return True

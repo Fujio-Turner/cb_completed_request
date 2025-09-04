@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <!--
     Couchbase Query Analyzer
     Version: 3.10.0
@@ -18,28 +18,30 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.11.0" />
-    <meta name="last-updated" content="2025-08-30" />
-    <title>Query Analyzer v3.11.0</title>
+    <meta name="version" content="3.12.1" />
+    <meta name="last-updated" content="2025-09-03" />
+    <title>Query Analyzer v3.12.1</title>
     <!-- Include jQuery UI CSS -->
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css?v=362" />
-    <!-- Include Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0?v=362"></script>
-    <!-- Include Chart.js datetime adapter -->
-    <script
-        src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js?v=362"></script>
-    <!-- Include Chart.js zoom plugin -->
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js?v=362"></script>
-    <!-- Include Hammer.js for touch/gesture support -->
-    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8?v=362"></script>
-    <!-- Include DOMPurify for security -->
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js?v=362"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/themes/base/jquery-ui.min.css" integrity="sha512-TFee0335YRJoyiqz8hA8KV3P0tXa5CpRBSoM0Wnkn7JoJx1kaq1yXL/rb8YFpWXkMOjRcv5txv+C6UluttluCQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
+    <!-- Include Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.js" integrity="sha512-6HrPqAvK+lZElIZ4mZ64fyxIBTsaX5zAFZg2V/2WT+iKPrFzTzvx6QAsLW2OaLwobhMYBog/+bvmIEEGXi0p1w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> 
+    
+    <!-- Include Chart.js datetime adapter -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js" integrity=" sha512-VPUN3sK5Jce8lVuVWfTZolO+BDodUHFq1QsNHmszMbKpYrQzjCxvC0FDG7igWCYBcsFDpqhcVq4sQ851OqhAPg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+      
+    <!-- Include Chart.js zoom plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js" integrity="sha512-FRGbE3pigbYamZnw4+uT4t63+QJOfg4MXSgzPn2t8AWg9ofmFvZ/0Z37ZpCawjfXLBSVX2p2CncsmUH2hzsgJg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <!-- Include Hammer.js for touch/gesture support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" integrity="sha512-UXumZrZNiOwnTcZSHLOfcTs0aos2MzBWHXOHOuB0J/R44QB0dwY5JgfbvljXcklVf65Gc4El6RjZ+lnwd2az2g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <!-- Include DOMPurify for security -->
+    <!-- OLD <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js?v=362"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js" integrity="sha512-YlctBG9PGZIhh9keoqI3eZkQM9T8QUbiBi7qNYAO/TUEo8jqWX5pLp5+x1cKRQDRzJ/lyGyJ9WUVNIRduxIIFw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <!-- Include Panzoom, jQuery, and jQuery UI -->
-    <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.2/dist/panzoom.min.js?v=362"></script>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js?v=362"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -1257,6 +1259,37 @@
             background-color: #f1f1f1;
         }
 
+        .sample-queries-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .sample-queries-table th {
+            background-color: #f8f9fa;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-weight: bold;
+        }
+
+        .sample-queries-table td {
+            padding: 6px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+        }
+
+        .sample-queries-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .statement-cell {
+            max-width: 400px;
+            word-wrap: break-word;
+            text-align: left;
+        }
+
         .grid-3-col {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -1510,7 +1543,7 @@
             // Chart and table captions
             SHOWING_TOP: "Showing top",
             OF_TOTAL: "of",
-            USERS: "Benutzer",
+            USERS: "users",
             INDEXES: "indexes",
             REQUESTS: "requests",
             MS_FOR: "ms for",
@@ -1522,18 +1555,18 @@
             // Operator modal and UI elements
             UNKNOWN: "Unknown",
             OPERATOR_LABEL: "Operator:",
-            COPY_STATS: "Statistiken Kopieren",
+            COPY_STATS: "Copy Stats",
             INDEX_USED: "Index Used:",
-            COPY: "Kopieren",
-            COPY_ALL: "Alle Kopieren",
-            SHOW_MORE: "Mehr Anzeigen",
-            HIDE: "Ausblenden",
-            RESET_ZOOM: "Zoom Zurücksetzen",
+            COPY: "Copy",
+            COPY_ALL: "Copy All",
+            SHOW_MORE: "Show More",
+            HIDE: "Hide",
+            RESET_ZOOM: "Reset Zoom",
 
             // User interface messages
             COPIED_CLIPBOARD: "Copied to clipboard!",
             FAILED_COPY_CLIPBOARD: "Failed to copy to clipboard",
-            COPIED: "Kopiert!",
+            COPIED: "Copied!",
             NO_EXECUTION_PLAN: "No execution plan available.",
             NO_OPERATORS_FOUND: "No operators found in the execution plan.",
             SELECT_QUERY_FLOW: "Select a query from the table to view the flow diagram.",
@@ -1545,6 +1578,33 @@
             USE_KEYS_HEADER: "🔑 USE KEYS:",
             EXECUTION_PLAN_HEADER: "⚙️ Execution Plan:",
             KEYS_NOT_EXTRACTED: "Keys could not be extracted from the query",
+            
+            // Sample queries functionality
+            SHOW_SAMPLE_QUERIES: "Show Sample Queries",
+            HIDE_SAMPLE_QUERIES: "Hide Sample Queries",
+            REQUEST_DATE: "Request Date",
+            STATEMENT: "Statement",
+            STATEMENT_UNIQUE: "Statement (unique)",
+
+            // Console log messages
+            COLLECTED_INDEX_DATA: "Collected index data for timing analysis:",
+            INDEX_ANALYSIS_INITIALIZED: "✅ Index analysis initialized",
+            INITIALIZING_ANALYZER: "🚀 Initializing Couchbase Query Analyzer...",
+            FEATURES: "🔧 Features:",
+            ANALYZER_INITIALIZED: "✅ Query Analyzer initialized successfully",
+            TIP_ABOUT: "💡 Tip: Type QueryAnalyzer.about() for full app info",
+
+            // Chart and table labels
+            QUERY_DURATION_CHART_TITLE: "Query Duration by Statement Type (Bubble Size = Query Count)",
+            USER_COUNT: "user: (count)",
+            STATE_FATAL: "state\nfatal",
+            COUNT_LABEL: "Count:",
+            AVG_LABEL: "Avg:",
+            MIN_LABEL: "Min:",
+            MAX_LABEL: "Max:",
+            FATAL_LABEL: "Fatal:",
+            ELAPSED_LABEL: "Elapsed:",
+            SWITCHED_TO: "Switched to",
 
             // Technical constants (DO NOT TRANSLATE - used in logic checks)
             N_A: "N/A",
@@ -1564,17 +1624,17 @@
     <div id="input-section">
         <div class="input-grid">
             <textarea id="json-input"
-                placeholder="Fügen Sie Ihre JSON-Ausgabe ein von: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;"
-                aria-label="JSON-Eingabefeld für Couchbase-Abfragedaten" role="textbox"></textarea>
+                placeholder="Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;"
+                aria-label="JSON input field for Couchbase query data" role="textbox"></textarea>
             <textarea id="indexJsonInput"
-                placeholder="Klicken Sie auf die Registerkarte 'Indizes' unten, um die auszuführende SQL-Abfrage zu erhalten. Fügen Sie die Ergebnisse hier ein..."
-                aria-label="Index JSON-Eingabefeld" role="textbox"></textarea>
+                placeholder="Click the 'Indexes' tab below to get the SQL query to run. Paste the results here..."
+                aria-label="Index JSON input field" role="textbox"></textarea>
         </div>
 
         <div style="margin: 10px 0; display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
             <!-- Parse Button and Progress (Left Side) -->
             <div style="display: flex; align-items: center; gap: 10px;">
-                <button id="parse-json-btn" onclick="parseJSON()" aria-label="JSON-Daten parsen und analysieren" tabindex="0"
+                <button id="parse-json-btn" onclick="parseJSON()" aria-label="Parse and analyze JSON data" tabindex="0"
                     role="button">
                     Parse JSON
                 </button>
@@ -1591,29 +1651,29 @@
                 style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: #f8f9fa; padding: 8px 12px; border-radius: 6px; border: 1px solid #dee2e6;">
                 <label class="label-flex" style="margin: 0;">
                     <input type="checkbox" id="exclude-system-queries" checked
-                        title="Schließt INFER, ADVISE, CREATE, ALTER INDEX Anweisungen und Abfragen von System-Keyspaces aus:"
-                        aria-label="Systemabfragen von der Analyse ausschließen" />
+                        title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
+                        aria-label="Exclude system queries from analysis" />
                     <span class="checkbox-label-text"
-                        title="Schließt INFER, ADVISE, CREATE, ALTER INDEX Anweisungen und Abfragen von System-Keyspaces aus:"
+                        title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
                         style="font-size: 12px;">
                         Exclude System
                     </span>
                 </label>
 
                 <div style="display: flex; align-items: center; gap: 5px;">
-                    <label for="start-date" style="font-size: 12px; color: #6c757d;">Von:</label>
-                    <input type="datetime-local" id="start-date" step="1" title="Startdatum/-zeit für Filterung"
+                    <label for="start-date" style="font-size: 12px; color: #6c757d;">From:</label>
+                    <input type="datetime-local" id="start-date" step="1" title="Start date/time for filtering"
                         style="font-size: 11px; padding: 2px 4px;" />
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 5px;">
-                    <label for="end-date" style="font-size: 12px; color: #6c757d;">Bis:</label>
-                    <input type="datetime-local" id="end-date" step="1" title="Enddatum/-zeit für Filterung"
+                    <label for="end-date" style="font-size: 12px; color: #6c757d;">To:</label>
+                    <input type="datetime-local" id="end-date" step="1" title="End date/time for filtering"
                         style="font-size: 11px; padding: 2px 4px;" />
                 </div>
 
                 <input type="text" id="sql-statement-filter" placeholder="Filter SQL++ Contains..."
-                    title="SQL++ Anweisungen während JSON-Parsing filtern"
+                    title="Filter SQL++ statements during JSON parsing"
                     style="width: 150px; font-size: 11px; padding: 4px 6px;" />
             </div>
 
@@ -1641,7 +1701,7 @@
 
             <!-- Help Link (Right Side) -->
             <div style="margin-left: auto;">
-                <a href="https://cb.fuj.io/analysis_hub#readStats" target="_blank"
+                <a href="https://cb.fuj.io/analysis_hub#introduction" target="_blank"
                     style="text-decoration: none; color: #007bff; font-size: 14px;">
                     NEED HELP? Debugging + Tool Tips
                 </a>
@@ -1654,26 +1714,26 @@
         <!-- Tab Headers -->
         <ul role="tablist" aria-label="Analysis views">
             <li role="tab">
-                <a href="#dashboard" aria-controls="dashboard" tabindex="0">Instrumententafel</a>
+                <a href="#dashboard" aria-controls="dashboard" tabindex="0">Dashboard</a>
             </li>
             <li role="tab">
                 <a href="#insights" aria-controls="insights" tabindex="0">Insights <span
                         class="beta-badge">Beta</span></a>
             </li>
             <li role="tab">
-                <a href="#timeline" aria-controls="timeline" tabindex="0">Zeitverlauf</a>
+                <a href="#timeline" aria-controls="timeline" tabindex="0">Timeline</a>
             </li>
             <li role="tab">
-                <a href="#analysis" aria-controls="analysis" tabindex="0">Abfragegruppen</a>
+                <a href="#analysis" aria-controls="analysis" tabindex="0">Query Groups</a>
             </li>
             <li role="tab">
-                <a href="#every-query" aria-controls="every-query" tabindex="0">Jede Abfrage</a>
+                <a href="#every-query" aria-controls="every-query" tabindex="0">Every Query</a>
             </li>
             <li role="tab">
-                <a href="#index-query-flow" aria-controls="index-query-flow" tabindex="0">Index/Abfrage-Fluss</a>
+                <a href="#index-query-flow" aria-controls="index-query-flow" tabindex="0">Index/Query Flow</a>
             </li>
             <li role="tab">
-                <a href="#indexes" aria-controls="indexes" tabindex="0">Indizes</a>
+                <a href="#indexes" aria-controls="indexes" tabindex="0">Indexes</a>
             </li>
         </ul>
 
@@ -1699,7 +1759,7 @@
                             <canvas id="primary-scan-chart"></canvas>
                         </div>
                         <div id="primary-scan-warning" class="warning-box">
-                            <div class="warning-title">⚠️ WARNUNG ⚠️</div>
+                            <div class="warning-title">⚠️ WARNING ⚠️</div>
                             <div class="warning-text">
                                 Primary index scans in production can cause full bucket scans
                                 leading to
@@ -1721,7 +1781,7 @@
                 <!-- Query Pattern Features Bar Chart -->
                 <div class="chart-container with-margin-top-20 draggable-chart" data-chart-id="query-pattern" data-position="dashboard-3">
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <h3 class="chart-title fixed-height">Abfragemuster-Eigenschaften</h3>
+                    <h3 class="chart-title fixed-height">Query Pattern Features</h3>
                     <div class="height-350-relative">
                         <canvas id="query-pattern-chart"></canvas>
                     </div>
@@ -1732,7 +1792,7 @@
             <div class="dashboard-tables-grid">
                 <!-- User Query Count Table -->
                 <div class="table-container with-margin-top-40">
-                    <h3 class="chart-title">Benutzer nach Abfrageanzahl</h3>
+                    <h3 class="chart-title">Users by Query Count</h3>
                     <div class="table-scroll">
                         <table id="user-count-table" class="table-full">
                             <thead class="sticky-header">
@@ -1748,7 +1808,7 @@
 
                 <!-- Index Usage Count Table -->
                 <div class="table-container with-margin-top-40">
-                    <h3 class="chart-title">Index-Nutzungsanzahl</h3>
+                    <h3 class="chart-title">Index Usage Count</h3>
                     <div class="table-subheader">
                         Note: #primary count shows total operations, not unique queries
                     </div>
@@ -1775,7 +1835,7 @@
             <div class="grid-3-col gap-20 margin-bottom-20">
                 <!-- Statement Type Pie Chart -->
                 <div class="chart-card">
-                    <h3 class="chart-card-header">Anweisungstyp</h3>
+                    <h3 class="chart-card-header">Statement Type</h3>
                     <div class="chart-card-content">
                         <canvas id="statement-type-chart"></canvas>
                     </div>
@@ -1783,7 +1843,7 @@
 
                 <!-- Query State Pie Chart -->
                 <div class="chart-card">
-                    <h3 class="chart-card-header">Abfragestatus</h3>
+                    <h3 class="chart-card-header">Query State</h3>
                     <div class="chart-card-content">
                         <canvas id="state-chart"></canvas>
                     </div>
@@ -1821,7 +1881,7 @@
 
                 <!-- Indexes Category -->
                 <div id="index-issues" class="insight-category">
-                    <h3 class="category-title" onclick="toggleCategory('index-issues')">🔍 Index-Leistungsprobleme</h3>
+                    <h3 class="category-title" onclick="toggleCategory('index-issues')">🔍 Index Performance Issues</h3>
                     <div class="insight-category-content" id="index-issues-content">
 
                         <div class="insight-item">
@@ -1836,12 +1896,29 @@
                                         class="highlight-number" id="avg-selectivity">0%</span> (excluding aggregate
                                     functions like COUNT(), AVG(), MIN(), MAX()).
                                 </p>
+
+                                   <button id="toggle-sample-queries-btn" onclick="toggleSampleQueries()" class="btn-standard">
+                                       <span id="sample-queries-btn-text">Show Sample Queries</span>
+                                   </button>
+                                   <div id="sample-queries-container" style="display: none; margin-top: 10px;">
+                                       <table class="sample-queries-table">
+                                           <thead>
+                                               <tr>
+                                                   <th>Request Date</th>
+                                                   <th>Statement (unique)</th>
+                                               </tr>
+                                           </thead>
+                                           <tbody id="sample-queries-tbody">
+                                           </tbody>
+                                       </table>
+                                   </div> 
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
                                         Consider creating more selective indexes to reduce scan overhead <a
                                             href="https://cb.fuj.io/analysis_hub.html#indexes"
-                                            class="insight-link">Mehr erfahren</a>
+                                            class="insight-link">Learn more</a>
                                     </div>
                                 </div>
                             </div>
@@ -1873,13 +1950,13 @@
                                         <span class="learn-more-icon">💡</span>
                                         Check kernel time on index nodes - high kernel time may indicate resource
                                         contention <a href="https://cb.fuj.io/analysis_hub.html#systemMetrics"
-                                            class="insight-link">Mehr erfahren</a>
+                                            class="insight-link">Learn more</a>
                                     </div>
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
                                         Index returning millions of records? Create more selective compound indexes <a
                                             href="https://cb.fuj.io/analysis_hub.html#indexes"
-                                            class="insight-link">Mehr erfahren</a>
+                                            class="insight-link">Learn more</a>
                                     </div>
                                 </div>
                             </div>
@@ -1900,7 +1977,7 @@
                                         <span class="learn-more-icon">💡</span>
                                         Review your indexing strategy - create selective secondary indexes <a
                                             href="https://cb.fuj.io/analysis_hub.html#optimizer"
-                                            class="insight-link">Mehr erfahren</a>
+                                            class="insight-link">Learn more</a>
                                     </div>
                                 </div>
                             </div>
@@ -1921,15 +1998,32 @@
                                 <p class="insight-description">
                                     <span class="highlight-number" id="high-kernel-time-queries-count">0 queries</span>
                                     whose average percentage of sum of their <b
-                                        title="Summe aller Ausführungszeiten minus Stream-Ausführungszeit">Kern-Ausführungszeit</b> / kernTime
+                                        title="Sum of all execTime minus Stream's execTime">core execTime</b> / kernTime
                                     is <span class="highlight-number" id="avg-core-kernel-ratio">0%</span>.
                                 </p>
+
+                                <button id="toggle-high-kernel-time-queries-sample-queries-btn" onclick="toggleInsightSampleQueries('high-kernel-time-queries')" class="btn-standard">
+                                    <span id="high-kernel-time-queries-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="high-kernel-time-queries-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="high-kernel-time-queries-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
                                         Is the Query Service co-located with other services? <a
                                             href="https://cb.fuj.io/analysis_hub.html#kernTime"
-                                            class="insight-link">Mehr erfahren</a>
+                                            class="insight-link">Learn more</a>
                                     </div>
                                 </div>
                             </div>
@@ -1944,12 +2038,29 @@
                                     <span class="highlight-number" id="avg-memory-usage">0GB</span> of memory each,
                                     indicating potential memory optimization opportunities.
                                 </p>
+
+                                <button id="toggle-high-memory-usage-sample-queries-btn" onclick="toggleInsightSampleQueries('high-memory-usage')" class="btn-standard">
+                                    <span id="high-memory-usage-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="high-memory-usage-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="high-memory-usage-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
                                         Consider increasing query memory limits or optimizing queries <a
                                             href="https://cb.fuj.io/analysis_hub.html#usedMemory"
-                                            class="insight-link">Mehr erfahren</a>
+                                            class="insight-link">Learn more</a>
                                     </div>
                                 </div>
                             </div>
@@ -1964,12 +2075,29 @@
                                     with avg query time of <span class="highlight-number"
                                         id="avg-use-keys-time">0ms</span>, suggesting potential KV service bottlenecks.
                                 </p>
+
+                                <button id="toggle-slow-use-key-queries-sample-queries-btn" onclick="toggleInsightSampleQueries('slow-use-key-queries')" class="btn-standard">
+                                    <span id="slow-use-key-queries-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="slow-use-key-queries-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="slow-use-key-queries-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
                                         Is the Data Service and/or Query Service co-located with other services? <a
                                             href="https://cb.fuj.io/analysis_hub.html#systemMetrics"
-                                            class="insight-link">Mehr erfahren</a>
+                                            class="insight-link">Learn more</a>
                                     </div>
                                 </div>
                             </div>
@@ -1990,14 +2118,30 @@
                                 <p class="insight-description">
                                     <span class="highlight-number" id="missing-where-count">0 queries</span> (<span
                                         class="highlight-number" id="missing-where-percent">0%</span>) lack WHERE
-                                    clauses, potentially scanning entire collections unnecessarily.
+                                    clauses, potentially scanning entire collections unnecessarily. <em>possibily a query with `USE KEYS()`</em>
                                 </p>
+
+                                <button id="toggle-missing-where-clauses-sample-queries-btn" onclick="toggleInsightSampleQueries('missing-where-clauses')" class="btn-standard">
+                                    <span id="missing-where-clauses-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="missing-where-clauses-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="missing-where-clauses-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
 
                         <div class="insight-item">
                             <h4 class="insight-title" onclick="toggleInsight('complex-join-operations')">Complex JOIN
-                                Operations<span class="dev-badge">Entwicklung</span></h4>
+                                Operations<span class="dev-badge">Dev</span></h4>
                             <div class="insight-content" id="complex-join-operations-content">
                                 <p class="insight-description">
                                     <span class="highlight-number">0 JOIN queries</span> are taking an average of <span
@@ -2009,7 +2153,7 @@
                                         <span class="learn-more-icon">💡</span>
                                         Consider denormalizing frequently joined data <a
                                             href="https://cb.fuj.io/analysis_hub.html#bestPractices"
-                                            class="insight-link">Mehr erfahren</a>
+                                            class="insight-link">Learn more</a>
                                     </div>
                                 </div>
                             </div>
@@ -2024,6 +2168,22 @@
                                     operations with leading wildcards (<code>%text</code>), preventing index usage and
                                     causing full scans.
                                 </p>
+
+                                <button id="toggle-inefficient-like-operations-sample-queries-btn" onclick="toggleInsightSampleQueries('inefficient-like-operations')" class="btn-standard">
+                                    <span id="inefficient-like-operations-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="inefficient-like-operations-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="inefficient-like-operations-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2045,12 +2205,29 @@
                                         class="highlight-number" id="avg-stream-ratio">0%</span> of the time of the
                                     query was streaming data out to the application.
                                 </p>
+
+                                <button id="toggle-large-payload-streaming-sample-queries-btn" onclick="toggleInsightSampleQueries('large-payload-streaming')" class="btn-standard">
+                                    <span id="large-payload-streaming-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="large-payload-streaming-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="large-payload-streaming-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
                                         Consider implementing pagination for large result sets <a
                                             href="https://cb.fuj.io/analysis_hub.html#practicalAnalysis"
-                                            class="insight-link">Mehr erfahren</a>
+                                            class="insight-link">Learn more</a>
                                     </div>
                                 </div>
                             </div>
@@ -2066,12 +2243,29 @@
                                         id="avg-large-result-size">0MB</span>, which can consume significant memory and
                                     network resources.
                                 </p>
+
+                                <button id="toggle-large-result-set-queries-sample-queries-btn" onclick="toggleInsightSampleQueries('large-result-set-queries')" class="btn-standard">
+                                    <span id="large-result-set-queries-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="large-result-set-queries-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="large-result-set-queries-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
                                         Large result sets can impact performance and resource usage <a
                                             href="https://cb.fuj.io/analysis_hub.html#practicalAnalysis"
-                                            class="insight-link">Mehr erfahren</a>
+                                            class="insight-link">Learn more</a>
                                     </div>
                                 </div>
                             </div>
@@ -2079,19 +2273,15 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title" onclick="toggleInsight('timeout-prone-queries')">Timeout-Prone
-                                Queries<span class="dev-badge">Entwicklung</span></h4>
+                                Queries<span class="beta-badge">Beta</span></h4>
                             <div class="insight-content" id="timeout-prone-queries-content">
-                                <p class="insight-description">
-                                    <span class="highlight-number">0 queries</span> are consistently approaching timeout
-                                    thresholds, with <span class="highlight-number">0 queries</span> actually timing out
-                                    in the analyzed period.
-                                </p>
+
                             </div>
                         </div>
 
                         <div class="insight-item">
                             <h4 class="insight-title" onclick="toggleInsight('concurrent-query-conflicts')">Concurrent
-                                Query Conflicts<span class="dev-badge">Entwicklung</span></h4>
+                                Query Conflicts<span class="dev-badge">Dev</span></h4>
                             <div class="insight-content" id="concurrent-query-conflicts-content">
                                 <p class="insight-description">
                                     <span class="highlight-number">0 queries</span> show evidence of resource
@@ -2103,7 +2293,7 @@
                                         <span class="learn-more-icon">💡</span>
                                         Review query scheduling and resource allocation <a
                                             href="https://cb.fuj.io/analysis_hub.html#elapsedTime"
-                                            class="insight-link">Mehr erfahren</a>
+                                            class="insight-link">Learn more</a>
                                     </div>
                                 </div>
                             </div>
@@ -2122,7 +2312,7 @@
                 </button>
                 <div class="margin-left-20"
                     style="display: inline-block; background: #f8f9fa; padding: 6px 10px; border-radius: 4px; border: 1px solid #dee2e6;">
-                    <label style="font-weight: bold; margin-right: 8px; color: #495057;">Y-Achsen-Skalierung:</label>
+                    <label style="font-weight: bold; margin-right: 8px; color: #495057;">Y-Axis Scale:</label>
                     <label><input type="radio" name="yScale" value="linear" checked onchange="changeYAxisScale()" />
                         Linear</label>
                     <label class="margin-left-10"><input type="radio" name="yScale" value="logarithmic"
@@ -2130,15 +2320,15 @@
                         Logarithmic</label>
                 </div>
                 <span class="margin-left-30">
-                    <label style="font-weight: bold; margin-right: 8px; color: #495057;">Zeit-Gruppierung:</label>
+                    <label style="font-weight: bold; margin-right: 8px; color: #495057;">Time Grouping:</label>
                     <select id="time-grouping-select" onchange="changeTimeGrouping()"
                         style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px;">
                         <option value="optimizer">By Optimizer (...)</option>
                         <option value="day">By Day</option>
-                        <option value="hour">Nach Stunde</option>
+                        <option value="hour">By Hour</option>
                         <option value="5min">By 5 Minutes</option>
-                        <option value="minute">Nach Minute</option>
-                        <option value="second">Nach Sekunde</option>
+                        <option value="minute">By Minute</option>
+                        <option value="second">By Second</option>
                     </select>
                 </span>
                 <span class="color-666 font-size-12 margin-left-20">
@@ -2239,12 +2429,12 @@
                             <label for="analysis-statement-search" class="font-bold-margin-right">Search
                                 Statement:</label>
                             <input type="text" id="analysis-statement-search"
-                                placeholder="In SQL++ Anweisungen suchen..." class="form-input" />
+                                placeholder="Search in SQL++ statements..." class="form-input" />
                         </div>
                         <div>
                             <label for="analysis-username-search" class="font-bold-margin-right">Search
                                 Username:</label>
-                            <input type="text" id="analysis-username-search" placeholder="Benutzernamen suchen..."
+                            <input type="text" id="analysis-username-search" placeholder="Search usernames..."
                                 class="form-input-small" />
                         </div>
                         <button id="analysis-clear-search" class="cursor-pointer border-none border-radius-3 btn-gray">
@@ -2273,13 +2463,13 @@
                     class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
                     <div class="gap-15 display-flex-center display-flex-wrap">
                         <div>
-                            <label for="statement-search" class="font-bold-margin-right">Anweisung Suchen:</label>
-                            <input type="text" id="statement-search" placeholder="In SQL++ Anweisungen suchen..."
+                            <label for="statement-search" class="font-bold-margin-right">Search Statement:</label>
+                            <input type="text" id="statement-search" placeholder="Search in SQL++ statements..."
                                 class="form-input" />
                         </div>
                         <div>
-                            <label for="username-search" class="font-bold-margin-right">Benutzername Suchen:</label>
-                            <input type="text" id="username-search" placeholder="Benutzernamen suchen..."
+                            <label for="username-search" class="font-bold-margin-right">Search Username:</label>
+                            <input type="text" id="username-search" placeholder="Search usernames..."
                                 class="form-input-small" />
                         </div>
                         <button id="clear-search" class="cursor-pointer border-none border-radius-3 btn-gray">
@@ -2459,7 +2649,7 @@
               margin-top: 8px;
             ">
                     <div style="display: flex; align-items: center; gap: 8px">
-                        <span><strong>Sync Gateway Indizes:</strong>
+                        <span><strong>Sync Gateway Indexes:</strong>
                             <span id="stat-mobile-indexes">0</span></span>
                         <label style="
                   display: flex;
@@ -2518,7 +2708,7 @@
                         2. Run it in Couchbase Query Workbench<br />
                         3. Copy the JSON results<br />
                         4. Paste into the second textarea ,on the right, at the top<br />
-                        5. Click "JSON Analysieren" again
+                        5. Click "Parse JSON" again
                     </p>
                 </div>
             </div>
@@ -2686,7 +2876,7 @@
 
             // Apply same filtering logic as Query Groups tab
             // Get derived statement type and normalize underscores to spaces
-            const statementType = request.statementType || deriveStatementType(request.statement) || "";
+            const statementType = request.statementType || deriveStatementType(request.statement || request.preparedText) || "";
             const normalizedType = statementType.replace(/_/g, " ").toUpperCase();
 
             // Define system query patterns (both with and without underscores)
@@ -2730,7 +2920,7 @@
 
                 // Apply SQL statement filtering only if filter text is not empty
                 if (sqlFilterText && sqlFilterText.length > 0) {
-                    const statement = (request.statement || "").toLowerCase().replace(/\s+/g, ' ').trim();
+                    const statement = (request.statement || request.preparedText || "").toLowerCase().replace(/\s+/g, ' ').trim();
                     const filterText = sqlFilterText.replace(/\s+/g, ' ').trim();
                     if (!statement.includes(filterText)) {
                         return false;
@@ -2745,6 +2935,13 @@
         }
 
         // Parse time strings to milliseconds (with caching)
+        // HTML escape utility function
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         function parseTime(timeStr) {
             if (!timeStr) {
                 return 0;
@@ -2893,6 +3090,14 @@
             normalizeStatementCache.set(statement, normalized);
 
             return normalized;
+        }
+
+        // Check if a query statement has filtering mechanism (WHERE clause or USE KEYS)
+        function hasFilteringMechanism(statement) {
+            if (!statement) return false;
+            const upperStatement = statement.toUpperCase();
+            // Check for WHERE clause or USE KEYS using word boundaries for precise matching
+            return /\bWHERE\b/.test(upperStatement) || /\bUSE\s+KEYS\b/.test(upperStatement);
         }
 
         // Get color class based on percentage
@@ -3226,9 +3431,9 @@
             try {
                 const successful = document.execCommand("copy");
                 if (successful) {
-                    showToast("Copied to clipboard!");
+                    showToast(TEXT_CONSTANTS.COPIED_CLIPBOARD);
                 } else {
-                    showToast("Failed to copy to clipboard", "error");
+                    showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
                 }
             } catch (err) {
                 console.error("Fallback: Oops, unable to copy", err);
@@ -3948,26 +4153,26 @@
                 column === "Primary Scan Used" ||
                 cleanColumn === "Primary Scan Used"
             ) {
-                return value === "Ja" ? 1 : 0;
+                return value === "Yes" ? 1 : 0;
             }
             if (column === "statementType" || cleanColumn === "statement Type") {
                 return String(value || "").toLowerCase();
             }
-            if (column === "Status") {
+            if (column === "state") {
                 // Sort fatal states first, then by alphabetical order
                 if (value === "fatal") return "aaa_fatal";
                 if (value === "completed") return "bbb_completed";
                 return String(value || "zzz_unknown").toLowerCase();
             }
-            if (column === "scanConsistency" || column === "Scan\nConsistency" || cleanColumn === "Scan-Konsistenz") {
+            if (column === "scanConsistency" || column === "Scan\nConsistency" || cleanColumn === "Scan Consistency") {
                 // Handle scan consistency values - data is nested under request object
                 const scanValue = item.request && item.request.scanConsistency ? item.request.scanConsistency : (value || "N/A");
                 return String(scanValue).toLowerCase();
             }
-            if (column === "Anweisung") {
+            if (column === "statement") {
                 return String(value || "").toLowerCase();
             }
-            if (column === "Benutzer") {
+            if (column === "users") {
                 return String(value || "").toLowerCase();
             }
 
@@ -4086,7 +4291,7 @@
                 return "Primary Scan Used";
             else if (displayColumn === "Scan\nConsistency")
                 return "scanConsistency";
-            else return displayColumn; // For columns without newlines like "#", "Status", "Anweisung", "Benutzer"
+            else return displayColumn; // For columns without newlines like "#", "state", "statement", "users"
         }
 
         // Handle column sort click
@@ -4402,10 +4607,10 @@
                 "Doc Fetch\nCount",
                 "Items from\nIndex Scan",
                 "Primary Scan\nUsed",
-                "Status",
-                "Anweisung",
+                "state",
+                "statement",
                 "Scan\nConsistency",
-                "Benutzer",
+                "users",
             ];
 
             const headerRow = document.createElement("tr");
@@ -4430,7 +4635,7 @@
                     th.style.backgroundColor = "#f8f9fa";
                 });
 
-                if (col === "Anweisung") {
+                if (col === "statement") {
                     th.style.width = "300px";
                     th.style.maxWidth = "300px";
                 }
@@ -4480,13 +4685,13 @@
                     "Items from Index Scan",
                     "Doc Fetch Count",
                     "Primary Scan Used",
-                    "Status",
-                    "Anweisung",
-                    "Benutzer",
+                    "state",
+                    "statement",
+                    "users",
                 ].forEach((col) => {
                     let value;
                     if (col === "Primary Scan Used") {
-                        value = request.usesPrimary ? "Ja" : "Nein";
+                        value = request.usesPrimary ? "Yes" : "No";
                     } else if (col === "Items from Index Scan") {
                         // Use phaseCounts for actual item counts, not operator counts
                         const indexScanCount = request.phaseCounts?.indexScan ||
@@ -4577,10 +4782,10 @@
                 "Doc Fetch\nCount",
                 "Items from\nIndex Scan",
                 "Primary Scan\nUsed",
-                "Status",
-                "Anweisung",
+                "state",
+                "statement",
                 "Scan\nConsistency",
-                "Benutzer",
+                "users",
             ];
 
             // Pagination: get only the current page data
@@ -4636,7 +4841,7 @@
                         td.style.wordWrap = "break-word";
                         td.style.fontSize = "11px";
                         td.textContent = value || "";
-                    } else if (col === "Anweisung") {
+                    } else if (col === "statement") {
                         // Set fixed width for statement column
                         td.style.width = "300px";
                         td.style.maxWidth = "300px";
@@ -4694,12 +4899,12 @@
 
                     if (
                         col === "Primary Scan\nUsed" &&
-                        (value === "Ja" || value === "True" || value === true)
+                        (value === "Yes" || value === "True" || value === true)
                     ) {
                         td.classList.add("primary-scan-yes");
                     }
 
-                    if (col === "Status" && value === "fatal") {
+                    if (col === "state" && value === "fatal") {
                         td.classList.add("fatal-state");
                     }
                     row.appendChild(td);
@@ -4748,7 +4953,7 @@
             const statement = statementStore[statementId];
             if (!statement) {
                 console.error("Statement not found in store:", statementId);
-                alert("Statement not found");
+                alert(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
                 return;
             }
 
@@ -4758,7 +4963,7 @@
                     // Show brief feedback
                     const button = event.target;
                     const originalText = button.textContent;
-                    button.textContent = "kopiert!";
+                    button.textContent = "copied!";
                     button.style.backgroundColor = "#4CAF50";
                     setTimeout(() => {
                         button.textContent = originalText;
@@ -4767,7 +4972,7 @@
                 })
                 .catch((err) => {
                     console.error("Failed to copy statement:", err);
-                    alert("Failed to copy to clipboard");
+                    alert(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD);
                 });
         }
 
@@ -4792,7 +4997,7 @@
             const statement = analysisStatementStore[statementId];
             if (!statement) {
                 console.error("Statement not found in store:", statementId);
-                alert("Statement not found");
+                alert(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
                 return;
             }
 
@@ -4802,7 +5007,7 @@
                     // Show brief feedback
                     const button = event.target;
                     const originalText = button.textContent;
-                    button.textContent = "kopiert!";
+                    button.textContent = "copied!";
                     button.style.backgroundColor = "#4CAF50";
                     setTimeout(() => {
                         button.textContent = originalText;
@@ -4811,7 +5016,7 @@
                 })
                 .catch((err) => {
                     console.error("Failed to copy statement:", err);
-                    alert("Failed to copy to clipboard");
+                    alert(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD);
                 });
         }
 
@@ -4949,10 +5154,10 @@
                     .replace(/_/g, " ")
                     .replace("in seconds", " (mm:ss.sss)");
                 if (col === "user_query_counts") {
-                    displayName = "user: (count)";
+                    displayName = TEXT_CONSTANTS.USER_COUNT;
                 }
                 if (col === "status_counts") {
-                    displayName = "state\nfatal";
+                    displayName = TEXT_CONSTANTS.STATE_FATAL;
                 }
                 th.textContent = displayName;
                 th.style.textAlign = "center";
@@ -5673,7 +5878,7 @@
                             order: 2, // Green bars on right
                         },
                         {
-                            label: "Durchschnittliche Index-Scans pro Abfrage",
+                            label: "Avg Index Scans per Query",
                             data: avgIndexScanData,
                             type: "line",
                             backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
@@ -5692,7 +5897,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: "Datenbank-Operationen Timeline: Index-Scans vs Dokument-Abrufe",
+                            text: "Database Operations Timeline: Index Scans vs Document Fetches",
                         },
                         legend: {
                             display: true,
@@ -5815,7 +6020,7 @@
                             time: getCurrentTimeConfig(requests),
                             title: {
                                 display: true,
-                                text: "Anfragezeit",
+                                text: "Request Time",
                             },
                         },
                         y: {
@@ -5832,7 +6037,7 @@
                             position: "right",
                             title: {
                                 display: true,
-                                text: "Durchschnittliche Index-Scans pro Abfrage",
+                                text: "Avg Index Scans per Query",
                             },
                             beginAtZero: true,
                             grid: {
@@ -6080,7 +6285,7 @@
                             time: getCurrentTimeConfig(requests),
                             title: {
                                 display: true,
-                                text: "Anfragezeit",
+                                text: "Request Time",
                             },
                         },
                         y: {
@@ -6228,7 +6433,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: "Filter-Operationen Timeline: Effizienz-Analyse (EINGANG vs AUSGANG)",
+                            text: "Filter Operations Timeline: Efficiency Analysis (IN vs OUT)",
                         },
                         legend: {
                             display: true,
@@ -6324,7 +6529,7 @@
                             time: getCurrentTimeConfig(requests),
                             title: {
                                 display: true,
-                                text: "Anfragezeit",
+                                text: "Request Time",
                             },
                         },
                         y: {
@@ -6587,7 +6792,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: "Abfrage-Performance Timeline: KernTime % der Ausführungszeit",
+                            text: "Query Performance Timeline: KernTime % of ExecutionTime",
                         },
                         legend: {
                             display: true,
@@ -6679,14 +6884,14 @@
                             time: getCurrentTimeConfig(requests),
                             title: {
                                 display: true,
-                                text: "Anfragezeit",
+                                text: "Request Time",
                             },
                             stacked: true,
                         },
                         y: {
                             title: {
                                 display: true,
-                                text: "Abfrageanzahl",
+                                text: "Query Count",
                             },
                             stacked: true,
                             beginAtZero: true,
@@ -6778,7 +6983,7 @@
                 }
 
                 // Use consistent statement type parsing
-                let statementType = request.statementType || deriveStatementType(request.statement) || "UNKNOWN";
+                let statementType = request.statementType || deriveStatementType(request.statement || request.preparedText) || "UNKNOWN";
 
                 if (!timeGroups[key].statementTypes[statementType]) {
                     timeGroups[key].statementTypes[statementType] = {
@@ -6936,7 +7141,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: "Query Duration by Statement Type (Bubble Size = Query Count)",
+                            text: TEXT_CONSTANTS.QUERY_DURATION_CHART_TITLE,
                         },
                         legend: {
                             display: true,
@@ -6953,17 +7158,17 @@
                                     if (statementType === "Fatal Queries") {
                                         return [
                                             `${statementType}`,
-                                            `Fatal: ${dataPoint.count}`,
-                                            `Elapsed: ${dataPoint.avgElapsedTime.toFixed(3)}s`,
+                                            `${TEXT_CONSTANTS.FATAL_LABEL} ${dataPoint.count}`,
+                                            `${TEXT_CONSTANTS.ELAPSED_LABEL} ${dataPoint.avgElapsedTime.toFixed(3)}s`,
                                         ];
                                     } else {
                                         // Handle regular statement type datasets
                                         return [
                                             `${statementType}`,
-                                            `Count: ${dataPoint.count}`,
-                                            `Avg: ${dataPoint.y.toFixed(3)}s`,
-                                            `Min: ${dataPoint.minDuration.toFixed(3)}s`,
-                                            `Max: ${dataPoint.maxDuration.toFixed(3)}s`,
+                                            `${TEXT_CONSTANTS.COUNT_LABEL} ${dataPoint.count}`,
+                                            `${TEXT_CONSTANTS.AVG_LABEL} ${dataPoint.y.toFixed(3)}s`,
+                                            `${TEXT_CONSTANTS.MIN_LABEL} ${dataPoint.minDuration.toFixed(3)}s`,
+                                            `${TEXT_CONSTANTS.MAX_LABEL} ${dataPoint.maxDuration.toFixed(3)}s`,
                                         ];
                                     }
                                 },
@@ -7065,7 +7270,7 @@
                             time: getCurrentTimeConfig(requests),
                             title: {
                                 display: true,
-                                text: "Anfragezeit",
+                                text: "Request Time",
                             },
                         },
                         y: {
@@ -7427,7 +7632,7 @@
                             },
                             title: {
                                 display: true,
-                                text: "Anfragezeit",
+                                text: "Request Time",
                             },
                         },
                         y: {
@@ -7537,7 +7742,7 @@
                             order: 2,
                         },
                         {
-                            label: "Durchschnitt pro Abfrage (MB)",
+                            label: "Avg per Query (MB)",
                             data: avgMemoryData,
                             type: "line",
                             backgroundColor: "#fd7e14", // Orange
@@ -7555,7 +7760,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: "Gesamter Abfrageprozess-Speicherverbrauch",
+                            text: "Total Query Process Memory Usage",
                         },
                         legend: {
                             display: true,
@@ -7671,7 +7876,7 @@
                             time: getCurrentTimeConfig(requests),
                             title: {
                                 display: true,
-                                text: "Anfragezeit",
+                                text: "Request Time",
                             },
                         },
                         y: {
@@ -7688,7 +7893,7 @@
                             position: "right",
                             title: {
                                 display: true,
-                                text: "Durchschnitt pro Abfrage (MB)",
+                                text: "Avg per Query (MB)",
                             },
                             beginAtZero: true,
                             grid: {
@@ -7759,7 +7964,7 @@
                     labels: labels,
                     datasets: [
                         {
-                            label: "Gesamte Ergebnisanzahl",
+                            label: "Total Result Count",
                             data: resultCountData,
                             backgroundColor: "rgba(144, 238, 144, 0.8)", // Light green
                             borderColor: "rgba(144, 238, 144, 1)",
@@ -7768,7 +7973,7 @@
                             order: 2,
                         },
                         {
-                            label: "Durchschnittliche Ergebnisanzahl pro Abfrage",
+                            label: "Avg Result Count per Query",
                             data: avgResultCountData,
                             type: "line",
                             backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
@@ -7787,7 +7992,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: "Ergebnisanzahl-Analyse: Gesamt vs. Durchschnitt pro Abfrage",
+                            text: "Result Count Analysis: Total vs Average per Query",
                         },
                         legend: {
                             display: true,
@@ -7840,7 +8045,7 @@
                             time: getCurrentTimeConfig(requests),
                             title: {
                                 display: true,
-                                text: "Anfragezeit",
+                                text: "Request Time",
                             },
                         },
                         y: {
@@ -7848,7 +8053,7 @@
                             position: "left",
                             title: {
                                 display: true,
-                                text: "Gesamte Ergebnisanzahl",
+                                text: "Total Result Count",
                             },
                             beginAtZero: true,
                         },
@@ -7928,7 +8133,7 @@
                     labels: labels,
                     datasets: [
                         {
-                            label: "Gesamte Ergebnisgröße (MB)",
+                            label: "Total Result Size (MB)",
                             data: resultSizeData,
                             backgroundColor: "rgba(0, 100, 0, 0.8)", // Dark green
                             borderColor: "rgba(0, 100, 0, 1)",
@@ -7937,7 +8142,7 @@
                             order: 2,
                         },
                         {
-                            label: "Durchschnittliche Ergebnisgröße pro Abfrage (MB)",
+                            label: "Avg Result Size per Query (MB)",
                             data: avgResultSizeData,
                             type: "line",
                             backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
@@ -7956,7 +8161,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: "Ergebnisgröße-Analyse: Gesamt vs. Durchschnitt pro Abfrage",
+                            text: "Result Size Analysis: Total vs Average per Query",
                         },
                         legend: {
                             display: true,
@@ -8009,7 +8214,7 @@
                             time: getCurrentTimeConfig(requests),
                             title: {
                                 display: true,
-                                text: "Anfragezeit",
+                                text: "Request Time",
                             },
                         },
                         y: {
@@ -8017,7 +8222,7 @@
                             position: "left",
                             title: {
                                 display: true,
-                                text: "Gesamte Ergebnisgröße (MB)",
+                                text: "Total Result Size (MB)",
                             },
                             beginAtZero: true,
                         },
@@ -8026,7 +8231,7 @@
                             position: "right",
                             title: {
                                 display: true,
-                                text: "Durchschnitt pro Abfrage (MB)",
+                                text: "Avg per Query (MB)",
                             },
                             beginAtZero: true,
                             grid: {
@@ -8244,7 +8449,7 @@
                             time: getCurrentTimeConfig(requests),
                             title: {
                                 display: true,
-                                text: "Anfragezeit",
+                                text: "Request Time",
                             },
                         },
                         y: {
@@ -8629,7 +8834,7 @@
                             time: getCurrentTimeConfig(requests),
                             title: {
                                 display: true,
-                                text: "Anfragezeit",
+                                text: "Request Time",
                             },
                         },
                         y: {
@@ -8957,7 +9162,7 @@
                     x: {
                     type: "time",
                     time: getCurrentTimeConfig(requests),
-                    title: { display: true, text: "Anfragezeit" },
+                    title: { display: true, text: "Request Time" },
                     },
                     y: {
                     type: "linear",
@@ -9415,7 +9620,7 @@
                         x: {
                             type: "time",
                             time: getCurrentTimeConfig(requests),
-                            title: { display: true, text: "Anfragezeit" },
+                            title: { display: true, text: "Request Time" },
                         },
                         y: {
                             type: "linear",
@@ -10266,8 +10471,8 @@
             const typeCounts = {};
 
             requests.forEach((request) => {
-                // First try the statementType field, then derive from statement
-                const type = request.statementType || deriveStatementType(request.statement) || "UNKNOWN";
+                // First try the statementType field, then derive from statement or preparedText
+                const type = request.statementType || deriveStatementType(request.statement || request.preparedText) || "UNKNOWN";
                 typeCounts[type] = (typeCounts[type] || 0) + 1;
             });
 
@@ -10538,7 +10743,7 @@
                     labels: Object.keys(timeBuckets),
                     datasets: [
                         {
-                            label: "Abfrageanzahl",
+                            label: "Query Count",
                             data: Object.values(timeBuckets),
                             backgroundColor: "#36a2eb",
                             borderColor: "#36a2eb",
@@ -10566,13 +10771,13 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: "Anzahl der Abfragen",
+                                text: "Number of Queries",
                             },
                         },
                         x: {
                             title: {
                                 display: true,
-                                text: "Verstrichene Zeitspanne",
+                                text: "Elapsed Time Range",
                             },
                         },
                     },
@@ -10609,79 +10814,77 @@
             };
 
             requests.forEach((request) => {
-                const statement = (request.statement || "").toUpperCase();
+                const statement = request.statement || request.preparedText || "";
+                const upperStatement = statement.toUpperCase();
 
                 // No WHERE
-                if (!statement.includes(" WHERE ")) {
+                if (!hasFilteringMechanism(statement)) {
                     patternCounts["No WHERE"]++;
                 }
 
                 // GROUP BY
-                if (statement.includes(" GROUP BY ")) {
+                if (upperStatement.includes(" GROUP BY ")) {
                     patternCounts["GROUP BY"]++;
                 }
 
                 // ORDER BY
-                if (statement.includes(" ORDER BY ")) {
+                if (upperStatement.includes(" ORDER BY ")) {
                     patternCounts["ORDER BY"]++;
                 }
 
                 // USE INDEX
-                if (statement.includes("USE INDEX")) {
+                if (upperStatement.includes("USE INDEX")) {
                     patternCounts["USE INDEX"]++;
                 }
 
                 // USE KEYS
-                if (statement.includes("USE KEYS")) {
+                if (upperStatement.includes("USE KEYS")) {
                     patternCounts["USE KEYS"]++;
                 }
 
                 // JOIN
-                if (statement.includes(" JOIN ")) {
+                if (upperStatement.includes(" JOIN ")) {
                     patternCounts["JOIN"]++;
                 }
 
                 // NEST
-                if (statement.includes(" NEST ")) {
+                if (upperStatement.includes(" NEST ")) {
                     patternCounts["NEST"]++;
                 }
 
                 // UNNEST
-                if (statement.includes(" UNNEST ")) {
+                if (upperStatement.includes(" UNNEST ")) {
                     patternCounts["UNNEST"]++;
                 }
 
                 // OFFSET
-                if (statement.includes(" OFFSET ")) {
+                if (upperStatement.includes(" OFFSET ")) {
                     patternCounts["OFFSET"]++;
                 }
 
                 // SEARCH
-                if (statement.includes(" SEARCH(")) {
+                if (upperStatement.includes(" SEARCH(")) {
                     patternCounts["SEARCH"]++;
                 }
 
                 // WITH (ensure it's a SQL clause, not a backticked field name)
-                if ((statement.startsWith("WITH ") || statement.includes(" WITH ")) && !statement.includes("`WITH`")) {
+                if ((upperStatement.startsWith("WITH ") || upperStatement.includes(" WITH ")) && !upperStatement.includes("`WITH`")) {
                     patternCounts["WITH"]++;
                 }
 
                 // ARRAY QUERY (has ANY/EVERY + SATISFIES + END)
                 if (
-                    (statement.includes(" ANY ") || statement.includes(" EVERY ") || statement.includes("ANY AND EVERY")) &&
-                    statement.includes(" SATISFIES ") &&
-                    (statement.includes(" END ") || statement.endsWith(" END"))
+                    (upperStatement.includes(" ANY ") || upperStatement.includes(" EVERY ") || upperStatement.includes("ANY AND EVERY")) &&
+                    upperStatement.includes(" SATISFIES ") &&
+                    (upperStatement.includes(" END ") || upperStatement.endsWith(" END"))
                 ) {
                     patternCounts["ARRAY QUERY"]++;
                 }
 
-                // SELECT * (between SELECT and FROM)
-                const selectMatch = statement.match(/SELECT\s+(.+?)\s+FROM/);
-                if (selectMatch) {
-                    const selectPart = selectMatch[1].trim();
-                    if (selectPart === "*" || selectPart.includes(".*")) {
-                        patternCounts["SELECT *"]++;
-                    }
+                // SELECT * (only pure SELECT * queries, not qualified wildcards like c.*)
+                const selectStarMatch = upperStatement.match(/SELECT\s+\*\s+FROM/);
+                if (selectStarMatch) {
+                    patternCounts["SELECT *"]++;
                 }
 
                 // LIKE (ensure it's an operator, not a backticked field name)
@@ -10738,7 +10941,7 @@
                     labels: Object.keys(patternCounts),
                     datasets: [
                         {
-                            label: "Abfrageanzahl",
+                            label: "Query Count",
                             data: Object.values(patternCounts),
                             backgroundColor: colors,
                             borderColor: colors,
@@ -10766,13 +10969,13 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: "Anzahl der Abfragen",
+                                text: "Number of Queries",
                             },
                         },
                         x: {
                             title: {
                                 display: true,
-                                text: "Abfragemuster-Eigenschaften",
+                                text: "Query Pattern Features",
                             },
                             ticks: {
                                 maxRotation: 45,
@@ -10903,7 +11106,7 @@
             const indexData = {};
 
             requests.forEach((request) => {
-                const bucketScopeCollection = parseFromClause(request.statement);
+                const bucketScopeCollection = parseFromClause(request.statement || request.preparedText);
 
                 // Debug problematic parsing
                 if (
@@ -10911,7 +11114,7 @@
                     bucketScopeCollection.includes("(")
                 ) {
                     console.warn("Potentially incorrect bucket parsing:", {
-                        statement: request.statement?.substring(0, 100) + "...",
+                        statement: (request.statement || request.preparedText)?.substring(0, 100) + "...",
                         parsed: bucketScopeCollection,
                     });
                     // Use default for obviously wrong parsing
@@ -11032,7 +11235,7 @@
                     if (!indexData[resolvedName]) {
                         indexData[resolvedName] = {
                             count: 0,
-                            bucketScopeCollection: bucketScopeCollection || "unbekannt",
+                            bucketScopeCollection: bucketScopeCollection || "unknown",
                         };
                     }
                     indexData[resolvedName].count++;
@@ -11150,17 +11353,68 @@
             let largePayloadStreamingCount = 0;
             let largePayloadTotalResultSize = 0;
             let largePayloadTotalStreamRatio = 0;
+            let approachingTimeoutCount = 0;
+            let actualTimeoutCount = 0;
+
+            // Sample queries arrays for insights
+            let missingWhereClausesSamples = [];
+            let slowUseKeyQueriesSamples = [];
+            let largeResultSetQueriesSamples = [];
+            let inefficientLikeOperationsSamples = [];
+            let highMemoryUsageSamples = [];
+            let highKernelTimeQueriesSamples = [];
+            let largePayloadStreamingSamples = [];
+            let actualTimeoutsSamples = [];
+            let approachingTimeoutsSamples = [];
 
             // Configurable threshold for kernel time detection
             const KERNEL_TIME_THRESHOLD_PERCENT = 20;
             const STREAM_KERNEL_THRESHOLD_PERCENT = 10;
 
             requests.forEach((request) => {
-                const statement = (request.statement || "").toUpperCase();
+                const statement = (request.statement || request.preparedText || "").toUpperCase();
+                const elapsedTime = parseTime(request.elapsedTime);
+                const elapsedTimeSeconds = elapsedTime / 1000; // Convert to seconds
+                const state = (request.state || "").toLowerCase();
+
+                // Count timeout-prone queries
+                // Approaching timeout: 1 minute (60s) to 1m15s (75s) AND state is "completed"
+                if (elapsedTimeSeconds >= 60 && elapsedTimeSeconds <= 75 && state === "completed") {
+                    approachingTimeoutCount++;
+                    if (approachingTimeoutsSamples.length < 5 && 
+                        !approachingTimeoutsSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        approachingTimeoutsSamples.push({
+                            requestTime: request.requestTime,
+                            statement: request.statement || request.preparedText,
+                            elapsedTime: request.elapsedTime
+                        });
+                    }
+                }
+                
+                // Actual timeout: 1m14s (74s) to 1m16s (76s) AND state is "fatal"  
+                if (elapsedTimeSeconds >= 74 && elapsedTimeSeconds <= 76 && state === "fatal") {
+                    actualTimeoutCount++;
+                    if (actualTimeoutsSamples.length < 5 && 
+                        !actualTimeoutsSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        actualTimeoutsSamples.push({
+                            requestTime: request.requestTime,
+                            statement: request.statement || request.preparedText,
+                            elapsedTime: request.elapsedTime
+                        });
+                    }
+                }
 
                 // Count missing WHERE clauses
-                if (!statement.includes(" WHERE ")) {
+                // Use consolidated function to check for filtering mechanisms (WHERE or USE KEYS)
+                if (!hasFilteringMechanism(request.statement || request.preparedText)) {
                     noWhereCount++;
+                    if (missingWhereClausesSamples.length < 5 && 
+                        !missingWhereClausesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        missingWhereClausesSamples.push({
+                            requestTime: request.requestTime,
+                            statement: request.statement || request.preparedText
+                        });
+                    }
                 }
 
                 // Count slow USE KEYS queries (> 1 second)
@@ -11169,6 +11423,13 @@
                     if (elapsedTime > 1000) { // 1 second = 1000ms
                         slowUseKeysCount++;
                         slowUseKeysTotalTime += elapsedTime;
+                        if (slowUseKeyQueriesSamples.length < 5 && 
+                            !slowUseKeyQueriesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                            slowUseKeyQueriesSamples.push({
+                                requestTime: request.requestTime,
+                                statement: request.statement || request.preparedText
+                            });
+                        }
                     }
                 }
 
@@ -11178,6 +11439,13 @@
                 if (resultSizeMB > 5) {
                     largeResultsCount++;
                     largeResultsTotalMB += resultSizeMB;
+                    if (largeResultSetQueriesSamples.length < 5 && 
+                        !largeResultSetQueriesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        largeResultSetQueriesSamples.push({
+                            requestTime: request.requestTime,
+                            statement: request.statement || request.preparedText
+                        });
+                    }
                 }
 
                 // Count inefficient LIKE operations with leading wildcards
@@ -11186,6 +11454,13 @@
                     const likeMatches = statement.match(/ LIKE\s+['"]%[^'"]*['"]?/g);
                     if (likeMatches && likeMatches.length > 0) {
                         inefficientLikeCount++;
+                        if (inefficientLikeOperationsSamples.length < 5 && 
+                            !inefficientLikeOperationsSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                            inefficientLikeOperationsSamples.push({
+                                requestTime: request.requestTime,
+                                statement: request.statement || request.preparedText
+                            });
+                        }
                     }
                 }
 
@@ -11195,6 +11470,13 @@
                 if (usedMemoryGB >= 1) {
                     highMemoryCount++;
                     highMemoryTotalGB += usedMemoryGB;
+                    if (highMemoryUsageSamples.length < 5 && 
+                        !highMemoryUsageSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        highMemoryUsageSamples.push({
+                            requestTime: request.requestTime,
+                            statement: request.statement || request.preparedText
+                        });
+                    }
                 }
 
                 // Analyze core execTime vs kernel time (two-stage check)
@@ -11215,6 +11497,13 @@
                             if (coreKernelAnalysis.coreToKernelRatio >= 50) {
                                 highKernelTimeQueriesCount++;
                                 totalCoreKernelRatio += coreKernelAnalysis.coreToKernelRatio;
+                                if (highKernelTimeQueriesSamples.length < 5 && 
+                                    !highKernelTimeQueriesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                                    highKernelTimeQueriesSamples.push({
+                                        requestTime: request.requestTime,
+                                        statement: request.statement || request.preparedText
+                                    });
+                                }
                             }
                         }
                     } catch (e) {
@@ -11237,6 +11526,13 @@
                                 largePayloadStreamingCount++;
                                 largePayloadTotalResultSize += payloadSizeMB;
                                 largePayloadTotalStreamRatio += streamAnalysis.streamRatio;
+                                if (largePayloadStreamingSamples.length < 5 && 
+                                    !largePayloadStreamingSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                                    largePayloadStreamingSamples.push({
+                                        requestTime: request.requestTime,
+                                        statement: request.statement || request.preparedText
+                                    });
+                                }
                             }
                         } catch (e) {
                             console.error("Error analyzing large payload streaming:", e);
@@ -11499,11 +11795,55 @@
                 }
             }
 
+            // Update the timeout-prone queries insight
+            const timeoutProneContent = document.getElementById("timeout-prone-queries-content");
+            if (timeoutProneContent) {
+                const approachingHighlight = approachingTimeoutCount > 0 ? "highlight-number" : "";
+                const actualHighlight = actualTimeoutCount > 0 ? "highlight-number" : "";
+                
+                timeoutProneContent.innerHTML = `
+                    <p class="insight-description">
+                        <span id="approaching-timeout-count" class="${approachingHighlight}">${approachingTimeoutCount} queries</span> are consistently approaching timeout
+                        thresholds, with <span id="actual-timeout-count" class="${actualHighlight}">${actualTimeoutCount} queries</span> actually timing out
+                        in the analyzed period. <em>(Default query timeout: 75 seconds / 1m15s)</em>
+                    </p>
+
+                    <button id="toggle-timeout-prone-queries-sample-queries-btn" onclick="toggleTimeoutQueriesTable()" class="btn-standard" style="margin-top: 10px;">
+                        <span id="timeout-prone-queries-sample-queries-btn-text">Show Sample Queries</span>
+                    </button>
+                    <div id="timeout-prone-queries-sample-queries-container" style="display: none; margin-top: 10px;">
+                        <table class="sample-queries-table">
+                            <thead>
+                                <tr>
+                                    <th>Request Date</th>
+                                    <th>Statement (unique)</th>
+                                    <th>Elapsed Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timeout-prone-queries-sample-queries-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
             // Reset metrics for next parse
             window.inefficientScanMetrics = [];
 
             // Update slow index scan times insight
             updateSlowIndexScanTimes(requests);
+
+            // Update sample queries for each insight
+            updateInsightSampleQueries('missing-where-clauses', missingWhereClausesSamples);
+            updateInsightSampleQueries('slow-use-key-queries', slowUseKeyQueriesSamples);
+            updateInsightSampleQueries('large-result-set-queries', largeResultSetQueriesSamples);
+            updateInsightSampleQueries('inefficient-like-operations', inefficientLikeOperationsSamples);
+            updateInsightSampleQueries('high-memory-usage', highMemoryUsageSamples);
+            updateInsightSampleQueries('high-kernel-time-queries', highKernelTimeQueriesSamples);
+            updateInsightSampleQueries('large-payload-streaming', largePayloadStreamingSamples);
+
+            // Special handling for timeout queries (3-column table with 10 entries)
+            updateTimeoutQueriesTable(actualTimeoutsSamples, approachingTimeoutsSamples);
 
             // Update navigation counts and accordion states
             updateInsightNavigation();
@@ -11669,7 +12009,8 @@
                 { id: 'missing-where-clauses', checkElement: 'missing-where-count' },
                 { id: 'inefficient-like-operations', checkElement: 'inefficient-like-count' },
                 { id: 'large-result-set-queries', checkElement: 'large-results-count' },
-                { id: 'large-payload-streaming', checkElement: 'large-payload-count' }
+                { id: 'large-payload-streaming', checkElement: 'large-payload-count' },
+                { id: 'timeout-prone-queries', checkElements: ['approaching-timeout-count', 'actual-timeout-count'] }
             ];
 
             insights.forEach(insight => {
@@ -11785,7 +12126,7 @@
             updatePrimaryIndexOverUsageFromAggregatedData(requests);
 
             // Debug: Log the collected index data
-            console.log("Collected index data for timing analysis:", indexData);
+            console.log(`${TEXT_CONSTANTS.COLLECTED_INDEX_DATA}`, indexData);
 
             // Analyze timing data for each index
             Object.values(indexData).forEach((index) => {
@@ -12247,13 +12588,16 @@
 
 
         // Lazy chart loading setup - generate charts only when tabs are activated
-        function setupLazyChartLoading(filteredRequests) {
+        function setupLazyChartLoading(filteredRequests, fullDataset) {
             // Track which tabs have been loaded
             const loadedTabs = new Set();
 
-            // Generate dashboard charts immediately (user sees this first)
-            generateDashboardCharts(filteredRequests);
+            // ALWAYS generate dashboard charts immediately after parsing (not lazy)
+            // This ensures fresh data every time, regardless of which tab is active
+            generateDashboardCharts(fullDataset || filteredRequests);
             loadedTabs.add('dashboard');
+            // Initialize drag and drop for dashboard charts
+            setTimeout(() => setupChartDragAndDrop(), 100);
             
             // Initialize drag and drop for all charts
             setTimeout(() => setupChartDragAndDrop(), 100);
@@ -12270,6 +12614,10 @@
 
                     try {
                         switch (tabId) {
+                            case 'dashboard':
+                                // Dashboard charts are now always generated immediately after parsing
+                                // No need to regenerate when switching tabs
+                                break;
                             case 'timeline':
                                 // For aggregation-based charts (operations, filter), use full data
                                 // For timeline chart (individual request visualization), use sampling for performance
@@ -12397,7 +12745,7 @@
 
                                 // Apply SQL statement filtering early
                                 if (sqlFilterText && sqlFilterText.length > 0) {
-                                    const statement = (request.statement || "").toLowerCase().replace(/\s+/g, ' ').trim();
+                                    const statement = (request.statement || request.preparedText || "").toLowerCase().replace(/\s+/g, ' ').trim();
                                     const filterText = sqlFilterText.replace(/\s+/g, ' ').trim();
                                     if (!statement.includes(filterText)) {
                                         skippedCount++;
@@ -12608,11 +12956,11 @@
                 updateFilterInfo(filteredAllRequests.length, filteredRequests.length);
                 generateTable(filteredRequests);
                 generateAnalysisTable(filteredRequests);
-                buildIndexQueryFlow(filteredRequests);
+                // buildIndexQueryFlow will be lazy loaded when index-query-flow tab is activated
                 // Only reset flow diagram if no query was previously selected
                 const flowDiagramValidation = document.getElementById("flow-diagram");
                 if (!flowDiagramValidation.hasChildNodes() || flowDiagramValidation.children.length === 0) {
-                    flowDiagramValidation.innerHTML = "Select a query from the table to view the flow diagram.";
+                    flowDiagramValidation.innerHTML = TEXT_CONSTANTS.SELECT_QUERY_FLOW;
                 }
                 return;
             }
@@ -12631,6 +12979,9 @@
                 // Extract used indexes from the query data
                 extractUsedIndexes(filteredRequests);
 
+                // Extract sample queries for display
+                extractSampleQueries(filteredRequests);
+
                 // Also parse index data if available
                 parseIndexJSON();
 
@@ -12644,7 +12995,7 @@
                     console.log(`${TEXT_CONSTANTS.CHART_SAMPLING} ${sampleRequests.length} ${TEXT_CONSTANTS.OF_TOTAL} ${filteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
                 }
 
-                setupLazyChartLoading(sampleRequests);
+                setupLazyChartLoading(sampleRequests, filteredRequests);
             } catch (e) {
                 console.error(`${TEXT_CONSTANTS.ERROR_GENERATING_UI}`, e);
                 alert(`${TEXT_CONSTANTS.ERROR_GENERATING_UI} Try reducing the date range or selecting a coarser time grouping.`);
@@ -12726,6 +13077,430 @@
                 generateAnalysis(filteredRequests);
                 buildIndexQueryFlow(filteredRequests);
             }
+        }
+
+        // Sample queries storage
+        let sampleQueries = [];
+        let sampleQueriesVisible = false;
+
+        // Extract sample queries from requests for display
+        function extractSampleQueries(requests) {
+            sampleQueries = [];
+            const seenStatements = new Set();
+            
+            for (const request of requests) {
+                if (sampleQueries.length >= 5) break;
+                
+                const statement = request.statement || request.preparedText || '';
+                if (!statement || seenStatements.has(statement)) continue;
+                
+                seenStatements.add(statement);
+                sampleQueries.push({
+                    requestTime: request.requestTime,
+                    statement: statement
+                });
+            }
+            
+            // Update the sample queries table
+            updateSampleQueriesTable();
+        }
+
+        // Toggle sample queries visibility
+        function toggleSampleQueries() {
+            const container = document.getElementById('sample-queries-container');
+            const btnText = document.getElementById('sample-queries-btn-text');
+            
+            sampleQueriesVisible = !sampleQueriesVisible;
+            
+            if (sampleQueriesVisible) {
+                container.style.display = 'block';
+                btnText.textContent = TEXT_CONSTANTS.HIDE_SAMPLE_QUERIES;
+            } else {
+                container.style.display = 'none';
+                btnText.textContent = TEXT_CONSTANTS.SHOW_SAMPLE_QUERIES;
+            }
+        }
+
+        // Update sample queries table content
+        function updateSampleQueriesTable() {
+            const tbody = document.getElementById('sample-queries-tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            sampleQueries.forEach((query, index) => {
+                const formattedDate = query.requestTime || "";
+                
+                const statementId = `sample-statement-${index}`;
+                const isLongStatement = query.statement.length > 500;
+                
+                const row = document.createElement('tr');
+                
+                // Create date cell
+                const dateCell = document.createElement('td');
+                dateCell.style.whiteSpace = 'nowrap';
+                dateCell.style.textAlign = 'center';
+                dateCell.style.fontSize = '11px';
+                dateCell.textContent = formattedDate;
+                
+                // Create statement cell
+                const statementCell = document.createElement('td');
+                statementCell.className = 'statement-cell';
+                
+                if (isLongStatement) {
+                    const truncated = query.statement.substring(0, 500);
+                    statementCell.innerHTML = `
+                        <div id="${statementId}-truncated">
+                            <span>${escapeHtml(truncated)}...</span>
+                            <br>
+                            <button onclick="toggleSampleStatement('${statementId}', true)" 
+                                    class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.SHOW_MORE}</button>
+                            <button onclick="copySampleStatement('${statementId}', event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                        <div id="${statementId}-full" style="display: none;">
+                            <span>${escapeHtml(query.statement)}</span>
+                            <br>
+                            <button onclick="toggleSampleStatement('${statementId}', false)" 
+                                    class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.HIDE}</button>
+                            <button onclick="copySampleStatement('${statementId}', event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                    `;
+                } else {
+                    statementCell.innerHTML = `
+                        <div>
+                            <span>${escapeHtml(query.statement)}</span>
+                            <br>
+                            <button onclick="copySampleStatement('${statementId}', event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                    `;
+                }
+                
+                row.appendChild(dateCell);
+                row.appendChild(statementCell);
+                tbody.appendChild(row);
+            });
+        }
+
+        // Toggle between truncated and full statement view
+        function toggleSampleStatement(statementId, showFull) {
+            const truncatedDiv = document.getElementById(statementId + '-truncated');
+            const fullDiv = document.getElementById(statementId + '-full');
+            
+            if (showFull) {
+                truncatedDiv.style.display = 'none';
+                fullDiv.style.display = 'block';
+            } else {
+                truncatedDiv.style.display = 'block';
+                fullDiv.style.display = 'none';
+            }
+        }
+
+        // Copy sample statement to clipboard
+        function copySampleStatement(statementId, event) {
+            const index = parseInt(statementId.replace('sample-statement-', ''));
+            const statement = sampleQueries[index]?.statement;
+            
+            if (!statement) {
+                console.error(TEXT_CONSTANTS.STATEMENT_NOT_FOUND, statementId);
+                showToast(TEXT_CONSTANTS.STATEMENT_NOT_FOUND, "error");
+                return;
+            }
+            
+            navigator.clipboard.writeText(statement)
+                .then(() => {
+                    const button = event.target;
+                    const originalText = button.textContent;
+                    button.textContent = TEXT_CONSTANTS.COPIED;
+                    button.style.backgroundColor = '#4CAF50';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.backgroundColor = '';
+                    }, 1000);
+                })
+                .catch((err) => {
+                    console.error(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, err);
+                    showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
+                });
+        }
+
+        // Storage for insight-specific sample queries
+        let insightSampleQueries = {};
+        let insightSampleQueriesVisible = {};
+
+        // Toggle insight-specific sample queries visibility
+        function toggleInsightSampleQueries(insightId) {
+            const container = document.getElementById(`${insightId}-sample-queries-container`);
+            const btnText = document.getElementById(`${insightId}-sample-queries-btn-text`);
+            
+            if (!container || !btnText) return;
+            
+            const isVisible = insightSampleQueriesVisible[insightId] || false;
+            insightSampleQueriesVisible[insightId] = !isVisible;
+            
+            if (!isVisible) {
+                container.style.display = 'block';
+                btnText.textContent = TEXT_CONSTANTS.HIDE_SAMPLE_QUERIES;
+            } else {
+                container.style.display = 'none';
+                btnText.textContent = TEXT_CONSTANTS.SHOW_SAMPLE_QUERIES;
+            }
+        }
+
+        // Update insight-specific sample queries table
+        function updateInsightSampleQueries(insightId, queries) {
+            const tbody = document.getElementById(`${insightId}-sample-queries-tbody`);
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            insightSampleQueries[insightId] = queries;
+            
+            queries.forEach((query, index) => {
+                const formattedDate = query.requestTime || "";
+                
+                const statementId = `${insightId}-statement-${index}`;
+                const isLongStatement = query.statement.length > 500;
+                
+                const row = document.createElement('tr');
+                
+                // Create date cell
+                const dateCell = document.createElement('td');
+                dateCell.style.whiteSpace = 'nowrap';
+                dateCell.style.textAlign = 'center';
+                dateCell.style.fontSize = '11px';
+                dateCell.textContent = formattedDate;
+                
+                // Create statement cell
+                const statementCell = document.createElement('td');
+                statementCell.className = 'statement-cell';
+                
+                if (isLongStatement) {
+                    const truncated = query.statement.substring(0, 500);
+                    statementCell.innerHTML = `
+                        <div id="${statementId}-truncated">
+                            <span>${escapeHtml(truncated)}...</span>
+                            <br>
+                            <button onclick="toggleInsightStatement('${statementId}', true)" 
+                                    class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.SHOW_MORE}</button>
+                            <button onclick="copyInsightStatement('${insightId}', ${index}, event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                        <div id="${statementId}-full" style="display: none;">
+                            <span>${escapeHtml(query.statement)}</span>
+                            <br>
+                            <button onclick="toggleInsightStatement('${statementId}', false)" 
+                                    class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.HIDE}</button>
+                            <button onclick="copyInsightStatement('${insightId}', ${index}, event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                    `;
+                } else {
+                    statementCell.innerHTML = `
+                        <div>
+                            <span>${escapeHtml(query.statement)}</span>
+                            <br>
+                            <button onclick="copyInsightStatement('${insightId}', ${index}, event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                    `;
+                }
+                
+                row.appendChild(dateCell);
+                row.appendChild(statementCell);
+                tbody.appendChild(row);
+            });
+        }
+
+        // Toggle insight statement truncation
+        function toggleInsightStatement(statementId, showFull) {
+            const truncatedDiv = document.getElementById(statementId + '-truncated');
+            const fullDiv = document.getElementById(statementId + '-full');
+            
+            if (showFull) {
+                truncatedDiv.style.display = 'none';
+                fullDiv.style.display = 'block';
+            } else {
+                truncatedDiv.style.display = 'block';
+                fullDiv.style.display = 'none';
+            }
+        }
+
+        // Copy insight statement to clipboard
+        function copyInsightStatement(insightId, index, event) {
+            const statement = insightSampleQueries[insightId]?.[index]?.statement;
+            
+            if (!statement) {
+                console.error(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
+                showToast(TEXT_CONSTANTS.STATEMENT_NOT_FOUND, "error");
+                return;
+            }
+            
+            navigator.clipboard.writeText(statement)
+                .then(() => {
+                    const button = event.target;
+                    const originalText = button.textContent;
+                    button.textContent = TEXT_CONSTANTS.COPIED;
+                    button.style.backgroundColor = '#4CAF50';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.backgroundColor = '';
+                    }, 1000);
+                })
+                .catch((err) => {
+                    console.error(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, err);
+                    showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
+                });
+        }
+
+        // Storage for timeout queries
+        let timeoutQueriesData = {
+            actualTimeouts: [],
+            approachingTimeouts: []
+        };
+        let timeoutQueriesVisible = false;
+
+        // Toggle timeout queries table visibility
+        function toggleTimeoutQueriesTable() {
+            const container = document.getElementById('timeout-prone-queries-sample-queries-container');
+            const btnText = document.getElementById('timeout-prone-queries-sample-queries-btn-text');
+            
+            if (!container || !btnText) return;
+            
+            timeoutQueriesVisible = !timeoutQueriesVisible;
+            
+            if (timeoutQueriesVisible) {
+                container.style.display = 'block';
+                btnText.textContent = TEXT_CONSTANTS.HIDE_SAMPLE_QUERIES;
+            } else {
+                container.style.display = 'none';
+                btnText.textContent = TEXT_CONSTANTS.SHOW_SAMPLE_QUERIES;
+            }
+        }
+
+        // Update timeout queries table with special 3-column format
+        function updateTimeoutQueriesTable(actualTimeouts, approachingTimeouts) {
+            const tbody = document.getElementById('timeout-prone-queries-sample-queries-tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            timeoutQueriesData.actualTimeouts = actualTimeouts;
+            timeoutQueriesData.approachingTimeouts = approachingTimeouts;
+            
+            // First add actual timeouts (up to 5)
+            actualTimeouts.forEach((query, index) => {
+                const row = createTimeoutQueryRow(query, index, 'actual');
+                row.style.backgroundColor = '#ffebee'; // Light red background for timeouts
+                tbody.appendChild(row);
+            });
+            
+            // Then add approaching timeouts (up to 5)
+            approachingTimeouts.forEach((query, index) => {
+                const row = createTimeoutQueryRow(query, index + actualTimeouts.length, 'approaching');
+                row.style.backgroundColor = '#fff3e0'; // Light orange background for approaching
+                tbody.appendChild(row);
+            });
+        }
+
+        // Create a timeout query table row
+        function createTimeoutQueryRow(query, index, type) {
+            const formattedDate = query.requestTime || "";
+            
+            const statementId = `timeout-${type}-statement-${index}`;
+            const isLongStatement = query.statement.length > 500;
+            
+            const row = document.createElement('tr');
+            
+            // Create date cell
+            const dateCell = document.createElement('td');
+            dateCell.style.whiteSpace = 'nowrap';
+            dateCell.style.textAlign = 'center';
+            dateCell.style.fontSize = '11px';
+            dateCell.textContent = formattedDate;
+            
+            // Create statement cell
+            const statementCell = document.createElement('td');
+            statementCell.className = 'statement-cell';
+            
+            if (isLongStatement) {
+                const truncated = query.statement.substring(0, 500);
+                statementCell.innerHTML = `
+                    <div id="${statementId}-truncated">
+                        <span>${escapeHtml(truncated)}...</span>
+                        <br>
+                        <button onclick="toggleInsightStatement('${statementId}', true)" 
+                                class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.SHOW_MORE}</button>
+                        <button onclick="copyTimeoutStatement('${type}', ${index}, event)" 
+                                class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                    </div>
+                    <div id="${statementId}-full" style="display: none;">
+                        <span>${escapeHtml(query.statement)}</span>
+                        <br>
+                        <button onclick="toggleInsightStatement('${statementId}', false)" 
+                                class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.HIDE}</button>
+                        <button onclick="copyTimeoutStatement('${type}', ${index}, event)" 
+                                class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                    </div>
+                `;
+            } else {
+                statementCell.innerHTML = `
+                    <div>
+                        <span>${escapeHtml(query.statement)}</span>
+                        <br>
+                        <button onclick="copyTimeoutStatement('${type}', ${index}, event)" 
+                                class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                    </div>
+                `;
+            }
+            
+            // Create elapsed time cell
+            const elapsedTimeCell = document.createElement('td');
+            elapsedTimeCell.style.whiteSpace = 'nowrap';
+            elapsedTimeCell.style.textAlign = 'center';
+            elapsedTimeCell.style.fontSize = '11px';
+            elapsedTimeCell.textContent = query.elapsedTime || 'N/A';
+            if (type === 'actual') {
+                elapsedTimeCell.style.fontWeight = 'bold';
+                elapsedTimeCell.style.color = '#d32f2f'; // Red for timeouts
+            } else {
+                elapsedTimeCell.style.color = '#f57c00'; // Orange for approaching
+            }
+            
+            row.appendChild(dateCell);
+            row.appendChild(statementCell);
+            row.appendChild(elapsedTimeCell);
+            
+            return row;
+        }
+
+        // Copy timeout statement to clipboard
+        function copyTimeoutStatement(type, index, event) {
+            const statement = type === 'actual' ? 
+                timeoutQueriesData.actualTimeouts[index]?.statement : 
+                timeoutQueriesData.approachingTimeouts[index - timeoutQueriesData.actualTimeouts.length]?.statement;
+            
+            if (!statement) {
+                console.error(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
+                showToast(TEXT_CONSTANTS.STATEMENT_NOT_FOUND, "error");
+                return;
+            }
+            
+            navigator.clipboard.writeText(statement)
+                .then(() => {
+                    const button = event.target;
+                    const originalText = button.textContent;
+                    button.textContent = TEXT_CONSTANTS.COPIED;
+                    button.style.backgroundColor = '#4CAF50';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.backgroundColor = '';
+                    }, 1000);
+                })
+                .catch((err) => {
+                    console.error(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, err);
+                    showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
+                });
         }
 
         // Track which tabs have been loaded
@@ -13560,7 +14335,7 @@
             <button onclick="copyIndexName('${index.name.replace(
                     /'/g,
                     "\\'"
-                )}', event)" class="btn-standard" style="font-size: 11px;">Kopieren</button>
+                )}', event)" class="btn-standard" style="font-size: 11px;">Copy</button>
           </div>
           <div class="index-stats" style="font-size: 13px; margin-top: 8px;">
             Avg Scan Time: <span style="${avgScanTimeStyle}">${stats.avgScanTime
@@ -13617,10 +14392,10 @@
             <button onclick="toggleQueryText('${query.normalizedStatement.replace(
                     /[^a-zA-Z0-9]/g,
                     ""
-                )}')" class="btn-standard">Mehr Anzeigen</button>
+                )}')" class="btn-standard">Show More</button>
             <button class="btn-standard query-copy-btn" data-query-statement="${encodeURIComponent(
                     query.statement
-                )}">Kopieren</button>
+                )}">Copy</button>
           </div>
         `;
 
@@ -13896,10 +14671,10 @@
 
             if (element.classList.contains("expanded")) {
                 element.classList.remove("expanded");
-                button.textContent = "Mehr Anzeigen";
+                button.textContent = "Show More";
             } else {
                 element.classList.add("expanded");
-                button.textContent = "Ausblenden";
+                button.textContent = "Hide";
             }
         }
 
@@ -13908,7 +14683,7 @@
                 // Brief visual feedback
                 const button = event ? event.target : window.event.target;
                 const originalText = button.textContent;
-                button.textContent = "Kopiert!";
+                button.textContent = "Copied!";
                 button.style.backgroundColor = "#4CAF50";
                 setTimeout(() => {
                     button.textContent = originalText;
@@ -13923,7 +14698,7 @@
                 const button = event.target;
                 const originalText = button.textContent;
                 const originalBg = button.style.backgroundColor;
-                button.textContent = "Kopiert!";
+                button.textContent = "Copied!";
                 button.style.backgroundColor = "#4CAF50";
                 setTimeout(() => {
                     button.textContent = originalText;
@@ -13939,7 +14714,7 @@
                 const button = event.target;
                 const originalText = button.textContent;
                 const originalBg = button.style.backgroundColor;
-                button.textContent = "Kopiert!";
+                button.textContent = "Copied!";
                 button.style.backgroundColor = "#28a745";
                 setTimeout(() => {
                     button.textContent = originalText;
@@ -13971,8 +14746,8 @@
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = "3.11.0";
-        const LAST_UPDATED = "2025-09-01";
+        const APP_VERSION = "3.12.1";
+        const LAST_UPDATED = "2025-09-03";
 
         function getVersionInfo() {
             return {
@@ -14027,10 +14802,10 @@
                     ? "state-online"
                     : state === "offline"
                         ? "state-offline"
-                        : state === "wird erstellt"
+                        : state === "building"
                             ? "state-building"
                             : "state-offline";
-            return `<span class="state-badge ${stateClass}">${state || "unbekannt"
+            return `<span class="state-badge ${stateClass}">${state || "unknown"
                 }</span>`;
         }
 
@@ -14066,7 +14841,7 @@
                         console.warn(
                             `⚠️ Failed to parse plan JSON for request: ${processedRequest.clientContextID ||
                             processedRequest.requestId ||
-                            "unbekannt"
+                            "unknown"
                             }`,
                             e
                         );
@@ -14237,7 +15012,7 @@
         function parseIndexTarget(indexString) {
             const match = indexString.match(/\bON\s+([^\s(;]+)/i);
             if (!match)
-                return { bucket: "unbekannt", scope: "unbekannt", collection: "unbekannt" };
+                return { bucket: "unknown", scope: "unknown", collection: "unknown" };
 
             // Clean up the target string - remove backticks, leading dots, trailing semicolons
             let target = match[1]
@@ -14259,9 +15034,9 @@
             }
 
             return {
-                bucket: parts[0] || "unbekannt",
-                scope: parts[1] || "unbekannt",
-                collection: parts[2] || "unbekannt",
+                bucket: parts[0] || "unknown",
+                scope: parts[1] || "unknown",
+                collection: parts[2] || "unknown",
             };
         }
 
@@ -14458,7 +15233,7 @@
                                 To analyze indexes, run this query in your Couchbase Query Workbench and paste the results in the second textarea above:
                             </p>
                             <div class="sql-query-box">
-                                <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">Abfrage Kopieren</button>
+                                <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">Copy Query</button>
                                 <pre>SELECT 
  s.name,
  s.id,
@@ -14482,7 +15257,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                                 2. Run it in Couchbase Query Workbench<br>
                                 3. Copy the JSON results<br>
                                 4. Paste into the second textarea at the top<br>
-                                5. Click "JSON Analysieren" again
+                                5. Click "Parse JSON" again
                             </p>
                         </div>
                     `;
@@ -14561,7 +15336,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 index.name.includes("primary") || index.name.includes("#primary");
             const lastScan = index.metadata?.last_scan_time || "Never";
             const replica = index.metadata?.num_replica || 0;
-            const state = index.state || "unbekannt";
+            const state = index.state || "unknown";
             const timeSince = getTimeSince(lastScan);
             const lastScanFormatted =
                 lastScan === "Never" ? "Never" : new Date(lastScan).toLocaleString();
@@ -14591,7 +15366,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 }
             }
 
-            const usedBadge = isUsed ? '<span class="used-badge">Verwendet</span>' : "";
+            const usedBadge = isUsed ? '<span class="used-badge">Used</span>' : "";
 
             return `
                 <div class="index-item ${isPrimary ? "primary" : ""}">
@@ -14608,7 +15383,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         <button class="btn-standard copy-btn" onclick="copyIndexDefinition('${index.indexString.replace(
                     /'/g,
                     "\\'"
-                )}', event)">Kopieren</button>
+                )}', event)">Copy</button>
                     </div>
                 </div>
             `;
@@ -14621,7 +15396,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 .then(() => {
                     const button = event.target;
                     const originalText = button.textContent;
-                    button.textContent = "Kopiert!";
+                    button.textContent = "Copied!";
                     button.style.backgroundColor = "#28a745";
                     setTimeout(() => {
                         button.textContent = originalText;
@@ -14657,7 +15432,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 .then(() => {
                     const button = event.target;
                     const originalText = button.textContent;
-                    button.textContent = "Kopiert!";
+                    button.textContent = "Copied!";
                     button.style.backgroundColor = "#28a745";
                     setTimeout(() => {
                         button.textContent = originalText;
@@ -14727,13 +15502,13 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 }
             });
 
-            console.log("✅ Index analysis initialized");
+            console.log(TEXT_CONSTANTS.INDEX_ANALYSIS_INITIALIZED);
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            console.log("🚀 Initializing Couchbase Query Analyzer...");
+            console.log(TEXT_CONSTANTS.INITIALIZING_ANALYZER);
             console.log(`📦 Version: ${APP_VERSION} (Updated: ${LAST_UPDATED})`);
-            console.log("🔧 Features:", getVersionInfo().features.join(", "));
+            console.log(`${TEXT_CONSTANTS.FEATURES}`, getVersionInfo().features.join(", "));
 
             // Initialize theme from localStorage
 
@@ -14745,7 +15520,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 activate: function (event, ui) {
                     // Announce tab change to screen readers
                     const tabName = ui.newTab.find("a").text();
-                    showToast(`Switched to ${tabName}`, "info");
+                    showToast(`${TEXT_CONSTANTS.SWITCHED_TO} ${tabName}`, "info");
                 },
             });
 
@@ -14773,7 +15548,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 });
             }
 
-            console.log("✅ Query Analyzer initialized successfully");
+            console.log(TEXT_CONSTANTS.ANALYZER_INITIALIZED);
 
             // Initialize index analysis
             initializeIndexAnalysis();
@@ -14796,7 +15571,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 },
             };
 
-            console.log("💡 Tip: Type QueryAnalyzer.about() for full app info");
+            console.log(TEXT_CONSTANTS.TIP_ABOUT);
         });
     </script>
 </body>
