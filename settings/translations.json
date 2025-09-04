@@ -35,6 +35,11 @@
       "pt": "Analisar JSON",
       "de": "JSON Analysieren"
     },
+    "⚠️ Filters changed. Click \"Parse JSON\" to apply changes.": {
+      "es": "⚠️ Filtros cambiados. Haga clic en \"Analizar JSON\" para aplicar cambios.",
+      "pt": "⚠️ Filtros alterados. Clique em \"Analisar JSON\" para aplicar alterações.",
+      "de": "⚠️ Filter geändert. Klicken Sie auf \"JSON Analysieren\" um Änderungen anzuwenden."
+    },
     "Copy": {
       "es": "Copiar",
       "pt": "Copiar",

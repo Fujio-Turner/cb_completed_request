@@ -1539,6 +1539,7 @@
             NO_DATA_FOUND: "No data found in the JSON",
             UNEXPECTED_DATA_FORMAT: "Unexpected data format in JSON",
             ERROR_PARSING_JSON: "Error parsing JSON:",
+            FILTERS_CHANGED_REMINDER: "⚠️ Filters changed. Click \"Parse JSON\" to apply changes.",
 
             // Chart and table captions
             SHOWING_TOP: "Showing top",
@@ -12654,8 +12655,86 @@
             });
         }
 
+        // Filter reminder toast notification
+        let filterReminderTimeout = null;
+
+        function showFilterReminder() {
+            // Clear any existing timeout
+            if (filterReminderTimeout) {
+                clearTimeout(filterReminderTimeout);
+            }
+
+            // Remove any existing filter reminder toasts
+            const existingFilterToasts = document.querySelectorAll(".filter-reminder-toast");
+            existingFilterToasts.forEach((toast) => toast.remove());
+
+            // Create the toast
+            const toast = document.createElement("div");
+            toast.className = "filter-reminder-toast";
+            toast.textContent = TEXT_CONSTANTS.FILTERS_CHANGED_REMINDER;
+            toast.style.cssText = `
+                position: fixed;
+                top: -50px;
+                left: 20px;
+                padding: 12px 20px;
+                border-radius: 6px;
+                background: #fff3cd;
+                border: 1px solid #ffeaa7;
+                color: #856404;
+                font-size: 13px;
+                font-weight: 500;
+                z-index: 10001;
+                max-width: 320px;
+                word-wrap: break-word;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transition: all 0.4s ease-out;
+                transform: translateY(0px);
+            `;
+
+            document.body.appendChild(toast);
+
+            // Animate slide down from top
+            setTimeout(() => {
+                toast.style.top = "20px";
+                toast.style.transform = "translateY(0px)";
+            }, 10);
+
+            // Auto-hide after 10 seconds
+            filterReminderTimeout = setTimeout(() => {
+                toast.style.opacity = "0";
+                toast.style.transform = "translateY(-10px)";
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 400);
+                filterReminderTimeout = null;
+            }, 10000);
+        }
+
+        function hideFilterReminder() {
+            // Clear timeout and remove any existing filter reminder toasts
+            if (filterReminderTimeout) {
+                clearTimeout(filterReminderTimeout);
+                filterReminderTimeout = null;
+            }
+            const existingFilterToasts = document.querySelectorAll(".filter-reminder-toast");
+            existingFilterToasts.forEach((toast) => {
+                toast.style.opacity = "0";
+                toast.style.transform = "translateY(-10px)";
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 400);
+            });
+        }
+
         // Parse JSON input - Optimized
         function parseJSON() {
+            // Hide filter reminder when parsing
+            hideFilterReminder();
+            
             // Clear caches at start of new parse to prevent memory leaks
             clearCaches();
 
@@ -13057,25 +13136,9 @@
                 startDateInput.value = toDateTimeLocal(startDate);
             }
 
-            // Trigger filtering with new date range
+            // Show reminder to click Parse JSON
             if (originalRequests.length > 0) {
-                const startDate = startDateInput.value
-                    ? new Date(startDateInput.value)
-                    : null;
-                const endDate = endDateInput.value
-                    ? new Date(endDateInput.value)
-                    : null;
-                const filteredRequests = filterRequestsByDateRange(
-                    originalRequests,
-                    startDate,
-                    endDate
-                );
-
-                updateFilterInfo(originalRequests.length, filteredRequests.length);
-                generateTable(filteredRequests);
-                generateTimeline(filteredRequests);
-                generateAnalysis(filteredRequests);
-                buildIndexQueryFlow(filteredRequests);
+                showFilterReminder();
             }
         }
 
@@ -15531,20 +15594,36 @@ LET bid = CONCAT("", s.bucket_id, ""),
             if (excludeCheckbox) {
                 excludeCheckbox.addEventListener("change", function () {
                     console.log(`System query exclusion changed to: ${this.checked}`);
-                    // Only reprocess if we have JSON data
                     const jsonInput = document.getElementById("json-input").value;
                     if (jsonInput.trim()) {
-                        // Clear existing processed data AND date inputs to force complete reparse
-                        originalRequests = [];
-                        const startDateInput = document.getElementById("start-date");
-                        const endDateInput = document.getElementById("end-date");
-                        startDateInput.value = "";
-                        endDateInput.value = "";
-                        console.log(
-                            "Clearing existing data, date filters, and reprocessing..."
-                        );
-                        parseJSON();
+                        showFilterReminder();
                     }
+                });
+            }
+
+            // Add event listeners for date/time filter controls
+            const startDateInput = document.getElementById("start-date");
+            const endDateInput = document.getElementById("end-date");
+            const sqlFilterInput = document.getElementById("sql-statement-filter");
+
+            if (startDateInput) {
+                startDateInput.addEventListener("change", function () {
+                    console.log(`Start date changed to: ${this.value}`);
+                    showFilterReminder();
+                });
+            }
+
+            if (endDateInput) {
+                endDateInput.addEventListener("change", function () {
+                    console.log(`End date changed to: ${this.value}`);
+                    showFilterReminder();
+                });
+            }
+
+            if (sqlFilterInput) {
+                sqlFilterInput.addEventListener("input", function () {
+                    console.log(`SQL filter changed to: ${this.value}`);
+                    showFilterReminder();
                 });
             }
 
