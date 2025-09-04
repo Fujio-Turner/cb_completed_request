@@ -1517,9 +1517,9 @@
         // Global text constants - modify these for different languages
         const TEXT_CONSTANTS = {
             // Performance and logging messages
-            PARSE_PERFORMANCE: "Rendimiento de análisis:",
+            PARSE_PERFORMANCE: "Parse performance:",
             CACHE_STATS: "Cache stats - parseTime:",
-            ALL_CACHES_CLEARED: "Todos los cachés limpiados para nuevo análisis JSON",
+            ALL_CACHES_CLEARED: "All caches cleared for new JSON parse",
             LAZY_LOADED_TAB: "Lazy loaded",
             CHART_SAMPLING: "Chart sampling: Using",
             TIMELINE_CHARTS_USING: "Timeline charts: Using",
@@ -1527,9 +1527,9 @@
             FILTERED_OUT_EARLY: "filtered out early",
 
             // Error messages
-            JSON_PARSING_ERROR: "Error de análisis JSON:",
+            JSON_PARSING_ERROR: "JSON parsing error:",
             ERROR_PROCESSING_REQUEST: "Error processing request",
-            ERROR_GENERATING_UI: "Error generando interfaz:",
+            ERROR_GENERATING_UI: "Error generating UI:",
             ERROR_LAZY_LOADING: "Error lazy loading",
 
             // User messages and toasts
@@ -1555,22 +1555,22 @@
             // Operator modal and UI elements
             UNKNOWN: "Unknown",
             OPERATOR_LABEL: "Operator:",
-            COPY_STATS: "Copiar Estadísticas",
+            COPY_STATS: "Copy Stats",
             INDEX_USED: "Index Used:",
-            COPY: "Copiar",
-            COPY_ALL: "Copiar Todo",
-            SHOW_MORE: "Mostrar Más",
-            HIDE: "Ocultar",
+            COPY: "Copy",
+            COPY_ALL: "Copy All",
+            SHOW_MORE: "Show More",
+            HIDE: "Hide",
             RESET_ZOOM: "Reset Zoom",
 
             // User interface messages
             COPIED_CLIPBOARD: "Copied to clipboard!",
-            FAILED_COPY_CLIPBOARD: "Error al copiar al portapapeles",
+            FAILED_COPY_CLIPBOARD: "Failed to copy to clipboard",
             COPIED: "Copied!",
             NO_EXECUTION_PLAN: "No execution plan available.",
             NO_OPERATORS_FOUND: "No operators found in the execution plan.",
             SELECT_QUERY_FLOW: "Select a query from the table to view the flow diagram.",
-            STATEMENT_NOT_FOUND: "Declaración no encontrada",
+            STATEMENT_NOT_FOUND: "Statement not found",
 
             // Modal and plan display headers
             VIEW_DETAILED_PLAN: "View Detailed Execution Plan & Indexes/Keys Used",
@@ -1580,7 +1580,7 @@
             KEYS_NOT_EXTRACTED: "Keys could not be extracted from the query",
             
             // Sample queries functionality
-            SHOW_SAMPLE_QUERIES: "Mostrar Consultas de Ejemplo",
+            SHOW_SAMPLE_QUERIES: "Show Sample Queries",
             HIDE_SAMPLE_QUERIES: "Hide Sample Queries",
             REQUEST_DATE: "Request Date",
             STATEMENT: "Statement",
@@ -1588,11 +1588,11 @@
 
             // Console log messages
             COLLECTED_INDEX_DATA: "Collected index data for timing analysis:",
-            INDEX_ANALYSIS_INITIALIZED: "✅ Análisis de índices inicializado",
-            INITIALIZING_ANALYZER: "🚀 Inicializando Analizador de Consultas Couchbase...",
+            INDEX_ANALYSIS_INITIALIZED: "✅ Index analysis initialized",
+            INITIALIZING_ANALYZER: "🚀 Initializing Couchbase Query Analyzer...",
             FEATURES: "🔧 Features:",
-            ANALYZER_INITIALIZED: "✅ Analizador de consultas inicializado exitosamente",
-            TIP_ABOUT: "💡 Consejo: Escriba QueryAnalyzer.about() para información completa de la aplicación",
+            ANALYZER_INITIALIZED: "✅ Query Analyzer initialized successfully",
+            TIP_ABOUT: "💡 Tip: Type QueryAnalyzer.about() for full app info",
 
             // Chart and table labels
             QUERY_DURATION_CHART_TITLE: "Query Duration by Statement Type (Bubble Size = Query Count)",
@@ -1714,26 +1714,26 @@
         <!-- Tab Headers -->
         <ul role="tablist" aria-label="Analysis views">
             <li role="tab">
-                <a href="#dashboard" aria-controls="dashboard" tabindex="0">Panel de Control</a>
+                <a href="#dashboard" aria-controls="dashboard" tabindex="0">Dashboard</a>
             </li>
             <li role="tab">
                 <a href="#insights" aria-controls="insights" tabindex="0">Insights <span
                         class="beta-badge">Beta</span></a>
             </li>
             <li role="tab">
-                <a href="#timeline" aria-controls="timeline" tabindex="0">Línea de Tiempo</a>
+                <a href="#timeline" aria-controls="timeline" tabindex="0">Timeline</a>
             </li>
             <li role="tab">
-                <a href="#analysis" aria-controls="analysis" tabindex="0">Análisis</a>
+                <a href="#analysis" aria-controls="analysis" tabindex="0">Query Groups</a>
             </li>
             <li role="tab">
-                <a href="#every-query" aria-controls="every-query" tabindex="0">Cada Consulta</a>
+                <a href="#every-query" aria-controls="every-query" tabindex="0">Every Query</a>
             </li>
             <li role="tab">
-                <a href="#index-query-flow" aria-controls="index-query-flow" tabindex="0">Flujo de Índice/Consulta</a>
+                <a href="#index-query-flow" aria-controls="index-query-flow" tabindex="0">Index/Query Flow</a>
             </li>
             <li role="tab">
-                <a href="#indexes" aria-controls="indexes" tabindex="0">Índices</a>
+                <a href="#indexes" aria-controls="indexes" tabindex="0">Indexes</a>
             </li>
         </ul>
 
@@ -1753,7 +1753,7 @@
                 <!-- Primary Index(es) Scan Used Chart -->
                 <div class="chart-container height-300 draggable-chart" data-chart-id="primary-scan" data-position="dashboard-2">
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <h3 class="chart-title fixed-height">Uso por Tipo de Índice</h3>
+                    <h3 class="chart-title fixed-height">Index Type Usage</h3>
                     <div class="chart-flex-container">
                         <div class="flex-1 position-relative">
                             <canvas id="primary-scan-chart"></canvas>
@@ -1851,7 +1851,7 @@
 
                 <!-- Scan Consistency Pie Chart -->
                 <div class="chart-card">
-                    <h3 class="chart-card-header">Consistencia de Escaneo de Índice</h3>
+                    <h3 class="chart-card-header">Index Scan Consistency</h3>
                     <div class="chart-card-content">
                         <canvas id="scan-consistency-chart"></canvas>
                     </div>
@@ -3090,6 +3090,14 @@
             normalizeStatementCache.set(statement, normalized);
 
             return normalized;
+        }
+
+        // Check if a query statement has filtering mechanism (WHERE clause or USE KEYS)
+        function hasFilteringMechanism(statement) {
+            if (!statement) return false;
+            const upperStatement = statement.toUpperCase();
+            // Check for WHERE clause or USE KEYS using word boundaries for precise matching
+            return /\bWHERE\b/.test(upperStatement) || /\bUSE\s+KEYS\b/.test(upperStatement);
         }
 
         // Get color class based on percentage
@@ -10806,79 +10814,77 @@
             };
 
             requests.forEach((request) => {
-                const statement = (request.statement || request.preparedText || "").toUpperCase();
+                const statement = request.statement || request.preparedText || "";
+                const upperStatement = statement.toUpperCase();
 
                 // No WHERE
-                if (!statement.includes(" WHERE ")) {
+                if (!hasFilteringMechanism(statement)) {
                     patternCounts["No WHERE"]++;
                 }
 
                 // GROUP BY
-                if (statement.includes(" GROUP BY ")) {
+                if (upperStatement.includes(" GROUP BY ")) {
                     patternCounts["GROUP BY"]++;
                 }
 
                 // ORDER BY
-                if (statement.includes(" ORDER BY ")) {
+                if (upperStatement.includes(" ORDER BY ")) {
                     patternCounts["ORDER BY"]++;
                 }
 
                 // USE INDEX
-                if (statement.includes("USE INDEX")) {
+                if (upperStatement.includes("USE INDEX")) {
                     patternCounts["USE INDEX"]++;
                 }
 
                 // USE KEYS
-                if (statement.includes("USE KEYS")) {
+                if (upperStatement.includes("USE KEYS")) {
                     patternCounts["USE KEYS"]++;
                 }
 
                 // JOIN
-                if (statement.includes(" JOIN ")) {
+                if (upperStatement.includes(" JOIN ")) {
                     patternCounts["JOIN"]++;
                 }
 
                 // NEST
-                if (statement.includes(" NEST ")) {
+                if (upperStatement.includes(" NEST ")) {
                     patternCounts["NEST"]++;
                 }
 
                 // UNNEST
-                if (statement.includes(" UNNEST ")) {
+                if (upperStatement.includes(" UNNEST ")) {
                     patternCounts["UNNEST"]++;
                 }
 
                 // OFFSET
-                if (statement.includes(" OFFSET ")) {
+                if (upperStatement.includes(" OFFSET ")) {
                     patternCounts["OFFSET"]++;
                 }
 
                 // SEARCH
-                if (statement.includes(" SEARCH(")) {
+                if (upperStatement.includes(" SEARCH(")) {
                     patternCounts["SEARCH"]++;
                 }
 
                 // WITH (ensure it's a SQL clause, not a backticked field name)
-                if ((statement.startsWith("WITH ") || statement.includes(" WITH ")) && !statement.includes("`WITH`")) {
+                if ((upperStatement.startsWith("WITH ") || upperStatement.includes(" WITH ")) && !upperStatement.includes("`WITH`")) {
                     patternCounts["WITH"]++;
                 }
 
                 // ARRAY QUERY (has ANY/EVERY + SATISFIES + END)
                 if (
-                    (statement.includes(" ANY ") || statement.includes(" EVERY ") || statement.includes("ANY AND EVERY")) &&
-                    statement.includes(" SATISFIES ") &&
-                    (statement.includes(" END ") || statement.endsWith(" END"))
+                    (upperStatement.includes(" ANY ") || upperStatement.includes(" EVERY ") || upperStatement.includes("ANY AND EVERY")) &&
+                    upperStatement.includes(" SATISFIES ") &&
+                    (upperStatement.includes(" END ") || upperStatement.endsWith(" END"))
                 ) {
                     patternCounts["ARRAY QUERY"]++;
                 }
 
-                // SELECT * (between SELECT and FROM)
-                const selectMatch = statement.match(/SELECT\s+(.+?)\s+FROM/);
-                if (selectMatch) {
-                    const selectPart = selectMatch[1].trim();
-                    if (selectPart === "*" || selectPart.includes(".*")) {
-                        patternCounts["SELECT *"]++;
-                    }
+                // SELECT * (only pure SELECT * queries, not qualified wildcards like c.*)
+                const selectStarMatch = upperStatement.match(/SELECT\s+\*\s+FROM/);
+                if (selectStarMatch) {
+                    patternCounts["SELECT *"]++;
                 }
 
                 // LIKE (ensure it's an operator, not a backticked field name)
@@ -11399,9 +11405,8 @@
                 }
 
                 // Count missing WHERE clauses
-                // Note: statement is already converted to uppercase, so check for uppercase WHERE
-                // Use regex to match WHERE as a complete word with word boundaries
-                if (!/\bWHERE\b/.test(statement)) {
+                // Use consolidated function to check for filtering mechanisms (WHERE or USE KEYS)
+                if (!hasFilteringMechanism(request.statement || request.preparedText)) {
                     noWhereCount++;
                     if (missingWhereClausesSamples.length < 5 && 
                         !missingWhereClausesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
@@ -12587,17 +12592,12 @@
             // Track which tabs have been loaded
             const loadedTabs = new Set();
 
-            // Check if dashboard tab is currently active and load it immediately
-            const activeTab = $('#tabs').tabs('option', 'active');
-            const activeTabId = $('#tabs > div').eq(activeTab).attr('id');
-            
-            if (activeTabId === 'dashboard') {
-                // Generate dashboard charts with FULL dataset (not sampled)
-                generateDashboardCharts(fullDataset || filteredRequests);
-                loadedTabs.add('dashboard');
-                // Initialize drag and drop for dashboard charts
-                setTimeout(() => setupChartDragAndDrop(), 100);
-            }
+            // ALWAYS generate dashboard charts immediately after parsing (not lazy)
+            // This ensures fresh data every time, regardless of which tab is active
+            generateDashboardCharts(fullDataset || filteredRequests);
+            loadedTabs.add('dashboard');
+            // Initialize drag and drop for dashboard charts
+            setTimeout(() => setupChartDragAndDrop(), 100);
             
             // Initialize drag and drop for all charts
             setTimeout(() => setupChartDragAndDrop(), 100);
@@ -12615,10 +12615,8 @@
                     try {
                         switch (tabId) {
                             case 'dashboard':
-                                // Generate dashboard charts with FULL dataset (not sampled)
-                                generateDashboardCharts(fullDataset || filteredRequests);
-                                // Re-initialize drag and drop for dashboard charts
-                                setTimeout(() => setupChartDragAndDrop(), 100);
+                                // Dashboard charts are now always generated immediately after parsing
+                                // No need to regenerate when switching tabs
                                 break;
                             case 'timeline':
                                 // For aggregation-based charts (operations, filter), use full data
@@ -14337,7 +14335,7 @@
             <button onclick="copyIndexName('${index.name.replace(
                     /'/g,
                     "\\'"
-                )}', event)" class="btn-standard" style="font-size: 11px;">Copiar</button>
+                )}', event)" class="btn-standard" style="font-size: 11px;">Copy</button>
           </div>
           <div class="index-stats" style="font-size: 13px; margin-top: 8px;">
             Avg Scan Time: <span style="${avgScanTimeStyle}">${stats.avgScanTime
@@ -14394,10 +14392,10 @@
             <button onclick="toggleQueryText('${query.normalizedStatement.replace(
                     /[^a-zA-Z0-9]/g,
                     ""
-                )}')" class="btn-standard">Mostrar Más</button>
+                )}')" class="btn-standard">Show More</button>
             <button class="btn-standard query-copy-btn" data-query-statement="${encodeURIComponent(
                     query.statement
-                )}">Copiar</button>
+                )}">Copy</button>
           </div>
         `;
 
@@ -15385,7 +15383,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         <button class="btn-standard copy-btn" onclick="copyIndexDefinition('${index.indexString.replace(
                     /'/g,
                     "\\'"
-                )}', event)">Copiar</button>
+                )}', event)">Copy</button>
                     </div>
                 </div>
             `;
