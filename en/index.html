@@ -11051,8 +11051,10 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                 isLargePayload: (request.resultSize || 0) > 50000000 || (request.resultCount || 0) > 10000,
                 // Store metadata for quick access
                 _planMetadata: planMetadata,
+                // Normalize prepared queries: use preparedText as statement if statement doesn't exist
+                statement: request.statement || request.preparedText,
                 // Ensure we have a statement type (derive if not present)
-                statementType: request.statementType || deriveStatementType(request.statement),
+                statementType: request.statementType || deriveStatementType(request.statement || request.preparedText),
             };
 
             return processedRequest;
