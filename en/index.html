@@ -11682,7 +11682,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         let sampleQueries = [];
         let sampleQueriesVisible = false;
 
-        // Extract sample queries from requests for display
+        // Extract sample queries from requests for display - only inefficient index scan queries
         function extractSampleQueries(requests) {
             sampleQueries = [];
             const seenStatements = new Set();
@@ -11693,11 +11693,32 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                 const statement = request.statement || request.preparedText || '';
                 if (!statement || seenStatements.has(statement)) continue;
                 
-                seenStatements.add(statement);
-                sampleQueries.push({
-                    requestTime: request.requestTime,
-                    statement: statement
-                });
+                // Apply the same inefficient index scan criteria as the counter
+                const hasAggregates = /\b(COUNT|AVG|MIN|MAX|SUM)\s*\(/i.test(statement);
+                
+                if (!hasAggregates) {
+                    const resultCount = request.resultCount || 0;
+                    const phaseCounts = request.phaseCounts || {};
+
+                    // Check various types of index scans (same logic as counter)
+                    let totalScanned = 0;
+                    if (phaseCounts.primaryScan) totalScanned += phaseCounts.primaryScan;
+                    if (phaseCounts.indexScan) totalScanned += phaseCounts.indexScan;
+                    if (phaseCounts['primaryScan.GSI']) totalScanned += phaseCounts['primaryScan.GSI'];
+                    if (phaseCounts['indexScan.GSI']) totalScanned += phaseCounts['indexScan.GSI'];
+
+                    // Only include if scanned >= 50,000 and efficiency < 10%
+                    if (totalScanned >= 50000) {
+                        const efficiency = totalScanned > 0 ? (resultCount / totalScanned) * 100 : 0;
+                        if (efficiency < 10) {
+                            seenStatements.add(statement);
+                            sampleQueries.push({
+                                requestTime: request.requestTime,
+                                statement: statement
+                            });
+                        }
+                    }
+                }
             }
             
             // Update the sample queries table
