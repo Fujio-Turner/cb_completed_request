@@ -110,38 +110,61 @@ def check_javascript_syntax():
         
     return []
 
+def strip_scripts_and_inline_js(html: str) -> str:
+    """Remove <script>...</script> blocks and inline JS handler attribute values from HTML."""
+    # Remove script blocks
+    no_scripts = re.sub(r"<script[\s\S]*?>[\s\S]*?</script>", "", html, flags=re.IGNORECASE)
+    # Remove inline event handler attribute values (onclick=..., etc.) by blanking the value only
+    event_attrs = [
+        'onclick','ondblclick','onmousedown','onmouseup','onmouseover','onmouseout','onmousemove',
+        'onkeydown','onkeypress','onkeyup','onload','onunload','onfocus','onblur','onchange',
+        'oninput','onsubmit','onreset','onselect','onwheel','oncontextmenu','ontouchstart',
+        'ontouchend','ontouchmove','onpointerdown','onpointerup','onpointermove'
+    ]
+    pattern = r"(?i)(?:" + "|".join(event_attrs) + r")\s*=\s*(?:\"[\s\S]*?\"|'[\s\S]*?')"
+    no_inline = re.sub(pattern, lambda m: m.group(0).split('=')[0] + '=""', no_scripts)
+    return no_inline
+
+
 def check_localization():
-    """Check localization completeness"""
+    """Check localization completeness (HTML-only checks; JS content is ignored by policy)"""
     print("🔍 Checking Localization...")
     issues = []
-    
-    # Check for English text in non-English files
-    english_patterns = [
-        ("Copy buttons", 'grep -n "Copy</button>" de/index.html es/index.html pt/index.html 2>/dev/null'),
-        ("English button text", 'grep -n ">Copy<\\|>Show<\\|>Hide<\\|>Reset<" de/index.html es/index.html pt/index.html 2>/dev/null'),
-        ("English tab headers", 'grep -n ">Dashboard<\\|>Timeline<\\|>Analysis<" de/index.html es/index.html pt/index.html 2>/dev/null')
+
+    # Files to check
+    lang_files = [
+        ("German", "de/index.html", ["Instrumententafel", "Zeitverlauf", "Abfragegruppen", "Jede Abfrage", "Index/Abfrage-Fluss", "Indizes"]),
+        ("Spanish", "es/index.html", ["Panel de Control", "Línea de Tiempo", "Grupos de Consulta", "Cada Consulta", "Flujo de Índice/Consulta", "Índices"]),
+        ("Portuguese", "pt/index.html", ["Painel de Controle", "Linha do Tempo", "Grupos de Consulta", "Cada Consulta", "Fluxo de Índice/Consulta", "Índices"]),
     ]
-    
-    for pattern_name, cmd in english_patterns:
-        output, returncode = run_command(cmd, quiet=True)
-        if returncode == 0 and output:
-            issues.append(f"English text found in non-English files ({pattern_name}): {len(output.split())} instances")
-    
-    # Check for translated tab headers
-    languages = [
-        ("German", "de/index.html", ["Instrumententafel", "Zeitverlauf", "Analysieren"]),
-        ("Spanish", "es/index.html", ["Panel de Control", "Línea de Tiempo", "Análisis"]),
-        ("Portuguese", "pt/index.html", ["Painel de Controle", "Linha do Tempo", "Análise"])
+
+    # Patterns to flag (HTML-only)
+    html_english_markers = [
+        ("Copy buttons", r"Copy</button>"),
+        ("English button text", r">(Copy|Show|Hide|Reset)<"),
+        ("English tab headers", r">(Dashboard|Timeline|Analysis)<"),
     ]
-    
-    for lang_name, file_path, expected_terms in languages:
-        if os.path.exists(file_path):
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-                found_terms = [term for term in expected_terms if term in content]
-                if len(found_terms) < len(expected_terms):
-                    issues.append(f"{lang_name} translations incomplete: missing {set(expected_terms) - set(found_terms)}")
-    
+
+    for lang_name, file_path, expected_tabs in lang_files:
+        if not os.path.exists(file_path):
+            continue
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        # Remove scripts and inline JS before scanning
+        html_only = strip_scripts_and_inline_js(content)
+
+        # Check English markers in HTML-only content
+        html_issues = 0
+        for marker_name, pattern in html_english_markers:
+            if re.search(pattern, html_only):
+                html_issues += 1
+                issues.append(f"English text found in {lang_name} ({marker_name})")
+
+        # Check translated tab headers (in full content to be safe)
+        found_terms = [term for term in expected_tabs if term in content]
+        if len(found_terms) < len(expected_tabs):
+            issues.append(f"{lang_name} translations incomplete: missing {set(expected_tabs) - set(found_terms)}")
+
     return issues
 
 def check_html_structure():

@@ -49,7 +49,7 @@
 
 ### ✅ release_notes_v3_12_0.py
 **Version-specific release notes**
-- Generated release notes for v3.12.0
+- Example module containing sample release notes content
 
 ### ✅ RELEASE_WORK_CHECK.py
 **Release checklist validation**

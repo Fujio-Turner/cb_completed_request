@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Release Notes for v3.12.0
+Release Notes for v3.12.2
 """
 
 from add_release_notes import add_release_notes_to_file
 
 def main():
-    """Add release notes for v3.12.0"""
+    """Add release notes for v3.12.2"""
     
-    # Release notes for v3.12.0
+    # Release notes for v3.12.2
     release_notes_v3_12_0 = {
         'en': """#### 🚀 New Features
 - **Timeout-Prone Queries Analysis**: Added comprehensive timeout detection and analysis for queries approaching or exceeding the 75-second threshold
@@ -100,7 +100,7 @@ def main():
     ]
     
     success_count = 0
-    print(f"📝 Adding Release Notes for Version 3.12.0")
+    print(f"📝 Adding Release Notes for Version 3.12.2")
     print("=" * 50)
     
     for filepath, lang_code, lang_name in files:
@@ -108,7 +108,7 @@ def main():
         content = release_notes_v3_12_0.get(lang_code, release_notes_v3_12_0.get('en', ''))
         
         # Use manual approach for localized files with different section names
-        if add_release_notes_to_file(filepath, "3.12.0", "September 3, 2025", content, lang_code):
+        if add_release_notes_to_file(filepath, "3.12.2", "September 6, 2025", content, lang_code):
             success_count += 1
     
     if success_count == len(files):

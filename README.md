@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.12.1
+# Couchbase Slow Query Analysis Tool v3.12.2
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](de/README.de.md) | [🇪🇸 Español](es/README.es.md) | [🇵🇹 Português](pt/README.pt.md)
 
@@ -37,7 +37,7 @@ Go to the folder where you downloaded the HTML file and open it directly in any 
 Run this query in Couchbase Query Workbench or cbq:
 
 ```sql
-SELECT *, meta().plan FROM system:completed_requests LIMIT 2000;
+SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;
 ```
 
 **Notes**: 
@@ -159,6 +159,11 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 
 ## Release Notes
 
+### Version 3.12.2 (September 6, 2025)
+- Bug fixes and quality improvements across the analyzer UI and documentation
+- Closes #84, #82, #79, #78, #75, #58
+
+
 ### Version 3.12.1 (September 3, 2025)
 #### 🔧 Performance & Optimization
 - **CSS Minification**: Optimized CSS for improved load times and performance
@@ -195,7 +200,7 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 - **JavaScript Housekeeping**: Code cleanup and optimization for better maintainability
 - **Enhanced Validation**: Improved error handling and data validation processes
 - **Performance Monitoring**: Better tracking and logging of analysis performance metrics
-### Version 3.11.0 (September 1, 2025)
+### Version 3.11 (September 1, 2025)
 #### 🚀 New Features
 - **Enhanced Timeline Visualization**: Added new index/doc chart functionality for comprehensive performance analysis
 - **KernTime Analysis**: Implemented kernTime vs ElapsedTime comparison charts for CPU utilization insights

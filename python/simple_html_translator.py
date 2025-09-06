@@ -30,7 +30,7 @@ def translate_basic_html_content(file_path, language_code):
     # Basic HTML translations - add more as needed
     basic_translations = {
         'de': {
-            '<title>Query Analyzer v3.12.0</title>': '<title>Abfrage-Analyzer v3.12.0</title>',
+            '<title>Query Analyzer v3.12.2</title>': '<title>Abfrage-Analyzer v3.12.2</title>',
             '>Dashboard</a>': '>Instrumententafel</a>',
             '>Timeline</a>': '>Zeitverlauf</a>',
             '>Query Groups</a>': '>Abfrage-Gruppen</a>',
@@ -41,7 +41,7 @@ def translate_basic_html_content(file_path, language_code):
             'To:</label>': 'Bis:</label>',
         },
         'es': {
-            '<title>Query Analyzer v3.12.0</title>': '<title>Analizador de Consultas v3.12.0</title>',
+            '<title>Query Analyzer v3.12.2</title>': '<title>Analizador de Consultas v3.12.2</title>',
             '>Dashboard</a>': '>Panel de Control</a>',
             '>Timeline</a>': '>Línea de Tiempo</a>',
             '>Query Groups</a>': '>Grupos de Consultas</a>',
@@ -52,7 +52,7 @@ def translate_basic_html_content(file_path, language_code):
             'To:</label>': 'Hasta:</label>',
         },
         'pt': {
-            '<title>Query Analyzer v3.12.0</title>': '<title>Analisador de Consultas v3.12.0</title>',
+            '<title>Query Analyzer v3.12.2</title>': '<title>Analisador de Consultas v3.12.2</title>',
             '>Dashboard</a>': '>Painel de Controle</a>',
             '>Timeline</a>': '>Linha do Tempo</a>',
             '>Query Groups</a>': '>Grupos de Consultas</a>',

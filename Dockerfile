@@ -2,7 +2,7 @@
 FROM nginx:alpine
 
 # Add version and metadata labels
-LABEL version="3.12.1"
+LABEL version="3.12.2"
 LABEL description="Couchbase Slow Query Analysis Tool"
 LABEL maintainer="Fujio Turner"
 

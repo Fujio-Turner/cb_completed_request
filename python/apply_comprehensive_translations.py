@@ -101,7 +101,11 @@ def is_protected_context(content, start_pos, end_pos):
     return False
 
 def apply_comprehensive_translations(file_path, language_code, translations):
-    """Apply all translations from JSON file safely"""
+    """Apply all translations from JSON file safely
+
+    IMPORTANT: Only translate HTML (outside <script>...</script> blocks).
+    JavaScript must remain intact, except for explicitly managed TEXT_CONSTANTS (handled elsewhere).
+    """
     
     print(f"🔄 Applying comprehensive {language_code.upper()} translations to {file_path}")
     print("=" * 60)
@@ -113,6 +117,45 @@ def apply_comprehensive_translations(file_path, language_code, translations):
         original_content = content
         changes_made = 0
         skipped_protected = 0
+        skipped_in_scripts = 0
+        
+        # Precompute protected ranges to fully avoid modifying JavaScript:
+        # 1) <script>...</script> blocks
+        # 2) Inline JS event handler attribute values (onclick=, oninput=, ...)
+        # 3) href="javascript:..." attribute values
+        protected_ranges = []
+        # 1) script blocks
+        for m in re.finditer(r"<script[\s\S]*?>[\s\S]*?</script>", content, flags=re.IGNORECASE):
+            protected_ranges.append((m.start(), m.end()))
+        # 2) inline event handler attributes
+        event_attrs = [
+            'onclick','ondblclick','onmousedown','onmouseup','onmouseover','onmouseout','onmousemove',
+            'onkeydown','onkeypress','onkeyup','onload','onunload','onfocus','onblur','onchange',
+            'oninput','onsubmit','onreset','onselect','onwheel','oncontextmenu','ontouchstart',
+            'ontouchend','ontouchmove','onpointerdown','onpointerup','onpointermove'
+        ]
+        # Match attr values with either single or double quotes
+        event_pattern = r"(?i)\s(?:" + '|'.join(event_attrs) + r")\s*=\s*(?:\"[\s\S]*?\"|'[\s\S]*?')"
+        for m in re.finditer(event_pattern, content):
+            # Find the start of the quoted value
+            attr_text = m.group(0)
+            # Determine quote char and compute inner range
+            quote_char = '"' if '"' in attr_text else "'"
+            # Compute absolute positions of the value within the file content
+            value_match = re.search(quote_char + r"([\s\S]*?)" + quote_char, attr_text)
+            if value_match:
+                value_start = m.start() + value_match.start(1) + 1  # +1 to move past opening quote
+                value_end = m.start() + value_match.end(1) + 1      # end index exclusive
+                protected_ranges.append((value_start-1, value_end+1))  # include quotes conservatively
+        # 3) href="javascript:..."
+        for m in re.finditer(r"(?i)\shref\s*=\s*(\"javascript:[^\"]*\"|'javascript:[^']*')", content):
+            protected_ranges.append((m.start(1), m.end(1)))
+        
+        def in_protected_ranges(pos, end_pos):
+            for s, e in protected_ranges:
+                if pos >= s and end_pos <= e:
+                    return True
+            return False
         
         # Get UI strings for this language
         ui_strings = translations.get("ui_strings", {})
@@ -137,36 +180,56 @@ def apply_comprehensive_translations(file_path, language_code, translations):
                 if pos == -1:
                     break
                 
-                # Check if this occurrence is in a protected context
                 end_pos = pos + len(english_text)
+                
+                # Skip any occurrence inside protected ranges (<script>, inline JS event handlers, href="javascript:")
+                if in_protected_ranges(pos, end_pos):
+                    skipped_in_scripts += 1
+                    start = end_pos
+                    continue
+                
+                # Check if this occurrence is in a protected context
                 if is_protected_context(content, pos, end_pos):
                     skipped_protected += 1
                     start = end_pos
                     continue
                 
-                # Apply translation
+                # Apply translation (HTML-only)
                 content = content[:pos] + translated_text + content[end_pos:]
                 changes_made += 1
                 print(f"  ✅ {english_text[:40]}... → {translated_text[:40]}...")
                 
                 # Update start position for next search
                 start = pos + len(translated_text)
-        
-        # Write back if changes were made
-        if changes_made > 0:
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
+
+        # Explicitly ensure tab headers are localized in anchors
+        tabs = {
+            "#dashboard": "Dashboard",
+            "#timeline": "Timeline",
+            "#analysis": "Query Groups",
+            "#every-query": "Every Query",
+            "#index-query-flow": "Index/Query Flow",
+            "#indexes": "Indexes",
+        }
+        for href, en_label in tabs.items():
+            tr_map = ui_strings.get(en_label, {})
+            if language_code in tr_map:
+                label = tr_map[language_code]
+                # Replace inner text of anchor with this href using a function to avoid backreference issues
+                pattern = re.compile(rf"(<a[^>]+href=\"{re.escape(href)}\"[^>]*>)(.*?)(</a>)", flags=re.IGNORECASE | re.DOTALL)
+                content = pattern.sub(lambda m: m.group(1) + label + m.group(3), content)
+
+        # Write back if changes were made (or if anchors were updated implicitly)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
             
             print(f"\n📊 Translation Summary:")
             print(f"   ✅ Translations applied: {changes_made}")
             print(f"   🛡️ Protected (skipped): {skipped_protected}")
+            print(f"   🧪 Skipped inside <script>: {skipped_in_scripts}")
             print(f"   📁 File: {file_path}")
             
             return True
-        else:
-            print(f"  ℹ️ No translations needed in {file_path}")
-            return False
-            
     except Exception as e:
         print(f"  ❌ Error processing {file_path}: {e}")
         return False
