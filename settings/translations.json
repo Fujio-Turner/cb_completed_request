@@ -375,20 +375,70 @@
       "pt": "Original",
       "de": "Original"
     },
+    "Original (full data)": {
+      "es": "Original (todos los datos)",
+      "pt": "Original (todos os dados)",
+      "de": "Original (alle Daten)"
+    },
     "1 Day": {
       "es": "1 Día",
       "pt": "1 Dia",
       "de": "1 Tag"
+    },
+    "Last 1 Day": {
+      "es": "Último 1 día",
+      "pt": "Último 1 dia",
+      "de": "Letzter 1 Tag"
     },
     "1 Hour": {
       "es": "1 Hora",
       "pt": "1 Hora",
       "de": "1 Stunde"
     },
+    "Last 1 Hour": {
+      "es": "Última 1 hora",
+      "pt": "Última 1 hora",
+      "de": "Letzte 1 Stunde"
+    },
     "1 Week": {
       "es": "1 Semana",
       "pt": "1 Semana",
       "de": "1 Woche"
+    },
+    "Last 1 Week": {
+      "es": "Última 1 semana",
+      "pt": "Última 1 semana",
+      "de": "Letzte 1 Woche"
+    },
+    "Presets": {
+      "es": "Preajustes",
+      "pt": "Predefinições",
+      "de": "Voreinstellungen"
+    },
+    "Sets From/To automatically": {
+      "es": "Establece Desde/Hasta automáticamente",
+      "pt": "Define De/Até automaticamente",
+      "de": "Setzt Von/Bis automatisch"
+    },
+    "SQL++ Statement Filter": {
+      "es": "Filtro de Declaración SQL++",
+      "pt": "Filtro de Declaração SQL++",
+      "de": "SQL++ Anweisungsfilter"
+    },
+    "e.g., FROM bucket WHERE type = 'order'": {
+      "es": "p. ej., FROM bucket WHERE type = 'order'",
+      "pt": "ex.: FROM bucket WHERE type = 'order'",
+      "de": "z. B., FROM bucket WHERE type = 'order'"
+    },
+    "Enter part of a SQL++ statement to filter results (contains match)": {
+      "es": "Ingrese parte de una declaración SQL++ para filtrar resultados (coincidencia por contiene)",
+      "pt": "Digite parte de uma declaração SQL++ para filtrar resultados (correspondência por contém)",
+      "de": "Geben Sie einen Teil einer SQL++-Anweisung ein, um Ergebnisse zu filtern (Enthält-Abgleich)"
+    },
+    "Exclude System": {
+      "es": "Excluir Sistema",
+      "pt": "Excluir Sistema",
+      "de": "System ausschließen"
     },
     "By Hour": {
       "es": "Por Hora",
