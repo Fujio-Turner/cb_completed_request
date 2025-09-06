@@ -845,6 +845,11 @@
       "pt": "Operações LIKE Ineficientes",
       "de": "Ineffiziente LIKE-Operationen"
     },
+    "SELECT * Usage": {
+      "es": "Uso de SELECT *",
+      "pt": "Uso de SELECT *",
+      "de": "Verwendung von SELECT *"
+    },
     "Large Payload Streaming": {
       "es": "Transmisión de Carga Útil Grande",
       "pt": "Streaming de Payload Grande",
@@ -1029,6 +1034,16 @@
       "es": ", impidiendo el uso de índices y causando escaneos completos.",
       "pt": ", impedindo o uso de índices e causando varreduras completas.",
       "de": ", verhindern die Indexnutzung und verursachen vollständige Scans."
+    },
+    "use SELECT * which returns entire documents and can increase network I/O and memory.": {
+      "es": "usan SELECT * que devuelve documentos completos y puede aumentar el E/S de red y la memoria.",
+      "pt": "usam SELECT * que retorna documentos inteiros e pode aumentar E/S de rede e memória.",
+      "de": "verwenden SELECT *, was gesamte Dokumente zurückgibt und Netzwerk-I/O sowie Speicher erhöhen kann."
+    },
+    "Prefer selecting only needed fields.": {
+      "es": "Prefiera seleccionar solo los campos necesarios.",
+      "pt": "Prefira selecionar apenas os campos necessários.",
+      "de": "Bevorzugen Sie die Auswahl nur der benötigten Felder."
     },
     "with avg size:": {
       "es": "con tamaño promedio:",

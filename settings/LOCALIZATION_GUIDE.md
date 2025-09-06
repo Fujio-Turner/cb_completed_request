@@ -256,6 +256,27 @@ console.log("Timeline charts: Using " + count + " of " + total + " requests for 
 console.log(`${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${count} ${TEXT_CONSTANTS.OF_TOTAL} ${total} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
 ```
 
+---
+
+## New Strings Checklist (v3.12.1)
+
+A new insight was added under "Query Pattern Analysis" for SELECT *. To ensure full localization in the next release, add/update these UI strings in `settings/translations.json`:
+
+- "SELECT * Usage"
+- "use SELECT * which returns entire documents and can increase network I/O and memory."
+- "Prefer selecting only needed fields."
+
+Notes:
+- We follow the existing pattern of segmenting long sentences (like the LIKE insight) so dynamic counts like `<span id="select-star-count">0 queries</span>` remain intact while the descriptive parts translate.
+- The initial button label uses "Show Sample Queries" which is already present in translations.json and will toggle via TEXT_CONSTANTS at runtime.
+
+Validation (when you’re ready to translate):
+- Apply: `python3 python/apply_comprehensive_translations.py es|de|pt`
+- Validate JS: `python3 python/validate_js_syntax.py`
+- Validate HTML: `python3 python/validate_html_attributes.py`
+
+---
+
 ### **Step 4: RECOMMENDED Complete Translation Process**
 
 **🚀 SYSTEMATIC APPROACH**: Use this proven method to apply all 900+ translations from translations.json:

@@ -729,6 +729,31 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                                 </div>
                             </div>
                         </div>
+
+                        <div class="insight-item">
+                            <h4 class="insight-title" onclick="toggleInsight('select-star-usage')">SELECT * Usage<span class="live-badge">Live</span></h4>
+                            <div class="insight-content" id="select-star-usage-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="select-star-count">0 queries</span> use SELECT * which returns entire documents and can increase network I/O and memory. Prefer selecting only needed fields.
+                                </p>
+
+                                <button id="toggle-select-star-usage-sample-queries-btn" onclick="toggleInsightSampleQueries('select-star-usage')" class="btn-standard">
+                                    <span id="select-star-usage-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="select-star-usage-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="select-star-usage-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -9888,6 +9913,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
             let largeResultsCount = 0;
             let largeResultsTotalMB = 0;
             let inefficientLikeCount = 0;
+            let selectStarCount = 0;
             let inefficientIndexScansCount = 0;
             let highMemoryCount = 0;
             let highMemoryTotalGB = 0;
@@ -9904,6 +9930,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
             let slowUseKeyQueriesSamples = [];
             let largeResultSetQueriesSamples = [];
             let inefficientLikeOperationsSamples = [];
+            let selectStarUsageSamples = [];
             let highMemoryUsageSamples = [];
             let highKernelTimeQueriesSamples = [];
             let largePayloadStreamingSamples = [];
@@ -10004,6 +10031,19 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                                 statement: request.statement || request.preparedText
                             });
                         }
+                    }
+                }
+
+                // Count SELECT * usage (pure SELECT * FROM, not qualified wildcards like c.*)
+                const selectStarMatch = statement.match(/SELECT\s+\*\s+FROM/);
+                if (selectStarMatch) {
+                    selectStarCount++;
+                    if (selectStarUsageSamples.length < 5 &&
+                        !selectStarUsageSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        selectStarUsageSamples.push({
+                            requestTime: request.requestTime,
+                            statement: request.statement || request.preparedText
+                        });
                     }
                 }
 
@@ -10235,6 +10275,13 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                 inefficientLikeCountElement.className = inefficientLikeCount > 0 ? "highlight-number" : "";
             }
 
+            // Update the SELECT * usage insight
+            const selectStarCountElement = document.getElementById("select-star-count");
+            if (selectStarCountElement) {
+                selectStarCountElement.textContent = `${selectStarCount} queries`;
+                selectStarCountElement.className = selectStarCount > 0 ? "highlight-number" : "";
+            }
+
             // Update the high memory usage insight
             const highMemoryCountElement = document.getElementById("high-memory-count");
             const avgMemoryUsageElement = document.getElementById("avg-memory-usage");
@@ -10381,6 +10428,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
             updateInsightSampleQueries('slow-use-key-queries', slowUseKeyQueriesSamples);
             updateInsightSampleQueries('large-result-set-queries', largeResultSetQueriesSamples);
             updateInsightSampleQueries('inefficient-like-operations', inefficientLikeOperationsSamples);
+            updateInsightSampleQueries('select-star-usage', selectStarUsageSamples);
             updateInsightSampleQueries('high-memory-usage', highMemoryUsageSamples);
             updateInsightSampleQueries('high-kernel-time-queries', highKernelTimeQueriesSamples);
             updateInsightSampleQueries('large-payload-streaming', largePayloadStreamingSamples);
@@ -10551,6 +10599,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                 { id: 'slow-use-key-queries', checkElement: 'slow-use-keys-count' },
                 { id: 'missing-where-clauses', checkElement: 'missing-where-count' },
                 { id: 'inefficient-like-operations', checkElement: 'inefficient-like-count' },
+                { id: 'select-star-usage', checkElement: 'select-star-count' },
                 { id: 'large-result-set-queries', checkElement: 'large-results-count' },
                 { id: 'large-payload-streaming', checkElement: 'large-payload-count' },
                 { id: 'timeout-prone-queries', checkElements: ['approaching-timeout-count', 'actual-timeout-count'] }
