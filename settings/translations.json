@@ -850,6 +850,11 @@
       "pt": "Uso de SELECT *",
       "de": "Verwendung von SELECT *"
     },
+    "ORDER BY / LIMIT / OFFSET Index Over-Scan": {
+      "es": "ORDER BY / LIMIT / OFFSET Sobre-escaneo del Índice",
+      "pt": "ORDER BY / LIMIT / OFFSET Sobre-varredura do Índice",
+      "de": "ORDER BY / LIMIT / OFFSET Index-Über-Scan"
+    },
     "Large Payload Streaming": {
       "es": "Transmisión de Carga Útil Grande",
       "pt": "Streaming de Payload Grande",
@@ -1049,6 +1054,26 @@
       "es": "con tamaño promedio:",
       "pt": "com tamanho médio:",
       "de": "mit durchschnittlicher Größe:"
+    },
+    "with ORDER BY + LIMIT + OFFSET scanned 10,000+ items from the index.": {
+      "es": "con ORDER BY + LIMIT + OFFSET escanearon 10.000+ elementos del índice.",
+      "pt": "com ORDER BY + LIMIT + OFFSET verificaram mais de 10.000 itens do índice.",
+      "de": "mit ORDER BY + LIMIT + OFFSET wurden über 10.000 Elemente aus dem Index gescannt."
+    },
+    "Avg scanned per query:": {
+      "es": "Promedio escaneado por consulta:",
+      "pt": "Média verificada por consulta:",
+      "de": "Durchschnittlich gescannte Elemente pro Abfrage:"
+    },
+    "Consider an index that satisfies the ORDER BY to only scan needed rows/items": {
+      "es": "Considere un índice que satisfaga el ORDER BY para escanear solo las filas/elementos necesarios",
+      "pt": "Considere um índice que atenda ao ORDER BY para varrer apenas as linhas/itens necessários",
+      "de": "Erwägen Sie einen Index, der ORDER BY erfüllt, um nur die benötigten Zeilen/Einträge zu scannen"
+    },
+    "To see identified index(es) go to the \"Index/Query Flow\" tab.": {
+      "es": "Para ver los índices identificados, vaya a la pestaña \"Flujo de Índice/Consulta\".",
+      "pt": "Para ver os índices identificados, vá para a aba \"Fluxo Índice/Consulta\".",
+      "de": "Um die identifizierten Index(e) zu sehen, gehen Sie zum Tab \"Index/Abfragefluss\"."
     },
     "with": {
       "es": "con",

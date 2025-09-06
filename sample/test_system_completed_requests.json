@@ -1767,5 +1767,155 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-23T11:15:20.013Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"1.67µs\",\"servTime\":\"9.34µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:analytics\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"0.987µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":2500000,\"#itemsOut\":0,\"#phaseSwitches\":25000,\"execTime\":\"75.900s\",\"kernTime\":\"75.1s\",\"servTime\":\"74.8s\"},\"index\":\"idx_analytics_confidence\",\"keyspace\":\"analytics\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"null\",\"inclusion\":0,\"low\":\"0.5\"}]}],\"using\":\"gsi\"}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "pagination-overfetch-orders-1",
+      "cpuTime": "120.456ms",
+      "elapsedTime": "320.123ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 12000,
+        "fetch": 50
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "order": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "10.123µs",
+        "instantiate": "6.789µs",
+        "parse": "200.456µs",
+        "plan": "80.123µs",
+        "indexScan": "120.000ms",
+        "fetch": "150.000ms",
+        "project": "20.000ms",
+        "run": "318.912ms",
+        "stream": "12.345ms"
+      },
+      "remoteAddr": "127.0.0.1:51000",
+      "requestId": "pagination-overfetch-orders-1",
+      "requestTime": "2025-08-10T10:00:00.123Z",
+      "resultCount": 50,
+      "resultSize": 24576,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "319.987ms",
+      "state": "completed",
+      "statement": "SELECT orderId, customerId, total FROM `orders` WHERE status = 'shipped' ORDER BY orderDate DESC LIMIT 50 OFFSET 100",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 8192,
+      "userAgent": "node-couchbase/4.2.0",
+      "users": "local:order_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-10T10:00:00.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.00µs\",\"servTime\":\"9.00µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:orders\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"3.50µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":12000,\"#itemsOut\":50,\"#phaseSwitches\":24000,\"execTime\":\"120.000ms\",\"kernTime\":\"110.000ms\",\"servTime\":\"105.000ms\"},\"index\":\"idx_orders_orderDate\",\"keyspace\":\"orders\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":50,\"#itemsOut\":50,\"#phaseSwitches\":100,\"execTime\":\"150.000ms\",\"kernTime\":\"140.000ms\",\"servTime\":\"135.000ms\"},\"keyspace\":\"orders\",\"namespace\":\"default\"},{\"#operator\":\"Order\",\"#stats\":{\"#itemsIn\":50,\"#itemsOut\":50,\"#phaseSwitches\":75,\"execTime\":\"10.000ms\"},\"sort_terms\":[{\"desc\":true,\"expr\":\"(`orders`.`orderDate`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":50,\"#itemsOut\":50,\"#phaseSwitches\":51,\"execTime\":\"12.345ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "pagination-overfetch-products-1",
+      "cpuTime": "98.123ms",
+      "elapsedTime": "275.789ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 15000,
+        "fetch": 20
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "order": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "8.456µs",
+        "instantiate": "5.678µs",
+        "parse": "150.234µs",
+        "plan": "70.456µs",
+        "indexScan": "100.000ms",
+        "fetch": "150.000ms",
+        "project": "15.000ms",
+        "run": "274.234ms",
+        "stream": "10.123ms"
+      },
+      "remoteAddr": "127.0.0.1:51001",
+      "requestId": "pagination-overfetch-products-1",
+      "requestTime": "2025-08-10T10:05:00.123Z",
+      "resultCount": 20,
+      "resultSize": 12288,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "275.000ms",
+      "state": "completed",
+      "statement": "SELECT name, price FROM `products` WHERE category = 'electronics' ORDER BY price ASC LIMIT 20 OFFSET 200",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 6144,
+      "userAgent": "python-couchbase/4.1.0",
+      "users": "local:catalog_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-10T10:05:00.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"1.90µs\",\"servTime\":\"8.50µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:products\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"3.10µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":15000,\"#itemsOut\":20,\"#phaseSwitches\":30000,\"execTime\":\"100.000ms\",\"kernTime\":\"92.000ms\",\"servTime\":\"90.000ms\"},\"index\":\"idx_products_price\",\"keyspace\":\"products\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":20,\"#itemsOut\":20,\"#phaseSwitches\":40,\"execTime\":\"150.000ms\",\"kernTime\":\"140.000ms\",\"servTime\":\"138.000ms\"},\"keyspace\":\"products\",\"namespace\":\"default\"},{\"#operator\":\"Order\",\"#stats\":{\"#itemsIn\":20,\"#itemsOut\":20,\"#phaseSwitches\":30,\"execTime\":\"8.000ms\"},\"sort_terms\":[{\"expr\":\"(`products`.`price`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":20,\"#itemsOut\":20,\"#phaseSwitches\":21,\"execTime\":\"10.123ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "pagination-overfetch-users-1",
+      "cpuTime": "150.000ms",
+      "elapsedTime": "400.000ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "primaryScan": 20000,
+        "fetch": 100
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "primaryScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "order": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "12.000µs",
+        "instantiate": "7.000µs",
+        "parse": "220.000µs",
+        "plan": "90.000µs",
+        "primaryScan": "200.000ms",
+        "fetch": "180.000ms",
+        "project": "10.000ms",
+        "run": "398.000ms",
+        "stream": "12.000ms"
+      },
+      "remoteAddr": "127.0.0.1:51002",
+      "requestId": "pagination-overfetch-users-1",
+      "requestTime": "2025-08-10T10:10:00.123Z",
+      "resultCount": 100,
+      "resultSize": 61440,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "399.000ms",
+      "state": "completed",
+      "statement": "SELECT u.userId, u.name FROM `users` u WHERE u.active = true ORDER BY u.createdDate DESC LIMIT 100 OFFSET 500",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 12288,
+      "userAgent": "java-couchbase/3.5.0",
+      "users": "local:user_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-10T10:10:00.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.50µs\",\"servTime\":\"9.50µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:users\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"4.00µs\"},\"~children\":[{\"#operator\":\"PrimaryScan3\",\"#stats\":{\"#itemsIn\":20000,\"#itemsOut\":100,\"#phaseSwitches\":40000,\"execTime\":\"200.000ms\",\"kernTime\":\"190.000ms\",\"servTime\":\"185.000ms\"},\"index\":\"def_primary\",\"keyspace\":\"users\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":100,\"#itemsOut\":100,\"#phaseSwitches\":200,\"execTime\":\"180.000ms\",\"kernTime\":\"170.000ms\",\"servTime\":\"168.000ms\"},\"keyspace\":\"users\",\"namespace\":\"default\"},{\"#operator\":\"Order\",\"#stats\":{\"#itemsIn\":100,\"#itemsOut\":100,\"#phaseSwitches\":150,\"execTime\":\"8.000ms\"},\"sort_terms\":[{\"desc\":true,\"expr\":\"(`u`.`createdDate`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":100,\"#itemsOut\":100,\"#phaseSwitches\":101,\"execTime\":\"12.000ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
   }
  ]

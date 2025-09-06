@@ -487,6 +487,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                                         <span class="highlight-number" id="slow-primary-indexes">0</span> #primary
                                         indexes with an avg scan time of 2+ seconds
                                     </div>
+                                    To see identified index(es) go to the "Index/Query Flow" tab.
                                 </div>
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
@@ -521,6 +522,39 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                                         Review your indexing strategy - create selective secondary indexes <a
                                             href="https://cb.fuj.io/analysis_hub.html#optimizer"
                                             class="insight-link">Learn more</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <h4 class="insight-title" onclick="toggleInsight('pagination-index-overfetch')">ORDER BY / LIMIT / OFFSET Index Over-Scan<span class="beta-badge">Beta</span></h4>
+                            <div class="insight-content" id="pagination-index-overfetch-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="pagination-overfetch-count">0 queries</span> with `ORDER BY` + `LIMIT ` + `OFFSET ` scanned an Avg of <span id="pagination-overfetch-avg-items">0</span> items from the index(es).
+                                </p>
+
+                                <button id="toggle-pagination-index-overfetch-sample-queries-btn" onclick="toggleInsightSampleQueries('pagination-index-overfetch')" class="btn-standard">
+                                    <span id="pagination-index-overfetch-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="pagination-index-overfetch-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pagination-index-overfetch-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="learn-more-section">
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Consider an index that satisfies the ORDER BY to only scan needed rows/items
+                                        <a href="https://cb.fuj.io/analysis_hub.html#optimizer" class="insight-link">Learn more</a>
                                     </div>
                                 </div>
                             </div>
@@ -9915,6 +9949,8 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
             let inefficientLikeCount = 0;
             let selectStarCount = 0;
             let inefficientIndexScansCount = 0;
+            let paginationOverfetchCount = 0;
+            let paginationOverfetchTotalScanned = 0;
             let highMemoryCount = 0;
             let highMemoryTotalGB = 0;
             let highKernelTimeQueriesCount = 0;
@@ -9936,6 +9972,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
             let largePayloadStreamingSamples = [];
             let actualTimeoutsSamples = [];
             let approachingTimeoutsSamples = [];
+            let paginationOverfetchSamples = [];
 
             // Configurable threshold for kernel time detection
             const KERNEL_TIME_THRESHOLD_PERCENT = 20;
@@ -10153,6 +10190,28 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                         }
                     }
                 }
+
+                // Detect pagination index over-scan for ORDER BY + LIMIT + OFFSET
+                const hasOrderBy = statement.includes(" ORDER BY ");
+                const hasLimit = statement.includes(" LIMIT ");
+                const hasOffset = statement.includes(" OFFSET ");
+                if (hasOrderBy && hasLimit && hasOffset) {
+                    const pc = request.phaseCounts || {};
+                    const primaryCount = Math.max(pc.primaryScan || 0, pc['primaryScan.GSI'] || 0);
+                    const indexCount = Math.max(pc.indexScan || 0, pc['indexScan.GSI'] || 0);
+                    const scanned = Math.max(primaryCount, indexCount);
+                    if (scanned >= 10000) {
+                        paginationOverfetchCount++;
+                        paginationOverfetchTotalScanned += scanned;
+                        if (paginationOverfetchSamples.length < 5 &&
+                            !paginationOverfetchSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                            paginationOverfetchSamples.push({
+                                requestTime: request.requestTime,
+                                statement: request.statement || request.preparedText
+                            });
+                        }
+                    }
+                }
             });
 
             const totalQueries = requests.length;
@@ -10342,6 +10401,19 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
             const avgResultCountElement = document.getElementById("avg-result-count");
             const avgSelectivityElement = document.getElementById("avg-selectivity");
 
+            // Update pagination over-scan insight
+            const paginationOverfetchCountElement = document.getElementById("pagination-overfetch-count");
+            const paginationOverfetchAvgElement = document.getElementById("pagination-overfetch-avg-items");
+            if (paginationOverfetchCountElement) {
+                paginationOverfetchCountElement.textContent = `${paginationOverfetchCount} queries`;
+                paginationOverfetchCountElement.className = paginationOverfetchCount > 0 ? "highlight-number" : "";
+            }
+            if (paginationOverfetchAvgElement) {
+                const avgScanned = paginationOverfetchCount > 0 ? Math.round(paginationOverfetchTotalScanned / paginationOverfetchCount) : 0;
+                paginationOverfetchAvgElement.textContent = avgScanned.toLocaleString();
+                paginationOverfetchAvgElement.className = paginationOverfetchCount > 0 ? "highlight-number" : "";
+            }
+
             if (inefficientIndexScansCountElement) {
                 inefficientIndexScansCountElement.textContent = `${inefficientIndexScansCount} queries`;
                 inefficientIndexScansCountElement.className = inefficientIndexScansCount > 0 ? "highlight-number" : "";
@@ -10429,6 +10501,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
             updateInsightSampleQueries('large-result-set-queries', largeResultSetQueriesSamples);
             updateInsightSampleQueries('inefficient-like-operations', inefficientLikeOperationsSamples);
             updateInsightSampleQueries('select-star-usage', selectStarUsageSamples);
+            updateInsightSampleQueries('pagination-index-overfetch', paginationOverfetchSamples);
             updateInsightSampleQueries('high-memory-usage', highMemoryUsageSamples);
             updateInsightSampleQueries('high-kernel-time-queries', highKernelTimeQueriesSamples);
             updateInsightSampleQueries('large-payload-streaming', largePayloadStreamingSamples);
@@ -10600,6 +10673,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                 { id: 'missing-where-clauses', checkElement: 'missing-where-count' },
                 { id: 'inefficient-like-operations', checkElement: 'inefficient-like-count' },
                 { id: 'select-star-usage', checkElement: 'select-star-count' },
+                { id: 'pagination-index-overfetch', checkElement: 'pagination-overfetch-count' },
                 { id: 'large-result-set-queries', checkElement: 'large-results-count' },
                 { id: 'large-payload-streaming', checkElement: 'large-payload-count' },
                 { id: 'timeout-prone-queries', checkElements: ['approaching-timeout-count', 'actual-timeout-count'] }
