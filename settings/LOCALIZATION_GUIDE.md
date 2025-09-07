@@ -897,6 +897,50 @@ grep -n ">Copy<\|>Show<\|>Hide<\|>Reset<" *.html
 grep -n "\`.*>.*Copy.*<.*\`" *.html
 ```
 
+## 🔒 Technical Token Protection (v3.12.2)
+
+The following tokens MUST remain in English across all languages. These are part of code, CSS, or Couchbase SQL++ and translating them causes runtime or UI breakage.
+
+- HTML attributes and ARIA
+  - Keep attribute names in English: for, id, class, href, src, title, placeholder, aria-*, role
+  - Common mistakes to avoid:
+    - label para="…" → label for="…" (Spanish/Portuguese)
+    - label für="…" → label for="…" (German)
+  - Validation:
+    - grep -nE "label\s+(para|für)=" {es,de,pt}/index.html  # should return 0
+
+- SQL++ keywords and system keyspaces in sample queries
+  - Do NOT translate: SELECT, FROM, meta().plan, system:completed_requests
+  - Validation (should return 0):
+    - grep -nE "system:completed_(solicitudes|solicitações|Anfragen)" {es,de,pt}/index.html
+  - Positive check (should return >0):
+    - grep -n "system:completed_requests" {es,de,pt}/index.html
+
+- CSS class names (must remain identical to English)
+  - Do NOT translate or invent localized class names:
+    - state-badge, state-online, state-offline, state-building
+    - index-statement, fatal-state, used-badge, beta-badge, live-badge
+  - Validation:
+    - diff <(grep -o "class=\"[^\"]\+\"" en/index.html) <(grep -o "class=\"[^\"]\+\"" {es,de,pt}/index.html)
+    - grep -nE "estado-|index-declaraci(ón|ão)|fatal-(Status|estado)" {es,de,pt}/index.html  # should return 0
+
+- CSS property names (must remain in English)
+  - Keep property names exactly: transform, text-transform, transition
+  - Common mistakes to avoid:
+    - text-transparam → text-transform
+    - transparam: … → transform: …
+    - transition:transparam → transition:transform
+    - transfürm (or any diacritics) → transform
+  - Validation (should return 0):
+    - grep -nE "text-transparam|transparam|transfürm|transition:transparam" {es,de,pt}/index.html
+
+- Quick fix checklist (when auditing a locale)
+  - [ ] <html lang="…"> matches language code
+  - [ ] No label para= / label für=
+  - [ ] Sample query placeholder uses system:completed_requests
+  - [ ] No localized CSS classes (estado-*, index-declaración/-declaração, fatal-Status/fatal-estado)
+  - [ ] No CSS typos for transform/text-transform/transition
+
 ## 🚨 Common Translation Issues
 
 ### Chart Titles in JavaScript Configurations
