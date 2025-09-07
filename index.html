@@ -24,14 +24,14 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
     <div class="guide-container">
         <div class="guide-step">
             <h3>Extract Query Data from System:Completed_Requests</h3>
-            <p>Run the below query in your Couchbase Query Workbench or <code>cbq</code>.</p> 
+            <p>Run the following query in your Couchbase Query Workbench or <code>cbq</code>.</p> 
             <p>You will want to copy or save the JSON output.</p>
             <div class="sql-query-box">
                 <pre>SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;</pre>
                 <button class="sql-copy-btn">Copy</button>
             </div>
-            <p><strong>Notes:</strong>This query returns a JSON of 9-15MB optimized for browser performance.</p>
-            <p><a href="sql_queries.md">Advanced Query Options</a></p>
+            <p><strong>Notes:</strong> This query returns a 9–15 MB JSON optimized for browser performance.</p>
+            <p>Want more specific, targeted queries than the one above? See <a href="https://cb.fuj.io/sql_queries.html">Targeted Query Filters</a> for sample SQL++ queries.</p>
         </div>
         <div class="guide-step">
             <img src="img/completed_request_json.png" alt="Couchbase system:completed_requests query output JSON for slow query analysis" style="width: 550px;">
@@ -42,14 +42,14 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
     <div class="guide-container">
         <div class="guide-step">
             <h3>Access the Hosted Analyzer Tool</h3>
-            <p>Click the link below to go to the web based query analyzer tool. Pick by <strong>Language-Specific:</strong></p>
+            <p>Click the link below to go to the web-based query analyzer tool. Choose your language:</p>
             <ul>
                 <li><span style="font-size: large;"><a href="https://cb.fuj.io/en/" target="_blank" rel="noopener noreferrer">https://cb.fuj.io/en/ (English)</a></span></li>
                 <li><span style="font-size: large;"><a href="https://cb.fuj.io/de/" target="_blank" rel="noopener noreferrer">https://cb.fuj.io/de/ (Deutsch)</a></span></li>
                 <li><span style="font-size: large;"><a href="https://cb.fuj.io/es/" target="_blank" rel="noopener noreferrer">https://cb.fuj.io/es/ (Español)</a></span></li>
                 <li><span style="font-size: large;"><a href="https://cb.fuj.io/pt/" target="_blank" rel="noopener noreferrer">https://cb.fuj.io/pt/ (Português)</a></span></li>
             </ul>
-            <p>  <img src="img/firefox.png" alt="FireFox" style="width: 30px;"> <em>Firefox</em> renders data the fastest.</p>
+            <p>  <img src="img/firefox.png" alt="Firefox" style="width: 30px;"> <em>Firefox</em> renders data the fastest.</p>
         </div>
         <div class="guide-step">
        <img src="img/copy_paste_side_by_side.png" alt="Steps to analyze Couchbase slow queries from extraction to visualization" style="width: 650px;" >
@@ -62,7 +62,21 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
             <h3>Paste JSON Data and Parse for Analysis</h3>
             <p>Copy the JSON output from Step 1 and paste it into the <span style="font-size: large; color: black;"><b>Upper Left</b></span> text box, then click the <strong>Parse JSON</strong> button.</p>
             <img src="img/paste_json.png" alt="Paste JSON into Couchbase slow query analyzer tool and parse for performance insights" loading="lazy">
-            <p><strong>Need Help?</strong> <a href="analysis_hub.html" target="_blank" rel="noopener noreferrer">📚 Analysis Hub - Couchbase N1QL Query Optimization Guide & Glossary</a></p>
+            <p><strong>Need Help?</strong> <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer" style="font-size: 18px; font-weight: 600;">📚 Analysis Hub - Couchbase N1QL Query Optimization Guide & Glossary</a></p>
+            <div style="display:flex; gap:10px; overflow-x:auto; padding:6px 0;">
+                <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer">
+                    <img src="img/query_times.png" alt="Timing metrics overview thumbnail" style="width:120px; height:auto; border:1px solid #ddd; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                </a>
+                <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer">
+                    <img src="img/serviceTime.png" alt="ServiceTime breakdown thumbnail" style="width:120px; height:auto; border:1px solid #ddd; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                </a>
+                <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer">
+                    <img src="img/query_node.png" alt="Query node architecture thumbnail" style="width:120px; height:auto; border:1px solid #ddd; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                </a>
+                <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer">
+                    <img src="img/covered_index.png" alt="Covering index visualization thumbnail" style="width:120px; height:auto; border:1px solid #ddd; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                </a>
+            </div>
         </div>
         <div class="guide-step">
             <img src="img/timeline.png" alt="Timeline charts for Couchbase N1QL query execution plan analysis" loading="lazy">
@@ -77,7 +91,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
             <ul>
                 <li><strong>Auto-population:</strong> Date fields populate with your data's full time range.</li>
                 <li><strong>Custom Date Ranges:</strong> Adjust "From" and "To" dates or filter by specific SQL++ query terms.</li>
-                <li><strong>SQL++ Term Search:</strong> Filter by specific SQL++ query terms. EX. <i>`SELECT city , state`</i></li>
+                <li><strong>SQL++ Term Search:</strong> Filter by specific SQL++ query terms, e.g., <i>`SELECT city, state`</i></li>
                 <li><strong>Re-analyze:</strong> Click <strong>Parse JSON</strong> to apply filters.</li>
                 <li><strong>Filter status:</strong> View the number of queries matching your criteria.</li>
             </ul>
@@ -86,9 +100,9 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
             <p style="color: #007bff; font-weight: 600;">Discover automated performance analysis with the new Insights tab:</p>
             <ul>
                 <li><strong>🎯 Query Pattern Analysis:</strong> Automatically identifies slow queries and performance bottlenecks</li>
-                <li><strong>📊 Index Analysis:</strong> Indexes usage and Query optimization opportunities</li>
+                <li><strong>📊 Index Analysis:</strong> Index usage and query optimization opportunities</li>
                 <li><strong>⚡ Performance Insights:</strong> Recommendations to improve query speed</li>
-                <li><strong>📈 Trend Analysis:</strong> Analysis of query performance and bottlenecks </li>
+                <li><strong>📈 Trend Analysis:</strong> Query performance trends and bottlenecks</li>
             </ul>
             <p style="background: #e8f4fd; padding: 8px; border-radius: 4px; font-size: 13px; border-left: 3px solid #007bff;">
                 <strong>Pro Tip:</strong> After parsing your data, visit the Insights tab for automated performance recommendations and optimization suggestions.
@@ -139,7 +153,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
     <div class="guide-container">
         <div class="guide-step">
             <h3>Download Couchbase Query Analyzer for Offline Analysis</h3>
-            <p>If you prefer to use the tool locally you can get the raw HTML BELOW , copy/paste HTML and save it as index.html :</p>
+            <p>If you prefer to use the tool locally, you can copy the raw HTML below and save it as <code>index.html</code>:</p>
             <ul>
                 <li><a href="https://raw.githubusercontent.com/Fujio-Turner/cb_completed_request/main/en/index.html">English (index.html)</a></li>
                 <li><a href="https://raw.githubusercontent.com/Fujio-Turner/cb_completed_request/main/de/index.html">German (index.html)</a></li>
@@ -148,40 +162,41 @@ LET bid = CONCAT("", s.bucket_id, ""),
             </ul>
         </div>
         <div class="guide-step">
-            <p>Tested and Compatible with Couchbase 7.6.6 and Capella</p>
+            <p>Tested and compatible with Couchbase 7.6.6 and Capella</p>
             <p>Feature List & Release Notes</p>
             <a href="https://github.com/Fujio-Turner/cb_completed_request/blob/main/README.md#features" target="_blank" rel="noopener noreferrer">https://github.com/Fujio-Turner/cb_completed_request</a></li>
         </div>
     </div>
 
-    <h2>Why Analyze Couchbase Slow Queries?</h2>
-    <p>Identifying and tuning slow queries in Couchbase can reduce execution time by up to 75%, as seen in real-world optimizations. Our tool visualizes data from system:completed_requests, helping with index analysis, query filtering, and performance bottlenecks for better Couchbase performance tuning.</p>
-
     <h2>FAQs on Couchbase Query Performance</h2>
     <div class="faq-container" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
         <div class="faq-item">
+            <button class="faq-question">Why analyze Couchbase slow queries? <span class="faq-toggle">+</span></button>
+            <div class="faq-answer">Identifying and tuning slow queries in Couchbase can reduce execution time by up to 75%, as seen in real-world optimizations. Our tool visualizes data from <code>system:completed_requests</code>, helping with index analysis, query filtering, and performance bottlenecks for better Couchbase performance tuning.</div>
+        </div>
+        <div class="faq-item">
             <button class="faq-question">What causes slow queries in Couchbase? <span class="faq-toggle">+</span></button>
-            <div class="faq-answer">Poor indexing, large datasets, or inefficient N1QL statements. Use our analyzer to diagnose performance bottlenecks and identify optimization opportunities. <br><a href="analysis_hub.html#optimizer" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">📚 Learn More: Query Optimization Guide</a></div>
+            <div class="faq-answer">Poor indexing, large datasets, or inefficient N1QL statements. Use our analyzer to diagnose performance bottlenecks and identify optimization opportunities. <br><a href="https://cb.fuj.io/analysis_hub#optimizer" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">📚 Learn More: Query Optimization Guide</a></div>
         </div>
         
         <div class="faq-item">
             <button class="faq-question">How do I fix slow queries in Couchbase? <span class="faq-toggle">+</span></button>
-            <div class="faq-answer">Start with proper indexing strategies, use covering indexes when possible, and analyze execution plans. Our tool provides visual insights into query performance patterns. <br><a href="analysis_hub.html#optimizer" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">🎯 Get Help: Crawl, Walk, Run Optimization Approach</a></div>
+            <div class="faq-answer">Start with proper indexing strategies, use covering indexes when possible, and analyze execution plans. Our tool provides visual insights into query performance patterns. <br><a href="https://cb.fuj.io/analysis_hub#optimizer" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">🎯 Get Help: Crawl, Walk, Run Optimization Approach</a></div>
         </div>
         
         <div class="faq-item">
             <button class="faq-question">What is system:completed_requests? <span class="faq-toggle">+</span></button>
-            <div class="faq-answer">A Couchbase system catalog that contains historical query execution data including timing metrics, execution plans, and performance statistics. <br><a href="analysis_hub.html#readStats" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">📊 Learn More: Understanding Query Statistics</a></div>
+            <div class="faq-answer">A Couchbase system catalog that contains historical query execution data including timing metrics, execution plans, and performance statistics. <br><a href="https://cb.fuj.io/analysis_hub#readStats" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">📊 Learn More: Understanding Query Statistics</a></div>
         </div>
         
         <div class="faq-item">
             <button class="faq-question">Is this tool compatible with Couchbase Capella? <span class="faq-toggle">+</span></button>
-            <div class="faq-answer">Yes, the analyzer works with both Couchbase Server 7.6+ and Couchbase Capella cloud database deployments. <br><a href="analysis_hub.html" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">🔍 Get Help: Analysis Hub & Debugging Guide</a></div>
+            <div class="faq-answer">Yes, the analyzer works with both Couchbase Server 7.6+ and Couchbase Capella cloud database deployments. <br><a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">🔍 Get Help: Analysis Hub & Debugging Guide</a></div>
         </div>
         
         <div class="faq-item">
             <button class="faq-question">How often should I analyze query performance? <span class="faq-toggle">+</span></button>
-            <div class="faq-answer">Regular analysis is recommended, especially after data growth, schema changes, or when users report performance issues. Weekly or monthly reviews help maintain optimal performance. <br><a href="analysis_hub.html#bestPractices" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">✨ Learn More: Query Tuning Best Practices</a></div>
+            <div class="faq-answer">Regular analysis is recommended, especially after data growth, schema changes, or when users report performance issues. Weekly or monthly reviews help maintain optimal performance. <br><a href="https://cb.fuj.io/analysis_hub#bestPractices" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">✨ Learn More: Query Tuning Best Practices</a></div>
         </div>
     </div>
 
@@ -193,6 +208,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
         <a href="https://github.com/Fujio-Turner/cb_completed_request" target="_blank" rel="noopener noreferrer">
             <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub repository for Couchbase slow query analysis tool" width="40" height="40">
         </a>
+        <div style="margin-top:6px;font-size:12px;color:#777;">© 2025 fuj.io</div>
     </footer>
 
     <script type="application/ld+json">
@@ -242,9 +258,12 @@ LET bid = CONCAT("", s.bucket_id, ""),
             button.addEventListener('click', () => {
                 const code = button.parentElement.querySelector('pre').textContent;
                 navigator.clipboard.writeText(code).then(() => {
+                    const originalBg = window.getComputedStyle(button).backgroundColor;
+                    button.style.background = '#28a745';
                     button.textContent = 'Copied!';
                     setTimeout(() => {
                         button.textContent = 'Copy';
+                        button.style.background = '';
                     }, 2000);
                 }).catch(err => {
                     console.error('Failed to copy: ', err);

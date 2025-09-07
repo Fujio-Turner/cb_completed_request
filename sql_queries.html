@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="version" content="3.12.2" />
+  <meta name="last-updated" content="2025-09-07" />
+  <title>Advanced SQL++ Queries - Couchbase Slow Query Analyzer</title>
+  <meta name="description" content="Advanced SQL++ queries for extracting and filtering Couchbase system:completed_requests data for slow query analysis.">
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5}
+    .container{max-width:1000px;margin:0 auto}
+    .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .page-header a{color:#007bff;text-decoration:none;font-size:14px}
+    .page-header a:hover{text-decoration:underline}
+    .intro{color:#555;margin-bottom:20px}
+    h1{margin:0 0 8px 0}
+    h2{margin-top:30px;color:#333}
+    h3{margin-top:24px;color:#333}
+    .sql-query-box{background:#f8f9fa;border:1px solid #dee2e6;border-radius:6px;padding:15px;margin:15px 0;position:relative}
+    .sql-query-box pre{background:#ffffff;border:1px solid #e9ecef;border-radius:4px;padding:10px;margin:10px 0;font-family:monospace;font-size:12px;overflow-x:auto}
+    .sql-copy-btn{position:absolute;top:10px;right:10px;background:#007bff;color:white;border:none;border-radius:4px;padding:6px 12px;font-size:11px;cursor:pointer}
+    .sql-copy-btn:hover{background:#0056b3}
+    .version-info{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.1);color:#333;padding:4px 8px;border-radius:4px;font-size:0.75em;font-family:monospace;z-index:999;opacity:0.7;transition:opacity 0.3s ease}
+    .version-info:hover{opacity:1;background:rgba(0,0,0,0.2)}
+    footer{position:fixed;bottom:10px;right:10px;z-index:999;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <h1>Advanced SQL++ Queries</h1>
+      <div>
+        <a href="https://cb.fuj.io/">← Back to Quick Start</a>
+      </div>
+    </div>
+    <p class="intro">Use these SQL++ examples to extract targeted results from system:completed_requests—by node, by date range, and by excluding system-generated statements—so you can focus on the most relevant queries during analysis.</p>
+
+    <h3>To remove system-level queries, add the following filter</h3>
+    <div class="sql-query-box">
+      <pre><code>SELECT
+    *, 
+    meta().plan
+FROM 
+    system:completed_requests 
+WHERE  
+    clientContextID NOT LIKE 'INTERNAL-%' AND 
+    UPPER(IFMISSING(preparedText, statement)) NOT LIKE 'INFER %' AND 
+    UPPER(IFMISSING(preparedText, statement)) NOT LIKE 'ADVISE %' AND 
+    UPPER(IFMISSING(preparedText, statement)) NOT LIKE 'CREATE %' AND 
+    UPPER(IFMISSING(preparedText, statement)) NOT LIKE 'CREATE INDEX%' AND 
+    UPPER(IFMISSING(preparedText, statement)) NOT LIKE 'ALTER INDEX%' AND 
+    UPPER(IFMISSING(preparedText, statement)) NOT LIKE '% SYSTEM:%' 
+LIMIT 
+    2000;</code></pre>
+      <button class="sql-copy-btn">Copy</button>
+    </div>
+
+    <h3>Search for parts of SQL strings only</h3>
+    <div class="sql-query-box">
+      <pre><code>SELECT
+    *, 
+    meta().plan
+FROM 
+    system:completed_requests 
+WHERE  
+    CONTAINS(`statement`,"SELECT *")
+    OR
+    CONTAINS(preparedText,"SELECT *")
+ORDER BY 
+    requestId
+LIMIT
+    2000;</code></pre>
+      <button class="sql-copy-btn">Copy</button>
+    </div>
+
+    <h3>Query to find records between two dates</h3>
+    <div class="sql-query-box">
+      <pre><code>SELECT
+    *, 
+    meta().plan
+FROM 
+    system:completed_requests 
+WHERE  
+    requestTime BETWEEN "2025-06-01" AND "2025-08-02";</code></pre>
+      <button class="sql-copy-btn">Copy</button>
+    </div>
+
+    <h3>Slow query log from the current query node only</h3>
+    <div class="sql-query-box">
+      <pre><code>SELECT 
+    *,
+    meta().plan
+FROM
+    system:completed_requests
+WHERE
+    node = NODE_NAME()
+LIMIT 
+    2000;</code></pre>
+      <button class="sql-copy-btn">Copy</button>
+    </div>
+
+    <h3>Get slow queries from a specific query node</h3>
+    <div class="sql-query-box">
+      <pre><code>SELECT 
+    *, 
+    meta().plan
+FROM 
+    system:completed_requests 
+WHERE 
+    node LIKE "10.132.133.165%" 
+LIMIT
+    2000;</code></pre>
+      <button class="sql-copy-btn">Copy</button>
+    </div>
+
+    <p style="margin-top:32px;color:#666">Source: <code>sql_queries.md</code>. For broader guidance, see the <a href="analysis_hub.html" target="_blank" rel="noopener noreferrer">Analysis Hub</a>.</p>
+  </div>
+
+  <div class="version-info">Couchbase Slow Query Analysis Tool v3.12.2</div>
+  <footer>
+    <a href="https://github.com/Fujio-Turner/cb_completed_request" target="_blank" rel="noopener noreferrer">
+      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub repository for Couchbase slow query analysis tool" width="40" height="40">
+    </a>
+    <div style="margin-top:6px;font-size:12px;color:#777;">© 2025 fuj.io</div>
+  </footer>
+
+  <script>
+    // SQL Copy functionality
+    document.querySelectorAll('.sql-copy-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const code = button.parentElement.querySelector('pre').textContent;
+        navigator.clipboard.writeText(code).then(() => {
+          const originalBg = window.getComputedStyle(button).backgroundColor;
+          button.style.background = '#28a745';
+          button.textContent = 'Copied!';
+          setTimeout(() => {
+            button.textContent = 'Copy';
+            button.style.background = '';
+          }, 2000);
+        }).catch(err => {
+          console.error('Failed to copy: ', err);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

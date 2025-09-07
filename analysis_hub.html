@@ -7,8 +7,17 @@
     <meta name="keywords" content="Couchbase debugging, N1QL performance tuning, query optimization guide, Couchbase metrics glossary, database performance analysis">
     <link rel="canonical" href="https://cb.fuj.io/analysis_hub.html">
     <style>
-body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5;line-height:1.6;color:#333}h1{color:#2c3e50;border-bottom:2px solid #eee;padding-bottom:10px;margin-bottom:20px}h2{color:#34495e;margin-top:40px;border-bottom:1px solid #ddd;padding-bottom:5px}h3{color:#2980b9;margin-top:30px}p{margin-bottom:15px}ul{list-style-type:disc;margin-left:20px;margin-bottom:15px}code{background-color:#f8f9fa;padding:2px 6px;border-radius:4px;font-family:monospace;color:#e74c3c}img{max-width:100%;height:auto;border:1px solid #ddd;border-radius:8px;margin:15px 0;box-shadow:0 2px 8px rgba(0,0,0,0.1)}.sidebar{position:fixed;left:0;top:0;bottom:0;width:250px;background:#fff;padding:20px;overflow-y:auto;border-right:1px solid #ccc;box-shadow:2px 0 5px rgba(0,0,0,0.1)}.sidebar h2{font-size:18px;color:#2c3e50;margin-bottom:10px}.sidebar ul{list-style:none;margin:0;padding:0}.sidebar li{margin-bottom:10px}.sidebar a{text-decoration:none;color:#2980b9;font-weight:bold}.sidebar a:hover{text-decoration:underline}.main-content{margin-left:270px;max-width:800px;background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.05)}.guide-step{margin-bottom:40px;padding:20px;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}.guide-step p,.guide-step ul{color:#555}.guide-step strong{color:#333}.version-info{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.1);color:#333;padding:4px 8px;border-radius:4px;font-size:0.75em;font-family:monospace;z-index:999;opacity:0.7;transition:opacity 0.3s ease}.version-info:hover{opacity:1;background:rgba(0,0,0,0.2)}footer{position:fixed;bottom:10px;right:10px;z-index:999;text-align:center;font-size:0.8em;color:#777}.sql-code{background:#f6f8fa;color:#24292e;padding:15px;border-radius:8px;font-family:'Courier New',monospace;font-size:14px;line-height:1.4;margin:15px 0;overflow-x:auto;border-left:4px solid #0366d6}.sql-keyword{color:#0366d6;font-weight:bold}.sql-string{color:#032f62}.sql-comment{color:#6a737d;font-style:italic}.performance-level{margin:20px 0;padding:20px;border-radius:8px;border-left:5px solid}.walk-level{background:#fff5f5;border-color:#fc8181}.crawl-level{background:#fffaf0;border-color:#f6ad55}.run-level{background:#f0fff4;border-color:#68d391}.level-title{font-size:18px;font-weight:bold;margin-bottom:10px;display:flex;align-items:center}.level-icon{margin-right:10px;font-size:20px}.timing-thumbnail{width:120px;height:auto;margin:0 5px 0 0;border:2px solid #03a9f4;border-radius:6px;cursor:pointer;transition:all 0.3s ease;display:inline-block;vertical-align:middle}.timing-thumbnail:hover{transform:scale(6);z-index:1000;position:relative;box-shadow:0 8px 25px rgba(0,0,0,0.3);border-color:#0277bd}.thumbnail-container{display:inline-flex;align-items:center;margin:5px 0}.thumbnail-text{color:#0277bd;font-weight:bold;margin-left:8px}
-    </style>
+body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5;line-height:1.6;color:#333}h1{color:#2c3e50;border-bottom:2px solid #eee;padding-bottom:10px;margin-bottom:20px}h2{color:#34495e;margin-top:40px;border-bottom:1px solid #ddd;padding-bottom:5px}h3{color:#2980b9;margin-top:30px}p{margin-bottom:15px}ul{list-style-type:disc;margin-left:20px;margin-bottom:15px}code{background-color:#f8f9fa;padding:2px 6px;border-radius:4px;font-family:monospace;color:#e74c3c}img{max-width:100%;height:auto;border:1px solid #ddd;border-radius:8px;margin:15px 0;box-shadow:0 2px 8px rgba(0,0,0,0.1)}.sidebar{position:fixed;left:0;top:0;bottom:0;width:250px;background:#fff;padding:20px;overflow-y:auto;border-right:1px solid #ccc;box-shadow:2px 0 5px rgba(0,0,0,0.1)}.sidebar h2{font-size:18px;color:#2c3e50;margin-bottom:10px}.sidebar ul{list-style:none;margin:0;padding:0}.sidebar li{margin-bottom:10px}.sidebar a{text-decoration:none;color:#2980b9;font-weight:bold}.sidebar a:hover{text-decoration:underline}.main-content{margin-left:270px;max-width:800px;background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.05)}.guide-step{margin-bottom:40px;padding:20px;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}.guide-step p,.guide-step ul{color:#555}.guide-step strong{color:#333}.version-info{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.1);color:#333;padding:4px 8px;border-radius:4px;font-size:0.75em;font-family:monospace;z-index:999;opacity:0.7;transition:opacity 0.3s ease}.version-info:hover{opacity:1;background:rgba(0,0,0,0.2)}footer{position:fixed;bottom:10px;right:10px;z-index:999;text-align:center;font-size:0.8em;color:#777}.sql-code{background:#f6f8fa;color:#24292e;padding:15px;border-radius:8px;font-family:'Courier New',monospace;font-size:14px;line-height:1.4;margin:15px 0;overflow-x:auto;border-left:4px solid #0366d6;position:relative;padding-right:80px}.sql-keyword{color:#0366d6;font-weight:bold}.sql-string{color:#032f62}.sql-comment{color:#6a737d;font-style:italic}.sql-copy-btn{position:absolute;top:8px;right:8px;background:#007bff;color:#fff;border:none;border-radius:4px;padding:6px 12px;font-size:11px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15);z-index:5}.sql-copy-btn:hover{background:#0056b3}.performance-level{margin:20px 0;padding:20px;border-radius:8px;border-left:5px solid}.walk-level{background:#fff5f5;border-color:#fc8181}.crawl-level{background:#fffaf0;border-color:#f6ad55}.run-level{background:#f0fff4;border-color:#68d391}.level-title{font-size:18px;font-weight:bold;margin-bottom:10px;display:flex;align-items:center}.level-icon{margin-right:10px;font-size:20px}.timing-thumbnail{width:120px;height:auto;margin:0 5px 0 0;border:2px solid #03a9f4;border-radius:6px;cursor:pointer;transition:all 0.3s ease;display:inline-block;vertical-align:middle}.timing-thumbnail:hover{transform:scale(6);z-index:1000;position:relative;box-shadow:0 8px 25px rgba(0,0,0,0.3);border-color:#0277bd}.thumbnail-container{display:inline-flex;align-items:center;margin:5px 0}.thumbnail-text{color:#0277bd;font-weight:bold;margin-left:8px}
+    /* Sidebar collapse styles */
+.sidebar{transition:transform 0.3s ease}
+.main-content{transition:margin-left 0.3s ease}
+.sidebar-collapsed .sidebar{transform:translateX(-250px)}
+.sidebar-collapsed .main-content{margin-left:20px}
+.sidebar-collapsed .sidebar-toggle{left:0}
+.sidebar-toggle{cursor:pointer;padding:12px}
+.sidebar-toggle .arrow{transition:transform 0.3s ease}
+.sidebar-collapsed .sidebar-toggle .arrow{transform:rotate(180deg)}
+</style>
 </head>
 <body>
     <div class="sidebar">
@@ -52,7 +61,12 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
         </ul>
     </div>
     
-    <div class="main-content">
+    <div id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle topics" title="Toggle topics">
+    <svg class="arrow" width="24" height="24" viewBox="0 0 24 24" style="fill:none;stroke:#2980b9;stroke-width:2"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+
+     <div class="main-content">
+        <div style="text-align:right; margin-bottom:10px;"><a href="https://cb.fuj.io/">← Back to Quick Start</a></div>
         <h1>Couchbase Query Performance Debugging</h1>
         <h3><i>"Why Is My Query Slow?"</i></h3>        
         <p><strong>Last updated:</strong> September 1, 2025</p>
@@ -78,32 +92,77 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
         
         <div class="guide-step" id="parseJSON">
             <h2>📊 Parse JSON</h2>
+            <img src="img/parse_json_button.png" alt="Parse JSON button in the analyzer" style="float:left; max-width:40%; width: 260px; height:auto; border:1px solid #ddd; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.08); margin: 0 16px 8px 0;" loading="lazy">
             <p>The Parse JSON feature allows you to analyze query results and apply advanced filtering directly within the Query Analyzer tool. Multiple filtering options help you focus on specific data subsets for targeted analysis.</p>
-
+                       <div style="clear: both;"></div>
+            
             <div style="background: #e6fffa; border: 1px solid #4fd1c7; border-radius: 8px; padding: 20px; margin: 20px 0;">
                 <h3 style="color: #234e52; margin-top: 0;">🔧 Available Filters & Controls</h3>
                 <p style="color: #2d3748; margin-bottom: 15px;">The Parse JSON section provides several filtering options to refine your analysis:</p>
 
                 <div style="display: grid; gap: 15px;">
-                    <div style="background: #f0fff4; border-left: 4px solid #68d391; padding: 12px; border-radius: 4px;">
-                        <h4 style="color: #22543d; margin: 0 0 8px 0;">✅ Exclude System Queries</h4>
-                        <p style="color: #2d5016; margin: 0; font-size: 14px;"><strong>Default: Enabled</strong> - Automatically filters out system-level operations like INFER, ADVISE, CREATE/ALTER INDEX statements, and queries from system: keyspaces. Keeps your analysis focused on application queries.</p>
-                    </div>
-
                     <div style="background: #fffbf0; border-left: 4px solid #f6ad55; padding: 12px; border-radius: 4px;">
                         <h4 style="color: #c05621; margin: 0 0 8px 0;">📅 Date/Time Range Filtering</h4>
                         <p style="color: #744210; margin: 0 0 8px 0; font-size: 14px;">Precise temporal filtering with datetime controls:</p>
-                        <ul style="color: #744210; margin: 0 0 0 20px; font-size: 14px;">
+                        <ul style="color: #744210; margin: 0 0 8px 20px; font-size: 14px;">
                             <li><strong>From/To Dates:</strong> Specify exact datetime ranges with second precision</li>
                             <li><strong>Quick Time Buttons:</strong> Original | 1 Week | 1 Day | 1 Hour for instant filtering</li>
                             <li><strong>Time Zone Aware:</strong> Uses local browser timezone for accurate filtering</li>
                         </ul>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
+                            <img src="img/datepicker.png" alt="Datetime picker controls" style="max-width:100%; height:auto; border:1px solid #ddd; border-radius:6px;">
+                        </div>
+                    </div>
+                    
+                    <div style="background: #fffaf0; border-left: 4px solid #f59e0b; padding: 12px; border-radius: 4px;">
+                        <h4 style="color: #b45309; margin: 0 0 8px 0;">⏱️ Preset Date Ranges</h4>
+                        <p style="color: #7c2d12; margin: 0 0 8px 0; font-size: 14px;">Sets the date pickers for you based on your data and current "To" value:</p>
+                        <ul style="color: #7c2d12; margin: 0 0 8px 20px; font-size: 14px;">
+                            <li><strong>Original:</strong> Resets <em>From</em> and <em>To</em> to the full time range detected in your JSON.</li>
+                            <li><strong>Last 1 Week / 1 Day / 1 Hour:</strong> Moves <em>From</em> backward from the current <em>To</em> (or from <em>now</em> if <em>To</em> is empty). <em>To</em> is not changed.</li>
+                            <li><strong>Apply:</strong> Click <em>Parse JSON</em> to re-run analysis with the new range.</li>
+                        </ul>
+                        <div style="margin-top:8px; display:inline-block; position:relative;">
+                            <img src="img/preset_dates.png" alt="Preset date range buttons" style="max-width:100%; width: 280px; height:auto; border:1px solid #ddd; border-radius:6px; display:block;">
+                            <img src="img/preset_dates_drop_down.png" alt="Preset date range dropdown example" style="position:absolute; top:0; left:0; width:100%; height:auto; border-radius:6px; opacity:0; transition: opacity 0.3s ease;">
+                        </div>
+                        <script>
+                        (function(){
+                          const wrap = document.currentScript.previousElementSibling;
+                          if (!wrap) return;
+                          const imgs = wrap.querySelectorAll('img');
+                          const base = imgs[0];
+                          const hover = imgs[1];
+                          wrap.addEventListener('mouseenter', ()=>{ hover.style.opacity = '1'; });
+                          wrap.addEventListener('mouseleave', ()=>{ hover.style.opacity = '0'; });
+                        })();
+                        </script>
                     </div>
 
                     <div style="background: #f0f8ff; border-left: 4px solid #6366f1; padding: 12px; border-radius: 4px;">
                         <h4 style="color: #4338ca; margin: 0 0 8px 0;">🔍 SQL++ Statement Filter</h4>
-                        <p style="color: #312e81; margin: 0 0 8px 0; font-size: 14px;">Text-based filtering using "Filter SQL++ Contains..." - searches within the actual SQL++ statement text to find queries containing specific keywords, table names, or patterns. Case-insensitive substring matching.</p>
+                        <p style="color: #312e81; margin: 0 0 8px 0; font-size: 14px;">Text-based filtering using \"Filter SQL++ Contains...\" - searches within the actual SQL++ statement text to find queries containing specific keywords, table names, or patterns. Case-insensitive substring matching.</p>
                         <p style="color: #312e81; margin: 0; font-size: 14px;"><strong>Advanced Option:</strong> In the filter input, enter SQL strings like <code>WHERE type = 'invoice' AND status LIKE 'pending%'</code> to subset the data with N1QL-like expressions for post-parsing filtering.</p>
+                        <div style="margin-top:8px; display:inline-block; position:relative; width: 420px;">
+                            <img src="img/sql_string_filter_and_exclude_system.png" alt="Exclude system queries toggle and SQL filter" style="max-width:100%; width: 100%; height:auto; border:1px solid #ddd; border-radius:6px; display:block;">
+                            <img src="img/sql_string_filter_and_exclude_system_example.png" alt="Example with SQL++ text in filter input" style="position:absolute; top:0; left:0; width:100%; height:auto; border-radius:6px; opacity:0; transition: opacity 0.3s ease;">
+                        </div>
+                        <script>
+                        (function(){
+                          const wrap = document.currentScript.previousElementSibling;
+                          if (!wrap) return;
+                          const imgs = wrap.querySelectorAll('img');
+                          const base = imgs[0];
+                          const hover = imgs[1];
+                          wrap.addEventListener('mouseenter', ()=>{ hover.style.opacity = '1'; });
+                          wrap.addEventListener('mouseleave', ()=>{ hover.style.opacity = '0'; });
+                        })();
+                        </script>
+                    </div>
+
+                    <div style="background: #f0fff4; border-left: 4px solid #68d391; padding: 12px; border-radius: 4px;">
+                        <h4 style="color: #22543d; margin: 0 0 8px 0;">✅ Exclude System Queries</h4>
+                        <p style="color: #2d5016; margin: 0 0 8px 0; font-size: 14px;"><strong>Default: Enabled</strong> - Automatically filters out system-level operations like INFER, ADVISE, CREATE/ALTER INDEX statements, and queries from system: keyspaces. Keeps your analysis focused on application queries.</p>
                     </div>
                 </div>
             </div>
@@ -143,6 +202,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
                                 <li><strong>Inefficient Index Scans</strong> - Identifies queries with poor selectivity ratios</li>
                                 <li><strong>Slow Index Scan Times</strong> - Flags indexes taking 2+ seconds to scan</li>
                                 <li><strong>Primary Index Over-Usage</strong> - Detects reliance on expensive primary indexes</li>
+                                <li><strong>ORDER BY / LIMIT / OFFSET Index Over-Scan</strong> - Highlights over-scanning due to pagination patterns (Beta)</li>
                             </ul>
                         </div>
                         
@@ -159,8 +219,8 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
                             <h5 style="color: #059669; margin: 0 0 6px 0;">🔄 Query Pattern Analysis</h5>
                             <ul style="color: #059669; margin: 0; font-size: 13px;">
                                 <li><strong>Missing WHERE Clauses</strong> - Identifies full collection scans</li>
-                                <li><strong>Complex JOIN Operations</strong> - Analyzes join performance patterns</li>
                                 <li><strong>Inefficient LIKE Operations</strong> - Detects leading wildcard usage</li>
+                                <li><strong>SELECT * Usage</strong> - Finds queries returning entire documents (Live)</li>
                             </ul>
                         </div>
                         
@@ -206,8 +266,27 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
                 
                 <div style="background: #fdf2f8; border-left: 4px solid #ec4899; padding: 12px; border-radius: 4px; margin: 15px 0;">
                     <h4 style="color: #be185d; margin: 0 0 8px 0;">📋 Data Requirements</h4>
-                    <p style="color: #be185d; margin: 0 0 8px 0; font-size: 14px;"><strong>Separate Query Required:</strong> You'll need to run a separate SQL++ query to get index information from your system and JOIN it with the slow query JSON data.</p>
-                    <p style="color: #be185d; margin: 0; font-size: 13px;"><em>The Indexes tab uses data from both system:completed_requests and system:indexes to provide comprehensive index analysis.</em></p>
+                    <p style="color: #be185d; margin: 0 0 8px 0; font-size: 14px;"><strong>Separate Query Required:</strong> You'll need this separate SQL++ query below to get index information from your system.</p>
+                    <p style="color: #be185d; margin: 0 0 10px 0; font-size: 13px;"><em>The Indexes tab uses data from both <code>system:completed_requests</code> and <code>system:indexes</code> in the Couchbase <code>system:*</code> catalog to provide comprehensive index analysis.</em></p>
+                    <div class="sql-code">
+<pre>SELECT 
+    s.name,
+    s.id,
+    s.metadata,
+    s.state,
+    s.num_replica,
+    CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+FROM system:indexes AS s
+LET bid = CONCAT("", s.bucket_id, ""),
+    sid = CONCAT("", s.scope_id, ""),
+    kid = CONCAT("", s.keyspace_id, ""),
+    k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
+    ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
+    w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
+    p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;
+</pre>
+                        <button class="sql-copy-btn">Copy</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -397,6 +476,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
                 
                 <div class="sql-code">
 <span class="sql-keyword">CREATE INDEX</span> <span class="sql-string">`allTypes`</span> <span class="sql-keyword">ON</span> <span class="sql-string">`bucket`</span>(<span class="sql-string">`type`</span>);
+                    <button class="sql-copy-btn">Copy</button>
                 </div>
 
                 <p><strong>General steps in a SQL++ query execution:</strong></p>
@@ -415,6 +495,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
 <span class="sql-keyword">WHERE</span> <span class="sql-string">`type`</span> = <span class="sql-string">"invoice"</span> 
   <span class="sql-keyword">AND</span> <span class="sql-string">`date`</span> = <span class="sql-string">"today"</span> 
         <span class="sql-keyword">AND</span> <span class="sql-string">`custId`</span> = <span class="sql-string">"12345"</span>
+                    <button class="sql-copy-btn">Copy</button>
                 </div>
 
                 <p><strong>Performance characteristics:</strong> Basic index usage, requires document fetches, applies filters after retrieval.</p>
@@ -432,6 +513,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
                 <div class="sql-code">
 <span class="sql-keyword">CREATE INDEX</span> <span class="sql-string">`custInvoices_v1`</span> <span class="sql-keyword">ON</span> <span class="sql-string">`bucket`</span>(<span class="sql-string">`date`</span>, <span class="sql-string">`custId`</span>) 
 <span class="sql-keyword">WHERE</span> <span class="sql-string">`type`</span> = <span class="sql-string">"invoice"</span>
+                    <button class="sql-copy-btn">Copy</button>
                 </div>
 
                 <p><strong>Key improvements:</strong></p>
@@ -461,6 +543,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
 <span class="sql-keyword">WHERE</span> <span class="sql-string">`type`</span> = <span class="sql-string">"invoice"</span> 
   <span class="sql-keyword">AND</span> <span class="sql-string">`date`</span> = <span class="sql-string">"today"</span> 
   <span class="sql-keyword">AND</span> <span class="sql-string">`custId`</span> = <span class="sql-string">"12345"</span>
+                    <button class="sql-copy-btn">Copy</button>
                 </div>
 
                 <p><strong>Then create a covering index with proper field ordering:</strong></p>
@@ -469,6 +552,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
     <span class="sql-string">`custId`</span>, <span class="sql-string">`date`</span>,              <span class="sql-comment">-- Filter fields: highest cardinality first</span>
     <span class="sql-string">`invoiceId`</span>, <span class="sql-string">`status`</span>, <span class="sql-string">`orderTotal`</span>, <span class="sql-string">`discounts`</span>  <span class="sql-comment">-- SELECT fields at end</span>
 ) <span class="sql-keyword">WHERE</span> <span class="sql-string">`type`</span> = <span class="sql-string">"invoice"</span>
+                    <button class="sql-copy-btn">Copy</button>
                 </div>
 
                 <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin: 15px 0;">
@@ -1211,6 +1295,54 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
     </div>
     
     <div class="version-info">Couchbase Query Performance Guide v3.12.2 - September 6, 2025</div>
-    <footer>&copy; 2025 Couchbase Performance Analysis Hub</footer>
+    <footer>&copy; 2025 Couchbase Performance Analysis Hub<br>© 2025 fuj.io</footer>
+    <script>
+        // SQL Copy functionality for Analysis Hub
+        document.querySelectorAll('.sql-copy-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const codeContainer = button.closest('.sql-code') || button.parentElement.querySelector('pre');
+                let code = '';
+                if (codeContainer) {
+                    const clone = codeContainer.cloneNode(true);
+                    clone.querySelectorAll('button').forEach(b => b.remove());
+                    code = clone.textContent.replace(/\s*Copy\s*$/,'').trim();
+                }
+                navigator.clipboard.writeText(code).then(() => {
+                    button.style.background = '#28a745';
+                    button.textContent = 'Copied!';
+                    setTimeout(() => {
+                        button.textContent = 'Copy';
+                        button.style.background = '';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+            });
+        });
+    </script>
+<script>
+// Sidebar toggle logic
+(function(){
+  const toggle = document.getElementById('sidebarToggle');
+  if (!toggle) return;
+  const syncTogglePos = () => {
+    // position alongside sidebar edge whether collapsed or not
+    toggle.style.position = 'fixed';
+    toggle.style.top = '50%';
+    toggle.style.transform = 'translateY(-50%)';
+    toggle.style.left = document.body.classList.contains('sidebar-collapsed') ? '0px' : '250px';
+    toggle.style.zIndex = '1001';
+  };
+  toggle.addEventListener('click', () => {
+    document.body.classList.toggle('sidebar-collapsed');
+    syncTogglePos();
+  });
+  window.addEventListener('resize', syncTogglePos);
+  // init
+  syncTogglePos();
+})();
+</script>
 </body>
 </html>
