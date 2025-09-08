@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.12.2
+# Couchbase Slow Query Analysis Tool v3.13.0
 
 **🌍 Idiomas:** [🇺🇸 English](../README.md) | [🇩🇪 Deutsch](../de/README.de.md) | [🇪🇸 Español](../es/README.es.md) | **🇵🇹 Português**
 
@@ -157,12 +157,19 @@ Ao analisar gráficos de linha do tempo, escolha intervalos de data apropriados 
 
 ## 📋 Notas de Lançamento
 
-### Versão 3.12.2 (6 de setembro de 2025)
+### Versão 3.13.0 (7 de setembro de 2025)
+- Novo: Controle de intervalo de datas do Parse JSON substituído por dropdown compacto (encerra #84)
+- Novo: Gráfico phaseTimes em Query Groups para tempos agregados de operadores (encerra #83)
+- Novo: Gráficos do Dashboard exibem valores diretamente nos gráficos (encerra #87)
+- UX/Docs: “Advanced Query Options” convertido para página HTML e linkado na ferramenta (encerra #86)
+- Insights: Adicionado link “Saiba mais” para o Analysis Hub e ajustes de HTML (encerra #74)
+
+### Versão 3.12.x (setembro de 2025)
 - Correções de bugs e melhorias de qualidade na UI do analisador e na documentação
 - Encerra #84, #82, #79, #78, #75, #58
 
 
-### Versão 3.12.0 (September 3, 2025)
+### Versão 3.12.x (setembro de 2025)
 #### 🚀 Novos Recursos
 - **Análise de Consultas Propensas a Timeout**: Adicionada detecção e análise abrangente de timeout para consultas que se aproximam ou excedem o limiar de 75 segundos
 - **Dashboard de Insights Aprimorado**: Nova perspectiva rastreando consultas que consistentemente se aproximam de limites de timeout com categorização detalhada

@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.12.2
+# Couchbase Slow Query Analysis Tool v3.13.0
 
 **🌍 Sprachen:** [🇺🇸 English](../README.md) | **🇩🇪 Deutsch** | [🇪🇸 Español](../es/README.es.md) | [🇵🇹 Português](../pt/README.pt.md)
 
@@ -157,12 +157,19 @@ Bei der Analyse von Timeline-Diagrammen wählen Sie angemessene Datumsbereiche f
 
 ## 📋 Versionshinweise
 
-### Version 3.12.2 (6. September 2025)
+### Version 3.13.0 (7. September 2025)
+- Neu: Parse JSON Datumsbereich-Steuerung durch kompaktes Dropdown ersetzt (schließt #84)
+- Neu: Query Groups phaseTimes-Diagramm für aggregierte Operator-Laufzeiten (schließt #83)
+- Neu: Dashboard-Diagramme zeigen Werte direkt im Diagramm an (schließt #87)
+- UX/Dokumentation: „Advanced Query Options“ nach HTML konvertiert und aus dem Tool verlinkt (schließt #86)
+- Insights: „Mehr erfahren“-Link zum Analysis Hub hinzugefügt und HTML-Verbesserungen (schließt #74)
+
+### Version 3.12.x (September 2025)
 - Fehlerbehebungen und Qualitätsverbesserungen in der Analyzer-UI und Dokumentation
 - Schließt #84, #82, #79, #78, #75, #58
 
 
-### Version 3.12.0 (September 3, 2025)
+### Version 3.12.x (September 2025)
 #### 🚀 Neue Funktionen
 - **Timeout-anfällige Abfragen-Analyse**: Umfassende Timeout-Erkennung und -Analyse für Abfragen hinzugefügt, die sich der 75-Sekunden-Schwelle nähern oder diese überschreiten
 - **Erweitertes Insights-Dashboard**: Neue Einsicht zur Verfolgung von Abfragen, die konsistent Timeout-Limits erreichen, mit detaillierter Kategorisierung

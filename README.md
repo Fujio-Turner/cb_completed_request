@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.12.2
+# Couchbase Slow Query Analysis Tool v3.13.0
 
 **🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](de/README.de.md) | [🇪🇸 Español](es/README.es.md) | [🇵🇹 Português](pt/README.pt.md)
 
@@ -159,12 +159,19 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 
 ## Release Notes
 
-### Version 3.12.2 (September 6, 2025)
+### Version 3.13.0 (September 7, 2025)
+- New: Parse JSON date range control replaced with compact dropdown (closes #84)
+- New: Query Groups phaseTimes chart for aggregated operator timings (closes #83)
+- New: Dashboard charts show values directly on the charts (closes #87)
+- UX/Docs: Converted “Advanced Query Options” to an HTML page and linked from the tool (closes #86)
+- Insights: Added “Learn more” link to Analysis Hub and HTML touchups (closes #74)
+
+### Version 3.12.x (September 2025)
 - Bug fixes and quality improvements across the analyzer UI and documentation
 - Closes #84, #82, #79, #78, #75, #58
 
 
-### Version 3.12.1 (September 3, 2025)
+### Version 3.12.x (September 2025)
 #### 🔧 Performance & Optimization
 - **CSS Minification**: Optimized CSS for improved load times and performance
 - **Code Enhancements**: Various code improvements and optimizations
@@ -180,7 +187,7 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 - **Syntax Validation**: Enhanced validation scripts to prevent JavaScript breakage
 - **Language Files**: Updated all language versions with proper syntax preservation
 
-### Version 3.12.0 (September 3, 2025)
+### Version 3.12.x (September 2025)
 #### 🚀 New Features
 - **Timeout-Prone Queries Analysis**: Added comprehensive timeout detection and analysis for queries approaching or exceeding the 75-second threshold
 - **Enhanced Insights Dashboard**: New insight tracking queries that consistently approach timeout limits with detailed categorization
