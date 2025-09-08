@@ -180,6 +180,107 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                 LOADING: "Loading..."
             };
     </script>
+<style>
+/* Report Mode + Print styles (Phase 1) */
+.report-mode body, .report-mode { background: #fff !important; }
+/* Preview (screen) should not use flex/100vh to allow natural scroll */
+.report-mode { display: block !important; height: auto !important; overflow: visible !important; }
+.report-mode #tabs { height: auto !important; overflow: visible !important; display: block !important; }
+.report-mode .version-info, .report-mode #input-section, .report-mode .ui-tabs-nav, .report-mode footer, .report-mode .beta-badge, .report-mode .dev-badge, .report-mode .live-badge { display: none !important; }
+.report-mode .ui-tabs-panel { display: none !important; }
+.report-mode .ui-tabs-panel.report-visible { display: block !important; }
+.report-mode #report-header { position: sticky; top: 0; background: #fff; z-index: 10001; display: block !important; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+
+/* Unclamp scroll areas for printing */
+.print-unclamp, .report-mode .print-unclamp { overflow: visible !important; max-height: none !important; height: auto !important; }
+
+/* Table print helpers + layout overrides */
+@media print {
+html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff !important; }
+body { display: block !important; height: auto !important; overflow: visible !important; padding: 12mm !important; }
+#tabs { height: auto !important; overflow: visible !important; display: block !important; }
+.ui-tabs-panel { display: block !important; }
+/* Ensure panels expand naturally for print */
+#dashboard, #insights, #timeline, #analysis, #every-query, #index-query-flow, #indexes { height: auto !important; overflow: visible !important; display: block !important; }
+#index-query-flow .height-100 { height: auto !important; }
+#flow-canvas, #flow-elements, #flow-svg { transform: none !important; width: auto !important; height: auto !important; overflow: visible !important; }
+/* Unclamp previously fixed-height areas */
+#table-section, #analysis-table-section, #table-container, #analysis-table-container, #flow-canvas, #indexResults { height: auto !important; overflow: visible !important; }
+
+/* Hide sticky header by default in print; only show when explicitly enabled */
+#report-header { display: none !important; position: static !important; box-shadow: none !important; }
+#report-header.print-visible { display: block !important; }
+/* Ensure cover stays on a single page and forces a break after */
+#report-cover { page-break-after: always; page-break-inside: avoid; min-height: 100vh; }
+
+.version-info, #input-section, .ui-tabs-nav, footer, .modal, .toast { display: none !important; }
+/* Only print selected sections */
+.report-mode [data-report-section]:not(.report-visible) { display: none !important; }
+  .report-visible { display: block !important; }
+  thead { display: table-header-group; }
+  tfoot { display: table-footer-group; }
+  table, tr, td, th { page-break-inside: avoid; }
+  .chart-container, .table-container, .chart-card, .insight-category, .insight-item { page-break-inside: avoid; }
+  .page-break { page-break-before: always; }
+}
+
+/* Report header */
+#report-header { display: none; padding: 12px 16px; border-bottom: 1px solid #ddd; margin-bottom: 16px; position: relative; }
+#report-header h1 { margin: 0 0 6px 0; font-size: 18px; }
+#report-header .meta { color: #666; font-size: 12px; }
+#report-header .report-exit-btn { position: absolute; right: 12px; top: 12px; }
+
+/* Cover page */
+#report-cover { display: none; background: #fff; padding: 24px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 18px; min-height: 80vh; }
+#report-cover h1 { margin: 0 0 10px 0; font-size: 26px; font-weight: 700; }
+#report-cover .line { color: #555; margin: 4px 0; font-size: 13px; }
+#report-cover .section { margin-top: 16px; }
+#report-cover .section h3 { margin: 0 0 6px 0; font-size: 16px; font-weight: 600; }
+#report-cover ul { margin: 6px 0 0 18px; }
+
+/* Floating Exit button for preview */
+.report-exit-btn { position: fixed; top: 12px; right: 12px; z-index: 10002; background: #d9534f; color: #fff; border: none; border-radius: 6px; padding: 10px 14px; font-weight: 800; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer; }
+.report-exit-btn:hover { background: #c9302c; }
+@media print { .report-exit-btn { display: none !important; } }
+
+/* Chart image replacement */
+.chart-print-img { max-width: 100%; height: auto; display: block; }
+
+/* Page break helper visible only in print */
+.page-break { display: none; }
+</style>
+<script>
+// Extend TEXT_CONSTANTS with Report Maker strings (Phase 1)
+if (window.TEXT_CONSTANTS) {
+  Object.assign(TEXT_CONSTANTS, {
+    REPORT_MAKER: "Report Maker",
+    SELECT_SECTIONS: "Select sections",
+    SELECT_TIMELINE_CHARTS: "Select Timeline charts",
+    INCLUDE_HEADER_SUMMARY: "Include header summary",
+    INCLUDE_FILTERS: "Include filters applied",
+    FLATTEN_TABLES_FOR_PRINT: "Flatten scrollable tables for print",
+    CONVERT_CHARTS_TO_IMAGES: "Convert charts to images for printing",
+    PREVIEW_REPORT: "Preview Report",
+    PRINT_SAVE_PDF: "Print / Save PDF",
+    EXIT_REPORT_MODE: "Exit Report Mode",
+    LOAD_TEST_SAMPLE: "Load test sample JSON",
+    REPORT_GENERATED_AT: "Generated at",
+    REPORT_TIME_RANGE: "Range",
+    REPORT_FILTERS_APPLIED: "Filter",
+    REPORT_OPTIONS: "Options",
+    EXIT_REPORT_PREVIEW: "EXIT REPORT PREVIEW",
+    COVER_TITLE: "Couchbase Query Analysis Report",
+    COVER_SECTIONS_INCLUDED: "Sections included",
+    COVER_TIMELINE_CHARTS: "Timeline charts",
+    COVER_FILTERS_APPLIED: "Filters applied",
+    COVER_TIME_RANGE: "Time range",
+    COVER_DATA_COUNTS: "Data counts",
+    COVER_NOTES: "Notes",
+    COVER_BETA_NOTE: "Some charts marked Beta/Dev may display incomplete or placeholder content."
+
+  });
+}
+</script>
 </head>
 
 <body>
@@ -299,10 +400,13 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
             <li role="tab">
                 <a href="#indexes" aria-controls="indexes" tabindex="0">Indexes</a>
             </li>
+            <li role="tab">
+                <a href="#report-maker" aria-controls="report-maker" tabindex="0">Report Maker</a>
+            </li>
         </ul>
 
         <!-- Dashboard Tab Content -->
-        <div id="dashboard">
+        <div id="dashboard" data-report-section="dashboard">
             <div class="dashboard-grid">
                 <!-- Elapsed Time Distribution Bar Chart -->
                 <div class="chart-container height-300 draggable-chart" data-chart-id="elapsed-time" data-position="dashboard-1">
@@ -421,7 +525,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         </div>
 
         <!-- Insights Tab Content -->
-        <div id="insights">
+        <div id="insights" data-report-section="insights">
             <div
                 style="padding: 20px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; margin-bottom: 20px;">
                 <h2 style="color: #856404; margin-top: 0; font-size: 24px; font-weight: bold; text-align: center;">
@@ -924,7 +1028,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         </div>
 
         <!-- Timeline Tab Content -->
-        <div id="timeline">
+        <div id="timeline" data-report-section="timeline">
             <div class="margin-bottom-10">
                 <button id="reset-zoom-btn" onclick="resetTimelineZoom()"
                     class="cursor-pointer border-none border-radius-3 btn-gray">
@@ -1033,7 +1137,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         </div>
 
         <!-- Analysis Tab Content -->
-        <div id="analysis">
+        <div id="analysis" data-report-section="analysis">
             <!--
         <div id="charts-placeholder">
           *Future charts and visualizations will be displayed here.
@@ -1082,7 +1186,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         </div>
 
         <!-- Every Query Tab Content -->
-        <div id="every-query">
+        <div id="every-query" data-report-section="every-query">
             <div id="flow-diagram-section">
                 <div id="flow-diagram"></div>
             </div>
@@ -1117,7 +1221,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         </div>
 
         <!-- Index/Query Flow Tab Content -->
-        <div id="index-query-flow">
+        <div id="index-query-flow" data-report-section="index-query-flow">
             <div class="height-100 position-relative background-f8 border-radius-8 overflow-hidden">
                 <!-- Summary counts above the flow chart -->
                 <div id="flow-summary"
@@ -1138,7 +1242,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         </div>
 
         <!-- Indexes Tab Content -->
-        <div id="indexes">
+        <div id="indexes" data-report-section="indexes">
             <!-- Filter Controls -->
             <div class="margin-bottom-20 padding-15 background-f8 border-radius-6">
                 <!-- First row: Search, Bucket, Scope, Collection, Sort -->
@@ -1342,8 +1446,41 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                 </div>
             </div>
         </div>
+    <!-- Report Maker Tab Content -->
+       <div id="report-maker" data-report-section="report-maker" style="padding: 15px;">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
+                <button id="btn-load-sample" class="btn-standard"></button>
+                <button id="btn-preview-report" class="btn-standard" style="background:#0d6efd;color:#fff"></button>
+                <button id="btn-print-report" class="btn-standard"></button>
+                <button id="btn-exit-report" class="btn-standard"></button>
+            </div>
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                <h3 id="rm-select-sections-title" style="margin:0 0 8px 0;"></h3>
+                <div id="report-sections" style="display:flex; gap: 16px; flex-wrap: wrap;">
+                    <label><input type="checkbox" data-section="dashboard" checked> Dashboard</label>
+                    <label><input type="checkbox" data-section="insights"> Insights</label>
+                    <label><input type="checkbox" data-section="timeline" checked> Timeline</label>
+                    <label><input type="checkbox" data-section="analysis"> Query Groups</label>
+                    <label><input type="checkbox" data-section="every-query"> Every Query</label>
+                    <label><input type="checkbox" data-section="index-query-flow"> Index/Query Flow</label>
+                    <label><input type="checkbox" data-section="indexes"> Indexes</label>
+                </div>
+            </div>
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                <h3 id="rm-select-timeline-title" style="margin:0 0 8px 0;"></h3>
+                <div id="report-timeline-charts" style="display:flex; gap: 16px; flex-wrap: wrap;"></div>
+            </div>
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                <h3 id="rm-options-title" style="margin:0 0 8px 0;"></h3>
+                <label style="margin-right:16px;"><input type="checkbox" id="opt-include-header" checked> <span id="rm-opt-include-header"></span></label>
+                <label style="margin-right:16px;"><input type="checkbox" id="opt-include-filters" checked> <span id="rm-opt-include-filters"></span></label>
+                <label style="margin-right:16px;"><input type="checkbox" id="opt-flatten-tables" checked> <span id="rm-opt-flatten-tables"></span></label>
+                <label style="margin-right:16px;"><input type="checkbox" id="opt-charts-as-images" checked> <span id="rm-opt-charts-as-images"></span></label>
+            </div>
+            <div class="color-666" style="font-size:12px;">Tip: Use filters and date range first, then preview and print.</div>
+        </div>
     </div>
-    <!-- Modals (outside tabs) -->
+     <!-- Modals (outside tabs) -->
     <div id="plan-modal" class="modal">
         <div class="modal-content">
             <span class="close">×</span>
@@ -14702,6 +14839,458 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             };
 
             console.log(TEXT_CONSTANTS.TIP_ABOUT);
+        });
+
+        // =====================
+        // Report Maker (Phase 1)
+        // =====================
+        let reportModeActive = false;
+        function getReportSelections() {
+            const sectionChecks = document.querySelectorAll('#report-sections input[type="checkbox"]');
+            const sections = {};
+            sectionChecks.forEach(chk => { sections[chk.getAttribute('data-section')] = chk.checked; });
+
+            // Timeline charts from dynamic list
+            const chartChecks = document.querySelectorAll('#report-timeline-charts input[type="checkbox"]');
+            const timelineChartsSel = {};
+            chartChecks.forEach(chk => { timelineChartsSel[chk.getAttribute('data-chart-id')] = chk.checked; });
+
+            return {
+                sections,
+                options: {
+                    includeHeader: !!document.getElementById('opt-include-header')?.checked,
+                    includeFilters: !!document.getElementById('opt-include-filters')?.checked,
+                    flattenTables: !!document.getElementById('opt-flatten-tables')?.checked,
+                    chartsAsImages: !!document.getElementById('opt-charts-as-images')?.checked,
+                },
+                timelineCharts: timelineChartsSel,
+            };
+        }
+
+        function populateReportMakerTimelineCharts() {
+            const container = document.getElementById('report-timeline-charts');
+            if (!container) return;
+            container.innerHTML = '';
+            const mapNames = {
+                'duration-buckets': 'Duration Buckets',
+                'query-types': 'Query Types',
+                'operations': 'Operations',
+                'filter': 'Filter Efficiency',
+                'result-count': 'Result Count',
+                'result-size': 'Result Size',
+                'timeline': 'Timeline',
+                'memory': 'Memory',
+                'exec-vs-kernel': 'Exec vs Kernel',
+                'exec-vs-serv': 'Exec vs Service',
+                'exec-vs-elapsed': 'Exec vs Elapsed',
+                'enhanced-operations': 'Enhanced Operations'
+            };
+            const cards = document.querySelectorAll('#timeline .chart-container');
+            cards.forEach(card => {
+                const id = card.getAttribute('data-chart-id') || card.querySelector('canvas')?.id || '';
+                if (!id) return;
+                const lbl = mapNames[id] || id;
+                const label = document.createElement('label');
+                label.innerHTML = `<input type=\"checkbox\" data-chart-id=\"${id}\" checked> ${lbl}`;
+                container.appendChild(label);
+            });
+        }
+
+        function addReportHeader(summaryText) {
+            let header = document.getElementById('report-header');
+            if (!header) {
+                header = document.createElement('div');
+                header.id = 'report-header';
+                document.body.insertBefore(header, document.body.firstChild);
+            }
+            // preserve existing exit button
+            const existingBtn = header.querySelector('#report-exit-btn');
+            const ver = (typeof getVersionInfo === 'function' ? getVersionInfo().version : '');
+            const now = new Date().toLocaleString();
+            header.innerHTML = `
+              <h1>Couchbase Query Analyzer ${ver ? 'v' + ver : ''}</h1>
+              <div class=\"meta\">${TEXT_CONSTANTS.REPORT_GENERATED_AT || 'Generated at'}: ${now}${summaryText ? ' • ' + summaryText : ''}</div>
+            `;
+            // ensure header is printable when summary is included
+            header.classList.add('print-visible');
+            if (existingBtn) header.appendChild(existingBtn);
+        }
+
+        function buildTabHighlights(selections) {
+            const bullets = [];
+            const t = (k, d) => (window.TEXT_CONSTANTS && TEXT_CONSTANTS[k]) ? TEXT_CONSTANTS[k] : d;
+
+            // Dashboard
+            if (selections.sections && selections.sections.dashboard) {
+                try {
+                    const list = Array.isArray(window.everyQueryData) ? window.everyQueryData : [];
+                    const total = list.length;
+                    const prim = list.filter(r => r["Primary Scan Used"] === 'Yes').length;
+                    const fatal = list.filter(r => (r.state || '').toLowerCase() === 'fatal').length;
+                    const stCounts = {};
+                    list.forEach(r => { const k = (r.statementType || '').toString(); stCounts[k] = (stCounts[k]||0)+1; });
+                    const topTypes = Object.entries(stCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>`${k} (${v})`).join(', ');
+                    bullets.push(`<h4>Dashboard</h4><ul>
+                        <li>Primary index usage: ${total?Math.round((prim/total)*100):0}% (${prim}/${total})</li>
+                        <li>Fatal rate: ${total?Math.round((fatal/total)*100):0}% (${fatal}/${total})</li>
+                        <li>Top statement types: ${topTypes || '-'}</li>
+                    </ul>`);
+                } catch(e){}
+            }
+
+            // Timeline
+            if (selections.sections && selections.sections.timeline) {
+                try {
+                    const reqs = Array.isArray(window.originalRequests) ? window.originalRequests : [];
+                    let minT, maxT; 
+                    reqs.forEach(r => { const d = new Date(r.requestTime); if (!isNaN(d)) { if (!minT||d<minT) minT=d; if (!maxT||d>maxT) maxT=d; }});
+                    const spanHrs = (minT&&maxT)? Math.round((maxT-minT)/(1000*60*60)) : 0;
+                    const unit = reqs.length ? getOptimalTimeUnit(reqs) : 'minute';
+                    bullets.push(`<h4>Timeline</h4><ul>
+                        <li>Span: ${spanHrs} hours${spanHrs>=24?` (~${Math.round(spanHrs/24)} days)`:''}</li>
+                        <li>Grouping: ${unit}</li>
+                    </ul>`);
+                } catch(e){}
+            }
+
+            // Query Groups
+            if (selections.sections && selections.sections.analysis) {
+                try {
+                    const groups = Array.isArray(window.analysisData) ? window.analysisData : [];
+                    const count = groups.length;
+                    let slow = null;
+                    groups.forEach(g => { const ref = g.groupRef; if (ref && !isNaN(ref.avg_duration_in_seconds)) { if (!slow || ref.avg_duration_in_seconds > slow.avg) slow = { avg: ref.avg_duration_in_seconds, stmt: ref.normalized_statement }; }});
+                    bullets.push(`<h4>Query Groups</h4><ul>
+                        <li>Total groups: ${count}</li>
+                        <li>Slowest avg duration: ${slow ? formatTime(slow.avg*1000) : 'N/A'}</li>
+                    </ul>`);
+                } catch(e){}
+            }
+
+            // Every Query
+            if (selections.sections && selections.sections["every-query"]) {
+                try {
+                    const list = Array.isArray(window.everyQueryData) ? window.everyQueryData : [];
+                    let longest = null;
+                    list.forEach(r => { const ms = parseTime(r.request?.elapsedTime || r.elapsedTime); if (!isNaN(ms)) { if (!longest || ms > longest.ms) longest = { ms, stmt: r.request?.statement || r.statement }; }});
+                    bullets.push(`<h4>Every Query</h4><ul>
+                        <li>Longest elapsed: ${longest ? formatTime(longest.ms) : 'N/A'}</li>
+                    </ul>`);
+                } catch(e){}
+            }
+
+            // Index/Query Flow
+            if (selections.sections && selections.sections["index-query-flow"]) {
+                bullets.push(`<h4>Index/Query Flow</h4><ul>
+                    <li>Visual map of queries and indexes. Use this to spot overused primary scans and heavy fetch paths.</li>
+                </ul>`);
+            }
+
+            // Indexes
+            if (selections.sections && selections.sections.indexes) {
+                try {
+                    const ix = (document.getElementById('stat-indexes')||{}).textContent || '0';
+                    const prim = (document.getElementById('stat-primary')||{}).textContent || '0';
+                    const never = (document.getElementById('stat-never-scanned')||{}).textContent || '0';
+                    bullets.push(`<h4>Indexes</h4><ul>
+                        <li>Total indexes: ${ix}</li>
+                        <li>Primary indexes: ${prim}</li>
+                        <li>Never scanned: ${never}</li>
+                    </ul>`);
+                } catch(e){}
+            }
+
+            return bullets.join('');
+        }
+
+        function buildReportCoverHTML(selections) {
+            const t = (k, d) => (window.TEXT_CONSTANTS && TEXT_CONSTANTS[k]) ? TEXT_CONSTANTS[k] : d;
+            const now = new Date().toLocaleString();
+            const startDateInput = document.getElementById('start-date');
+            const endDateInput = document.getElementById('end-date');
+            const sqlFilter = document.getElementById('sql-statement-filter');
+            const timeRange = (startDateInput?.value && endDateInput?.value) ? `${startDateInput.value} → ${endDateInput.value}` : '-';
+
+            // Section display names
+            const sectionNames = {
+                'dashboard': t('TAB_DASHBOARD', 'Dashboard'),
+                'timeline': t('TAB_TIMELINE', 'Timeline'),
+                'analysis': t('TAB_QUERY_GROUPS', 'Query Groups'),
+                'every-query': t('TAB_EVERY_QUERY', 'Every Query'),
+                'index-query-flow': t('TAB_INDEX_QUERY_FLOW', 'Index/Query Flow'),
+                'indexes': t('TAB_INDEXES', 'Indexes')
+            };
+            const selectedSections = Object.entries(selections.sections || {})
+                .filter(([, v]) => v)
+                .map(([k]) => k);
+            const sectionsHtml = selectedSections.length
+                ? selectedSections.map(k => `<li>${sectionNames[k] || k}</li>`).join('')
+                : '<li>-</li>';
+
+            // Timeline chart labels from DOM (fallback to IDs)
+            const selectedCharts = Object.entries(selections.timelineCharts || {})
+                .filter(([, v]) => v)
+                .map(([k]) => k);
+            const chartsHtml = (() => {
+                if (!selectedCharts.length) return '<li>-</li>';
+                const container = document.getElementById('report-timeline-charts');
+                const items = [];
+                selectedCharts.forEach(id => {
+                    let labelText = id;
+                    try {
+                        const input = container ? container.querySelector(`input[data-chart-id="${id}"]`) : null;
+                        const label = input ? input.closest('label') : null;
+                        if (label) labelText = label.textContent.trim();
+                    } catch (e) {}
+                    items.push(`<li>${labelText}</li>`);
+                });
+                return items.join('');
+            })();
+
+            // Counts
+            let total = 0, after = 0;
+            try { total = Array.isArray(originalRequests) ? originalRequests.length : 0; } catch(e){}
+            try { after = Array.isArray(filteredEveryQueryData) ? filteredEveryQueryData.length : (Array.isArray(everyQueryData) ? everyQueryData.length : 0); } catch(e){}
+
+            return `
+              <h1>${t('COVER_TITLE','Couchbase Query Analysis Report')}</h1>
+              <div class="line">${t('REPORT_GENERATED_AT','Generated at')}: ${now}</div>
+              <div class="line">${t('COVER_TIME_RANGE','Time range')}: ${timeRange}</div>
+              <div class="line">${t('COVER_FILTERS_APPLIED','Filters applied')}: ${sqlFilter?.value || '-'}</div>
+              <div class="line">${t('COVER_DATA_COUNTS','Data counts')}: ${after}${total ? ` ${t('OF_TOTAL','of')} ${total}` : ''}</div>
+              <div class="section">
+                <h3>${t('COVER_SECTIONS_INCLUDED','Sections included')}</h3>
+                <ul>${sectionsHtml}</ul>
+              </div>
+              <div class="section">
+                <h3>${t('COVER_TIMELINE_CHARTS','Timeline charts')}</h3>
+                <ul>${chartsHtml}</ul>
+              </div>
+              <div class="section">
+                <h3>${t('COVER_NOTES','Notes')}</h3>
+                <ul><li>${t('COVER_BETA_NOTE','Some charts marked Beta/Dev may display incomplete or placeholder content.')}</li></ul>
+              </div>
+              <div class="section">
+                <h3>Highlights</h3>
+                ${buildTabHighlights(selections)}
+              </div>
+            `;
+        }
+
+        function toggleSectionsVisibility(selections) {
+            const panels = document.querySelectorAll('[data-report-section]');
+            panels.forEach(p => p.classList.remove('report-visible'));
+            Object.keys(selections.sections).forEach(key => {
+                if (selections.sections[key]) {
+                    const el = document.querySelector(`[data-report-section=\"${key}\"]`);
+                    if (el) el.classList.add('report-visible');
+                }
+            });
+
+            // Within timeline, hide unselected chart containers
+            const tlSel = selections.timelineCharts || {};
+            document.querySelectorAll('#timeline .chart-container').forEach(c => {
+                const id = c.getAttribute('data-chart-id');
+                if (!id) return;
+                c.style.display = (tlSel[id] === false) ? 'none' : '';
+            });
+        }
+
+        function flattenScrollableAreas(enable) {
+            const selectors = [
+                '#table-section', '#analysis-table-section', '#table-container', '#analysis-table-container', '.table-scroll', '.overflow-auto'
+            ];
+            selectors.forEach(sel => {
+                document.querySelectorAll(sel).forEach(el => {
+                    if (enable) el.classList.add('print-unclamp'); else el.classList.remove('print-unclamp');
+                });
+            });
+        }
+
+        function replaceChartsWithImages(enable) {
+            const selectedPanels = document.querySelectorAll('.report-visible');
+            const canvases = [];
+            selectedPanels.forEach(panel => {
+                panel.querySelectorAll('canvas').forEach(cv => canvases.push(cv));
+            });
+
+            if (enable) {
+                canvases.forEach(canvas => {
+                    // Skip if already replaced
+                    if (canvas.dataset.replaced === '1') return;
+                    try {
+                        const ratio = window.devicePixelRatio || 1;
+                        const url = canvas.toDataURL('image/png');
+                        const img = document.createElement('img');
+                        img.className = 'chart-print-img';
+                        img.src = url;
+                        img.dataset.replaceId = canvas.id || '';
+                        canvas.style.display = 'none';
+                        canvas.dataset.replaced = '1';
+                        canvas.parentElement.insertBefore(img, canvas.nextSibling);
+                    } catch (e) { /* ignore */ }
+                });
+            } else {
+                document.querySelectorAll('.chart-print-img').forEach(img => {
+                    const canvasId = img.dataset.replaceId;
+                    const canvas = canvasId ? document.getElementById(canvasId) : null;
+                    if (canvas) {
+                        canvas.style.display = '';
+                        delete canvas.dataset.replaced;
+                    }
+                    img.remove();
+                });
+            }
+        }
+
+        function buildReportSummary() {
+            const info = [];
+            // Data counts if available
+            try {
+                if (Array.isArray(everyQueryData) && everyQueryData.length) {
+                    info.push(`${TEXT_CONSTANTS.SHOWING_TOP || 'Showing top'} ${everyQueryData.length}`);
+                }
+            } catch (e) {}
+            // Date range
+            const startDateInput = document.getElementById('start-date');
+            const endDateInput = document.getElementById('end-date');
+            if (startDateInput?.value && endDateInput?.value) {
+                info.push(`${TEXT_CONSTANTS.REPORT_TIME_RANGE || 'Range'}: ${startDateInput.value} → ${endDateInput.value}`);
+            }
+            // SQL filter
+            const sqlFilter = document.getElementById('sql-statement-filter');
+            if (sqlFilter?.value) {
+                info.push(`${TEXT_CONSTANTS.REPORT_FILTERS_APPLIED || 'Filter'}: ${sqlFilter.value}`);
+            }
+            return info.join(' • ');
+        }
+
+        function enterReportMode() {
+            populateReportMakerTimelineCharts();
+            const selections = getReportSelections();
+            document.body.classList.add('report-mode');
+            reportModeActive = true;
+            // reset printable header state; will be enabled only if option selected
+            const hdr = document.getElementById('report-header');
+            if (hdr) hdr.classList.remove('print-visible');
+
+            // Floating exit button
+            let exitBtn = document.getElementById('report-exit-btn');
+            if (!exitBtn) {
+                exitBtn = document.createElement('button');
+                exitBtn.id = 'report-exit-btn';
+                exitBtn.className = 'report-exit-btn';
+                exitBtn.textContent = (TEXT_CONSTANTS && TEXT_CONSTANTS.EXIT_REPORT_PREVIEW) || 'EXIT REPORT PREVIEW';
+                exitBtn.addEventListener('click', exitReportMode);
+                // append into report header (sticky)
+                let header = document.getElementById('report-header');
+                if (!header) {
+                    header = document.createElement('div');
+                    header.id = 'report-header';
+                    document.body.insertBefore(header, document.body.firstChild);
+                }
+                header.appendChild(exitBtn);
+            } else {
+                exitBtn.style.display = 'inline-block';
+            }
+
+            // Cover page
+            let cover = document.getElementById('report-cover');
+            if (!cover) {
+                cover = document.createElement('div');
+                cover.id = 'report-cover';
+                document.body.insertBefore(cover, document.body.firstChild);
+            }
+            cover.innerHTML = buildReportCoverHTML(selections);
+            cover.style.display = 'block';
+
+            // Ensure a page break after cover when printing
+            let brk = document.getElementById('report-cover-break');
+            if (!brk) {
+                brk = document.createElement('div');
+                brk.id = 'report-cover-break';
+                brk.className = 'page-break';
+                cover.insertAdjacentElement('afterend', brk);
+            }
+
+            toggleSectionsVisibility(selections);
+            if (selections.options.includeHeader) addReportHeader(buildReportSummary());
+            flattenScrollableAreas(selections.options.flattenTables);
+            replaceChartsWithImages(selections.options.chartsAsImages);
+        }
+
+        function exitReportMode() {
+            reportModeActive = false;
+            document.body.classList.remove('report-mode');
+            // Restore
+            replaceChartsWithImages(false);
+            flattenScrollableAreas(false);
+            const header = document.getElementById('report-header');
+            if (header) { header.style.display = 'none'; header.classList.remove('print-visible'); }
+            const cover = document.getElementById('report-cover');
+            if (cover) cover.style.display = 'none';
+            const exitBtn = document.getElementById('report-exit-btn');
+            if (exitBtn) exitBtn.style.display = 'none';
+            // Re-show all timeline charts
+            document.querySelectorAll('#timeline .chart-container').forEach(c => { c.style.display = ''; });
+        }
+
+        function printReport() {
+            if (!reportModeActive) enterReportMode();
+            // Allow layout to settle before printing
+            setTimeout(() => window.print(), 100);
+        }
+
+        async function loadTestSample() {
+            try {
+                const res = await fetch('sample/test_system_completed_requests.json');
+                const json = await res.text();
+                const textarea = document.getElementById('json-input');
+                textarea.value = json;
+                parseJSON();
+                showToast(TEXT_CONSTANTS.COPIED_CLIPBOARD || 'Loaded');
+            } catch (e) {
+                console.error('Failed to load sample JSON', e);
+                showToast('Failed to load sample JSON', 'error');
+            }
+        }
+
+        // Wire up Report Maker buttons on DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', () => {
+            const t = (k, d) => (window.TEXT_CONSTANTS && TEXT_CONSTANTS[k]) ? TEXT_CONSTANTS[k] : d;
+
+            const btnPreview = document.getElementById('btn-preview-report');
+            const btnPrint = document.getElementById('btn-print-report');
+            const btnExit = document.getElementById('btn-exit-report');
+            const btnSample = document.getElementById('btn-load-sample');
+            if (btnPreview) btnPreview.addEventListener('click', enterReportMode);
+            if (btnPrint) btnPrint.addEventListener('click', printReport);
+            if (btnExit) btnExit.addEventListener('click', exitReportMode);
+            if (btnSample) btnSample.addEventListener('click', loadTestSample);
+
+            // Set localized labels
+            if (btnPreview) btnPreview.textContent = t('PREVIEW_REPORT', 'Preview Report');
+            if (btnPrint) btnPrint.textContent = t('PRINT_SAVE_PDF', 'Print / Save PDF');
+            if (btnExit) btnExit.textContent = t('EXIT_REPORT_MODE', 'Exit Report Mode');
+            if (btnSample) btnSample.textContent = t('LOAD_TEST_SAMPLE', 'Load test sample JSON');
+
+            const hSections = document.getElementById('rm-select-sections-title');
+            const hTimeline = document.getElementById('rm-select-timeline-title');
+            const hOptions = document.getElementById('rm-options-title');
+            if (hSections) hSections.textContent = t('SELECT_SECTIONS', 'Select sections');
+            if (hTimeline) hTimeline.textContent = t('SELECT_TIMELINE_CHARTS', 'Select Timeline charts');
+            if (hOptions) hOptions.textContent = t('REPORT_OPTIONS', 'Options');
+
+            const lIncHead = document.getElementById('rm-opt-include-header');
+            const lIncFilt = document.getElementById('rm-opt-include-filters');
+            const lFlatTbl = document.getElementById('rm-opt-flatten-tables');
+            const lChartsImg = document.getElementById('rm-opt-charts-as-images');
+            if (lIncHead) lIncHead.textContent = t('INCLUDE_HEADER_SUMMARY', 'Include header summary');
+            if (lIncFilt) lIncFilt.textContent = t('INCLUDE_FILTERS', 'Include filters applied');
+            if (lFlatTbl) lFlatTbl.textContent = t('FLATTEN_TABLES_FOR_PRINT', 'Flatten scrollable tables for print');
+            if (lChartsImg) lChartsImg.textContent = t('CONVERT_CHARTS_TO_IMAGES', 'Convert charts to images for printing');
+
+            populateReportMakerTimelineCharts();
         });
     </script>
 </body>
