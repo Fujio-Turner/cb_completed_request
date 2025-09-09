@@ -201,7 +201,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
 /* Preview (screen) should not use flex/100vh to allow natural scroll */
 .report-mode { display: block !important; height: auto !important; overflow: visible !important; }
 .report-mode #tabs { height: auto !important; overflow: visible !important; display: block !important; }
-.report-mode .version-info, .report-mode #input-section, .report-mode .ui-tabs-nav, .report-mode footer, .report-mode .beta-badge, .report-mode .dev-badge, .report-mode .live-badge { display: none !important; }
+.report-mode .version-info, .report-mode #input-section, .report-mode .ui-tabs-nav, .report-mode footer, .report-mode .beta-badge, .report-mode .dev-badge, .report-mode .live-badge, .report-mode #analysis-search-controls { display: none !important; }
 .report-mode .ui-tabs-panel { display: none !important; }
 .report-mode .ui-tabs-panel.report-visible { display: block !important; }
 .report-mode #report-header { position: sticky; top: 0; background: #fff; z-index: 10001; display: block !important; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
@@ -214,11 +214,14 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
 html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff !important; }
 body { display: block !important; height: auto !important; overflow: visible !important; padding: 12mm !important; }
 #tabs { height: auto !important; overflow: visible !important; display: block !important; }
-.ui-tabs-panel { display: block !important; }
+.ui-tabs-panel { display: block; }
 /* Ensure panels expand naturally for print */
-#dashboard, #insights, #timeline, #analysis, #every-query, #index-query-flow, #indexes { height: auto !important; overflow: visible !important; display: block !important; }
+#dashboard, #insights, #timeline, #analysis, #every-query, #index-query-flow, #indexes { height: auto !important; overflow: visible !important; }
 #index-query-flow .height-100 { height: auto !important; }
 #flow-canvas, #flow-elements, #flow-svg { transform: none !important; width: auto !important; height: auto !important; overflow: visible !important; }
+/* In report mode, only show selected panels */
+.report-mode .ui-tabs-panel { display: none !important; }
+.report-mode .ui-tabs-panel.report-visible { display: block !important; }
 /* Unclamp previously fixed-height areas */
 #table-section, #analysis-table-section, #table-container, #analysis-table-container, #flow-canvas, #indexResults { height: auto !important; overflow: visible !important; }
 
@@ -229,6 +232,8 @@ body { display: block !important; height: auto !important; overflow: visible !im
 #report-cover { page-break-after: always; page-break-inside: avoid; min-height: 100vh; }
 
 .version-info, #input-section, .ui-tabs-nav, footer, .modal, .toast { display: none !important; }
+/* Hide analysis/every-query search controls and timeline controls in report */
+#analysis-search-controls, #search-controls, #timeline-controls { display: none !important; }
 /* Only print selected sections */
 .report-mode [data-report-section]:not(.report-visible) { display: none !important; }
   .report-visible { display: block !important; }
@@ -236,7 +241,16 @@ body { display: block !important; height: auto !important; overflow: visible !im
   tfoot { display: table-footer-group; }
   table, tr, td, th { page-break-inside: avoid; }
   .chart-container, .table-container, .chart-card, .insight-category, .insight-item { page-break-inside: avoid; }
-  .page-break { page-break-before: always; }
+
+  /* Fit Dashboard tables side-by-side in Chrome */
+  #dashboard .dashboard-tables-grid { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; column-gap: 10px !important; }
+  #dashboard .dashboard-tables-grid > .table-container { box-sizing: border-box !important; padding: 4px !important; margin: 0 !important; }
+  #dashboard .dashboard-tables-grid table { table-layout: fixed !important; font-size: 11px !important; }
+  #dashboard .dashboard-tables-grid th, #dashboard .dashboard-tables-grid td { padding: 6px !important; word-break: break-word !important; }
+  #dashboard .dashboard-tables-grid button { display: none !important; }
+
+
+  .page-break { display: block !important; break-before: page !important; page-break-before: always !important; height: 0; }
 }
 
 /* Report header */
@@ -415,7 +429,8 @@ if (window.TEXT_CONSTANTS) {
                 <a href="#indexes" aria-controls="indexes" tabindex="0">Indexes</a>
             </li>
             <li role="tab">
-                <a href="#report-maker" aria-controls="report-maker" tabindex="0">Report Maker</a>
+                <a href="#report-maker" aria-controls="report-maker" tabindex="0">Report Maker <span
+                        class="beta-badge">Beta</span></a>
             </li>
         </ul>
 
@@ -1043,7 +1058,7 @@ if (window.TEXT_CONSTANTS) {
 
         <!-- Timeline Tab Content -->
         <div id="timeline" data-report-section="timeline">
-            <div class="margin-bottom-10">
+            <div id="timeline-controls" class="margin-bottom-10">
                 <button id="reset-zoom-btn" onclick="resetTimelineZoom()"
                     class="cursor-pointer border-none border-radius-3 btn-gray">
                     Reset Zoom
@@ -1463,7 +1478,6 @@ if (window.TEXT_CONSTANTS) {
     <!-- Report Maker Tab Content -->
        <div id="report-maker" data-report-section="report-maker" style="padding: 15px;">
             <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
-                <button id="btn-load-sample" class="btn-standard"></button>
                 <button id="btn-preview-report" class="btn-standard" style="background:#0d6efd;color:#fff"></button>
                 <button id="btn-print-report" class="btn-standard"></button>
                 <button id="btn-exit-report" class="btn-standard"></button>
@@ -1472,9 +1486,9 @@ if (window.TEXT_CONSTANTS) {
                 <h3 id="rm-select-sections-title" style="margin:0 0 8px 0;"></h3>
                 <div id="report-sections" style="display:flex; gap: 16px; flex-wrap: wrap;">
                     <label><input type="checkbox" data-section="dashboard" checked> Dashboard</label>
-                    <label><input type="checkbox" data-section="insights"> Insights</label>
+                    <label><input type="checkbox" data-section="insights" checked> Insights</label>
                     <label><input type="checkbox" data-section="timeline" checked> Timeline</label>
-                    <label><input type="checkbox" data-section="analysis"> Query Groups</label>
+                    <label><input type="checkbox" data-section="analysis" checked> Query Groups</label>
                     <label><input type="checkbox" data-section="every-query"> Every Query</label>
                     <label><input type="checkbox" data-section="index-query-flow"> Index/Query Flow</label>
                     <label><input type="checkbox" data-section="indexes"> Indexes</label>
@@ -15011,15 +15025,19 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 'exec-vs-kernel': 'Exec vs Kernel',
                 'exec-vs-serv': 'Exec vs Service',
                 'exec-vs-elapsed': 'Exec vs Elapsed',
-                'enhanced-operations': 'Enhanced Operations'
+                'enhanced-operations': 'Enhanced Operations',
+                'cpu-time': 'CPU Time'
             };
+            // Default OFF list
+            const defaultOff = new Set(['timeline','memory','exec-vs-kernel','exec-vs-serv','exec-vs-elapsed','cpu-time','enhanced-operations']);
             const cards = document.querySelectorAll('#timeline .chart-container');
             cards.forEach(card => {
                 const id = card.getAttribute('data-chart-id') || card.querySelector('canvas')?.id || '';
                 if (!id) return;
                 const lbl = mapNames[id] || id;
+                const checkedAttr = defaultOff.has(id) ? '' : 'checked';
                 const label = document.createElement('label');
-                label.innerHTML = `<input type=\"checkbox\" data-chart-id=\"${id}\" checked> ${lbl}`;
+                label.innerHTML = `<input type=\"checkbox\" data-chart-id=\"${id}\" ${checkedAttr}> ${lbl}`;
                 container.appendChild(label);
             });
         }
@@ -15332,19 +15350,45 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             cover.innerHTML = buildReportCoverHTML(selections);
             cover.style.display = 'block';
 
-            // Ensure a page break after cover when printing
-            let brk = document.getElementById('report-cover-break');
-            if (!brk) {
-                brk = document.createElement('div');
-                brk.id = 'report-cover-break';
-                brk.className = 'page-break';
-                cover.insertAdjacentElement('afterend', brk);
-            }
+            // Cover already forces a page break in print via CSS (#report-cover { page-break-after: always })
+            // Remove any legacy cover-break element to avoid blank page 2
+            const legacyBrk = document.getElementById('report-cover-break');
+            if (legacyBrk) legacyBrk.remove();
 
             toggleSectionsVisibility(selections);
             if (selections.options.includeHeader) addReportHeader(buildReportSummary());
             flattenScrollableAreas(selections.options.flattenTables);
             replaceChartsWithImages(selections.options.chartsAsImages);
+        }
+
+        function resetReportMakerDefaults() {
+        // Sections default states
+        const defaultSections = {
+        'dashboard': true,
+        'insights': true,
+        'timeline': true,
+        'analysis': true,
+        'every-query': false,
+        'index-query-flow': false,
+        'indexes': false
+        };
+        document.querySelectorAll('#report-sections input[type="checkbox"]').forEach(chk => {
+            const k = chk.getAttribute('data-section');
+            if (k in defaultSections) chk.checked = !!defaultSections[k];
+            });
+            // Options default states
+            const opt = {
+                'opt-include-header': true,
+                'opt-include-filters': true,
+                'opt-flatten-tables': true,
+                'opt-charts-as-images': true
+            };
+            Object.keys(opt).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.checked = !!opt[id];
+            });
+            // Timeline charts list regenerated with default ON/OFF
+            populateReportMakerTimelineCharts();
         }
 
         function exitReportMode() {
@@ -15357,14 +15401,62 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (header) { header.style.display = 'none'; header.classList.remove('print-visible'); }
             const cover = document.getElementById('report-cover');
             if (cover) cover.style.display = 'none';
+            const legacyBrk = document.getElementById('report-cover-break');
+            if (legacyBrk) legacyBrk.remove();
             const exitBtn = document.getElementById('report-exit-btn');
             if (exitBtn) exitBtn.style.display = 'none';
             // Re-show all timeline charts
             document.querySelectorAll('#timeline .chart-container').forEach(c => { c.style.display = ''; });
+            // Reset checkboxes back to defaults
+            resetReportMakerDefaults();
         }
 
+        function setSearchControlsVisibility(hide) {
+            ['analysis-search-controls', 'search-controls'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = hide ? 'none' : '';
+            });
+        }
+
+        function addPageBreaksForSelectedPanels() {
+            // Remove existing auto breaks (keep cover break)
+            document.querySelectorAll('.page-break.auto').forEach(el => el.remove());
+            const panels = Array.from(document.querySelectorAll('[data-report-section].report-visible'));
+            panels.forEach((panel, idx) => {
+                if (idx === 0) return;
+                const br = document.createElement('div');
+                br.className = 'page-break auto';
+                panel.insertAdjacentElement('beforebegin', br);
+            });
+        }
+
+
         function printReport() {
-            if (!reportModeActive) enterReportMode();
+            const selections = getReportSelections();
+            if (!reportModeActive) {
+                // Enter preview with current selections
+                enterReportMode();
+            } else {
+                // Re-apply current selections to preview before printing
+                toggleSectionsVisibility(selections);
+                if (selections.options.includeHeader) {
+                    addReportHeader(buildReportSummary());
+                } else {
+                    const header = document.getElementById('report-header');
+                    if (header) { header.style.display = 'none'; header.classList.remove('print-visible'); }
+                }
+                flattenScrollableAreas(selections.options.flattenTables);
+                replaceChartsWithImages(selections.options.chartsAsImages);
+                const cover = document.getElementById('report-cover');
+                if (cover) cover.innerHTML = buildReportCoverHTML(selections);
+            }
+            // Insert page breaks so each selected tab starts on a new page (after cover)
+            addPageBreaksForSelectedPanels();
+            // Hide non-printable UI just in case the browser ignores CSS
+            setSearchControlsVisibility(true);
+            // Restore after printing
+            const restore = () => setSearchControlsVisibility(false);
+            window.addEventListener('afterprint', restore, { once: true });
             // Allow layout to settle before printing
             setTimeout(() => window.print(), 100);
         }
@@ -15390,17 +15482,14 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             const btnPreview = document.getElementById('btn-preview-report');
             const btnPrint = document.getElementById('btn-print-report');
             const btnExit = document.getElementById('btn-exit-report');
-            const btnSample = document.getElementById('btn-load-sample');
             if (btnPreview) btnPreview.addEventListener('click', enterReportMode);
             if (btnPrint) btnPrint.addEventListener('click', printReport);
             if (btnExit) btnExit.addEventListener('click', exitReportMode);
-            if (btnSample) btnSample.addEventListener('click', loadTestSample);
 
             // Set localized labels
             if (btnPreview) btnPreview.textContent = t('PREVIEW_REPORT', 'Preview Report');
             if (btnPrint) btnPrint.textContent = t('PRINT_SAVE_PDF', 'Print / Save PDF');
             if (btnExit) btnExit.textContent = t('EXIT_REPORT_MODE', 'Exit Report Mode');
-            if (btnSample) btnSample.textContent = t('LOAD_TEST_SAMPLE', 'Load test sample JSON');
 
             const hSections = document.getElementById('rm-select-sections-title');
             const hTimeline = document.getElementById('rm-select-timeline-title');
