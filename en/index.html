@@ -8707,8 +8707,14 @@ function renderQueryGroupPhaseTimesChart(group) {
                 const startValue = formatDateForInput(currentMin);
                 const endValue = formatDateForInput(currentMax);
 
-                document.getElementById("start-date").value = startValue;
-                document.getElementById("end-date").value = endValue;
+                const startInput = document.getElementById("start-date");
+                const endInput = document.getElementById("end-date");
+                startInput.value = startValue;
+                endInput.value = endValue;
+
+                // Always show the filter reminder banner after updating the pickers
+                // Consistent with setTimeRange and manual input changes
+                showFilterReminder();
             }
         }
 
