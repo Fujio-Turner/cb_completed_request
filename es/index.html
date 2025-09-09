@@ -180,6 +180,11 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                 LOADING: "Loading..."
             };
     </script>
+    <style>
+      /* Estado de Insight: gris por defecto; azul cuando está activo (con problemas) */
+      .insight-item { border-left: 4px solid #dee2e6 !important; }
+      .insight-item.active { border-left-color: #007bff !important; }
+    </style>
 </head>
 
 <body>

@@ -281,6 +281,11 @@ if (window.TEXT_CONSTANTS) {
   });
 }
 </script>
+    <style>
+      /* Insight state: gray by default; blue when active (issues found) */
+      .insight-item { border-left: 4px solid #dee2e6 !important; }
+      .insight-item.active { border-left-color: #007bff !important; }
+    </style>
 </head>
 
 <body>
@@ -11215,9 +11220,15 @@ function generateElapsedTimeChart(requests) {
                     if (titleElement) titleElement.classList.add('collapsed');
                     if (contentElement) contentElement.classList.add('collapsed');
                 }
+
+                // Toggle visual active state (blue edge when issues found)
+                const card = titleElement ? titleElement.closest('.insight-item') : null;
+                if (card) {
+                    card.classList.toggle('active', !!hasIssues);
+                }
             });
 
-            // Handle dev insights - always collapsed since they don't have real data
+            // Handle dev insights - always collapsed and not active since they don't have real data
             const devInsights = document.querySelectorAll('.insight-item:has(.dev-badge)');
             devInsights.forEach(devInsight => {
                 const titleElement = devInsight.querySelector('.insight-title');
@@ -11225,6 +11236,7 @@ function generateElapsedTimeChart(requests) {
 
                 if (titleElement) titleElement.classList.add('collapsed');
                 if (contentElement) contentElement.classList.add('collapsed');
+                devInsight.classList.remove('active');
             });
 
             // Handle beta insights - collapsed by default, but can be expanded based on results
