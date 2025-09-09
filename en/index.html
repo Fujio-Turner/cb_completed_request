@@ -177,7 +177,14 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
             // Technical constants (DO NOT TRANSLATE - used in logic checks)
                 N_A: "N/A",
                 NO_DATA: "No data",
-                LOADING: "Loading..."
+                LOADING: "Loading...",
+
+            // Input panel toggle
+                SHOW_INPUT_PANEL: "Show",
+                HIDE_INPUT_PANEL: "Hide",
+
+            // Help badge
+                HELP_DEBUG_TIPS: "NEED HELP? Debugging + Tool Tips — Click Here"
             };
     </script>
 <style>
@@ -369,13 +376,7 @@ if (window.TEXT_CONSTANTS) {
 
             <span id="filter-info" style="font-size: 12px; color: #6c757d;"></span>
 
-            <!-- Help Link (Right Side) -->
-            <div style="margin-left: auto;">
-                <a href="https://cb.fuj.io/analysis_hub#introduction" target="_blank"
-                    style="text-decoration: none; color: #007bff; font-size: 14px;">
-                    NEED HELP? Debugging + Tool Tips
-                </a>
-            </div>
+
         </div>
     </div>
 
@@ -1151,7 +1152,7 @@ if (window.TEXT_CONSTANTS) {
       -->
             <!-- Query Group Phase Times Chart -->
             <div id="analysis-phase-times-section" class="margin-bottom-20">
-                <div class="chart-container" style="height:315px;">
+                <div class="chart-container" style="height:450px;">
                     <div style="height: auto;">
                         <canvas id="query-group-phase-times-chart" style="width:100%;height:900px;"></canvas>
                     </div>
@@ -9014,10 +9015,15 @@ function renderQueryGroupPhaseTimesChart(group) {
         // Update filter info display
         function updateFilterInfo(originalCount, filteredCount) {
             const filterInfo = document.getElementById("filter-info");
+            const queriesBadge = document.getElementById("queries-fixed-badge");
             if (originalCount === filteredCount) {
-                filterInfo.textContent = `Showing all ${originalCount} queries`;
+                const html = `Showing all <strong>${originalCount}</strong> queries`;
+                if (filterInfo) filterInfo.innerHTML = html;
+                if (queriesBadge) queriesBadge.innerHTML = html;
             } else {
-                filterInfo.textContent = `Showing ${filteredCount} of ${originalCount} queries`;
+                const html = `Showing <strong>${filteredCount}</strong> of <strong>${originalCount}</strong> queries`;
+                if (filterInfo) filterInfo.innerHTML = html;
+                if (queriesBadge) queriesBadge.innerHTML = html;
             }
         }
 
@@ -11978,6 +11984,9 @@ function generateElapsedTimeChart(requests) {
                     document.getElementById("progress-container").style.display =
                         "block";
 
+                    // Schedule auto-hide of input panel after 3 seconds (unless user manually toggles)
+                    scheduleInputAutoHide(3000);
+
                     // Get filter settings once outside the loop for performance
                     const excludeCheckbox = document.getElementById("exclude-system-queries");
                     const isExcluding = excludeCheckbox && excludeCheckbox.checked;
@@ -12136,9 +12145,102 @@ function generateElapsedTimeChart(requests) {
                     }
                 }, 300);
             }, 4000);
-        }
+            }
 
-        // Finish processing after all batches are done
+            // Input panel auto-hide helpers (Issue #88)
+            let _inputHideTimer = null;
+            let _inputAutoHideDisabled = false;
+            function hideInputSection() {
+                const input = document.getElementById('input-section');
+                const tab = document.getElementById('toggle-input-tab');
+                if (!input) return;
+                try {
+                    const $input = window.jQuery ? jQuery(input) : null;
+                    if ($input && $input.fadeOut) {
+                        $input.stop(true, true).fadeOut('slow', () => {
+                            if (tab) {
+                                tab.setAttribute('aria-expanded', 'false');
+                                const label = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.SHOW_INPUT_PANEL) || 'Show';
+                                tab.textContent = '↓';
+                                tab.title = label;
+                                tab.classList.remove('showing');
+                                tab.classList.add('hidden');
+                            }
+                        });
+                    } else {
+                        // Fallback if jQuery missing
+                        input.style.display = 'none';
+                        if (tab) {
+                            tab.setAttribute('aria-expanded', 'false');
+                            const label = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.SHOW_INPUT_PANEL) || 'Show';
+                            tab.textContent = '↓';
+                            tab.title = label;
+                            tab.classList.remove('showing');
+                            tab.classList.add('hidden');
+                        }
+                    }
+                } catch (e) { /* no-op */ }
+            }
+            function showInputSection() {
+                const input = document.getElementById('input-section');
+                const tab = document.getElementById('toggle-input-tab');
+                if (!input) return;
+                try {
+                    const $input = window.jQuery ? jQuery(input) : null;
+                    if ($input && $input.fadeIn) {
+                        $input.stop(true, true).fadeIn('slow', () => {
+                            if (tab) {
+                                tab.setAttribute('aria-expanded', 'true');
+                                const label = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.HIDE_INPUT_PANEL) || 'Hide';
+                                tab.textContent = '↑';
+                                tab.title = label;
+                                tab.classList.remove('hidden');
+                                tab.classList.add('showing');
+                            }
+                        });
+                    } else {
+                        input.style.display = '';
+                        if (tab) {
+                            tab.setAttribute('aria-expanded', 'true');
+                            const label = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.HIDE_INPUT_PANEL) || 'Hide';
+                            tab.textContent = '↑';
+                            tab.title = label;
+                            tab.classList.remove('hidden');
+                            tab.classList.add('showing');
+                        }
+                    }
+                } catch (e) { /* no-op */ }
+            }
+            function toggleInputSection() {
+                const input = document.getElementById('input-section');
+                if (!input) return;
+                // User manually toggled; disable future auto-hide for this session
+                _inputAutoHideDisabled = true;
+                if (_inputHideTimer) { clearTimeout(_inputHideTimer); _inputHideTimer = null; }
+                const cs = window.getComputedStyle ? getComputedStyle(input) : null;
+                const isHidden = (
+                    (cs && (cs.display === 'none' || cs.visibility === 'hidden' || cs.visibility === 'collapse')) ||
+                    input.style.display === 'none' ||
+                    input.hidden === true
+                );
+                if (isHidden) showInputSection(); else hideInputSection();
+            }
+            function scheduleInputAutoHide(delayMs = 3000) {
+                if (_inputAutoHideDisabled) return; // respect user preference
+                if (_inputHideTimer) {
+                    clearTimeout(_inputHideTimer);
+                    _inputHideTimer = null;
+                }
+                _inputHideTimer = setTimeout(() => {
+                    const input = document.getElementById('input-section');
+                    if (_inputAutoHideDisabled) return;
+                    if (input && input.style.visibility !== 'collapse') {
+                        hideInputSection();
+                    }
+                }, delayMs);
+            }
+
+            // Finish processing after all batches are done
         function finishProcessing(allRequests) {
             const startDateInput = document.getElementById("start-date");
             const endDateInput = document.getElementById("end-date");
@@ -15309,6 +15411,74 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (lChartsImg) lChartsImg.textContent = t('CONVERT_CHARTS_TO_IMAGES', 'Convert charts to images for printing');
 
             populateReportMakerTimelineCharts();
+
+            // Setup input toggle tab and styles (Issue #88)
+            try {
+                // Inject minimal CSS for the toggle tab
+                const css = `
+                .toggle-input-tab { position: fixed; left: 2px; top: 2px; z-index: 10001; color: #fff; border: 1px solid rgba(255,255,255,0.9); border-radius: 4px; width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; line-height: 1; letter-spacing: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer; }
+                .toggle-input-tab.showing { background: #007bff; }
+                .toggle-input-tab.showing:hover { background: #0056b3; }
+                .toggle-input-tab.hidden { background: #28a745; }
+                .toggle-input-tab.hidden:hover { background: #1e7e34; }
+                .help-fixed-badge { position: fixed; right: 6px; top: 6px; z-index: 9998; background: #f1f3f5; color: #343a40; border: 1px solid #dee2e6; border-radius: 14px; padding: 4px 10px; font-size: 11px; font-weight: 700; box-shadow: 0 1px 6px rgba(0,0,0,0.12); }
+                .help-fixed-badge a { color: #007bff; text-decoration: none; }
+                .help-fixed-badge a:hover { text-decoration: underline; }
+                .queries-fixed-badge { position: fixed; top: 6px; left: 50%; transform: translateX(-50%); z-index: 9997; background: #f8f9fa; color: #343a40; border: 1px solid #dee2e6; border-radius: 14px; padding: 4px 12px; font-size: 11px; font-weight: 600; box-shadow: 0 1px 6px rgba(0,0,0,0.08); pointer-events: none; }
+                @media print { .toggle-input-tab { display: none !important; } .help-fixed-badge, .queries-fixed-badge { display: none !important; } }
+                /* Fade-up animation helpers for input panel */
+                #input-section.input-anim { transition: opacity 320ms cubic-bezier(0.22, 1, 0.36, 1), transform 320ms cubic-bezier(0.22, 1, 0.36, 1); will-change: opacity, transform; }
+                #input-section.fade-up-hidden { opacity: 0; transform: translateY(-12px); }
+                `;
+                const styleEl = document.createElement('style');
+                styleEl.textContent = css;
+                document.head.appendChild(styleEl);
+
+                // Create the toggle tab if not present
+                let tab = document.getElementById('toggle-input-tab');
+                if (!tab) {
+                    tab = document.createElement('button');
+                    tab.id = 'toggle-input-tab';
+                    tab.type = 'button';
+                    tab.className = 'toggle-input-tab';
+                    tab.setAttribute('aria-controls', 'input-section');
+                    tab.setAttribute('aria-expanded', 'false');
+                    tab.title = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.SHOW_INPUT_PANEL) || 'Show';
+                    tab.textContent = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.SHOW_INPUT_PANEL) || 'Show';
+                    tab.addEventListener('click', toggleInputSection);
+                    document.body.appendChild(tab);
+                }
+                // Ensure initial label matches current state (input is visible at load)
+                const hideLabel = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.HIDE_INPUT_PANEL) || 'Hide';
+                tab.textContent = '↑';
+                tab.title = hideLabel;
+                tab.setAttribute('aria-expanded', 'true');
+                tab.classList.remove('hidden');
+                tab.classList.add('showing');
+
+                // Create fixed help badge (always visible top-right)
+                let help = document.getElementById('help-fixed-badge');
+                if (!help) {
+                help = document.createElement('div');
+                help.id = 'help-fixed-badge';
+                help.className = 'help-fixed-badge';
+                const helpText = t('HELP_DEBUG_TIPS', 'NEED HELP? Debugging + Tool Tips — Click Here');
+                help.innerHTML = `<a href="https://cb.fuj.io/analysis_hub#introduction" target="_blank" rel="noopener">${helpText}</a>`;
+                document.body.appendChild(help);
+                }
+
+                // Create fixed queries count badge (center top)
+                let qbadge = document.getElementById('queries-fixed-badge');
+                if (!qbadge) {
+                    qbadge = document.createElement('div');
+                    qbadge.id = 'queries-fixed-badge';
+                    qbadge.className = 'queries-fixed-badge';
+                    qbadge.innerHTML = 'Showing all <strong>0</strong> queries';
+                    document.body.appendChild(qbadge);
+                }
+            } catch (e) {
+                console.warn('Failed to initialize input toggle tab', e);
+            }
         });
     </script>
 </body>
