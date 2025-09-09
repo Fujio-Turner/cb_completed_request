@@ -62,6 +62,14 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
 
         /* Reduce padding on chart containers to save vertical space and allow scrolling */
         .chart-container { padding: 5px !important; overflow: auto !important; }
+        /* Ensure consistent vertical spacing for standalone charts */
+        .with-margin-top-20 { margin-top: 20px !important; }
+        .with-margin-top-40 { margin-top: 40px !important; }
+        .with-margin-bottom-20 { margin-bottom: 20px !important; }
+        /* Ensure gap above Query Pattern Features matches below */
+        .pattern-analysis-grid { display: grid !important; grid-template-columns: 1fr; grid-template-rows: 400px; gap: 20px; margin-top: 20px !important; margin-bottom: 0; clear: both !important; position: relative; z-index: 0; }
+        /* Remove inflated min-height on draggable tiles in dashboard */
+        #dashboard .draggable-chart { min-height: 0 !important; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/jquery-ui.min.js" integrity="sha512-MSOo1aY+3pXCOCdGAYoBZ6YGI0aragoQsg1mKKBHXCYPIWxamwOE7Drh+N5CPgGI5SA9IEKJiPjdfqWFWmZtRA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
@@ -11984,9 +11992,6 @@ function generateElapsedTimeChart(requests) {
                     document.getElementById("progress-container").style.display =
                         "block";
 
-                    // Schedule auto-hide of input panel after 3 seconds (unless user manually toggles)
-                    scheduleInputAutoHide(3000);
-
                     // Get filter settings once outside the loop for performance
                     const excludeCheckbox = document.getElementById("exclude-system-queries");
                     const isExcluding = excludeCheckbox && excludeCheckbox.checked;
@@ -12371,6 +12376,9 @@ function generateElapsedTimeChart(requests) {
             if (!flowDiagram.hasChildNodes() || flowDiagram.children.length === 0) {
                 flowDiagram.innerHTML = TEXT_CONSTANTS.SELECT_QUERY_FLOW;
             }
+
+            // Schedule auto-hide of input panel after successful processing
+            scheduleInputAutoHide(3000);
         }
 
         // Modal event listeners
