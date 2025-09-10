@@ -1917,5 +1917,53 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-10T10:10:00.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.50µs\",\"servTime\":\"9.50µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:users\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"4.00µs\"},\"~children\":[{\"#operator\":\"PrimaryScan3\",\"#stats\":{\"#itemsIn\":20000,\"#itemsOut\":100,\"#phaseSwitches\":40000,\"execTime\":\"200.000ms\",\"kernTime\":\"190.000ms\",\"servTime\":\"185.000ms\"},\"index\":\"def_primary\",\"keyspace\":\"users\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":100,\"#itemsOut\":100,\"#phaseSwitches\":200,\"execTime\":\"180.000ms\",\"kernTime\":\"170.000ms\",\"servTime\":\"168.000ms\"},\"keyspace\":\"users\",\"namespace\":\"default\"},{\"#operator\":\"Order\",\"#stats\":{\"#itemsIn\":100,\"#itemsOut\":100,\"#phaseSwitches\":150,\"execTime\":\"8.000ms\"},\"sort_terms\":[{\"desc\":true,\"expr\":\"(`u`.`createdDate`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":100,\"#itemsOut\":100,\"#phaseSwitches\":101,\"execTime\":\"12.000ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "mutation-update-orders-inefficient-scan",
+      "cpuTime": "200.000ms",
+      "elapsedTime": "1.234s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 120000,
+        "fetch": 500
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "update": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "10.000µs",
+        "instantiate": "6.000µs",
+        "parse": "150.000µs",
+        "plan": "80.000µs",
+        "indexScan": "320.000ms",
+        "fetch": "100.000ms",
+        "run": "1.233s",
+        "stream": "1.000ms"
+      },
+      "remoteAddr": "127.0.0.1:52000",
+      "requestId": "mutation-update-orders-inefficient-scan",
+      "requestTime": "2025-08-12T12:00:00.000Z",
+      "resultCount": 0,
+      "resultSize": 0,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "1.234s",
+      "state": "completed",
+      "statement": "UPDATE `orders` SET status = 'archived' WHERE orderDate < '2023-01-01'",
+      "statementType": "UPDATE",
+      "useCBO": true,
+      "usedMemory": 4096,
+      "userAgent": "maintenance-job/1.0.0",
+      "users": "local:maintenance_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-12T12:00:00.001Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"1.234µs\",\"servTime\":\"6.789µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:orders\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"3.210µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":120000,\"#itemsOut\":500,\"#phaseSwitches\":240000,\"execTime\":\"320.000ms\",\"kernTime\":\"300.000ms\",\"servTime\":\"295.000ms\"},\"index\":\"idx_orders_orderDate\",\"keyspace\":\"orders\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":500,\"#itemsOut\":500,\"#phaseSwitches\":1000,\"execTime\":\"100.000ms\",\"kernTime\":\"95.000ms\",\"servTime\":\"92.000ms\"},\"keyspace\":\"orders\",\"namespace\":\"default\"},{\"#operator\":\"Update\",\"#stats\":{\"#itemsIn\":500,\"#itemsOut\":0,\"#phaseSwitches\":1000,\"execTime\":\"800.000ms\",\"kernTime\":\"780.000ms\",\"servTime\":\"770.000ms\"},\"keyspace\":\"orders\",\"namespace\":\"default\"},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":0,\"#itemsOut\":0,\"#phaseSwitches\":1,\"execTime\":\"1.000ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
   }
+
  ]

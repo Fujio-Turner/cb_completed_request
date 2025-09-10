@@ -10814,10 +10814,12 @@ function generateElapsedTimeChart(requests) {
                 }
 
                 // Count inefficient index scans
+                // Exclude mutation statements (MERGE, DELETE, INSERT, UPDATE) which may return [] on success
+                const isMutationStatement = /^(MERGE|DELETE|INSERT|UPDATE)\b/i.test(statement);
                 // Check if query has aggregate functions (exclude them)
                 const hasAggregates = /\b(COUNT|AVG|MIN|MAX|SUM)\s*\(/i.test(statement);
 
-                if (!hasAggregates) {
+                if (!isMutationStatement && !hasAggregates) {
                     const resultCount = request.resultCount || 0;
                     const phaseCounts = request.phaseCounts || {};
 
