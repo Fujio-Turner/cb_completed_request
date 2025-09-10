@@ -177,6 +177,9 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         PHASE_JOIN: "JOIN",
         PHASE_PROJECT: "Project",
         PHASE_DELETE_UPDATE: "DELETE / UPDATE",
+        PHASE_DELETE: "DELETE",
+        PHASE_UPDATE: "UPDATE",
+        PHASE_INSERT: "INSERT",
         PHASE_STREAM: "Stream",
                 PHASE_SORT: "ORDER BY",
         PHASE_GROUP_AGG: "GROUP BY",
@@ -3932,7 +3935,9 @@ if (window.TEXT_CONSTANTS) {
             const s_sort = phaseStats('sort');
             const s_limit = phaseStats('limit');
             const s_project = phaseStats('project');
-            const s_dml = phaseStats(['delete','update']);
+            const s_delete = phaseStats('delete');
+            const s_update = phaseStats('update');
+            const s_insert = phaseStats('insert');
             const s_stream = phaseStats('stream');
 
             const avgPhaseTimeline = [
@@ -3947,7 +3952,9 @@ if (window.TEXT_CONSTANTS) {
                 { id: 'sort', label: TEXT_CONSTANTS.PHASE_SORT, avgMs: s_sort.avg, minMs: s_sort.min, maxMs: s_sort.max },
                 { id: 'limit', label: TEXT_CONSTANTS.PHASE_LIMIT || 'limit', avgMs: s_limit.avg, minMs: s_limit.min, maxMs: s_limit.max },
                 { id: 'project', label: TEXT_CONSTANTS.PHASE_PROJECT, avgMs: s_project.avg, minMs: s_project.min, maxMs: s_project.max },
-                { id: 'deleteUpdate', label: TEXT_CONSTANTS.PHASE_DELETE_UPDATE || 'DELETE / UPDATE', avgMs: s_dml.avg, minMs: s_dml.min, maxMs: s_dml.max },
+                { id: 'delete', label: TEXT_CONSTANTS.PHASE_DELETE || 'DELETE', avgMs: s_delete.avg, minMs: s_delete.min, maxMs: s_delete.max },
+                { id: 'update', label: TEXT_CONSTANTS.PHASE_UPDATE || 'UPDATE', avgMs: s_update.avg, minMs: s_update.min, maxMs: s_update.max },
+                { id: 'insert', label: TEXT_CONSTANTS.PHASE_INSERT || 'INSERT', avgMs: s_insert.avg, minMs: s_insert.min, maxMs: s_insert.max },
                 { id: 'stream', label: TEXT_CONSTANTS.PHASE_STREAM || 'return results', avgMs: s_stream.avg, minMs: s_stream.min, maxMs: s_stream.max },
             ].filter(p => p.avgMs > 0);
 
@@ -4394,7 +4401,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                 const sortStats    = findStats('sort');
                 const limitStats   = findStats('limit');
                 const projectStats = findStats('project');
-                const dmlStats     = findStats('deleteUpdate');
+                const deleteStats  = findStats('delete');
+                const updateStats  = findStats('update');
+                const insertStats  = findStats('insert');
                 const streamStats  = findStats('stream');
 
                 // Dynamically build rows (top-down order) and include only if data exists
@@ -4408,7 +4417,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                     { key: 'sort',         label: TEXT_CONSTANTS.PHASE_SORT,                            include: !!sortStats.avgMs },
                     { key: 'limit',        label: TEXT_CONSTANTS.PHASE_LIMIT,                           include: !!limitStats.avgMs },
                     { key: 'project',      label: TEXT_CONSTANTS.PHASE_PROJECT,                         include: !!projectStats.avgMs },
-                    { key: 'deleteUpdate', label: TEXT_CONSTANTS.PHASE_DELETE_UPDATE || 'DELETE / UPDATE', include: !!dmlStats.avgMs },
+                    { key: 'delete',       label: TEXT_CONSTANTS.PHASE_DELETE || 'DELETE',              include: !!deleteStats.avgMs },
+                    { key: 'update',       label: TEXT_CONSTANTS.PHASE_UPDATE || 'UPDATE',              include: !!updateStats.avgMs },
+                    { key: 'insert',       label: TEXT_CONSTANTS.PHASE_INSERT || 'INSERT',              include: !!insertStats.avgMs },
                     { key: 'stream',       label: TEXT_CONSTANTS.PHASE_STREAM,                          include: !!streamStats.avgMs },
                 ];
                 const activeRows = rows.filter(r => r.include);
@@ -4446,7 +4457,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                 const sortBar    = sortStats.avgMs   > 0 ? [t, (t += sortStats.avgMs)]      : null;
                 const limitBar   = limitStats.avgMs  > 0 ? [t, (t += limitStats.avgMs)]     : null;
                 const projectBar = projectStats.avgMs> 0 ? [t, (t += projectStats.avgMs)]   : null;
-                const dmlBar     = dmlStats.avgMs    > 0 ? [t, (t += dmlStats.avgMs)]       : null;
+                const deleteBar  = deleteStats.avgMs > 0 ? [t, (t += deleteStats.avgMs)]     : null;
+                const updateBar  = updateStats.avgMs > 0 ? [t, (t += updateStats.avgMs)]     : null;
+                const insertBar  = insertStats.avgMs > 0 ? [t, (t += insertStats.avgMs)]     : null;
                 const streamBar  = streamStats.avgMs > 0 ? [t, (t += streamStats.avgMs)]    : null;
 
                 // Helper to place a bar on a specific row index
@@ -4478,8 +4491,12 @@ function renderQueryGroupPhaseTimesChart(group) {
                     datasets.push({ label: TEXT_CONSTANTS.PHASE_LIMIT,     phaseId: 'limit',     data: mkDataForRow(limitBar, rowIndex.limit), backgroundColor: 'rgba(153, 102, 255, 0.30)', borderColor: 'rgba(153, 102, 255, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
                 if (projectBar && rowIndex.project !== undefined)
                     datasets.push({ label: TEXT_CONSTANTS.PHASE_PROJECT,   phaseId: 'project',   data: mkDataForRow(projectBar,rowIndex.project), backgroundColor: 'rgba(255, 99, 132, 0.25)', borderColor: 'rgba(255, 99, 132, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
-                if (dmlBar && rowIndex.deleteUpdate !== undefined)
-                    datasets.push({ label: TEXT_CONSTANTS.PHASE_DELETE_UPDATE || 'DELETE / UPDATE', phaseId: 'deleteUpdate', data: mkDataForRow(dmlBar, rowIndex.deleteUpdate), backgroundColor: 'rgba(121, 85, 72, 0.35)', borderColor: 'rgba(121, 85, 72, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
+                if (deleteBar && rowIndex.delete !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_DELETE || 'DELETE', phaseId: 'delete', data: mkDataForRow(deleteBar, rowIndex.delete), backgroundColor: 'rgba(200, 35, 51, 0.35)', borderColor: 'rgba(200, 35, 51, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
+                if (updateBar && rowIndex.update !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_UPDATE || 'UPDATE', phaseId: 'update', data: mkDataForRow(updateBar, rowIndex.update), backgroundColor: 'rgba(0, 150, 136, 0.35)', borderColor: 'rgba(0, 150, 136, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
+                if (insertBar && rowIndex.insert !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_INSERT || 'INSERT', phaseId: 'insert', data: mkDataForRow(insertBar, rowIndex.insert), backgroundColor: 'rgba(156, 39, 176, 0.35)', borderColor: 'rgba(156, 39, 176, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
                 if (streamBar && rowIndex.stream !== undefined)
                     datasets.push({ label: TEXT_CONSTANTS.PHASE_STREAM,    phaseId: 'stream',    data: mkDataForRow(streamBar,rowIndex.stream), backgroundColor: 'rgba(0, 123, 255, 0.20)',  borderColor: 'rgba(0, 123, 255, 0.8)',  borderWidth: 1, borderRadius: 4, grouped: false });
 
