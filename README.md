@@ -1,21 +1,15 @@
-# Couchbase Slow Query Analysis Tool v3.13.0
+# Couchbase Slow Query Analysis Tool v3.14.0
 
-**🌍 Languages:** **🇺🇸 English** | [🇩🇪 Deutsch](de/README.de.md) | [🇪🇸 Español](es/README.es.md) | [🇵🇹 Português](pt/README.pt.md)
 
-🚀 **Beta Deployment Links:**
+
+🚀 **Hosted Tool:**
 - English: https://cb.fuj.io/en/
-- German: https://cb.fuj.io/de/
-- Spanish: https://cb.fuj.io/es/
-- Portuguese: https://cb.fuj.io/pt/
 
 If you don't want to download the index.html files, click the beta links above. Remember to still follow the steps in the `Quick Start` section below to complete `Steps 3:` and beyond to get the JSON data you need to debug and analyze.
 
 ## 📁 **Download Instructions:**
-Alternatively, you can download the HTML files locally:
+Alternatively, you can download the HTML file locally:
 - **English**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/en/index.html?download=true)
-- **German**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/de/index.html?download=true)
-- **Spanish**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/es/index.html?download=true)
-- **Portuguese**: Download [`index.html`](https://github.com/Fujio-Turner/cb_completed_request/raw/main/pt/index.html?download=true)
 
 ---
 
@@ -26,9 +20,7 @@ A comprehensive web-based tool for analyzing Couchbase query performance and exe
 ## Quick Start
 
 ### Step 1: Download the Tool
-**🌍 Language-Specific Downloads:**
 - **English**: Download `index.html`
-_Or download the whole repository for all languages_
 
 ### Step 2: Open in Browser
 Go to the folder where you downloaded the HTML file and open it directly in any modern web browser (Chrome, Firefox, Safari, Edge). _Firefox_ seems to be the faster
@@ -84,7 +76,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
 ## Features
 
-### **Six Analysis Tabs**:
+### **Eight Analysis Tabs**:
 
 #### **1. Dashboard Tab**
 - **Query Duration Distribution** bar chart showing performance patterns
@@ -98,7 +90,14 @@ LET bid = CONCAT("", s.bucket_id, ""),
 - **Statement Type** pie chart (SELECT, INSERT, UPDATE, DELETE breakdown)
 - **Query State** pie chart showing completion status
 
-#### **2. Timeline Tab**
+#### **2. Insights Tab**
+- **Automated analysis** organized into categories with live metrics:
+  - **Index Performance Issues**: Inefficient scans, slow index scans, primary index over-usage, ORDER BY/LIMIT/OFFSET over-scan (Beta)
+  - **Resource Utilization Issues**: High kernel time, high memory usage, slow USE KEYS queries
+  - **Query Pattern Analysis**: Missing WHERE clauses, inefficient LIKE (leading wildcard), SELECT * usage
+- Items are marked Live/Beta where applicable; expand items for details and counts
+
+#### **3. Timeline Tab**
 - **Six Interactive Visualizations** in 2x3 grid layout:
   - **Duration Buckets Chart**: Query duration distribution over time
   - **Query Types Chart**: Query type breakdown by time periods
@@ -113,7 +112,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
   - "Use Time Range" filtering button
   - Pan/zoom capabilities with drag-to-pan, scroll-to-zoom, drag-box selection
 
-#### **3. Query Groups Tab** (Analysis)
+#### **4. Query Groups Tab** (Analysis)
 - **Aggregated Query Analysis** with normalized statement grouping
 - **Statistical Metrics**: total_count, min/max/avg/median duration
 - **Performance Averages**: avg_fetch, avg_primaryScan, avg_indexScan
@@ -121,21 +120,27 @@ LET bid = CONCAT("", s.bucket_id, ""),
 - **Smart Normalization**: Replaces string literals and numbers with `?` placeholders
 - **Filtered Results**: Excludes INFER, ADVISE, CREATE, ALTER INDEX, and SYSTEM queries
 
-#### **4. Every Query Tab**
+#### **5. Every Query Tab**
 - **Comprehensive Query Table** with 17 columns
 - **Interactive Flow Diagrams** with color-coded execution plan visualization
 - **Enhanced Table Features** with full column sorting and statement management
 - **Advanced Data Processing** with batch processing capabilities
 
-#### **5. Index Query Flow Tab**
+#### **6. Index/Query Flow Tab**
 - **Visual Index-Query Relationships** with interactive flow diagrams
 - **Enhanced Primary Index Detection** with comprehensive coverage
 - **Performance Insights** for optimization opportunities
 
-#### **6. Indexes Tab** (NEW in v3.0.0)
+#### **7. Indexes Tab**
 - **Comprehensive Index Management** with complete index catalog
 - **Advanced filtering options** and specialized filters
 - **Smart Index Consolidation** and query-index matching
+
+#### **8. Report Maker Tab** (Beta)
+- **Select sections** (Dashboard, Timeline, Query Groups, Every Query, Index/Query Flow, Indexes)
+- **Options**: Include header summary, include applied filters, flatten scrollable tables for print
+- **Charts**: Convert charts to images for printing
+- **Workflow**: Preview report → Print / Save PDF → Exit Report Mode
 
 ## Understanding the Analysis
 
@@ -159,13 +164,21 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 
 ## Release Notes
 
-### Version 3.13.0 (September 7, 2025)
+### Version 3.14.0 (September 10, 2025)
+- Process: Discontinued multi-language HTML builds; English-only shipping (index.html and en/index.html)
+- Docs/Verification: Simplified release and verification guides to English-only
+- Hub page: Updated copy, schema, and links for English-only
+- Enforced version/date header comment updates in en/index.html
+- CI: Updated Docker tags to 3.14.0/v3.14.0
+- Closes: #95, #94, #92, #91, #90, #88, #85, #81, #73, #11
+
+### Version 3.13.0 (September 9, 2025)
 - New: Parse JSON date range control replaced with compact dropdown (closes #84)
 - New: Query Groups phaseTimes chart for aggregated operator timings (closes #83)
 - New: Dashboard charts show values directly on the charts (closes #87)
 - UX/Docs: Converted “Advanced Query Options” to an HTML page and linked from the tool (closes #86)
 - Insights: Added “Learn more” link to Analysis Hub and HTML touchups (closes #74)
-
+- Process: Discontinued multi-language HTML builds; English-only shipping (index.html and en/index.html).
 ### Version 3.12.x (September 2025)
 - Bug fixes and quality improvements across the analyzer UI and documentation
 - Closes #84, #82, #79, #78, #75, #58

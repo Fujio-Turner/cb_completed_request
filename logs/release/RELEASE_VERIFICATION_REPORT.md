@@ -1,5 +1,51 @@
 RELEASE VERIFICATION REPORT
 ===========================
+Release Log Checked: settings/logs/release_20250909_235339.txt
+Version Verified: 3.14.0
+Verification Date: 2025-09-10
+Verified By: Amp AI Assistant
+
+VERSION CONSISTENCY:
+[✅] index.html and en/index.html meta tags show v3.14.0
+[✅] en/index.html version-info shows v3.14.0
+[✅] README.md shows v3.14.0 in header
+[✅] AGENT.md shows 3.14.0 (header and Version Management section)
+[✅] Dockerfile LABEL version="3.14.0"
+[✅] GitHub Actions workflow uses 3.14.0 and v3.14.0 tags
+[✅] All versions match across sources
+[ℹ️] Note: Main index.html is a guide page; its <title> does not include a version (by design)
+
+DOCUMENTATION:
+[✅] README.md exists and is updated
+[✅] Release notes include v3.14.0 (September 10, 2025)
+[✅] Quick Start section positioned near the top
+[✅] AGENT.md version section updated (Last Updated: 2025-09-10)
+
+FUNCTIONAL:
+[✅] index.html and en/index.html have proper HTML structure
+[✅] JavaScript constants set in en/index.html (APP_VERSION="3.14.0", LAST_UPDATED="2025-09-10")
+[ℹ️] Main index.html intentionally lacks APP_VERSION/LAST_UPDATED (guide page)
+[✅] File modification dates are recent for release artifacts
+
+RED FLAGS:
+[⚠️] Old version numbers appear in README release history (e.g., 3.7.x) — acceptable as historical notes
+[✅] No missing critical files detected
+[✅] No HTML syntax issues detected (script open/close counts in naive check are not applicable due to attribute usage)
+
+OVERALL RESULT:
+[✅] PASS - Release work verified successfully for v3.14.0
+
+NOTES:
+- Version markers are consistent across HTML meta/version-info, AGENT.md, README.md, Dockerfile, and CI workflow.
+- index.html title intentionally omits version as it serves as the Quick Start/guide landing page.
+
+---
+
+PREVIOUS REPORTS
+================
+
+RELEASE VERIFICATION REPORT
+===========================
 Release Log Checked: settings/logs/release_20250906_153444.txt
 Version Verified: 3.12.2
 Verification Date: 2025-09-06

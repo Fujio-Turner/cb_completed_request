@@ -55,8 +55,8 @@ def check_version_consistency(expected_version):
     print("🔍 Checking Version Consistency...")
     issues = []
     
-    # Check meta version tags
-    output, _ = run_command('grep -r "name=\\"version\\"" *.html */index.html 2>/dev/null', quiet=True)
+    # Check meta version tags (English-only)
+    output, _ = run_command('grep -H "name=\\"version\\"" index.html en/index.html 2>/dev/null', quiet=True)
     if output:
         for line in output.split('\n'):
             if expected_version not in line:
@@ -64,14 +64,14 @@ def check_version_consistency(expected_version):
     else:
         issues.append("No version meta tags found in HTML files")
     
-    # Check JavaScript constants
-    output, _ = run_command('grep -r "APP_VERSION.*=" *.html */index.html 2>/dev/null', quiet=True)
+    # Check JavaScript constants (English-only)
+    output, _ = run_command('grep -H "APP_VERSION.*=" index.html en/index.html 2>/dev/null', quiet=True)
     for line in output.split('\n'):
         if line and expected_version not in line and 'APP_VERSION' in line and '=' in line:
             issues.append(f"Version mismatch in JavaScript constant: {line}")
     
-    # Check README files
-    output, _ = run_command('grep -r "# Couchbase Slow Query Analysis Tool" README*.md */README*.md AGENT.md 2>/dev/null', quiet=True)
+    # Check README and AGENT only
+    output, _ = run_command('grep -H "# Couchbase Slow Query Analysis Tool" README.md AGENT.md 2>/dev/null', quiet=True)
     for line in output.split('\n'):
         if line and expected_version not in line:
             issues.append(f"Version mismatch in documentation: {line}")
@@ -87,7 +87,7 @@ def check_version_consistency(expected_version):
         older_minor = int(minor) - 1
         older_versions_pattern = f"{major}\\.{older_minor}\\.[0-9]"
         
-        cmd = f'grep -r "{older_versions_pattern}" *.html */index.html *.md AGENT.md Dockerfile 2>/dev/null | grep -v "cdnjs.cloudflare.com" | grep -v "cdn.jsdelivr.net" | grep -v "integrity=" | grep -v "crossorigin=" | grep -v "release_" | grep -v "\\.min\\.js" | grep -v "\\.min\\.css" | head -5'
+        cmd = f'grep -H "{older_versions_pattern}" index.html en/index.html AGENT.md Dockerfile .github/workflows/docker-build-push.yml 2>/dev/null | grep -v "cdnjs.cloudflare.com" | grep -v "cdn.jsdelivr.net" | grep -v "integrity=" | grep -v "crossorigin=" | grep -v "release_" | grep -v "\\.min\\.js" | grep -v "\\.min\\.css" | head -5'
         output, _ = run_command(cmd, quiet=True)
         if output:
             # Only report if the matches look like application versions, not library versions
@@ -127,52 +127,16 @@ def strip_scripts_and_inline_js(html: str) -> str:
 
 
 def check_localization():
-    """Check localization completeness (HTML-only checks; JS content is ignored by policy)"""
-    print("🔍 Checking Localization...")
-    issues = []
-
-    # Files to check
-    lang_files = [
-        ("German", "de/index.html", ["Instrumententafel", "Zeitverlauf", "Abfragegruppen", "Jede Abfrage", "Index/Abfrage-Fluss", "Indizes"]),
-        ("Spanish", "es/index.html", ["Panel de Control", "Línea de Tiempo", "Grupos de Consulta", "Cada Consulta", "Flujo de Índice/Consulta", "Índices"]),
-        ("Portuguese", "pt/index.html", ["Painel de Controle", "Linha do Tempo", "Grupos de Consulta", "Cada Consulta", "Fluxo de Índice/Consulta", "Índices"]),
-    ]
-
-    # Patterns to flag (HTML-only)
-    html_english_markers = [
-        ("Copy buttons", r"Copy</button>"),
-        ("English button text", r">(Copy|Show|Hide|Reset)<"),
-        ("English tab headers", r">(Dashboard|Timeline|Analysis)<"),
-    ]
-
-    for lang_name, file_path, expected_tabs in lang_files:
-        if not os.path.exists(file_path):
-            continue
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        # Remove scripts and inline JS before scanning
-        html_only = strip_scripts_and_inline_js(content)
-
-        # Check English markers in HTML-only content
-        html_issues = 0
-        for marker_name, pattern in html_english_markers:
-            if re.search(pattern, html_only):
-                html_issues += 1
-                issues.append(f"English text found in {lang_name} ({marker_name})")
-
-        # Check translated tab headers (in full content to be safe)
-        found_terms = [term for term in expected_tabs if term in content]
-        if len(found_terms) < len(expected_tabs):
-            issues.append(f"{lang_name} translations incomplete: missing {set(expected_tabs) - set(found_terms)}")
-
-    return issues
+    """Localization checks removed (English-only release)."""
+    print("🔍 Checking Localization... (skipped: English-only)")
+    return []
 
 def check_html_structure():
     """Check HTML structure consistency"""
     print("🔍 Checking HTML Structure...")
     issues = []
     
-    html_files = ['index.html'] + glob.glob('*/index.html')
+    html_files = ['index.html', 'en/index.html']
     
     for file_path in html_files:
         if not os.path.exists(file_path):
@@ -210,15 +174,9 @@ def check_file_existence():
     
     critical_files = [
         'index.html',
-        'en/index.html', 
-        'de/index.html',
-        'es/index.html', 
-        'pt/index.html',
+        'en/index.html',
         'AGENT.md',
         'README.md',
-        'de/README.de.md',
-        'es/README.es.md',
-        'pt/README.pt.md',
         'Dockerfile',
         '.github/workflows/docker-build-push.yml'
     ]
