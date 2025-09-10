@@ -13,25 +13,25 @@ This guide provides independent verification commands to double-check that relea
 
 ## 🔍 Version Consistency Verification
 
-### Check All HTML Files Have Correct Version
+### Check HTML Files Have Correct Version (English-only)
 ```bash
-# Expected: All should show the same new version number
-grep -r "name=\"version\"" *.html */index.html 2>/dev/null | grep -v old_
+# Expected: Both should show the same new version number
+grep -H "name=\"version\"" index.html en/index.html
 
-# Expected: All titles should show v{VERSION}
-grep -r "<title>" *.html */index.html 2>/dev/null | grep -v old_
+# Expected: Both titles should show v{VERSION}
+grep -H "<title>" index.html en/index.html
 
-# Expected: All version-info divs should show v{VERSION}
-grep -r "version-info" *.html */index.html 2>/dev/null | grep -v old_
+# Expected: Both version-info divs should show v{VERSION}
+grep -H "version-info" index.html en/index.html
 
-# Expected: All APP_VERSION constants should show "{VERSION}"
-grep -r "APP_VERSION" *.html */index.html 2>/dev/null | grep -v old_
+# Expected: Both APP_VERSION constants should show "{VERSION}"
+grep -H "APP_VERSION" index.html en/index.html
 ```
 
 ### Check Documentation Files
 ```bash
-# Expected: All should show v{VERSION} in headers
-grep -r "# Couchbase Slow Query Analysis Tool" README*.md */README*.md AGENT.md 2>/dev/null
+# Expected: README.md and AGENT.md should show v{VERSION} in headers
+grep -H "# Couchbase Slow Query Analysis Tool" README.md AGENT.md 2>/dev/null
 
 # Check AGENT.md version section specifically
 grep -A2 -B1 "Current Version" AGENT.md
@@ -49,70 +49,36 @@ grep -A10 -B5 "type=raw,value=" .github/workflows/docker-build-push.yml
 ---
 
 ## 🌐 Localization Verification
-
-### Check for Untranslated Critical Elements
-```bash
-# These should return ZERO results (no English in non-English files)
-echo "=== Checking for English 'Copy' buttons in non-English files ==="
-grep -n "Copy</button>" de/index.html es/index.html pt/index.html 2>/dev/null || echo "✅ No English Copy buttons found"
-
-echo "=== Checking for English button text in non-English files ==="
-grep -n ">Copy<\|>Show<\|>Hide<\|>Reset<" de/index.html es/index.html pt/index.html 2>/dev/null || echo "✅ No English button text found"
-```
-
-### Check Tab Headers Are Translated
-```bash
-# Should show translated versions, not English
-echo "=== German tab headers ==="
-grep -n ">Dashboard<\|>Timeline<\|>Analysis<" de/index.html 2>/dev/null || echo "❌ German tabs might not be translated"
-
-echo "=== Spanish tab headers ==="
-grep -n ">Dashboard<\|>Timeline<\|>Analysis<" es/index.html 2>/dev/null || echo "❌ Spanish tabs might not be translated"
-
-echo "=== Portuguese tab headers ==="
-grep -n ">Dashboard<\|>Timeline<\|>Analysis<" pt/index.html 2>/dev/null || echo "❌ Portuguese tabs might not be translated"
-```
-
-### Check Language File Structure
-```bash
-# Expected: Should list index.html in each language directory
-echo "=== Verifying language file structure ==="
-ls -la de/index.html es/index.html pt/index.html 2>/dev/null && echo "✅ All language files exist" || echo "❌ Missing language files"
-
-# Check main index.html exists
-ls -la index.html 2>/dev/null && echo "✅ Main index.html exists" || echo "❌ Missing main index.html"
-```
+Removed. Localization is no longer part of the release verification for HTML files.
 
 ---
 
 ## 📚 Documentation Verification
 
-### Check README Files Structure
+### Check README.md Structure
 ```bash
-# Expected: All README files should exist
-echo "=== Verifying README files exist ==="
-ls -la README.md */README*.md 2>/dev/null
+# Expected: README.md should exist
+echo "=== Verifying README.md exists ==="
+ls -la README.md 2>/dev/null
 
-# Check for Quick Start sections (should be positioned early)
-echo "=== Checking Quick Start positioning ==="
-for readme in README.md */README*.md; do
-  if [ -f "$readme" ]; then
-    echo "--- $readme ---"
-    grep -n -A2 -B2 "Quick Start\|Início Rápido\|Inicio Rápido\|Schnellstart" "$readme" 2>/dev/null || echo "No Quick Start found"
-  fi
-done
+# Check for Quick Start section (should be positioned early)
+echo "=== Checking Quick Start positioning (README.md) ==="
+readme=README.md
+if [ -f "$readme" ]; then
+  echo "--- $readme ---"
+  grep -n -A2 -B2 "Quick Start" "$readme" 2>/dev/null || echo "No Quick Start found"
+fi
 ```
 
 ### Check Release Notes Were Added
 ```bash
 # Expected: Should find version entries with today's date pattern
-echo "=== Checking for release notes entries ==="
-for readme in README.md */README*.md; do
-  if [ -f "$readme" ]; then
-    echo "--- $readme ---"
-    grep -n -A3 -B1 "v[0-9]\+\.[0-9]\+\.[0-9]\+" "$readme" | head -10
-  fi
-done
+echo "=== Checking for release notes entries (README.md) ==="
+readme=README.md
+if [ -f "$readme" ]; then
+  echo "--- $readme ---"
+  grep -n -A3 -B1 "v[0-9]\+\.[0-9]\+\.[0-9]\+" "$readme" | head -10
+fi
 ```
 
 ---
@@ -123,7 +89,7 @@ done
 ```bash
 # Basic syntax check - look for common HTML structure
 echo "=== Basic HTML structure verification ==="
-for htmlfile in index.html de/index.html es/index.html pt/index.html; do
+for htmlfile in index.html en/index.html; do
   if [ -f "$htmlfile" ]; then
     echo "--- $htmlfile ---"
     echo "Has DOCTYPE: $(grep -c DOCTYPE "$htmlfile")"
@@ -140,7 +106,7 @@ done
 ```bash
 # Expected: All should have matching APP_VERSION and LAST_UPDATED
 echo "=== JavaScript constants verification ==="
-for htmlfile in index.html de/index.html es/index.html pt/index.html; do
+for htmlfile in index.html en/index.html; do
   if [ -f "$htmlfile" ]; then
     echo "--- $htmlfile ---"
     grep "const APP_VERSION" "$htmlfile" 2>/dev/null
@@ -166,13 +132,17 @@ echo "AGENT.md version: $AGENT_VERSION"
 README_VERSION=$(grep "# Couchbase.*v[0-9]" README.md | grep -o "v[0-9]\+\.[0-9]\+\.[0-9]\+" | head -1)
 echo "README.md version: $README_VERSION"
 
-# Get version from main HTML meta tag
-HTML_VERSION=$(grep "name=\"version\"" index.html | grep -o "[0-9]\+\.[0-9]\+\.[0-9]\+" | head -1)
-echo "index.html meta version: v$HTML_VERSION"
+# Get version from main HTML meta tags
+HTML_VERSION_ROOT=$(grep "name=\"version\"" index.html | grep -o "[0-9]\+\.[0-9]\+\.[0-9]\+" | head -1)
+HTML_VERSION_EN=$(grep "name=\"version\"" en/index.html | grep -o "[0-9]\+\.[0-9]\+\.[0-9]\+" | head -1)
+echo "index.html meta version: v$HTML_VERSION_ROOT"
+echo "en/index.html meta version: v$HTML_VERSION_EN"
 
-# Get version from JavaScript constant
-JS_VERSION=$(grep "APP_VERSION.*=" index.html | grep -o "[0-9]\+\.[0-9]\+\.[0-9]\+" | head -1)
-echo "JavaScript APP_VERSION: v$JS_VERSION"
+# Get version from JavaScript constants
+JS_VERSION_ROOT=$(grep "APP_VERSION.*=" index.html | grep -o "[0-9]\+\.[0-9]\+\.[0-9]\+" | head -1)
+JS_VERSION_EN=$(grep "APP_VERSION.*=" en/index.html | grep -o "[0-9]\+\.[0-9]\+\.[0-9]\+" | head -1)
+echo "index.html APP_VERSION: v$JS_VERSION_ROOT"
+echo "en/index.html APP_VERSION: v$JS_VERSION_EN"
 
 # Get Docker version
 DOCKER_VERSION=$(grep "LABEL version=" Dockerfile | grep -o "[0-9]\+\.[0-9]\+\.[0-9]\+" | head -1)
@@ -211,19 +181,9 @@ else
 fi
 
 echo ""
-echo "2. Checking for English text in non-English files..."
-ENGLISH_IN_LANGS=$(grep -n "Dashboard\|Timeline\|Analysis\|Copy\|Show\|Hide\|Reset" de/index.html es/index.html pt/index.html 2>/dev/null || true)
-if [ -n "$ENGLISH_IN_LANGS" ]; then
-  echo "❌ Found English text in non-English files:"
-  echo "$ENGLISH_IN_LANGS"
-else
-  echo "✅ No obvious English text in language files"
-fi
-
-echo ""
-echo "3. Checking for missing critical files..."
+echo "2. Checking for missing critical files..."
 MISSING_FILES=""
-for file in index.html de/index.html es/index.html pt/index.html AGENT.md README.md Dockerfile; do
+for file in index.html en/index.html AGENT.md README.md Dockerfile; do
   if [ ! -f "$file" ]; then
     MISSING_FILES="$MISSING_FILES $file"
   fi
@@ -236,8 +196,8 @@ else
 fi
 
 echo ""
-echo "4. Checking for syntax errors in HTML..."
-for htmlfile in index.html de/index.html es/index.html pt/index.html; do
+echo "3. Checking for syntax errors in HTML..."
+for htmlfile in index.html en/index.html; do
   if [ -f "$htmlfile" ]; then
     UNCLOSED_TAGS=$(grep -c "<script>" "$htmlfile" 2>/dev/null) || 0
     CLOSE_TAGS=$(grep -c "</script>" "$htmlfile" 2>/dev/null) || 0
@@ -267,33 +227,26 @@ Verification Date: {TODAY}
 Verified By: {YOUR_NAME}
 
 VERSION CONSISTENCY:
-[ ] All HTML files show v{VERSION}
-[ ] All README files show v{VERSION}
+[ ] index.html and en/index.html show v{VERSION}
+[ ] README.md shows v{VERSION}
 [ ] AGENT.md shows v{VERSION}
 [ ] Docker files show v{VERSION}
 [ ] All versions match exactly
 
-LOCALIZATION:
-[ ] No English "Copy" buttons in language files
-[ ] No English "Show/Hide/Reset" in language files
-[ ] Tab headers translated in all languages
-[ ] All language files (de/, es/, pt/) exist
-
 DOCUMENTATION:
-[ ] All README files exist and updated
-[ ] Release notes added to README files
-[ ] Quick Start sections properly positioned
+[ ] README.md exists and updated
+[ ] Release notes added to README.md
+[ ] Quick Start section properly positioned
 [ ] AGENT.md version section updated
 
 FUNCTIONAL:
-[ ] All HTML files have proper structure
+[ ] index.html and en/index.html have proper structure
 [ ] JavaScript constants set correctly
 [ ] No obvious syntax errors found
 [ ] File modification dates look recent
 
 RED FLAGS:
 [ ] No old version numbers found anywhere
-[ ] No English text in non-English files
 [ ] No missing critical files
 [ ] No HTML syntax errors detected
 
@@ -311,8 +264,7 @@ NOTES:
 
 1. **Run immediately after release:** Don't wait - verify while the work is fresh
 2. **Replace {VERSION} with actual version:** The version number from your release log
-3. **Check specific language files:** If you know which languages were updated
-4. **Save verification results:** Keep a record of what you found
-5. **Fix issues before deployment:** Don't deploy if verification fails
+3. **Save verification results:** Keep a record of what you found
+4. **Fix issues before deployment:** Don't deploy if verification fails
 
 This tool is independent of the release process and only checks final results, not what the release guides claim was done.

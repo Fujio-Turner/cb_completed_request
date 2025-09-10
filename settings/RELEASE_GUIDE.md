@@ -91,33 +91,22 @@ Optional automation:
 sed -i '' 's/^\s*Version: .*/    Version: NEW_VERSION/' en/index.html
 sed -i '' 's/^\s*Last Updated: .*/    Last Updated: YYYY-MM-DD/' en/index.html
 
-# If you want to align all localized index.html headers too (after copying from en/)
-sed -i '' 's/^\s*Version: .*/    Version: NEW_VERSION/' */index.html
-sed -i '' 's/^\s*Last Updated: .*/    Last Updated: YYYY-MM-DD/' */index.html
+
 ```
 
-### **Step 4: Follow LOCALIZATION_GUIDE.md**
-Ensure all localizations are current and complete:
+### **Step 4: English-only Release (no localization step)**
+As of v3.13.x, we only ship the English tool. Do NOT run settings/LOCALIZATION_GUIDE.md.
 
-1. **Open:** [LOCALIZATION_GUIDE.md](LOCALIZATION_GUIDE.md)
-2. **Execute:** LOCALIZATION_GUIDE.md Step 1-2 for README Files maintenance (if needed)
-3. **Execute:** LOCALIZATION_GUIDE.md Step 3-4 for HTML Tools synchronization using **COMPLETE REPLACEMENT METHOD**:
-   - **Create backups** of existing localized files: `cp de/index.html de/index.html.backup`
-   - **Copy en/index.html** to all language directories: `cp en/index.html de/index.html`
-   - **Re-translate entire files** using translation system (do NOT try to selectively copy features)
-   - **Verify functionality** is identical across all language versions
-4. **🚨 CRITICAL:** JavaScript Syntax Validation: `python3 python/validate_js_syntax.py`
-5. **Run:** LOCALIZATION_GUIDE.md Step 5-6 for comprehensive verification including post-translation audit system
-6. **Update release log:** Check off localization verification items
+Do this instead:
+- Ensure only these HTML files are updated: `index.html` and `en/index.html`.
+- Update version meta tags, title, version-info div, and JS constants in both files.
+- Update the header comment in `en/index.html` (Version and Last Updated).
+- Skip any copying or translating to `de/`, `es/`, or `pt/`.
+- Run JavaScript syntax validation: `python3 python/validate_js_syntax.py`.
 
-**⚠️ CRITICAL:** When new features are added to en/index.html, localized versions MUST be completely replaced and re-translated, not selectively updated.
-
-**Expected Outcome:**
-- All README files synchronized across languages with current release notes
-- All HTML files have complete translations AND identical functionality 
-- Translation audit shows 95%+ completion
-- All language versions tested and functional
-- **All language versions contain the same features as English version**
+Expected Outcome:
+- English-only artifacts updated and consistent (index.html and en/index.html)
+- No references to localized HTML files remain in index.html navigation
 
 ### **Step 5: Comprehensive Release Testing**
 🚨 **MANDATORY:** Run the complete verification script before proceeding:
@@ -157,17 +146,8 @@ python3 python/validate_js_syntax.py
 python3 python/fix_js_strings.py  # If validation fails
 ```
 
-#### 🔧 **Expected Issue 4: English Text in Non-English Files**  
-**Symptom:** Buttons, labels, constants still in English
-**Fix:** Apply comprehensive translations:
-```bash
-# Method 1: Copy English files and re-translate (RECOMMENDED)
-cp en/index.html de/index.html es/index.html pt/index.html
-python3 python/apply_safe_translations.py
-
-# Method 2: Apply comprehensive translations to existing files
-python3 python/apply_comprehensive_insights_translations.py
-```
+#### 🔧 **Expected Issue 4: N/A (Localization removed)**
+Localization checks are no longer applicable. We only ship `index.html` and `en/index.html`.
 
 #### 🔧 **Expected Issue 5: HTML Structure Inconsistencies**
 **Symptom:** Script tag mismatches or missing elements
@@ -211,11 +191,11 @@ Complete the deployment preparation:
 ### **Step 7: Final Release Documentation**
 Complete your release log and documentation:
 
-1. **🚨 CRITICAL - Add Release Notes to All README Files:**
+1. **🚨 CRITICAL - Add Release Notes to README.md:**
    ```bash
-   # Use automated release notes script (recommended)
+   # Use the release notes script (supports English-only)
    python3 python/add_release_notes.py
-   # OR manually add to README.md, de/README.de.md, es/README.es.md, pt/README.pt.md
+   # OR manually add to README.md
    ```
 
 2. **Fill Additional Notes:** Document any issues or special considerations, including GitHub issue references
@@ -236,11 +216,6 @@ Before marking a release complete, ALL of these must pass:
 - [ ] JavaScript constants match meta tags
 - [ ] en/index.html header comment shows correct Version and Last Updated
 
-### ✅ Localization Quality
-- [ ] No English text found in German/Spanish/Portuguese files
-- [ ] All dynamic content displays in correct languages
-- [ ] All chart configurations translated
-- [ ] No JavaScript errors in any language version
 
 ### ✅ Functional Quality  
 - [ ] All HTML files load without errors
@@ -250,9 +225,8 @@ Before marking a release complete, ALL of these must pass:
 - [ ] All search and filter functions work
 
 ### ✅ Documentation Quality
-- [ ] **🚨 CRITICAL: Release notes added to all README files** (README.md, de/README.de.md, es/README.es.md, pt/README.pt.md)
-- [ ] Quick Start sections positioned correctly
-- [ ] Language navigation links functional
+- [ ] **🚨 CRITICAL: Release notes added to README.md**
+- [ ] Quick Start section positioned correctly
 - [ ] Spell checking completed on all files
 
 ## 📁 File Dependencies
@@ -277,8 +251,8 @@ This release guide coordinates these files:
 - **logs/release_YYYYMMDD_HHMMSS.txt** - Your specific release log (created from template in logs folder)
 
 ### Target Files (Updated During Release)
-- **HTML Files:** `index.html`, `en/index.html`, `de/index.html`, `es/index.html`, `pt/index.html`
-- **Documentation:** `AGENT.md`, `README.md`, `de/README.de.md`, `es/README.es.md`, `pt/README.pt.md`
+- **HTML Files:** `index.html`, `en/index.html`
+- **Documentation:** `AGENT.md`, `README.md`
 - **Docker:** `Dockerfile`, `.github/workflows/docker-build-push.yml`
 
 ## 🔄 Workflow Summary
@@ -290,15 +264,13 @@ graph TD
     C --> D[Determine Version Numbers - Dry Run]
     D --> E[Follow VERSION_UPDATE_GUIDE.md]
     E --> F[Update Release Log - Versions]
-    F --> G[Follow LOCALIZATION_GUIDE.md] 
-    G --> H[Update Release Log - Localizations]
-    H --> I[🚨 MANDATORY: Run RELEASE_WORK_CHECK.py]
-    I --> J{All Checks Pass?}
-    J -->|❌ NO| K[Fix Issues]
-    K --> I
-    J -->|✅ YES| L[Complete Docker & Deployment]
-    L --> M[Finalize Release Log]
-    M --> N[Release Complete]
+    F --> G[🚨 MANDATORY: Run RELEASE_WORK_CHECK.py]
+    G --> H{All Checks Pass?}
+    H -->|❌ NO| I[Fix Issues]
+    I --> G
+    H -->|✅ YES| J[Complete Docker & Deployment]
+    J --> K[Finalize Release Log]
+    K --> L[Release Complete]
 ```
 
 ## 🎯 Success Criteria
@@ -307,10 +279,9 @@ A successful release using this guide will have:
 
 1. **Complete Release Log:** All sections filled out with actual values
 2. **Version Consistency:** All files show the same new version
-3. **Localization Completeness:** All language versions fully translated and functional
-4. **Quality Assurance:** All testing passes without issues
-5. **Documentation Current:** All README files updated with release notes
-6. **Deployment Ready:** Docker files prepared with correct version tags
+3. **Quality Assurance:** All testing passes without issues
+4. **Documentation Current:** README.md updated with release notes
+5. **Deployment Ready:** Docker files prepared with correct version tags
 
 ## 🔧 Troubleshooting
 
@@ -325,13 +296,8 @@ sed -i '' 's/content="OLD_VERSION"/content="NEW_VERSION"/g' *.html */index.html
 sed -i '' 's/APP_VERSION = "OLD_VERSION"/APP_VERSION = "NEW_VERSION"/g' */index.html
 ```
 
-#### LOCALIZATION_GUIDE.md fails:
-```bash
-# Nuclear option: Start fresh with clean translations
-cp en/index.html de/index.html es/index.html pt/index.html
-python3 python/apply_safe_translations.py
-python3 python/validate_js_syntax.py
-```
+#### Localization-related steps
+Not applicable. As of v3.13.x, localization is no longer part of the release process.
 
 #### JavaScript syntax errors:
 ```bash
@@ -348,19 +314,8 @@ python3 python/RELEASE_WORK_CHECK.py [VERSION]
 
 **📚 See [RELEASE_TROUBLESHOOTING_GUIDE.md](RELEASE_TROUBLESHOOTING_GUIDE.md) for complete solutions to all known issues.**
 
-### If localized HTML files are missing new features:
-**🚨 COMMON ISSUE:** Localized files (de/index.html, es/index.html, pt/index.html) missing functionality that exists in en/index.html
-
-**Root Cause:** Selective feature copying instead of complete file replacement
-
-**Solution:**
-1. **Backup existing files:** `cp de/index.html de/index.html.backup` (repeat for es/ and pt/)
-2. **Replace with English version:** `cp en/index.html de/index.html` (repeat for es/ and pt/)
-3. **Re-translate completely:** Use translation system to translate entire file
-4. **Verify feature parity:** Ensure all tabs/functionality exist in all language versions
-5. **Update release log:** Document the complete replacement approach used
-
-**Prevention:** Always use complete file replacement method when en/index.html gets new features
+### Localization status
+As of v3.13.x, multi-language HTML builds are discontinued. Only `index.html` and `en/index.html` are maintained and released.
 
 ---
 
