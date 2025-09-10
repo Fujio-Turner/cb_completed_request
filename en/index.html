@@ -273,6 +273,20 @@ body { display: block !important; height: auto !important; overflow: visible !im
 #report-cover .section { margin-top: 16px; }
 #report-cover .section h3 { margin: 0 0 6px 0; font-size: 16px; font-weight: 600; }
 #report-cover ul { margin: 6px 0 0 18px; }
+/* Cover layout + cards */
+#report-cover .cover-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 900px) { #report-cover .cover-grid { grid-template-columns: 1fr 1fr; } }
+#report-cover .cover-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+#report-cover .cover-card h4 { margin: 0 0 6px 0; font-size: 14px; color: #343a40; }
+#report-cover .cover-card h5 { margin: 8px 0 4px 0; font-size: 13px; color: #495057; }
+#report-cover .muted { color: #6c757d; }
+#report-cover .badge { display: inline-block; padding: 2px 6px; font-size: 10px; border-radius: 10px; font-weight: 700; }
+#report-cover .badge.live { background: #28a745; color: #fff; }
+#report-cover .badge.beta { background: #007bff; color: #fff; }
+#report-cover .emoji-title { display: inline-flex; align-items: center; gap: 6px; }
+#report-cover .list-tight { margin: 6px 0 0 18px; }
+#report-cover .callout { background: #e9f7ef; border-left: 4px solid #28a745; padding: 8px 10px; border-radius: 6px; color: #155724; font-size: 12px; }
+
 
 /* Floating Exit button for preview */
 .report-exit-btn { position: fixed; top: 12px; right: 12px; z-index: 10002; background: #d9534f; color: #fff; border: none; border-radius: 6px; padding: 10px 14px; font-weight: 800; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer; }
@@ -289,32 +303,41 @@ body { display: block !important; height: auto !important; overflow: visible !im
 // Extend TEXT_CONSTANTS with Report Maker strings (Phase 1)
 if (window.TEXT_CONSTANTS) {
   Object.assign(TEXT_CONSTANTS, {
-    REPORT_MAKER: "Report Maker",
-    SELECT_SECTIONS: "Select sections",
-    SELECT_TIMELINE_CHARTS: "Select Timeline charts",
-    INCLUDE_HEADER_SUMMARY: "Include header summary",
-    INCLUDE_FILTERS: "Include filters applied",
-    FLATTEN_TABLES_FOR_PRINT: "Flatten scrollable tables for print",
-    CONVERT_CHARTS_TO_IMAGES: "Convert charts to images for printing",
-    PREVIEW_REPORT: "Preview Report",
-    PRINT_SAVE_PDF: "Print / Save PDF",
-    EXIT_REPORT_MODE: "Exit Report Mode",
-    LOAD_TEST_SAMPLE: "Load test sample JSON",
-    REPORT_GENERATED_AT: "Generated at",
-    REPORT_TIME_RANGE: "Range",
-    REPORT_FILTERS_APPLIED: "Filter",
-    REPORT_OPTIONS: "Options",
-    EXIT_REPORT_PREVIEW: "EXIT REPORT PREVIEW",
-    COVER_TITLE: "Couchbase Query Analysis Report",
-    COVER_SECTIONS_INCLUDED: "Sections included",
-    COVER_TIMELINE_CHARTS: "Timeline charts",
-    COVER_FILTERS_APPLIED: "Filters applied",
-    COVER_TIME_RANGE: "Time range",
-    COVER_DATA_COUNTS: "Data counts",
-    COVER_NOTES: "Notes",
-    COVER_BETA_NOTE: "Some charts marked Beta/Dev may display incomplete or placeholder content."
+  REPORT_MAKER: "Report Maker",
+  SELECT_SECTIONS: "Select sections",
+  SELECT_TIMELINE_CHARTS: "Select Timeline charts",
+  INCLUDE_HEADER_SUMMARY: "Include header summary",
+  INCLUDE_FILTERS: "Include filters applied",
+  FLATTEN_TABLES_FOR_PRINT: "Flatten scrollable tables for print",
+  CONVERT_CHARTS_TO_IMAGES: "Convert charts to images for printing",
+  PREVIEW_REPORT: "Preview Report",
+  PRINT_SAVE_PDF: "Print / Save PDF",
+  EXIT_REPORT_MODE: "Exit Report Mode",
+  LOAD_TEST_SAMPLE: "Load test sample JSON",
+  REPORT_GENERATED_AT: "Generated at",
+  REPORT_TIME_RANGE: "Range",
+  REPORT_FILTERS_APPLIED: "Filter",
+  REPORT_OPTIONS: "Options",
+  EXIT_REPORT_PREVIEW: "EXIT REPORT PREVIEW",
+  COVER_TITLE: "Couchbase Query Analysis Report",
+  COVER_SECTIONS_INCLUDED: "Sections included",
+  COVER_TIMELINE_CHARTS: "Timeline charts",
+  COVER_FILTERS_APPLIED: "Filters applied",
+  COVER_TIME_RANGE: "Time range",
+  COVER_DATA_COUNTS: "Data counts",
+  COVER_NOTES: "Notes",
+  COVER_BETA_NOTE: "Some charts marked Beta/Dev may display incomplete or placeholder content.",
 
-  });
+    // Cover page rich content blocks (English)
+     COVER_BLOCK_DASHBOARD_HTML: "<div class=\"section\"><h3>📊 Dashboard</h3><p>High-level overview with draggable charts showing query duration distribution, index type usage, scan consistency patterns, result size analysis, and system health metrics. Perfect for at-a-glance performance monitoring.</p></div>",
+     COVER_BLOCK_INSIGHTS_HTML: "<div class=\"section\"><h3>💡 Insights Tab</h3><p>The Insights tab provides automated analysis organized into three main categories, each with expandable insights and live metrics based on your parsed query data:</p><h4>📊 Analysis Categories</h4><div><h5>🔍 Index Performance Issues</h5><ul><li>Inefficient Index Scans - Identifies queries with poor selectivity ratios</li><li>Slow Index Scan Times - Flags indexes taking 2+ seconds to scan</li><li>Primary Index Over-Usage - Detects reliance on expensive primary indexes</li><li>ORDER BY / LIMIT / OFFSET Index Over-Scan - Highlights over-scanning due to pagination patterns (Beta)</li></ul><h5>⚡ Resource Utilization Issues</h5><ul><li>High Kernel Time in Queries - CPU scheduling overhead analysis</li><li>High Memory Usage Detected - Memory-intensive query identification</li><li>Slow USE KEY Queries - KV service bottleneck detection</li></ul><h5>🔄 Query Pattern Analysis</h5><ul><li>Missing WHERE Clauses - Identifies full collection scans</li><li>Inefficient LIKE Operations - Detects leading wildcard usage</li><li>SELECT * Usage - Finds queries returning entire documents (Live)</li></ul><h5>🚀 Performance Optimization Opportunities</h5><ul><li>Large Payload Streaming - Identifies queries with heavy network usage</li><li>Large Result Set Queries - Flags memory and bandwidth intensive operations</li><li>Timeout-Prone Queries - Detects queries approaching timeout limits</li></ul></div><p><strong>💡 Live Data:</strong> Insights marked with Live analyze your actual parsed data, while Beta insights are experimental and may show false positives.</p></div>",
+     COVER_BLOCK_TIMELINE_DESC: "Chronological analysis with zoomable time-series charts. Track query patterns by time grouping (seconds to days), analyze duration buckets, operation types, result counts, and memory usage trends over time with dual Y-axis support.",
+     COVER_BLOCK_QUERY_GROUPS_HTML: "<div class=\"section\"><h3>🔍 Query Groups</h3><p>Analyze similar queries grouped by normalized patterns. Compare aggregated statistics, identify frequently executed query types, and optimize query families that share similar execution characteristics and performance profiles.</p></div>",
+     COVER_BLOCK_EVERY_QUERY_HTML: "<div class=\"section\"><h3>📋 Every Query</h3><p>Detailed tabular view of individual query executions with sorting, filtering, and search capabilities. Drill down into specific query metrics, execution plans, and performance details for granular analysis and debugging.</p></div>",
+     COVER_BLOCK_FLOW_HTML: "<div class=\"section\"><h3>🌊 Index/Query Flow</h3><p>Interactive visual flow diagram showing the relationship between indexes and queries. See which indexes are used by which queries, identify index usage patterns, and optimize index coverage with drag-and-pan visualization.</p></div>",
+     COVER_BLOCK_INDEXES_HTML: "<div class=\"section\"><h3>🗂️ Indexes</h3><p>Comprehensive index management with filtering by bucket/scope/collection. Analyze index performance metrics, memory residency, scan times, and usage patterns. Includes search and sorting capabilities for large index inventories.</p></div>"
+
+   });
 }
 </script>
     <style>
@@ -1521,7 +1544,10 @@ if (window.TEXT_CONSTANTS) {
                 <label style="margin-right:16px;"><input type="checkbox" id="opt-flatten-tables" checked> <span id="rm-opt-flatten-tables"></span></label>
                 <label style="margin-right:16px;"><input type="checkbox" id="opt-charts-as-images" checked> <span id="rm-opt-charts-as-images"></span></label>
             </div>
-            <div class="color-666" style="font-size:12px;">Tip: Use filters and date range first, then preview and print.</div>
+            <div class="report-tip" style="margin-top:8px; margin-bottom:12px;">
+                <div class="tip-text" style="font-size:16px; font-weight:700; color:#343a40;">Pro Tip: Use SQL++ query segment filter ,above, to show case a spacifc query and/or date range first, then preview and print.</div>
+                <img src="https://cb.fuj.io/img/sql_string_filter_and_exclude_system_example.png" alt="Report Maker filters and exclude system example" style="margin-top:8px; max-width:100%; height:auto; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.06);" loading="lazy">
+            </div>
         </div>
     </div>
      <!-- Modals (outside tabs) -->
@@ -15238,6 +15264,120 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             return bullets.join('');
         }
 
+        function buildCoverDetailedSections(selections) {
+            const t = (k, d) => (window.TEXT_CONSTANTS && TEXT_CONSTANTS[k]) ? TEXT_CONSTANTS[k] : d;
+            let html = '';
+            try {
+                if (selections.sections && selections.sections.dashboard) {
+                    html += `
+                    <div class="section cover-card">
+                      <h3 class="emoji-title">📊 <span>Dashboard</span></h3>
+                      <p class="muted">High-level overview with draggable charts showing query duration distribution, index type usage, scan consistency patterns, result size analysis, and system health metrics. Perfect for at-a-glance performance monitoring.</p>
+                    </div>`;
+                }
+                if (selections.sections && selections.sections.insights) {
+                    html += `
+                    <div class="section cover-card">
+                      <h3 class="emoji-title">💡 <span>Insights Tab</span></h3>
+                      <p class="muted">The Insights tab provides automated analysis organized into three main categories, each with expandable insights and live metrics based on your parsed query data:</p>
+                      <div class="cover-grid">
+                        <div>
+                          <h4>📊 Analysis Categories</h4>
+                          <h5>🔍 Index Performance Issues</h5>
+                          <ul class="list-tight">
+                            <li>Inefficient Index Scans - Identifies queries with poor selectivity ratios</li>
+                            <li>Slow Index Scan Times - Flags indexes taking 2+ seconds to scan</li>
+                            <li>Primary Index Over-Usage - Detects reliance on expensive primary indexes</li>
+                            <li>ORDER BY / LIMIT / OFFSET Index Over-Scan - Highlights over-scanning due to pagination patterns <span class="badge beta">BETA</span></li>
+                          </ul>
+                          <h5>⚡ Resource Utilization Issues</h5>
+                          <ul class="list-tight">
+                            <li>High Kernel Time in Queries - CPU scheduling overhead analysis</li>
+                            <li>High Memory Usage Detected - Memory-intensive query identification</li>
+                            <li>Slow USE KEY Queries - KV service bottleneck detection</li>
+                          </ul>
+                        </div>
+                        <div>
+                          <h5>🔄 Query Pattern Analysis</h5>
+                          <ul class="list-tight">
+                            <li>Missing WHERE Clauses - Identifies full collection scans</li>
+                            <li>Inefficient LIKE Operations - Detects leading wildcard usage</li>
+                            <li>SELECT * Usage - Finds queries returning entire documents <span class="badge live">LIVE</span></li>
+                          </ul>
+                          <h5>🚀 Performance Optimization Opportunities</h5>
+                          <ul class="list-tight">
+                            <li>Large Payload Streaming - Identifies queries with heavy network usage</li>
+                            <li>Large Result Set Queries - Flags memory and bandwidth intensive operations</li>
+                            <li>Timeout-Prone Queries - Detects queries approaching timeout limits</li>
+                          </ul>
+                        </div>
+                      </div>
+                      <div class="callout" style="margin-top:10px;">
+                        <strong>Live Data:</strong> Insights marked with <span class="badge live">LIVE</span> analyze your actual parsed data, while <span class="badge beta">BETA</span> insights are experimental and may show false positives.
+                      </div>
+                    </div>`;
+                }
+                if (selections.sections && selections.sections.timeline) {
+                    // Build selected timeline charts list
+                    const selectedCharts = Object.entries(selections.timelineCharts || {})
+                        .filter(([, v]) => v)
+                        .map(([k]) => k);
+                    let chartsHtml = '<li>-</li>';
+                    try {
+                        if (selectedCharts.length) {
+                            const container = document.getElementById('report-timeline-charts');
+                            const items = [];
+                            selectedCharts.forEach(id => {
+                                let labelText = id;
+                                const input = container ? container.querySelector(`input[data-chart-id="${id}"]`) : null;
+                                const label = input ? input.closest('label') : null;
+                                if (label) labelText = label.textContent.trim();
+                                items.push(`<li>${labelText}</li>`);
+                            });
+                            chartsHtml = items.join('');
+                        }
+                    } catch (e) {}
+                    html += `
+                        <div class="section cover-card">
+                          <h3 class="emoji-title">⏰ <span>Timeline</span></h3>
+                          <p class="muted">Chronological analysis with zoomable time-series charts. Track query patterns by time grouping (seconds to days), analyze duration buckets, operation types, result counts, and memory usage trends over time with dual Y-axis support.</p>
+                          <h4 style="margin-top:10px;">Timeline charts</h4>
+                          <ul>${chartsHtml}</ul>
+                        </div>
+                    `;
+                }
+                if (selections.sections && selections.sections.analysis) {
+                    html += `
+                    <div class="section cover-card">
+                      <h3 class="emoji-title">🔍 <span>Query Groups</span></h3>
+                      <p class="muted">Analyze similar queries grouped by normalized patterns. Compare aggregated statistics, identify frequently executed query types, and optimize query families that share similar execution characteristics and performance profiles.</p>
+                    </div>`;
+                }
+                if (selections.sections && selections.sections['every-query']) {
+                    html += `
+                    <div class="section cover-card">
+                      <h3 class="emoji-title">📋 <span>Every Query</span></h3>
+                      <p class="muted">Detailed tabular view of individual query executions with sorting, filtering, and search capabilities. Drill down into specific query metrics, execution plans, and performance details for granular analysis and debugging.</p>
+                    </div>`;
+                }
+                if (selections.sections && selections.sections['index-query-flow']) {
+                    html += `
+                    <div class="section cover-card">
+                      <h3 class="emoji-title">🌊 <span>Index/Query Flow</span></h3>
+                      <p class="muted">Interactive visual flow diagram showing the relationship between indexes and queries. See which indexes are used by which queries, identify index usage patterns, and optimize index coverage with drag-and-pan visualization.</p>
+                    </div>`;
+                }
+                if (selections.sections && selections.sections.indexes) {
+                    html += `
+                    <div class="section cover-card">
+                      <h3 class="emoji-title">🗂️ <span>Indexes</span></h3>
+                      <p class="muted">Comprehensive index management with filtering by bucket/scope/collection. Analyze index performance metrics, memory residency, scan times, and usage patterns. Includes search and sorting capabilities for large index inventories.</p>
+                    </div>`;
+                }
+            } catch (e) { /* ignore */ }
+            return html;
+        }
+
         function buildReportCoverHTML(selections) {
             const t = (k, d) => (window.TEXT_CONSTANTS && TEXT_CONSTANTS[k]) ? TEXT_CONSTANTS[k] : d;
             const now = new Date().toLocaleString();
@@ -15245,42 +15385,6 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             const endDateInput = document.getElementById('end-date');
             const sqlFilter = document.getElementById('sql-statement-filter');
             const timeRange = (startDateInput?.value && endDateInput?.value) ? `${startDateInput.value} → ${endDateInput.value}` : '-';
-
-            // Section display names
-            const sectionNames = {
-                'dashboard': t('TAB_DASHBOARD', 'Dashboard'),
-                'timeline': t('TAB_TIMELINE', 'Timeline'),
-                'analysis': t('TAB_QUERY_GROUPS', 'Query Groups'),
-                'every-query': t('TAB_EVERY_QUERY', 'Every Query'),
-                'index-query-flow': t('TAB_INDEX_QUERY_FLOW', 'Index/Query Flow'),
-                'indexes': t('TAB_INDEXES', 'Indexes')
-            };
-            const selectedSections = Object.entries(selections.sections || {})
-                .filter(([, v]) => v)
-                .map(([k]) => k);
-            const sectionsHtml = selectedSections.length
-                ? selectedSections.map(k => `<li>${sectionNames[k] || k}</li>`).join('')
-                : '<li>-</li>';
-
-            // Timeline chart labels from DOM (fallback to IDs)
-            const selectedCharts = Object.entries(selections.timelineCharts || {})
-                .filter(([, v]) => v)
-                .map(([k]) => k);
-            const chartsHtml = (() => {
-                if (!selectedCharts.length) return '<li>-</li>';
-                const container = document.getElementById('report-timeline-charts');
-                const items = [];
-                selectedCharts.forEach(id => {
-                    let labelText = id;
-                    try {
-                        const input = container ? container.querySelector(`input[data-chart-id="${id}"]`) : null;
-                        const label = input ? input.closest('label') : null;
-                        if (label) labelText = label.textContent.trim();
-                    } catch (e) {}
-                    items.push(`<li>${labelText}</li>`);
-                });
-                return items.join('');
-            })();
 
             // Counts
             let total = 0, after = 0;
@@ -15293,22 +15397,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
               <div class="line">${t('COVER_TIME_RANGE','Time range')}: ${timeRange}</div>
               <div class="line">${t('COVER_FILTERS_APPLIED','Filters applied')}: ${sqlFilter?.value || '-'}</div>
               <div class="line">${t('COVER_DATA_COUNTS','Data counts')}: ${after}${total ? ` ${t('OF_TOTAL','of')} ${total}` : ''}</div>
-              <div class="section">
-                <h3>${t('COVER_SECTIONS_INCLUDED','Sections included')}</h3>
-                <ul>${sectionsHtml}</ul>
-              </div>
-              <div class="section">
-                <h3>${t('COVER_TIMELINE_CHARTS','Timeline charts')}</h3>
-                <ul>${chartsHtml}</ul>
-              </div>
-              <div class="section">
-                <h3>${t('COVER_NOTES','Notes')}</h3>
-                <ul><li>${t('COVER_BETA_NOTE','Some charts marked Beta/Dev may display incomplete or placeholder content.')}</li></ul>
-              </div>
-              <div class="section">
-                <h3>Highlights</h3>
-                ${buildTabHighlights(selections)}
-              </div>
+              ${buildCoverDetailedSections(selections)}
             `;
         }
 
