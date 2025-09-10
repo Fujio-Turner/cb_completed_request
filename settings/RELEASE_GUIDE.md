@@ -52,6 +52,50 @@ Execute the complete version update process:
 - Docker files updated with new version
 - All version consistency checks passed
 
+### Header Comment Block in en/index.html (Version + Date)
+The English HTML includes a header comment with version and date. Update both on every release, in addition to meta tags and JS constants:
+
+```html
+<!--
+    Couchbase Query Analyzer
+    Version: X.X.X
+    Last Updated: YYYY-MM-DD
+    
+    🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
+    This guide covers all HTML elements, JavaScript variables, and documentation files that need updating.
+    Load and do what the AGENT.md file before working on this file.
+
+    Use semantic versioning: MAJOR.MINOR.PATCH
+    - MAJOR: Breaking changes or complete rewrites
+    - MINOR: New features, significant enhancements  
+    - PATCH: Bug fixes, small improvements
+    
+-->
+```
+
+- Set `Version:` to the exact release version (e.g., `3.13.0`).
+- Set `Last Updated:` to the release date in `YYYY-MM-DD` (e.g., `2025-09-09`).
+
+Verification:
+
+```bash
+# Spot check the header comment values
+grep -n "^\s*Version:" en/index.html
+grep -n "^\s*Last Updated:" en/index.html
+```
+
+Optional automation:
+
+```bash
+# Update just the English file
+sed -i '' 's/^\s*Version: .*/    Version: NEW_VERSION/' en/index.html
+sed -i '' 's/^\s*Last Updated: .*/    Last Updated: YYYY-MM-DD/' en/index.html
+
+# If you want to align all localized index.html headers too (after copying from en/)
+sed -i '' 's/^\s*Version: .*/    Version: NEW_VERSION/' */index.html
+sed -i '' 's/^\s*Last Updated: .*/    Last Updated: YYYY-MM-DD/' */index.html
+```
+
 ### **Step 4: Follow LOCALIZATION_GUIDE.md**
 Ensure all localizations are current and complete:
 
@@ -137,6 +181,19 @@ for file in *.html */index.html; do
 done
 ```
 
+#### 🔧 **Expected Issue 6: Header Comment Block Outdated**
+**Symptom:** Header comment in en/index.html shows an older `Version:` or `Last Updated:` value than the release
+**Fix:** Update the header comment to match the release version/date
+```bash
+# Update English header comment to match the release
+sed -i '' 's/^\s*Version: .*/    Version: NEW_VERSION/' en/index.html
+sed -i '' 's/^\s*Last Updated: .*/    Last Updated: YYYY-MM-DD/' en/index.html
+
+# Verify
+grep -n "^\s*Version:" en/index.html
+grep -n "^\s*Last Updated:" en/index.html
+```
+
 #### **MANDATORY Re-Verification**
 After fixing issues, **MUST** re-run verification:
 ```bash
@@ -177,6 +234,7 @@ Before marking a release complete, ALL of these must pass:
 - [ ] AGENT.md shows correct version
 - [ ] Docker files show correct version
 - [ ] JavaScript constants match meta tags
+- [ ] en/index.html header comment shows correct Version and Last Updated
 
 ### ✅ Localization Quality
 - [ ] No English text found in German/Spanish/Portuguese files
