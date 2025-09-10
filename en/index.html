@@ -174,7 +174,9 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         PHASE_INDEX_SCAN: "Index Scan",
         PHASE_FETCH: "Doc Fetch",
         PHASE_FILTER: "Filter",
+        PHASE_JOIN: "JOIN",
         PHASE_PROJECT: "Project",
+        PHASE_DELETE_UPDATE: "DELETE / UPDATE",
         PHASE_STREAM: "Stream",
                 PHASE_SORT: "ORDER BY",
         PHASE_GROUP_AGG: "GROUP BY",
@@ -3924,12 +3926,14 @@ if (window.TEXT_CONSTANTS) {
             const s_plan = phaseStats('plan');
             const s_index = phaseStats(['indexScan','primaryScan','primaryScan.GSI']);
             const s_fetch = phaseStats('fetch');
+            const s_join = phaseStats(['hashJoin','nestedLoopJoin']);
             const s_filter = phaseStats('filter');
-            const s_project = phaseStats('project');
-            const s_stream = phaseStats('stream');
-            const s_sort = phaseStats('sort');
             const s_group = phaseStats(['group','aggregate']);
+            const s_sort = phaseStats('sort');
             const s_limit = phaseStats('limit');
+            const s_project = phaseStats('project');
+            const s_dml = phaseStats(['delete','update']);
+            const s_stream = phaseStats('stream');
 
             const avgPhaseTimeline = [
                 { id: 'authorize', label: TEXT_CONSTANTS.PHASE_AUTHORIZE || 'authorize', avgMs: s_authorize.avg, minMs: s_authorize.min, maxMs: s_authorize.max },
@@ -3937,11 +3941,13 @@ if (window.TEXT_CONSTANTS) {
                 { id: 'plan', label: TEXT_CONSTANTS.PHASE_PLAN, avgMs: s_plan.avg, minMs: s_plan.min, maxMs: s_plan.max },
                 { id: 'indexScan', label: TEXT_CONSTANTS.PHASE_INDEX_SCAN || 'index scan', avgMs: s_index.avg, minMs: s_index.min, maxMs: s_index.max },
                 { id: 'fetch', label: TEXT_CONSTANTS.PHASE_FETCH || 'fetch data', avgMs: s_fetch.avg, minMs: s_fetch.min, maxMs: s_fetch.max },
+                { id: 'join', label: TEXT_CONSTANTS.PHASE_JOIN || 'JOIN', avgMs: s_join.avg, minMs: s_join.min, maxMs: s_join.max },
                 { id: 'filter', label: TEXT_CONSTANTS.PHASE_FILTER, avgMs: s_filter.avg, minMs: s_filter.min, maxMs: s_filter.max },
                 { id: 'groupAgg', label: TEXT_CONSTANTS.PHASE_GROUP_AGG, avgMs: s_group.avg, minMs: s_group.min, maxMs: s_group.max },
                 { id: 'sort', label: TEXT_CONSTANTS.PHASE_SORT, avgMs: s_sort.avg, minMs: s_sort.min, maxMs: s_sort.max },
                 { id: 'limit', label: TEXT_CONSTANTS.PHASE_LIMIT || 'limit', avgMs: s_limit.avg, minMs: s_limit.min, maxMs: s_limit.max },
                 { id: 'project', label: TEXT_CONSTANTS.PHASE_PROJECT, avgMs: s_project.avg, minMs: s_project.min, maxMs: s_project.max },
+                { id: 'deleteUpdate', label: TEXT_CONSTANTS.PHASE_DELETE_UPDATE || 'DELETE / UPDATE', avgMs: s_dml.avg, minMs: s_dml.min, maxMs: s_dml.max },
                 { id: 'stream', label: TEXT_CONSTANTS.PHASE_STREAM || 'return results', avgMs: s_stream.avg, minMs: s_stream.min, maxMs: s_stream.max },
             ].filter(p => p.avgMs > 0);
 
@@ -4377,38 +4383,45 @@ function renderQueryGroupPhaseTimesChart(group) {
                 const findStats = (id) => phases.find(p => p.id === id) || { avgMs: 0, minMs: 0, maxMs: 0 };
 
                 // Stats per phase (avg/min/max in ms)
-                const authStats   = findStats('authorize');
-                const parseStats  = findStats('parse');
-                const planStats   = findStats('plan');
-                const indexStats  = findStats('indexScan');
-                const fetchStats  = findStats('fetch');
-                const filterStats = findStats('filter');
-                const groupStats  = findStats('groupAgg');
-                const sortStats   = findStats('sort');
-                const limitStats  = findStats('limit');
-                const projectStats= findStats('project');
-                const streamStats = findStats('stream');
+                const authStats    = findStats('authorize');
+                const parseStats   = findStats('parse');
+                const planStats    = findStats('plan');
+                const indexStats   = findStats('indexScan');
+                const fetchStats   = findStats('fetch');
+                const joinStats    = findStats('join');
+                const filterStats  = findStats('filter');
+                const groupStats   = findStats('groupAgg');
+                const sortStats    = findStats('sort');
+                const limitStats   = findStats('limit');
+                const projectStats = findStats('project');
+                const dmlStats     = findStats('deleteUpdate');
+                const streamStats  = findStats('stream');
 
-                // Build labels (display). Top Left is row 1.
-                const labels = [
-                    TEXT_CONSTANTS.PHASE_AUTHORIZE,
-                    `Parse & Plan`,
-                    `Index Scan / Doc Fetch`,
-                    TEXT_CONSTANTS.PHASE_FILTER,
-                    TEXT_CONSTANTS.PHASE_GROUP_AGG,
-                    TEXT_CONSTANTS.PHASE_SORT,
-                    TEXT_CONSTANTS.PHASE_LIMIT,
-                    TEXT_CONSTANTS.PHASE_PROJECT,
-                    TEXT_CONSTANTS.PHASE_STREAM
+                // Dynamically build rows (top-down order) and include only if data exists
+                const rows = [
+                    { key: 'authorize',    label: TEXT_CONSTANTS.PHASE_AUTHORIZE,                         include: !!authStats.avgMs },
+                    { key: 'parsePlan',    label: `Parse & Plan`,                                       include: !!parseStats.avgMs || !!planStats.avgMs },
+                    { key: 'scanFetch',    label: `Index Scan / Doc Fetch`,                             include: !!indexStats.avgMs || !!fetchStats.avgMs },
+                    { key: 'join',         label: TEXT_CONSTANTS.PHASE_JOIN || 'JOIN',                  include: !!joinStats.avgMs },
+                    { key: 'filter',       label: TEXT_CONSTANTS.PHASE_FILTER,                          include: !!filterStats.avgMs },
+                    { key: 'groupAgg',     label: TEXT_CONSTANTS.PHASE_GROUP_AGG,                       include: !!groupStats.avgMs },
+                    { key: 'sort',         label: TEXT_CONSTANTS.PHASE_SORT,                            include: !!sortStats.avgMs },
+                    { key: 'limit',        label: TEXT_CONSTANTS.PHASE_LIMIT,                           include: !!limitStats.avgMs },
+                    { key: 'project',      label: TEXT_CONSTANTS.PHASE_PROJECT,                         include: !!projectStats.avgMs },
+                    { key: 'deleteUpdate', label: TEXT_CONSTANTS.PHASE_DELETE_UPDATE || 'DELETE / UPDATE', include: !!dmlStats.avgMs },
+                    { key: 'stream',       label: TEXT_CONSTANTS.PHASE_STREAM,                          include: !!streamStats.avgMs },
                 ];
+                const activeRows = rows.filter(r => r.include);
+                const labels = activeRows.map(r => r.label);
+                const rowIndex = Object.fromEntries(activeRows.map((r, i) => [r.key, i]));
 
                 // Dynamically size chart height based on row count and bar thickness (set parent height for Chart.js sizing)
                 try {
                     const barPx = 26; // close to maxBarThickness used elsewhere
                     const rowPadding = 28; // tick + grid spacing
                     const base = 140; // extra space for axes/labels
-                    const targetHeight = Math.max(base + labels.length * (barPx + rowPadding), 520);
-                    const scaled = Math.max(330, Math.round(targetHeight * 0.75)); // reduce by ~25%
+                    const targetHeight = Math.max(base + labels.length * (barPx + rowPadding), 300);
+                    const scaled = Math.max(280, Math.round(targetHeight * 0.75)); // reduce by ~25%
                     const parent = canvas.parentElement; // Chart.js reads parent container size
                     if (parent) parent.style.height = `${scaled}px`;
                     // Also set the canvas as a fallback
@@ -4417,24 +4430,24 @@ function renderQueryGroupPhaseTimesChart(group) {
 
                 // Compute sequential offsets. Row 2: parse then plan (in series). Row 3: scan/fetch concurrent.
                 let t = 0;
-                const authBar   = authStats.avgMs   > 0 ? [t, (t += authStats.avgMs)]     : null;
-                const row2Start = t;
-                const parseBar  = parseStats.avgMs  > 0 ? [t, (t += parseStats.avgMs)]    : null;
-                const planBar   = planStats.avgMs   > 0 ? [t, (t += planStats.avgMs)]     : null;
+                const authBar    = authStats.avgMs   > 0 ? [t, (t += authStats.avgMs)]      : null;
+                const row2Start  = t;
+                const parseBar   = parseStats.avgMs  > 0 ? [t, (t += parseStats.avgMs)]     : null;
+                const planBar    = planStats.avgMs   > 0 ? [t, (t += planStats.avgMs)]      : null;
 
-                const row3Start = t; // concurrency start for Index Scan / Fetch
-                const scanBar   = indexStats.avgMs  > 0 ? [row3Start, row3Start + indexStats.avgMs] : null;
-                const fetchBar  = fetchStats.avgMs  > 0 ? [row3Start, row3Start + fetchStats.avgMs] : null;
+                const row3Start  = t; // concurrency start for Index Scan / Fetch
+                const scanBar    = indexStats.avgMs  > 0 ? [row3Start, row3Start + indexStats.avgMs] : null;
+                const fetchBar   = fetchStats.avgMs  > 0 ? [row3Start, row3Start + fetchStats.avgMs] : null;
                 t = Math.max(scanBar ? scanBar[1] : row3Start, fetchBar ? fetchBar[1] : row3Start);
 
-                const filterBar = filterStats.avgMs > 0 ? [t, (t += filterStats.avgMs)] : null;
-                const groupBar  = groupStats.avgMs  > 0 ? [t, (t += groupStats.avgMs)]  : null;
-                const sortBar   = sortStats.avgMs   > 0 ? [t, (t += sortStats.avgMs)]   : null;
-                const limitBar  = limitStats.avgMs  > 0 ? [t, (t += limitStats.avgMs)]  : null;
-                const projectBar= projectStats.avgMs> 0 ? [t, (t += projectStats.avgMs)]: null;
-                const streamBar = streamStats.avgMs > 0 ? [t, (t += streamStats.avgMs)] : null;
-
-
+                const joinBar    = joinStats.avgMs   > 0 ? [t, (t += joinStats.avgMs)]      : null;
+                const filterBar  = filterStats.avgMs > 0 ? [t, (t += filterStats.avgMs)]    : null;
+                const groupBar   = groupStats.avgMs  > 0 ? [t, (t += groupStats.avgMs)]     : null;
+                const sortBar    = sortStats.avgMs   > 0 ? [t, (t += sortStats.avgMs)]      : null;
+                const limitBar   = limitStats.avgMs  > 0 ? [t, (t += limitStats.avgMs)]     : null;
+                const projectBar = projectStats.avgMs> 0 ? [t, (t += projectStats.avgMs)]   : null;
+                const dmlBar     = dmlStats.avgMs    > 0 ? [t, (t += dmlStats.avgMs)]       : null;
+                const streamBar  = streamStats.avgMs > 0 ? [t, (t += streamStats.avgMs)]    : null;
 
                 // Helper to place a bar on a specific row index
                 function mkDataForRow(bar, rowIndex) {
@@ -4443,21 +4456,68 @@ function renderQueryGroupPhaseTimesChart(group) {
 
                 // Build datasets; one dataset per segment. Attach phaseId for tooltip stats.
                 const datasets = [];
-                if (authBar) datasets.push({ label: TEXT_CONSTANTS.PHASE_AUTHORIZE, phaseId: 'authorize', data: mkDataForRow(authBar, 0), backgroundColor: 'rgba(102, 126, 234, 0.35)', borderColor: 'rgba(102, 126, 234, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
-                if (parseBar) datasets.push({ label: TEXT_CONSTANTS.PHASE_PARSE,     phaseId: 'parse',     data: mkDataForRow(parseBar, 1), backgroundColor: 'rgba(66, 133, 244, 0.35)', borderColor: 'rgba(66, 133, 244, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
-                if (planBar)  datasets.push({ label: TEXT_CONSTANTS.PHASE_PLAN,      phaseId: 'plan',      data: mkDataForRow(planBar,  1), backgroundColor: 'rgba(66, 133, 244, 0.25)', borderColor: 'rgba(66, 133, 244, 0.8)', borderWidth: 1, borderRadius: 4, grouped: false });
-                if (scanBar)  datasets.push({ label: TEXT_CONSTANTS.PHASE_INDEX_SCAN,phaseId: 'indexScan', data: mkDataForRow(scanBar,  2), backgroundColor: 'rgba(40, 167, 69, 0.35)',  borderColor: 'rgba(40, 167, 69, 0.9)',  borderWidth: 1, borderRadius: 4, barThickness: 10, categoryPercentage: 0.5, barPercentage: 0.5 });
-                if (fetchBar) datasets.push({ label: TEXT_CONSTANTS.PHASE_FETCH,     phaseId: 'fetch',     data: mkDataForRow(fetchBar, 2), backgroundColor: 'rgba(220, 53, 69, 0.30)',  borderColor: 'rgba(220, 53, 69, 0.9)',  borderWidth: 1, borderRadius: 4, barThickness: 10, categoryPercentage: 0.5, barPercentage: 0.5 });
-                if (filterBar)datasets.push({ label: TEXT_CONSTANTS.PHASE_FILTER,    phaseId: 'filter',    data: mkDataForRow(filterBar,3), backgroundColor: 'rgba(255, 193, 7, 0.30)',   borderColor: 'rgba(255, 193, 7, 0.9)',   borderWidth: 1, borderRadius: 4, grouped: false });
-                if (groupBar) datasets.push({ label: TEXT_CONSTANTS.PHASE_GROUP_AGG, phaseId: 'groupAgg',  data: mkDataForRow(groupBar, 4), backgroundColor: 'rgba(23, 162, 184, 0.30)',  borderColor: 'rgba(23, 162, 184, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
-                if (sortBar)  datasets.push({ label: TEXT_CONSTANTS.PHASE_SORT,      phaseId: 'sort',      data: mkDataForRow(sortBar,  5), backgroundColor: 'rgba(108, 117, 125, 0.30)', borderColor: 'rgba(108, 117, 125, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
-                if (limitBar) datasets.push({ label: TEXT_CONSTANTS.PHASE_LIMIT,     phaseId: 'limit',     data: mkDataForRow(limitBar, 6), backgroundColor: 'rgba(153, 102, 255, 0.30)', borderColor: 'rgba(153, 102, 255, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
-                if (projectBar)datasets.push({ label: TEXT_CONSTANTS.PHASE_PROJECT,  phaseId: 'project',   data: mkDataForRow(projectBar,7), backgroundColor: 'rgba(255, 99, 132, 0.25)', borderColor: 'rgba(255, 99, 132, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
-                if (streamBar) datasets.push({ label: TEXT_CONSTANTS.PHASE_STREAM,   phaseId: 'stream',    data: mkDataForRow(streamBar, 8), backgroundColor: 'rgba(0, 123, 255, 0.20)',  borderColor: 'rgba(0, 123, 255, 0.8)',  borderWidth: 1, borderRadius: 4, grouped: false });
+                if (authBar && rowIndex.authorize !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_AUTHORIZE, phaseId: 'authorize', data: mkDataForRow(authBar, rowIndex.authorize), backgroundColor: 'rgba(102, 126, 234, 0.35)', borderColor: 'rgba(102, 126, 234, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
+                if (parseBar && rowIndex.parsePlan !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_PARSE,     phaseId: 'parse',     data: mkDataForRow(parseBar, rowIndex.parsePlan), backgroundColor: 'rgba(66, 133, 244, 0.35)', borderColor: 'rgba(66, 133, 244, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
+                if (planBar && rowIndex.parsePlan !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_PLAN,      phaseId: 'plan',      data: mkDataForRow(planBar,  rowIndex.parsePlan), backgroundColor: 'rgba(66, 133, 244, 0.25)', borderColor: 'rgba(66, 133, 244, 0.8)', borderWidth: 1, borderRadius: 4, grouped: false });
+                if (scanBar && rowIndex.scanFetch !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_INDEX_SCAN,phaseId: 'indexScan', data: mkDataForRow(scanBar,  rowIndex.scanFetch), backgroundColor: 'rgba(40, 167, 69, 0.35)',  borderColor: 'rgba(40, 167, 69, 0.9)',  borderWidth: 1, borderRadius: 4, barThickness: 10, categoryPercentage: 0.5, barPercentage: 0.5 });
+                if (fetchBar && rowIndex.scanFetch !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_FETCH,     phaseId: 'fetch',     data: mkDataForRow(fetchBar, rowIndex.scanFetch), backgroundColor: 'rgba(220, 53, 69, 0.30)',  borderColor: 'rgba(220, 53, 69, 0.9)',  borderWidth: 1, borderRadius: 4, barThickness: 10, categoryPercentage: 0.5, barPercentage: 0.5 });
+                if (joinBar && rowIndex.join !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_JOIN || 'JOIN', phaseId: 'join',  data: mkDataForRow(joinBar, rowIndex.join), backgroundColor: 'rgba(255, 159, 64, 0.35)', borderColor: 'rgba(255, 159, 64, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
+                if (filterBar && rowIndex.filter !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_FILTER,    phaseId: 'filter',    data: mkDataForRow(filterBar,rowIndex.filter), backgroundColor: 'rgba(255, 193, 7, 0.30)',   borderColor: 'rgba(255, 193, 7, 0.9)',   borderWidth: 1, borderRadius: 4, grouped: false });
+                if (groupBar && rowIndex.groupAgg !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_GROUP_AGG, phaseId: 'groupAgg',  data: mkDataForRow(groupBar, rowIndex.groupAgg), backgroundColor: 'rgba(23, 162, 184, 0.30)',  borderColor: 'rgba(23, 162, 184, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
+                if (sortBar && rowIndex.sort !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_SORT,      phaseId: 'sort',      data: mkDataForRow(sortBar,  rowIndex.sort), backgroundColor: 'rgba(108, 117, 125, 0.30)', borderColor: 'rgba(108, 117, 125, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
+                if (limitBar && rowIndex.limit !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_LIMIT,     phaseId: 'limit',     data: mkDataForRow(limitBar, rowIndex.limit), backgroundColor: 'rgba(153, 102, 255, 0.30)', borderColor: 'rgba(153, 102, 255, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
+                if (projectBar && rowIndex.project !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_PROJECT,   phaseId: 'project',   data: mkDataForRow(projectBar,rowIndex.project), backgroundColor: 'rgba(255, 99, 132, 0.25)', borderColor: 'rgba(255, 99, 132, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
+                if (dmlBar && rowIndex.deleteUpdate !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_DELETE_UPDATE || 'DELETE / UPDATE', phaseId: 'deleteUpdate', data: mkDataForRow(dmlBar, rowIndex.deleteUpdate), backgroundColor: 'rgba(121, 85, 72, 0.35)', borderColor: 'rgba(121, 85, 72, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
+                if (streamBar && rowIndex.stream !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_STREAM,    phaseId: 'stream',    data: mkDataForRow(streamBar,rowIndex.stream), backgroundColor: 'rgba(0, 123, 255, 0.20)',  borderColor: 'rgba(0, 123, 255, 0.8)',  borderWidth: 1, borderRadius: 4, grouped: false });
+
+                // Inline plugin to draw avg time labels at end of each bar
+                const valueLabelPlugin = {
+                    id: 'queryGroupBarValueLabels',
+                    afterDatasetsDraw(chart, args, plgOpts) {
+                        const { ctx, chartArea } = chart;
+                        ctx.save();
+                        ctx.fillStyle = '#000';
+                        ctx.font = 'bold 14px Arial';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'middle';
+                        chart.data.datasets.forEach((ds, di) => {
+                            const meta = chart.getDatasetMeta(di);
+                            if (!meta || meta.hidden) return;
+                            const statsForDs = (phaseId) => findStats(phaseId || '');
+                            meta.data.forEach((bar, i) => {
+                                const raw = ds.data[i];
+                                if (!raw || !Array.isArray(raw)) return;
+                                const stats = statsForDs(ds.phaseId);
+                                const avgMs = (stats && stats.avgMs) ? stats.avgMs : 0;
+                                if (!avgMs) return;
+                                const label = formatTime(avgMs);
+                                const x = Math.max(bar.x, bar.base) + 6;
+                                const y = bar.y;
+                                const drawX = Math.min(x, chartArea.right - 4);
+                                ctx.fillText(label, drawX, y);
+                            });
+                        });
+                        ctx.restore();
+                    }
+                };
 
                 window.queryGroupPhaseTimesChart = new Chart(ctx, {
                     type: 'bar',
                     data: { labels, datasets },
+                    plugins: [valueLabelPlugin],
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
@@ -4497,7 +4557,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                             y: {
                                 stacked: false,
                                 offset: true,
-                                title: { display: true, text: TEXT_CONSTANTS.AXIS_QUERY_PHASE }
+                                title: { display: false }
                             }
                         }
                     }
