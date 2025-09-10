@@ -201,6 +201,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
 /* Preview (screen) should not use flex/100vh to allow natural scroll */
 .report-mode { display: block !important; height: auto !important; overflow: visible !important; }
 .report-mode #tabs { height: auto !important; overflow: visible !important; display: block !important; }
+.report-mode .chart-container { overflow: visible !important; }
 .report-mode .version-info, .report-mode #input-section, .report-mode .ui-tabs-nav, .report-mode footer, .report-mode .beta-badge, .report-mode .dev-badge, .report-mode .live-badge, .report-mode #analysis-search-controls { display: none !important; }
 .report-mode .ui-tabs-panel { display: none !important; }
 .report-mode .ui-tabs-panel.report-visible { display: block !important; }
@@ -218,6 +219,7 @@ body { display: block !important; height: auto !important; overflow: visible !im
 /* Ensure panels expand naturally for print */
 #dashboard, #insights, #timeline, #analysis, #every-query, #index-query-flow, #indexes { height: auto !important; overflow: visible !important; }
 #index-query-flow .height-100 { height: auto !important; }
+#timeline .chart-container, .chart-container { overflow: visible !important; }
 #flow-canvas, #flow-elements, #flow-svg { transform: none !important; width: auto !important; height: auto !important; overflow: visible !important; }
 /* In report mode, only show selected panels */
 .report-mode .ui-tabs-panel { display: none !important; }
@@ -14996,6 +14998,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         // Report Maker (Phase 1)
         // =====================
         let reportModeActive = false;
+        let savedTimelineDisplay = null; // Map<Element, string> original inline display values
         function getReportSelections() {
             const sectionChecks = document.querySelectorAll('#report-sections input[type="checkbox"]');
             const sections = {};
@@ -15325,6 +15328,11 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             const selections = getReportSelections();
             document.body.classList.add('report-mode');
             reportModeActive = true;
+            // Save original timeline chart container visibility
+            savedTimelineDisplay = new Map();
+            document.querySelectorAll('#timeline .chart-container').forEach(c => {
+                savedTimelineDisplay.set(c, c.style.display);
+            });
             // reset printable header state; will be enabled only if option selected
             const hdr = document.getElementById('report-header');
             if (hdr) hdr.classList.remove('print-visible');
@@ -15414,8 +15422,16 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (legacyBrk) legacyBrk.remove();
             const exitBtn = document.getElementById('report-exit-btn');
             if (exitBtn) exitBtn.style.display = 'none';
-            // Re-show all timeline charts
-            document.querySelectorAll('#timeline .chart-container').forEach(c => { c.style.display = ''; });
+            // Re-show timeline charts to original visibility state
+            if (savedTimelineDisplay instanceof Map) {
+                document.querySelectorAll('#timeline .chart-container').forEach(c => {
+                    const val = savedTimelineDisplay.get(c);
+                    c.style.display = (typeof val === 'string') ? val : '';
+                });
+                savedTimelineDisplay = null;
+            }
+            // Trigger resize so charts recompute layout
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
             // Reset checkboxes back to defaults
             resetReportMakerDefaults();
         }
