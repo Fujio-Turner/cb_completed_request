@@ -1369,11 +1369,11 @@ if (window.TEXT_CONSTANTS) {
                     </div>
                 </div>
                 <div style="
-              display: grid;
-              grid-template-columns: repeat(2, 1fr);
-              gap: 15px;
-              margin-top: 8px;
-            ">
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+                margin-top: 8px;
+                ">
                     <div style="display: flex; align-items: center; gap: 8px">
                         <span><strong>Primary Indexes:</strong>
                             <span id="stat-primary">0</span></span>
@@ -1400,13 +1400,13 @@ if (window.TEXT_CONSTANTS) {
                             Used Only
                         </label>
                     </div>
-                </div>
-                <div style="
-              display: grid;
-              grid-template-columns: repeat(2, 1fr);
-              gap: 15px;
-              margin-top: 8px;
-            ">
+                    </div>
+                    <div style="
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 15px;
+                    margin-top: 8px;
+                    ">
                     <div style="display: flex; align-items: center; gap: 8px">
                         <span><strong>Without/With Replica:</strong>
                             <span id="stat-replica-info">0/0</span></span>
@@ -1418,6 +1418,21 @@ if (window.TEXT_CONSTANTS) {
                 ">
                             <input type="checkbox" id="filter-no-replica" style="margin: 0" />
                             No Replicas Only
+                        </label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px">
+                        <span><strong>Index Type:</strong></span>
+                        <label style="display:flex; align-items:center; gap:4px; font-size:11px;">
+                            <input type="radio" name="indexTypeFilter" value="all" id="filter-type-all" checked style="margin:0" />
+                            All Indexes
+                        </label>
+                        <label style="display:flex; align-items:center; gap:4px; font-size:11px;">
+                            <input type="radio" name="indexTypeFilter" value="gsi" id="filter-type-gsi" style="margin:0" />
+                            GSI Only
+                        </label>
+                        <label style="display:flex; align-items:center; gap:4px; font-size:11px;">
+                            <input type="radio" name="indexTypeFilter" value="fts" id="filter-type-fts" style="margin:0" />
+                            FTS Only
                         </label>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px">
@@ -1483,6 +1498,7 @@ if (window.TEXT_CONSTANTS) {
                             s.metadata,
                             s.state,
                             s.num_replica,
+                            s.`using` AS indexType,
                             CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
                             FROM system:indexes AS s
                             LET bid = CONCAT("", s.bucket_id, ""),
@@ -14425,18 +14441,24 @@ function generateElapsedTimeChart(requests) {
                     primaryCount++;
                 }
 
-                // Check replicas
-                const replica = index.metadata?.num_replica || 0;
-                if (replica > 0) {
-                    withReplicasCount++;
-                } else {
-                    noReplicasCount++;
+                // Check replicas (skip FTS indexes)
+                const idxType = ((index.indexType || index.metadata?.using || '').toString().toLowerCase());
+                if (idxType !== 'fts') {
+                    const replica = index.metadata?.num_replica || 0;
+                    if (replica > 0) {
+                        withReplicasCount++;
+                    } else {
+                        noReplicasCount++;
+                    }
                 }
 
-                // Check if never scanned
+                // Check if never scanned (skip FTS indexes)
                 const lastScan = index.metadata?.last_scan_time;
-                if (!lastScan || lastScan === "Never") {
-                    neverScannedCount++;
+                const idxTypeForNever = ((index.indexType || index.metadata?.using || '').toString().toLowerCase());
+                if (idxTypeForNever !== 'fts') {
+                    if (!lastScan || lastScan === "Never") {
+                        neverScannedCount++;
+                    }
                 }
 
                 // Check if used in queries
@@ -14627,6 +14649,7 @@ function generateElapsedTimeChart(requests) {
             const searchTerm =
                 document.getElementById("indexSearch")?.value.toLowerCase().trim() ||
                 "";
+            const typeFilter = document.querySelector('input[name="indexTypeFilter"]:checked')?.value || 'all';
 
             // Get checkbox filter states
             const filterPrimary =
@@ -14664,6 +14687,13 @@ function generateElapsedTimeChart(requests) {
                     if (!matchesSearch) return false;
                 }
 
+                // Type radio filter (All, GSI, FTS)
+                if (typeFilter !== 'all') {
+                    const idxType = ((index.indexType || index.metadata?.using || '').toString().toLowerCase()) || 'gsi';
+                    if (typeFilter === 'gsi' && idxType !== 'gsi') return false;
+                    if (typeFilter === 'fts' && idxType !== 'fts') return false;
+                }
+
                 // Checkbox filters
                 const isPrimary =
                     index.name.includes("primary") || index.name.includes("#primary");
@@ -14680,14 +14710,18 @@ function generateElapsedTimeChart(requests) {
                     if (!isUsed) return false;
                 }
 
-                // Check replicas
+                // Check replicas (skip FTS indexes when filtering by no replica)
                 if (filterNoReplica) {
+                    const idxType = ((index.indexType || index.metadata?.using || '').toString().toLowerCase());
+                    if (idxType === 'fts') return false;
                     const replica = index.metadata?.num_replica || 0;
                     if (replica !== 0) return false;
                 }
 
-                // Check never scanned
+                // Check never scanned (skip FTS indexes)
                 if (filterNeverScanned) {
+                    const idxTypeNs = ((index.indexType || index.metadata?.using || '').toString().toLowerCase());
+                    if (idxTypeNs === 'fts') return false;
                     const lastScan = index.metadata?.last_scan_time;
                     if (lastScan && lastScan !== "Never") return false;
                 }
@@ -14744,21 +14778,22 @@ function generateElapsedTimeChart(requests) {
                             <div class="sql-query-box">
                                 <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">Copy Query</button>
                                 <pre>SELECT 
- s.name,
- s.id,
- s.metadata,
- s.state,
- s.num_replica,
-CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
-FROM system:indexes AS s
-LET bid = CONCAT("", s.bucket_id, ""),
-    sid = CONCAT("", s.scope_id, ""),
-    kid = CONCAT("", s.keyspace_id, ""),
-    k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
-    ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
-    w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
-    p = CASE WHEN s.\`partition\` IS NOT NULL THEN " PARTITION BY " || s.\`partition\` ELSE "" END
-;</pre>
+                                s.name,
+                                s.id,
+                                s.metadata,
+                                s.state,
+                                s.num_replica,
+                                s.\`using\` AS indexType,
+                                CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+                                FROM system:indexes AS s
+                                LET bid = CONCAT("", s.bucket_id, ""),
+                                sid = CONCAT("", s.scope_id, ""),
+                                kid = CONCAT("", s.keyspace_id, ""),
+                                k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
+                                ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
+                                w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
+                                    p = CASE WHEN s.\`partition\` IS NOT NULL THEN " PARTITION BY " || s.\`partition\` ELSE "" END
+ ;</pre>
                             </div>
                             <p style="color: #666; font-size: 13px; margin-top: 15px;">
                                 <strong>Steps:</strong><br>
@@ -14844,12 +14879,19 @@ LET bid = CONCAT("", s.bucket_id, ""),
             const isPrimary =
                 index.name.includes("primary") || index.name.includes("#primary");
             const lastScan = index.metadata?.last_scan_time || "Never";
-            const replica = index.metadata?.num_replica || 0;
+            const rawReplica = index.metadata?.num_replica;
             const state = index.state || "unknown";
             const timeSince = getTimeSince(lastScan);
             const lastScanFormatted =
                 lastScan === "Never" ? "Never" : new Date(lastScan).toLocaleString();
-            const replicaClass = replica === 0 ? "replica-zero" : "";
+            const idxType = ((index.indexType || index.metadata?.using || '').toString().toLowerCase()) || 'gsi';
+            const isFtsIndex = idxType === 'fts';
+            const idxTypeLabel = isFtsIndex ? 'FTS' : 'GSI';
+            const computedReplica = (rawReplica ?? 0);
+            const replicaDisplay = isFtsIndex ? TEXT_CONSTANTS.N_A : computedReplica;
+            const replicaClass = (!isFtsIndex && computedReplica === 0) ? "replica-zero" : "";
+            const lastScanDisplay = isFtsIndex ? TEXT_CONSTANTS.N_A : lastScanFormatted;
+            const timeSinceDisplay = isFtsIndex ? "" : timeSince;
 
             // Check if this index is used in the parsed query data
             const targetString = `${target.bucket}.${target.scope}.${target.collection}`;
@@ -14885,7 +14927,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 }.${target.collection}<br>
                         <strong>State:</strong> ${createStateBadge(
                     state
-                )} | <strong>Replicas:</strong> <span class="${replicaClass}">${replica}</span> | <strong>Last Scan:</strong> ${lastScanFormatted} ${timeSince}
+                )} | <strong>Type:</strong> ${idxTypeLabel} | <strong>Replicas:</strong> <span class="${replicaClass}">${replicaDisplay}</span> | <strong>Last Scan:</strong> ${lastScanDisplay} ${timeSinceDisplay}
                     </div>
                     <div class="index-statement">
                         ${index.indexString}
@@ -14920,21 +14962,22 @@ LET bid = CONCAT("", s.bucket_id, ""),
         // Copy index query to clipboard
         function copyIndexQuery(event) {
             const query = `SELECT 
- s.name,
- s.id,
- s.metadata,
- s.state,
- s.num_replica,
-CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
-FROM system:indexes AS s
-LET bid = CONCAT("", s.bucket_id, ""),
-    sid = CONCAT("", s.scope_id, ""),
-    kid = CONCAT("", s.keyspace_id, ""),
-    k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
-    ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
-    w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
-    p = CASE WHEN s.\`partition\` IS NOT NULL THEN " PARTITION BY " || s.\`partition\` ELSE "" END
-;`;
+            s.name,
+            s.id,
+            s.metadata,
+            s.state,
+            s.num_replica,
+            s.\`using\` AS indexType,
+            CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+            FROM system:indexes AS s
+            LET bid = CONCAT("", s.bucket_id, ""),
+            sid = CONCAT("", s.scope_id, ""),
+            kid = CONCAT("", s.keyspace_id, ""),
+            k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
+            ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
+            w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
+                p = CASE WHEN s.\`partition\` IS NOT NULL THEN " PARTITION BY " || s.\`partition\` ELSE "" END
+ ;`;
 
             navigator.clipboard
                 .writeText(query)
@@ -15003,6 +15046,19 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 "filter-never-scanned",
                 "filter-exclude-mobile",
             ];
+
+            // Radio buttons for type filter
+            const typeRadios = [
+                "filter-type-all",
+                "filter-type-gsi",
+                "filter-type-fts",
+            ];
+            typeRadios.forEach((id) => {
+                const radio = document.getElementById(id);
+                if (radio) {
+                    radio.addEventListener("change", applyIndexFilters);
+                }
+            });
 
             filterCheckboxes.forEach((id) => {
                 const checkbox = document.getElementById(id);

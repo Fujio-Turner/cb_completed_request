@@ -545,4 +545,18 @@
     "datastore_id": "http://127.0.0.1:8091",
     "indexString": "CREATE INDEX sg_tombstones_x1 ON mobile_bucket (_sync.`rev`, _sync.`seq`) WHERE _sync.`deleted` = true;"
   }
+,
+  {
+    "name": "fts_products_title_body",
+    "id": "fts::default:products:fts_products_title_body",
+    "metadata": {
+      "num_replica": 0,
+      "last_scan_time": "Never",
+      "using": "fts"
+    },
+    "state": "online",
+    "num_replica": 0,
+    "indexType": "fts",
+    "indexString": "CREATE INDEX fts_products_title_body ON products._default._default (SEARCH(title), SEARCH(description))"
+  }
 ]

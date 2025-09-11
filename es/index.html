@@ -1325,7 +1325,8 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                             s.metadatos,
                             s.estado,
                             s.num_replica,
-                            CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+                            s.`using` AS indexType,
+                             CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
                             FROM system:indexes AS s
                             LET bid = CONCAT("", s.bucket_id, ""),
                                 sid = CONCAT("", s.scope_id, ""),
@@ -14359,7 +14360,8 @@ function generateElapsedTimeChart(requests) {
  s.metadata,
  s.state,
  s.num_replica,
-CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+  s.`using` AS indexType,
+ CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
 FROM system:indexes AS s
 LET bid = CONCAT("", s.bucket_id, ""),
     sid = CONCAT("", s.scope_id, ""),
@@ -14535,7 +14537,8 @@ LET bid = CONCAT("", s.bucket_id, ""),
  s.metadata,
  s.state,
  s.num_replica,
-CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+  s.\`using\` AS indexType,
+ CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
 FROM system:indexes AS s
 LET bid = CONCAT("", s.bucket_id, ""),
     sid = CONCAT("", s.scope_id, ""),

@@ -1965,5 +1965,57 @@
     },
     "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-12T12:00:00.001Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"1.234µs\",\"servTime\":\"6.789µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:orders\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"3.210µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":120000,\"#itemsOut\":500,\"#phaseSwitches\":240000,\"execTime\":\"320.000ms\",\"kernTime\":\"300.000ms\",\"servTime\":\"295.000ms\"},\"index\":\"idx_orders_orderDate\",\"keyspace\":\"orders\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":500,\"#itemsOut\":500,\"#phaseSwitches\":1000,\"execTime\":\"100.000ms\",\"kernTime\":\"95.000ms\",\"servTime\":\"92.000ms\"},\"keyspace\":\"orders\",\"namespace\":\"default\"},{\"#operator\":\"Update\",\"#stats\":{\"#itemsIn\":500,\"#itemsOut\":0,\"#phaseSwitches\":1000,\"execTime\":\"800.000ms\",\"kernTime\":\"780.000ms\",\"servTime\":\"770.000ms\"},\"keyspace\":\"orders\",\"namespace\":\"default\"},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":0,\"#itemsOut\":0,\"#phaseSwitches\":1,\"execTime\":\"1.000ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
   }
+,
+  {
+    "completed_requests": {
+      "clientContextID": "fts-search-products-demo",
+      "cpuTime": "12.345ms",
+      "elapsedTime": "245.678ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "fetch": 120,
+        "indexFtsSearch": 120
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexFtsSearch": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "6.789µs",
+        "instantiate": "4.567µs",
+        "parse": "56.789µs",
+        "plan": "18.901µs",
+        "plan.index.metadata": "7.654µs",
+        "plan.keyspace.metadata": "5.432µs",
+        "indexFtsSearch": "145.678ms",
+        "fetch": "78.901ms",
+        "project": "12.345ms",
+        "run": "243.456ms",
+        "stream": "1.789ms"
+      },
+      "remoteAddr": "127.0.0.1:56789",
+      "requestId": "fts-search-products-demo",
+      "requestTime": "2025-07-24T10:05:12.345Z",
+      "resultCount": 120,
+      "resultSize": 48000,
+      "scanConsistency": "unbounded",
+      "serviceTime": "245.123ms",
+      "state": "completed",
+      "statement": "SELECT META().id, title FROM `products` WHERE SEARCH(products, 'laptop') AND price < 2000",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 4096,
+      "userAgent": "node-couchbase/4.1.2",
+      "users": "local:search_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-24T10:05:12.346Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"1.789µs\",\"servTime\":\"5.321µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:products\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"2.345µs\"},\"~children\":[{\"#operator\":\"IndexFtsSearch\",\"#stats\":{\"#itemsIn\":120,\"#itemsOut\":120,\"#phaseSwitches\":480,\"execTime\":\"145.678ms\",\"kernTime\":\"120.123ms\",\"servTime\":\"130.456ms\"},\"index\":\"fts_products_title_body\",\"keyspace\":\"products\",\"namespace\":\"default\",\"using\":\"fts\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":120,\"#itemsOut\":120,\"#phaseSwitches\":240,\"execTime\":\"78.901ms\",\"kernTime\":\"70.123ms\",\"servTime\":\"74.567ms\"},\"keyspace\":\"products\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":120,\"#itemsOut\":120,\"#phaseSwitches\":240,\"execTime\":\"12.345ms\",\"kernTime\":\"10.987ms\"},\"result_terms\":[{\"expr\":\"meta().id\"},{\"expr\":\"`title`\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":120,\"#itemsOut\":120,\"#phaseSwitches\":121,\"execTime\":\"1.789ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  }
 
  ]
