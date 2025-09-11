@@ -618,7 +618,7 @@ if (window.TEXT_CONSTANTS) {
                                     entries but returned back an avg <span class="highlight-number"
                                         id="avg-result-count">0</span> records per query or a selectivity of <span
                                         class="highlight-number" id="avg-selectivity">0%</span> (excluding aggregate
-                                    functions like COUNT(), AVG(), MIN(), MAX()).
+                                    functions like COUNT(), AVG(), MIN(), MAX(), and mutation statements (MERGE, DELETE, INSERT, UPDATE, UPSERT).
                                 </p>
 
                                    <button id="toggle-sample-queries-btn" onclick="toggleSampleQueries()" class="btn-standard">
@@ -10830,8 +10830,9 @@ function generateElapsedTimeChart(requests) {
                 }
 
                 // Count inefficient index scans
-                // Exclude mutation statements (MERGE, DELETE, INSERT, UPDATE) which may return [] on success
-                const isMutationStatement = /^(MERGE|DELETE|INSERT|UPDATE)\b/i.test(statement);
+                // Exclude mutation statements (MERGE, DELETE, INSERT, UPDATE, UPSERT) which may return [] on success
+                const stmtType = (request.statementType || deriveStatementType(request.statement || request.preparedText) || '').toUpperCase();
+                const isMutationStatement = stmtType === 'MERGE' || stmtType === 'DELETE' || stmtType === 'INSERT' || stmtType === 'UPDATE' || stmtType === 'UPSERT';
                 // Check if query has aggregate functions (exclude them)
                 const hasAggregates = /\b(COUNT|AVG|MIN|MAX|SUM)\s*\(/i.test(statement);
 
