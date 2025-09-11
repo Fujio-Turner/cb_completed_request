@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.14.0
+# Couchbase Slow Query Analysis Tool v3.14.1
 
 
 
@@ -163,6 +163,10 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 **⚠️ Warning**: Large date ranges with fine-grained groupings may cause chart rendering errors. The tool will alert you and suggest better combinations.
 
 ## Release Notes
+
+### Version 3.14.1 (September 10, 2025)
+- Bug fixes and quality improvements
+- Closes: #98, #97, #96
 
 ### Version 3.14.0 (September 10, 2025)
 - Process: Discontinued multi-language HTML builds; English-only shipping (index.html and en/index.html)

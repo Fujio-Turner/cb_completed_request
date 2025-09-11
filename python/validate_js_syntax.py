@@ -42,12 +42,10 @@ def extract_and_validate_js(filepath):
 
 def main():
     """Validate JavaScript syntax in all HTML files"""
+    # English-only release validation
     files_to_check = [
         'index.html',
-        'en/index.html', 
-        'de/index.html',
-        'es/index.html', 
-        'pt/index.html'
+        'en/index.html'
     ]
     
     print("🔍 JavaScript Syntax Validation")
