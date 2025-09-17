@@ -11977,9 +11977,6 @@ function generateElapsedTimeChart(requests) {
             // Initialize drag and drop for all charts
             setTimeout(() => setupChartDragAndDrop(), 100);
 
-            // Pre-aggregate timeline data once for all timeline charts
-            let timelineData = null;
-
             // Set up lazy loading for other tabs
             $('#tabs').on('tabsactivate', function (event, ui) {
                 const tabId = ui.newPanel.attr('id');
@@ -12027,6 +12024,48 @@ function generateElapsedTimeChart(requests) {
                     }
                 }
             });
+
+            // Also refresh the currently active tab immediately after parsing (important when Timeline is already open)
+            try {
+                const $tabs = $('#tabs');
+                if ($tabs && $tabs.length) {
+                    const activeIndex = $tabs.tabs('option', 'active');
+                    const panels = $tabs.find('.ui-tabs-panel');
+                    const activePanel = panels && panels.eq ? panels.eq(activeIndex) : null;
+                    const activeId = activePanel && activePanel.attr ? activePanel.attr('id') : null;
+                    if (activeId && !loadedTabs.has(activeId)) {
+                        const loadStart = performance.now();
+                        switch (activeId) {
+                            case 'dashboard':
+                                // Already generated above
+                                break;
+                            case 'timeline': {
+                                // Same logic as tabsactivate handler
+                                const sampleSize = Math.min(500, filteredRequests.length);
+                                const sampleStep = Math.max(1, Math.floor(filteredRequests.length / sampleSize));
+                                const timelineSample = filteredRequests.filter((_, i) => i % sampleStep === 0);
+                                console.log(`${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${timelineSample.length} ${TEXT_CONSTANTS.OF_TOTAL} ${filteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
+                                generateOperationsChart(filteredRequests);
+                                generateFilterChart(filteredRequests);
+                                generateTimelineChart(timelineSample);
+                                setTimeout(() => setupChartDragAndDrop(), 100);
+                                break;
+                            }
+                            case 'index-query-flow':
+                                buildIndexQueryFlow(filteredRequests);
+                                break;
+                            case 'insights':
+                                // nothing
+                                break;
+                        }
+                        loadedTabs.add(activeId);
+                        const loadEnd = performance.now();
+                        console.log(`${TEXT_CONSTANTS.LAZY_LOADED_TAB} ${activeId} ${TEXT_CONSTANTS.TAB_IN} ${Math.round(loadEnd - loadStart)}${TEXT_CONSTANTS.MS}`);
+                    }
+                }
+            } catch (e) {
+                console.error(`${TEXT_CONSTANTS.ERROR_LAZY_LOADING} active-tab`, e);
+            }
         }
 
         // Filter reminder toast notification
