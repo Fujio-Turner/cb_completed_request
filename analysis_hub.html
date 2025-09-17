@@ -158,8 +158,36 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5
                           wrap.addEventListener('mouseleave', ()=>{ hover.style.opacity = '0'; });
                         })();
                         </script>
-                    </div>
+                        </div>
 
+                        <div style="background: #e6fffa; border-left: 4px solid #14b8a6; padding: 12px; border-radius: 4px;">
+                        <h4 style="color: #0f766e; margin: 0 0 8px 0;">⏱️ Elapsed Time Filter</h4>
+                        <p style="color: #065f46; margin: 0 0 8px 0; font-size: 14px;">Filter by the <code>elapsedTime</code> of each query using comparisons and ranges. Supported:
+                                <strong>&lt;, &lt;=, =, &gt;, &gt;=</strong>, ranges like <code>100-500ms</code> or <code>0.5s-2s</code>, unit-inferred ranges like <code>3-15s</code>,
+                            shorthand <code>500ms+</code> (means <em>&gt;= 500ms</em>), and bare numbers (e.g., <code>150</code> means <em>&gt;= 150ms</em>).</p>
+                        <ul style="color: #065f46; margin: 0 0 8px 20px; font-size: 14px;">
+                            <li><strong>Comparators:</strong> <code>&gt;500ms</code>, <code>&gt;=1s</code>, <code>&lt;2s</code>, <code>=150ms</code></li>
+                            <li><strong>Ranges (inclusive):</strong> <code>100-500ms</code>, <code>0.5s-2s</code>, <code>3-15s</code> (unit applied to both sides)</li>
+                            <li><strong>Shorthand:</strong> <code>500ms+</code> (same as <code>&gt;=500ms</code>)</li>
+                            <li><strong>Bare number:</strong> <code>150</code> is interpreted as <code>&gt;=150ms</code></li>
+                        </ul>
+                        <div style="margin-top:8px; display:inline-block; position:relative; width: 420px;">
+                            <img src="img/elapsedTime_filter.png" alt="Elapsed Time Filter input and layout" style="max-width:100%; width: 100%; height:auto; border:1px solid #ddd; border-radius:6px; display:block;">
+                            <img src="img/elapsedTime_filter_example.png" alt="Examples entered into Elapsed Time Filter input" style="position:absolute; top:0; left:0; width:100%; height:auto; border-radius:6px; opacity:0; transition: opacity 0.3s ease;">
+                        </div>
+                        <script>
+                        (function(){
+                          const wrap = document.currentScript.previousElementSibling;
+                          if (!wrap) return;
+                          const imgs = wrap.querySelectorAll('img');
+                          const base = imgs[0];
+                          const hover = imgs[1];
+                          wrap.addEventListener('mouseenter', ()=>{ hover.style.opacity = '1'; });
+                          wrap.addEventListener('mouseleave', ()=>{ hover.style.opacity = '0'; });
+                        })();
+                        </script>
+                    </div>
+ 
                     <div style="background: #f0fff4; border-left: 4px solid #68d391; padding: 12px; border-radius: 4px;">
                         <h4 style="color: #22543d; margin: 0 0 8px 0;">✅ Exclude System Queries</h4>
                         <p style="color: #2d5016; margin: 0 0 8px 0; font-size: 14px;"><strong>Default: Enabled</strong> - Automatically filters out system-level operations like INFER, ADVISE, CREATE/ALTER INDEX statements, and queries from system: keyspaces. Keeps your analysis focused on application queries.</p>

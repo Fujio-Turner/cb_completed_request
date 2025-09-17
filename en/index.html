@@ -459,7 +459,7 @@ if (window.TEXT_CONSTANTS) {
 
             <!-- Filtering Controls Group -->
             <div
-                style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: #f8f9fa; padding: 8px 12px; border-radius: 6px; border: 1px solid #dee2e6;">
+                style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; background: #f8f9fa; padding: 8px 12px; border-radius: 6px; border: 1px solid #dee2e6; max-width: 1320px; flex: 0 1 auto;">
                 <div class="preset-stack margin-left-0">
                     <label for="time-range-select" class="preset-label">Presets</label>
                     <select id="time-range-select" onchange="setTimeRange(this.value)" title="Quickly set From/To date range" aria-describedby="preset-help"
@@ -485,12 +485,22 @@ if (window.TEXT_CONSTANTS) {
                     </div>
                 </div>
 
-                <div class="filter-stack" style="margin-left: 15px;">
-                    <label for="sql-statement-filter" class="filter-label">SQL++ Statement Filter</label>
-                    <input type="text" id="sql-statement-filter" placeholder="e.g., FROM bucket WHERE type = 'order'"
-                        title="Enter part of a SQL++ statement to filter results (contains match)"
-                        style="width: 190px; font-size: 11px; padding: 4px 6px;" />
-                    <label class="label-flex margin-top-5" style="margin: 0;">
+                <div class="filter-stack" style="margin-left: 15px; display: grid; grid-template-columns: 300px 200px auto; align-items: end; column-gap: 12px; row-gap: 0;">
+                    <div style="display: flex; flex-direction: column; padding: 6px 8px;">
+                        <label for="sql-statement-filter" class="filter-label">SQL++ Statement Filter</label>
+                        <input type="text" id="sql-statement-filter" placeholder="e.g., FROM bucket WHERE type = 'order'"
+                            title="Enter part of a SQL++ statement to filter results (contains match)"
+                            style="width: 100%; max-width: 100%; font-size: 11px; padding: 4px 6px;" />
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; padding: 6px 8px;">
+                        <label for="elapsed-time-filter" class="filter-label">Elapsed Time Filter</label>
+                        <input type="text" id="elapsed-time-filter" placeholder="e.g., >500ms, >=1s, 100-500ms, 0.5s-2s"
+                            title="Filter by elapsedTime; supports >, >=, <, <=, = or ranges like 100-500ms"
+                            style="width: 100%; max-width: 100%; font-size: 11px; padding: 4px 6px;" />
+                    </div>
+
+                    <label class="label-flex margin-top-5" style="margin: 0; display: flex; align-items: center; gap: 6px; padding: 6px 8px;">
                         <input type="checkbox" id="exclude-system-queries" checked
                             title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
                             aria-label="Exclude system queries from analysis" />
@@ -1840,7 +1850,10 @@ if (window.TEXT_CONSTANTS) {
             const sqlFilter = document.getElementById("sql-statement-filter");
             const sqlFilterText = sqlFilter ? sqlFilter.value.trim().toLowerCase() : "";
 
-
+            // Get elapsed time filter predicate (if any)
+            const elapsedFilterInput = document.getElementById("elapsed-time-filter");
+            const elapsedFilterText = elapsedFilterInput ? elapsedFilterInput.value.trim() : "";
+            const elapsedPredicate = makeElapsedFilterPredicate(elapsedFilterText);
 
             const filtered = requests.filter((request) => {
                 // Apply system query exclusion first
@@ -1853,6 +1866,14 @@ if (window.TEXT_CONSTANTS) {
                     const statement = (request.statement || request.preparedText || "").toLowerCase().replace(/\s+/g, ' ').trim();
                     const filterText = sqlFilterText.replace(/\s+/g, ' ').trim();
                     if (!statement.includes(filterText)) {
+                        return false;
+                    }
+                }
+
+                // Apply elapsedTime filter if provided
+                if (elapsedPredicate) {
+                    const ms = parseTime(request.elapsedTime || "");
+                    if (!elapsedPredicate(ms)) {
                         return false;
                     }
                 }
@@ -12193,6 +12214,72 @@ function generateElapsedTimeChart(requests) {
             });
         }
 
+        // Build an elapsedTime filter predicate from user input
+        function makeElapsedFilterPredicate(input) {
+            try {
+                if (!input || !(input = String(input).trim())) return null;
+                const s = input.toLowerCase();
+
+                const toMs = (num, unit) => {
+                    const v = parseFloat(num);
+                    const u = (unit || 'ms').toLowerCase();
+                    if (u === 'ms') return v;
+                    if (u === 's') return v * 1000;
+                    if (u === 'µs' || u === 'us') return v / 1000;
+                    // Fallback: attempt parseTime on composed string
+                    const ms = parseTime(`${v}${u}`);
+                    return isNaN(ms) ? NaN : ms;
+                };
+
+                // e.g., "100ms-500ms" or "0.5s - 2s" (inclusive)
+                const range = s.match(/^(\d*\.?\d+)\s*(µs|us|ms|s)?\s*-\s*(\d*\.?\d+)\s*(µs|us|ms|s)?$/);
+                if (range) {
+                    // If only one side has a unit, apply it to both sides for user-friendly behavior (e.g., "3-15s")
+                    const inferredUnit = range[2] || range[4] || 'ms';
+                    const leftMs = toMs(range[1], range[2] || inferredUnit);
+                    const rightMs = toMs(range[3], range[4] || inferredUnit);
+                    if (isNaN(leftMs) || isNaN(rightMs)) return null;
+                    const min = Math.min(leftMs, rightMs);
+                    const max = Math.max(leftMs, rightMs);
+                    return (x) => typeof x === 'number' && !isNaN(x) && x >= min && x <= max;
+                }
+
+                // e.g., ">=500ms", "<2s", "=150ms"
+                const comp = s.match(/^(<=|>=|<|>|=)\s*(\d*\.?\d+)\s*(µs|us|ms|s)?$/);
+                if (comp) {
+                    const op = comp[1];
+                    const valMs = toMs(comp[2], comp[3] || 'ms');
+                    if (isNaN(valMs)) return null;
+                    return (x) => {
+                        if (typeof x !== 'number' || isNaN(x)) return false;
+                        if (op === '<') return x < valMs;
+                        if (op === '<=') return x <= valMs;
+                        if (op === '>') return x > valMs;
+                        if (op === '>=') return x >= valMs;
+                        return x === valMs; // '='
+                    };
+                }
+
+                // e.g., "500ms+" (>=)
+                const plus = s.match(/^(\d*\.?\d+)\s*(µs|us|ms|s)\s*\+$/);
+                if (plus) {
+                    const valMs = toMs(plus[1], plus[2]);
+                    if (isNaN(valMs)) return null;
+                    return (x) => typeof x === 'number' && !isNaN(x) && x >= valMs;
+                }
+
+                // Bare number: assume ms and '>=' semantics
+                const bare = s.match(/^(\d*\.?\d+)$/);
+                if (bare) {
+                    const valMs = toMs(bare[1], 'ms');
+                    if (isNaN(valMs)) return null;
+                    return (x) => typeof x === 'number' && !isNaN(x) && x >= valMs;
+                }
+
+                return null;
+            } catch (e) { return null; }
+        }
+
         // Parse JSON input - Optimized
         function parseJSON() {
             // Hide filter reminder when parsing
@@ -12271,6 +12358,11 @@ function generateElapsedTimeChart(requests) {
                     const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
                     const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
 
+                    // Get elapsedTime filter predicate
+                    const elapsedFilterInput = document.getElementById("elapsed-time-filter");
+                    const elapsedFilterText = elapsedFilterInput ? elapsedFilterInput.value.trim() : "";
+                    const elapsedPredicate = makeElapsedFilterPredicate(elapsedFilterText);
+
                     function processBatch(startIndex) {
                         const endIndex = Math.min(
                             startIndex + batchSize,
@@ -12310,6 +12402,15 @@ function generateElapsedTimeChart(requests) {
                                             skippedCount++;
                                             continue;
                                         }
+                                    }
+                                }
+
+                                // Apply elapsedTime filter early (based on completed_requests.elapsedTime)
+                                if (elapsedPredicate) {
+                                    const elapsedMs = parseTime(request.elapsedTime || "");
+                                    if (!elapsedPredicate(elapsedMs)) {
+                                        skippedCount++;
+                                        continue;
                                     }
                                 }
 
@@ -15255,6 +15356,7 @@ function generateElapsedTimeChart(requests) {
             const startDateInput = document.getElementById("start-date");
             const endDateInput = document.getElementById("end-date");
             const sqlFilterInput = document.getElementById("sql-statement-filter");
+            const elapsedFilterInput = document.getElementById("elapsed-time-filter");
 
             if (startDateInput) {
                 startDateInput.addEventListener("change", function () {
@@ -15273,6 +15375,13 @@ function generateElapsedTimeChart(requests) {
             if (sqlFilterInput) {
                 sqlFilterInput.addEventListener("input", function () {
                     console.log(`SQL filter changed to: ${this.value}`);
+                    showFilterReminder();
+                });
+            }
+
+            if (elapsedFilterInput) {
+                elapsedFilterInput.addEventListener("input", function () {
+                    console.log(`Elapsed filter changed to: ${this.value}`);
                     showFilterReminder();
                 });
             }
@@ -15825,10 +15934,15 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (startDateInput?.value && endDateInput?.value) {
                 info.push(`${TEXT_CONSTANTS.REPORT_TIME_RANGE || 'Range'}: ${startDateInput.value} → ${endDateInput.value}`);
             }
-            // SQL filter
+            // SQL++ statement filter
             const sqlFilter = document.getElementById('sql-statement-filter');
             if (sqlFilter?.value) {
                 info.push(`${TEXT_CONSTANTS.REPORT_FILTERS_APPLIED || 'Filter'}: ${sqlFilter.value}`);
+            }
+            // Elapsed time filter
+            const elapsedFilter = document.getElementById('elapsed-time-filter');
+            if (elapsedFilter?.value) {
+                info.push(`${TEXT_CONSTANTS.REPORT_FILTERS_APPLIED || 'Filter'}: elapsed ${elapsedFilter.value}`);
             }
             return info.join(' • ');
         }
