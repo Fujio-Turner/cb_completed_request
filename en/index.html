@@ -200,7 +200,18 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                 HELP_DEBUG_TIPS: "NEED HELP? Debugging + Tool Tips — Click Here",
 
             // Bug report CTA
-                BUG_REPORT_CTA: "Report a Bug Click Here"
+                BUG_REPORT_CTA: "Report a Bug Click Here",
+
+            // File upload UI + messages
+                UPLOAD_JSON: "Upload .json",
+                INVALID_FILE_TYPE: "Please select a .json file",
+                FILE_READ_ERROR: "Error reading file",
+                PASTE_OVERRIDES_UPLOAD: "Pasted JSON overrides uploaded file; cleared file selection",
+                OR_LABEL: "OR",
+
+            // Input section headers
+                COMPLETED_JSON_HEADER: "Completed Requests JSON (system:completed_requests)",
+                INDEXES_JSON_HEADER: "Indexes JSON (system:indexes output)"
             };
     </script>
 <style>
@@ -381,15 +392,54 @@ if (window.TEXT_CONSTANTS) {
       })();
     </script>
 
-    <!-- Input Section (outside tabs) -->
+    <style>
+      /* Side-by-side upload vs textarea layout */
+      .input-source-grid { display: flex; gap: 16px; align-items: flex-start; }
+      .source-section { flex: 1; }
+      .section-title { font-size: 14px; font-weight: 700; color: #343a40; margin: 0 0 6px 0; }
+      .input-source-row { display: flex; gap: 12px; align-items: stretch; margin-bottom: 10px; }
+      .upload-box, .textarea-box { flex: 1; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 8px; }
+      .or-divider { align-self: center; color: #6c757d; font-weight: 700; }
+      .file-name { font-size: 11px; color: #6c757d; margin-top: 6px; }
+    </style>
+ 
+     <!-- Input Section (outside tabs) -->
     <div id="input-section">
         <div class="input-grid">
-            <textarea id="json-input"
-                placeholder="Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;"
-                aria-label="JSON input field for Couchbase query data" role="textbox"></textarea>
-            <textarea id="indexJsonInput"
-                placeholder="Click the 'Indexes' tab below to get the SQL query to run. Paste the results here..."
-                aria-label="Index JSON input field" role="textbox"></textarea>
+            <div class="input-source-grid">
+                <div class="source-section" aria-labelledby="completed-section-title">
+                    <div id="completed-section-title" class="section-title"></div>
+                    <div class="input-source-row">
+                        <div class="upload-box">
+                            <button type="button" id="upload-completed-btn" class="btn-standard" title="Upload JSON for completed_requests"></button>
+                            <input type="file" id="completed-requests-file" accept=".json,application/json" style="display:none" aria-label="Upload Completed Requests JSON file" />
+                            <div id="completed-file-name" class="file-name"></div>
+                        </div>
+                        <div class="or-divider"><span id="or-label-1">OR</span></div>
+                        <div class="textarea-box">
+                            <textarea id="json-input"
+                                placeholder="Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;"
+                                aria-label="JSON input field for Couchbase query data" role="textbox"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="source-section" aria-labelledby="indexes-section-title">
+                    <div id="indexes-section-title" class="section-title"></div>
+                    <div class="input-source-row">
+                        <div class="upload-box">
+                            <button type="button" id="upload-indexes-btn" class="btn-standard" title="Upload JSON for indexes"></button>
+                            <input type="file" id="indexes-file" accept=".json,application/json" style="display:none" aria-label="Upload Indexes JSON file" />
+                            <div id="indexes-file-name" class="file-name"></div>
+                        </div>
+                        <div class="or-divider"><span id="or-label-2">OR</span></div>
+                        <div class="textarea-box">
+                            <textarea id="indexJsonInput"
+                                placeholder="Click the 'Indexes' tab below to get the SQL query to run. Paste the results here..."
+                                aria-label="Index JSON input field" role="textbox"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div style="margin: 10px 0; display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
@@ -12154,7 +12204,10 @@ function generateElapsedTimeChart(requests) {
             // Start performance timing
             const parseStartTime = performance.now();
 
-            const jsonInput = document.getElementById("json-input").value.trim();
+            // Prefer uploaded file content (in-memory) over textarea to avoid DOM bloat
+            const uploadedRaw = (window._uploadedCompletedJsonRaw && typeof window._uploadedCompletedJsonRaw === 'string') ? window._uploadedCompletedJsonRaw : '';
+            const taVal = document.getElementById("json-input").value;
+            const jsonInput = (uploadedRaw ? uploadedRaw : taVal).trim();
             const startDateInput = document.getElementById("start-date");
             const endDateInput = document.getElementById("end-date");
 
@@ -14604,18 +14657,19 @@ function generateElapsedTimeChart(requests) {
 
         // Parse and process index JSON data
         function parseIndexJSON() {
-            const indexJsonInput = document
-                .getElementById("indexJsonInput")
-                .value.trim();
+            // Prefer uploaded file content (in-memory) over textarea to avoid DOM bloat
+            const uploadedIndexRaw = (window._uploadedIndexesJsonRaw && typeof window._uploadedIndexesJsonRaw === 'string') ? window._uploadedIndexesJsonRaw.trim() : "";
+            const indexTextAreaVal = (document.getElementById("indexJsonInput")?.value || "").trim();
+            const sourceJson = uploadedIndexRaw || indexTextAreaVal;
 
-            if (!indexJsonInput) {
+            if (!sourceJson) {
                 indexData = [];
                 displayIndexResults();
                 return;
             }
 
             try {
-                const parsedData = JSON.parse(indexJsonInput);
+                const parsedData = JSON.parse(sourceJson);
                 indexData = Array.isArray(parsedData) ? parsedData : [parsedData];
 
                 // Extract unique buckets, scopes, collections
@@ -15224,6 +15278,144 @@ function generateElapsedTimeChart(requests) {
             }
 
             console.log(TEXT_CONSTANTS.ANALYZER_INITIALIZED);
+
+            // Setup JSON file upload handlers
+            (function setupUploadInputs() {
+                try {
+                    const setButtonLabels = () => {
+                        const btn1 = document.getElementById('upload-completed-btn');
+                        const btn2 = document.getElementById('upload-indexes-btn');
+                        if (btn1) btn1.textContent = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.UPLOAD_JSON) || 'Upload .json';
+                        if (btn2) btn2.textContent = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.UPLOAD_JSON) || 'Upload .json';
+                        const orTxt = (window.TEXT_CONSTANTS && (TEXT_CONSTANTS.OR_LABEL || 'OR')) || 'OR';
+                        const or1 = document.getElementById('or-label-1');
+                        const or2 = document.getElementById('or-label-2');
+                        if (or1) or1.textContent = orTxt;
+                        if (or2) or2.textContent = orTxt;
+                        const completedHeader = document.getElementById('completed-section-title');
+                        const indexesHeader = document.getElementById('indexes-section-title');
+                        if (completedHeader) completedHeader.textContent = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.COMPLETED_JSON_HEADER) || 'Completed Requests JSON (system:completed_requests)';
+                        if (indexesHeader) indexesHeader.textContent = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.INDEXES_JSON_HEADER) || 'Indexes JSON (system:indexes output)';
+                    };
+                    setButtonLabels();
+
+                    const jsonTextarea = document.getElementById('json-input');
+                    const indexTextarea = document.getElementById('indexJsonInput');
+
+                    const completedInput = document.getElementById('completed-requests-file');
+                    const completedBtn = document.getElementById('upload-completed-btn');
+                    const completedName = document.getElementById('completed-file-name');
+
+                    const indexesInput = document.getElementById('indexes-file');
+                    const indexesBtn = document.getElementById('upload-indexes-btn');
+                    const indexesName = document.getElementById('indexes-file-name');
+
+                    // In-memory upload buffers to avoid populating textareas
+                    window._uploadedCompletedJsonRaw = window._uploadedCompletedJsonRaw || '';
+                    window._uploadedIndexesJsonRaw = window._uploadedIndexesJsonRaw || '';
+
+                    const readJsonFile = (file, onLoad, onError) => {
+                        if (!file) return;
+                        const name = file.name || '';
+                        if (!/\.json$/i.test(name)) {
+                            showToast((window.TEXT_CONSTANTS && TEXT_CONSTANTS.INVALID_FILE_TYPE) || 'Please select a .json file', 'warning');
+                            return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = () => { try { onLoad(reader.result); } catch (e) { /* no-op */ } };
+                        reader.onerror = () => {
+                            showToast((window.TEXT_CONSTANTS && TEXT_CONSTANTS.FILE_READ_ERROR) || 'Error reading file', 'error');
+                            if (typeof onError === 'function') onError();
+                        };
+                        reader.readAsText(file);
+                    };
+
+                    if (completedBtn && completedInput) {
+                        completedBtn.addEventListener('click', () => completedInput.click());
+                        completedInput.addEventListener('change', function () {
+                            const file = this.files && this.files[0];
+                            if (!file) return;
+                            readJsonFile(
+                                file,
+                                (text) => {
+                                    // Store uploaded JSON in memory; do NOT populate textarea to keep DOM light
+                                    window._uploadedCompletedJsonRaw = text || '';
+                                    if (completedName) completedName.textContent = file.name || '';
+                                    // Auto-run parse on successful upload
+                                    if (typeof parseJSON === 'function') {
+                                        try { setTimeout(() => parseJSON(), 0); } catch (e) { /* no-op */ }
+                                    }
+                                },
+                                () => {
+                                    this.value = '';
+                                    if (completedName) completedName.textContent = '';
+                                }
+                            );
+                        });
+                    }
+
+                    if (indexesBtn && indexesInput) {
+                        indexesBtn.addEventListener('click', () => indexesInput.click());
+                        indexesInput.addEventListener('change', function () {
+                            const file = this.files && this.files[0];
+                            if (!file) return;
+                            readJsonFile(
+                                file,
+                                (text) => {
+                                    // Store uploaded JSON in memory; do NOT populate textarea to keep DOM light
+                                    window._uploadedIndexesJsonRaw = text || '';
+                                    // Parse immediately using in-memory data
+                                    if (typeof parseIndexJSON === 'function') {
+                                        try { parseIndexJSON(); } catch (e) { /* no-op */ }
+                                    }
+                                    if (indexesName) indexesName.textContent = file.name || '';
+                                },
+                                () => {
+                                    this.value = '';
+                                    if (indexesName) indexesName.textContent = '';
+                                }
+                            );
+                        });
+                    }
+
+                    if (jsonTextarea) {
+                        jsonTextarea.addEventListener('paste', () => {
+                            const fi = completedInput;
+                            if (fi && fi.value) {
+                                fi.value = '';
+                                if (completedName) completedName.textContent = '';
+                            }
+                            // Clear in-memory upload to give paste precedence
+                            if (window._uploadedCompletedJsonRaw) {
+                                window._uploadedCompletedJsonRaw = '';
+                                showToast((window.TEXT_CONSTANTS && TEXT_CONSTANTS.PASTE_OVERRIDES_UPLOAD) || 'Pasted JSON overrides uploaded file; cleared file selection', 'info');
+                            }
+                            // Auto-run parse after paste completes
+                            if (typeof parseJSON === 'function') {
+                                try { setTimeout(() => parseJSON(), 0); } catch (e) { /* no-op */ }
+                            }
+                        });
+                    }
+                    if (indexTextarea) {
+                        indexTextarea.addEventListener('paste', () => {
+                            const fi = indexesInput;
+                            if (fi && fi.value) {
+                                fi.value = '';
+                                if (indexesName) indexesName.textContent = '';
+                            }
+                            // Clear in-memory upload to give paste precedence
+                            if (window._uploadedIndexesJsonRaw) {
+                                window._uploadedIndexesJsonRaw = '';
+                                showToast((window.TEXT_CONSTANTS && TEXT_CONSTANTS.PASTE_OVERRIDES_UPLOAD) || 'Pasted JSON overrides uploaded file; cleared file selection', 'info');
+                            }
+                            // Auto-run index parse after paste completes
+                            if (typeof parseIndexJSON === 'function') {
+                                try { setTimeout(() => parseIndexJSON(), 0); } catch (e) { /* no-op */ }
+                            }
+                        });
+                    }
+                } catch (e) { /* no-op */ }
+            })();
 
             // Initialize index analysis
             initializeIndexAnalysis();
