@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.14.1
+# Couchbase Slow Query Analysis Tool v3.15.0
 
 
 
@@ -163,6 +163,17 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 **⚠️ Warning**: Large date ranges with fine-grained groupings may cause chart rendering errors. The tool will alert you and suggest better combinations.
 
 ## Release Notes
+
+### Version 3.15.0 (September 16, 2025)
+- New: Upload .json file option in Parse JSON (closes #99)
+- New: Elapsed time range filter in Parse JSON (closes #23)
+- Enhancement: Timeline charts for execTime vs comparative metrics and Group By execTime (closes #64)
+- Enhancement: Insights now counts 75-second default timeout queries (closes #61)
+- Enhancement: Date range optimizer improvements in Timeline (closes #93)
+- Enhancement: Show Scan Consistency on Index/Query Flow query cards (closes #101)
+- New: Bug finder link added to UI (closes #102)
+- Fix: Timeline charts now re-process after Parse JSON with new dataset (closes #103)
+- Milestone: All issues in Milestone 1 (“release-solidus”) resolved
 
 ### Version 3.14.1 (September 10, 2025)
 - Bug fixes and quality improvements
