@@ -197,7 +197,10 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                 HIDE_INPUT_PANEL: "Hide",
 
             // Help badge
-                HELP_DEBUG_TIPS: "NEED HELP? Debugging + Tool Tips — Click Here"
+                HELP_DEBUG_TIPS: "NEED HELP? Debugging + Tool Tips — Click Here",
+
+            // Bug report CTA
+                BUG_REPORT_CTA: "Report a Bug Click Here"
             };
     </script>
 <style>
@@ -207,7 +210,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
 .report-mode { display: block !important; height: auto !important; overflow: visible !important; }
 .report-mode #tabs { height: auto !important; overflow: visible !important; display: block !important; }
 .report-mode .chart-container { overflow: visible !important; }
-.report-mode .version-info, .report-mode #input-section, .report-mode .ui-tabs-nav, .report-mode footer, .report-mode .beta-badge, .report-mode .dev-badge, .report-mode .live-badge, .report-mode #analysis-search-controls { display: none !important; }
+.report-mode .version-info, .report-mode .bug-report-link, .report-mode #input-section, .report-mode .ui-tabs-nav, .report-mode footer, .report-mode .beta-badge, .report-mode .dev-badge, .report-mode .live-badge, .report-mode #analysis-search-controls { display: none !important; }
 .report-mode .ui-tabs-panel { display: none !important; }
 .report-mode .ui-tabs-panel.report-visible { display: block !important; }
 .report-mode #report-header { position: sticky; top: 0; background: #fff; z-index: 10001; display: block !important; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
@@ -238,7 +241,7 @@ body { display: block !important; height: auto !important; overflow: visible !im
 /* Ensure cover stays on a single page and forces a break after */
 #report-cover { page-break-after: always; page-break-inside: avoid; min-height: 100vh; }
 
-.version-info, #input-section, .ui-tabs-nav, footer, .modal, .toast { display: none !important; }
+.version-info, .bug-report-link, #input-section, .ui-tabs-nav, footer, .modal, .toast { display: none !important; }
 /* Hide analysis/every-query search controls and timeline controls in report */
 #analysis-search-controls, #search-controls, #timeline-controls { display: none !important; }
 /* Only print selected sections */
@@ -344,6 +347,10 @@ if (window.TEXT_CONSTANTS) {
       /* Insight state: gray by default; blue when active (issues found) */
       .insight-item { border-left: 4px solid #dee2e6 !important; }
       .insight-item.active { border-left-color: #007bff !important; }
+
+      /* Bug report floating link */
+      .bug-report-link { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.1); color: #333; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; font-family: monospace; z-index: 999; opacity: 0.7; text-decoration: none; transition: opacity 0.3s ease, background 0.3s ease; }
+      .bug-report-link:hover { opacity: 1; background: rgba(0,0,0,0.2); }
     </style>
 </head>
 
@@ -352,6 +359,27 @@ if (window.TEXT_CONSTANTS) {
     <div class="version-info" title="Couchbase Query Analyzer Version">
         v3.14.1
     </div>
+
+    <!-- Bug report link (bottom-right) -->
+    <a id="bug-report-link" class="bug-report-link" href="https://github.com/Fujio-Turner/cb_completed_request/issues" target="_blank" rel="noopener noreferrer">Report a Bug Click Here</a>
+    <script>
+      (function(){
+        var setBugText = function(){
+          var el = document.getElementById('bug-report-link');
+          try {
+            if (!el) return;
+            if (typeof TEXT_CONSTANTS !== 'undefined' && TEXT_CONSTANTS.BUG_REPORT_CTA) {
+              el.textContent = TEXT_CONSTANTS.BUG_REPORT_CTA;
+            }
+          } catch (e) { /* no-op */ }
+        };
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', setBugText);
+        } else {
+          setBugText();
+        }
+      })();
+    </script>
 
     <!-- Input Section (outside tabs) -->
     <div id="input-section">

@@ -6,8 +6,9 @@
 ### Workflow Order for Updates
 When making changes, follow this order:
 1. **Update Version** → Follow settings/VERSION_UPDATE_GUIDE.md
-2. **Update Localization** → Follow settings/LOCALIZATION_GUIDE.md  
-3. **Update README Release Notes** → Add release notes to all README files
+2. **Update README Release Notes** → Add release notes as needed
+
+Note: Only update the English UI (en/index.html) by default. Do not update other language files unless explicitly requested.
 
 ### Version Update Process
 - **Title Updates**: When updating versions, remember to update:
