@@ -13175,7 +13175,8 @@ function generateElapsedTimeChart(requests) {
                             statement: stmt, // Add original statement for createQueryDiv
                             count: 0,
                             totalDuration: 0, // Add totalDuration calculation
-                            requests: []
+                            requests: [],
+                            scanConsistencies: [] // non-unbounded values only
                         });
                     }
                     const group = queryGroups.get(normalized);
@@ -13183,6 +13184,13 @@ function generateElapsedTimeChart(requests) {
                     // Use same logic as Analysis tab: serviceTime converted to ms
                     const durationMs = parseTime(request.serviceTime);
                     group.totalDuration += isNaN(durationMs) ? 0 : durationMs;
+                    // Track non-unbounded scan consistency for this group
+                    try {
+                        const sc = ((request.scanConsistency) || (request.request && request.request.scanConsistency) || 'unbounded').toLowerCase();
+                        if (sc && sc !== 'unbounded' && !group.scanConsistencies.includes(sc)) {
+                            group.scanConsistencies.push(sc);
+                        }
+                    } catch(_) {}
                     group.requests.push(request);
                 }
             });
@@ -13396,6 +13404,7 @@ function generateElapsedTimeChart(requests) {
                         count: 0,
                         totalDuration: 0,
                         requestIndices: [],
+                        scanConsistencies: [] // non-unbounded values only
                     });
                 }
                 const group = queryGroups.get(normalizedStatement);
@@ -13404,6 +13413,13 @@ function generateElapsedTimeChart(requests) {
                 const durationMs = parseTime(request.serviceTime);
 
                 group.totalDuration += isNaN(durationMs) ? 0 : durationMs;
+                // Track non-unbounded scan consistency for this group
+                try {
+                    const sc = ((request.scanConsistency) || (request.request && request.request.scanConsistency) || 'unbounded').toLowerCase();
+                    if (sc && sc !== 'unbounded' && !group.scanConsistencies.includes(sc)) {
+                        group.scanConsistencies.push(sc);
+                    }
+                } catch(_) {}
                 group.requestIndices.push(requestIndex);
             });
 
@@ -13930,9 +13946,19 @@ function generateElapsedTimeChart(requests) {
             const avgDurationStyle =
                 avgDurationSeconds >= 60 ? "font-weight: bold; color: red;" : "";
 
+            const badgesHTML = (Array.isArray(query.scanConsistencies) && query.scanConsistencies.length > 0)
+                ? query.scanConsistencies.map((c) => {
+                    const lc = String(c).toLowerCase();
+                    let bg = '#6c757d';
+                    if (lc === 'scan_plus') bg = '#28a745';
+                    else if (lc === 'request_plus') bg = '#fd7e14';
+                    return `<span class="consistency-badge" style="display:inline-block;margin-left:6px;background:${bg};color:#fff;padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700;">${lc}</span>`;
+                }).join('')
+                : '';
+
             div.innerHTML = `
           <div style="font-weight: bold; font-size: 14px; color: #333;">Executions: ${query.count
-                }${useKeysIndicator}</div>
+                }${useKeysIndicator}${badgesHTML}</div>
           <div style="font-size: 12px; color: #666; margin: 4px 0;">Avg Duration: <span style="${avgDurationStyle}">${formatTime(
                     avgDuration
                 )}</span></div>
