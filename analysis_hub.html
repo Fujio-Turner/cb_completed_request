@@ -858,6 +858,18 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     <li><strong>Service Mixing:</strong> Query nodes also running KV/Index services compete for CPU resources</li>
                 </ul>
             </div>
+
+            <div style="background:#ecfeff; border-left:4px solid #06b6d4; padding:14px; border-radius:8px; margin:14px 0;">
+                <h4 style="color:#0e7490; margin:0 0 8px 0;">Key Definitions & Relationships</h4>
+                <ul style="margin:0; color:#0e7490;">
+                    <li><strong>elapsedTime:</strong> Total wall-clock from request to completion.</li>
+                    <li><strong>executionTime:</strong> Time spent in the execution phase (after parse/plan).</li>
+                    <li><strong>execTime (operator):</strong> Active CPU work inside an operator.</li>
+                    <li><strong>servTime (operator):</strong> Waiting on services (Index/KV/FTS).</li>
+                    <li><strong>kernTime (operator):</strong> Waiting to be scheduled on a CPU (OS kernel scheduling).</li>
+                </ul>
+                <p style="margin:8px 0 0; color:#0e7490; font-size:14px;">Per operator, total time ≈ execTime + servTime + kernTime. Across the plan, executionTime follows the critical path rather than a simple sum. High kernTime stretches executionTime and therefore elapsedTime without doing useful work.</p>
+            </div>
             
             <h3 id="kernTimeAnalysis">What a High KernelTime Means for a Slow Query</h3>
             <p>A high KernelTime indicates that CPU contention is a primary bottleneck contributing to the query's slowness. This doesn't mean the query itself is inefficient in terms of logic or data access—instead, it points to systemic issues on the query node or cluster, such as:</p>

@@ -864,6 +864,10 @@ if (window.TEXT_CONSTANTS) {
                                     </table>
                                 </div>
 
+                                <div class="insight-note" style="background:#f0f9ff; border-left:4px solid #3b82f6; padding:10px 12px; border-radius:6px; margin:10px 0; color:#1e3a8a;">
+                                    <strong>What high kernTime means:</strong> kernTime is time spent waiting to be scheduled on CPU. If it dominates ServiceTime (e.g., ~99%), the node is CPU-bound and the query spends most of its life paused, not doing useful work. Look for high request.active.count, cpu.user.percent, or gc.pause.percent. Actions: reduce concurrency, add query nodes, or separate services.
+                                </div>
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
