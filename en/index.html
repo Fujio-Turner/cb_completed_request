@@ -11836,8 +11836,8 @@ function generateElapsedTimeChart(requests) {
                     try {
                         plan = JSON.parse(item.plan);
                     } catch (e) {
-                        console.warn(`Failed to parse plan JSON for request:`, e.message);
-                        showNotification(`JSON parsing error: ${e.message}`, "warning");
+                        console.warn(`${TEXT_CONSTANTS.JSON_PARSING_ERROR} plan for request:`, e.message);
+                        showSlidingNotification(`${TEXT_CONSTANTS.ERROR_PARSING_JSON} ${e.message}`, "warning");
                         plan = null;
                     }
                 } else {
@@ -12482,7 +12482,8 @@ function generateElapsedTimeChart(requests) {
                 }
             } catch (e) {
                 console.error(`${TEXT_CONSTANTS.JSON_PARSING_ERROR}`, e);
-                showToast(`${TEXT_CONSTANTS.ERROR_PARSING_JSON} ${e.message}`, "error");
+                console.log(`${TEXT_CONSTANTS.JSON_PARSING_ERROR}`, e);
+                showSlidingNotification(`${TEXT_CONSTANTS.ERROR_PARSING_JSON} ${e.message}`, "error");
                 document.getElementById("progress-container").style.display = "none";
             }
         }
@@ -12536,6 +12537,69 @@ function generateElapsedTimeChart(requests) {
                     }
                 }, 300);
             }, 4000);
+            }
+
+            // Sliding notification (upper-left) used for prominent messages
+            function showSlidingNotification(message, type = "info", durationMs = 8000) {
+                // Remove existing sliding toasts
+                const existing = document.querySelectorAll(".sliding-toast");
+                existing.forEach(t => t.remove());
+
+                const toast = document.createElement("div");
+                toast.className = "sliding-toast";
+                toast.textContent = message;
+                toast.style.cssText = `
+                    position: fixed;
+                    top: -50px;
+                    left: 20px;
+                    padding: 12px 20px;
+                    border-radius: 6px;
+                    background: #e3f2fd;
+                    border: 1px solid #bbdefb;
+                    color: #0d47a1;
+                    font-size: 13px;
+                    font-weight: 600;
+                    z-index: 10001;
+                    max-width: 360px;
+                    word-wrap: break-word;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    transition: all 0.35s ease-out;
+                    transform: translateY(0px);
+                `;
+
+                // Color scheme by type
+                if (type === "error") {
+                    toast.style.background = "#f8d7da";
+                    toast.style.border = "1px solid #f5c2c7";
+                    toast.style.color = "#842029";
+                } else if (type === "warning") {
+                    toast.style.background = "#fff3cd";
+                    toast.style.border = "1px solid #ffeaa7";
+                    toast.style.color = "#856404";
+                } else if (type === "success") {
+                    toast.style.background = "#d1e7dd";
+                    toast.style.border = "1px solid #badbcc";
+                    toast.style.color = "#0f5132";
+                }
+
+                document.body.appendChild(toast);
+
+                // Slide down
+                setTimeout(() => {
+                    toast.style.top = "20px";
+                    toast.style.transform = "translateY(0px)";
+                }, 10);
+
+                // Auto-hide
+                setTimeout(() => {
+                    toast.style.opacity = "0";
+                    toast.style.transform = "translateY(-10px)";
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            document.body.removeChild(toast);
+                        }
+                    }, 400);
+                }, durationMs);
             }
 
             // Input panel auto-hide helpers (Issue #88)
