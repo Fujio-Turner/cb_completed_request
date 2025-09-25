@@ -210,8 +210,17 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                 OR_LABEL: "OR",
 
             // Input section headers
-                COMPLETED_JSON_HEADER: "Completed Requests JSON (system:completed_requests)",
-                INDEXES_JSON_HEADER: "Indexes JSON (system:indexes output)"
+            COMPLETED_JSON_HEADER: "Completed Requests JSON (system:completed_requests)",
+            INDEXES_JSON_HEADER: "Indexes JSON (system:indexes output)",
+
+                        // New features (v3.16.0+)
+                WHOLE_RECORD: "Whole Record",
+                REQUEST_ID: "Request ID",
+                ENTER_REQUEST_ID: "Enter requestId",
+                LOAD: "Load",
+                RECORD_NOT_FOUND: "Request ID not found",
+                VIEW_WHOLE_RECORD: "View Whole Record",
+                COPY_REQUEST_ID: "Copy Request ID"
             };
     </script>
 <style>
@@ -547,6 +556,9 @@ if (window.TEXT_CONSTANTS) {
                 <a href="#indexes" aria-controls="indexes" tabindex="0">Indexes</a>
             </li>
             <li role="tab">
+                <a href="#whole-record" aria-controls="whole-record" tabindex="0">Whole Doc</a>
+            </li>
+            <li role="tab">
                 <a href="#report-maker" aria-controls="report-maker" tabindex="0">Report Maker <span
                         class="beta-badge">Beta</span></a>
             </li>
@@ -718,6 +730,7 @@ if (window.TEXT_CONSTANTS) {
                                                <tr>
                                                    <th>Request Date</th>
                                                    <th>Statement (unique)</th>
+                                                   <th>Request ID</th>
                                                </tr>
                                            </thead>
                                            <tbody id="sample-queries-tbody">
@@ -812,6 +825,7 @@ if (window.TEXT_CONSTANTS) {
                                             <tr>
                                                 <th>Request Date</th>
                                                 <th>Statement (unique)</th>
+                                                <th>Request ID</th>
                                             </tr>
                                         </thead>
                                         <tbody id="pagination-index-overfetch-sample-queries-tbody">
@@ -857,6 +871,7 @@ if (window.TEXT_CONSTANTS) {
                                             <tr>
                                                 <th>Request Date</th>
                                                 <th>Statement (unique)</th>
+                                                <th>Request ID</th>
                                             </tr>
                                         </thead>
                                         <tbody id="high-kernel-time-queries-sample-queries-tbody">
@@ -898,6 +913,7 @@ if (window.TEXT_CONSTANTS) {
                                             <tr>
                                                 <th>Request Date</th>
                                                 <th>Statement (unique)</th>
+                                                <th>Request ID</th>
                                             </tr>
                                         </thead>
                                         <tbody id="high-memory-usage-sample-queries-tbody">
@@ -935,6 +951,7 @@ if (window.TEXT_CONSTANTS) {
                                             <tr>
                                                 <th>Request Date</th>
                                                 <th>Statement (unique)</th>
+                                                <th>Request ID</th>
                                             </tr>
                                         </thead>
                                         <tbody id="slow-use-key-queries-sample-queries-tbody">
@@ -980,6 +997,7 @@ if (window.TEXT_CONSTANTS) {
                                             <tr>
                                                 <th>Request Date</th>
                                                 <th>Statement (unique)</th>
+                                                <th>Request ID</th>
                                             </tr>
                                         </thead>
                                         <tbody id="missing-where-clauses-sample-queries-tbody">
@@ -1028,6 +1046,7 @@ if (window.TEXT_CONSTANTS) {
                                             <tr>
                                                 <th>Request Date</th>
                                                 <th>Statement (unique)</th>
+                                                <th>Request ID</th>
                                             </tr>
                                         </thead>
                                         <tbody id="inefficient-like-operations-sample-queries-tbody">
@@ -1053,6 +1072,7 @@ if (window.TEXT_CONSTANTS) {
                                             <tr>
                                                 <th>Request Date</th>
                                                 <th>Statement (unique)</th>
+                                                <th>Request ID</th>
                                             </tr>
                                         </thead>
                                         <tbody id="select-star-usage-sample-queries-tbody">
@@ -1613,7 +1633,20 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
         </div>
-    <!-- Report Maker Tab Content -->
+    <!-- Whole Record Tab Content -->
+        <div id="whole-record" data-report-section="whole-record" style="padding: 15px;">
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                <label for="whole-record-request-id-input" class="font-bold-margin-right" style="margin-right:8px;">Request ID</label>
+                <input type="text" id="whole-record-request-id-input" placeholder="" class="form-input" style="width:320px;" />
+                <button id="whole-record-load-btn" class="btn-standard" onclick="loadWholeRecordFromInput()">Load</button>
+                <span class="color-666 font-size-12 margin-left-10">(Tip: open with #requestId=... in URL)</span>
+            </div>
+            <div class="background-white padding-15 border-1-ddd" style="min-height:200px; overflow-x:auto; overflow-y:auto;">
+                <pre id="whole-record-json" style="white-space: pre-wrap; word-break: break-word; margin:0; overflow-x:auto; overflow-y:auto;"></pre>
+            </div>
+        </div>
+
+        <!-- Report Maker Tab Content -->
        <div id="report-maker" data-report-section="report-maker" style="padding: 15px;">
             <!-- Report Maker banner at top of tab -->
             <div style="padding: 16px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; margin: 0 0 14px;">
@@ -3566,6 +3599,7 @@ if (window.TEXT_CONSTANTS) {
                 "statement",
                 "Scan\nConsistency",
                 "users",
+                "requestId",
             ];
 
             const headerRow = document.createElement("tr");
@@ -3741,6 +3775,7 @@ if (window.TEXT_CONSTANTS) {
                 "statement",
                 "Scan\nConsistency",
                 "users",
+                "requestId",
             ];
 
             // Pagination: get only the current page data
@@ -3796,6 +3831,14 @@ if (window.TEXT_CONSTANTS) {
                         td.style.wordWrap = "break-word";
                         td.style.fontSize = "11px";
                         td.textContent = value || "";
+                    } else if (col === "requestId") {
+                        const reqId = (rowData.request && rowData.request.requestId) || rowData.requestId || value || "";
+                        const safeId = String(reqId);
+                        td.style.whiteSpace = 'nowrap';
+                        td.innerHTML = `
+                          <code style="font-size:11px;">${escapeHtml(safeId)}</code>
+                          <button data-id="${escapeHtml(safeId)}" onclick="copyRequestId(this.dataset.id, event)" class="btn-standard" style="margin-left:6px;">${TEXT_CONSTANTS.COPY}</button>
+                        `;
                     } else if (col === "statement") {
                         // Set fixed width for statement column
                         td.style.width = "300px";
@@ -10774,6 +10817,7 @@ function generateElapsedTimeChart(requests) {
                         approachingTimeoutsSamples.push({
                             requestTime: request.requestTime,
                             statement: request.statement || request.preparedText,
+                            requestId: request.requestId,
                             elapsedTime: request.elapsedTime
                         });
                     }
@@ -10787,6 +10831,7 @@ function generateElapsedTimeChart(requests) {
                         actualTimeoutsSamples.push({
                             requestTime: request.requestTime,
                             statement: request.statement || request.preparedText,
+                            requestId: request.requestId,
                             elapsedTime: request.elapsedTime
                         });
                     }
@@ -10800,7 +10845,8 @@ function generateElapsedTimeChart(requests) {
                         !missingWhereClausesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                         missingWhereClausesSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement || request.preparedText
+                            statement: request.statement || request.preparedText,
+                            requestId: request.requestId
                         });
                     }
                 }
@@ -10831,7 +10877,8 @@ function generateElapsedTimeChart(requests) {
                         !largeResultSetQueriesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                         largeResultSetQueriesSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement || request.preparedText
+                            statement: request.statement || request.preparedText,
+                            requestId: request.requestId
                         });
                     }
                 }
@@ -10860,7 +10907,8 @@ function generateElapsedTimeChart(requests) {
                         !selectStarUsageSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                         selectStarUsageSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement || request.preparedText
+                            statement: request.statement || request.preparedText,
+                            requestId: request.requestId
                         });
                     }
                 }
@@ -10875,7 +10923,8 @@ function generateElapsedTimeChart(requests) {
                         !highMemoryUsageSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                         highMemoryUsageSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement || request.preparedText
+                            statement: request.statement || request.preparedText,
+                            requestId: request.requestId
                         });
                     }
                 }
@@ -13008,7 +13057,8 @@ function generateElapsedTimeChart(requests) {
                             seenStatements.add(statement);
                             sampleQueries.push({
                                 requestTime: request.requestTime,
-                                statement: statement
+                                statement: statement,
+                                requestId: request.requestId
                             });
                         }
                     }
@@ -13094,6 +13144,15 @@ function generateElapsedTimeChart(requests) {
                 
                 row.appendChild(dateCell);
                 row.appendChild(statementCell);
+                const idCell = document.createElement('td');
+                idCell.style.whiteSpace = 'nowrap';
+                const reqId = (query && query.requestId) || '';
+                const safeId = String(reqId);
+                idCell.innerHTML = `
+                  <code style=\"font-size:11px;\">${escapeHtml(safeId)}</code>
+                  <button data-id="${escapeHtml(safeId)}" onclick="copyRequestId(this.dataset.id, event)" class="btn-standard" style="margin-left:6px;">${TEXT_CONSTANTS.COPY}</button>
+                `;
+                row.appendChild(idCell);
                 tbody.appendChild(row);
             });
         }
@@ -13223,6 +13282,15 @@ function generateElapsedTimeChart(requests) {
                 
                 row.appendChild(dateCell);
                 row.appendChild(statementCell);
+                const idCell = document.createElement('td');
+                idCell.style.whiteSpace = 'nowrap';
+                const reqId = (query && query.requestId) || '';
+                const safeId = String(reqId);
+                idCell.innerHTML = `
+                  <code style=\"font-size:11px;\">${escapeHtml(safeId)}</code>
+                  <button data-id="${escapeHtml(safeId)}" onclick="copyRequestId(this.dataset.id, event)" class="btn-standard" style="margin-left:6px;">${TEXT_CONSTANTS.COPY}</button>
+                `;
+                row.appendChild(idCell);
                 tbody.appendChild(row);
             });
         }
@@ -13450,6 +13518,134 @@ function generateElapsedTimeChart(requests) {
                 },
             });
         });
+
+        // Whole Record feature (Issue #110)
+        function setWholeRecordTexts() {
+            try {
+                var loadBtn = document.getElementById('whole-record-load-btn');
+                if (loadBtn && window.TEXT_CONSTANTS) {
+                    loadBtn.textContent = TEXT_CONSTANTS.LOAD || 'Load';
+                }
+                var label = document.querySelector('label[for="whole-record-request-id-input"]');
+                if (label && window.TEXT_CONSTANTS) {
+                    label.textContent = TEXT_CONSTANTS.REQUEST_ID || 'Request ID';
+                }
+                var input = document.getElementById('whole-record-request-id-input');
+                if (input && window.TEXT_CONSTANTS) {
+                    input.placeholder = TEXT_CONSTANTS.ENTER_REQUEST_ID || 'Enter requestId';
+                }
+            } catch (e) { /* no-op */ }
+        }
+
+        function copyRequestId(reqId, event) {
+            if (!reqId) return;
+            navigator.clipboard.writeText(String(reqId)).then(() => {
+                if (event && event.target) {
+                    const btn = event.target;
+                    const original = btn.textContent;
+                    btn.textContent = TEXT_CONSTANTS.COPIED || 'Copied!';
+                    btn.style.backgroundColor = '#4CAF50';
+                    setTimeout(() => { btn.textContent = TEXT_CONSTANTS.COPY || 'Copy'; btn.style.backgroundColor=''; }, 1000);
+                } else {
+                    showToast(TEXT_CONSTANTS.COPIED_CLIPBOARD || 'Copied to clipboard!', 'success');
+                }
+            }).catch((err) => {
+                console.error(err);
+                showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD || 'Failed to copy to clipboard', 'error');
+            });
+            if (event && event.stopPropagation) event.stopPropagation();
+        }
+
+        function findRequestById(requestId) {
+            if (!requestId) return null;
+            const idStr = String(requestId);
+            const pools = [window.filteredRequests, window.currentFilteredRequests, window.originalRequests];
+            for (const pool of pools) {
+                if (Array.isArray(pool)) {
+                    const found = pool.find(r => (r && (r.requestId === idStr || r.requestID === idStr)));
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        function renderWholeRecord(record) {
+            const pre = document.getElementById('whole-record-json');
+            if (!pre) return;
+            if (!record) {
+                pre.textContent = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.RECORD_NOT_FOUND) || 'Request ID not found';
+                return;
+            }
+            try {
+                const out = Object.assign({}, record);
+                if (out.request && typeof out.request === 'object') out.request = Object.assign({}, out.request);
+                if (out.plan && typeof out.plan === 'string') { try { out.plan = JSON.parse(out.plan); } catch(_){} }
+                if (out.request && out.request.plan && typeof out.request.plan === 'string') { try { out.request.plan = JSON.parse(out.request.plan); } catch(_){} }
+                pre.textContent = JSON.stringify(out, null, 2);
+            } catch (e) {
+                pre.textContent = ((window.TEXT_CONSTANTS && TEXT_CONSTANTS.ERROR_PARSING_JSON) || 'Error parsing JSON:') + ' ' + (e && e.message ? e.message : e);
+            }
+        }
+
+        function loadWholeRecordById(requestId) {
+            const rec = findRequestById(requestId);
+            try { const link = document.querySelector('a[href="#whole-record"]'); if (link && link.click) link.click(); } catch (_) {}
+            renderWholeRecord(rec);
+        }
+
+        function loadWholeRecordFromInput() {
+            const input = document.getElementById('whole-record-request-id-input');
+            if (!input) return;
+            const val = (input.value || '').trim();
+            if (!val) return;
+            loadWholeRecordById(val);
+        }
+
+        function handleWholeRecordHash() {
+            try {
+                const hash = window.location.hash || '';
+                const m = hash.match(/requestId=([^&]+)/i);
+                if (m && m[1]) {
+                    const id = decodeURIComponent(m[1]);
+                    const input = document.getElementById('whole-record-request-id-input');
+                    if (input) input.value = id;
+                    loadWholeRecordById(id);
+                }
+            } catch (e) { /* no-op */ }
+        }
+
+        (function(){
+            function initWholeRecord() {
+                setWholeRecordTexts();
+                handleWholeRecordHash();
+                try { window.addEventListener('hashchange', handleWholeRecordHash); } catch(_) {}
+                try {
+                  var inp = document.getElementById('whole-record-request-id-input');
+                  if (inp) {
+                    inp.addEventListener('paste', function(){
+                      setTimeout(function(){
+                        var v = (inp.value||'').trim();
+                        if (v) loadWholeRecordById(v);
+                      }, 0);
+                    });
+                    // Also auto-load when user types/pastes and pauses
+                    var t;
+                    inp.addEventListener('input', function(){
+                      clearTimeout(t);
+                      t = setTimeout(function(){
+                        var v = (inp.value||'').trim();
+                        if (v) loadWholeRecordById(v);
+                      }, 300);
+                    });
+                  }
+                } catch(_) {}
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initWholeRecord);
+            } else {
+                initWholeRecord();
+            }
+        })();
 
         // Index/Query Flow functionality
         let indexQueryFlowData = {
