@@ -701,7 +701,7 @@ if (window.TEXT_CONSTANTS) {
                                 Index Scans<span class="live-badge">Live</span></h4>
                             <div class="insight-content" id="inefficient-index-scans-content">
                                 <p class="insight-description">
-                                    <span class="highlight-number" id="inefficient-index-scans-count">0 queries</span>
+                                    <span class="highlight-number" id="inefficient-index-scans-count">0 queries</span> (<span class="highlight-number" id="inefficient-index-scans-percent">0%</span>)
                                     scan an average of <span class="highlight-number" id="avg-scan-count">0</span> index
                                     entries but returned back an avg <span class="highlight-number"
                                         id="avg-result-count">0</span> records per query or a selectivity of <span
@@ -800,7 +800,7 @@ if (window.TEXT_CONSTANTS) {
                             <h4 class="insight-title" onclick="toggleInsight('pagination-index-overfetch')">ORDER BY / LIMIT / OFFSET Index Over-Scan<span class="beta-badge">Beta</span></h4>
                             <div class="insight-content" id="pagination-index-overfetch-content">
                                 <p class="insight-description">
-                                    <span class="highlight-number" id="pagination-overfetch-count">0 queries</span> with `ORDER BY` + `LIMIT ` + `OFFSET ` scanned an Avg of <span id="pagination-overfetch-avg-items">0</span> items from the index(es).
+                                    <span class="highlight-number" id="pagination-overfetch-count">0 queries</span> (<span class="highlight-number" id="pagination-overfetch-percent">0%</span>) with `ORDER BY` + `LIMIT ` + `OFFSET ` scanned an Avg of <span id="pagination-overfetch-avg-items">0</span> items from the index(es).
                                 </p>
 
                                 <button id="toggle-pagination-index-overfetch-sample-queries-btn" onclick="toggleInsightSampleQueries('pagination-index-overfetch')" class="btn-standard">
@@ -842,7 +842,7 @@ if (window.TEXT_CONSTANTS) {
                                 Time in Queries<span class="beta-badge">Beta</span></h4>
                             <div class="insight-content" id="high-kernel-time-queries-content">
                                 <p class="insight-description">
-                                    <span class="highlight-number" id="high-kernel-time-queries-count">0 queries</span>
+                                    <span class="highlight-number" id="high-kernel-time-queries-count">0 queries</span> (<span class="highlight-number" id="high-kernel-time-queries-percent">0%</span>)
                                     whose average percentage of sum of their <b
                                         title="Sum of all execTime minus Stream's execTime">core execTime</b> / kernTime
                                     is <span class="highlight-number" id="avg-core-kernel-ratio">0%</span>.
@@ -880,7 +880,7 @@ if (window.TEXT_CONSTANTS) {
                                 Detected<span class="live-badge">Live</span></h4>
                             <div class="insight-content" id="high-memory-usage-content">
                                 <p class="insight-description">
-                                    <span class="highlight-number" id="high-memory-count">0 queries</span> are using avg
+                                    <span class="highlight-number" id="high-memory-count">0 queries</span> (<span class="highlight-number" id="high-memory-percent">0%</span>) are using avg
                                     <span class="highlight-number" id="avg-memory-usage">0GB</span> of memory each,
                                     indicating potential memory optimization opportunities.
                                 </p>
@@ -917,7 +917,7 @@ if (window.TEXT_CONSTANTS) {
                                 Queries<span class="live-badge">Live</span></h4>
                             <div class="insight-content" id="slow-use-key-queries-content">
                                 <p class="insight-description">
-                                    <span class="highlight-number" id="slow-use-keys-count">0 USE KEY queries</span>
+                                    <span class="highlight-number" id="slow-use-keys-count">0 USE KEY queries</span> (<span class="highlight-number" id="slow-use-keys-percent">0%</span>)
                                     with avg query time of <span class="highlight-number"
                                         id="avg-use-keys-time">0ms</span>, suggesting potential KV service bottlenecks.
                                 </p>
@@ -964,7 +964,7 @@ if (window.TEXT_CONSTANTS) {
                                 <p class="insight-description">
                                     <span class="highlight-number" id="missing-where-count">0 queries</span> (<span
                                         class="highlight-number" id="missing-where-percent">0%</span>) lack WHERE
-                                    clauses, potentially scanning entire collections unnecessarily. <em>possibily a query with `USE KEYS()`</em>
+                                    clauses, potentially scanning entire collections unnecessarily. <em>possibly a query with `USE KEYS()`</em>
                                 </p>
 
                                 <button id="toggle-missing-where-clauses-sample-queries-btn" onclick="toggleInsightSampleQueries('missing-where-clauses')" class="btn-standard">
@@ -1010,7 +1010,7 @@ if (window.TEXT_CONSTANTS) {
                                 LIKE Operations<span class="live-badge">Live</span></h4>
                             <div class="insight-content" id="inefficient-like-operations-content">
                                 <p class="insight-description">
-                                    <span class="highlight-number" id="inefficient-like-count">0 queries</span> use LIKE
+                                    <span class="highlight-number" id="inefficient-like-count">0 queries</span> (<span class="highlight-number" id="inefficient-like-percent">0%</span>) use LIKE
                                     operations with leading wildcards (<code>%text</code>), preventing index usage and
                                     causing full scans.
                                 </p>
@@ -1037,7 +1037,7 @@ if (window.TEXT_CONSTANTS) {
                             <h4 class="insight-title" onclick="toggleInsight('select-star-usage')">SELECT * Usage<span class="live-badge">Live</span></h4>
                             <div class="insight-content" id="select-star-usage-content">
                                 <p class="insight-description">
-                                    <span class="highlight-number" id="select-star-count">0 queries</span> use SELECT * which returns entire documents and can increase network I/O and memory. Prefer selecting only needed fields.
+                                    <span class="highlight-number" id="select-star-count">0 queries</span> (<span class="highlight-number" id="select-star-percent">0%</span>) use SELECT * which returns entire documents and can increase network I/O and memory. Prefer selecting only needed fields.
                                 </p>
 
                                 <button id="toggle-select-star-usage-sample-queries-btn" onclick="toggleInsightSampleQueries('select-star-usage')" class="btn-standard">
@@ -1071,7 +1071,7 @@ if (window.TEXT_CONSTANTS) {
                                 Streaming<span class="live-badge">Live</span></h4>
                             <div class="insight-content" id="large-payload-streaming-content">
                                 <p class="insight-description">
-                                    <span class="highlight-number" id="large-payload-count">0 queries</span> with avg
+                                    <span class="highlight-number" id="large-payload-count">0 queries</span> (<span class="highlight-number" id="large-payload-percent">0%</span>) with avg
                                     size: <span class="highlight-number" id="avg-payload-size">0MB</span> with <span
                                         class="highlight-number" id="avg-stream-ratio">0%</span> of the time of the
                                     query was streaming data out to the application.
@@ -1109,7 +1109,7 @@ if (window.TEXT_CONSTANTS) {
                                 Set Queries<span class="live-badge">Live</span></h4>
                             <div class="insight-content" id="large-result-set-queries-content">
                                 <p class="insight-description">
-                                    <span class="highlight-number" id="large-results-count">0 queries</span> return
+                                    <span class="highlight-number" id="large-results-count">0 queries</span> (<span class="highlight-number" id="large-results-percent">0%</span>) return
                                     result sets with avg size of <span class="highlight-number"
                                         id="avg-large-result-size">0MB</span>, which can consume significant memory and
                                     network resources.
@@ -11030,6 +11030,12 @@ function generateElapsedTimeChart(requests) {
                     avgUseKeysTimeElement.textContent = formatTime(avgUseKeysTime);
                     avgUseKeysTimeElement.className = "highlight-number";
                 }
+                const slowUseKeysPercentElement = document.getElementById("slow-use-keys-percent");
+                if (slowUseKeysPercentElement) {
+                    const slowUseKeysPercent = totalQueries > 0 ? ((slowUseKeysCount / totalQueries) * 100).toFixed(1) : 0;
+                    slowUseKeysPercentElement.textContent = `${slowUseKeysPercent}%`;
+                    slowUseKeysPercentElement.className = "highlight-number";
+                }
             } else {
                 // Reset to defaults
                 if (slowUseKeysCountElement) {
@@ -11039,6 +11045,11 @@ function generateElapsedTimeChart(requests) {
                 if (avgUseKeysTimeElement) {
                     avgUseKeysTimeElement.textContent = "0ms";
                     avgUseKeysTimeElement.className = "";
+                }
+                const slowUseKeysPercentElement = document.getElementById("slow-use-keys-percent");
+                if (slowUseKeysPercentElement) {
+                    slowUseKeysPercentElement.textContent = "0%";
+                    slowUseKeysPercentElement.className = "";
                 }
             }
 
@@ -11057,6 +11068,12 @@ function generateElapsedTimeChart(requests) {
                     avgLargeResultSizeElement.textContent = `${avgLargeResultSize}MB`;
                     avgLargeResultSizeElement.className = "highlight-number";
                 }
+                const largeResultsPercentElement = document.getElementById("large-results-percent");
+                if (largeResultsPercentElement) {
+                    const largeResultsPercent = totalQueries > 0 ? ((largeResultsCount / totalQueries) * 100).toFixed(1) : 0;
+                    largeResultsPercentElement.textContent = `${largeResultsPercent}%`;
+                    largeResultsPercentElement.className = "highlight-number";
+                }
             } else {
                 // Reset to defaults
                 if (largeResultsCountElement) {
@@ -11066,6 +11083,11 @@ function generateElapsedTimeChart(requests) {
                 if (avgLargeResultSizeElement) {
                     avgLargeResultSizeElement.textContent = "0MB";
                     avgLargeResultSizeElement.className = "";
+                }
+                const largeResultsPercentElement = document.getElementById("large-results-percent");
+                if (largeResultsPercentElement) {
+                    largeResultsPercentElement.textContent = "0%";
+                    largeResultsPercentElement.className = "";
                 }
             }
 
@@ -11090,6 +11112,12 @@ function generateElapsedTimeChart(requests) {
                     avgStreamRatioElement.textContent = `${avgStreamRatio}%`;
                     avgStreamRatioElement.className = "highlight-number";
                 }
+                const largePayloadPercentElement = document.getElementById("large-payload-percent");
+                if (largePayloadPercentElement) {
+                    const largePayloadPercent = totalQueries > 0 ? ((largePayloadStreamingCount / totalQueries) * 100).toFixed(1) : 0;
+                    largePayloadPercentElement.textContent = `${largePayloadPercent}%`;
+                    largePayloadPercentElement.className = "highlight-number";
+                }
             } else {
                 // Reset to defaults
                 if (largePayloadCountElement) {
@@ -11104,6 +11132,11 @@ function generateElapsedTimeChart(requests) {
                     avgStreamRatioElement.textContent = "0%";
                     avgStreamRatioElement.className = "";
                 }
+                const largePayloadPercentElement = document.getElementById("large-payload-percent");
+                if (largePayloadPercentElement) {
+                    largePayloadPercentElement.textContent = "0%";
+                    largePayloadPercentElement.className = "";
+                }
             }
 
             // Update the inefficient LIKE operations insight
@@ -11112,6 +11145,12 @@ function generateElapsedTimeChart(requests) {
             if (inefficientLikeCountElement) {
                 inefficientLikeCountElement.textContent = `${inefficientLikeCount} queries`;
                 inefficientLikeCountElement.className = inefficientLikeCount > 0 ? "highlight-number" : "";
+                const inefficientLikePercentElement = document.getElementById("inefficient-like-percent");
+                if (inefficientLikePercentElement) {
+                    const inefficientLikePercent = totalQueries > 0 ? ((inefficientLikeCount / totalQueries) * 100).toFixed(1) : 0;
+                    inefficientLikePercentElement.textContent = `${inefficientLikePercent}%`;
+                    inefficientLikePercentElement.className = inefficientLikeCount > 0 ? "highlight-number" : "";
+                }
             }
 
             // Update the SELECT * usage insight
@@ -11119,6 +11158,12 @@ function generateElapsedTimeChart(requests) {
             if (selectStarCountElement) {
                 selectStarCountElement.textContent = `${selectStarCount} queries`;
                 selectStarCountElement.className = selectStarCount > 0 ? "highlight-number" : "";
+                const selectStarPercentElement = document.getElementById("select-star-percent");
+                if (selectStarPercentElement) {
+                    const selectStarPercent = totalQueries > 0 ? ((selectStarCount / totalQueries) * 100).toFixed(1) : 0;
+                    selectStarPercentElement.textContent = `${selectStarPercent}%`;
+                    selectStarPercentElement.className = selectStarCount > 0 ? "highlight-number" : "";
+                }
             }
 
             // Update the high memory usage insight
@@ -11136,6 +11181,12 @@ function generateElapsedTimeChart(requests) {
                     avgMemoryUsageElement.textContent = `${avgMemoryGB}GB`;
                     avgMemoryUsageElement.className = "highlight-number";
                 }
+                const highMemoryPercentElement = document.getElementById("high-memory-percent");
+                if (highMemoryPercentElement) {
+                    const highMemoryPercent = totalQueries > 0 ? ((highMemoryCount / totalQueries) * 100).toFixed(1) : 0;
+                    highMemoryPercentElement.textContent = `${highMemoryPercent}%`;
+                    highMemoryPercentElement.className = "highlight-number";
+                }
             } else {
                 // Reset to defaults
                 if (highMemoryCountElement) {
@@ -11145,6 +11196,11 @@ function generateElapsedTimeChart(requests) {
                 if (avgMemoryUsageElement) {
                     avgMemoryUsageElement.textContent = "0GB";
                     avgMemoryUsageElement.className = "";
+                }
+                const highMemoryPercentElement = document.getElementById("high-memory-percent");
+                if (highMemoryPercentElement) {
+                    highMemoryPercentElement.textContent = "0%";
+                    highMemoryPercentElement.className = "";
                 }
             }
 
@@ -11163,6 +11219,12 @@ function generateElapsedTimeChart(requests) {
                     avgCoreKernelRatioElement.textContent = `${avgCoreKernelRatio}%`;
                     avgCoreKernelRatioElement.className = "highlight-number";
                 }
+                const highKernelTimePercentElement = document.getElementById("high-kernel-time-queries-percent");
+                if (highKernelTimePercentElement) {
+                    const highKernelPercent = totalQueries > 0 ? ((highKernelTimeQueriesCount / totalQueries) * 100).toFixed(1) : 0;
+                    highKernelTimePercentElement.textContent = `${highKernelPercent}%`;
+                    highKernelTimePercentElement.className = "highlight-number";
+                }
             } else {
                 // Reset to defaults
                 if (highKernelTimeQueriesCountElement) {
@@ -11172,6 +11234,11 @@ function generateElapsedTimeChart(requests) {
                 if (avgCoreKernelRatioElement) {
                     avgCoreKernelRatioElement.textContent = "0%";
                     avgCoreKernelRatioElement.className = "";
+                }
+                const highKernelTimePercentElement = document.getElementById("high-kernel-time-queries-percent");
+                if (highKernelTimePercentElement) {
+                    highKernelTimePercentElement.textContent = "0%";
+                    highKernelTimePercentElement.className = "";
                 }
             }
 
@@ -11187,6 +11254,12 @@ function generateElapsedTimeChart(requests) {
             if (paginationOverfetchCountElement) {
                 paginationOverfetchCountElement.textContent = `${paginationOverfetchCount} queries`;
                 paginationOverfetchCountElement.className = paginationOverfetchCount > 0 ? "highlight-number" : "";
+                const paginationOverfetchPercentElement = document.getElementById("pagination-overfetch-percent");
+                if (paginationOverfetchPercentElement) {
+                    const paginationOverfetchPercent = totalQueries > 0 ? ((paginationOverfetchCount / totalQueries) * 100).toFixed(1) : 0;
+                    paginationOverfetchPercentElement.textContent = `${paginationOverfetchPercent}%`;
+                    paginationOverfetchPercentElement.className = paginationOverfetchCount > 0 ? "highlight-number" : "";
+                }
             }
             if (paginationOverfetchAvgElement) {
                 const avgScanned = paginationOverfetchCount > 0 ? Math.round(paginationOverfetchTotalScanned / paginationOverfetchCount) : 0;
@@ -11197,6 +11270,12 @@ function generateElapsedTimeChart(requests) {
             if (inefficientIndexScansCountElement) {
                 inefficientIndexScansCountElement.textContent = `${inefficientIndexScansCount} queries`;
                 inefficientIndexScansCountElement.className = inefficientIndexScansCount > 0 ? "highlight-number" : "";
+                const inefficientIndexScansPercentElement = document.getElementById("inefficient-index-scans-percent");
+                if (inefficientIndexScansPercentElement) {
+                    const inefficientIndexScansPercent = totalQueries > 0 ? ((inefficientIndexScansCount / totalQueries) * 100).toFixed(1) : 0;
+                    inefficientIndexScansPercentElement.textContent = `${inefficientIndexScansPercent}%`;
+                    inefficientIndexScansPercentElement.className = inefficientIndexScansCount > 0 ? "highlight-number" : "";
+                }
             }
 
             // Calculate and display averages
@@ -11242,19 +11321,21 @@ function generateElapsedTimeChart(requests) {
             if (timeoutProneContent) {
                 const approachingHighlight = approachingTimeoutCount > 0 ? "highlight-number" : "";
                 const actualHighlight = actualTimeoutCount > 0 ? "highlight-number" : "";
+                const approachingTimeoutPercent = totalQueries > 0 ? ((approachingTimeoutCount / totalQueries) * 100).toFixed(1) : 0;
+                const actualTimeoutPercent = totalQueries > 0 ? ((actualTimeoutCount / totalQueries) * 100).toFixed(1) : 0;
                 
                 timeoutProneContent.innerHTML = `
-                    <p class="insight-description">
-                        <span id="approaching-timeout-count" class="${approachingHighlight}">${approachingTimeoutCount} queries</span> are consistently approaching timeout
-                        thresholds, with <span id="actual-timeout-count" class="${actualHighlight}">${actualTimeoutCount} queries</span> actually timing out
+                    <p class=\"insight-description\">
+                        <span id=\"approaching-timeout-count\" class=\"${approachingHighlight}\">${approachingTimeoutCount} queries</span> (<span id=\"approaching-timeout-percent\" class=\"${approachingHighlight}\">${approachingTimeoutPercent}%</span>) are consistently approaching timeout
+                        thresholds, with <span id=\"actual-timeout-count\" class=\"${actualHighlight}\">${actualTimeoutCount} queries</span> (<span id=\"actual-timeout-percent\" class=\"${actualHighlight}\">${actualTimeoutPercent}%</span>) actually timing out
                         in the analyzed period. <em>(Default query timeout: 75 seconds / 1m15s)</em>
                     </p>
 
-                    <button id="toggle-timeout-prone-queries-sample-queries-btn" onclick="toggleTimeoutQueriesTable()" class="btn-standard" style="margin-top: 10px;">
-                        <span id="timeout-prone-queries-sample-queries-btn-text">Show Sample Queries</span>
+                    <button id=\"toggle-timeout-prone-queries-sample-queries-btn\" onclick=\"toggleTimeoutQueriesTable()\" class=\"btn-standard\" style=\"margin-top: 10px;\">
+                        <span id=\"timeout-prone-queries-sample-queries-btn-text\">Show Sample Queries</span>
                     </button>
-                    <div id="timeout-prone-queries-sample-queries-container" style="display: none; margin-top: 10px;">
-                        <table class="sample-queries-table">
+                    <div id=\"timeout-prone-queries-sample-queries-container\" style=\"display: none; margin-top: 10px;\">
+                        <table class=\"sample-queries-table\">
                             <thead>
                                 <tr>
                                     <th>Request Date</th>
@@ -11262,7 +11343,7 @@ function generateElapsedTimeChart(requests) {
                                     <th>Elapsed Time</th>
                                 </tr>
                             </thead>
-                            <tbody id="timeout-prone-queries-sample-queries-tbody">
+                            <tbody id=\"timeout-prone-queries-sample-queries-tbody\">
                             </tbody>
                         </table>
                     </div>
