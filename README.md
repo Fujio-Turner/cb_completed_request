@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.15.0
+# Couchbase Slow Query Analysis Tool v3.16.0
 
 
 
@@ -163,6 +163,11 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 **⚠️ Warning**: Large date ranges with fine-grained groupings may cause chart rendering errors. The tool will alert you and suggest better combinations.
 
 ## Release Notes
+
+### Version 3.16.0 (September 25, 2025)
+- New: Insights shows query count and % of total queries (closes #107)
+- Docs: Improved kernTime explanations in Insights and Analysis Hub (closes #106, #108)
+- Fix: Parse JSON statement parsing error and better debugging on failed JSON (closes #104, #105)
 
 ### Version 3.15.0 (September 16, 2025)
 - New: Upload .json file option in Parse JSON (closes #99)
