@@ -4130,7 +4130,7 @@ if (window.TEXT_CONSTANTS) {
             // Group requests by normalized_statement
             const groups = {};
             requests.forEach((request) => {
-                const stmt = request.preparedText || request.statement;
+                const stmt = request.statement || request.preparedText;
                 if (!stmt) return;
                 // Note: System query filtering is now handled globally in parseJSON()
                 const normalized = normalizeStatement(stmt);
@@ -9795,7 +9795,16 @@ function generateStateChart(requests) {
                 return "UNKNOWN";
             }
 
-            const trimmed = statement.trim().toUpperCase();
+            // Decode any HTML entities and strip any HTML-like tags (e.g., <ud>...)</ud>)
+            try {
+                const tmp = document.createElement('div');
+                tmp.innerHTML = statement;
+                statement = (tmp.textContent || tmp.innerText || "");
+            } catch (e) { /* no-op */ }
+            // Remove any residual tags and collapse whitespace
+            const cleaned = statement.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
+
+            const trimmed = cleaned.trim().toUpperCase();
             if (!trimmed) {
                 return "UNKNOWN";
             }
@@ -11960,8 +11969,17 @@ function generateElapsedTimeChart(requests) {
                 isLargePayload: (request.resultSize || 0) > 50000000 || (request.resultCount || 0) > 10000,
                 // Store metadata for quick access
                 _planMetadata: planMetadata,
-                // Normalize prepared queries: use preparedText as statement if statement doesn't exist
-                statement: request.statement || request.preparedText,
+                // Normalize prepared queries: prefer raw statement; fallback to preparedText, and clean for display
+                statement: (function(){
+                    const raw = request.statement || request.preparedText || '';
+                    try {
+                        const tmp = document.createElement('div');
+                        tmp.innerHTML = raw; // decode entities
+                        let txt = (tmp.textContent || tmp.innerText || '');
+                        txt = txt.replace(/<[^>]*>/g, ' '); // strip any tags like <ud>
+                        return txt.replace(/\s+/g, ' ').trim();
+                    } catch (e) { return raw; }
+                })(),
                 // Ensure we have a statement type (derive if not present)
                 statementType: request.statementType || deriveStatementType(request.statement || request.preparedText),
             };
