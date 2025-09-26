@@ -556,7 +556,7 @@ if (window.TEXT_CONSTANTS) {
                 <a href="#indexes" aria-controls="indexes" tabindex="0">Indexes</a>
             </li>
             <li role="tab">
-                <a href="#whole-record" aria-controls="whole-record" tabindex="0">Whole Doc</a>
+                <a href="#whole-record" aria-controls="whole-record" tabindex="0">Raw Record</a>
             </li>
             <li role="tab">
                 <a href="#report-maker" aria-controls="report-maker" tabindex="0">Report Maker <span
@@ -1639,7 +1639,7 @@ if (window.TEXT_CONSTANTS) {
                 <label for="whole-record-request-id-input" class="font-bold-margin-right" style="margin-right:8px;">Request ID</label>
                 <input type="text" id="whole-record-request-id-input" placeholder="" class="form-input" style="width:320px;" />
                 <button id="whole-record-load-btn" class="btn-standard" onclick="loadWholeRecordFromInput()">Load</button>
-                <span class="color-666 font-size-12 margin-left-10">(Tip: open with #requestId=... in URL)</span>
+                <span class="color-666 font-size-12 margin-left-10">Tip: To get a requestId, go to the "Every Query" tab and look at the far-right column. Copy the requestId and paste it here. You can also open with #requestId=... in the URL.</span>
             </div>
             <div class="background-white padding-15 border-1-ddd" style="min-height:200px; overflow-x:auto; overflow-y:auto;">
                 <pre id="whole-record-json" style="white-space: pre-wrap; word-break: break-word; margin:0; overflow-x:auto; overflow-y:auto;"></pre>
