@@ -1,5 +1,54 @@
 RELEASE VERIFICATION REPORT
 ===========================
+Release Log Checked: settings/logs/release_20250925_223132.txt
+Version Verified: 3.16.1
+Verification Date: 2025-09-25
+Verified By: Amp AI Assistant
+
+VERSION CONSISTENCY:
+[✅] index.html and en/index.html meta tags show v3.16.1
+[✅] Both <title> tags show v3.16.1
+[✅] index.html and en/index.html version-info show v3.16.1
+[✅] README.md shows v3.16.1 in header and has release notes entry
+[✅] AGENT.md header shows v3.16.1; Version Management shows 3.16.1 (Last Updated: 2025-09-25)
+[✅] Dockerfile LABEL version="3.16.1"
+[✅] GitHub Actions workflow uses 3.16.1 and v3.16.1 tags
+[✅] All versions match across sources
+
+DOCUMENTATION:
+[✅] README.md exists and updated
+[✅] Release notes include v3.16.1 (September 25, 2025)
+[✅] Quick Start section positioned near the top
+[✅] AGENT.md version section updated
+
+FUNCTIONAL:
+[✅] index.html and en/index.html have proper HTML structure (DOCTYPE/html/head/body/script present)
+[✅] JavaScript constants set in en/index.html (APP_VERSION="3.16.1", LAST_UPDATED="2025-09-25")
+[ℹ️] Main index.html intentionally lacks JS constants; serves as documentation landing page
+[✅] File modification dates are recent for release artifacts (past 24h)
+
+RED FLAGS:
+[⚠️] Old version numbers (e.g., 3.7.x) appear in README release history — acceptable as historical notes
+[ℹ️] Naive script-tag count mismatch due to external <script src> tags; not an issue
+[✅] No missing critical files detected
+
+TESTS:
+[✅] Jest: 10/10 test suites passed, 31/31 tests
+
+OVERALL RESULT:
+[✅] PASS - Release work verified successfully for v3.16.1
+
+NOTES:
+- Version markers are consistent across HTML meta/version-info, README.md, AGENT.md, Dockerfile, and CI workflow.
+- Updated root index.html <title> to include v3.16.1 for consistency with verification guide.
+
+---
+
+PREVIOUS REPORTS
+================
+
+RELEASE VERIFICATION REPORT
+===========================
 Release Log Checked: settings/logs/release_20250910_222100.txt
 Version Verified: 3.14.1
 Verification Date: 2025-09-10
