@@ -4640,7 +4640,21 @@ function renderQueryGroupPhaseTimesChart(group) {
                 t = Math.max(scanBar ? scanBar[1] : row3Start, fetchBar ? fetchBar[1] : row3Start);
 
                 const joinBar    = joinStats.avgMs   > 0 ? [t, (t += joinStats.avgMs)]      : null;
-                const filterBar  = filterStats.avgMs > 0 ? [t, (t += filterStats.avgMs)]    : null;
+                // Filter bar placement:
+                // - Preserve the average duration as the bar width (visual focus on avg time).
+                // - Align the bar END to the later of scan/fetch end or its own intrinsic end.
+                // - The START is computed as end - avg (does not need to begin with scan/fetch).
+                let filterBar = null;
+                if (filterStats.avgMs > 0) {
+                    const concurrentStart = row3Start;
+                    const scanEnd = scanBar ? scanBar[1] : concurrentStart;
+                    const fetchEnd = fetchBar ? fetchBar[1] : concurrentStart;
+                    const concurrentEnd = Math.max(scanEnd, fetchEnd);
+                    const intrinsicEnd = concurrentStart + filterStats.avgMs;
+                    const filterEnd = Math.max(concurrentEnd, intrinsicEnd);
+                    const filterStart = Math.max(0, filterEnd - filterStats.avgMs);
+                    filterBar = [filterStart, filterEnd];
+                }
                 const groupBar   = groupStats.avgMs  > 0 ? [t, (t += groupStats.avgMs)]     : null;
                 const sortBar    = sortStats.avgMs   > 0 ? [t, (t += sortStats.avgMs)]      : null;
                 const limitBar   = limitStats.avgMs  > 0 ? [t, (t += limitStats.avgMs)]     : null;
