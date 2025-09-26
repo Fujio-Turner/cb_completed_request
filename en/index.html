@@ -187,6 +187,9 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         AXIS_QUERY_PHASE: "Query Phase",
         AXIS_TIME_MS: "Time (ms)",
 
+        // Phase timeline note (approximate)
+        PHASE_TIMELINE_NOTE: "Approximate phase timing: many steps run concurrently and asynchronously; bars show average timing, not exact start times.",
+ 
             // Technical constants (DO NOT TRANSLATE - used in logic checks)
                 N_A: "N/A",
                 NO_DATA: "No data",
@@ -1320,6 +1323,7 @@ if (window.TEXT_CONSTANTS) {
                 <div class="chart-container" style="height:340px;">
                     <div style="height: auto;">
                         <canvas id="query-group-phase-times-chart" style="width:100%;height:900px;"></canvas>
+                        <div id="query-group-phase-times-note" style="font-size: 11px; color: #6c757d; margin-top: 6px;"></div>
                     </div>
                 </div>
             </div>
@@ -4565,9 +4569,12 @@ function renderQueryGroupPhaseTimesChart(group) {
                 const titleEl = document.getElementById('query-group-phase-times-title');
                 const subtitleEl = document.getElementById('query-group-phase-times-subtitle');
                 const canvas = document.getElementById('query-group-phase-times-chart');
+                const noteEl = document.getElementById('query-group-phase-times-note');
                 if (!canvas) return;
 
                 if (titleEl) titleEl.textContent = TEXT_CONSTANTS.QUERY_GROUP_PHASE_TIMES_TITLE || 'Phase Times by Query Group (avg)';
+                if (subtitleEl && TEXT_CONSTANTS.PHASE_TIMELINE_NOTE) subtitleEl.textContent = TEXT_CONSTANTS.PHASE_TIMELINE_NOTE;
+                if (noteEl && TEXT_CONSTANTS.PHASE_TIMELINE_NOTE) noteEl.textContent = TEXT_CONSTANTS.PHASE_TIMELINE_NOTE;
 
                 const ctx = canvas.getContext('2d');
                 if (window.queryGroupPhaseTimesChart) {
@@ -4658,11 +4665,46 @@ function renderQueryGroupPhaseTimesChart(group) {
                 const groupBar   = groupStats.avgMs  > 0 ? [t, (t += groupStats.avgMs)]     : null;
                 const sortBar    = sortStats.avgMs   > 0 ? [t, (t += sortStats.avgMs)]      : null;
                 const limitBar   = limitStats.avgMs  > 0 ? [t, (t += limitStats.avgMs)]     : null;
-                const projectBar = projectStats.avgMs> 0 ? [t, (t += projectStats.avgMs)]   : null;
+                // Project alignment with Filter:
+                // - If Project avg >= Filter avg: start Project at Filter start and extend past Filter if needed.
+                // - If Project avg <  Filter avg: end Project at Filter end (it "waits" for filter to finish),
+                //   with start shifted so width == Project avg.
+                let projectBar = null;
+                if (projectStats.avgMs > 0) {
+                    if (filterBar) {
+                        const filterStart = filterBar[0];
+                        const filterEnd = filterBar[1];
+                        const projectAvg = projectStats.avgMs;
+                        const filterAvg = filterEnd - filterStart;
+                        if (projectAvg >= filterAvg) {
+                            const projectStart = filterStart;
+                            const projectEnd = projectStart + projectAvg;
+                            projectBar = [projectStart, projectEnd];
+                        } else {
+                            const projectEnd = filterEnd;
+                            const projectStart = Math.max(0, projectEnd - projectAvg);
+                            projectBar = [projectStart, projectEnd];
+                        }
+                    } else {
+                        // Fallback when no filterBar: place sequentially at current t
+                        const projectStart = t;
+                        const projectEnd = projectStart + projectStats.avgMs;
+                        projectBar = [projectStart, projectEnd];
+                    }
+                }
                 const deleteBar  = deleteStats.avgMs > 0 ? [t, (t += deleteStats.avgMs)]     : null;
                 const updateBar  = updateStats.avgMs > 0 ? [t, (t += updateStats.avgMs)]     : null;
                 const insertBar  = insertStats.avgMs > 0 ? [t, (t += insertStats.avgMs)]     : null;
-                const streamBar  = streamStats.avgMs > 0 ? [t, (t += streamStats.avgMs)]    : null;
+                // Stream should be the final step: start at the latest end among all other phases
+                let streamBar = null;
+                if (streamStats.avgMs > 0) {
+                    const otherEnds = [authBar, parseBar, planBar, scanBar, fetchBar, joinBar, filterBar, groupBar, sortBar, limitBar, projectBar, deleteBar, updateBar, insertBar]
+                        .filter(Boolean)
+                        .map(b => b[1]);
+                    const streamStart = otherEnds.length ? Math.max(...otherEnds) : t;
+                    const streamEnd = streamStart + streamStats.avgMs;
+                    streamBar = [streamStart, streamEnd];
+                }
 
                 // Helper to place a bar on a specific row index
                 function mkDataForRow(bar, rowIndex) {
