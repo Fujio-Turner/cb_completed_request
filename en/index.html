@@ -730,7 +730,7 @@ if (window.TEXT_CONSTANTS) {
                                                <tr>
                                                    <th>Request Date</th>
                                                    <th>Statement (unique)</th>
-                                                   <th>Request ID</th>
+                                                   
                                                </tr>
                                            </thead>
                                            <tbody id="sample-queries-tbody">
@@ -825,7 +825,7 @@ if (window.TEXT_CONSTANTS) {
                                             <tr>
                                                 <th>Request Date</th>
                                                 <th>Statement (unique)</th>
-                                                <th>Request ID</th>
+                                                
                                             </tr>
                                         </thead>
                                         <tbody id="pagination-index-overfetch-sample-queries-tbody">
@@ -871,7 +871,7 @@ if (window.TEXT_CONSTANTS) {
                                             <tr>
                                                 <th>Request Date</th>
                                                 <th>Statement (unique)</th>
-                                                <th>Request ID</th>
+                                                
                                             </tr>
                                         </thead>
                                         <tbody id="high-kernel-time-queries-sample-queries-tbody">
@@ -880,7 +880,7 @@ if (window.TEXT_CONSTANTS) {
                                 </div>
 
                                 <div class="insight-note" style="background:#f0f9ff; border-left:4px solid #3b82f6; padding:10px 12px; border-radius:6px; margin:10px 0; color:#1e3a8a;">
-                                    <strong>What high kernTime means:</strong> kernTime is time spent waiting to be scheduled on CPU. If it dominates ServiceTime (e.g., ~99%), the node is CPU-bound and the query spends most of its life paused, not doing useful work. Look for high request.active.count, cpu.user.percent, or gc.pause.percent. Actions: reduce concurrency, add query nodes, or separate services.
+                                    <strong>What high kernTime means:</strong> kernTime is time spent waiting to be scheduled on CPU. If it dominates ServiceTime and/or Execution Time (e.g., ~99%), the node is CPU-bound and the query spends most of its life paused, not doing useful work. Look for high request.active.count, cpu.user.percent, or gc.pause.percent. Actions: reduce concurrency, add query nodes, or separate services.
                                 </div>
 
                                 <div class="learn-more-section">
@@ -913,7 +913,7 @@ if (window.TEXT_CONSTANTS) {
                                             <tr>
                                                 <th>Request Date</th>
                                                 <th>Statement (unique)</th>
-                                                <th>Request ID</th>
+                                                
                                             </tr>
                                         </thead>
                                         <tbody id="high-memory-usage-sample-queries-tbody">
@@ -951,7 +951,7 @@ if (window.TEXT_CONSTANTS) {
                                             <tr>
                                                 <th>Request Date</th>
                                                 <th>Statement (unique)</th>
-                                                <th>Request ID</th>
+                                                
                                             </tr>
                                         </thead>
                                         <tbody id="slow-use-key-queries-sample-queries-tbody">
@@ -997,7 +997,7 @@ if (window.TEXT_CONSTANTS) {
                                             <tr>
                                                 <th>Request Date</th>
                                                 <th>Statement (unique)</th>
-                                                <th>Request ID</th>
+                                                
                                             </tr>
                                         </thead>
                                         <tbody id="missing-where-clauses-sample-queries-tbody">
@@ -1046,7 +1046,7 @@ if (window.TEXT_CONSTANTS) {
                                             <tr>
                                                 <th>Request Date</th>
                                                 <th>Statement (unique)</th>
-                                                <th>Request ID</th>
+                                                
                                             </tr>
                                         </thead>
                                         <tbody id="inefficient-like-operations-sample-queries-tbody">
@@ -1072,7 +1072,7 @@ if (window.TEXT_CONSTANTS) {
                                             <tr>
                                                 <th>Request Date</th>
                                                 <th>Statement (unique)</th>
-                                                <th>Request ID</th>
+                                                
                                             </tr>
                                         </thead>
                                         <tbody id="select-star-usage-sample-queries-tbody">
@@ -10817,7 +10817,6 @@ function generateElapsedTimeChart(requests) {
                         approachingTimeoutsSamples.push({
                             requestTime: request.requestTime,
                             statement: request.statement || request.preparedText,
-                            requestId: request.requestId,
                             elapsedTime: request.elapsedTime
                         });
                     }
@@ -10831,7 +10830,6 @@ function generateElapsedTimeChart(requests) {
                         actualTimeoutsSamples.push({
                             requestTime: request.requestTime,
                             statement: request.statement || request.preparedText,
-                            requestId: request.requestId,
                             elapsedTime: request.elapsedTime
                         });
                     }
@@ -10845,8 +10843,7 @@ function generateElapsedTimeChart(requests) {
                         !missingWhereClausesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                         missingWhereClausesSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement || request.preparedText,
-                            requestId: request.requestId
+                            statement: request.statement || request.preparedText
                         });
                     }
                 }
@@ -10877,8 +10874,7 @@ function generateElapsedTimeChart(requests) {
                         !largeResultSetQueriesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                         largeResultSetQueriesSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement || request.preparedText,
-                            requestId: request.requestId
+                            statement: request.statement || request.preparedText
                         });
                     }
                 }
@@ -10907,8 +10903,7 @@ function generateElapsedTimeChart(requests) {
                         !selectStarUsageSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                         selectStarUsageSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement || request.preparedText,
-                            requestId: request.requestId
+                            statement: request.statement || request.preparedText
                         });
                     }
                 }
@@ -10923,8 +10918,7 @@ function generateElapsedTimeChart(requests) {
                         !highMemoryUsageSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                         highMemoryUsageSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement || request.preparedText,
-                            requestId: request.requestId
+                            statement: request.statement || request.preparedText
                         });
                     }
                 }
@@ -13144,15 +13138,6 @@ function generateElapsedTimeChart(requests) {
                 
                 row.appendChild(dateCell);
                 row.appendChild(statementCell);
-                const idCell = document.createElement('td');
-                idCell.style.whiteSpace = 'nowrap';
-                const reqId = (query && query.requestId) || '';
-                const safeId = String(reqId);
-                idCell.innerHTML = `
-                  <code style=\"font-size:11px;\">${escapeHtml(safeId)}</code>
-                  <button data-id="${escapeHtml(safeId)}" onclick="copyRequestId(this.dataset.id, event)" class="btn-standard" style="margin-left:6px;">${TEXT_CONSTANTS.COPY}</button>
-                `;
-                row.appendChild(idCell);
                 tbody.appendChild(row);
             });
         }
@@ -13282,15 +13267,6 @@ function generateElapsedTimeChart(requests) {
                 
                 row.appendChild(dateCell);
                 row.appendChild(statementCell);
-                const idCell = document.createElement('td');
-                idCell.style.whiteSpace = 'nowrap';
-                const reqId = (query && query.requestId) || '';
-                const safeId = String(reqId);
-                idCell.innerHTML = `
-                  <code style=\"font-size:11px;\">${escapeHtml(safeId)}</code>
-                  <button data-id="${escapeHtml(safeId)}" onclick="copyRequestId(this.dataset.id, event)" class="btn-standard" style="margin-left:6px;">${TEXT_CONSTANTS.COPY}</button>
-                `;
-                row.appendChild(idCell);
                 tbody.appendChild(row);
             });
         }
