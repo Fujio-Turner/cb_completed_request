@@ -4669,7 +4669,15 @@ function renderQueryGroupPhaseTimesChart(group) {
 
                 const row3Start  = t; // concurrency start for Index Scan / Fetch
                 const scanBar    = indexStats.avgMs  > 0 ? [row3Start, row3Start + indexStats.avgMs] : null;
-                const fetchBar   = fetchStats.avgMs  > 0 ? [row3Start, row3Start + fetchStats.avgMs] : null;
+                // Adjust Doc Fetch to end no earlier than Index Scan if scan is longer.
+                let fetchBar = null;
+                if (fetchStats.avgMs > 0) {
+                    const intrinsicEnd = row3Start + fetchStats.avgMs;
+                    const scanEnd = scanBar ? scanBar[1] : intrinsicEnd;
+                    const fetchEnd = Math.max(intrinsicEnd, scanEnd);
+                    const fetchStart = Math.max(0, fetchEnd - fetchStats.avgMs);
+                    fetchBar = [fetchStart, fetchEnd];
+                }
                 t = Math.max(scanBar ? scanBar[1] : row3Start, fetchBar ? fetchBar[1] : row3Start);
 
                 const joinBar    = joinStats.avgMs   > 0 ? [t, (t += joinStats.avgMs)]      : null;
