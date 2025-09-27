@@ -79,6 +79,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         const TEXT_CONSTANTS = {
         // Performance and logging messages
         PARSE_PERFORMANCE: "Parse performance:",
+         PREPARED_TEXT: "Prepared:",
         CACHE_STATS: "Cache stats - parseTime:",
         ALL_CACHES_CLEARED: "All caches cleared for new JSON parse",
         LAZY_LOADED_TAB: "Lazy loaded",
@@ -3416,8 +3417,12 @@ if (window.TEXT_CONSTANTS) {
             return data.filter((rowData) => {
                 // Filter by statement
                 if (currentStatementFilter) {
-                    const statement = (rowData.statement || "").toLowerCase();
-                    if (!statement.includes(currentStatementFilter.toLowerCase())) {
+                const combined = (
+                    ((rowData.request && rowData.request.statement) || "") +
+                " " +
+                    ((rowData.request && rowData.request.preparedText) || "")
+                    ).toLowerCase();
+                    if (!combined.includes(currentStatementFilter.toLowerCase())) {
                         return false;
                     }
                 }
@@ -3449,9 +3454,11 @@ if (window.TEXT_CONSTANTS) {
             return data.filter((rowData) => {
                 // Filter by statement
                 if (currentAnalysisStatementFilter) {
-                    const statement = (rowData.statement || "").toLowerCase();
+                    const combined = (
+                        (rowData.statement || "") + " " + (rowData.preparedSample || "")
+                    ).toLowerCase();
                     if (
-                        !statement.includes(currentAnalysisStatementFilter.toLowerCase())
+                        !combined.includes(currentAnalysisStatementFilter.toLowerCase())
                     ) {
                         return false;
                     }
@@ -3712,6 +3719,8 @@ if (window.TEXT_CONSTANTS) {
                         value = formatTime(parseTime(request[col]));
                     } else if (col === "serviceTime") {
                         value = formatTime(request.serviceTimeMs || parseTime(request[col]));
+                    } else if (col === "statement") {
+                        value = request.preparedText || request.statement || "N/A";
                     } else {
                         value = request[col] || "N/A";
                     }
@@ -4272,8 +4281,18 @@ if (window.TEXT_CONSTANTS) {
                     rowData[col] = value;
                 });
 
-                // Add fields for search filtering
+                // Add fields for search filtering and prepared sample
                 rowData.statement = group.normalized_statement || "";
+                // Use first request of this group to derive a prepared statement sample
+                try {
+                    const sampleList = groups && groups[group.normalized_statement];
+                    if (Array.isArray(sampleList) && sampleList.length > 0) {
+                        const sampleReq = sampleList[0] || {};
+                        rowData.preparedSample = sampleReq.preparedText || sampleReq.statement || "";
+                    } else {
+                        rowData.preparedSample = "";
+                    }
+                } catch (e) { rowData.preparedSample = ""; }
                 rowData.users = Object.keys(group.user_query_counts || {}).join(", ");
                 // Attach original group for chart rendering on row click
                 rowData.groupRef = group;
@@ -4359,6 +4378,10 @@ if (window.TEXT_CONSTANTS) {
                             const statement = value || "";
                             const statementId = `analysis-statement-${index}`;
 
+                            // Optionally show a sample prepared statement below, if available
+                            const preparedSample = (rowData && rowData.preparedSample) ? String(rowData.preparedSample) : "";
+                            const preparedSnippet = preparedSample ? `<div style=\"margin-top:6px; color:#555; font-size:12px;\"><strong>${TEXT_CONSTANTS.PREPARED_TEXT || 'Prepared:'}</strong> ${escapeHtml(preparedSample.substring(0, 300))}${preparedSample.length > 300 ? '...' : ''}</div>` : '';
+
                             // Store the statement safely
                             analysisStatementStore[statementId] = statement;
 
@@ -4369,6 +4392,7 @@ if (window.TEXT_CONSTANTS) {
                                 td.innerHTML = `
                     <div id="${statementId}-truncated">
                       <span>${truncated}...</span>
+                      ${preparedSnippet}
                       <br>
                       <button onclick="toggleAnalysisStatement('${statementId}', true)" 
                               class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.SHOW_MORE}</button>
@@ -4377,6 +4401,7 @@ if (window.TEXT_CONSTANTS) {
                     </div>
                     <div id="${statementId}-full" style="display: none;">
                       <span>${statement}</span>
+                      ${preparedSnippet}
                       <br>
                       <button onclick="toggleAnalysisStatement('${statementId}', false)" 
                               class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.HIDE}</button>
@@ -4389,6 +4414,7 @@ if (window.TEXT_CONSTANTS) {
                                 td.innerHTML = `
                     <div>
                       <span>${statement}</span>
+                      ${preparedSnippet}
                       <br>
                       <button onclick="copyAnalysisStatement('${statementId}', event)" 
                               class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
@@ -10288,8 +10314,11 @@ function generateElapsedTimeChart(requests) {
                 const statement = request.statement || request.preparedText || "";
                 const upperStatement = statement.toUpperCase();
 
-                // No WHERE
-                if (!hasFilteringMechanism(statement)) {
+                // No WHERE: if this is an EXECUTE, check the preparedText (actual statement) for WHERE/filters
+                const stmtForFilter = (upperStatement.startsWith("EXECUTE") && request.preparedText)
+                    ? request.preparedText
+                    : statement;
+                if (!hasFilteringMechanism(stmtForFilter)) {
                     patternCounts["No WHERE"]++;
                 }
 
@@ -10869,10 +10898,10 @@ function generateElapsedTimeChart(requests) {
                 if (elapsedTimeSeconds >= 60 && elapsedTimeSeconds <= 75 && state === "completed") {
                     approachingTimeoutCount++;
                     if (approachingTimeoutsSamples.length < 5 && 
-                        !approachingTimeoutsSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        !approachingTimeoutsSamples.some(s => s.statement === (request.preparedText || request.statement))) {
                         approachingTimeoutsSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement || request.preparedText,
+                            statement: request.preparedText || request.statement,
                             elapsedTime: request.elapsedTime
                         });
                     }
@@ -10882,10 +10911,10 @@ function generateElapsedTimeChart(requests) {
                 if (elapsedTimeSeconds >= 74 && elapsedTimeSeconds <= 76 && state === "fatal") {
                     actualTimeoutCount++;
                     if (actualTimeoutsSamples.length < 5 && 
-                        !actualTimeoutsSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        !actualTimeoutsSamples.some(s => s.statement === (request.preparedText || request.statement))) {
                         actualTimeoutsSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement || request.preparedText,
+                            statement: request.preparedText || request.statement,
                             elapsedTime: request.elapsedTime
                         });
                     }
@@ -10893,13 +10922,17 @@ function generateElapsedTimeChart(requests) {
 
                 // Count missing WHERE clauses
                 // Use consolidated function to check for filtering mechanisms (WHERE or USE KEYS)
-                if (!hasFilteringMechanism(request.statement || request.preparedText)) {
+                // If this is EXECUTE, evaluate WHERE on preparedText (actual statement) when present
+                const stmtForWhere = (((request.statement || '').toUpperCase().startsWith('EXECUTE')) && request.preparedText)
+                    ? request.preparedText
+                    : (request.statement || request.preparedText);
+                if (!hasFilteringMechanism(stmtForWhere)) {
                     noWhereCount++;
                     if (missingWhereClausesSamples.length < 5 && 
-                        !missingWhereClausesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        !missingWhereClausesSamples.some(s => s.statement === (request.preparedText || request.statement))) {
                         missingWhereClausesSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement || request.preparedText
+                            statement: request.preparedText || request.statement
                         });
                     }
                 }
@@ -10911,10 +10944,10 @@ function generateElapsedTimeChart(requests) {
                         slowUseKeysCount++;
                         slowUseKeysTotalTime += elapsedTime;
                         if (slowUseKeyQueriesSamples.length < 5 && 
-                            !slowUseKeyQueriesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                            !slowUseKeyQueriesSamples.some(s => s.statement === (request.preparedText || request.statement))) {
                             slowUseKeyQueriesSamples.push({
                                 requestTime: request.requestTime,
-                                statement: request.statement || request.preparedText
+                                statement: request.preparedText || request.statement
                             });
                         }
                     }
@@ -10927,10 +10960,10 @@ function generateElapsedTimeChart(requests) {
                     largeResultsCount++;
                     largeResultsTotalMB += resultSizeMB;
                     if (largeResultSetQueriesSamples.length < 5 && 
-                        !largeResultSetQueriesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        !largeResultSetQueriesSamples.some(s => s.statement === (request.preparedText || request.statement))) {
                         largeResultSetQueriesSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement || request.preparedText
+                            statement: request.preparedText || request.statement
                         });
                     }
                 }
@@ -10942,10 +10975,10 @@ function generateElapsedTimeChart(requests) {
                     if (likeMatches && likeMatches.length > 0) {
                         inefficientLikeCount++;
                         if (inefficientLikeOperationsSamples.length < 5 && 
-                            !inefficientLikeOperationsSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                            !inefficientLikeOperationsSamples.some(s => s.statement === (request.preparedText || request.statement))) {
                             inefficientLikeOperationsSamples.push({
                                 requestTime: request.requestTime,
-                                statement: request.statement || request.preparedText
+                                statement: request.preparedText || request.statement
                             });
                         }
                     }
@@ -10956,10 +10989,10 @@ function generateElapsedTimeChart(requests) {
                 if (selectStarMatch) {
                     selectStarCount++;
                     if (selectStarUsageSamples.length < 5 &&
-                        !selectStarUsageSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        !selectStarUsageSamples.some(s => s.statement === (request.preparedText || request.statement))) {
                         selectStarUsageSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement || request.preparedText
+                            statement: request.preparedText || request.statement
                         });
                     }
                 }
@@ -10971,10 +11004,10 @@ function generateElapsedTimeChart(requests) {
                     highMemoryCount++;
                     highMemoryTotalGB += usedMemoryGB;
                     if (highMemoryUsageSamples.length < 5 && 
-                        !highMemoryUsageSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                        !highMemoryUsageSamples.some(s => s.statement === (request.preparedText || request.statement))) {
                         highMemoryUsageSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.statement || request.preparedText
+                            statement: request.preparedText || request.statement
                         });
                     }
                 }
@@ -10998,10 +11031,10 @@ function generateElapsedTimeChart(requests) {
                                 highKernelTimeQueriesCount++;
                                 totalCoreKernelRatio += coreKernelAnalysis.coreToKernelRatio;
                                 if (highKernelTimeQueriesSamples.length < 5 && 
-                                    !highKernelTimeQueriesSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                                    !highKernelTimeQueriesSamples.some(s => s.statement === (request.preparedText || request.statement))) {
                                     highKernelTimeQueriesSamples.push({
                                         requestTime: request.requestTime,
-                                        statement: request.statement || request.preparedText
+                                        statement: request.preparedText || request.statement
                                     });
                                 }
                             }
@@ -11030,7 +11063,7 @@ function generateElapsedTimeChart(requests) {
                                     !largePayloadStreamingSamples.some(s => s.statement === (request.statement || request.preparedText))) {
                                     largePayloadStreamingSamples.push({
                                         requestTime: request.requestTime,
-                                        statement: request.statement || request.preparedText
+                                        statement: request.preparedText || request.statement
                                     });
                                 }
                             }
@@ -11087,10 +11120,10 @@ function generateElapsedTimeChart(requests) {
                         paginationOverfetchCount++;
                         paginationOverfetchTotalScanned += scanned;
                         if (paginationOverfetchSamples.length < 5 &&
-                            !paginationOverfetchSamples.some(s => s.statement === (request.statement || request.preparedText))) {
+                            !paginationOverfetchSamples.some(s => s.statement === (request.preparedText || request.statement))) {
                             paginationOverfetchSamples.push({
                                 requestTime: request.requestTime,
-                                statement: request.statement || request.preparedText
+                                statement: request.preparedText || request.statement
                             });
                         }
                     }

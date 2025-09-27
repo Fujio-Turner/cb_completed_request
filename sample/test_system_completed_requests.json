@@ -2050,6 +2050,7 @@
       "resultSize": 2048,
       "scanConsistency": "request_plus",
       "users": "local:test_user",
+      "requestId": "exec-prepared-1",
       "statement": "<ud>EXECUTE myPrepared()</ud>",
       "preparedText": "SELECT u.name FROM fujioturner u WHERE u.userId = "
     },
@@ -2066,6 +2067,7 @@
       "resultSize": 4096,
       "scanConsistency": "scan_plus",
       "users": "local:test_user2",
+      "requestId": "exec-prepared-2",
       "statement": "<UD>EXECUTE myPrepared2</UD>",
       "preparedText": "SELECT o.orderId, o.total FROM  o WHERE o.customerId = "
     },
@@ -2082,6 +2084,7 @@
       "resultSize": 2048,
       "scanConsistency": "request_plus",
       "users": "local:test_user",
+      "requestId": "exec-prepared-3",
       "statement": "<ud>EXECUTE myPrepared($userId)</ud>",
       "preparedText": "SELECT u.name FROM `users` u WHERE u.userId = $userId"
     },
@@ -2098,9 +2101,77 @@
       "resultSize": 4096,
       "scanConsistency": "scan_plus",
       "users": "local:test_user2",
+      "requestId": "exec-prepared-4",
       "statement": "<UD>EXECUTE \"myPrepared2\"</UD>",
       "preparedText": "SELECT o.orderId, o.total FROM `orders` o WHERE o.customerId = $custId"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#stats\":{\"execTime\":\"2µs\",\"servTime\":\"5µs\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"1ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "requestTime": "2025-09-27T12:00:00.000Z",
+      "elapsedTime": "180.000ms",
+      "serviceTime": "175.000ms",
+      "cpuTime": "7.000ms",
+      "state": "completed",
+      "resultCount": 1,
+      "resultSize": 2048,
+      "scanConsistency": "request_plus",
+      "users": "local:test_exec_user",
+      "requestId": "exec-prepared-5",
+      "statement": "EXECUTE getProductById",
+      "preparedText": "SELECT * FROM `products` USE KEYS $docId"
+    },
+    "plan": "{\\\"#operator\\\":\\\"Authorize\\\",\\\"#stats\\\":{\\\"execTime\\\":\\\"2µs\\\",\\\"servTime\\\":\\\"5µs\\\"},\\\"~child\\\":{\\\"#operator\\\":\\\"Sequence\\\",\\\"~children\\\":[{\\\"#operator\\\":\\\"Stream\\\",\\\"#stats\\\":{\\\"execTime\\\":\\\"1ms\\\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "requestTime": "2025-09-27T12:05:00.000Z",
+      "elapsedTime": "200.000ms",
+      "serviceTime": "195.000ms",
+      "cpuTime": "8.000ms",
+      "state": "completed",
+      "resultCount": 10,
+      "resultSize": 8192,
+      "scanConsistency": "scan_plus",
+      "users": "local:test_exec_user2",
+      "requestId": "exec-prepared-6",
+      "statement": "EXECUTE listUsersNoFilter",
+      "preparedText": "SELECT name FROM `users` u"
+    },
+    "plan": "{\\\"#operator\\\":\\\"Authorize\\\",\\\"#stats\\\":{\\\"execTime\\\":\\\"2µs\\\",\\\"servTime\\\":\\\"5µs\\\"},\\\"~child\\\":{\\\"#operator\\\":\\\"Sequence\\\",\\\"~children\\\":[{\\\"#operator\\\":\\\"Stream\\\",\\\"#stats\\\":{\\\"execTime\\\":\\\"1ms\\\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "requestTime": "2025-09-27T12:10:00.000Z",
+      "elapsedTime": "210.000ms",
+      "serviceTime": "205.000ms",
+      "cpuTime": "9.000ms",
+      "state": "completed",
+      "resultCount": 3,
+      "resultSize": 3072,
+      "scanConsistency": "request_plus",
+      "users": "local:test_exec_user3",
+      "requestId": "exec-prepared-7",
+      "statement": "EXECUTE activeUserEmails",
+      "preparedText": "SELECT u.email FROM `users` u WHERE u.active = true"
+    },
+    "plan": "{\\\"#operator\\\":\\\"Authorize\\\",\\\"#stats\\\":{\\\"execTime\\\":\\\"2µs\\\",\\\"servTime\\\":\\\"5µs\\\"},\\\"~child\\\":{\\\"#operator\\\":\\\"Sequence\\\",\\\"~children\\\":[{\\\"#operator\\\":\\\"Stream\\\",\\\"#stats\\\":{\\\"execTime\\\":\\\"1ms\\\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "requestTime": "2025-09-27T12:15:00.000Z",
+      "elapsedTime": "150.000ms",
+      "serviceTime": "145.000ms",
+      "cpuTime": "6.000ms",
+      "state": "completed",
+      "resultCount": 0,
+      "resultSize": 0,
+      "scanConsistency": "request_plus",
+      "users": "local:test_exec_user4",
+      "requestId": "exec-prepared-8",
+      "statement": "EXECUTE myUnknownPrepared"
+    },
+    "plan": "{\\\"#operator\\\":\\\"Authorize\\\",\\\"#stats\\\":{\\\"execTime\\\":\\\"2µs\\\",\\\"servTime\\\":\\\"5µs\\\"},\\\"~child\\\":{\\\"#operator\\\":\\\"Sequence\\\",\\\"~children\\\":[{\\\"#operator\\\":\\\"Stream\\\",\\\"#stats\\\":{\\\"execTime\\\":\\\"1ms\\\"}}]}}"
   }
 ]
