@@ -1323,8 +1323,8 @@ if (window.TEXT_CONSTANTS) {
             <div id="analysis-phase-times-section" class="margin-bottom-20">
                 <div class="chart-container" style="height:340px;">
                     <div style="height: auto;">
+                        <div id="query-group-phase-times-note" style="font-size: 12px; color: #495057; font-weight: 600; margin-bottom: 6px;"></div>
                         <canvas id="query-group-phase-times-chart" style="width:100%;height:900px;"></canvas>
-                        <div id="query-group-phase-times-note" style="font-size: 11px; color: #6c757d; margin-top: 6px;"></div>
                     </div>
                 </div>
             </div>
@@ -4691,32 +4691,17 @@ function renderQueryGroupPhaseTimesChart(group) {
                 const groupBar   = groupStats.avgMs  > 0 ? [t, (t += groupStats.avgMs)]     : null;
                 const sortBar    = sortStats.avgMs   > 0 ? [t, (t += sortStats.avgMs)]      : null;
                 const limitBar   = limitStats.avgMs  > 0 ? [t, (t += limitStats.avgMs)]     : null;
-                // Project alignment with Filter:
-                // - If Project avg >= Filter avg: start Project at Filter start and extend past Filter if needed.
-                // - If Project avg <  Filter avg: end Project at Filter end (it "waits" for filter to finish),
-                //   with start shifted so width == Project avg.
+                // Project must occur after Filter/Group/Sort/Limit. It should not overlap earlier phases.
+                // Start Project at the later of (sequential time 't' after limit) and the end of Filter.
                 let projectBar = null;
                 if (projectStats.avgMs > 0) {
-                    if (filterBar) {
-                        const filterStart = filterBar[0];
-                        const filterEnd = filterBar[1];
-                        const projectAvg = projectStats.avgMs;
-                        const filterAvg = filterEnd - filterStart;
-                        if (projectAvg >= filterAvg) {
-                            const projectStart = filterStart;
-                            const projectEnd = projectStart + projectAvg;
-                            projectBar = [projectStart, projectEnd];
-                        } else {
-                            const projectEnd = filterEnd;
-                            const projectStart = Math.max(0, projectEnd - projectAvg);
-                            projectBar = [projectStart, projectEnd];
-                        }
-                    } else {
-                        // Fallback when no filterBar: place sequentially at current t
-                        const projectStart = t;
-                        const projectEnd = projectStart + projectStats.avgMs;
-                        projectBar = [projectStart, projectEnd];
-                    }
+                    const prevEnd = Math.max(
+                        t,
+                        filterBar ? filterBar[1] : 0
+                    );
+                    const projectStart = prevEnd;
+                    const projectEnd = projectStart + projectStats.avgMs;
+                    projectBar = [projectStart, projectEnd];
                 }
                 const deleteBar  = deleteStats.avgMs > 0 ? [t, (t += deleteStats.avgMs)]     : null;
                 const updateBar  = updateStats.avgMs > 0 ? [t, (t += updateStats.avgMs)]     : null;
