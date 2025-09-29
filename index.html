@@ -253,7 +253,7 @@
             <div class="steps">
                 <div class="step">
                     <strong>1. Extract Data</strong>
-                    <p>Run the following query in your Couchbase Query Workbench or <code>cbq</code>, then export the results as JSON.</p>
+                    <p>Run the following query in your Couchbase Query Workbench , Capella Query tab or <code>cbq</code>, then export the results as JSON.</p>
                     <div class="sql-query-box">
                         <pre>SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;</pre>
                         <button class="sql-copy-btn">Copy</button>
@@ -263,9 +263,7 @@
                     <strong>2. Analyze & Optimize</strong>
                     <p><a href="https://cb.fuj.io/en/" target="_blank" rel="noopener noreferrer">Open Analyzer</a> — in the <b>upper-left corner</b>, paste or upload your JSON to get instant analysis and suggestions.</p>
                     <p><b>Private & Secure:</b> <i>Runs entirely in your browser with no server uploads. Optionally download the HTML to run locally.</i></p>
-                    <div style="display:flex; align-items:center; gap:10px; margin-top:8px; color:#4a5568; font-size: 0.95em;">
-                        <img src="img/firefox.png" alt="Firefox" style="width: 20px; height: 20px;"> <span>Firefox renders large JSON the fastest.</span>
-                    </div>
+
                 </div>
                 <div class="step">
                     <strong>3. Apply & Test</strong>
@@ -280,33 +278,20 @@
         <section>
             <h2>FAQs</h2>
             <div class="accordion">
-                <div class="accordion-header" onclick="toggleAccordion(this)">How do I get query data?</div>
+                <div class="accordion-header" onclick="toggleAccordion(this)">How do I get query data to use for the tool/analyzer?</div>
                 <div class="accordion-content">
-                    <p>Run the SQL++ query from <strong>1. Extract Data</strong> in Couchbase Query Workbench, then export queries as JSON by copying and pasting or saving to a file. See the <a href="https://docs.couchbase.com/server/current/n1ql/n1ql-query.html" target="_blank" rel="noopener noreferrer">Couchbase documentation</a> for details. For advanced, targeted SQL++ queries to filter JSON results, see <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a>.</p>
-                    <p>Also see: <a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample completed_requests JSON</a></p>
-                </div>
-            </div>
-            <div class="accordion">
-                <div class="accordion-header" onclick="toggleAccordion(this)">What are the terms of use and license?</div>
-                <div class="accordion-content">
-                    <p>Apache 2.0 license. Contribute or report issues on <a href="https://github.com/Fujio-Turner/cb_completed_request" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
-                    <p>Also see: <a href="https://github.com/Fujio-Turner/cb_completed_request/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">LICENSE</a></p>
-                </div>
-            </div>
-            <div class="accordion">
-                <div class="accordion-header" onclick="toggleAccordion(this)">What data formats are supported?</div>
-                <div class="accordion-content">
-                    <p>JSON exports from Couchbase Query Workbench or <code>system:completed_requests</code>.</p>
-                    <p>Also see: <a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample completed_requests JSON</a> <span style="color:#a0aec0">•</span> <a href="sample/test_system_indexes.json" target="_blank" rel="noopener noreferrer">Sample system:indexes JSON</a></p>
+                    <p>Run the SQL++ query from <strong>1. Extract Data</strong> in Couchbase Query Workbench or Capella Query tab, then export queries as JSON by copying and pasting or saving to a file. For advanced, targeted SQL++ queries to filter JSON results, see <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a>.</p>
+                    <p>Also see: <a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample (dummy) completed_requests JSON</a></p>
                 </div>
             </div>
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion(this)">How do I use this tool and/or debug queries?</div>
                 <div class="accordion-content">
                     <p>For a step-by-step workflow to analyze your JSON results, interpret metrics, and debug slow queries, visit the <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer">Analysis Hub - Couchbase N1QL Query Optimization Guide & Glossary</a>.</p>
-                    <p>Also see: <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a> <span style="color:#a0aec0">•</span> <a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample completed_requests JSON</a></p>
+                    <p>Also see: <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a> <span style="color:#a0aec0">•</span> <a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample (dummy) completed_requests JSON</a></p>
                 </div>
             </div>
+
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion(this)">Where do I paste the JSON in the tool?</div>
                 <div class="accordion-content">
@@ -315,30 +300,44 @@
                     <p>Also see: <a href="https://cb.fuj.io/en/" target="_blank" rel="noopener noreferrer">Open Analyzer</a></p>
                 </div>
             </div>
-            <div class="accordion">
-                <div class="accordion-header" onclick="toggleAccordion(this)">Does my data leave the browser?</div>
+
+                        <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">Where does the slow query data come from?</div>
                 <div class="accordion-content">
-                    <p>No. All parsing and analysis happen locally in your browser. You can also download the HTML to run it completely offline.</p>
-                    <p>Also see: <a href="https://raw.githubusercontent.com/Fujio-Turner/cb_completed_request/main/en/index.html" target="_blank" rel="noopener noreferrer">Download HTML (en/index.html)</a></p>
+                    <p>The Couchbase cluster stores a small history of queries that take longer then 1 second. You can query/get this history via <code>system:completed_requests</code> catalog. Run the query from <strong>1. Extract Data</strong> in Query Workbench or <code>cbq</code> to collect recent query executions, timing metrics, and the execution plan.</p>
+                    <div class="sql-query-box">
+<pre>SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;</pre>
+                        <button class="sql-copy-btn">Copy</button>
+                    </div>
+                    <p>NOTE: The above query will not get all of the slow query history but rather a small 2000 sample in random order.</p>
+                    <p>Also see: <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a> <span style="color:#a0aec0">•</span> <a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample (dummy) completed_requests JSON</a></p>
                 </div>
             </div>
+
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion(this)">How large can the JSON be?</div>
                 <div class="accordion-content">
                     <p>Typical exports are around <b>9–45 MB</b>. For larger datasets, filter by time range or use <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a>.</p>
                 </div>
             </div>
+
             <div class="accordion">
-                <div class="accordion-header" onclick="toggleAccordion(this)">Which browsers are recommended?</div>
+                <div class="accordion-header" onclick="toggleAccordion(this)">Why is the analyzer slow or crashing?</div>
                 <div class="accordion-content">
-                    <p><img src="img/firefox.png" alt="Firefox" style="width: 20px; height: 20px; vertical-align: text-bottom;"> <b>Firefox</b> renders large JSON the fastest. Chrome and Edge are supported.</p>
-                    <p>Also see: <a href="https://cb.fuj.io/en/" target="_blank" rel="noopener noreferrer">Open Analyzer</a></p>
+                    <p>Large JSON payloads and browser memory limits can impact performance. Try the following:</p>
+                    <ul>
+                        <li>Export a smaller dataset (filter by time range or query patterns before exporting).</li>
+                        <li>Use the <b>Upload</b> option instead of copy/paste to reduce your browser's memory overhead.</li>
+                        <li>Prefer  <img src="img/firefox.png" alt="Firefox" style="width: 20px; height: 20px;"> <b>Firefox</b> — it parses and renders large JSON the fastest.</li>
+                    </ul>
+                    <p>Also see: <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a> <span style="color:#a0aec0">•</span> <a href="https://raw.githubusercontent.com/Fujio-Turner/cb_completed_request/main/en/index.html" target="_blank" rel="noopener noreferrer">Download HTML (en/index.html)</a></p>
                 </div>
             </div>
+
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion(this)">Can I use this with Couchbase Capella?</div>
                 <div class="accordion-content">
-                    <p>Yes, it is fully compatible with both Couchbase Server and Capella. Ensure you have access to query logs or profiling data.</p>
+                    <p>Yes, it is fully compatible with both Couchbase Server and Capella. Just Run the same query from <strong>1. Extract Data</strong> in the Query tab in your Capella cluster.</p>
                     <p>Also see: <a href="https://docs.couchbase.com/cloud/" target="_blank" rel="noopener noreferrer">Couchbase Capella documentation</a></p>
                 </div>
             </div>
@@ -365,9 +364,17 @@ LET bid = CONCAT("", s.bucket_id, ""),
     p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;</pre>
                         <button class="sql-copy-btn">Copy</button>
                     </div>
-                    <p>See also: <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a> <span style="color:#a0aec0">•</span> <a href="sample/test_system_indexes.json" target="_blank" rel="noopener noreferrer">Sample system:indexes JSON</a></p>
+                    <p>See also: <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a> <span style="color:#a0aec0">•</span> <a href="sample/test_system_indexes.json" target="_blank" rel="noopener noreferrer">Sample (dummy) system:indexes JSON</a></p>
+                </div>
+        </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">What are the terms of use and license?</div>
+                <div class="accordion-content">
+                    <p>Apache 2.0 license. Contribute or report issues on <a href="https://github.com/Fujio-Turner/cb_completed_request" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+                    <p>Also see: <a href="https://github.com/Fujio-Turner/cb_completed_request/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">LICENSE</a></p>
                 </div>
             </div>
+
         </section>
     </main>
 
