@@ -14,115 +14,340 @@
     <meta property="og:url" content="https://cb.fuj.io/en/">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
     <style>
-body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f5f5}.guide-container{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}.guide-step{background:white;padding:15px;border:1px solid #ccc;border-radius:5px}.guide-step h3{margin-top:0;font-size:18px;color:#333}.guide-step p,.guide-step ul{font-size:14px;color:#666;line-height:1.5}.guide-step pre{background:#f8f9fa;padding:10px;border-radius:4px;font-size:12px;overflow-x:auto}.guide-step a{color:#007bff;text-decoration:none}.guide-step a:hover{text-decoration:underline}.guide-step img{max-width:100%;height:auto}.video-placeholder{background:#e9ecef;padding:15px;border-radius:4px;text-align:center;color:#666;font-size:14px}.sql-query-box{background:#f8f9fa;border:1px solid #dee2e6;border-radius:6px;padding:15px;margin:15px 0;position:relative}.sql-query-box pre{background:#ffffff;border:1px solid #e9ecef;border-radius:4px;padding:10px;margin:10px 0;font-family:monospace;font-size:12px;overflow-x:auto}.sql-copy-btn{position:absolute;top:10px;right:10px;background:#007bff;color:white;border:none;border-radius:4px;padding:6px 12px;font-size:11px;cursor:pointer}.sql-copy-btn:hover{background:#0056b3}.version-info{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.1);color:#333;padding:4px 8px;border-radius:4px;font-size:0.75em;font-family:monospace;z-index:999;opacity:0.7;transition:opacity 0.3s ease}.version-info:hover{opacity:1;background:rgba(0,0,0,0.2)}footer{position:fixed;bottom:10px;right:10px;z-index:999;text-align:center}.faq-item{border-bottom:1px solid #e9ecef;margin-bottom:10px}.faq-question{width:100%;text-align:left;background:none;border:none;padding:15px 0;font-size:16px;font-weight:bold;color:#333;cursor:pointer;display:flex;justify-content:space-between;align-items:center}.faq-question:hover{color:#007bff}.faq-toggle{font-size:18px;font-weight:bold;transition:transform 0.3s ease}.faq-answer{color:#666;line-height:1.5;display:none;padding:0 0 15px 0;transition:all 0.3s ease}.faq-answer.active{display:block}.faq-item:last-child{border-bottom:none}
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        header {
+            text-align: center;
+            padding: 5px 20px;
+            background: linear-gradient(135deg, #007acc 0%, #00b4d8 100%);
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+        }
+        header img.logo {
+            max-width: 150px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin: 0;
+            letter-spacing: 0.2px;
+        }
+        h2 {
+            font-size: 1.8em;
+            color: #007acc;
+            margin-top: 40px;
+            position: relative;
+        }
+        /* Section title accent */
+        h2::after {
+            content: "";
+            display: block;
+            width: 56px;
+            height: 3px;
+            background: #00b4d8;
+            border-radius: 2px;
+            margin-top: 8px;
+        }
+        .intro {
+            text-align: center;
+            font-size: 1.1em;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            color: #4a5568;
+        }
+        .steps, .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .step, .feature {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #eaeef2;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .step:hover, .feature:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.10);
+        }
+        .step a {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007acc;
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            margin-top: 10px;
+            box-shadow: 0 2px 6px rgba(0,122,204,0.25);
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+        .step a:hover {
+            background: #005f99;
+            transform: translateY(-1px);
+        }
+
+        /* Hero CTA */
+        .cta-btn{
+            display:inline-block;
+            padding:12px 22px;
+            background:#007acc;
+            color:#fff;
+            border-radius:8px;
+            text-decoration:none;
+            font-weight:600;
+            box-shadow:0 6px 18px rgba(0,122,204,0.25);
+            transition:transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+        .cta-btn:hover{background:#005f99;transform:translateY(-1px);box-shadow:0 10px 24px rgba(0,122,204,0.3)}
+
+        /* Mini gallery under hero */
+        .mini-gallery{display:flex;gap:14px;justify-content:center;align-items:stretch;flex-wrap:wrap;margin:6px 0 18px}
+        .mini-card{display:flex;flex-direction:column;align-items:center;background:#fff;border:1px solid #eaeef2;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.06);padding:8px 10px;width:180px;transition:transform 0.2s ease, box-shadow 0.2s ease}
+        .mini-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,0.10)}
+        .mini-card img{width:160px;height:100px;object-fit:cover;border-radius:8px;margin-bottom:6px}
+        .mini-card span{font-size:0.95em;color:#2d3748;font-weight:600}
+
+        /* Match original SQL query box + copy button look & feel */
+        .sql-query-box{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;padding:15px;margin:15px 0;position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+        .sql-query-box pre{background:#ffffff;border:1px solid #e9ecef;border-radius:6px;padding:10px;margin:10px 0;font-family:monospace;font-size:12px;line-height:1.5;overflow-x:auto}
+        .sql-copy-btn{position:absolute;top:10px;right:10px;background:#007bff;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.12);transition: background 0.2s ease, transform 0.2s ease}
+        .sql-copy-btn:hover{background:#0056b3;transform: translateY(-1px)}
+
+        .gallery {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+        .gallery img {
+            width: 300px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            will-change: transform;
+        }
+        .gallery img:hover {
+            transform: scale(1.7);
+            box-shadow: 0 14px 30px rgba(0,0,0,0.25);
+            position: relative;
+            z-index: 2;
+        }
+        .accordion {
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #eaeef2;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+            margin: 20px 0;
+        }
+        .accordion-header {
+            padding: 15px;
+            cursor: pointer;
+            background: #f0f8ff;
+            font-weight: bold;
+            border-bottom: 1px solid #e6eef5;
+        }
+        .accordion-content {
+            padding: 0 15px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        .accordion-content.open {
+            max-height: 500px;
+            padding: 15px;
+        }
+
+        /* Floating GitHub icon like the original */
+        .floating-github{position:fixed;bottom:10px;right:10px;z-index:999;text-align:center}
+        .floating-github img{width:40px;height:40px;filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2))}
+        .floating-github .copyright{margin-top:6px;font-size:12px;color:#777}
+
+        /* Version badge (parity with original) */
+        .version-info{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.1);color:#333;padding:4px 8px;border-radius:4px;font-size:0.75em;font-family:monospace;z-index:999;opacity:0.7;transition:opacity 0.3s ease}
+        .version-info:hover{opacity:1;background:rgba(0,0,0,0.2)}
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9em;
+            color: #666;
+            border-top: 1px solid #eaeef2;
+            margin-top: 30px;
+        }
+        footer a {
+            color: #007acc;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Accessible focus styles */
+        a:focus-visible, button:focus-visible {
+            outline: 3px solid rgba(0,122,204,0.35);
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            h1 { font-size: 2em; }
+            .gallery img { width: 100%; max-width: 300px; height: auto; }
+        }
     </style>
 </head>
 <body>
-    <h1>🚀 Couchbase Slow Query Analyzer Tool - Quick Start Guide</h1>
-    <p>An Open Source Couchbase slow query analyzer tool for optimizing N1QL query performance and analyzing execution plans (Capella compatible). Supports Couchbase 7.6+ and Capella with timeline charts for query execution plans.</p>
+    <!-- Floating GitHub link (matches original positioning/appearance) -->
+    <div class="floating-github">
+        <a href="https://github.com/Fujio-Turner/cb_completed_request" target="_blank" rel="noopener noreferrer">
+            <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub repository for Couchbase slow query analysis tool">
+        </a>
+        <div class="copyright">© 2025 fuj.io</div>
+    </div>
 
-    <h2>What this tool helps you do</h2>
-    <ul>
-      <li>Couchbase slow query analyzer and N1QL query performance tuning guide</li>
-      <li>Execution plan analyzer and index advisor for SQL++ queries</li>
-      <li>N1QL profiler with query execution timeline visualization</li>
-      <li>Analyze Couchbase completed requests and monitor queries</li>
-      <li>Debug slow Couchbase queries and apply tuning best practices</li>
-    </ul>
+    <header>
+        <h1>Couchbase Query Analyzer</h1>
+        <p>Open-source tool to debug and analyze slow N1QL/SQL++ queries.</p>
+    </header>
 
-    <h2>Step 1: Extract Couchbase Query Data for Slow Query Analysis</h2>
-    <div class="guide-container">
-        <div class="guide-step">
-            <h3>Extract Query Data from System:Completed_Requests</h3>
-            <p>Run the following query in your Couchbase Query Workbench or <code>cbq</code>.</p> 
-            <p>You will want to copy or save the JSON output.</p>
-            <div class="sql-query-box">
-                <pre>SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;</pre>
-                <button class="sql-copy-btn">Copy</button>
+    <section>
+        <h2>Screenshots</h2>
+        <div class="gallery">
+            <img src="img/dashboard.png" alt="Couchbase Query Analyzer dashboard">
+            <img src="img/timeline.png" alt="N1QL query execution timeline charts">
+            <img src="img/indexes_queries_flow.png" alt="Index and query flow diagram visualization">
+        </div>
+    </section>
+
+    <main>
+        <section>
+            <h2>Why Are My Queries Slow?</h2>
+            <p>Slow Couchbase queries can stem from unoptimized N1QL/SQL++ statements, missing indexes, or inefficient data scans. This open-source tool helps you:</p>
+            <ul>
+                <li>Identify bottlenecks with detailed query analysis.</li>
+                <li><b>Insights</b> provides a quick overview and suggestions.</li>
+                <li>Visualize query performance with timelines and metrics.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Get Started</h2>
+            <div class="steps">
+                <div class="step">
+                    <strong>1. Extract Data</strong>
+                    <p>Run the following query in your Couchbase Query Workbench or <code>cbq</code>, then export the results as JSON.</p>
+                    <div class="sql-query-box">
+                        <pre>SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;</pre>
+                        <button class="sql-copy-btn">Copy</button>
+                    </div>
+                </div>
+                <div class="step">
+                    <strong>2. Analyze & Optimize</strong>
+                    <p><a href="https://cb.fuj.io/en/" target="_blank" rel="noopener noreferrer">Open Analyzer</a> — in the <b>upper-left corner</b>, paste or upload your JSON to get instant analysis and suggestions.</p>
+                    <p><b>Private & Secure:</b> <i>Runs entirely in your browser with no server uploads. Optionally download the HTML to run locally.</i></p>
+                    <div style="display:flex; align-items:center; gap:10px; margin-top:8px; color:#4a5568; font-size: 0.95em;">
+                        <img src="img/firefox.png" alt="Firefox" style="width: 20px; height: 20px;"> <span>Firefox renders large JSON the fastest.</span>
+                    </div>
+                </div>
+                <div class="step">
+                    <strong>3. Apply & Test</strong>
+                    <p>Implement index or query changes, then re-run to confirm performance gains.</p>
+                      <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer" style="color:#ecedee; font-weight:600;">Need help? Analysis Hub</a>
+                 
+                </div>
             </div>
-            <p><strong>Notes:</strong> This query returns a 9–15 MB JSON optimized for browser performance.</p>
-            <p>Want more specific, targeted queries than the one above? See <a href="https://cb.fuj.io/sql_queries.html">Targeted Query Filters</a> for sample SQL++ queries.</p>
-        </div>
-        <div class="guide-step">
-            <img src="img/completed_request_json.png" alt="Analyze Couchbase completed requests JSON for N1QL profiling and optimization" style="width: 550px;">
-        </div>
-    </div>
+        </section>
 
-    <h2>Step 2: Access Couchbase Query Analyzer Tool</h2>
-    <div class="guide-container">
-        <div class="guide-step">
-            <h3>Access the Hosted Analyzer Tool</h3>
-            <p>Click the link below to go to the web-based query analyzer tool:</p>
-            <ul>
-                <li><span style="font-size: large;"><a href="https://cb.fuj.io/en/" target="_blank" rel="noopener noreferrer">https://cb.fuj.io/en/ (English)</a></span></li>
-            </ul>
-            <p>  <img src="img/firefox.png" alt="Firefox" style="width: 30px;"> <em>Firefox</em> renders data the fastest.</p>
-        </div>
-        <div class="guide-step">
-       <img src="img/copy_paste_side_by_side.png" alt="Steps to optimize Couchbase SQL++ queries, monitor performance, and analyze slow N1QL queries" style="width: 650px;" >
-        </div>
-    </div>
 
-    <h2>Step 3: Parse and Analyze Query Performance Data</h2>
-    <div class="guide-container">
-        <div class="guide-step">
-            <h3>Paste JSON Data and Parse for Analysis</h3>
-            <p>Copy the JSON output from Step 1 and paste it into the <span style="font-size: large; color: black;"><b>Upper Left</b></span> text box, then click the <strong>Parse JSON</strong> button.</p>
-            <img src="img/paste_json.png" alt="Paste JSON into Couchbase slow query analyzer tool and parse for performance insights" loading="lazy">
-            <p><strong>Need Help?</strong> <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer" style="font-size: 18px; font-weight: 600;">📚 Analysis Hub - Couchbase N1QL Query Optimization Guide & Glossary</a></p>
-            <div style="display:flex; gap:10px; overflow-x:auto; padding:6px 0;">
-                <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer">
-                    <img src="img/query_times.png" alt="Timing metrics overview thumbnail" style="width:120px; height:auto; border:1px solid #ddd; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                </a>
-                <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer">
-                    <img src="img/serviceTime.png" alt="ServiceTime breakdown thumbnail" style="width:120px; height:auto; border:1px solid #ddd; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                </a>
-                <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer">
-                    <img src="img/query_node.png" alt="Query node architecture thumbnail" style="width:120px; height:auto; border:1px solid #ddd; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                </a>
-                <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer">
-                    <img src="img/covered_index.png" alt="Covering index visualization thumbnail" style="width:120px; height:auto; border:1px solid #ddd; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                </a>
+        <section>
+            <h2>FAQs</h2>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">How do I get query data?</div>
+                <div class="accordion-content">
+                    <p>Run the SQL++ query from <strong>1. Extract Data</strong> in Couchbase Query Workbench, then export queries as JSON by copying and pasting or saving to a file. See the <a href="https://docs.couchbase.com/server/current/n1ql/n1ql-query.html" target="_blank" rel="noopener noreferrer">Couchbase documentation</a> for details. For advanced, targeted SQL++ queries to filter JSON results, see <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a>.</p>
+                    <p>Also see: <a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample completed_requests JSON</a></p>
+                </div>
             </div>
-        </div>
-        <div class="guide-step">
-            <img src="img/timeline.png" alt="N1QL query execution timeline charts for Couchbase execution plan analysis" loading="lazy">
-        </div>
-    </div>
-
-    <h2>Step 4: Advanced Query Filtering and Insights</h2>
-    <div class="guide-container">
-        <div class="guide-step">
-            <h3>🔍 Filter Query Data for Targeted Analysis</h3>
-            <p><strong>Filter by:</strong></p>
-            <ul>
-                <li><strong>Auto-population:</strong> Date fields populate with your data's full time range.</li>
-                <li><strong>Custom Date Ranges:</strong> Adjust "From" and "To" dates or filter by specific SQL++ query terms.</li>
-                <li><strong>SQL++ Term Search:</strong> Filter by specific SQL++ query terms, e.g., <i>`SELECT city, state`</i></li>
-                <li><strong>Re-analyze:</strong> Click <strong>Parse JSON</strong> to apply filters.</li>
-                <li><strong>Filter status:</strong> View the number of queries matching your criteria.</li>
-            </ul>
-            
-            <h4 style="color: #007bff; margin-top: 20px;">💡 NEW: Insights Dashboard</h4>
-            <p style="color: #007bff; font-weight: 600;">Discover automated performance analysis with the new Insights tab:</p>
-            <ul>
-                <li><strong>🎯 Query Pattern Analysis:</strong> Automatically identifies slow queries and performance bottlenecks</li>
-                <li><strong>📊 Index Analysis:</strong> Index usage and query optimization opportunities</li>
-                <li><strong>⚡ Performance Insights:</strong> Recommendations to improve query speed</li>
-                <li><strong>📈 Trend Analysis:</strong> Query performance trends and bottlenecks</li>
-            </ul>
-            <p style="background: #e8f4fd; padding: 8px; border-radius: 4px; font-size: 13px; border-left: 3px solid #007bff;">
-                <strong>Pro Tip:</strong> After parsing your data, visit the Insights tab for automated performance recommendations and optimization suggestions.
-            </p>
-        </div>
-        <div class="guide-step">
-
-            <p><strong>Enhanced Index Analysis:</strong></p>
-            <p>To retrieve the current list of indexes in your cluster and connect them to slow queries, run the query below in your workbench (as in Step 1). Paste the JSON output into the <span style="font-size: large; color: black;"><b>Upper Right</b></span> text box.</p>
-            <div class="sql-query-box">
-                <pre>
-SELECT 
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">What are the terms of use and license?</div>
+                <div class="accordion-content">
+                    <p>Apache 2.0 license. Contribute or report issues on <a href="https://github.com/Fujio-Turner/cb_completed_request" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+                    <p>Also see: <a href="https://github.com/Fujio-Turner/cb_completed_request/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">LICENSE</a></p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">What data formats are supported?</div>
+                <div class="accordion-content">
+                    <p>JSON exports from Couchbase Query Workbench or <code>system:completed_requests</code>.</p>
+                    <p>Also see: <a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample completed_requests JSON</a> <span style="color:#a0aec0">•</span> <a href="sample/test_system_indexes.json" target="_blank" rel="noopener noreferrer">Sample system:indexes JSON</a></p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">How do I use this tool and/or debug queries?</div>
+                <div class="accordion-content">
+                    <p>For a step-by-step workflow to analyze your JSON results, interpret metrics, and debug slow queries, visit the <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer">Analysis Hub - Couchbase N1QL Query Optimization Guide & Glossary</a>.</p>
+                    <p>Also see: <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a> <span style="color:#a0aec0">•</span> <a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample completed_requests JSON</a></p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">Where do I paste the JSON in the tool?</div>
+                <div class="accordion-content">
+                    <p>Open the analyzer and paste or upload your JSON in the <b>upper-left</b> input box, then click <b>Parse JSON</b>. See the placement below:</p>
+                    <img src="img/paste_json.png" alt="Paste JSON in the upper-left input box and click Parse JSON" style="max-width: 520px; width: 100%; border: 1px solid #e6eef5; border-radius: 6px; margin: 8px 0;">
+                    <p>Also see: <a href="https://cb.fuj.io/en/" target="_blank" rel="noopener noreferrer">Open Analyzer</a></p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">Does my data leave the browser?</div>
+                <div class="accordion-content">
+                    <p>No. All parsing and analysis happen locally in your browser. You can also download the HTML to run it completely offline.</p>
+                    <p>Also see: <a href="https://raw.githubusercontent.com/Fujio-Turner/cb_completed_request/main/en/index.html" target="_blank" rel="noopener noreferrer">Download HTML (en/index.html)</a></p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">How large can the JSON be?</div>
+                <div class="accordion-content">
+                    <p>Typical exports are around <b>9–45 MB</b>. For larger datasets, filter by time range or use <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a>.</p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">Which browsers are recommended?</div>
+                <div class="accordion-content">
+                    <p><img src="img/firefox.png" alt="Firefox" style="width: 20px; height: 20px; vertical-align: text-bottom;"> <b>Firefox</b> renders large JSON the fastest. Chrome and Edge are supported.</p>
+                    <p>Also see: <a href="https://cb.fuj.io/en/" target="_blank" rel="noopener noreferrer">Open Analyzer</a></p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">Can I use this with Couchbase Capella?</div>
+                <div class="accordion-content">
+                    <p>Yes, it is fully compatible with both Couchbase Server and Capella. Ensure you have access to query logs or profiling data.</p>
+                    <p>Also see: <a href="https://docs.couchbase.com/cloud/" target="_blank" rel="noopener noreferrer">Couchbase Capella documentation</a></p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">How do I get the index definitions from the slow queries?</div>
+                <div class="accordion-content">
+                    <p>Run the <code>system:indexes</code> query, then paste or upload the JSON into the <b>upper-right</b> input box of the analyzer. This connects index metadata to your slow queries for the Indexes and Index/Query Flow views.</p>
+                    <div class="sql-query-box">
+<pre>SELECT 
     s.name,
     s.id,
     s.metadata,
@@ -137,172 +362,42 @@ LET bid = CONCAT("", s.bucket_id, ""),
     k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
     ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
     w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
-    p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;
-            </pre>
-                <button class="sql-copy-btn">Copy</button>
+    p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;</pre>
+                        <button class="sql-copy-btn">Copy</button>
+                    </div>
+                    <p>See also: <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a> <span style="color:#a0aec0">•</span> <a href="sample/test_system_indexes.json" target="_blank" rel="noopener noreferrer">Sample system:indexes JSON</a></p>
+                </div>
             </div>
-            <p><strong>Example Index Query Output:</strong></p>
-            <pre>[{
-  "name": "#primary",
-  "id": "acd3909da629f840",
-  "metadata": {
-    "last_scan_time": "2025-02-26T08:39:39.681-08:00",
-    "num_replica": 0,
-    "stats": {
-      "last_known_scan_time": 1740587979681244700
-    }
-  },
-  "state": "online",
-  "indexString": "CREATE INDEX #primary ON customer_addresses;"
-}]</pre>
-        </div>
-    </div>
-
-    <h2>Step 5: Download for Local Use (Optional)</h2>
-    <div class="guide-container">
-        <div class="guide-step">
-            <h3>Download Couchbase Query Analyzer for Offline Analysis</h3>
-            <p>If you prefer to use the tool locally, you can copy the raw HTML below and save it as <code>index.html</code>:</p>
-            <ul>
-                <li><a href="https://raw.githubusercontent.com/Fujio-Turner/cb_completed_request/main/en/index.html">English (index.html)</a></li>
-            </ul>
-        </div>
-        <div class="guide-step">
-            <p>Tested and compatible with Couchbase 7.6.6 and Capella</p>
-            <p>Feature List & Release Notes</p>
-            <a href="https://github.com/Fujio-Turner/cb_completed_request" target="_blank" rel="noopener noreferrer">https://github.com/Fujio-Turner/cb_completed_request</a>
-        </div>
-    </div>
-
-    <h2>FAQs on Couchbase Query Performance</h2>
-    <div class="faq-container" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <div class="faq-item">
-            <button class="faq-question">Why analyze Couchbase slow queries? <span class="faq-toggle">+</span></button>
-            <div class="faq-answer">Identifying and tuning slow queries in Couchbase can reduce execution time by up to 75%, as seen in real-world optimizations. Our tool visualizes data from <code>system:completed_requests</code>, helping with index analysis, query filtering, and performance bottlenecks for better Couchbase performance tuning.</div>
-        </div>
-        <div class="faq-item">
-            <button class="faq-question">What causes slow queries in Couchbase? <span class="faq-toggle">+</span></button>
-            <div class="faq-answer">Poor indexing, large datasets, or inefficient N1QL statements. Use our analyzer to diagnose performance bottlenecks and identify optimization opportunities. <br><a href="https://cb.fuj.io/analysis_hub#optimizer" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">📚 Learn More: Query Optimization Guide</a></div>
-        </div>
-        
-        <div class="faq-item">
-            <button class="faq-question">How do I fix slow queries in Couchbase? <span class="faq-toggle">+</span></button>
-            <div class="faq-answer">Start with proper indexing strategies, use covering indexes when possible, and analyze execution plans. Our tool provides visual insights into query performance patterns. <br><a href="https://cb.fuj.io/analysis_hub#optimizer" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">🎯 Get Help: Crawl, Walk, Run Optimization Approach</a></div>
-        </div>
-        
-        <div class="faq-item">
-            <button class="faq-question">What is system:completed_requests? <span class="faq-toggle">+</span></button>
-            <div class="faq-answer">A Couchbase system catalog that contains historical query execution data including timing metrics, execution plans, and performance statistics. <br><a href="https://cb.fuj.io/analysis_hub#readStats" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">📊 Learn More: Understanding Query Statistics</a></div>
-        </div>
-        
-        <div class="faq-item">
-            <button class="faq-question">Is this tool compatible with Couchbase Capella? <span class="faq-toggle">+</span></button>
-            <div class="faq-answer">Yes, the analyzer works with both Couchbase Server 7.6+ and Couchbase Capella cloud database deployments. <br><a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">🔍 Get Help: Analysis Hub & Debugging Guide</a></div>
-        </div>
-        
-        <div class="faq-item">
-            <button class="faq-question">How often should I analyze query performance? <span class="faq-toggle">+</span></button>
-            <div class="faq-answer">Regular analysis is recommended, especially after data growth, schema changes, or when users report performance issues. Weekly or monthly reviews help maintain optimal performance. <br><a href="https://cb.fuj.io/analysis_hub#bestPractices" target="_blank" rel="noopener noreferrer" style="color: #007bff; font-weight: bold;">✨ Learn More: Query Tuning Best Practices</a></div>
-        </div>
-    </div>
-
-    <p><strong>Last updated:</strong> September 28, 2025</p>
+        </section>
+    </main>
 
     <div class="version-info">Couchbase Slow Query Analysis Tool v3.16.2</div>
 
     <footer>
-        <a href="https://github.com/Fujio-Turner/cb_completed_request" target="_blank" rel="noopener noreferrer">
-            <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub repository for Couchbase slow query analysis tool" width="40" height="40">
-        </a>
-        <div style="margin-top:6px;font-size:12px;color:#777;">© 2025 fuj.io</div>
+        <p>&copy; 2025 <a href="https://fuj.io" target="_blank" rel="noopener noreferrer">fuj.io</a>.</p>
     </footer>
 
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "HowTo",
-      "name": "Couchbase Slow Query Analysis Guide",
-      "description": "Step-by-step guide to using the Open Source Couchbase slow query analyzer tool for performance optimization.",
-      "keywords": "Couchbase query optimizer tool, How to debug Couchbase N1QL queries, Couchbase slow query analyzer, N1QL query performance tuning guide, Couchbase execution plan analyzer, Optimize Couchbase SQL++ queries, Couchbase index advisor tool, Debugging slow Couchbase queries, Couchbase query monitoring dashboard, Tune Couchbase query performance, Couchbase N1QL profiler, Analyze Couchbase completed requests, Couchbase query optimization tips, How to fix slow N1QL queries, Couchbase cost-based optimizer guide, N1QL query execution timeline, Couchbase performance insights tool, Debug Couchbase query errors, Couchbase query tuning best practices, Offline Couchbase query analyzer",
-      "step": [
-        {
-          "@type": "HowToStep",
-          "name": "Extract Couchbase Query Data",
-          "text": "Run the SQL query in Couchbase Query Workbench to get JSON output from system:completed_requests.",
-          "url": "#step1"
-        },
-        {
-          "@type": "HowToStep",
-          "name": "Access the Analyzer Tool",
-          "text": "Visit cb.fuj.io/en/ and access the hosted analyzer tool.",
-          "url": "#step2"
-        },
-        {
-          "@type": "HowToStep",
-          "name": "Parse JSON Data",
-          "text": "Paste the JSON output into the tool and click Parse JSON to analyze query performance.",
-          "url": "#step3"
-        },
-        {
-          "@type": "HowToStep",
-          "name": "Filter and Analyze",
-          "text": "Use advanced filtering options and index analysis to identify performance bottlenecks.",
-          "url": "#step4"
-        },
-        {
-          "@type": "HowToStep",
-          "name": "Download for Offline Use",
-          "text": "Optionally download the tool for local analysis and offline usage.",
-          "url": "#step5"
-        }
-      ]
-    }
-    </script>
-
     <script>
-        // SQL Copy functionality
+        function toggleAccordion(header) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('open');
+        }
+
+        // Match original Copy behavior (button text + green success color)
         document.querySelectorAll('.sql-copy-btn').forEach(button => {
             button.addEventListener('click', () => {
                 const code = button.parentElement.querySelector('pre').textContent;
                 navigator.clipboard.writeText(code).then(() => {
-                    const originalBg = window.getComputedStyle(button).backgroundColor;
                     button.style.background = '#28a745';
+                    const prevText = button.textContent;
                     button.textContent = 'Copied!';
                     setTimeout(() => {
-                        button.textContent = 'Copy';
+                        button.textContent = prevText;
                         button.style.background = '';
                     }, 2000);
                 }).catch(err => {
                     console.error('Failed to copy: ', err);
                 });
-            });
-        });
-
-        // FAQ Accordion functionality
-        document.querySelectorAll('.faq-question').forEach(question => {
-            question.addEventListener('click', () => {
-                const answer = question.nextElementSibling;
-                const toggle = question.querySelector('.faq-toggle');
-                
-                if (answer.classList.contains('active')) {
-                    answer.classList.remove('active');
-                    toggle.textContent = '+';
-                    toggle.style.transform = 'rotate(0deg)';
-                } else {
-                    // Close all other FAQ items
-                    document.querySelectorAll('.faq-answer').forEach(otherAnswer => {
-                        otherAnswer.classList.remove('active');
-                    });
-                    document.querySelectorAll('.faq-toggle').forEach(otherToggle => {
-                        otherToggle.textContent = '+';
-                        otherToggle.style.transform = 'rotate(0deg)';
-                    });
-                    
-                    // Open this FAQ item
-                    answer.classList.add('active');
-                    toggle.textContent = '−';
-                    toggle.style.transform = 'rotate(180deg)';
-                }
             });
         });
     </script>
