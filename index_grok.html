@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Couchbase Query Optimizer v3.16.2</title>
+    <meta name="description" content="Free, open-source tool to analyze and optimize slow Couchbase N1QL/SQL++ queries for better database performance. Debug and improve efficiency in minutes.">
+    <meta name="keywords" content="Couchbase, N1QL, SQL++, query optimizer, slow query analyzer, database performance, open source">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        header {
+            text-align: center;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #007acc 0%, #00b4d8 100%);
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        header img.logo {
+            max-width: 150px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin: 0;
+        }
+        h2 {
+            font-size: 1.8em;
+            color: #007acc;
+            margin-top: 40px;
+        }
+        .intro {
+            text-align: center;
+            font-size: 1.1em;
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+        .steps, .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .step, .feature {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .step:hover, .feature:hover {
+            transform: translateY(-5px);
+        }
+        .step a {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007acc;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-top: 10px;
+        }
+        .step a:hover {
+            background: #005f99;
+        }
+        .copy-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .copy-btn:hover {
+            background: #218838;
+        }
+        .gallery {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+        .gallery img {
+            width: 300px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .gallery img:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        .accordion {
+            background: white;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .accordion-header {
+            padding: 15px;
+            cursor: pointer;
+            background: #f0f8ff;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+        }
+        .accordion-content {
+            padding: 0 15px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .accordion-content.open {
+            max-height: 500px;
+            padding: 15px;
+        }
+        .github-fork {
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        .github-fork img {
+            width: 149px;
+            height: 149px;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        footer a {
+            color: #007acc;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            h1 { font-size: 2em; }
+            .gallery img { width: 100%; max-width: 300px; }
+            .github-fork img { width: 100px; height: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="github-fork">
+        <a href="https://github.com/Fujio-Turner/cb_completed_request" target="_blank">
+            <img src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Github.com">
+        </a>
+    </div>
+
+    <header>
+        <h1>Couchbase Query Analyzer</h1>
+        <p>Open Source Tool to Debug &  Analyze slow N1QL/SQL++ queries.</p>
+    </header>
+
+    <main>
+       
+        <section>
+            <h2>Why Are My Queries Slow?</h2>
+            <p>Slow Couchbase queries can stem from unoptimized N1QL/SQL++ statements, missing indexes, or inefficient data scans. This open-source tool helps you:</p>
+            <ul>
+                <li>Identify bottlenecks with detailed query analysis.</li>
+                <li><b>Insights</b> give you quick overview and suggestions</li>
+                <li>Visualize query performance with timelines and metrics.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Get Started</h2>
+            <div class="steps">
+                <div class="step">
+                    <strong>1. Extract Data</strong>
+                    <p>Run</p> </p><code>SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;</code></p> </p> and export slow queries as JSON.</p>
+                    <button class="copy-btn" onclick="copyText('SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;')">Copy Query</button>
+                </div>
+                <div class="step">
+                    <strong>2. Analyze & Optimize</strong>
+                    <p><a href="https://cb.fuj.io/en/" target="_blank">Use the Tool</a> – Paste your data, filter queries, and get instant optimization suggestions.</p>
+                    <p><b>Private:</b> <i>All data and analysis is done locally in your browser only.</i></p>
+                </div>
+                <div class="step">
+                    <strong>3. Apply & Test</strong>
+                    <p>Implement index or query tweaks, then re-run to confirm performance gains.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Screenshots</h2>
+            <div class="gallery">
+                <img src="img/dashboard.png" alt="Query Analyzer Dashboard">
+                <img src="img/timeline.png" alt="Query Analyzer Timeline">
+                 <img src="img/indexes_queries_flow.png" alt="Index Query Flow Diagram">
+            </div>
+        </section>
+
+        <section>
+            <h2>FAQs</h2>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">How do I get query data?</div>
+                <div class="accordion-content">
+                    <p>Run the above SQL++ , in Step 1. in Couchbase Query Workbench export queries as JSON via copy and paste or save it as a JSON file. See <a href="https://docs.couchbase.com/server/current/n1ql/n1ql-query.html" target="_blank">Couchbase docs</a> for details.</p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">What are the terms of use and license?</div>
+                <div class="accordion-content">
+                    <p>Apache 2.0 licence , Contribute or report issues on <a href="https://github.com/Fujio-Turner/cb_completed_request" target="_blank">GitHub</a>.</p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">What data formats are supported?</div>
+                <div class="accordion-content">
+                    <p>JSON exports from Couchbase Query Workbench or system:completed_requests.</p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">Can I use this with Couchbase Capella?</div>
+                <div class="accordion-content">
+                    <p>Yes, fully compatible with both Couchbase Server and Capella. Ensure you have access to query logs or profiling data.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 <a href="https://fuj.io" target="_blank">fuj.io</a>.</p>
+    </footer>
+
+    <script>
+        function toggleAccordion(header) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('open');
+        }
+
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Query copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy query.');
+            });
+        }
+    </script>
+</body>
+</html>
