@@ -2173,5 +2173,76 @@
       "statement": "EXECUTE myUnknownPrepared"
     },
     "plan": "{\\\"#operator\\\":\\\"Authorize\\\",\\\"#stats\\\":{\\\"execTime\\\":\\\"2µs\\\",\\\"servTime\\\":\\\"5µs\\\"},\\\"~child\\\":{\\\"#operator\\\":\\\"Sequence\\\",\\\"~children\\\":[{\\\"#operator\\\":\\\"Stream\\\",\\\"#stats\\\":{\\\"execTime\\\":\\\"1ms\\\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "requestTime": "2025-09-29T12:20:00.000Z",
+      "elapsedTime": "100.000ms",
+      "serviceTime": "98.000ms",
+      "cpuTime": "4.000ms",
+      "state": "completed",
+      "resultCount": 1,
+      "resultSize": 1024,
+      "scanConsistency": "request_plus",
+      "users": "local:test_prepared",
+      "requestId": "exec-prepared-em-1",
+      "statement": "EXECUTE getUserById",
+      "statementType": "EXECUTE",
+      "preparedText": "<em>SELECT u.name FROM `users` u WHERE u.userId = $userId</em>"
+    },
+    "plan": "{#operator:Authorize}"
+  },
+  {
+    "completed_requests": {
+      "requestTime": "2025-09-29T12:25:00.000Z",
+      "elapsedTime": "105.000ms",
+      "serviceTime": "100.000ms",
+      "cpuTime": "5.000ms",
+      "state": "completed",
+      "resultCount": 2,
+      "resultSize": 2048,
+      "scanConsistency": "scan_plus",
+      "users": "local:test_prepared2",
+      "requestId": "exec-prepared-ud-1",
+      "statement": "EXECUTE listRecentOrders",
+      "statementType": "EXECUTE",
+      "preparedText": "<UD>SELECT o.orderId, o.total FROM `orders` o WHERE o.orderDate > $since</UD>"
+    },
+    "plan": "{#operator:Authorize}"
+  },
+  {
+    "completed_requests": {
+      "requestTime": "2025-09-29T12:30:00.000Z",
+      "elapsedTime": "110.000ms",
+      "serviceTime": "108.000ms",
+      "cpuTime": "6.000ms",
+      "state": "completed",
+      "resultCount": 3,
+      "resultSize": 3072,
+      "scanConsistency": "request_plus",
+      "users": "local:test_prepared3",
+      "requestId": "select-with-preparedText-not-executed",
+      "statement": "SELECT name FROM `users` WHERE active = true",
+      "statementType": "SELECT",
+      "preparedText": "<EM>SELECT name FROM `users` WHERE active = true</EM>"
+    },
+    "plan": "{#operator:Authorize}"
+  },
+  {
+    "completed_requests": {
+      "requestTime": "2025-09-29T12:35:00.000Z",
+      "elapsedTime": "115.000ms",
+      "serviceTime": "112.000ms",
+      "cpuTime": "6.000ms",
+      "state": "completed",
+      "resultCount": 0,
+      "resultSize": 0,
+      "scanConsistency": "request_plus",
+      "users": "local:test_prepared4",
+      "requestId": "exec-without-preparedText",
+      "statement": "EXECUTE orphanPrepared",
+      "statementType": "EXECUTE"
+    },
+    "plan": "{#operator:Authorize}"
   }
 ]

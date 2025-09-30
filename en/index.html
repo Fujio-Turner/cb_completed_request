@@ -1935,10 +1935,12 @@ if (window.TEXT_CONSTANTS) {
             return div.innerHTML;
         }
 
-        // Strip only <em> tags that sometimes appear around preparedText
+        // Strip presentational tags that sometimes appear around preparedText
         function stripEmTags(text) {
             if (text == null) return "";
-            return String(text).replace(/<\/?em>/gi, "");
+            return String(text)
+                .replace(/<\/?em>/gi, "")
+                .replace(/<\/?ud>/gi, "");
         }
 
         // Detect if this request executed a prepared statement
@@ -2575,7 +2577,7 @@ if (window.TEXT_CONSTANTS) {
 
             // Get bucket.scope.collection from the statement for primary index resolution
             const requestStatement =
-                request.preparedText || request.statement || "";
+                (request.statement || stripEmTags(request.preparedText || "") || "");
             let bucketScopeCollection = "unknown.unknown.unknown";
 
             const fromMatch = requestStatement.match(/FROM\s+([^\s\n\r\t]+)/i);
