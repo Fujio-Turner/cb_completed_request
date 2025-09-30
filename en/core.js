@@ -193,7 +193,7 @@ function buildMemoryUsageConfig(requests) {
   const serviceMs = [];
   requests.forEach(r => {
     labels.push(r.requestId || r.clientContextID || '');
-    usedMB.push(Math.round(((r.usedMemory || 0) / (1024)) * 100) / 100); // KB -> MB if input is KB; if bytes, adjust in tests
+    usedMB.push(Math.round(((r.usedMemory || 0) / (1024 * 1024)) * 100) / 100); // bytes -> MB
     serviceMs.push(parseTime(r.serviceTime));
   });
   return {

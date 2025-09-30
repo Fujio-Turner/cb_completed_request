@@ -3734,10 +3734,9 @@ if (window.TEXT_CONSTANTS) {
                                 ? ((totalKernTimeMs / elapsedTimeMs) * 100).toFixed(2) + "%"
                                 : "N/A";
                     } else if (col === "memory (MB)") {
-                        value =
-                            totalMemoryBytes > 0
-                                ? (totalMemoryBytes / 1024 / 1024).toFixed(2)
-                                : "0.00";
+                        value = (request.memoryBytes == null)
+                            ? "N/A"
+                            : (request.memoryBytes / 1024 / 1024).toFixed(2);
                     } else if (col === "elapsedTime") {
                         value = formatTime(elapsedTimeMs);
                     } else if (col === "cpuTime") {
@@ -12199,7 +12198,7 @@ function generateElapsedTimeChart(requests) {
                 elapsedTimeMs: elapsedTimeMs,
                 serviceTimeMs: planMetadata ? planMetadata.totalServiceTime : parseTime(request.serviceTime || '0ms'),
                 kernTimeMs: planMetadata ? planMetadata.maxKernTime : 0,
-                memoryBytes: planMetadata ? planMetadata.totalMemoryUsage : (request.usedMemory || 0),
+                memoryBytes: (typeof request.usedMemory === 'number') ? request.usedMemory : null,
                 // Use cached boolean flags
                 usesPrimary: planMetadata ? planMetadata.usesPrimary : false,
                 // Use cached index information
