@@ -2354,5 +2354,57 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#stats\":{\"execTime\":\"2µs\",\"servTime\":\"6µs\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"execTime\":\"10ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"execTime\":\"20ms\"}},{\"#operator\":\"Unnest\",\"#stats\":{\"execTime\":\"120ms\"}},{\"#operator\":\"Filter\",\"#stats\":{\"execTime\":\"120ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"2ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "unnest-no-filter-has-project-stream",
+      "cpuTime": "9.000ms",
+      "elapsedTime": "120.000ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 75,
+        "fetch": 75,
+        "unnest": 300
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "unnest": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "6.000µs",
+        "instantiate": "4.000µs",
+        "parse": "50.000µs",
+        "plan": "25.000µs",
+        "indexScan": "12.000ms",
+        "fetch": "25.000ms",
+        "unnest": "40.000ms",
+        "project": "8.000ms",
+        "run": "117.000ms",
+        "stream": "3.000ms"
+      },
+      "remoteAddr": "127.0.0.1:60003",
+      "requestId": "unnest-no-filter-has-project-stream",
+      "requestTime": "2025-09-30T11:00:00.000Z",
+      "resultCount": 75,
+      "resultSize": 16384,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "119.000ms",
+      "state": "completed",
+      "statement": "SELECT u.name, t AS tag FROM `users` u UNNEST u.tags AS t",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 2048,
+      "userAgent": "test-suite/1.0",
+      "users": "local:test_user3",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#stats\":{\"execTime\":\"2µs\",\"servTime\":\"5µs\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"execTime\":\"12ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"execTime\":\"25ms\"}},{\"#operator\":\"Unnest\",\"#stats\":{\"execTime\":\"40ms\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"8ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"3ms\"}}]}}"
   }
 ]

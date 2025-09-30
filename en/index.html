@@ -4751,13 +4751,14 @@ function renderQueryGroupPhaseTimesChart(group) {
                 const groupBar   = groupStats.avgMs  > 0 ? [t, (t += groupStats.avgMs)]     : null;
                 const sortBar    = sortStats.avgMs   > 0 ? [t, (t += sortStats.avgMs)]      : null;
                 const limitBar   = limitStats.avgMs  > 0 ? [t, (t += limitStats.avgMs)]     : null;
-                // Project must occur after Filter/Group/Sort/Limit. It should not overlap earlier phases.
-                // Start Project at the later of (sequential time 't' after limit) and the end of Filter.
+                // Project must occur after Nest/Unnest and Filter (and sequential phases like Group/Sort/Limit).
+                // Start Project at the later of: sequential time 't', Filter end, and Nest/Unnest end.
                 let projectBar = null;
                 if (projectStats.avgMs > 0) {
                     const prevEnd = Math.max(
                         t,
-                        filterBar ? filterBar[1] : 0
+                        filterBar ? filterBar[1] : 0,
+                        nestBar ? nestBar[1] : 0
                     );
                     const projectStart = prevEnd;
                     const projectEnd = projectStart + projectStats.avgMs;
@@ -4769,12 +4770,12 @@ function renderQueryGroupPhaseTimesChart(group) {
                 // Stream should be the final step: start at the latest end among all other phases
                 let streamBar = null;
                 if (streamStats.avgMs > 0) {
-                    const otherEnds = [authBar, parseBar, planBar, scanBar, fetchBar, joinBar, filterBar, groupBar, sortBar, limitBar, projectBar, deleteBar, updateBar, insertBar]
-                        .filter(Boolean)
-                        .map(b => b[1]);
-                    const streamStart = otherEnds.length ? Math.max(...otherEnds) : t;
-                    const streamEnd = streamStart + streamStats.avgMs;
-                    streamBar = [streamStart, streamEnd];
+                const otherEnds = [authBar, parseBar, planBar, scanBar, fetchBar, joinBar, nestBar, filterBar, groupBar, sortBar, limitBar, projectBar, deleteBar, updateBar, insertBar]
+                .filter(Boolean)
+                .map(b => b[1]);
+                const streamStart = otherEnds.length ? Math.max(...otherEnds) : t;
+                const streamEnd = streamStart + streamStats.avgMs;
+                streamBar = [streamStart, streamEnd];
                 }
 
                 // Helper to place a bar on a specific row index
