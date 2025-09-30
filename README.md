@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.16.2
+# Couchbase Slow Query Analysis Tool v3.16.3
 
 
 
@@ -163,6 +163,10 @@ When analyzing timeline charts, choose appropriate date ranges for each time gro
 **⚠️ Warning**: Large date ranges with fine-grained groupings may cause chart rendering errors. The tool will alert you and suggest better combinations.
 
 ## Release Notes
+
+### Version 3.16.3 (September 29, 2025)
+- Bug fixes and quality improvements
+- Closes: #120, #119, #118
 
 ### Version 3.16.2 (September 28, 2025)
 - Fix: Query Groups phase timeline now aligns Doc Fetch to end no earlier than Index Scan; Project occurs after Filter/Group/Sort/Limit (closes #115, #114)
