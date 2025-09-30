@@ -1849,7 +1849,7 @@ if (window.TEXT_CONSTANTS) {
                 return false;
             }
 
-            const stmt = request.preparedText || request.statement;
+            const stmt = request.statement || request.preparedText;
             if (!stmt) {
                 return false;
             }
@@ -1933,6 +1933,29 @@ if (window.TEXT_CONSTANTS) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Strip only <em> tags that sometimes appear around preparedText
+        function stripEmTags(text) {
+            if (text == null) return "";
+            return String(text).replace(/<\/?em>/gi, "");
+        }
+
+        // Detect if this request executed a prepared statement
+        function isPreparedExecution(request) {
+            if (!request) return false;
+            const hasPrepared = typeof request.preparedText === 'string' && request.preparedText.trim().length > 0;
+            const type = (request.statementType || '').toUpperCase();
+            const stmt = (request.statement || '').toUpperCase().trim();
+            const hasExecute = type === 'EXECUTE' || stmt.startsWith('EXECUTE ');
+            return hasPrepared && hasExecute;
+        }
+
+        // Get a cleaned prepared text sample when applicable
+        function getPreparedSample(request) {
+            if (!isPreparedExecution(request)) return "";
+            const txt = stripEmTags(request.preparedText || "");
+            return txt.trim();
         }
 
         function parseTime(timeStr) {
@@ -3720,7 +3743,7 @@ if (window.TEXT_CONSTANTS) {
                     } else if (col === "serviceTime") {
                         value = formatTime(request.serviceTimeMs || parseTime(request[col]));
                     } else if (col === "statement") {
-                        value = request.preparedText || request.statement || "N/A";
+                        value = request.statement || request.preparedText || "N/A";
                     } else {
                         value = request[col] || "N/A";
                     }
@@ -3868,33 +3891,40 @@ if (window.TEXT_CONSTANTS) {
                         if (statement.length > 500) {
                             // Create truncated version
                             const truncated = statement.substring(0, 500);
+                            const preparedSample = (rowData && rowData.request && isPreparedExecution(rowData.request)) ? getPreparedSample(rowData.request) : "";
+                            const preparedSnippet = preparedSample ? `<div style=\"margin-top:6px; color:#555; font-size:12px;\"><strong>${TEXT_CONSTANTS.PREPARED_TEXT || 'Prepared:'}</strong> ${escapeHtml(preparedSample.substring(0, 300))}${preparedSample.length > 300 ? '...' : ''}</div>` : '';
 
                             td.innerHTML = `
                   <div id="${statementId}-truncated">
                     <span>${truncated}...</span>
+                    ${preparedSnippet}
                     <br>
-                    <button onclick="toggleStatement('${statementId}', true)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.SHOW_MORE}</button>
-                    <button onclick="copyStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                    <button onclick=\"toggleStatement('${statementId}', true)\" 
+                            class=\"btn-standard\" style=\"margin-top: 5px; margin-right: 5px;\">${TEXT_CONSTANTS.SHOW_MORE}</button>
+                    <button onclick=\"copyStatement('${statementId}', event)\" 
+                            class=\"btn-standard\" style=\"margin-top: 5px;\">${TEXT_CONSTANTS.COPY}</button>
                   </div>
                   <div id="${statementId}-full" style="display: none;">
                     <span>${statement}</span>
+                    ${preparedSnippet}
                     <br>
-                    <button onclick="toggleStatement('${statementId}', false)" 
-                            class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.HIDE}</button>
-                    <button onclick="copyStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                    <button onclick=\"toggleStatement('${statementId}', false)\" 
+                            class=\"btn-standard\" style=\"margin-top: 5px; margin-right: 5px;\">${TEXT_CONSTANTS.HIDE}</button>
+                    <button onclick=\"copyStatement('${statementId}', event)\" 
+                            class=\"btn-standard\" style=\"margin-top: 5px;\">${TEXT_CONSTANTS.COPY}</button>
                   </div>
                 `;
                         } else {
                             // Short statement - just show it with copy button
+                            const preparedSample = (rowData && rowData.request && isPreparedExecution(rowData.request)) ? getPreparedSample(rowData.request) : "";
+                            const preparedSnippet = preparedSample ? `<div style=\"margin-top:6px; color:#555; font-size:12px;\"><strong>${TEXT_CONSTANTS.PREPARED_TEXT || 'Prepared:'}</strong> ${escapeHtml(preparedSample.substring(0, 300))}${preparedSample.length > 300 ? '...' : ''}</div>` : '';
                             td.innerHTML = `
                   <div>
                     <span>${statement}</span>
+                    ${preparedSnippet}
                     <br>
-                    <button onclick="copyStatement('${statementId}', event)" 
-                            class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                    <button onclick=\"copyStatement('${statementId}', event)\" 
+                            class=\"btn-standard\" style=\"margin-top: 5px;\">${TEXT_CONSTANTS.COPY}</button>
                   </div>
                 `;
                         }
@@ -4285,13 +4315,13 @@ if (window.TEXT_CONSTANTS) {
                 rowData.statement = group.normalized_statement || "";
                 // Use first request of this group to derive a prepared statement sample
                 try {
-                    const sampleList = groups && groups[group.normalized_statement];
-                    if (Array.isArray(sampleList) && sampleList.length > 0) {
-                        const sampleReq = sampleList[0] || {};
-                        rowData.preparedSample = sampleReq.preparedText || sampleReq.statement || "";
-                    } else {
-                        rowData.preparedSample = "";
-                    }
+                const sampleList = groups && groups[group.normalized_statement];
+                if (Array.isArray(sampleList) && sampleList.length > 0) {
+                const sampleReq = sampleList[0] || {};
+                rowData.preparedSample = isPreparedExecution(sampleReq) ? getPreparedSample(sampleReq) : "";
+                } else {
+                rowData.preparedSample = "";
+                }
                 } catch (e) { rowData.preparedSample = ""; }
                 rowData.users = Object.keys(group.user_query_counts || {}).join(", ");
                 // Attach original group for chart rendering on row click
