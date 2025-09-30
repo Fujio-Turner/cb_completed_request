@@ -2244,5 +2244,115 @@
       "statementType": "EXECUTE"
     },
     "plan": "{#operator:Authorize}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "nest-faster-than-fetch",
+      "cpuTime": "10.000ms",
+      "elapsedTime": "150.000ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 100,
+        "fetch": 100,
+        "nest": 100,
+        "filter": 100
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "nest": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "8.000µs",
+        "instantiate": "5.000µs",
+        "parse": "60.000µs",
+        "plan": "30.000µs",
+        "indexScan": "20.000ms",
+        "fetch": "80.000ms",
+        "nest": "10.000ms",
+        "filter": "15.000ms",
+        "project": "5.000ms",
+        "run": "148.000ms",
+        "stream": "2.000ms"
+      },
+      "remoteAddr": "127.0.0.1:60001",
+      "requestId": "nest-faster-than-fetch",
+      "requestTime": "2025-09-30T10:00:00.000Z",
+      "resultCount": 100,
+      "resultSize": 20480,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "149.000ms",
+      "state": "completed",
+      "statement": "SELECT u.name, o.* FROM `users` u NEST `orders` o ON KEYS u.orderHistory WHERE u.active = true",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 2048,
+      "userAgent": "test-suite/1.0",
+      "users": "local:test_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#stats\":{\"execTime\":\"2µs\",\"servTime\":\"6µs\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"execTime\":\"20ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"execTime\":\"80ms\"}},{\"#operator\":\"Nest\",\"#stats\":{\"execTime\":\"10ms\"}},{\"#operator\":\"Filter\",\"#stats\":{\"execTime\":\"15ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"2ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "unnest-longer-than-fetch",
+      "cpuTime": "12.000ms",
+      "elapsedTime": "170.000ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 50,
+        "fetch": 50,
+        "unnest": 500,
+        "filter": 500
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "unnest": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "9.000µs",
+        "instantiate": "6.000µs",
+        "parse": "70.000µs",
+        "plan": "35.000µs",
+        "indexScan": "10.000ms",
+        "fetch": "20.000ms",
+        "unnest": "120.000ms",
+        "filter": "120.000ms",
+        "project": "5.000ms",
+        "run": "168.000ms",
+        "stream": "2.000ms"
+      },
+      "remoteAddr": "127.0.0.1:60002",
+      "requestId": "unnest-longer-than-fetch",
+      "requestTime": "2025-09-30T10:05:00.000Z",
+      "resultCount": 50,
+      "resultSize": 10240,
+      "scanConsistency": "request_plus",
+      "serviceTime": "169.000ms",
+      "state": "completed",
+      "statement": "SELECT u.name, t AS tag FROM `users` u UNNEST u.tags AS t WHERE u.role = 'member'",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 3072,
+      "userAgent": "test-suite/1.0",
+      "users": "local:test_user2",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#stats\":{\"execTime\":\"2µs\",\"servTime\":\"6µs\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"execTime\":\"10ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"execTime\":\"20ms\"}},{\"#operator\":\"Unnest\",\"#stats\":{\"execTime\":\"120ms\"}},{\"#operator\":\"Filter\",\"#stats\":{\"execTime\":\"120ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"2ms\"}}]}}"
   }
 ]

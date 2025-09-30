@@ -185,6 +185,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                 PHASE_SORT: "ORDER BY",
         PHASE_GROUP_AGG: "GROUP BY",
         PHASE_LIMIT: "LIMIT",
+        PHASE_NEST: "Nest/Unnest",
         AXIS_QUERY_PHASE: "Query Phase",
         AXIS_TIME_MS: "Time (ms)",
 
@@ -4162,6 +4163,7 @@ if (window.TEXT_CONSTANTS) {
             const s_index = phaseStats(['indexScan','primaryScan','primaryScan.GSI']);
             const s_fetch = phaseStats('fetch');
             const s_join = phaseStats(['hashJoin','nestedLoopJoin']);
+            const s_nest = phaseStats(['nest','unnest']);
             const s_filter = phaseStats('filter');
             const s_group = phaseStats(['group','aggregate']);
             const s_sort = phaseStats('sort');
@@ -4179,6 +4181,7 @@ if (window.TEXT_CONSTANTS) {
                 { id: 'indexScan', label: TEXT_CONSTANTS.PHASE_INDEX_SCAN || 'index scan', avgMs: s_index.avg, minMs: s_index.min, maxMs: s_index.max },
                 { id: 'fetch', label: TEXT_CONSTANTS.PHASE_FETCH || 'fetch data', avgMs: s_fetch.avg, minMs: s_fetch.min, maxMs: s_fetch.max },
                 { id: 'join', label: TEXT_CONSTANTS.PHASE_JOIN || 'JOIN', avgMs: s_join.avg, minMs: s_join.min, maxMs: s_join.max },
+                { id: 'nest', label: TEXT_CONSTANTS.PHASE_NEST || 'Nest/Unnest', avgMs: s_nest.avg, minMs: s_nest.min, maxMs: s_nest.max },
                 { id: 'filter', label: TEXT_CONSTANTS.PHASE_FILTER, avgMs: s_filter.avg, minMs: s_filter.min, maxMs: s_filter.max },
                 { id: 'groupAgg', label: TEXT_CONSTANTS.PHASE_GROUP_AGG, avgMs: s_group.avg, minMs: s_group.min, maxMs: s_group.max },
                 { id: 'sort', label: TEXT_CONSTANTS.PHASE_SORT, avgMs: s_sort.avg, minMs: s_sort.min, maxMs: s_sort.max },
@@ -4649,6 +4652,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 const fetchStats   = findStats('fetch');
                 const joinStats    = findStats('join');
                 const filterStats  = findStats('filter');
+                const nestStats    = findStats('nest');
                 const groupStats   = findStats('groupAgg');
                 const sortStats    = findStats('sort');
                 const limitStats   = findStats('limit');
@@ -4664,6 +4668,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                     { key: 'parsePlan',    label: `Parse & Plan`,                                       include: !!parseStats.avgMs || !!planStats.avgMs },
                     { key: 'scanFetch',    label: `Index Scan / Doc Fetch`,                             include: !!indexStats.avgMs || !!fetchStats.avgMs },
                     { key: 'join',         label: TEXT_CONSTANTS.PHASE_JOIN || 'JOIN',                  include: !!joinStats.avgMs },
+                    { key: 'nest',         label: TEXT_CONSTANTS.PHASE_NEST || 'Nest/Unnest',           include: !!nestStats.avgMs },
                     { key: 'filter',       label: TEXT_CONSTANTS.PHASE_FILTER,                          include: !!filterStats.avgMs },
                     { key: 'groupAgg',     label: TEXT_CONSTANTS.PHASE_GROUP_AGG,                       include: !!groupStats.avgMs },
                     { key: 'sort',         label: TEXT_CONSTANTS.PHASE_SORT,                            include: !!sortStats.avgMs },
@@ -4712,6 +4717,22 @@ function renderQueryGroupPhaseTimesChart(group) {
                 t = Math.max(scanBar ? scanBar[1] : row3Start, fetchBar ? fetchBar[1] : row3Start);
 
                 const joinBar    = joinStats.avgMs   > 0 ? [t, (t += joinStats.avgMs)]      : null;
+                // Nest/Unnest bar placement: same policy as Filter
+                // - Preserve the average duration as the bar width.
+                // - Align END to later of scan/fetch end or its own intrinsic end.
+                // - START = end - avg.
+                let nestBar = null;
+                if (nestStats.avgMs > 0) {
+                    const concurrentStart = row3Start;
+                    const scanEnd = scanBar ? scanBar[1] : concurrentStart;
+                    const fetchEnd = fetchBar ? fetchBar[1] : concurrentStart;
+                    const concurrentEnd = Math.max(scanEnd, fetchEnd);
+                    const intrinsicEnd = concurrentStart + nestStats.avgMs;
+                    const end = Math.max(concurrentEnd, intrinsicEnd);
+                    const start = Math.max(0, end - nestStats.avgMs);
+                    nestBar = [start, end];
+                }
+
                 // Filter bar placement:
                 // - Preserve the average duration as the bar width (visual focus on avg time).
                 // - Align the bar END to the later of scan/fetch end or its own intrinsic end.
@@ -4775,6 +4796,8 @@ function renderQueryGroupPhaseTimesChart(group) {
                     datasets.push({ label: TEXT_CONSTANTS.PHASE_FETCH,     phaseId: 'fetch',     data: mkDataForRow(fetchBar, rowIndex.scanFetch), backgroundColor: 'rgba(220, 53, 69, 0.30)',  borderColor: 'rgba(220, 53, 69, 0.9)',  borderWidth: 1, borderRadius: 4, barThickness: 10, categoryPercentage: 0.5, barPercentage: 0.5 });
                 if (joinBar && rowIndex.join !== undefined)
                     datasets.push({ label: TEXT_CONSTANTS.PHASE_JOIN || 'JOIN', phaseId: 'join',  data: mkDataForRow(joinBar, rowIndex.join), backgroundColor: 'rgba(255, 159, 64, 0.35)', borderColor: 'rgba(255, 159, 64, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
+                if (nestBar && rowIndex.nest !== undefined)
+                    datasets.push({ label: TEXT_CONSTANTS.PHASE_NEST || 'Nest/Unnest', phaseId: 'nest', data: mkDataForRow(nestBar,rowIndex.nest), backgroundColor: 'rgba(121, 85, 72, 0.35)',   borderColor: 'rgba(121, 85, 72, 0.9)',   borderWidth: 1, borderRadius: 4, grouped: false });
                 if (filterBar && rowIndex.filter !== undefined)
                     datasets.push({ label: TEXT_CONSTANTS.PHASE_FILTER,    phaseId: 'filter',    data: mkDataForRow(filterBar,rowIndex.filter), backgroundColor: 'rgba(255, 193, 7, 0.30)',   borderColor: 'rgba(255, 193, 7, 0.9)',   borderWidth: 1, borderRadius: 4, grouped: false });
                 if (groupBar && rowIndex.groupAgg !== undefined)
