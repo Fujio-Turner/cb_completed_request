@@ -82,11 +82,6 @@
         <p>Concise guidance to process data, interpret stats, and optimize queries.</p>
     </header>
 
-    <section class="intro">
-        <p>This hub complements the Analyzer UI. Use it to learn the workflow, understand metrics, and follow the Crawl → Walk → Run optimization path. Minimalist layout; deep dives are folded into accordions.</p>
-        <p><a href="en/index.html">Open Analyzer</a> · <a href="index.html">Home</a></p>
-    </section>
-
     <div class="layout">
         <nav class="sidebar" aria-label="Topics">
             <h2 style="margin:0 0 8px;font-size:16px;color:#2d3748">Topics</h2>
@@ -99,6 +94,7 @@
                 <li class="sub"><a href="#system-metrics">• System & result metrics</a></li>
                 <li class="sub"><a href="#phase-metrics">• Phase metrics</a></li>
                 <li><a href="#part-3">Crawl → Walk → Run</a></li>
+                <li class="sub"><a href="#practical-tips">• Practical tips</a></li>
                 <li><a href="#part-4">Glossary</a></li>
                 <li class="sub"><a href="#scanConsistency">• scanConsistency</a></li>
                 <li class="sub"><a href="#serviceTime">• serviceTime</a></li>
@@ -254,7 +250,17 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     </div>
                     <p><a href="#part-4">See glossary examples and remediation tips</a></p>
                 </div>
-            </div>
+                <div class="feature" id="practical-tips">
+                    <strong>Practical tips</strong>
+                    <ul>
+                        <li>High <code>kernTime</code> → CPU contention; check system load and concurrency.</li>
+                        <li>High <code>phaseCounts.fetch</code> → add covering indexes; reduce fetches.</li>
+                        <li>Large <code>resultSize</code> vs <code>resultCount</code> → optimize projection; narrow scans.</li>
+                        <li><code>elapsedTime</code> ≫ <code>serviceTime</code> → queuing/network; scale query nodes/servicers.</li>
+                        <li><code>cpuTime</code> high ~ <code>serviceTime</code> → CPU-bound; simplify expressions or add cores.</li>
+                    </ul>
+                    <p style="color:#4a5568;font-size:0.95em">See also: <a href="#timing-metrics">Timing metrics</a> and <a href="#phase-metrics">Phase metrics</a>.</p>
+                </div>
         <div class="back-to-top"><a href="#top">Back to top</a></div>
                </section>
         
