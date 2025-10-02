@@ -48,7 +48,7 @@ Execute the complete version update process:
 
 **Expected Outcome:**
 - All HTML files updated with new version numbers
-- All documentation (AGENT.md, README files) updated with new version
+- All documentation (AGENT.md, README files, release_notes.md) updated with new version
 - Docker files updated with new version
 - All version consistency checks passed
 
@@ -191,12 +191,10 @@ Complete the deployment preparation:
 ### **Step 7: Final Release Documentation**
 Complete your release log and documentation:
 
-1. **🚨 CRITICAL - Add Release Notes to README.md:**
-   ```bash
-   # Use the release notes script (supports English-only)
-   python3 python/add_release_notes.py
-   # OR manually add to README.md
-   ```
+1. **🚨 CRITICAL - Update Release Notes:**
+   - Update `release_notes.md` with the latest entries for this version.
+- Ensure the README Release Notes section links to `release_notes.md`.
+- Optional: use `python3 python/add_release_notes.py` to draft content, then paste/adapt into `release_notes.md`.
 
 2. **Fill Additional Notes:** Document any issues or special considerations, including GitHub issue references
 3. **Complete Files Modified:** Check off all modified files including README files
@@ -225,7 +223,7 @@ Before marking a release complete, ALL of these must pass:
 - [ ] All search and filter functions work
 
 ### ✅ Documentation Quality
-- [ ] **🚨 CRITICAL: Release notes added to README.md**
+- [ ] **🚨 CRITICAL: release_notes.md updated and linked from README.md**
 - [ ] Quick Start section positioned correctly
 - [ ] Spell checking completed on all files
 
@@ -252,7 +250,7 @@ This release guide coordinates these files:
 
 ### Target Files (Updated During Release)
 - **HTML Files:** `index.html`, `en/index.html`
-- **Documentation:** `AGENT.md`, `README.md`
+- **Documentation:** `AGENT.md`, `README.md`, `release_notes.md`
 - **Docker:** `Dockerfile`, `.github/workflows/docker-build-push.yml`
 
 ## 🔄 Workflow Summary
