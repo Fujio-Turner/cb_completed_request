@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="version" content="3.16.3" />
+    <meta name="last-updated" content="2025-09-29" />
+    <title>Couchbase Query Analysis Hub v3.16.3</title>
+    <meta name="description" content="Minimalist Couchbase Query Analysis Hub: how to process data, interpret stats, optimize (Crawl→Walk→Run), and glossary. Styled like the main Analyzer page.">
+    <!-- canonical to be finalized when deployed -->
+    <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
+    <style>
+        /* Base layout (parity with index.html) */
+        html{scroll-behavior:smooth}
+        body{
+            font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+            line-height:1.6;color:#333;max-width:1000px;margin:0 auto;padding:20px;background:#f5f7fa;
+            -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+        }
+        header{text-align:center;padding:5px 20px;background:linear-gradient(135deg,#007acc 0%,#00b4d8 100%);color:#fff;border-radius:12px;margin-bottom:20px;box-shadow:0 6px 18px rgba(0,0,0,0.08)}
+        h1{font-size:2.4em;margin:0;letter-spacing:0.2px}
+        h2{font-size:1.8em;color:#007acc;margin-top:40px;position:relative}
+        h2::after{content:"";display:block;width:56px;height:3px;background:#00b4d8;border-radius:2px;margin-top:8px}
+        .intro{ text-align:center;font-size:1.05em;max-width:720px;margin:10px auto 24px;color:#4a5568 }
+
+        /* Card/grid primitives for later phases */
+        .steps,.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+        .step,.feature{background:#fff;padding:20px;border-radius:10px;border:1px solid #eaeef2;box-shadow:0 4px 14px rgba(0,0,0,0.06);transition:transform .25s ease, box-shadow .25s ease}
+        .step:hover,.feature:hover{transform:translateY(-4px);box-shadow:0 10px 24px rgba(0,0,0,0.10)}
+
+        /* Accordion (used from Part 2 & 4) */
+        .accordion{background:#fff;border-radius:10px;border:1px solid #eaeef2;box-shadow:0 4px 14px rgba(0,0,0,0.06);margin:20px 0}
+        .accordion-header{padding:15px;cursor:pointer;background:#f0f8ff;font-weight:bold;border-bottom:1px solid #e6eef5}
+        .accordion-content{padding:0 15px;max-height:0;overflow:hidden;transition:max-height .3s ease, padding .3s ease}
+        .accordion-content.open{max-height:500px;padding:15px}
+
+        /* SQL code UI */
+        .sql-query-box{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;padding:15px;margin:15px 0;position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+        .sql-query-box pre{background:#fff;border:1px solid #e9ecef;border-radius:6px;padding:10px;margin:10px 0;font-family:monospace;font-size:12px;line-height:1.5;overflow-x:auto}
+        .sql-copy-btn{position:absolute;top:10px;right:10px;background:#007bff;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.12);transition: background .2s ease, transform .2s ease}
+        .sql-copy-btn:hover{background:#0056b3;transform:translateY(-1px)}
+
+        /* Gallery thumbnails */
+        .gallery{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin:30px 0}
+        .gallery img{width:300px;height:200px;object-fit:cover;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.08);transition:transform .3s ease, box-shadow .3s ease;will-change:transform}
+        .gallery img:hover{transform:scale(1.7);box-shadow:0 14px 30px rgba(0,0,0,0.25);position:relative;z-index:2}
+
+        /* Contents navigation (legacy, not used) */
+        .contents{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:10px 0 24px}
+        .contents a{display:inline-block;background:#fff;border:1px solid #eaeef2;color:#007acc;text-decoration:none;padding:8px 12px;border-radius:999px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+        .contents a:hover{background:#f0f8ff}
+        @media (min-width:1024px){ .contents.sticky{position:sticky; top:10px; z-index:10} }
+
+        /* Sidebar layout */
+        .layout{display:flex;gap:20px}
+        .sidebar{background:#fff;border:1px solid #eaeef2;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.06);padding:16px;width:260px;position:sticky;top:10px;align-self:flex-start;max-height:calc(100vh - 120px);overflow:auto}
+        .sidebar .sub{margin-left:14px;font-size:13px;color:#4a5568}
+        .content{flex:1}
+        @media (max-width:980px){.layout{flex-direction:column}.sidebar{position:static;width:auto;max-height:none}}
+
+        /* Back-to-top link */
+        .back-to-top{display:block;text-align:right;margin-top:8px}
+        .back-to-top a{color:#007acc;text-decoration:none;font-weight:600}
+        .back-to-top a:hover{text-decoration:underline}
+
+        /* Version badge + footer (parity) */
+        .version-info{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.1);color:#333;padding:4px 8px;border-radius:4px;font-size:.75em;font-family:monospace;z-index:999;opacity:.7;transition:opacity .3s ease}
+        .version-info:hover{opacity:1;background:rgba(0,0,0,0.2)}
+        footer{text-align:center;padding:20px;font-size:.9em;color:#666;border-top:1px solid #eaeef2;margin-top:30px}
+        footer a{color:#007acc;text-decoration:none}
+        footer a:hover{text-decoration:underline}
+
+        /* Accessible focus */
+        a:focus-visible,button:focus-visible{outline:3px solid rgba(0,122,204,0.35);outline-offset:2px;border-radius:6px}
+
+        @media (max-width:600px){body{padding:10px}h1{font-size:2em}.gallery img{width:100%;max-width:300px;height:auto}}
+    </style>
+</head>
+<body id="top">
+    <header>
+        <h1>Couchbase Query Analysis Hub</h1>
+        <p>Concise guidance to process data, interpret stats, and optimize queries.</p>
+    </header>
+
+    <section class="intro">
+        <p>This hub complements the Analyzer UI. Use it to learn the workflow, understand metrics, and follow the Crawl → Walk → Run optimization path. Minimalist layout; deep dives are folded into accordions.</p>
+        <p><a href="en/index.html">Open Analyzer</a> · <a href="index.html">Home</a></p>
+    </section>
+
+    <div class="layout">
+        <nav class="sidebar" aria-label="Topics">
+            <h2 style="margin:0 0 8px;font-size:16px;color:#2d3748">Topics</h2>
+            <ul style="list-style:none;margin:0;padding:0">
+                <li><a href="#part-1">Process → Charts & Stats</a></li>
+                <li class="sub"><a href="#parseJSON">• Parse JSON & Filters</a></li>
+                <li class="sub"><a href="#tabs">• Analyzer Tabs</a></li>
+                <li><a href="#part-2">Read the Stats</a></li>
+                <li class="sub"><a href="#timing-metrics">• Timing metrics</a></li>
+                <li class="sub"><a href="#system-metrics">• System & result metrics</a></li>
+                <li class="sub"><a href="#phase-metrics">• Phase metrics</a></li>
+                <li><a href="#part-3">Crawl → Walk → Run</a></li>
+                <li><a href="#part-4">Glossary</a></li>
+                <li class="sub"><a href="#scanConsistency">• scanConsistency</a></li>
+                <li class="sub"><a href="#serviceTime">• serviceTime</a></li>
+                <li class="sub"><a href="#elapsedTime">• elapsedTime</a></li>
+                <li class="sub"><a href="#cpuTime">• cpuTime</a></li>
+                <li class="sub"><a href="#state">• state</a></li>
+                <li class="sub"><a href="#usedMemory">• usedMemory</a></li>
+            </ul>
+        </nav>
+        <main class="content">
+        <section id="part-1">
+            <h2>How to process and generate charts/stats</h2>
+            <div class="steps">
+                <div class="step">
+                    <strong>1) Extract Data</strong>
+                    <p>Run this in Query Workbench, Capella Query tab, or <code>cbq</code>, then export as JSON.</p>
+                    <div class="sql-query-box">
+<pre>SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;</pre>
+                        <button class="sql-copy-btn">Copy</button>
+                    </div>
+                    <p style="color:#4a5568;font-size:0.95em">Tip: For larger datasets, prefer targeted filters (see below) before exporting.</p>
+                    <p><a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample completed_requests JSON</a></p>
+                </div>
+
+                <div class="step">
+                    <strong>2) Paste or Upload JSON</strong>
+                    <p><a href="en/index.html">Open Analyzer</a> — in the upper-left input, paste or upload your JSON, then click <b>Parse JSON</b>.</p>
+                    <p><b>Private & secure:</b> Runs entirely in your browser. No server uploads.</p>
+                    <div class="gallery" style="margin:10px 0 0">
+                        <img src="img/parse_json_button.png" alt="Parse JSON button in the analyzer" loading="lazy">
+                    </div>
+                </div>
+
+                <div class="step" id="parseJSON">
+                    <strong>3) Parse JSON & Filters Overview</strong>
+                    <p>After parsing, use filters to focus analysis:</p>
+                    <ul>
+                        <li><b>Date/Time Range</b> — From/To with quick presets (Original | 1 Week | 1 Day | 1 Hour)</li>
+                        <li><b>SQL++ Statement Contains</b> — text filter for keywords/patterns</li>
+                        <li><b>Elapsed Time Filter</b> — comparisons and ranges (e.g., <code>&gt;=500ms</code>, <code>0.5s-2s</code>)</li>
+                        <li><b>Exclude System Queries</b> — hides system:*, INFER/ADVISE, CREATE/ALTER INDEX, etc.</li>
+                    </ul>
+                    <div class="gallery">
+                        <img src="img/datepicker.png" alt="Datetime picker controls" loading="lazy">
+                        <img src="img/preset_dates.png" alt="Preset date range buttons" loading="lazy">
+                        <img src="img/sql_string_filter_and_exclude_system.png" alt="SQL++ contains filter and exclude system toggle" loading="lazy">
+                        <img src="img/elapsedTime_filter.png" alt="Elapsed Time filter input" loading="lazy">
+                    </div>
+                </div>
+
+                <div class="step" id="tabs">
+                    <strong>4) Analyzer Tabs (What you’ll see)</strong>
+                    <ul>
+                        <li><b>Dashboard</b> — high-level charts and distributions</li>
+                        <li><b>Insights</b> — automated checks and quick wins</li>
+                        <li><b>Timeline</b> — time-series performance with zoom</li>
+                        <li><b>Query Groups</b> — normalized patterns and aggregates</li>
+                        <li><b>Every Query</b> — sortable table of raw executions</li>
+                        <li><b>Index/Query Flow</b> — relationship diagram</li>
+                        <li><b>Indexes</b> — inventory and performance of indexes</li>
+                    </ul>
+                    <div class="gallery">
+                        <img src="img/dashboard.png" alt="Dashboard screenshot" loading="lazy">
+                        <img src="img/timeline.png" alt="Timeline screenshot" loading="lazy">
+                        <img src="img/indexes_queries_flow.png" alt="Index/Query Flow screenshot" loading="lazy">
+                    </div>
+                </div>
+
+                <div class="step" id="indexes">
+                    <strong>5) Add Indexes JSON (optional but recommended)</strong>
+                    <p>Run this separate query for <code>system:indexes</code> and paste/upload to the upper-right input to enrich Indexes and Flow views.</p>
+                    <div class="sql-query-box">
+<pre>SELECT 
+    s.name,
+    s.id,
+    s.metadata,
+    s.state,
+    s.num_replica,
+    s.`using` AS indexType,
+    CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+FROM system:indexes AS s
+LET bid = CONCAT("", s.bucket_id, ""),
+    sid = CONCAT("", s.scope_id, ""),
+    kid = CONCAT("", s.keyspace_id, ""),
+    k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
+    ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
+    w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
+    p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;</pre>
+                        <button class="sql-copy-btn">Copy</button>
+                    </div>
+                    <p><a href="sample/test_system_indexes.json" target="_blank" rel="noopener noreferrer">Sample system:indexes JSON</a></p>
+                </div>
+
+                <div class="step">
+                    <strong>6) Apply & Iterate</strong>
+                    <p>Use Insights and Tabs to identify bottlenecks. Apply index/query changes, re-run the data extract, and compare metrics.</p>
+                </div>
+                </div>
+                    <div class="back-to-top"><a href="#top">Back to top</a></div>
+                       </section>
+                
+        <section id="part-2">
+            <h2>What the stats and tables mean</h2>
+            <div class="feature">
+                <strong>Timing relationships at a glance</strong>
+                <p>These metrics describe different aspects of the same lifecycle. Use this diagram to orient how they fit together, then drill into the grouped accordions below.</p>
+                <div class="gallery" style="margin:10px 0 0">
+                    <img src="img/query_times.png" alt="Timing relationships diagram (elapsedTime, serviceTime, executionTime, cpuTime, kernTime)" loading="lazy">
+                </div>
+            </div>
+
+            <div class="accordion" id="timing-metrics">
+                <div class="accordion-header" onclick="toggleAccordion(this)">Timing metrics</div>
+                <div class="accordion-content">
+                    <ul>
+                        <li><code>elapsedTime</code> — Total wall-clock from request acknowledgment to last byte sent.</li>
+                        <li><code>serviceTime</code> — Active execution time while waiting on services (Index, Data, FTS).</li>
+                        <li><code>executionTime</code> — Internal query processing time (engine logic).</li>
+                        <li><code>cpuTime</code> — Cumulative CPU consumed across threads (can exceed wall time).</li>
+                        <li><code>kernTime</code> — Time spent waiting for CPU scheduling by the OS.</li>
+                    </ul>
+                    <p style="color:#4a5568;font-size:0.95em">Quick patterns: <b>elapsedTime ≫ serviceTime</b> → queuing or network; <b>cpuTime ~ serviceTime</b> → CPU-bound; <b>kernTime high</b> → CPU contention.</p>
+                    <p><a href="#part-4">See glossary for definitions and examples</a></p>
+                </div>
+            </div>
+
+            <div class="accordion" id="system-metrics">
+                <div class="accordion-header" onclick="toggleAccordion(this)">System & result metrics</div>
+                <div class="accordion-content">
+                    <ul>
+                        <li><code>resultCount</code> — Number of documents returned to the client.</li>
+                        <li><code>resultSize</code> — Total bytes sent; affects network transfer time.</li>
+                        <li><code>errorCount</code> — Errors encountered during execution.</li>
+                        <li><code>usedMemory</code> — Peak document memory usage (requires <code>memory_quota</code>).</li>
+                    </ul>
+                    <p style="color:#4a5568;font-size:0.95em">Watch-outs: large <code>resultSize</code> stretches <code>elapsedTime</code>; high <code>usedMemory</code> suggests heavy sorts/aggregations or big payloads.</p>
+                    <p><a href="#part-4">See glossary for deeper guidance</a></p>
+                </div>
+            </div>
+
+            <div class="accordion" id="phase-metrics">
+                <div class="accordion-header" onclick="toggleAccordion(this)">Phase metrics</div>
+                <div class="accordion-content">
+                    <ul>
+                        <li><code>phaseCounts</code> — Items processed per phase (e.g., <code>indexScan</code>, <code>fetch</code>, <code>sort</code>).</li>
+                        <li><code>phaseOperators</code> — Operator counts by phase.</li>
+                        <li><code>phaseTimes</code> — Time spent per phase (authorize → parse → plan → run → stream).</li>
+                    </ul>
+                    <p>With <code>profile="timings"</code>, operators expose <code>execTime</code>, <code>servTime</code>, and <code>kernTime</code> for fine-grained analysis.</p>
+                    <p style="color:#4a5568;font-size:0.95em">Quick pattern: high <code>phaseCounts.fetch</code> → missing covering index; optimize projection/index to reduce fetches.</p>
+                    <div class="gallery" style="margin:10px 0 0">
+                        <img src="img/serviceTime.png" alt="ServiceTime breakdown and phases" loading="lazy">
+                    </div>
+                    <p><a href="#part-4">See glossary examples and remediation tips</a></p>
+                </div>
+            </div>
+        <div class="back-to-top"><a href="#top">Back to top</a></div>
+               </section>
+        
+         <section id="part-3">
+            <h2>Crawl → Walk → Run</h2>
+            <div class="features">
+                <div class="feature">
+                    <strong>CRAWL · Basic index strategy</strong>
+                    <ul>
+                        <li>High <code>phaseCounts.fetch</code>; <code>phaseTimes.fetch</code> dominates.</li>
+                        <li>Larger <code>resultSize</code>; moderate <a href="#part-2">serviceTime</a>.</li>
+                        <li>Often primary or non-covering indexes; broad scans.</li>
+                    </ul>
+                    <p style="color:#4a5568;font-size:0.95em">Success: reduce <code>phaseCounts.fetch</code> and <code>phaseTimes.fetch</code> by 30–50%.</p>
+                    <p><a href="#part-4">See glossary: serviceTime, elapsedTime</a></p>
+                </div>
+
+                <div class="feature">
+                    <strong>WALK · Targeted composite indexes</strong>
+                    <ul>
+                        <li>Reduced <code>phaseCounts.fetch</code> via better pre-filtering in indexes.</li>
+                        <li>More selective <code>phaseCounts.indexScan</code>; improved <a href="#part-2">serviceTime</a>.</li>
+                        <li>Projection refined; data scanned narrows.</li>
+                    </ul>
+                    <p style="color:#4a5568;font-size:0.95em">Success: sustained drops in fetch counts/time; stable or lower <code>resultSize</code>; fewer I/O waits.</p>
+                    <p><a href="#part-4">See glossary: phaseCounts, phaseTimes</a></p>
+                </div>
+
+                <div class="feature">
+                    <strong>RUN · Covering indexes</strong>
+                    <ul>
+                        <li><code>phaseCounts.fetch = 0</code> — no document fetches.</li>
+                        <li>Minimal <code>resultSize</code> (project only needed fields).</li>
+                        <li>Minimal <a href="#part-2">serviceTime</a>; low <code>kernTime</code>.</li>
+                    </ul>
+                    <p style="color:#4a5568;font-size:0.95em">Success: 70–90% reduction in <code>serviceTime</code>; faster and more predictable queries.</p>
+                    <p><a href="#part-4">See glossary: kernTime, serviceTime</a></p>
+                </div>
+            </div>
+        <div class="back-to-top"><a href="#top">Back to top</a></div>
+               </section>
+        
+         <section id="part-4">
+            <h2>Glossary of terms</h2>
+            <div class="accordion" id="scanConsistency">
+                <div class="accordion-header" onclick="toggleAccordion(this)">scanConsistency</div>
+                <div class="accordion-content">
+                    <p>Controls freshness vs performance of index scans.</p>
+                    <ul>
+                        <li><b>not_bounded (unbounded)</b> — fastest; may return slightly stale results.</li>
+                        <li><b>at_plus</b> — waits for indexes to catch up to last known mutation time.</li>
+                        <li><b>request_plus</b> — strongest; indexes sync to this request’s timestamp (slowest).</li>
+                    </ul>
+                    <p style="color:#4a5568;font-size:0.95em">Guidance: use unbounded for analytics, at_plus for recent writes, request_plus for strict freshness.</p>
+                </div>
+            </div>
+
+            <div class="accordion" id="serviceTime">
+                <div class="accordion-header" onclick="toggleAccordion(this)">serviceTime</div>
+                <div class="accordion-content">
+                    <p>Calendar time actively executing the query, including waits on Index/Data/FTS services.</p>
+                    <ul>
+                        <li>High vs <code>elapsedTime</code> → execution is the bottleneck.</li>
+                        <li>Dominated by <code>servTime</code> in profiling → external services are slow.</li>
+                    </ul>
+                    <p><a href="#part-2">See timing relationships</a></p>
+                </div>
+            </div>
+
+            <div class="accordion" id="elapsedTime">
+                <div class="accordion-header" onclick="toggleAccordion(this)">elapsedTime</div>
+                <div class="accordion-content">
+                    <p>Total end-to-end time: queuing + execution + result transmission.</p>
+                    <ul>
+                        <li><b>elapsedTime ≫ execution/service</b> → queuing or large result transfer.</li>
+                        <li>Large <code>resultSize</code> or slow network stretches elapsedTime.</li>
+                    </ul>
+                    <p><a href="#part-2">See timing diagram</a></p>
+                </div>
+            </div>
+
+            <div class="accordion" id="cpuTime">
+                <div class="accordion-header" onclick="toggleAccordion(this)">cpuTime</div>
+                <div class="accordion-content">
+                    <p>Cumulative CPU across threads; may exceed wall time due to parallelism.</p>
+                    <ul>
+                        <li><b>cpuTime ~ serviceTime</b> → CPU‑bound workload.</li>
+                        <li>Check sorts, aggregations, and complex expressions.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="accordion" id="state">
+                <div class="accordion-header" onclick="toggleAccordion(this)">state</div>
+                <div class="accordion-content">
+                    <p>Execution status of a request.</p>
+                    <ul>
+                        <li><b>completed</b> — finished successfully</li>
+                        <li><b>running</b> — currently executing</li>
+                        <li><b>cancelled</b> — terminated before completion</li>
+                        <li><b>timeout</b> — exceeded configured timeout</li>
+                        <li><b>error</b> — failed; inspect <code>errors</code></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="accordion" id="usedMemory">
+                <div class="accordion-header" onclick="toggleAccordion(this)">usedMemory</div>
+                <div class="accordion-content">
+                    <p>Peak document memory used (requires <code>memory_quota</code>).</p>
+                    <ul>
+                        <li>High values indicate big payloads, large sorts/aggregations, or inefficient scans.</li>
+                        <li>Correlate with <code>resultSize</code> and phase patterns; consider LIMIT/covering indexes.</li>
+                    </ul>
+                </div>
+            </div>
+        <div class="back-to-top"><a href="#top">Back to top</a></div>
+           </section>
+     </main>
+
+    </div>
+
+    <div class="version-info">Couchbase Query Analysis Hub v3.16.3</div>
+
+    <footer>
+        <p>&copy; 2025 <a href="https://fuj.io" target="_blank" rel="noopener noreferrer">fuj.io</a>. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Accordion toggle behavior (shared component)
+        function toggleAccordion(header){
+            const content = header.nextElementSibling; if(!content) return;
+            const isOpen = content.classList.toggle('open');
+            header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+
+        // Initialize accordion ARIA and keyboard support
+        document.addEventListener('DOMContentLoaded',()=>{
+            document.querySelectorAll('.accordion').forEach((acc,i)=>{
+                const header = acc.querySelector('.accordion-header');
+                const content = acc.querySelector('.accordion-content');
+                if(!header||!content) return;
+                const id = content.id || `acc-content-${i}`;
+                content.id = id;
+                header.setAttribute('role','button');
+                header.setAttribute('tabindex','0');
+                header.setAttribute('aria-controls', id);
+                header.setAttribute('aria-expanded','false');
+                header.addEventListener('keydown',(e)=>{
+                    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); toggleAccordion(header); }
+                });
+            });
+        });
+
+        // SQL Copy behavior (shared component)
+        document.querySelectorAll('.sql-copy-btn').forEach(button=>{
+            button.addEventListener('click',()=>{
+                const code = button.parentElement.querySelector('pre')?.textContent || '';
+                navigator.clipboard.writeText(code).then(()=>{
+                    button.style.background='#28a745';
+                    const prev=button.textContent; button.textContent='Copied!';
+                    setTimeout(()=>{button.textContent=prev;button.style.background='';},2000);
+                }).catch(err=>{console.error('Failed to copy: ',err)});
+            });
+        });
+    </script>
+</body>
+</html>
