@@ -1,3 +1,7 @@
+### Version 3.16.4 (October 3, 2025)
+- Bug fixes and quality improvements
+- Closes: #125, #124, #63
+
 ### Version 3.16.3 (September 29, 2025)
 - Bug fixes and quality improvements
 - Closes: #120, #119, #118

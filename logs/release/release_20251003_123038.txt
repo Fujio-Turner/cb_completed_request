@@ -1,0 +1,122 @@
+
+
+# Release Log - Version 3.16.4
+**Release Date:** 2025-10-03  
+**Previous Version:** 3.16.3  
+**New Version:** 3.16.4
+
+This file tracks all changes made during the release process.
+
+## 📋 Release Checklist Progress
+
+### ✅ Branch & Issue Information
+- [ ] **Release Branch:** release-venom
+- [ ] **Base Commit:** {pending}
+- [ ] **Issues Resolved:** #125, #124, #63
+- [ ] **Metal Gear Character:** Venom Snake
+
+### ✅ Version Information  
+- [ ] **Previous Version:** 3.16.3
+- [ ] **New Version:** 3.16.4
+- [ ] **Release Date:** 2025-10-03
+- [ ] **Version Type:** PATCH - Bug fixes for issues #125, #124, #63
+
+---
+
+## 🌐 HTML Files Updates (English Only - Localization Discontinued)
+
+### ✅ English (index.html)
+- [ ] **Meta version tag:** `<meta name="version" content="3.16.3" />` → `<meta name="version" content="3.16.4" />`
+- [ ] **Meta last-updated tag:** `<meta name="last-updated" content="2025-09-29" />` → `<meta name="last-updated" content="2025-10-03" />`
+- [ ] **Title tag:** `<title>Query Analyzer v3.16.3</title>` → `<title>Query Analyzer v3.16.4</title>`
+- [ ] **Version info display:** `<div class="version-info">v3.16.3</div>` → `<div class="version-info">v3.16.4</div>`
+- [ ] **JavaScript APP_VERSION:** `const APP_VERSION = "3.16.3";` → `const APP_VERSION = "3.16.4";`
+- [ ] **JavaScript LAST_UPDATED:** `const LAST_UPDATED = "2025-09-29";` → `const LAST_UPDATED = "2025-10-03";`
+
+### ✅ English (en/index.html)
+- [ ] **Header comment Version:** `Version: 3.16.3` → `Version: 3.16.4`
+- [ ] **Header comment Last Updated:** `Last Updated: 2025-09-29` → `Last Updated: 2025-10-03`
+- [ ] **Meta version tag:** Updated to 3.16.4
+- [ ] **Meta last-updated tag:** Updated to 2025-10-03
+- [ ] **Title tag:** Updated to v3.16.4
+- [ ] **Version info display:** Updated to v3.16.4
+- [ ] **JavaScript constants:** APP_VERSION and LAST_UPDATED updated
+
+---
+
+## 📚 Documentation Updates
+
+### ✅ AGENT.md
+- [ ] **Main heading:** `# Couchbase Slow Query Analysis Tool v3.16.3` → `# Couchbase Slow Query Analysis Tool v3.16.4`
+- [ ] **Version Management section:** Current Version updated to 3.16.4 (Last Updated: 2025-10-03)
+- [ ] **File Path:** /AGENT.md
+
+### ✅ README Files
+
+#### ✅ English README.md
+- [ ] **Main heading:** Updated to v3.16.4
+- [ ] **Release Notes section:** Added v3.16.4 entry with date 2025-10-03
+- [ ] **File Path:** /README.md
+
+### ✅ release_notes.md
+- [ ] **New version entry:** Added v3.16.4 with changes for issues #125, #124, #63
+- [ ] **File Path:** /release_notes.md
+
+---
+
+## 🐳 Docker & Deployment Updates
+
+### ✅ Dockerfile
+- [ ] **Version label:** `LABEL version="3.16.3"` → `LABEL version="3.16.4"`
+- [ ] **File Path:** /Dockerfile
+
+### ✅ GitHub Actions Workflow
+- [ ] **Version tags updated:**
+  - `type=raw,value=3.16.4,enable={{is_default_branch}}`
+  - `type=raw,value=v3.16.4,enable={{is_default_branch}}`
+- [ ] **File Path:** /.github/workflows/docker-build-push.yml
+
+---
+
+## 🔍 Verification & Testing
+
+### ✅ Version Consistency Checks
+- [ ] Run `python3 python/RELEASE_WORK_CHECK.py` - All checks pass
+- [ ] Verify en/index.html header comment Version and Last Updated
+- [ ] Verify index.html version matches
+
+### ✅ Functional Testing
+- [ ] **English (index.html):** Loads and functions correctly
+- [ ] **English (en/index.html):** Loads and functions correctly
+- [ ] **All charts:** Display correctly with proper colors and labels
+- [ ] **No JavaScript errors:** Console is clean
+
+---
+
+## 📝 Additional Notes
+
+### Issues Resolved:
+- #125: {to be filled}
+- #124: {to be filled}
+- #63: {to be filled}
+
+### Files Modified (Summary):
+- [ ] index.html
+- [ ] en/index.html
+- [ ] AGENT.md
+- [ ] README.md
+- [ ] release_notes.md
+- [ ] Dockerfile
+- [ ] .github/workflows/docker-build-push.yml
+
+---
+
+## ✅ Release Complete
+- [ ] **All version updates:** Complete and verified
+- [ ] **All tests passed:** Functional and visual testing complete
+- [ ] **Documentation updated:** README and release notes current
+- [ ] **Docker deployment:** Tags pushed and verified
+- [ ] **This log completed:** All sections filled out
+
+**Release Completed By:** {pending}  
+**Release Completion Date:** {pending}

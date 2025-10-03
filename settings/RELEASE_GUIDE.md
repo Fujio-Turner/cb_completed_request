@@ -98,14 +98,15 @@ sed -i '' 's/^\s*Last Updated: .*/    Last Updated: YYYY-MM-DD/' en/index.html
 As of v3.13.x, we only ship the English tool. Do NOT run settings/LOCALIZATION_GUIDE.md.
 
 Do this instead:
-- Ensure only these HTML files are updated: `index.html` and `en/index.html`.
+- Ensure these HTML files are updated: `index.html` and `en/index.html`.
 - Update version meta tags, title, version-info div, and JS constants in both files.
 - Update the header comment in `en/index.html` (Version and Last Updated).
+- Note: `analysis_hub.html` has no version info and does not need updating.
 - Skip any copying or translating to `de/`, `es/`, or `pt/`.
 - Run JavaScript syntax validation: `python3 python/validate_js_syntax.py`.
 
 Expected Outcome:
-- English-only artifacts updated and consistent (index.html and en/index.html)
+- English-only artifacts updated and consistent (index.html, en/index.html, and analysis_hub.html)
 - No references to localized HTML files remain in index.html navigation
 
 ### **Step 5: Comprehensive Release Testing**
@@ -249,7 +250,7 @@ This release guide coordinates these files:
 - **logs/release_YYYYMMDD_HHMMSS.txt** - Your specific release log (created from template in logs folder)
 
 ### Target Files (Updated During Release)
-- **HTML Files:** `index.html`, `en/index.html`
+- **HTML Files:** `index.html`, `en/index.html` (Note: `analysis_hub.html` is version-agnostic)
 - **Documentation:** `AGENT.md`, `README.md`, `release_notes.md`
 - **Docker:** `Dockerfile`, `.github/workflows/docker-build-push.yml`
 

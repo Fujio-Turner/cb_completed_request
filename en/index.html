@@ -18,9 +18,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.16.3" />
-    <meta name="last-updated" content="2025-09-29" />
-    <title>Query Analyzer v3.16.3</title>
+    <meta name="version" content="3.16.4" />
+    <meta name="last-updated" content="2025-10-03" />
+    <title>Query Analyzer v3.16.4</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/themes/base/jquery-ui.min.css" integrity="sha512-TFee0335YRJoyiqz8hA8KV3P0tXa5CpRBSoM0Wnkn7JoJx1kaq1yXL/rb8YFpWXkMOjRcv5txv+C6UluttluCQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -37,7 +37,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" integrity="sha512-UXumZrZNiOwnTcZSHLOfcTs0aos2MzBWHXOHOuB0J/R44QB0dwY5JgfbvljXcklVf65Gc4El6RjZ+lnwd2az2g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
     <!-- Include DOMPurify for security -->
-    <!-- OLD <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js?v=362"></script> -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js" integrity="sha512-YlctBG9PGZIhh9keoqI3eZkQM9T8QUbiBi7qNYAO/TUEo8jqWX5pLp5+x1cKRQDRzJ/lyGyJ9WUVNIRduxIIFw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <!-- Include Panzoom, jQuery, and jQuery UI -->
@@ -358,13 +357,13 @@ if (window.TEXT_CONSTANTS) {
   COVER_BETA_NOTE: "Some charts marked Beta/Dev may display incomplete or placeholder content.",
 
     // Cover page rich content blocks (English)
-     COVER_BLOCK_DASHBOARD_HTML: "<div class=\"section\"><h3>📊 Dashboard</h3><p>High-level overview with draggable charts showing query duration distribution, index type usage, scan consistency patterns, result size analysis, and system health metrics. Perfect for at-a-glance performance monitoring.</p></div>",
-     COVER_BLOCK_INSIGHTS_HTML: "<div class=\"section\"><h3>💡 Insights Tab</h3><p>The Insights tab provides automated analysis organized into three main categories, each with expandable insights and live metrics based on your parsed query data:</p><h4>📊 Analysis Categories</h4><div><h5>🔍 Index Performance Issues</h5><ul><li>Inefficient Index Scans - Identifies queries with poor selectivity ratios</li><li>Slow Index Scan Times - Flags indexes taking 2+ seconds to scan</li><li>Primary Index Over-Usage - Detects reliance on expensive primary indexes</li><li>ORDER BY / LIMIT / OFFSET Index Over-Scan - Highlights over-scanning due to pagination patterns (Beta)</li></ul><h5>⚡ Resource Utilization Issues</h5><ul><li>High Kernel Time in Queries - CPU scheduling overhead analysis</li><li>High Memory Usage Detected - Memory-intensive query identification</li><li>Slow USE KEY Queries - KV service bottleneck detection</li></ul><h5>🔄 Query Pattern Analysis</h5><ul><li>Missing WHERE Clauses - Identifies full collection scans</li><li>Inefficient LIKE Operations - Detects leading wildcard usage</li><li>SELECT * Usage - Finds queries returning entire documents (Live)</li></ul><h5>🚀 Performance Optimization Opportunities</h5><ul><li>Large Payload Streaming - Identifies queries with heavy network usage</li><li>Large Result Set Queries - Flags memory and bandwidth intensive operations</li><li>Timeout-Prone Queries - Detects queries approaching timeout limits</li></ul></div><p><strong>💡 Live Data:</strong> Insights marked with Live analyze your actual parsed data, while Beta insights are experimental and may show false positives.</p></div>",
+     COVER_BLOCK_DASHBOARD_HTML: "<div class=\"section\"><h3>Dashboard</h3><p>High-level overview with draggable charts showing query duration distribution, index type usage, scan consistency patterns, result size analysis, and system health metrics. Perfect for at-a-glance performance monitoring.</p></div>",
+     COVER_BLOCK_INSIGHTS_HTML: "<div class=\"section\"><h3>Insights Tab</h3><p>The Insights tab provides automated analysis organized into three main categories, each with expandable insights and live metrics based on your parsed query data:</p><h4> Analysis Categories</h4><div><h5> Index Performance Issues</h5><ul><li>Inefficient Index Scans - Identifies queries with poor selectivity ratios</li><li>Slow Index Scan Times - Flags indexes taking 2+ seconds to scan</li><li>Primary Index Over-Usage - Detects reliance on expensive primary indexes</li><li>ORDER BY / LIMIT / OFFSET Index Over-Scan - Highlights over-scanning due to pagination patterns (Beta)</li></ul><h5>⚡ Resource Utilization Issues</h5><ul><li>High Kernel Time in Queries - CPU scheduling overhead analysis</li><li>High Memory Usage Detected - Memory-intensive query identification</li><li>Slow USE KEY Queries - KV service bottleneck detection</li></ul><h5> Query Pattern Analysis</h5><ul><li>Missing WHERE Clauses - Identifies full collection scans</li><li>Inefficient LIKE Operations - Detects leading wildcard usage</li><li>SELECT * Usage - Finds queries returning entire documents (Live)</li></ul><h5>🚀 Performance Optimization Opportunities</h5><ul><li>Large Payload Streaming - Identifies queries with heavy network usage</li><li>Large Result Set Queries - Flags memory and bandwidth intensive operations</li><li>Timeout-Prone Queries - Detects queries approaching timeout limits</li></ul></div><p><strong>💡 Live Data:</strong> Insights marked with Live analyze your actual parsed data, while Beta insights are experimental and may show false positives.</p></div>",
      COVER_BLOCK_TIMELINE_DESC: "Chronological analysis with zoomable time-series charts. Track query patterns by time grouping (seconds to days), analyze duration buckets, operation types, result counts, and memory usage trends over time with dual Y-axis support.",
-     COVER_BLOCK_QUERY_GROUPS_HTML: "<div class=\"section\"><h3>🔍 Query Groups</h3><p>Analyze similar queries grouped by normalized patterns. Compare aggregated statistics, identify frequently executed query types, and optimize query families that share similar execution characteristics and performance profiles.</p></div>",
-     COVER_BLOCK_EVERY_QUERY_HTML: "<div class=\"section\"><h3>📋 Every Query</h3><p>Detailed tabular view of individual query executions with sorting, filtering, and search capabilities. Drill down into specific query metrics, execution plans, and performance details for granular analysis and debugging.</p></div>",
-     COVER_BLOCK_FLOW_HTML: "<div class=\"section\"><h3>🌊 Index/Query Flow</h3><p>Interactive visual flow diagram showing the relationship between indexes and queries. See which indexes are used by which queries, identify index usage patterns, and optimize index coverage with drag-and-pan visualization.</p></div>",
-     COVER_BLOCK_INDEXES_HTML: "<div class=\"section\"><h3>🗂️ Indexes</h3><p>Comprehensive index management with filtering by bucket/scope/collection. Analyze index performance metrics, memory residency, scan times, and usage patterns. Includes search and sorting capabilities for large index inventories.</p></div>"
+     COVER_BLOCK_QUERY_GROUPS_HTML: "<div class=\"section\"><h3>Query Groups</h3><p>Analyze similar queries grouped by normalized patterns. Compare aggregated statistics, identify frequently executed query types, and optimize query families that share similar execution characteristics and performance profiles.</p></div>",
+     COVER_BLOCK_EVERY_QUERY_HTML: "<div class=\"section\"><h3>Every Query</h3><p>Detailed tabular view of individual query executions with sorting, filtering, and search capabilities. Drill down into specific query metrics, execution plans, and performance details for granular analysis and debugging.</p></div>",
+     COVER_BLOCK_FLOW_HTML: "<div class=\"section\"><h3>Index/Query Flow</h3><p>Interactive visual flow diagram showing the relationship between indexes and queries. See which indexes are used by which queries, identify index usage patterns, and optimize index coverage with drag-and-pan visualization.</p></div>",
+     COVER_BLOCK_INDEXES_HTML: "<div class=\"section\"><h3>Indexes</h3><p>Comprehensive index management with filtering by bucket/scope/collection. Analyze index performance metrics, memory residency, scan times, and usage patterns. Includes search and sorting capabilities for large index inventories.</p></div>"
 
    });
 }
@@ -383,7 +382,7 @@ if (window.TEXT_CONSTANTS) {
 <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v3.16.3
+        v3.16.4
     </div>
 
     <!-- Bug report link (bottom-right) -->
@@ -15088,8 +15087,8 @@ function generateElapsedTimeChart(requests) {
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = "3.16.3";
-        const LAST_UPDATED = "2025-09-29";
+        const APP_VERSION = "3.16.4";
+        const LAST_UPDATED = "2025-10-03";
 
         function getVersionInfo() {
             return {
