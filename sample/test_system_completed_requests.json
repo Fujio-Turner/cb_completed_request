@@ -2406,5 +2406,280 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#stats\":{\"execTime\":\"2µs\",\"servTime\":\"5µs\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"execTime\":\"12ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"execTime\":\"25ms\"}},{\"#operator\":\"Unnest\",\"#stats\":{\"execTime\":\"40ms\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"8ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"3ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "slow-parse-time-cpu-contention-001",
+      "cpuTime": "125.456ms",
+      "elapsedTime": "134.567ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$orderId": "ORD-2025-001234"
+      },
+      "phaseCounts": {
+        "indexScan": 1,
+        "fetch": 1
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "45.123µs",
+        "instantiate": "89.456µs",
+        "parse": "2.345ms",
+        "plan": "856.789µs",
+        "plan.index.metadata": "234.567µs",
+        "plan.keyspace.metadata": "123.456µs",
+        "indexScan": "45.678ms",
+        "fetch": "67.890ms",
+        "project": "12.345ms",
+        "run": "128.901ms",
+        "stream": "3.456ms"
+      },
+      "remoteAddr": "127.0.0.1:54321",
+      "requestId": "slow-parse-time-cpu-contention-001",
+      "requestTime": "2025-09-15T09:30:45.123Z",
+      "resultCount": 1,
+      "resultSize": 2048,
+      "scanConsistency": "request_plus",
+      "serviceTime": "133.456ms",
+      "state": "completed",
+      "statement": "SELECT o.orderId, o.customerId, o.totalAmount, o.items FROM `orders` o WHERE o.orderId = $orderId",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 512,
+      "userAgent": "couchbase-java-client/3.4.2",
+      "users": "local:order_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#stats\":{\"execTime\":\"5.123µs\",\"servTime\":\"40.0µs\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":1,\"#itemsOut\":1,\"execTime\":\"45.678ms\",\"kernTime\":\"42.1ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":1,\"#itemsOut\":1,\"execTime\":\"67.890ms\",\"kernTime\":\"60.5ms\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"12.345ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"3.456ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "slow-plan-time-metadata-overhead-002",
+      "cpuTime": "89.234ms",
+      "elapsedTime": "95.678ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 25,
+        "fetch": 25
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "23.456µs",
+        "instantiate": "67.890µs",
+        "parse": "456.789µs",
+        "plan": "3.456ms",
+        "plan.index.metadata": "1.234ms",
+        "plan.keyspace.metadata": "890.123µs",
+        "indexScan": "34.567ms",
+        "fetch": "45.678ms",
+        "filter": "5.678ms",
+        "project": "6.789ms",
+        "run": "92.345ms",
+        "stream": "2.345ms"
+      },
+      "remoteAddr": "127.0.0.1:65432",
+      "requestId": "slow-plan-time-metadata-overhead-002",
+      "requestTime": "2025-09-15T10:45:12.456Z",
+      "resultCount": 25,
+      "resultSize": 51200,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "95.123ms",
+      "state": "completed",
+      "statement": "SELECT p.productId, p.name, p.category, p.price FROM `products` p WHERE p.category = 'Electronics' AND p.inStock = true LIMIT 25",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 1024,
+      "userAgent": "python-couchbase/4.2.0",
+      "users": "local:catalog_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#stats\":{\"execTime\":\"3.456µs\",\"servTime\":\"20.0µs\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"execTime\":\"34.567ms\",\"kernTime\":\"30.2ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"execTime\":\"45.678ms\",\"kernTime\":\"40.1ms\"}},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"execTime\":\"5.678ms\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"6.789ms\"}},{\"#operator\":\"Limit\",\"#stats\":{\"execTime\":\"0.123ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"2.345ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "both-parse-plan-slow-high-cpu-003",
+      "cpuTime": "234.567ms",
+      "elapsedTime": "245.890ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$startDate": "2025-01-01T00:00:00Z",
+        "$endDate": "2025-12-31T23:59:59Z"
+      },
+      "phaseCounts": {
+        "indexScan": 1500,
+        "fetch": 1500,
+        "filter": 1500
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "78.901µs",
+        "instantiate": "123.456µs",
+        "parse": "5.678ms",
+        "plan": "4.321ms",
+        "plan.index.metadata": "2.123ms",
+        "plan.keyspace.metadata": "1.567ms",
+        "indexScan": "89.012ms",
+        "fetch": "123.456ms",
+        "filter": "12.345ms",
+        "project": "8.901ms",
+        "run": "235.678ms",
+        "stream": "4.567ms"
+      },
+      "remoteAddr": "127.0.0.1:12345",
+      "requestId": "both-parse-plan-slow-high-cpu-003",
+      "requestTime": "2025-09-15T11:20:33.789Z",
+      "resultCount": 1500,
+      "resultSize": 3072000,
+      "scanConsistency": "request_plus",
+      "serviceTime": "244.567ms",
+      "state": "completed",
+      "statement": "SELECT t.transactionId, t.userId, t.amount, t.timestamp FROM `transactions` t WHERE t.timestamp BETWEEN $startDate AND $endDate AND t.status = 'completed'",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 4096,
+      "userAgent": "node-couchbase/4.2.3",
+      "users": "local:analytics_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#stats\":{\"execTime\":\"8.901µs\",\"servTime\":\"70.0µs\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":1500,\"#itemsOut\":1500,\"execTime\":\"89.012ms\",\"kernTime\":\"85.6ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":1500,\"#itemsOut\":1500,\"execTime\":\"123.456ms\",\"kernTime\":\"118.9ms\"}},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":1500,\"#itemsOut\":1500,\"execTime\":\"12.345ms\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"8.901ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"4.567ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "extreme-parse-time-kernel-wait-004",
+      "cpuTime": "456.789ms",
+      "elapsedTime": "489.012ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$customerId": "CUST-999888"
+      },
+      "phaseCounts": {
+        "primaryScan": 50000,
+        "primaryScan.GSI": 50000,
+        "fetch": 50000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "primaryScan": 1,
+        "primaryScan.GSI": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "123.456µs",
+        "instantiate": "234.567µs",
+        "parse": "12.345ms",
+        "plan": "8.901ms",
+        "plan.index.metadata": "3.456ms",
+        "plan.keyspace.metadata": "2.789ms",
+        "primaryScan": "234.567ms",
+        "primaryScan.GSI": "234.567ms",
+        "fetch": "189.012ms",
+        "filter": "23.456ms",
+        "project": "15.678ms",
+        "run": "467.890ms",
+        "stream": "12.345ms"
+      },
+      "remoteAddr": "127.0.0.1:98765",
+      "requestId": "extreme-parse-time-kernel-wait-004",
+      "requestTime": "2025-09-15T12:05:47.123Z",
+      "resultCount": 50000,
+      "resultSize": 102400000,
+      "scanConsistency": "unbounded",
+      "serviceTime": "487.654ms",
+      "state": "completed",
+      "statement": "SELECT * FROM `customers` c WHERE c.customerId != $customerId",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 16384,
+      "userAgent": "go-couchbase/2.7.1",
+      "users": "local:reporting_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#stats\":{\"execTime\":\"23.456µs\",\"servTime\":\"100.0µs\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"PrimaryScan3\",\"#stats\":{\"#itemsIn\":50000,\"#itemsOut\":50000,\"execTime\":\"234.567ms\",\"kernTime\":\"225.8ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":50000,\"#itemsOut\":50000,\"execTime\":\"189.012ms\",\"kernTime\":\"180.3ms\"}},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":50000,\"#itemsOut\":50000,\"execTime\":\"23.456ms\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"15.678ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"12.345ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "very-slow-plan-time-complex-join-005",
+      "cpuTime": "678.901ms",
+      "elapsedTime": "712.345ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 500,
+        "fetch": 500,
+        "join": 500
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 2,
+        "fetch": 2,
+        "join": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "234.567µs",
+        "instantiate": "345.678µs",
+        "parse": "1.234ms",
+        "plan": "15.678ms",
+        "plan.index.metadata": "7.890ms",
+        "plan.keyspace.metadata": "4.567ms",
+        "indexScan": "123.456ms",
+        "fetch": "234.567ms",
+        "join": "289.012ms",
+        "project": "45.678ms",
+        "run": "695.678ms",
+        "stream": "8.901ms"
+      },
+      "remoteAddr": "127.0.0.1:11223",
+      "requestId": "very-slow-plan-time-complex-join-005",
+      "requestTime": "2025-09-15T13:15:22.456Z",
+      "resultCount": 500,
+      "resultSize": 1024000,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "710.123ms",
+      "state": "completed",
+      "statement": "SELECT u.userId, u.name, o.orderId, o.totalAmount FROM `users` u JOIN `orders` o ON KEYS u.orderIds WHERE u.accountType = 'premium'",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 8192,
+      "userAgent": "dotnet-couchbase/3.4.8",
+      "users": "local:user_analytics",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#stats\":{\"execTime\":\"34.567µs\",\"servTime\":\"200.0µs\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":500,\"#itemsOut\":500,\"execTime\":\"123.456ms\",\"kernTime\":\"118.9ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":500,\"#itemsOut\":500,\"execTime\":\"234.567ms\",\"kernTime\":\"225.3ms\"}},{\"#operator\":\"Join\",\"#stats\":{\"#itemsIn\":500,\"#itemsOut\":500,\"execTime\":\"289.012ms\",\"kernTime\":\"278.4ms\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"45.678ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"8.901ms\"}}]}}"
   }
 ]

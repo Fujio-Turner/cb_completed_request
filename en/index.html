@@ -945,6 +945,41 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
+                            <h4 class="insight-title" onclick="toggleInsight('slow-parse-plan-times')">Slow Parse/Plan Times<span class="beta-badge">Beta</span></h4>
+                            <div class="insight-content" id="slow-parse-plan-times-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="slow-parse-plan-count">0 queries</span> (<span class="highlight-number" id="slow-parse-plan-percent">0%</span>) have parse or plan times greater than 1ms with avg parse: <span class="highlight-number" id="avg-parse-time">0ms</span> and avg plan: <span class="highlight-number" id="avg-plan-time">0ms</span>, which may indicate high CPU utilization or kernel time wait issues.
+                                </p>
+
+                                <button id="toggle-slow-parse-plan-times-sample-queries-btn" onclick="toggleInsightSampleQueries('slow-parse-plan-times')" class="btn-standard">
+                                    <span id="slow-parse-plan-times-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="slow-parse-plan-times-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody id="slow-parse-plan-times-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="learn-more-section">
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Check CPU utilization and consider reducing query concurrency <a
+                                            href="https://cb.fuj.io/analysis_hub.html#kernTime"
+                                            class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
                             <h4 class="insight-title" onclick="toggleInsight('slow-use-key-queries')">Slow USE KEY
                                 Queries<span class="live-badge">Live</span></h4>
                             <div class="insight-content" id="slow-use-key-queries-content">
@@ -10924,6 +10959,9 @@ function generateElapsedTimeChart(requests) {
             let largePayloadTotalStreamRatio = 0;
             let approachingTimeoutCount = 0;
             let actualTimeoutCount = 0;
+            let slowParsePlanCount = 0;
+            let slowParsePlanTotalParseTime = 0;
+            let slowParsePlanTotalPlanTime = 0;
 
             // Sample queries arrays for insights
             let missingWhereClausesSamples = [];
@@ -10937,6 +10975,7 @@ function generateElapsedTimeChart(requests) {
             let actualTimeoutsSamples = [];
             let approachingTimeoutsSamples = [];
             let paginationOverfetchSamples = [];
+            let slowParsePlanSamples = [];
 
             // Configurable threshold for kernel time detection
             const KERNEL_TIME_THRESHOLD_PERCENT = 20;
@@ -11096,6 +11135,25 @@ function generateElapsedTimeChart(requests) {
                         }
                     } catch (e) {
                         console.error("Error parsing plan for kernel time analysis:", e);
+                    }
+                }
+
+                // Check for slow parse/plan times (> 1ms)
+                if (request.phaseTimes) {
+                    const parseTimeMs = parseTime(request.phaseTimes.parse || '0');
+                    const planTimeMs = parseTime(request.phaseTimes.plan || '0');
+                    
+                    if (parseTimeMs > 1 || planTimeMs > 1) {
+                        slowParsePlanCount++;
+                        slowParsePlanTotalParseTime += parseTimeMs;
+                        slowParsePlanTotalPlanTime += planTimeMs;
+                        if (slowParsePlanSamples.length < 5 && 
+                            !slowParsePlanSamples.some(s => s.statement === (request.preparedText || request.statement))) {
+                            slowParsePlanSamples.push({
+                                requestTime: request.requestTime,
+                                statement: request.preparedText || request.statement
+                            });
+                        }
                     }
                 }
 
@@ -11547,6 +11605,32 @@ function generateElapsedTimeChart(requests) {
             // Update slow index scan times insight
             updateSlowIndexScanTimes(requests);
 
+            // Update slow parse/plan times insight
+            const slowParsePlanCountElement = document.getElementById("slow-parse-plan-count");
+            const slowParsePlanPercentElement = document.getElementById("slow-parse-plan-percent");
+            const avgParseTimeElement = document.getElementById("avg-parse-time");
+            const avgPlanTimeElement = document.getElementById("avg-plan-time");
+            
+            if (slowParsePlanCountElement) {
+                slowParsePlanCountElement.textContent = `${slowParsePlanCount} queries`;
+                slowParsePlanCountElement.className = slowParsePlanCount > 0 ? "highlight-number" : "";
+            }
+            if (slowParsePlanPercentElement) {
+                const slowParsePlanPercent = totalQueries > 0 ? ((slowParsePlanCount / totalQueries) * 100).toFixed(1) : 0;
+                slowParsePlanPercentElement.textContent = `${slowParsePlanPercent}%`;
+                slowParsePlanPercentElement.className = slowParsePlanCount > 0 ? "highlight-number" : "";
+            }
+            if (avgParseTimeElement) {
+                const avgParseTime = slowParsePlanCount > 0 ? (slowParsePlanTotalParseTime / slowParsePlanCount).toFixed(3) : 0;
+                avgParseTimeElement.textContent = `${avgParseTime}ms`;
+                avgParseTimeElement.className = slowParsePlanCount > 0 ? "highlight-number" : "";
+            }
+            if (avgPlanTimeElement) {
+                const avgPlanTime = slowParsePlanCount > 0 ? (slowParsePlanTotalPlanTime / slowParsePlanCount).toFixed(3) : 0;
+                avgPlanTimeElement.textContent = `${avgPlanTime}ms`;
+                avgPlanTimeElement.className = slowParsePlanCount > 0 ? "highlight-number" : "";
+            }
+
             // Update sample queries for each insight
             updateInsightSampleQueries('missing-where-clauses', missingWhereClausesSamples);
             updateInsightSampleQueries('slow-use-key-queries', slowUseKeyQueriesSamples);
@@ -11557,6 +11641,7 @@ function generateElapsedTimeChart(requests) {
             updateInsightSampleQueries('high-memory-usage', highMemoryUsageSamples);
             updateInsightSampleQueries('high-kernel-time-queries', highKernelTimeQueriesSamples);
             updateInsightSampleQueries('large-payload-streaming', largePayloadStreamingSamples);
+            updateInsightSampleQueries('slow-parse-plan-times', slowParsePlanSamples);
 
             // Special handling for timeout queries (3-column table with 10 entries)
             updateTimeoutQueriesTable(actualTimeoutsSamples, approachingTimeoutsSamples);
@@ -11721,6 +11806,7 @@ function generateElapsedTimeChart(requests) {
                 { id: 'primary-index-over-usage', checkElement: 'primary-avg-items-scanned' },
                 { id: 'high-kernel-time-queries', checkElement: 'high-kernel-time-queries-count' },
                 { id: 'high-memory-usage', checkElement: 'high-memory-count' },
+                { id: 'slow-parse-plan-times', checkElement: 'slow-parse-plan-count' },
                 { id: 'slow-use-key-queries', checkElement: 'slow-use-keys-count' },
                 { id: 'missing-where-clauses', checkElement: 'missing-where-count' },
                 { id: 'inefficient-like-operations', checkElement: 'inefficient-like-count' },
@@ -16230,6 +16316,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                           <ul class="list-tight">
                             <li>High Kernel Time in Queries - CPU scheduling overhead analysis</li>
                             <li>High Memory Usage Detected - Memory-intensive query identification</li>
+                            <li>Slow Parse/Plan Times - Detects queries with parse/plan times > 1ms <span class="badge beta">BETA</span></li>
                             <li>Slow USE KEY Queries - KV service bottleneck detection</li>
                           </ul>
                         </div>
