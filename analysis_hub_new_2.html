@@ -50,6 +50,16 @@
         .gallery img{width:300px;height:200px;object-fit:cover;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.08);transition:transform .3s ease, box-shadow .3s ease;will-change:transform}
         .gallery img:hover{transform:scale(1.7);box-shadow:0 14px 30px rgba(0,0,0,0.25);position:relative;z-index:2}
 
+        /* Parse JSON filters: spacing and hover-swap thumbnails */
+        #parseJSON ul li{ margin-bottom:6px }
+        #parseJSON .gallery{ gap:14px; justify-content:flex-start }
+        #parseJSON .gallery img{ width:240px; height:auto }
+        #parseJSON .gallery img:hover{ transform:none; box-shadow:0 4px 14px rgba(0,0,0,0.08); position:static; z-index:auto }
+        #parseJSON .hover-swap{ position:relative; display:inline-block; border:1px solid #e6eef5; border-radius:8px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05) }
+        #parseJSON .hover-swap img{ display:block }
+        #parseJSON .hover-swap img.hover{ position:absolute; top:0; left:0; width:100%; height:auto; opacity:0; transition: opacity .3s ease }
+        #parseJSON .hover-swap:hover img.hover{ opacity:1 }
+
         /* Contents navigation (legacy, not used) */
         .contents{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:10px 0 24px}
         .contents a{display:inline-block;background:#fff;border:1px solid #eaeef2;color:#007acc;text-decoration:none;padding:8px 12px;border-radius:999px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
@@ -60,6 +70,8 @@
         .layout{display:flex;gap:20px}
         .sidebar{background:#fff;border:1px solid #eaeef2;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.06);padding:16px;width:260px;position:sticky;top:10px;align-self:flex-start;max-height:calc(100vh - 120px);overflow:auto}
         .sidebar .sub{margin-left:14px;font-size:13px;color:#4a5568}
+        .sidebar a{display:block;padding:6px 8px;border-radius:6px}
+        .sidebar a.active{background:#f0f8ff;color:#005f99;font-weight:700}
         .content{flex:1}
         @media (max-width:980px){
                   .layout{flex-direction:column}
@@ -133,28 +145,51 @@
 
                 <div class="step">
                     <strong>2) Paste or Upload JSON</strong>
-                    <p><a href="en/index.html">Open Analyzer</a> — in the upper-left input, paste or upload your JSON, then click <b>Parse JSON</b>.</p>
-                    <p><b>Private & secure:</b> Runs entirely in your browser. No server uploads.</p>
-                    <div class="gallery" style="margin:10px 0 0">
-                        <img src="img/parse_json_button.png" alt="Parse JSON button in the analyzer" loading="lazy">
-                    </div>
+                    <p><a href="en/index.html">Open Analyzer</a> — in the upper-left input, paste or upload your JSON, it will auto-parse or click <b>Parse JSON</b>.</p>
+                    
+                    <img style="width: 500px;"  src="img/parse_upload_json_completed_requests.png" alt="Parse JSON button in the analyzer" loading="lazy">
+
+                    <p><b>Private & secure:</b> Runs and processes your data entirely in your browser and it's memory. No server uploads.</p>
+                  
                 </div>
 
                 <div class="step" id="parseJSON">
                     <strong>3) Parse JSON & Filters Overview</strong>
                     <p>After parsing, use filters to focus analysis:</p>
                     <ul>
-                        <li><b>Date/Time Range</b> — From/To with quick presets (Original | 1 Week | 1 Day | 1 Hour)</li>
-                        <li><b>SQL++ Statement Contains</b> — text filter for keywords/patterns</li>
-                        <li><b>Elapsed Time Filter</b> — comparisons and ranges (e.g., <code>&gt;=500ms</code>, <code>0.5s-2s</code>)</li>
+                    <li>
+                       <b>Date/Time Range</b> — From/To with quick presets (Original | 1 Week | 1 Day | 1 Hour)
+                       <div class="gallery" style="margin:8px 0 0">
+                                                   <img src="img/datepicker.png" alt="Datetime picker controls" loading="lazy">
+                            <span class="hover-swap">
+                                                       <img src="img/preset_dates.png" alt="Preset date range buttons" loading="lazy">
+                                <img class="hover" src="img/preset_dates_drop_down.png" alt="Preset date range dropdown example" loading="lazy">
+                                                   </span>
+                        </div>
+                    </li>
+
+                        <li>
+                            <b>SQL++ Statement Contains</b> — text filter for keywords/patterns
+                            <div class="gallery" style="margin:8px 0 0">
+                                <span class="hover-swap">
+                                    <img src="img/sql_string_filter_and_exclude_system.png" alt="SQL++ contains filter and exclude system toggle" loading="lazy">
+                                    <img class="hover" src="img/sql_string_filter_and_exclude_system_example.png" alt="Example with SQL++ text in filter input" loading="lazy">
+                                </span>
+                            </div>
+                        </li>
+
+                        <li>
+                            <b>Elapsed Time Filter</b> — comparisons and ranges (e.g., <code>&gt;=500ms</code>, <code>0.5s-2s</code>)
+                            <div class="gallery" style="margin:8px 0 0">
+                                <span class="hover-swap">
+                                    <img src="img/elapsedTime_filter.png" alt="Elapsed Time filter input" loading="lazy">
+                                    <img class="hover" src="img/elapsedTime_filter_example.png" alt="Examples entered into Elapsed Time Filter input" loading="lazy">
+                                </span>
+                            </div>
+                        </li>
+
                         <li><b>Exclude System Queries</b> — hides system:*, INFER/ADVISE, CREATE/ALTER INDEX, etc.</li>
                     </ul>
-                    <div class="gallery">
-                        <img src="img/datepicker.png" alt="Datetime picker controls" loading="lazy">
-                        <img src="img/preset_dates.png" alt="Preset date range buttons" loading="lazy">
-                        <img src="img/sql_string_filter_and_exclude_system.png" alt="SQL++ contains filter and exclude system toggle" loading="lazy">
-                        <img src="img/elapsedTime_filter.png" alt="Elapsed Time filter input" loading="lazy">
-                    </div>
                 </div>
 
                 <div class="step" id="tabs">
@@ -380,6 +415,18 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 </div>
             </div>
 
+            <div class="accordion" id="executionTime">
+                <div class="accordion-header" onclick="toggleAccordion(this)">executionTime</div>
+                <div class="accordion-content">
+                    <p>Pure query processing time in the Query service (parse → plan → execute), excluding waits on services and result transmission.</p>
+                    <ul>
+                        <li>High values indicate computational complexity or inefficient plans.</li>
+                        <li>Optimize via EXPLAIN, better indexes (covering), and simplified logic.</li>
+                        <li>Context: see <a href="#timing-metrics">Timing metrics</a> for relationships.</li>
+                    </ul>
+                </div>
+            </div>
+
             <div class="accordion" id="cpuTime">
                 <div class="accordion-header" onclick="toggleAccordion(this)">cpuTime</div>
                 <div class="accordion-content">
@@ -388,6 +435,19 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         <li><b>cpuTime ~ serviceTime</b> → CPU‑bound workload.</li>
                         <li>Check sorts, aggregations, and complex expressions.</li>
                     </ul>
+                </div>
+            </div>
+
+            <div class="accordion" id="kernTime">
+                <div class="accordion-header" onclick="toggleAccordion(this)">kernTime</div>
+                <div class="accordion-content">
+                    <p>Time the OS kernel spends scheduling the query’s threads (waiting for a CPU), not doing useful work.</p>
+                    <ul>
+                        <li>High kernTime → CPU contention/overload; threads compete for cores.</li>
+                        <li>Check node CPU metrics, thread counts, and co-located services; reduce concurrency or add cores.</li>
+                        <li>Per operator: time ≈ execTime + servTime + kernTime; high kernTime stretches execution/elapsed time.</li>
+                    </ul>
+                    <p>See also: <a href="#timing-metrics">Timing metrics</a> and node diagram in Part 2.</p>
                 </div>
             </div>
 
@@ -455,7 +515,39 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 }
             });
         });
-
+        
+        // Scrollspy: highlight current section in sidebar
+        document.addEventListener('DOMContentLoaded',()=>{
+        const sidebar = document.getElementById('sidebar');
+        if(!sidebar) return;
+        const links = Array.from(sidebar.querySelectorAll('a[href^="#"]'));
+        const sections = links.map(a=>{
+        try{ return document.querySelector(a.getAttribute('href')); }catch{ return null; }
+        }).filter(Boolean);
+        const setActive = (id)=>{
+            links.forEach(a=>{
+                    const active = a.getAttribute('href') === '#' + id;
+                    a.classList.toggle('active', active);
+                    a.setAttribute('aria-current', active ? 'true' : 'false');
+                });
+            };
+            const update = ()=>{
+                const y = window.scrollY;
+                const mid = y + window.innerHeight * 0.35;
+                let activeId = sections[0] ? sections[0].id : '';
+                for(const sec of sections){
+                    const top = sec.getBoundingClientRect().top + y;
+                    if(top <= mid) activeId = sec.id;
+                }
+                if(activeId) setActive(activeId);
+            };
+            update();
+            let ticking=false;
+            window.addEventListener('scroll',()=>{ if(!ticking){ requestAnimationFrame(()=>{ update(); ticking=false; }); ticking=true; } }, { passive:true });
+            window.addEventListener('resize', update);
+            links.forEach(a=> a.addEventListener('click', ()=> setTimeout(update, 50)));
+        });
+        
         // SQL Copy behavior (shared component)
         document.querySelectorAll('.sql-copy-btn').forEach(button=>{
             button.addEventListener('click',()=>{
