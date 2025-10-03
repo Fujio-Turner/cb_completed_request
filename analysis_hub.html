@@ -554,6 +554,37 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <p style="color:#4a5568;font-size:0.95em"><b>Recommendation:</b> Avoid sequential scans for large datasets or frequent queries—always prioritize indexing for scalability.</p>
             </div>
 
+            <div class="feature" id="slow-parse-plan">
+                <strong>⚠️ Slow Parse and Plan Times <a href="#slow-parse-plan" class="anchor-link">#</a></strong>
+                <p>Parse (SQL++ text → internal structure) and plan (optimizer choosing execution strategy) phases normally complete in microseconds. When either exceeds 1ms, it indicates CPU contention or kernel scheduling delays—queries waiting for CPU time instead of executing.</p>
+                
+                <p><b>Example - Normal times (reference query):</b></p>
+                <pre style="background:#2d3748;color:#e2e8f0;padding:12px;border-radius:4px;overflow-x:auto;margin:10px 0;font-size:0.9em;">Query: SELECT * , meta() FROM `travel-sample` ORDER BY `type` DESC
+
+phaseTimes: {
+  "parse": "271.666µs",    ✅ Normal (< 1ms)
+  "plan": "441.75µs"       ✅ Normal (< 1ms)
+}</pre>
+
+                <p><b>Why times > 1ms are problematic:</b></p>
+                <ul>
+                    <li><b>CPU Saturation:</b> Query service node lacks available CPU cores</li>
+                    <li><b>Kernel Waits:</b> Threads queued in OS scheduler (see <a href="#kernTime">kernTime</a>)</li>
+                    <li><b>Co-located Services:</b> Query competing with Index/Data services on same node</li>
+                    <li><b>High Concurrency:</b> Too many simultaneous queries</li>
+                </ul>
+
+                <p><b>Diagnose via:</b></p>
+                <ul>
+                    <li><code>system:vitals</code> → <code>cpu.user.percent</code> (&gt;80%), <code>request.active.count</code></li>
+                    <li>Operator stats → high <code>kernTime</code> throughout execution plan</li>
+                    <li>Node config → check if services are co-located</li>
+                </ul>
+
+                <p><b>Fixes:</b> Reduce query concurrency, use prepared statements (skip parse), add dedicated query nodes, separate co-located services, or optimize complex queries.</p>
+                
+            </div>
+
             <div class="back-to-top"><a href="#top">Back to top</a></div>
         </section>
         
