@@ -46,12 +46,23 @@
                #part-4 .accordion[data-locked='true'] .accordion-header{background:#f0f8ff}
                 #part-4 .accordion[data-locked='true'] .accordion-header::before{transform:rotate(90deg);color:#0ea5e9;border-color:#0ea5e9;background:rgba(14,165,233,0.1)}
                 #part-4 .accordion[data-locked='true'] .accordion-header::after{content:'Locked — click to close';color:#0ea5e9;font-weight:700;background:rgba(14,165,233,0.12);padding:2px 6px;border-radius:999px}
+
+        /* Elapsed Time Filter examples accordion (same hover/lock behavior) */
+        #elapsedTimeExamples .accordion-content{transition:max-height .5s ease, padding .5s ease}
+        #elapsedTimeExamples.slow-close .accordion-content{transition:max-height .7s ease, padding .7s ease}
+        #elapsedTimeExamples .accordion-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+        #elapsedTimeExamples .accordion-header::after{content:'hover to open, click to lock';font-size:12px;color:#94a3b8;transition:color .2s ease, background .2s ease}
+        #elapsedTimeExamples .accordion-header::before{content:'▶';display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;border:1px solid #94a3b8;color:#94a3b8;margin-right:8px;font-size:12px;transform:rotate(0deg);transition:transform .3s ease, color .3s ease, border-color .3s ease, background .3s ease;background:#fff}
+        #elapsedTimeExamples[data-locked='true'] .accordion-header{background:#f0f8ff}
+        #elapsedTimeExamples[data-locked='true'] .accordion-header::before{transform:rotate(90deg);color:#0ea5e9;border-color:#0ea5e9;background:rgba(14,165,233,0.1)}
+        #elapsedTimeExamples[data-locked='true'] .accordion-header::after{content:'Locked — click to close';color:#0ea5e9;font-weight:700;background:rgba(14,165,233,0.12);padding:2px 6px;border-radius:999px}
          
          /* CRAWL/WALK/RUN images */
         .cwr-img{width:100%;height:auto;border:1px solid #e6eef5;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin:10px 0 12px}
         
         /* Badges */
          .badge-pro{display:inline-block;padding:2px 8px;background:#f59e0b;color:#fff;border-radius:999px;font-size:12px;font-weight:700;margin-left:8px;box-shadow:0 2px 6px rgba(0,0,0,0.12)}
+         .badge-warning{display:inline-block;padding:2px 8px;background:#dc2626;color:#fff;border-radius:999px;font-size:12px;font-weight:700;margin-left:8px;box-shadow:0 2px 6px rgba(0,0,0,0.12)}
 
           /* SQL code UI */
         .sql-query-box{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;padding:15px;margin:15px 0;position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
@@ -135,6 +146,11 @@
         /* Accessible focus */
         a:focus-visible,button:focus-visible{outline:3px solid rgba(0,122,204,0.35);outline-offset:2px;border-radius:6px}
 
+        /* Anchor link indicator */
+        .anchor-link{text-decoration:none;color:#94a3b8;margin-left:8px;opacity:0;transition:opacity .2s ease;font-size:0.8em;font-weight:400}
+        .feature:hover .anchor-link,.step:hover .anchor-link,h2:hover .anchor-link,h3:hover .anchor-link{opacity:1}
+        .anchor-link:hover{color:#007acc}
+
         @media (max-width:600px){body{padding:10px}h1{font-size:2em}.gallery img{width:100%;max-width:300px;height:auto}}
     </style>
 </head>
@@ -157,12 +173,12 @@
                 <li class="sub"><a href="#parseJSON">• Parse JSON & Filters</a></li>
                 <li class="sub"><a href="#tabs">• Analyzer Tabs</a></li>
                 <li><a href="#part-2">Read the Stats</a></li>
-                <li class="sub"><a href="#timing-metrics">• Timing Metrics</a></li>
-                <li class="sub"><a href="#read-stats">• System & Result Metrics</a></li>
+                <li class="sub"><a href="#read-stats">• Performance Data</a></li>
                 <li class="sub"><a href="#system-node-impact">• System & Node Impact</a></li>
-                <li class="sub"><a href="#phase-metrics">• Phase Metrics</a></li>
-                <li><a href="#part-3">Crawl → Walk → Run</a></li>
+                <li class="sub"><a href="#phase-metrics">• ServiceTime Context</a></li>
                 <li class="sub"><a href="#practical-tips">• Pro Insights</a></li>
+                <li><a href="#part-3">Crawl → Walk → Run</a></li>
+                <li><a href="#performance">Performance</a></li>
                 <li><a href="#scanConsistency">Glossary</a></li>
             </ul>
         </nav>
@@ -230,6 +246,18 @@
                                     <img class="hover" src="img/elapsedTime_filter_example.png" alt="Examples entered into Elapsed Time Filter input" loading="lazy">
                                 </span>
                             </div>
+                            <div class="accordion" id="elapsedTimeExamples" style="margin-top:12px">
+                                <div class="accordion-header" onclick="toggleAccordion(this)">Filter Examples</div>
+                                <div class="accordion-content">
+                                    <p>Filter by the <code>elapsedTime</code> of each query using comparisons and ranges. Supported: <code>&lt;</code>, <code>&lt;=</code>, <code>=</code>, <code>&gt;</code>, <code>&gt;=</code>, ranges like <code>100-500ms</code> or <code>0.5s-2s</code>, unit-inferred ranges like <code>3-15s</code>, shorthand <code>500ms+</code> (means <code>&gt;= 500ms</code>), and bare numbers (e.g., <code>150</code> means <code>&gt;= 150ms</code>).</p>
+                                    <ul>
+                                        <li><b>Comparators:</b> <code>&gt;500ms</code>, <code>&gt;=1s</code>, <code>&lt;2s</code>, <code>=150ms</code></li>
+                                        <li><b>Ranges (inclusive):</b> <code>100-500ms</code>, <code>0.5s-2s</code>, <code>3-15s</code> (unit applied to both sides)</li>
+                                        <li><b>Shorthand:</b> <code>500ms+</code> (same as <code>&gt;=500ms</code>)</li>
+                                        <li><b>Bare number:</b> <code>150</code> is interpreted as <code>&gt;=150ms</code></li>
+                                    </ul>
+                                </div>
+                            </div>
                         </li>
 
                         <li><b>Exclude System Queries</b> — hides system:*, INFER/ADVISE, CREATE/ALTER INDEX, etc.</li>
@@ -292,7 +320,7 @@
                 </div>
 
                 <div class="step" id="indexes">
-                    <strong>5) Add Indexes JSON (Optional but Recommended)</strong>
+                    <strong>5) Add Indexes JSON </strong><i>(Optional but Recommended)</i></strong>
                     <p>Run this separate query for <code>system:indexes</code> and paste/upload to the upper-right input to enrich Indexes and Flow views.</p>
                     <div class="sql-query-box">
 <pre>SELECT 
@@ -322,39 +350,35 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 
                 <section id="part-2">
             <h2>What the Stats and Tables Mean</h2>
-            <div class="feature" id="timing-metrics">
-                <strong>Timing Metrics</strong>
+
+            <div class="feature" id="read-stats">
+                <strong>Reading the Performance Data <a href="#read-stats" class="anchor-link">#</a></strong>
+                <p>The <strong>Every Query</strong> tab lets you see stats per individual query to spot bottlenecks and get timings of operations in detail.</p>
+                <img src="img/stats_to_plan.png" alt="Query statistics table showing performance metrics" style="max-width:100%; border:1px solid #e6eef5; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin:8px 0;">
                 <ul>
                     <li><code>elapsedTime</code> — Total wall-clock from request acknowledgment to last byte sent.</li>
                     <li><code>serviceTime</code> — Active execution time while waiting on services (Index, Data, FTS).</li>
                     <li><code>executionTime</code> — Internal query processing time (engine logic).</li>
                     <li><code>cpuTime</code> — Cumulative CPU consumed across threads (can exceed wall time).</li>
                     <li><code>kernTime</code> — Time spent waiting for CPU scheduling by the OS.</li>
-                </ul>
-                <p style="color:#4a5568;font-size:0.95em">Quick patterns: <b>elapsedTime ≫ serviceTime</b> → queuing or network; <b>cpuTime ~ serviceTime</b> → CPU-bound; <b>kernTime high</b> → CPU contention.</p>
-                <p>See the glossary: <a href="#elapsedTime">elapsedTime</a>, <a href="#serviceTime">serviceTime</a>, <a href="#executionTime">executionTime</a>, <a href="#cpuTime">cpuTime</a>, <a href="#kernTime">kernTime</a></p>
-                <p style="color:#4a5568;font-size:0.95em">Scroll down for more details and examples.</p>
-            </div>
-            <div class="feature" id="read-stats">
-                <strong>Reading the Performance Data</strong>
-                <p>Use the statistics table to spot bottlenecks and verify improvements. Start with timing metrics to understand the overall timeline, then correlate with phase metrics and system/resource metrics.</p>
-                <img src="img/stats_to_plan.png" alt="Query statistics table showing performance metrics" style="max-width:100%; border:1px solid #e6eef5; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin:8px 0;">
-                <ul>
                     <li><code>resultCount</code> — Number of documents returned to the client.</li>
                     <li><code>resultSize</code> — Total bytes sent; affects network transfer time.</li>
-                    <li><code>errorCount</code> — Errors encountered during execution.</li>
-                    <li><code>usedMemory</code> — Peak document memory usage (requires <code>memory_quota</code>).</li>
+                    <li><code>phaseCounts.fetch</code> — Number of full documents retrieved from data service</li>
+                    <li><code>phaseCounts.indexScan</code> — Number of matching records from the index(es) service</li>
                 </ul>
                 <p style="color:#4a5568;font-size:0.95em">Watch-outs: large <code>resultSize</code> stretches <code>elapsedTime</code>; high <code>usedMemory</code> suggests heavy sorts/aggregations or big payloads.</p>
             </div>
-
-
+        
 
             <div class="feature" id="system-node-impact">
-                <strong>System & Node Impact</strong>
+                <strong>System & Node Impact <a href="#system-node-impact" class="anchor-link">#</a></strong>
                 <p>Performance is influenced by node CPU, memory, and service placement. Large results also increase network time.</p>
-                  <img src="img/query_node.png" alt="Query node architecture impact" style="max-width:100%; border:1px solid #e6eef5; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin:8px 0;">
-   
+                  <img src="img/query_node.png" alt="Query node architecture impact" style="max-width:100%; border:1px solid #e6eef5; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin:8px 0;">          
+                <ul>
+                    <li><code>kernTime</code> — Time spent waiting for CPU scheduling by the OS.</li>
+                    <li><code>cpuTime</code> — Cumulative CPU consumed across threads (can exceed wall time).</li>
+                    <li><code>memoryUsed</code> — Cumulative Memory used to execute a query</li>
+                </ul>
                 <p>The image above shows the Query service handling multiple concurrent requests on a single node. The OS kernel schedules query threads onto a limited number of CPU cores, so parts of a query must “wait” when resources are contended. This scheduling delay appears as <code>kernTime</code> at the operator level and stretches execution/elapsed time without doing useful work.</p>
                 <ul>
                     <li><b>Limited CPU cores</b> → thread contention and context switching under load</li>
@@ -365,20 +389,17 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <p style="color:#4a5568;font-size:0.95em">Reduce contention by scaling query nodes, tuning concurrency, creating covering indexes to reduce fetches, and minimizing payload size.</p>
             </div>
 
-
-
             <div class="feature" id="phase-metrics">
-                <strong>ServiceTime in Context</strong>
-                <p>ServiceTime represents the actual query execution phases. This view shows how the query flows through <code>authorize</code> → <code>parse</code> → <code>plan</code> → <code>run</code> → <code>stream</code>, and how these phases roll up into the overall timing metrics.</p>
-                <p style="color:#4a5568;font-size:0.95em">Enable <code>profile="timings"</code> to see operator-level <code>execTime</code> (CPU), <code>servTime</code> (waiting on services), and <code>kernTime</code> (OS scheduling).</p>
+                <strong>ServiceTime in Context <a href="#phase-metrics" class="anchor-link">#</a></strong>
+                <p>The Query service relies on other services in the cluster to operate (Data, Index, FTS, and Auth Service). This statistic is a sum of time spent waiting on all these services for this particular query.</p>
                 <div class="gallery" style="margin:10px 0 0">
                     <img src="img/serviceTime.png" alt="ServiceTime breakdown and phases" loading="lazy">
                 </div>
-                <p>See the glossary: <a href="#serviceTime">serviceTime</a>, <a href="#kernTime">kernTime</a></p>
             </div>
 
+
                 <div class="feature" id="practical-tips">
-                    <strong>Pro Insights: How to Read the Stats <span class="badge-pro">PRO</span></strong>
+                    <strong>Pro Insights: How to Read the Stats <span class="badge-pro">PRO</span> <a href="#practical-tips" class="anchor-link">#</a></strong>
                     <ul>
                         <li>High <code>kernTime</code> → CPU contention; check system load and concurrency.</li>
                         <li>High <code>phaseCounts.fetch</code> → add covering indexes; reduce fetches.</li>
@@ -386,7 +407,10 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         <li><code>elapsedTime</code> ≫ <code>serviceTime</code> → queuing/network; scale query nodes/services.</li>
                         <li><code>cpuTime</code> high ~ <code>serviceTime</code> → CPU-bound; simplify expressions or add cores.</li>
                     </ul>
-                    <p style="color:#4a5568;font-size:0.95em">See also: <a href="#timing-metrics">Timing metrics</a> and <a href="#phase-metrics">Phase metrics</a>.</p>
+                    
+                    <p style="color:#4a5568;font-size:0.95em">Quick patterns: <b>elapsedTime ≫ serviceTime</b> → queuing or network; <b>cpuTime ~ serviceTime</b> → CPU-bound; <b>kernTime high</b> → CPU contention.</p>
+
+                    <p style="color:#4a5568;font-size:0.95em">See also: <a href="#read-stats">Performance Data</a> and <a href="#phase-metrics">ServiceTime Context</a>.</p>
                 </div>
             
         <div class="back-to-top"><a href="#top">Back to top</a></div>
@@ -395,8 +419,8 @@ LET bid = CONCAT("", s.bucket_id, ""),
          <section id="part-3">
          <h2>Crawl → Walk → Run</h2>
          <div class="features stacked">
-                <div class="feature">
-                    <strong>CRAWL · Basic Index Strategy</strong>
+                <div class="feature" id="crawl-strategy">
+                    <strong>CRAWL · Basic Index Strategy <a href="#crawl-strategy" class="anchor-link">#</a></strong>
                     <img class="cwr-img" src="img/full_index.png" alt="CRAWL: full index scan pattern" loading="lazy">
                     <ul>
                         <li>High <code>phaseCounts.fetch</code>; <code>phaseTimes.fetch</code> dominates.</li>
@@ -407,8 +431,8 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     <p>See the glossary: <a href="#serviceTime">serviceTime</a>, <a href="#elapsedTime">elapsedTime</a></p>
                 </div>
 
-                <div class="feature">
-                    <strong>WALK · Targeted Composite Indexes</strong>
+                <div class="feature" id="walk-strategy">
+                    <strong>WALK · Targeted Composite Indexes <a href="#walk-strategy" class="anchor-link">#</a></strong>
                     <img class="cwr-img" src="img/reduced_index.png" alt="WALK: reduced index scan pattern" loading="lazy">
                     <ul>
                         <li>Reduced <code>phaseCounts.fetch</code> via better pre-filtering in indexes.</li>
@@ -419,8 +443,8 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     <p>See the glossary: <a href="#executionTime">executionTime</a>, <a href="#serviceTime">serviceTime</a></p>
                 </div>
 
-                <div class="feature">
-                    <strong>RUN · Covering Indexes</strong>
+                <div class="feature" id="run-strategy">
+                    <strong>RUN · Covering Indexes <a href="#run-strategy" class="anchor-link">#</a></strong>
                     <img class="cwr-img" src="img/covered_index.png" alt="RUN: covering index pattern" loading="lazy">
                     <ul>
                         <li><code>phaseCounts.fetch = 0</code> — no document fetches.</li>
@@ -443,6 +467,97 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
         <div class="back-to-top"><a href="#top">Back to top</a></div>
                </section>
+
+        <section id="performance">
+            <h2>Performance</h2>
+
+            <div class="feature" id="what-is-index">
+                <strong>What is a Couchbase Index? <a href="#what-is-index" class="anchor-link">#</a></strong>
+                <p>A Couchbase index is a data structure that creates shortcuts to your documents, allowing queries to find data efficiently without scanning entire buckets. When you create indexes with <code>CREATE INDEX</code> statements, they are stored and managed by the Index Service.</p>
+                <img src="img/index_node_create_indexes.png" alt="Couchbase CREATE INDEX commands showing how indexes are organized on Index Node with key-value pairs" style="max-width:100%; border:1px solid #e6eef5; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin:12px 0;" loading="lazy">
+                
+                <p style="margin-top:16px"><strong>How Index Creation Works</strong></p>
+                <p style="color:#4a5568;font-size:0.95em">As shown in the diagram above, when you execute CREATE INDEX statements:</p>
+                <ul>
+                    <li><strong>custId_status_v1:</strong> Creates an index on <code>(status, custId)</code> fields, organizing data like "done,1234", "done,5678", "draft,1234"</li>
+                    <li><strong>email_v1:</strong> Creates an index on <code>(email)</code> field, organizing data like "@yahoo.com", "@gmail.com", "@aol.com"</li>
+                    <li><strong>Index Node Storage:</strong> All indexes are stored on dedicated Index Service nodes</li>
+                    <li><strong>Key-Value Organization:</strong> Each index maintains sorted key-value pairs for fast lookups</li>
+                    <li><strong>Document References:</strong> Index values point to document keys (like 1234, 5678) for quick document retrieval</li>
+                </ul>
+            </div>
+
+            <div class="feature">
+                <strong>Index Memory Usage: The Performance Game-Changer</strong>
+                <p>The percentage of your index stored in memory directly impacts query performance. Higher memory residency means faster query execution, while lower memory residency can lead to disk I/O and slower responses.</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                    <div>
+                        <p><strong>High Memory Residency (90%+)</strong></p>
+                        <img src="img/index_high_memory.png" alt="Couchbase index with high percentage of data in memory showing optimal performance" style="width:100%; border:1px solid #e6eef5; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05);" loading="lazy">
+                        <p style="color:#4a5568;font-size:0.95em;margin-top:8px">
+                            <strong>Optimal Performance:</strong> Most index data is in RAM, resulting in fast lookups and minimal disk I/O. Ideal for frequently accessed indexes.
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <p><strong>⚠️ Low Memory Residency (20-40%)</strong></p>
+                        <img src="img/index_low_memory.png" alt="Couchbase index with small percentage of data in memory showing performance impact" style="width:100%; border:1px solid #e6eef5; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05);" loading="lazy">
+                        <p style="color:#4a5568;font-size:0.95em;margin-top:8px">
+                            <strong>Performance Impact:</strong> Frequent disk reads required, leading to higher latency and reduced throughput. Consider increasing memory allocation.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature">
+                <strong>Index Memory Optimization Strategies</strong>
+                
+                <p style="margin-top:16px"><strong>Memory Optimization Tips</strong></p>
+                <ul>
+                    <li><strong>Monitor Memory Residency:</strong> Use our tool to track what percentage of your indexes are in memory</li>
+                    <li><strong>Increase Index RAM:</strong> Allocate more memory to the Index Service for frequently used indexes</li>
+                    <li><strong>Index Selectivity:</strong> Create more selective indexes to reduce overall memory footprint</li>
+                    <li><strong>Partition Indexes:</strong> Use partitioned indexes to distribute memory load across nodes</li>
+                    <li><strong>Archive Old Data:</strong> Remove or separate historical data that doesn't need high-performance access</li>
+                </ul>
+
+                <p style="margin-top:16px"><strong>Index Performance Impact</strong></p>
+                <p style="color:#4a5568;font-size:0.95em">Memory residency directly affects:</p>
+                <ul>
+                    <li><strong>Query Latency:</strong> In-memory indexes respond 10-100x faster than disk-based lookups</li>
+                    <li><strong>Throughput:</strong> Higher memory residency allows more concurrent queries without performance degradation</li>
+                    <li><strong>CPU Usage:</strong> Less CPU spent waiting for disk I/O when indexes are in memory</li>
+                    <li><strong>Consistency:</strong> Predictable performance when indexes don't compete for disk resources</li>
+                </ul>
+            </div>
+            
+            <div class="feature">
+                <strong>⚠️ Drawbacks of Primary Indexes <span class="badge-warning">WARNING</span></strong>
+                <p>While primary indexes in Couchbase provide a basic way to scan all documents in a bucket by their keys, they come with significant drawbacks that make them unsuitable for most production scenarios. Primary indexes lead to very slow performance because they fetch all documents across all types in the bucket before applying filters, resulting in unnecessary I/O, memory, and CPU waste.</p>
+                <ul>
+                    <li><b>Performance Impact:</b> Excessive document retrievals and post-scan filtering make operations "VERY EXPENSIVE"</li>
+                    <li><b>Resource Waste:</b> Unnecessary I/O, memory, and CPU consumption</li>
+                    <li><b>Not Recommended:</b> The Couchbase index advisor never recommends primary indexes</li>
+                    <li><b>Better Alternatives:</b> Secondary or composite indexes are almost always more efficient</li>
+                </ul>
+                <p style="color:#4a5568;font-size:0.95em"><b>Recommendation:</b> Avoid primary indexes in production—use them only for initial data exploration or when no other index applies, and opt for targeted secondary indexes to minimize latency and resource usage.</p>
+            </div>
+
+            <div class="feature">
+                <strong>⚠️ Drawbacks of Sequential Scans <span class="badge-warning">WARNING</span></strong>
+                <p>Sequential scans in Couchbase involve scanning documents directly without an index, which can be simple but comes with performance limitations. "Sequential scans are intended for simple, ready access to data, and are not intended as a high performance solution."</p>
+                <ul>
+                    <li><b>Limited Use Cases:</b> Best suited to small collections where key order is unimportant</li>
+                    <li><b>Index Overhead:</b> Only when the overhead of maintaining an index can't be justified</li>
+                    <li><b>Performance Issues:</b> Lead to full bucket traversals, high latency, and increased resource consumption</li>
+                    <li><b>Primary Index Alternative:</b> For ordered document key operations, a primary index provides the same functionality and will outperform a sequential scan</li>
+                </ul>
+                <p style="color:#4a5568;font-size:0.95em"><b>Recommendation:</b> Avoid sequential scans for large datasets or frequent queries—always prioritize indexing for scalability.</p>
+            </div>
+
+            <div class="back-to-top"><a href="#top">Back to top</a></div>
+        </section>
         
          <section id="part-4">
             <h2>Glossary of Terms</h2>
@@ -490,7 +605,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     <ul>
                         <li>High values indicate computational complexity or inefficient plans.</li>
                         <li>Optimize via EXPLAIN, better indexes (covering), and simplified logic.</li>
-                        <li>Context: see <a href="#timing-metrics">Timing metrics</a> for relationships.</li>
+                        <li>Context: see <a href="#read-stats">Performance Data</a> for metric relationships.</li>
                     </ul>
                 </div>
             </div>
@@ -515,7 +630,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         <li>Check node CPU metrics, thread counts, and co-located services; reduce concurrency or add cores.</li>
                         <li>Per operator: time ≈ execTime + servTime + kernTime; high kernTime stretches execution/elapsed time.</li>
                     </ul>
-                    <p>See also: <a href="#timing-metrics">Timing metrics</a> and node diagram in Part 2.</p>
+                    <p>See also: <a href="#read-stats">Performance Data</a> and <a href="#system-node-impact">System & Node Impact</a>.</p>
                 </div>
             </div>
 
@@ -645,9 +760,9 @@ LET bid = CONCAT("", s.bucket_id, ""),
             sync();
         });
 
-        // Glossary hover-to-open with slow close; click locks open
+        // Glossary and Elapsed Time Filter hover-to-open with slow close; click locks open
         document.addEventListener('DOMContentLoaded',()=>{
-            document.querySelectorAll('#part-4 .accordion').forEach((acc)=>{
+            document.querySelectorAll('#part-4 .accordion, #elapsedTimeExamples').forEach((acc)=>{
                 const header = acc.querySelector('.accordion-header');
                 const content = acc.querySelector('.accordion-content');
                 if(!header||!content) return;
