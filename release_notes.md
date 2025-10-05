@@ -1,3 +1,7 @@
+### Version 3.17.0 (October 5, 2025)
+- **New: Parse and Plan charts in Timeline** - Major debugging feature for analyzing query parsing and planning phases (closes #130, #129)
+- Enhancement: Timeline visualization improvements for slow query debugging (closes #128, #127)
+
 ### Version 3.16.4 (October 3, 2025)
 - Bug fixes and quality improvements
 - Closes: #125, #124, #63
