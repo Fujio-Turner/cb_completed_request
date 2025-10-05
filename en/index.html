@@ -1247,20 +1247,7 @@ if (window.TEXT_CONSTANTS) {
         <!-- Timeline Tab Content -->
         <div id="timeline" data-report-section="timeline">
             <div id="timeline-controls" class="margin-bottom-10">
-                <button id="reset-zoom-btn" onclick="resetTimelineZoom()"
-                    class="cursor-pointer border-none border-radius-3 btn-gray">
-                    Reset Zoom
-                </button>
-                <div class="margin-left-20"
-                    style="display: inline-block; background: #f8f9fa; padding: 6px 10px; border-radius: 4px; border: 1px solid #dee2e6;">
-                    <label style="font-weight: bold; margin-right: 8px; color: #495057;">Y-Axis Scale:</label>
-                    <label><input type="radio" name="yScale" value="linear" checked onchange="changeYAxisScale()" />
-                        Linear</label>
-                    <label class="margin-left-10"><input type="radio" name="yScale" value="logarithmic"
-                            onchange="changeYAxisScale()" />
-                        Logarithmic</label>
-                </div>
-                <span class="margin-left-30">
+                <span>
                     <label style="font-weight: bold; margin-right: 8px; color: #495057;">Time Grouping:</label>
                     <select id="time-grouping-select" onchange="changeTimeGrouping()"
                         style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px;">
@@ -1273,12 +1260,25 @@ if (window.TEXT_CONSTANTS) {
                     </select>
                 </span>
                 <span class="color-666 font-size-12 margin-left-20">
-                    Drag box to zoom area
+                    Click and drag to zoom
                 </span>
+                <button id="reset-zoom-btn" onclick="resetTimelineZoom()"
+                    class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray">
+                    Reset Zoom
+                </button>
                 <button id="use-time-range-btn" onclick="useCurrentTimeRange()"
                     class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray">
                     Use Charts Current X-Axis Date Range
                 </button>
+                <div class="margin-left-20"
+                    style="display: inline-block; background: #f8f9fa; padding: 6px 10px; border-radius: 4px; border: 1px solid #dee2e6;">
+                    <label style="font-weight: bold; margin-right: 8px; color: #495057;">Y-Axis Scale:</label>
+                    <label><input type="radio" name="yScale" value="linear" checked onchange="changeYAxisScale()" />
+                        Linear</label>
+                    <label class="margin-left-10"><input type="radio" name="yScale" value="logarithmic"
+                            onchange="changeYAxisScale()" />
+                        Logarithmic</label>
+                </div>
             </div>
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="duration-buckets" data-position="timeline-1">
@@ -9634,6 +9634,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                 const endInput = document.getElementById("end-date");
                 startInput.value = startValue;
                 endInput.value = endValue;
+
+                // Auto-show Data/Filter section so user can see the updated date range
+                showInputSection();
 
                 // Always show the filter reminder banner after updating the pickers
                 // Consistent with setTimeRange and manual input changes
