@@ -158,7 +158,7 @@
         <p>Concise guidance to process data, interpret stats, and optimize queries.</p>
     </header>
 
-    <div class="intro"><strong>Why is my query slow?</strong> Start with <a href="#read-stats">Reading the Performance Data</a>, then apply <a href="#part-3">Crawl → Walk → Run</a>. New to terms? See the <a href="#scanConsistency">glossary</a>.</div>
+    <div class="intro"><strong>Why is my query slow?</strong> Start with <a href="#read-stats">Reading the Performance Data</a></div>
     
     <div class="layout">
         <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true" aria-controls="sidebar">
@@ -175,9 +175,9 @@
                 <li class="sub"><a href="#system-node-impact">• System & Node Impact</a></li>
                 <li class="sub"><a href="#phase-metrics">• ServiceTime Context</a></li>
                 <li class="sub"><a href="#practical-tips">• Pro Insights</a></li>
-                <li><a href="#part-3">Crawl → Walk → Run</a></li>
+                <li><a href="#crawl-walk-run">Crawl → Walk → Run</a></li>
                 <li><a href="#performance">Performance</a></li>
-                <li><a href="#scanConsistency">Glossary</a></li>
+                <li><a href="#glossary">Glossary</a></li>
             </ul>
         </nav>
         <main class="content">
@@ -414,7 +414,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
         <div class="back-to-top"><a href="#top">Back to top</a></div>
                </section>
         
-         <section id="part-3">
+         <section id="crawl-walk-run">
          <h2>Crawl → Walk → Run</h2>
          <div class="features stacked">
                 <div class="feature" id="crawl-strategy">
@@ -589,7 +589,7 @@ phaseTimes: {
         </section>
         
          <section id="part-4">
-            <h2>Glossary of Terms</h2>
+            <h2 id="glossary">Glossary of Terms</h2>
             <div class="accordion" id="scanConsistency">
                 <div class="accordion-header" onclick="toggleAccordion(this)">scanConsistency</div>
                 <div class="accordion-content">
@@ -856,13 +856,33 @@ phaseTimes: {
                 openAndLockGlossary(acc);
                 acc.scrollIntoView({ behavior:'smooth', block:'start' });
             };
+            
+            // General hash handler for all anchors
+            const handleHash = (hash)=>{
+                if(!hash || hash === '#') return;
+                let el = null;
+                try{ el = document.querySelector(hash); }catch{ el = null; }
+                if(!el) return;
+                
+                // Handle glossary items first
+                let acc = null;
+                if(el.matches && el.matches('#part-4 .accordion')) acc = el; else acc = el.closest && el.closest('#part-4 .accordion');
+                if(acc) {
+                    openAndLockGlossary(acc);
+                    acc.scrollIntoView({ behavior:'smooth', block:'start' });
+                } else {
+                    // Scroll to any other anchor
+                    el.scrollIntoView({ behavior:'smooth', block:'start' });
+                }
+            };
+            
             // Initial hash
-            handleGlossaryHash(location.hash);
+            handleHash(location.hash);
             // On hash change
-            window.addEventListener('hashchange', ()=> handleGlossaryHash(location.hash));
+            window.addEventListener('hashchange', ()=> handleHash(location.hash));
             // Also handle clicks to internal links
             document.querySelectorAll('a[href^="#"]').forEach(a=>{
-                a.addEventListener('click', ()=> setTimeout(()=> handleGlossaryHash(location.hash), 0));
+                a.addEventListener('click', ()=> setTimeout(()=> handleHash(location.hash), 0));
             });
         });
      </script>
