@@ -7402,9 +7402,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                 
                 if (!y) return;
                 
-                // Get the pixel position for 1.0ms on the y-axis
-                // The y-axis value 1.0 represents the 1ms threshold between buckets
-                const yPosition = y.getPixelForValue(1.0);
+                // Get the pixel position for 3.0 on the y-axis
+                // This is between "666µs-1ms" (2.5) and "1-1.3ms" (3.5)
+                const yPosition = y.getPixelForValue(3.0);
                 
                 // Only draw if the line is within the chart area
                 if (yPosition < chart.chartArea.top || yPosition > chart.chartArea.bottom) {
@@ -7496,16 +7496,16 @@ function renderQueryGroupPhaseTimesChart(group) {
                         
                         let yPosition = 0;
                         switch(bucket) {
-                            case "1-333µs": yPosition = 0.167; break;
-                            case "333-666µs": yPosition = 0.5; break;
-                            case "666µs-1ms": yPosition = 0.833; break;
-                            case "1-1.3ms": yPosition = 1.15; break;
-                            case "1.3-1.6ms": yPosition = 1.45; break;
-                            case "1.6-2ms": yPosition = 1.8; break;
-                            case "2-10ms": yPosition = 6.0; break;
-                            case "10-100ms": yPosition = 55.0; break;
-                            case "100-500ms": yPosition = 300.0; break;
-                            case "500ms+": yPosition = 750.0; break;
+                            case "1-333µs": yPosition = 0.5; break;
+                            case "333-666µs": yPosition = 1.5; break;
+                            case "666µs-1ms": yPosition = 2.5; break;
+                            case "1-1.3ms": yPosition = 3.5; break;
+                            case "1.3-1.6ms": yPosition = 4.5; break;
+                            case "1.6-2ms": yPosition = 5.5; break;
+                            case "2-10ms": yPosition = 6.5; break;
+                            case "10-100ms": yPosition = 7.5; break;
+                            case "100-500ms": yPosition = 8.5; break;
+                            case "500ms+": yPosition = 9.5; break;
                         }
 
                         data.push({
@@ -7531,6 +7531,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 data: { datasets },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         title: { display: true, text: "Parse Duration Distribution by Time Buckets (Bubble Size = Query Count)" },
                         legend: { display: true, position: "top" },
@@ -7597,20 +7598,20 @@ function renderQueryGroupPhaseTimesChart(group) {
                             title: { display: true, text: "Request Time" }
                         },
                         y: {
-                            title: { display: true, text: "Duration Range (milliseconds)" },
+                            title: { display: true, text: "Duration Range" },
                             beginAtZero: true,
                             ticks: {
                                 callback: function (value) {
-                                    if (value === 0.167) return "1-333µs";
-                                    if (value === 0.5) return "333-666µs";
-                                    if (value === 0.833) return "666µs-1ms";
-                                    if (value === 1.15) return "1-1.3ms";
-                                    if (value === 1.45) return "1.3-1.6ms";
-                                    if (value === 1.8) return "1.6-2ms";
-                                    if (value === 6.0) return "2-10ms";
-                                    if (value === 55.0) return "10-100ms";
-                                    if (value === 300.0) return "100-500ms";
-                                    if (value === 750.0) return "500ms+";
+                                    if (value === 0.5) return "1-333µs";
+                                    if (value === 1.5) return "333-666µs";
+                                    if (value === 2.5) return "666µs-1ms";
+                                    if (value === 3.5) return "1-1.3ms";
+                                    if (value === 4.5) return "1.3-1.6ms";
+                                    if (value === 5.5) return "1.6-2ms";
+                                    if (value === 6.5) return "2-10ms";
+                                    if (value === 7.5) return "10-100ms";
+                                    if (value === 8.5) return "100-500ms";
+                                    if (value === 9.5) return "500ms+";
                                     return "";
                                 }
                             }
@@ -7689,16 +7690,16 @@ function renderQueryGroupPhaseTimesChart(group) {
                         
                         let yPosition = 0;
                         switch(bucket) {
-                            case "1-333µs": yPosition = 0.167; break;
-                            case "333-666µs": yPosition = 0.5; break;
-                            case "666µs-1ms": yPosition = 0.833; break;
-                            case "1-1.3ms": yPosition = 1.15; break;
-                            case "1.3-1.6ms": yPosition = 1.45; break;
-                            case "1.6-2ms": yPosition = 1.8; break;
-                            case "2-10ms": yPosition = 6.0; break;
-                            case "10-100ms": yPosition = 55.0; break;
-                            case "100-500ms": yPosition = 300.0; break;
-                            case "500ms+": yPosition = 750.0; break;
+                            case "1-333µs": yPosition = 0.5; break;
+                            case "333-666µs": yPosition = 1.5; break;
+                            case "666µs-1ms": yPosition = 2.5; break;
+                            case "1-1.3ms": yPosition = 3.5; break;
+                            case "1.3-1.6ms": yPosition = 4.5; break;
+                            case "1.6-2ms": yPosition = 5.5; break;
+                            case "2-10ms": yPosition = 6.5; break;
+                            case "10-100ms": yPosition = 7.5; break;
+                            case "100-500ms": yPosition = 8.5; break;
+                            case "500ms+": yPosition = 9.5; break;
                         }
 
                         data.push({
@@ -7724,6 +7725,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 data: { datasets },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         title: { display: true, text: "Plan Duration Distribution by Time Buckets (Note: Prepared statements skip parse/plan phases)" },
                         legend: { display: true, position: "top" },
@@ -7790,20 +7792,20 @@ function renderQueryGroupPhaseTimesChart(group) {
                             title: { display: true, text: "Request Time" }
                         },
                         y: {
-                            title: { display: true, text: "Duration Range (milliseconds)" },
+                            title: { display: true, text: "Duration Range" },
                             beginAtZero: true,
                             ticks: {
                                 callback: function (value) {
-                                    if (value === 0.167) return "1-333µs";
-                                    if (value === 0.5) return "333-666µs";
-                                    if (value === 0.833) return "666µs-1ms";
-                                    if (value === 1.15) return "1-1.3ms";
-                                    if (value === 1.45) return "1.3-1.6ms";
-                                    if (value === 1.8) return "1.6-2ms";
-                                    if (value === 6.0) return "2-10ms";
-                                    if (value === 55.0) return "10-100ms";
-                                    if (value === 300.0) return "100-500ms";
-                                    if (value === 750.0) return "500ms+";
+                                    if (value === 0.5) return "1-333µs";
+                                    if (value === 1.5) return "333-666µs";
+                                    if (value === 2.5) return "666µs-1ms";
+                                    if (value === 3.5) return "1-1.3ms";
+                                    if (value === 4.5) return "1.3-1.6ms";
+                                    if (value === 5.5) return "1.6-2ms";
+                                    if (value === 6.5) return "2-10ms";
+                                    if (value === 7.5) return "10-100ms";
+                                    if (value === 8.5) return "100-500ms";
+                                    if (value === 9.5) return "500ms+";
                                     return "";
                                 }
                             }
@@ -9802,31 +9804,8 @@ function renderQueryGroupPhaseTimesChart(group) {
                 window.execVsElapsedChart.update();
             }
 
-            // Update parse duration chart Y-axis scale
-            if (window.parseDurationChart) {
-                window.parseDurationChart.options.scales.y.type = scaleType;
-                if (scaleType === "logarithmic") {
-                    window.parseDurationChart.options.scales.y.beginAtZero = false;
-                    window.parseDurationChart.options.scales.y.min = 0.001; // Avoid log(0) for small durations
-                } else {
-                    window.parseDurationChart.options.scales.y.beginAtZero = true;
-                    delete window.parseDurationChart.options.scales.y.min;
-                }
-                window.parseDurationChart.update();
-            }
-
-            // Update plan duration chart Y-axis scale
-            if (window.planDurationChart) {
-                window.planDurationChart.options.scales.y.type = scaleType;
-                if (scaleType === "logarithmic") {
-                    window.planDurationChart.options.scales.y.beginAtZero = false;
-                    window.planDurationChart.options.scales.y.min = 0.001; // Avoid log(0) for small durations
-                } else {
-                    window.planDurationChart.options.scales.y.beginAtZero = true;
-                    delete window.planDurationChart.options.scales.y.min;
-                }
-                window.planDurationChart.update();
-            }
+            // Note: parseDurationChart and planDurationChart use fixed y-axis positions
+            // and do not respond to the scale toggle, similar to durationBucketsChart
 
         }
 
