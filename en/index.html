@@ -7443,15 +7443,18 @@ function renderQueryGroupPhaseTimesChart(group) {
             }
 
             const timeGroups = {};
-            const buckets = ["1-333µs", "333-666µs", "666µs-1ms", "1-1.3ms", "1.3-1.6ms", "1.6-2ms", "2ms+"];
+            const buckets = ["1-333µs", "333-666µs", "666µs-1ms", "1-1.3ms", "1.3-1.6ms", "1.6-2ms", "2-10ms", "10-100ms", "100-500ms", "500ms+"];
             const bucketColors = {
-                "1-333µs": "rgba(144, 238, 144, 0.6)",
-                "333-666µs": "rgba(255, 223, 0, 0.6)",
-                "666µs-1ms": "rgba(255, 165, 0, 0.6)",
-                "1-1.3ms": "rgba(255, 140, 0, 0.6)",
-                "1.3-1.6ms": "rgba(255, 99, 71, 0.6)",
-                "1.6-2ms": "rgba(255, 69, 0, 0.6)",
-                "2ms+": "rgba(220, 20, 60, 0.6)"
+                "1-333µs": "rgba(144, 238, 144, 0.7)",      // Light green
+                "333-666µs": "rgba(255, 223, 0, 0.7)",      // Yellow
+                "666µs-1ms": "rgba(255, 165, 0, 0.7)",      // Orange
+                "1-1.3ms": "rgba(255, 140, 0, 0.7)",        // Dark orange
+                "1.3-1.6ms": "rgba(255, 99, 71, 0.7)",      // Tomato
+                "1.6-2ms": "rgba(255, 69, 0, 0.7)",         // Orange red
+                "2-10ms": "rgba(220, 20, 60, 0.7)",         // Crimson
+                "10-100ms": "rgba(178, 34, 34, 0.7)",       // Firebrick
+                "100-500ms": "rgba(139, 0, 0, 0.7)",        // Dark red
+                "500ms+": "rgba(80, 0, 0, 0.8)"             // Very dark red
             };
 
             requests.forEach((request) => {
@@ -7472,7 +7475,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                 else if (parseDurationMs > 1.0 && parseDurationMs <= 1.3) timeGroups[key]["1-1.3ms"]++;
                 else if (parseDurationMs > 1.3 && parseDurationMs <= 1.6) timeGroups[key]["1.3-1.6ms"]++;
                 else if (parseDurationMs > 1.6 && parseDurationMs <= 2.0) timeGroups[key]["1.6-2ms"]++;
-                else if (parseDurationMs > 2.0) timeGroups[key]["2ms+"]++;
+                else if (parseDurationMs > 2.0 && parseDurationMs <= 10.0) timeGroups[key]["2-10ms"]++;
+                else if (parseDurationMs > 10.0 && parseDurationMs <= 100.0) timeGroups[key]["10-100ms"]++;
+                else if (parseDurationMs > 100.0 && parseDurationMs <= 500.0) timeGroups[key]["100-500ms"]++;
+                else if (parseDurationMs > 500.0) timeGroups[key]["500ms+"]++;
             });
 
             const sortedGroups = Object.values(timeGroups).sort((a, b) => a.timestamp - b.timestamp);
@@ -7496,7 +7502,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                             case "1-1.3ms": yPosition = 1.15; break;
                             case "1.3-1.6ms": yPosition = 1.45; break;
                             case "1.6-2ms": yPosition = 1.8; break;
-                            case "2ms+": yPosition = 2.5; break;
+                            case "2-10ms": yPosition = 6.0; break;
+                            case "10-100ms": yPosition = 55.0; break;
+                            case "100-500ms": yPosition = 300.0; break;
+                            case "500ms+": yPosition = 750.0; break;
                         }
 
                         data.push({
@@ -7598,7 +7607,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                                     if (value === 1.15) return "1-1.3ms";
                                     if (value === 1.45) return "1.3-1.6ms";
                                     if (value === 1.8) return "1.6-2ms";
-                                    if (value === 2.5) return "2ms+";
+                                    if (value === 6.0) return "2-10ms";
+                                    if (value === 55.0) return "10-100ms";
+                                    if (value === 300.0) return "100-500ms";
+                                    if (value === 750.0) return "500ms+";
                                     return "";
                                 }
                             }
@@ -7624,15 +7636,18 @@ function renderQueryGroupPhaseTimesChart(group) {
             }
 
             const timeGroups = {};
-            const buckets = ["1-333µs", "333-666µs", "666µs-1ms", "1-1.3ms", "1.3-1.6ms", "1.6-2ms", "2ms+"];
+            const buckets = ["1-333µs", "333-666µs", "666µs-1ms", "1-1.3ms", "1.3-1.6ms", "1.6-2ms", "2-10ms", "10-100ms", "100-500ms", "500ms+"];
             const bucketColors = {
-                "1-333µs": "rgba(144, 238, 144, 0.6)",
-                "333-666µs": "rgba(255, 223, 0, 0.6)",
-                "666µs-1ms": "rgba(255, 165, 0, 0.6)",
-                "1-1.3ms": "rgba(255, 140, 0, 0.6)",
-                "1.3-1.6ms": "rgba(255, 99, 71, 0.6)",
-                "1.6-2ms": "rgba(255, 69, 0, 0.6)",
-                "2ms+": "rgba(220, 20, 60, 0.6)"
+                "1-333µs": "rgba(144, 238, 144, 0.7)",      // Light green
+                "333-666µs": "rgba(255, 223, 0, 0.7)",      // Yellow
+                "666µs-1ms": "rgba(255, 165, 0, 0.7)",      // Orange
+                "1-1.3ms": "rgba(255, 140, 0, 0.7)",        // Dark orange
+                "1.3-1.6ms": "rgba(255, 99, 71, 0.7)",      // Tomato
+                "1.6-2ms": "rgba(255, 69, 0, 0.7)",         // Orange red
+                "2-10ms": "rgba(220, 20, 60, 0.7)",         // Crimson
+                "10-100ms": "rgba(178, 34, 34, 0.7)",       // Firebrick
+                "100-500ms": "rgba(139, 0, 0, 0.7)",        // Dark red
+                "500ms+": "rgba(80, 0, 0, 0.8)"             // Very dark red
             };
 
             requests.forEach((request) => {
@@ -7653,7 +7668,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                 else if (planDurationMs > 1.0 && planDurationMs <= 1.3) timeGroups[key]["1-1.3ms"]++;
                 else if (planDurationMs > 1.3 && planDurationMs <= 1.6) timeGroups[key]["1.3-1.6ms"]++;
                 else if (planDurationMs > 1.6 && planDurationMs <= 2.0) timeGroups[key]["1.6-2ms"]++;
-                else if (planDurationMs > 2.0) timeGroups[key]["2ms+"]++;
+                else if (planDurationMs > 2.0 && planDurationMs <= 10.0) timeGroups[key]["2-10ms"]++;
+                else if (planDurationMs > 10.0 && planDurationMs <= 100.0) timeGroups[key]["10-100ms"]++;
+                else if (planDurationMs > 100.0 && planDurationMs <= 500.0) timeGroups[key]["100-500ms"]++;
+                else if (planDurationMs > 500.0) timeGroups[key]["500ms+"]++;
             });
 
             const sortedGroups = Object.values(timeGroups).sort((a, b) => a.timestamp - b.timestamp);
@@ -7677,7 +7695,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                             case "1-1.3ms": yPosition = 1.15; break;
                             case "1.3-1.6ms": yPosition = 1.45; break;
                             case "1.6-2ms": yPosition = 1.8; break;
-                            case "2ms+": yPosition = 2.5; break;
+                            case "2-10ms": yPosition = 6.0; break;
+                            case "10-100ms": yPosition = 55.0; break;
+                            case "100-500ms": yPosition = 300.0; break;
+                            case "500ms+": yPosition = 750.0; break;
                         }
 
                         data.push({
@@ -7779,7 +7800,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                                     if (value === 1.15) return "1-1.3ms";
                                     if (value === 1.45) return "1.3-1.6ms";
                                     if (value === 1.8) return "1.6-2ms";
-                                    if (value === 2.5) return "2ms+";
+                                    if (value === 6.0) return "2-10ms";
+                                    if (value === 55.0) return "10-100ms";
+                                    if (value === 300.0) return "100-500ms";
+                                    if (value === 750.0) return "500ms+";
                                     return "";
                                 }
                             }
