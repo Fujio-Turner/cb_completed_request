@@ -1,3 +1,7 @@
+### Version 3.17.1 (October 5, 2025)
+- Fix: Timeline control order reorganized for better user experience (closes #132)
+- Fix: analysis_hub.html reference links now navigate to exact sections (closes #131)
+
 ### Version 3.17.0 (October 5, 2025)
 - **New: Parse and Plan charts in Timeline** - Major debugging feature for analyzing query parsing and planning phases (closes #130, #129)
 - Enhancement: Timeline visualization improvements for slow query debugging (closes #128, #127)

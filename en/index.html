@@ -2,7 +2,7 @@
 <html lang="en">
 <!--
     Couchbase Query Analyzer
-    Version: 3.17.0
+    Version: 3.17.1
     Last Updated: 2025-09-29
     
     🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
@@ -18,9 +18,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.17.0" />
+    <meta name="version" content="3.17.1" />
     <meta name="last-updated" content="2025-10-05" />
-    <title>Query Analyzer v3.17.0</title>
+    <title>Query Analyzer v3.17.1</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/themes/base/jquery-ui.min.css" integrity="sha512-TFee0335YRJoyiqz8hA8KV3P0tXa5CpRBSoM0Wnkn7JoJx1kaq1yXL/rb8YFpWXkMOjRcv5txv+C6UluttluCQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -218,7 +218,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
             COMPLETED_JSON_HEADER: "Completed Requests JSON (system:completed_requests)",
             INDEXES_JSON_HEADER: "Indexes JSON (system:indexes output)",
 
-                        // New features (v3.17.0+)
+                        // New features (v3.17.1+)
                 WHOLE_RECORD: "Whole Record",
                 REQUEST_ID: "Request ID",
                 ENTER_REQUEST_ID: "Enter requestId",
@@ -382,7 +382,7 @@ if (window.TEXT_CONSTANTS) {
 <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v3.17.0
+        v3.17.1
     </div>
 
     <!-- Bug report link (bottom-right) -->
@@ -15546,7 +15546,7 @@ function generateElapsedTimeChart(requests) {
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = "3.17.0";
+        const APP_VERSION = "3.17.1";
         const LAST_UPDATED = "2025-10-05";
 
         function getVersionInfo() {
