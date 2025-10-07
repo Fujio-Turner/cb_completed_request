@@ -372,6 +372,52 @@ if (window.TEXT_CONSTANTS) {
       /* Insight state: gray by default; blue when active (issues found) */
       .insight-item { border-left: 4px solid #dee2e6 !important; }
       .insight-item.active { border-left-color: #007bff !important; }
+      
+      /* Custom large tooltips for JOIN flags */
+      .join-flag-tooltip {
+        position: relative;
+        cursor: help;
+      }
+      
+      .join-flag-tooltip::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.95);
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: normal;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        line-height: 1.4;
+      }
+      
+      .join-flag-tooltip::before {
+        content: '';
+        position: absolute;
+        bottom: 115%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 6px solid transparent;
+        border-top-color: rgba(0, 0, 0, 0.95);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        z-index: 1000;
+      }
+      
+      .join-flag-tooltip:hover::after,
+      .join-flag-tooltip:hover::before {
+        opacity: 1;
+      }
 
       /* Bug report floating link */
       .bug-report-link { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.1); color: #333; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; font-family: monospace; z-index: 999; opacity: 0.7; text-decoration: none; transition: opacity 0.3s ease, background 0.3s ease; }
@@ -1055,18 +1101,57 @@ if (window.TEXT_CONSTANTS) {
 
                         <div class="insight-item">
                             <h4 class="insight-title" onclick="toggleInsight('complex-join-operations')">Complex JOIN
-                                Operations<span class="dev-badge">Dev</span></h4>
+                                Operations<span class="beta-badge">Beta</span></h4>
                             <div class="insight-content" id="complex-join-operations-content">
                                 <p class="insight-description">
-                                    <span class="highlight-number">0 JOIN queries</span> are taking an average of <span
-                                        class="highlight-number">0 seconds</span> each, with <span
-                                        class="highlight-number">0%</span> showing suboptimal join patterns.
+                                    <span class="highlight-number" id="complex-join-count">0 queries</span> (<span class="highlight-number" id="complex-join-percent">0%</span>) with JOIN operations detected, with <span class="highlight-number" id="complex-join-flagged-count">0</span> (<span class="highlight-number" id="complex-join-flagged-percent">0%</span>) flagged as complex. Average JOIN phase time: <span class="highlight-number" id="complex-join-avg-time">0s</span>.
                                 </p>
+
+                                <button id="toggle-complex-join-operations-sample-queries-btn" onclick="toggleInsightSampleQueries('complex-join-operations')" class="btn-standard">
+                                    <span id="complex-join-operations-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="complex-join-operations-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 140px;">Request Date</th>
+                                                <th style="width: 100px;">Flags</th>
+                                                <th style="width: 100px;">JOIN Time</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="complex-join-operations-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                    
+                                    <!-- Flag Legend -->
+                                    <div style="margin-top: 10px; padding: 10px 12px; background: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107;">
+                                        <strong style="font-size: 12px; color: #856404;">Flag Legend:</strong>
+                                        <ul style="margin: 8px 0 4px 0; padding-left: 20px; font-size: 11px; color: #856404; line-height: 1.6;">
+                                            <li><strong style="color: #dc3545;">🔴 Critical:</strong> 
+                                                <span style="font-weight: bold;">A</span> = Primary Scan, 
+                                                <span style="font-weight: bold;">B</span> = Cartesian Product, 
+                                                <span style="font-weight: bold;">D</span> = Severe Explosion (10x+)
+                                            </li>
+                                            <li><strong style="color: #fd7e14;">🟡 High:</strong> 
+                                                <span style="font-weight: bold;">C</span> = Data Explosion (2x-10x), 
+                                                <span style="font-weight: bold;">E</span> = Slow JOIN (≥2s), 
+                                                <span style="font-weight: bold;">F</span> = High Doc Count (≥100K), 
+                                                <span style="font-weight: bold;">H</span> = JOIN Time Dominant (≥30%)
+                                            </li>
+                                            <li><strong style="color: #ffc107;">🟠 Medium:</strong> 
+                                                <span style="font-weight: bold;">G</span> = Multiple JOINs (4+)
+                                            </li>
+                                        </ul>
+                                        <em style="font-size: 10px; color: #856404;">💡 Hover over flags in the table above for detailed metrics</em>
+                                    </div>
+                                </div>
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
-                                        Consider denormalizing frequently joined data <a
-                                            href="https://cb.fuj.io/analysis_hub.html#practical-tips"
+                                        Review JOIN optimization strategies and flag meanings <a
+                                            href="https://cb.fuj.io/analysis_hub.html#complex-joins"
                                             class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
                                     </div>
                                 </div>
@@ -11420,8 +11505,14 @@ function generateElapsedTimeChart(requests) {
             let slowParsePlanCount = 0;
             let slowParsePlanTotalParseTime = 0;
             let slowParsePlanTotalPlanTime = 0;
+            
+            // JOIN operations metrics
+            let joinQueriesCount = 0;
+            let joinQueriesWithIssuesCount = 0;
+            let joinPhaseTotalTime = 0;
 
             // Sample queries arrays for insights
+            let complexJoinOperationsSamples = [];
             let missingWhereClausesSamples = [];
             let slowUseKeyQueriesSamples = [];
             let largeResultSetQueriesSamples = [];
@@ -11593,6 +11684,106 @@ function generateElapsedTimeChart(requests) {
                         }
                     } catch (e) {
                         console.error("Error parsing plan for kernel time analysis:", e);
+                    }
+                }
+                
+                // Detect JOIN operations (Beta - full flag detection A-H)
+                const hasJoin = /\b(INNER\s+JOIN|LEFT\s+(OUTER\s+)?JOIN|RIGHT\s+(OUTER\s+)?JOIN|CROSS\s+JOIN|JOIN\b)/i.test(statement);
+                if (hasJoin) {
+                    joinQueriesCount++;
+                    
+                    // Get JOIN phase metrics
+                    const joinPhaseTime = request.phaseTimes?.join || 0;
+                    const joinPhaseTimeMs = parseTime(joinPhaseTime);
+                    if (joinPhaseTimeMs > 0) {
+                        joinPhaseTotalTime += joinPhaseTimeMs;
+                    }
+                    
+                    const elapsedTimeMs = parseTime(request.elapsedTime);
+                    const primaryScanCount = request.phaseCounts?.primaryScan || 0;
+                    const joinCount = request.phaseCounts?.join || 0;
+                    const indexScanCount = request.phaseCounts?.indexScan || 0;
+                    const fetchCount = request.phaseCounts?.fetch || 0;
+                    const unnestCount = request.phaseCounts?.unnest || 0;
+                    const resultCount = request.resultCount || 0;
+                    
+                    // Calculate input docs (before JOIN)
+                    const inputDocs = indexScanCount + fetchCount + primaryScanCount;
+                    const explosionRatio = inputDocs > 0 ? resultCount / inputDocs : 0;
+                    
+                    // Count JOIN keywords in statement
+                    const joinKeywordCount = (statement.match(/\bJOIN\b/gi) || []).length;
+                    
+                    // Calculate JOIN time ratio
+                    const joinTimeRatio = elapsedTimeMs > 0 ? joinPhaseTimeMs / elapsedTimeMs : 0;
+                    
+                    // Detect complexity flags (A-H)
+                    const flags = [];
+                    const flagDetails = {};
+                    
+                    // FLAG A: Primary Scan in JOIN (Critical)
+                    if (primaryScanCount > 0) {
+                        flags.push('A');
+                        flagDetails.A = `Primary Scan (${primaryScanCount.toLocaleString()} docs)`;
+                    }
+                    
+                    // FLAG B: Cartesian Product (Critical)
+                    if (/\bCROSS\s+JOIN\b/i.test(statement)) {
+                        flags.push('B');
+                        flagDetails.B = `CROSS JOIN detected`;
+                    }
+                    
+                    // FLAG C: Data Explosion 2x-10x (High)
+                    if (explosionRatio >= 2.0 && explosionRatio < 10.0) {
+                        flags.push('C');
+                        flagDetails.C = `${explosionRatio.toFixed(1)}x explosion (${inputDocs} → ${resultCount})`;
+                    }
+                    
+                    // FLAG D: Severe Data Explosion 10x+ (Critical)
+                    if (explosionRatio >= 10.0) {
+                        flags.push('D');
+                        flagDetails.D = `${explosionRatio.toFixed(1)}x explosion (${inputDocs} → ${resultCount})`;
+                    }
+                    
+                    // FLAG E: Slow JOIN Phase ≥2s (High)
+                    if (joinPhaseTimeMs >= 2000) {
+                        flags.push('E');
+                        flagDetails.E = `JOIN took ${(joinPhaseTimeMs / 1000).toFixed(2)}s`;
+                    }
+                    
+                    // FLAG F: High Document Processing ≥100K (High)
+                    if (joinCount >= 100000) {
+                        flags.push('F');
+                        flagDetails.F = `${joinCount.toLocaleString()} docs processed`;
+                    }
+                    
+                    // FLAG G: Multiple JOINs ≥4 (Medium)
+                    if (joinKeywordCount >= 4) {
+                        flags.push('G');
+                        flagDetails.G = `${joinKeywordCount} JOIN operations`;
+                    }
+                    
+                    // FLAG H: JOIN Time Dominant ≥30% (High)
+                    if (joinTimeRatio >= 0.30) {
+                        flags.push('H');
+                        flagDetails.H = `JOIN is ${(joinTimeRatio * 100).toFixed(1)}% of query time`;
+                    }
+                    
+                    // If any flags detected, this is a complex JOIN
+                    if (flags.length > 0) {
+                        joinQueriesWithIssuesCount++;
+                        
+                        // Add to sample queries (up to 5 unique)
+                        if (complexJoinOperationsSamples.length < 5 &&
+                            !complexJoinOperationsSamples.some(s => s.statement === (request.preparedText || request.statement))) {
+                            complexJoinOperationsSamples.push({
+                                requestTime: request.requestTime,
+                                statement: request.preparedText || request.statement,
+                                flags: flags,
+                                flagDetails: flagDetails,
+                                joinTime: joinPhaseTimeMs
+                            });
+                        }
                     }
                 }
 
@@ -11872,6 +12063,76 @@ function generateElapsedTimeChart(requests) {
                     selectStarPercentElement.className = selectStarCount > 0 ? "highlight-number" : "";
                 }
             }
+            
+            // Update the Complex JOIN Operations insight (Beta - basic version)
+            const complexJoinCountElement = document.getElementById("complex-join-count");
+            const complexJoinPercentElement = document.getElementById("complex-join-percent");
+            const complexJoinFlaggedCountElement = document.getElementById("complex-join-flagged-count");
+            const complexJoinFlaggedPercentElement = document.getElementById("complex-join-flagged-percent");
+            const complexJoinAvgTimeElement = document.getElementById("complex-join-avg-time");
+            
+            if (joinQueriesCount > 0) {
+                const joinPercent = totalQueries > 0 ? ((joinQueriesCount / totalQueries) * 100).toFixed(1) : 0;
+                const flaggedPercent = joinQueriesCount > 0 ? ((joinQueriesWithIssuesCount / joinQueriesCount) * 100).toFixed(1) : 0;
+                const avgJoinTime = joinQueriesCount > 0 ? (joinPhaseTotalTime / joinQueriesCount / 1000).toFixed(2) : 0;
+                
+                if (complexJoinCountElement) {
+                    complexJoinCountElement.textContent = `${joinQueriesCount} queries`;
+                    complexJoinCountElement.className = "highlight-number";
+                }
+                if (complexJoinPercentElement) {
+                    complexJoinPercentElement.textContent = `${joinPercent}%`;
+                    complexJoinPercentElement.className = "highlight-number";
+                }
+                if (complexJoinFlaggedCountElement) {
+                    complexJoinFlaggedCountElement.textContent = `${joinQueriesWithIssuesCount}`;
+                    complexJoinFlaggedCountElement.className = joinQueriesWithIssuesCount > 0 ? "highlight-number" : "";
+                }
+                if (complexJoinFlaggedPercentElement) {
+                    complexJoinFlaggedPercentElement.textContent = `${flaggedPercent}%`;
+                    complexJoinFlaggedPercentElement.className = joinQueriesWithIssuesCount > 0 ? "highlight-number" : "";
+                }
+                if (complexJoinAvgTimeElement) {
+                    complexJoinAvgTimeElement.textContent = `${avgJoinTime}s`;
+                    complexJoinAvgTimeElement.className = "highlight-number";
+                }
+                
+                // Activate the insight item if there are JOIN queries with issues
+                const complexJoinInsightItem = document.querySelector('#complex-join-operations-content').closest('.insight-item');
+                if (complexJoinInsightItem && joinQueriesWithIssuesCount > 0) {
+                    complexJoinInsightItem.classList.add('active');
+                } else if (complexJoinInsightItem) {
+                    complexJoinInsightItem.classList.remove('active');
+                }
+            } else {
+                // Reset to defaults
+                if (complexJoinCountElement) {
+                    complexJoinCountElement.textContent = "0 queries";
+                    complexJoinCountElement.className = "";
+                }
+                if (complexJoinPercentElement) {
+                    complexJoinPercentElement.textContent = "0%";
+                    complexJoinPercentElement.className = "";
+                }
+                if (complexJoinFlaggedCountElement) {
+                    complexJoinFlaggedCountElement.textContent = "0";
+                    complexJoinFlaggedCountElement.className = "";
+                }
+                if (complexJoinFlaggedPercentElement) {
+                    complexJoinFlaggedPercentElement.textContent = "0%";
+                    complexJoinFlaggedPercentElement.className = "";
+                }
+                if (complexJoinAvgTimeElement) {
+                    complexJoinAvgTimeElement.textContent = "0s";
+                    complexJoinAvgTimeElement.className = "";
+                }
+                
+                // Deactivate the insight item
+                const complexJoinInsightItem = document.querySelector('#complex-join-operations-content').closest('.insight-item');
+                if (complexJoinInsightItem) {
+                    complexJoinInsightItem.classList.remove('active');
+                }
+            }
 
             // Update the high memory usage insight
             const highMemoryCountElement = document.getElementById("high-memory-count");
@@ -12100,6 +12361,7 @@ function generateElapsedTimeChart(requests) {
             updateInsightSampleQueries('high-kernel-time-queries', highKernelTimeQueriesSamples);
             updateInsightSampleQueries('large-payload-streaming', largePayloadStreamingSamples);
             updateInsightSampleQueries('slow-parse-plan-times', slowParsePlanSamples);
+            updateJoinSampleQueries(complexJoinOperationsSamples); // Custom function with flags column
 
             // Special handling for timeout queries (3-column table with 10 entries)
             updateTimeoutQueriesTable(actualTimeoutsSamples, approachingTimeoutsSamples);
@@ -13954,6 +14216,115 @@ function generateElapsedTimeChart(requests) {
                 }
                 
                 row.appendChild(dateCell);
+                row.appendChild(statementCell);
+                tbody.appendChild(row);
+            });
+        }
+
+        // Update JOIN sample queries with flags and JOIN time columns
+        function updateJoinSampleQueries(queries) {
+            const tbody = document.getElementById('complex-join-operations-sample-queries-tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            insightSampleQueries['complex-join-operations'] = queries;
+            
+            queries.forEach((query, index) => {
+                const formattedDate = query.requestTime || "";
+                const flags = query.flags || [];
+                const flagDetails = query.flagDetails || {};
+                const joinTime = query.joinTime || 0;
+                
+                const statementId = `complex-join-operations-statement-${index}`;
+                const isLongStatement = query.statement.length > 500;
+                
+                const row = document.createElement('tr');
+                
+                // Create date cell
+                const dateCell = document.createElement('td');
+                dateCell.style.whiteSpace = 'nowrap';
+                dateCell.style.textAlign = 'center';
+                dateCell.style.fontSize = '11px';
+                dateCell.textContent = formattedDate;
+                
+                // Create flags cell with tooltips
+                const flagsCell = document.createElement('td');
+                flagsCell.style.fontWeight = 'bold';
+                flagsCell.style.textAlign = 'center';
+                flagsCell.style.fontSize = '12px';
+                
+                if (flags.length > 0) {
+                    // Create each flag span separately with custom large tooltips
+                    flagsCell.innerHTML = '';
+                    flags.forEach((flag, idx) => {
+                        const detail = flagDetails[flag] || '';
+                        const color = ['A', 'B', 'D'].includes(flag) ? '#dc3545' : 
+                                     ['C', 'E', 'F', 'H'].includes(flag) ? '#fd7e14' : '#ffc107';
+                        
+                        const flagSpan = document.createElement('span');
+                        flagSpan.textContent = flag;
+                        flagSpan.style.color = color;
+                        flagSpan.className = 'join-flag-tooltip';
+                        flagSpan.setAttribute('data-tooltip', detail);
+                        
+                        flagsCell.appendChild(flagSpan);
+                        
+                        // Add comma separator if not last flag
+                        if (idx < flags.length - 1) {
+                            const comma = document.createTextNode(', ');
+                            flagsCell.appendChild(comma);
+                        }
+                    });
+                } else {
+                    flagsCell.textContent = '-';
+                }
+                
+                // Create JOIN time cell
+                const joinTimeCell = document.createElement('td');
+                joinTimeCell.style.textAlign = 'center';
+                joinTimeCell.style.fontSize = '11px';
+                joinTimeCell.textContent = joinTime > 0 ? `${(joinTime / 1000).toFixed(2)}s` : 'N/A';
+                
+                // Create statement cell
+                const statementCell = document.createElement('td');
+                statementCell.className = 'statement-cell';
+                statementCell.style.fontFamily = 'monospace';
+                statementCell.style.fontSize = '11px';
+                
+                if (isLongStatement) {
+                    const truncated = query.statement.substring(0, 500);
+                    statementCell.innerHTML = `
+                        <div id="${statementId}-truncated">
+                            <span>${escapeHtml(truncated)}...</span>
+                            <br>
+                            <button onclick="toggleInsightStatement('${statementId}', true)" 
+                                    class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.SHOW_MORE}</button>
+                            <button onclick="copyInsightStatement('complex-join-operations', ${index}, event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                        <div id="${statementId}-full" style="display: none;">
+                            <span>${escapeHtml(query.statement)}</span>
+                            <br>
+                            <button onclick="toggleInsightStatement('${statementId}', false)" 
+                                    class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.HIDE}</button>
+                            <button onclick="copyInsightStatement('complex-join-operations', ${index}, event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                    `;
+                } else {
+                    statementCell.innerHTML = `
+                        <div>
+                            <span>${escapeHtml(query.statement)}</span>
+                            <br>
+                            <button onclick="copyInsightStatement('complex-join-operations', ${index}, event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                    `;
+                }
+                
+                row.appendChild(dateCell);
+                row.appendChild(flagsCell);
+                row.appendChild(joinTimeCell);
                 row.appendChild(statementCell);
                 tbody.appendChild(row);
             });

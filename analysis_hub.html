@@ -45,6 +45,14 @@
                 #part-4 .accordion[data-locked='true'] .accordion-header::before{transform:rotate(90deg);color:#0ea5e9;border-color:#0ea5e9;background:rgba(14,165,233,0.1)}
                 #part-4 .accordion[data-locked='true'] .accordion-header::after{content:'Locked — click to close';color:#0ea5e9;font-weight:700;background:rgba(14,165,233,0.12);padding:2px 6px;border-radius:999px}
 
+        /* Complex JOINs accordions (same style as Glossary) */
+        #complex-joins .accordion-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+        #complex-joins .accordion-header::after{content:'click to keep open/close';font-size:12px;color:#94a3b8;transition:color .2s ease, background .2s ease}
+        #complex-joins .accordion-header::before{content:'▶';display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;border:1px solid #94a3b8;color:#94a3b8;margin-right:8px;font-size:12px;transform:rotate(0deg);transition:transform .3s ease, color .3s ease, border-color .3s ease, background .3s ease;background:#fff}
+        #complex-joins .accordion[data-locked='true'] .accordion-header{background:#f0f8ff}
+        #complex-joins .accordion[data-locked='true'] .accordion-header::before{transform:rotate(90deg);color:#0ea5e9;border-color:#0ea5e9;background:rgba(14,165,233,0.1)}
+        #complex-joins .accordion[data-locked='true'] .accordion-header::after{content:'Locked — click to close';color:#0ea5e9;font-weight:700;background:rgba(14,165,233,0.12);padding:2px 6px;border-radius:999px}
+
         /* Elapsed Time Filter examples accordion (same hover/lock behavior) */
         #elapsedTimeExamples .accordion-content{transition:max-height .5s ease, padding .5s ease}
         #elapsedTimeExamples.slow-close .accordion-content{transition:max-height .7s ease, padding .7s ease}
@@ -585,6 +593,88 @@ phaseTimes: {
                 
             </div>
 
+            <div class="feature" id="complex-joins">
+                <strong>⚠️ Complex JOIN Operations <span class="badge-beta">BETA</span> <a href="#complex-joins" class="anchor-link">#</a></strong>
+                <p>JOIN operations in Couchbase N1QL/SQL++ can introduce significant performance overhead when not properly optimized. Complex JOINs are flagged based on multiple indicators (A-H) that signal resource contention, inefficient execution patterns, or unexpected data explosion.</p>
+                
+                <div class="accordion" id="join-complexity-flags">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Common JOIN Complexity Flags (A-H)</div>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><b>🔴 Flag A - Primary Scan in JOIN:</b> Using primary index instead of secondary index during JOIN phase (Critical). The right-side keyspace lacks a proper index on the join predicate, forcing a full collection scan.</li>
+                            <li><b>🔴 Flag B - Cartesian Product:</b> CROSS JOIN or missing/poor ON clause causing exponential result multiplication (Critical). Example: joining 1,000 rows with 1,000 rows produces 1,000,000 results.</li>
+                            <li><b>🔴 Flag D - Severe Data Explosion:</b> Result set 10x+ larger than input documents (Critical). Often caused by UNNEST followed by JOIN where each array element joins to multiple records.</li>
+                            <li><b>🟡 Flag C - Moderate Data Explosion:</b> Result set 2x-10x larger than input (High). Indicates JOIN conditions that aren't selective enough or UNNEST creating intermediate expansion.</li>
+                            <li><b>🟡 Flag E - Slow JOIN Phase:</b> JOIN phase time ≥2 seconds (High). Join execution is taking too long, potentially due to large datasets, missing indexes, or poor join predicates.</li>
+                            <li><b>🟡 Flag F - High Document Processing:</b> JOIN processed ≥100,000 documents (High). Large intermediate result sets consuming memory and CPU.</li>
+                            <li><b>🟡 Flag H - JOIN Time Dominant:</b> JOIN phase consumes ≥30% of total query time (High). The join operation is the bottleneck in query execution.</li>
+                            <li><b>🟠 Flag G - Multiple JOINs:</b> Query contains 4+ JOIN keywords (Medium). Complex multi-table joins increase complexity and maintenance difficulty.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="accordion" id="join-explosion-example">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Example - UNNEST + JOIN Data Explosion</div>
+                    <div class="accordion-content">
+                        <pre style="background:#2d3748;color:#e2e8f0;padding:12px;border-radius:4px;overflow-x:auto;margin:10px 0;font-size:0.9em;">Query: SELECT o.*, p.* FROM orders o 
+       UNNEST o.items AS item 
+       JOIN products p ON KEYS item.productId
+
+Input:  10,000 orders
+UNNEST: 50,000 items (avg 5 items per order)
+JOIN:   50,000 products matched
+Result: 50,000 rows (5x explosion) ⚠️
+
+Flags Triggered:
+- D: 5.0x explosion (10,000 → 50,000)
+- E: JOIN took 2.80s
+- H: JOIN is 32.7% of query time</pre>
+                    </div>
+                </div>
+
+                <div class="accordion" id="join-problems">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Why JOINs Can Be Problematic</div>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><b>Network Round-Trips:</b> Each join may require fetching documents from Data Service</li>
+                            <li><b>Memory Consumption:</b> Intermediate result sets held in memory during execution</li>
+                            <li><b>CPU Overhead:</b> Matching and filtering join predicates</li>
+                            <li><b>Index Dependencies:</b> Performance heavily depends on proper index coverage on both sides</li>
+                            <li><b>UNNEST Multiplication:</b> Array expansion before JOIN multiplies dataset size exponentially</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="accordion" id="join-optimization">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Optimization Strategies</div>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><b>Create Secondary Indexes:</b> Ensure both left and right keyspaces have indexes on join keys (fixes Flag A)</li>
+                            <li><b>Use Covering Indexes:</b> Include projected fields in index definition to avoid document fetches</li>
+                            <li><b>Add WHERE Filters Early:</b> Filter data before JOIN to reduce intermediate result set size</li>
+                            <li><b>Denormalize Data:</b> For frequently joined data, embed related documents to eliminate JOINs</li>
+                            <li><b>Optimize JOIN Order:</b> Join smallest dataset first, then progressively add larger datasets</li>
+                            <li><b>Review UNNEST Usage:</b> Consider if array elements truly need joining or can be filtered first</li>
+                            <li><b>Use Prepared Statements:</b> Cache execution plans for frequently executed JOINs</li>
+                            <li><b>Monitor JOIN Phase Metrics:</b> Track <code>phaseTimes.join</code> and <code>phaseCounts.join</code> to identify bottlenecks</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="accordion" id="join-denormalize-decision">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">When to Denormalize vs JOIN</div>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><b>Denormalize (embed) if:</b> Data is read frequently together, updates are infrequent, relationship is 1-to-1 or 1-to-few</li>
+                            <li><b>Use JOIN if:</b> Data changes frequently, relationship is many-to-many, need to maintain referential integrity</li>
+                            <li><b>Hybrid Approach:</b> Embed critical fields, JOIN for full details when needed</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <p style="color:#4a5568;font-size:0.95em;margin-top:15px;"><b>💡 Recommendation:</b> Monitor JOIN queries with multiple complexity flags (especially A, B, D) as they often indicate systemic design issues. Consider denormalizing frequently-joined data paths or restructuring queries to reduce JOIN overhead.</p>
+            </div>
+
             <div class="back-to-top"><a href="#top">Back to top</a></div>
         </section>
         
@@ -787,9 +877,9 @@ phaseTimes: {
             sync();
         });
 
-        // Glossary and Elapsed Time Filter hover-to-open with slow close; click locks open
+        // Glossary, Elapsed Time Filter, and Complex JOINs hover-to-open with slow close; click locks open
         document.addEventListener('DOMContentLoaded',()=>{
-            document.querySelectorAll('#part-4 .accordion, #elapsedTimeExamples').forEach((acc)=>{
+            document.querySelectorAll('#part-4 .accordion, #elapsedTimeExamples, #complex-joins .accordion').forEach((acc)=>{
                 const header = acc.querySelector('.accordion-header');
                 const content = acc.querySelector('.accordion-content');
                 if(!header||!content) return;

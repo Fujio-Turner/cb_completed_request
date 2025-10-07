@@ -2681,5 +2681,423 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#stats\":{\"execTime\":\"34.567µs\",\"servTime\":\"200.0µs\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":500,\"#itemsOut\":500,\"execTime\":\"123.456ms\",\"kernTime\":\"118.9ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":500,\"#itemsOut\":500,\"execTime\":\"234.567ms\",\"kernTime\":\"225.3ms\"}},{\"#operator\":\"Join\",\"#stats\":{\"#itemsIn\":500,\"#itemsOut\":500,\"execTime\":\"289.012ms\",\"kernTime\":\"278.4ms\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"45.678ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"8.901ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "join-primary-scan-flag-A",
+      "cpuTime": "1.234s",
+      "elapsedTime": "5.234s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "primaryScan": 50000,
+        "join": 50000,
+        "fetch": 0,
+        "indexScan": 0
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "primaryScan": 1,
+        "join": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "12.456µs",
+        "instantiate": "8.901µs",
+        "parse": "234.567µs",
+        "plan": "123.456µs",
+        "primaryScan": "2.345s",
+        "join": "2.500s",
+        "project": "234.567ms",
+        "run": "5.123s",
+        "stream": "100.234ms"
+      },
+      "remoteAddr": "127.0.0.1:54321",
+      "requestId": "join-primary-scan-flag-A",
+      "requestTime": "2025-08-10T11:30:00.000Z",
+      "resultCount": 50000,
+      "resultSize": 150000000,
+      "scanConsistency": "unbounded",
+      "serviceTime": "5.234s",
+      "state": "completed",
+      "statement": "SELECT o.*, c.* FROM orders o JOIN customers c ON o.customerId = c.id WHERE o.status = 'pending'",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 524288000,
+      "userAgent": "java-sdk/3.4.0",
+      "users": "local:admin",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"PrimaryScan\",\"#stats\":{\"#itemsIn\":50000,\"#itemsOut\":50000,\"execTime\":\"2.345s\"}},{\"#operator\":\"Join\",\"#stats\":{\"#itemsIn\":50000,\"#itemsOut\":50000,\"execTime\":\"2.500s\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"234.567ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"100.234ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "join-unnest-explosion-flag-C-D",
+      "cpuTime": "3.456s",
+      "elapsedTime": "8.567s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 10000,
+        "fetch": 10000,
+        "unnest": 50000,
+        "join": 50000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "unnest": 1,
+        "join": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "15.234µs",
+        "instantiate": "12.345µs",
+        "parse": "345.678µs",
+        "plan": "234.567µs",
+        "indexScan": "1.234s",
+        "fetch": "2.345s",
+        "unnest": "1.500s",
+        "join": "2.800s",
+        "project": "456.789ms",
+        "run": "8.400s",
+        "stream": "150.123ms"
+      },
+      "remoteAddr": "127.0.0.1:65432",
+      "requestId": "join-unnest-explosion-flag-C-D",
+      "requestTime": "2025-08-10T12:00:00.000Z",
+      "resultCount": 50000,
+      "resultSize": 200000000,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "8.567s",
+      "state": "completed",
+      "statement": "SELECT o.*, p.* FROM orders o UNNEST o.items AS item JOIN products p ON KEYS item.productId WHERE o.orderDate >= '2025-01-01'",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 819200000,
+      "userAgent": "python-sdk/4.1.5",
+      "users": "local:analytics_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":10000,\"#itemsOut\":10000,\"execTime\":\"1.234s\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":10000,\"#itemsOut\":10000,\"execTime\":\"2.345s\"}},{\"#operator\":\"Unnest\",\"#stats\":{\"#itemsIn\":10000,\"#itemsOut\":50000,\"execTime\":\"1.500s\"}},{\"#operator\":\"Join\",\"#stats\":{\"#itemsIn\":50000,\"#itemsOut\":50000,\"execTime\":\"2.800s\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"456.789ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"150.123ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "join-slow-phase-flag-E",
+      "cpuTime": "2.100s",
+      "elapsedTime": "6.789s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 5000,
+        "fetch": 5000,
+        "join": 25000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "join": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "20.123µs",
+        "instantiate": "15.678µs",
+        "parse": "456.789µs",
+        "plan": "345.678µs",
+        "indexScan": "890.123ms",
+        "fetch": "1.234s",
+        "join": "4.500s",
+        "project": "234.567ms",
+        "run": "6.700s",
+        "stream": "80.234ms"
+      },
+      "remoteAddr": "127.0.0.1:76543",
+      "requestId": "join-slow-phase-flag-E",
+      "requestTime": "2025-08-10T13:15:00.000Z",
+      "resultCount": 25000,
+      "resultSize": 100000000,
+      "scanConsistency": "unbounded",
+      "serviceTime": "6.789s",
+      "state": "completed",
+      "statement": "SELECT u.*, p.*, a.* FROM users u JOIN profiles p ON u.userId = p.userId JOIN addresses a ON u.userId = a.userId WHERE u.active = true",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 409600000,
+      "userAgent": "node-couchbase/4.2.1",
+      "users": "local:app_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":5000,\"#itemsOut\":5000,\"execTime\":\"890.123ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":5000,\"#itemsOut\":5000,\"execTime\":\"1.234s\"}},{\"#operator\":\"Join\",\"#stats\":{\"#itemsIn\":5000,\"#itemsOut\":25000,\"execTime\":\"4.500s\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"234.567ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"80.234ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "join-high-doc-processing-flag-F",
+      "cpuTime": "1.800s",
+      "elapsedTime": "5.123s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 150000,
+        "join": 150000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "join": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "18.456µs",
+        "instantiate": "11.234µs",
+        "parse": "567.890µs",
+        "plan": "456.789µs",
+        "indexScan": "2.123s",
+        "join": "2.700s",
+        "project": "189.012ms",
+        "run": "5.050s",
+        "stream": "60.123ms"
+      },
+      "remoteAddr": "127.0.0.1:87654",
+      "requestId": "join-high-doc-processing-flag-F",
+      "requestTime": "2025-08-10T14:30:00.000Z",
+      "resultCount": 150000,
+      "resultSize": 450000000,
+      "scanConsistency": "unbounded",
+      "serviceTime": "5.123s",
+      "state": "completed",
+      "statement": "SELECT t1.*, t2.* FROM transactions t1 LEFT JOIN audit_logs t2 ON t1.transactionId = t2.refId WHERE t1.amount > 1000",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 1048576000,
+      "userAgent": "go-sdk/2.6.3",
+      "users": "local:finance_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"execTime\":\"2.123s\"}},{\"#operator\":\"Join\",\"#stats\":{\"#itemsIn\":150000,\"#itemsOut\":150000,\"execTime\":\"2.700s\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"189.012ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"60.123ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "join-multiple-joins-flag-G",
+      "cpuTime": "3.200s",
+      "elapsedTime": "9.456s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 8000,
+        "fetch": 8000,
+        "join": 32000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "join": 4,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "25.678µs",
+        "instantiate": "18.901µs",
+        "parse": "678.901µs",
+        "plan": "567.890µs",
+        "indexScan": "1.456s",
+        "fetch": "2.123s",
+        "join": "5.200s",
+        "project": "345.678ms",
+        "run": "9.300s",
+        "stream": "120.456ms"
+      },
+      "remoteAddr": "127.0.0.1:98765",
+      "requestId": "join-multiple-joins-flag-G",
+      "requestTime": "2025-08-10T15:45:00.000Z",
+      "resultCount": 32000,
+      "resultSize": 256000000,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "9.456s",
+      "state": "completed",
+      "statement": "SELECT o.*, c.*, p.*, s.*, i.* FROM orders o JOIN customers c ON o.customerId = c.id JOIN payments p ON o.orderId = p.orderId JOIN shipments s ON o.orderId = s.orderId JOIN invoices i ON o.orderId = i.orderId WHERE o.orderDate >= '2025-01-01'",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 629145600,
+      "userAgent": "php-sdk/4.0.1",
+      "users": "local:reporting_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":8000,\"#itemsOut\":8000,\"execTime\":\"1.456s\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":8000,\"#itemsOut\":8000,\"execTime\":\"2.123s\"}},{\"#operator\":\"Join\",\"#stats\":{\"#itemsIn\":8000,\"#itemsOut\":32000,\"execTime\":\"5.200s\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"345.678ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"120.456ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "join-cartesian-product-flag-B",
+      "cpuTime": "5.678s",
+      "elapsedTime": "12.345s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 1000,
+        "fetch": 1000,
+        "join": 1000000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "join": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "30.123µs",
+        "instantiate": "20.456µs",
+        "parse": "789.012µs",
+        "plan": "678.901µs",
+        "indexScan": "1.234s",
+        "fetch": "1.567s",
+        "join": "8.900s",
+        "project": "456.789ms",
+        "run": "12.200s",
+        "stream": "100.234ms"
+      },
+      "remoteAddr": "127.0.0.1:12345",
+      "requestId": "join-cartesian-product-flag-B",
+      "requestTime": "2025-08-10T16:00:00.000Z",
+      "resultCount": 1000000,
+      "resultSize": 5000000000,
+      "scanConsistency": "unbounded",
+      "serviceTime": "12.345s",
+      "state": "completed",
+      "statement": "SELECT a.*, b.* FROM categories a CROSS JOIN products b WHERE a.active = true",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 2147483648,
+      "userAgent": "ruby-sdk/3.3.2",
+      "users": "local:data_engineer",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":1000,\"#itemsOut\":1000,\"execTime\":\"1.234s\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":1000,\"#itemsOut\":1000,\"execTime\":\"1.567s\"}},{\"#operator\":\"Join\",\"#stats\":{\"#itemsIn\":1000,\"#itemsOut\":1000000,\"execTime\":\"8.900s\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"456.789ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"100.234ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "join-moderate-explosion-flag-C",
+      "cpuTime": "1.567s",
+      "elapsedTime": "4.234s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 5000,
+        "fetch": 5000,
+        "unnest": 15000,
+        "join": 15000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "unnest": 1,
+        "join": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "22.345µs",
+        "instantiate": "16.789µs",
+        "parse": "456.123µs",
+        "plan": "345.678µs",
+        "indexScan": "890.456ms",
+        "fetch": "1.123s",
+        "unnest": "800.234ms",
+        "join": "1.800s",
+        "project": "234.567ms",
+        "run": "4.100s",
+        "stream": "90.123ms"
+      },
+      "remoteAddr": "127.0.0.1:23456",
+      "requestId": "join-moderate-explosion-flag-C",
+      "requestTime": "2025-08-10T17:00:00.000Z",
+      "resultCount": 15000,
+      "resultSize": 60000000,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "4.234s",
+      "state": "completed",
+      "statement": "SELECT o.*, i.* FROM orders o UNNEST o.items AS item JOIN inventory i ON KEYS item.sku WHERE o.status = 'processing'",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 157286400,
+      "userAgent": "rust-sdk/1.2.1",
+      "users": "local:inventory_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":5000,\"#itemsOut\":5000,\"execTime\":\"890.456ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":5000,\"#itemsOut\":5000,\"execTime\":\"1.123s\"}},{\"#operator\":\"Unnest\",\"#stats\":{\"#itemsIn\":5000,\"#itemsOut\":15000,\"execTime\":\"800.234ms\"}},{\"#operator\":\"Join\",\"#stats\":{\"#itemsIn\":15000,\"#itemsOut\":15000,\"execTime\":\"1.800s\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"234.567ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"90.123ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "join-time-dominant-flag-H",
+      "cpuTime": "2.890s",
+      "elapsedTime": "5.678s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 3000,
+        "fetch": 3000,
+        "join": 12000
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "join": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "19.456µs",
+        "instantiate": "14.789µs",
+        "parse": "345.678µs",
+        "plan": "289.012µs",
+        "indexScan": "456.789ms",
+        "fetch": "678.901ms",
+        "join": "4.200s",
+        "project": "189.012ms",
+        "run": "5.600s",
+        "stream": "70.123ms"
+      },
+      "remoteAddr": "127.0.0.1:34567",
+      "requestId": "join-time-dominant-flag-H",
+      "requestTime": "2025-08-10T18:00:00.000Z",
+      "resultCount": 12000,
+      "resultSize": 96000000,
+      "scanConsistency": "unbounded",
+      "serviceTime": "5.678s",
+      "state": "completed",
+      "statement": "SELECT e.*, d.*, p.* FROM employees e JOIN departments d ON e.deptId = d.id JOIN projects p ON e.projectId = p.id WHERE e.active = true",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 251658240,
+      "userAgent": "scala-sdk/1.4.2",
+      "users": "local:hr_system",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":3000,\"#itemsOut\":3000,\"execTime\":\"456.789ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":3000,\"#itemsOut\":3000,\"execTime\":\"678.901ms\"}},{\"#operator\":\"Join\",\"#stats\":{\"#itemsIn\":3000,\"#itemsOut\":12000,\"execTime\":\"4.200s\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"189.012ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"70.123ms\"}}]}}"
   }
 ]
