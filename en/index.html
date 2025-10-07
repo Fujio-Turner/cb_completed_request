@@ -1307,18 +1307,75 @@ if (window.TEXT_CONSTANTS) {
 
                         <div class="insight-item">
                             <h4 class="insight-title" onclick="toggleInsight('concurrent-query-conflicts')">Concurrent
-                                Query Conflicts<span class="dev-badge">Dev</span></h4>
+                                Query Conflicts<span class="beta-badge">Beta</span></h4>
                             <div class="insight-content" id="concurrent-query-conflicts-content">
                                 <p class="insight-description">
-                                    <span class="highlight-number">0 queries</span> show evidence of resource
-                                    contention, with execution times varying by more than <span
-                                        class="highlight-number">0%</span> during peak hours.
+                                    <span class="highlight-number" id="concurrent-conflicts-count">0 queries</span> (<span class="highlight-number" id="concurrent-conflicts-percent">0%</span>) show evidence of resource contention with service-level performance degradation.
                                 </p>
+
+                                <!-- Service Pressure Summary -->
+                                <div id="concurrent-conflicts-summary" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; display: none;">
+                                    <p style="margin: 0; font-size: 13px; color: #495057;">
+                                        📊 <strong>Service Pressure Analysis:</strong><br>
+                                        <span id="concurrent-conflicts-services-summary"></span>
+                                    </p>
+                                </div>
+
+                                <button id="toggle-concurrent-query-conflicts-sample-queries-btn" onclick="toggleInsightSampleQueries('concurrent-query-conflicts')" class="btn-standard">
+                                    <span id="concurrent-query-conflicts-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="concurrent-query-conflicts-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <!-- Flag Breakdown Section -->
+                                    <div id="concurrent-conflicts-flag-breakdown" style="margin-bottom: 15px; padding: 12px; background: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107;">
+                                        <strong style="font-size: 12px; color: #856404;">🔍 Service Pressure Breakdown:</strong>
+                                        <div id="concurrent-conflicts-flag-grid" style="margin-top: 10px;">
+                                            <!-- Flag items will be dynamically inserted here -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Sample Queries Table -->
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 140px;">Request Date</th>
+                                                <th style="width: 100px;">Flags</th>
+                                                <th style="width: 90px;">Parse+Plan</th>
+                                                <th style="width: 90px;">Fetch/Doc</th>
+                                                <th style="width: 110px;">Scan Rate</th>
+                                                <th style="width: 80px;">Kern%</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="concurrent-query-conflicts-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                    
+                                    <!-- Flag Legend -->
+                                    <div style="margin-top: 10px; padding: 10px 12px; background: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107;">
+                                        <strong style="font-size: 12px; color: #856404;">Flag Legend:</strong>
+                                        <ul style="margin: 8px 0 4px 0; padding-left: 20px; font-size: 11px; color: #856404; line-height: 1.6;">
+                                            <li><strong style="color: #dc3545;">🔴 Critical:</strong> 
+                                                <span style="font-weight: bold;">B</span> = Parse+Plan >10ms (Query Service critically overloaded), 
+                                                <span style="font-weight: bold;">D</span> = Fetch >10ms/doc (KV critically slow), 
+                                                <span style="font-weight: bold;">F</span> = Scan <1K/sec (Index critically slow), 
+                                                <span style="font-weight: bold;">H</span> = System-Wide (multiple services under pressure)
+                                            </li>
+                                            <li><strong style="color: #fd7e14;">🟡 High:</strong> 
+                                                <span style="font-weight: bold;">A</span> = Parse+Plan >1ms (Query Service pressure), 
+                                                <span style="font-weight: bold;">C</span> = Fetch >5ms/doc (KV pressure), 
+                                                <span style="font-weight: bold;">E</span> = Scan <5K/sec (Index slow), 
+                                                <span style="font-weight: bold;">G</span> = Kernel >30% (CPU contention)
+                                            </li>
+                                        </ul>
+                                        <em style="font-size: 10px; color: #856404;">💡 Hover over flags in the table above for detailed metrics</em>
+                                    </div>
+                                </div>
+
                                 <div class="learn-more-section">
                                     <div class="learn-more-item">
                                         <span class="learn-more-icon">💡</span>
-                                        Review query scheduling and resource allocation <a
-                                            href="https://cb.fuj.io/analysis_hub.html#elapsedTime"
+                                        Review service pressure indicators and optimization strategies <a
+                                            href="https://cb.fuj.io/analysis_hub.html#concurrent-conflicts"
                                             class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
                                     </div>
                                 </div>
@@ -11511,6 +11568,26 @@ function generateElapsedTimeChart(requests) {
             let joinQueriesWithIssuesCount = 0;
             let joinPhaseTotalTime = 0;
 
+            // Concurrent Conflicts metrics
+            let concurrentConflictsCount = 0;
+            let concurrentConflictsSamples = [];
+            const flagCounts = {
+                A: { count: 0, name: 'Query Service Warning', queries: [] },
+                B: { count: 0, name: 'Query Service Critical', queries: [] },
+                C: { count: 0, name: 'Data Service Warning', queries: [] },
+                D: { count: 0, name: 'Data Service Critical', queries: [] },
+                E: { count: 0, name: 'Index Service Warning', queries: [] },
+                F: { count: 0, name: 'Index Service Critical', queries: [] },
+                G: { count: 0, name: 'CPU Contention', queries: [] },
+                H: { count: 0, name: 'System-Wide Pressure', queries: [] }
+            };
+            const servicesUnderPressure = {
+                'Query Service': 0,
+                'Data Service': 0,
+                'Index Service': 0,
+                'CPU/OS': 0
+            };
+
             // Sample queries arrays for insights
             let complexJoinOperationsSamples = [];
             let missingWhereClausesSamples = [];
@@ -11529,6 +11606,33 @@ function generateElapsedTimeChart(requests) {
             // Configurable threshold for kernel time detection
             const KERNEL_TIME_THRESHOLD_PERCENT = 20;
             const STREAM_KERNEL_THRESHOLD_PERCENT = 10;
+
+            // Concurrent Conflicts thresholds (Service Pressure Detection)
+            const CONCURRENT_CONFLICT_THRESHOLDS = {
+                // Query Service (Parse + Plan) pressure
+                PARSE_PLAN_WARNING_MS: 1,
+                PARSE_PLAN_CRITICAL_MS: 10,
+                
+                // Data Service (Fetch) pressure - per-document timing
+                FETCH_PER_DOC_WARNING_MS: 5,
+                FETCH_PER_DOC_CRITICAL_MS: 10,
+                MIN_FETCH_COUNT_FOR_ANALYSIS: 10,
+                
+                // Index Service pressure - throughput analysis
+                INDEX_SCAN_WARNING_RATE: 5000,
+                INDEX_SCAN_CRITICAL_RATE: 1000,
+                MIN_INDEX_SCAN_FOR_ANALYSIS: 100,
+                
+                // CPU contention (Kernel time)
+                KERNEL_TIME_WARNING_RATIO: 0.30,
+                KERNEL_TIME_CRITICAL_RATIO: 0.50,
+                
+                // Multi-service pressure indicator
+                MIN_SERVICES_UNDER_PRESSURE: 2,
+                
+                // Reporting
+                TOP_AFFECTED_QUERIES: 10
+            };
 
             requests.forEach((request) => {
                 const statement = (request.statement || request.preparedText || "").toUpperCase();
@@ -11784,6 +11888,114 @@ function generateElapsedTimeChart(requests) {
                                 joinTime: joinPhaseTimeMs
                             });
                         }
+                    }
+                }
+
+                // Detect Concurrent Query Conflicts (Service Pressure Analysis)
+                const conflictFlags = [];
+                const conflictFlagDetails = {};
+                const requestServicesUnderPressure = new Set();
+                
+                // Step 1: Detect Query Service Pressure (Parse + Plan Time)
+                const parseTimeMs = parseTime(request.phaseTimes?.parse || '0');
+                const planTimeMs = parseTime(request.phaseTimes?.plan || '0');
+                const parsePlanTime = parseTimeMs + planTimeMs;
+                
+                if (parsePlanTime >= CONCURRENT_CONFLICT_THRESHOLDS.PARSE_PLAN_CRITICAL_MS) {
+                    conflictFlags.push('B');
+                    conflictFlagDetails.B = `Parse+Plan took ${parsePlanTime.toFixed(2)}ms (critically slow, should be <1ms)`;
+                    requestServicesUnderPressure.add('Query Service');
+                } else if (parsePlanTime >= CONCURRENT_CONFLICT_THRESHOLDS.PARSE_PLAN_WARNING_MS) {
+                    conflictFlags.push('A');
+                    conflictFlagDetails.A = `Parse+Plan took ${parsePlanTime.toFixed(2)}ms (should be <1ms)`;
+                    requestServicesUnderPressure.add('Query Service');
+                }
+                
+                // Step 2: Detect Data Service Pressure (Fetch Time per Document)
+                const fetchTimeMs = parseTime(request.phaseTimes?.fetch || '0');
+                const fetchCount = request.phaseCounts?.fetch || 0;
+                
+                if (fetchCount >= CONCURRENT_CONFLICT_THRESHOLDS.MIN_FETCH_COUNT_FOR_ANALYSIS) {
+                    const fetchPerDoc = fetchTimeMs / fetchCount;
+                    
+                    if (fetchPerDoc >= CONCURRENT_CONFLICT_THRESHOLDS.FETCH_PER_DOC_CRITICAL_MS) {
+                        conflictFlags.push('D');
+                        conflictFlagDetails.D = `Fetch ${fetchPerDoc.toFixed(2)}ms per doc (${fetchTimeMs}ms for ${fetchCount} docs) - critically slow`;
+                        requestServicesUnderPressure.add('Data Service');
+                    } else if (fetchPerDoc >= CONCURRENT_CONFLICT_THRESHOLDS.FETCH_PER_DOC_WARNING_MS) {
+                        conflictFlags.push('C');
+                        conflictFlagDetails.C = `Fetch ${fetchPerDoc.toFixed(2)}ms per doc (${fetchTimeMs}ms for ${fetchCount} docs)`;
+                        requestServicesUnderPressure.add('Data Service');
+                    }
+                }
+                
+                // Step 3: Detect Index Service Pressure (Scan Throughput)
+                const indexScanTimeMs = parseTime(request.phaseTimes?.indexScan || '0');
+                const indexScanCount = request.phaseCounts?.indexScan || 0;
+                
+                if (indexScanCount >= CONCURRENT_CONFLICT_THRESHOLDS.MIN_INDEX_SCAN_FOR_ANALYSIS && indexScanTimeMs > 0) {
+                    const recordsPerSecond = (indexScanCount / indexScanTimeMs) * 1000;
+                    
+                    if (recordsPerSecond <= CONCURRENT_CONFLICT_THRESHOLDS.INDEX_SCAN_CRITICAL_RATE) {
+                        conflictFlags.push('F');
+                        conflictFlagDetails.F = `Index scan ${Math.round(recordsPerSecond).toLocaleString()} records/sec (${indexScanCount.toLocaleString()} in ${indexScanTimeMs}ms) - critically slow`;
+                        requestServicesUnderPressure.add('Index Service');
+                    } else if (recordsPerSecond <= CONCURRENT_CONFLICT_THRESHOLDS.INDEX_SCAN_WARNING_RATE) {
+                        conflictFlags.push('E');
+                        conflictFlagDetails.E = `Index scan ${Math.round(recordsPerSecond).toLocaleString()} records/sec (${indexScanCount.toLocaleString()} in ${indexScanTimeMs}ms)`;
+                        requestServicesUnderPressure.add('Index Service');
+                    }
+                }
+                
+                // Step 4: Detect CPU Contention (Kernel Time)
+                const kernTimeMs = parseTime(request.phaseTimes?.kernTime || '0');
+                const conflictElapsedTimeMs = parseTime(request.elapsedTime);
+                
+                if (conflictElapsedTimeMs > 0 && kernTimeMs > 0) {
+                    const kernelRatio = kernTimeMs / conflictElapsedTimeMs;
+                    
+                    if (kernelRatio >= CONCURRENT_CONFLICT_THRESHOLDS.KERNEL_TIME_WARNING_RATIO) {
+                        conflictFlags.push('G');
+                        conflictFlagDetails.G = `Kernel time ${(kernelRatio * 100).toFixed(1)}% (${kernTimeMs}ms / ${conflictElapsedTimeMs}ms)`;
+                        requestServicesUnderPressure.add('CPU/OS');
+                    }
+                }
+                
+                // Step 5: Flag System-Wide Pressure (Multiple services affected)
+                if (requestServicesUnderPressure.size >= CONCURRENT_CONFLICT_THRESHOLDS.MIN_SERVICES_UNDER_PRESSURE) {
+                    conflictFlags.push('H');
+                    conflictFlagDetails.H = `${requestServicesUnderPressure.size} services under pressure: ${Array.from(requestServicesUnderPressure).join(', ')}`;
+                }
+                
+                // If any flags detected, count as concurrent conflict
+                if (conflictFlags.length > 0) {
+                    concurrentConflictsCount++;
+                    
+                    // Update flag counts
+                    conflictFlags.forEach(flag => {
+                        flagCounts[flag].count++;
+                        if (flagCounts[flag].queries.length < 10) {
+                            flagCounts[flag].queries.push(request);
+                        }
+                    });
+                    
+                    // Update service pressure counts
+                    requestServicesUnderPressure.forEach(service => {
+                        servicesUnderPressure[service]++;
+                    });
+                    
+                    // Add to sample queries (up to 10)
+                    if (concurrentConflictsSamples.length < CONCURRENT_CONFLICT_THRESHOLDS.TOP_AFFECTED_QUERIES) {
+                        concurrentConflictsSamples.push({
+                            requestTime: request.requestTime,
+                            statement: request.preparedText || request.statement,
+                            flags: conflictFlags,
+                            flagDetails: conflictFlagDetails,
+                            parsePlanTime: parsePlanTime,
+                            fetchPerDoc: fetchCount >= CONCURRENT_CONFLICT_THRESHOLDS.MIN_FETCH_COUNT_FOR_ANALYSIS ? fetchTimeMs / fetchCount : null,
+                            indexScanRate: (indexScanCount >= CONCURRENT_CONFLICT_THRESHOLDS.MIN_INDEX_SCAN_FOR_ANALYSIS && indexScanTimeMs > 0) ? (indexScanCount / indexScanTimeMs) * 1000 : null,
+                            kernelPercent: conflictElapsedTimeMs > 0 && kernTimeMs > 0 ? (kernTimeMs / conflictElapsedTimeMs) * 100 : null
+                        });
                     }
                 }
 
@@ -12134,6 +12346,64 @@ function generateElapsedTimeChart(requests) {
                 }
             }
 
+            // Update the Concurrent Query Conflicts insight (Beta)
+            const concurrentConflictsCountElement = document.getElementById("concurrent-conflicts-count");
+            const concurrentConflictsPercentElement = document.getElementById("concurrent-conflicts-percent");
+            
+            if (concurrentConflictsCount > 0) {
+                const conflictsPercent = totalQueries > 0 ? ((concurrentConflictsCount / totalQueries) * 100).toFixed(1) : 0;
+                
+                if (concurrentConflictsCountElement) {
+                    concurrentConflictsCountElement.textContent = `${concurrentConflictsCount} queries`;
+                    concurrentConflictsCountElement.className = "highlight-number";
+                }
+                if (concurrentConflictsPercentElement) {
+                    concurrentConflictsPercentElement.textContent = `${conflictsPercent}%`;
+                    concurrentConflictsPercentElement.className = "highlight-number";
+                }
+                
+                // Show service pressure summary
+                const summaryDiv = document.getElementById("concurrent-conflicts-summary");
+                const summaryText = document.getElementById("concurrent-conflicts-services-summary");
+                if (summaryDiv && summaryText) {
+                    const servicePressureSummary = Object.entries(servicesUnderPressure)
+                        .filter(([, count]) => count > 0)
+                        .map(([service, count]) => `• ${service}: ${count} queries affected`)
+                        .join('<br>');
+                    
+                    summaryText.innerHTML = servicePressureSummary;
+                    summaryDiv.style.display = 'block';
+                }
+                
+                // Activate the insight item if there are conflicts
+                const concurrentConflictsInsightItem = document.querySelector('#concurrent-query-conflicts-content').closest('.insight-item');
+                if (concurrentConflictsInsightItem) {
+                    concurrentConflictsInsightItem.classList.add('active');
+                }
+            } else {
+                // Reset to defaults
+                if (concurrentConflictsCountElement) {
+                    concurrentConflictsCountElement.textContent = "0 queries";
+                    concurrentConflictsCountElement.className = "";
+                }
+                if (concurrentConflictsPercentElement) {
+                    concurrentConflictsPercentElement.textContent = "0%";
+                    concurrentConflictsPercentElement.className = "";
+                }
+                
+                // Hide service pressure summary
+                const summaryDiv = document.getElementById("concurrent-conflicts-summary");
+                if (summaryDiv) {
+                    summaryDiv.style.display = 'none';
+                }
+                
+                // Deactivate the insight item
+                const concurrentConflictsInsightItem = document.querySelector('#concurrent-query-conflicts-content').closest('.insight-item');
+                if (concurrentConflictsInsightItem) {
+                    concurrentConflictsInsightItem.classList.remove('active');
+                }
+            }
+
             // Update the high memory usage insight
             const highMemoryCountElement = document.getElementById("high-memory-count");
             const avgMemoryUsageElement = document.getElementById("avg-memory-usage");
@@ -12362,6 +12632,7 @@ function generateElapsedTimeChart(requests) {
             updateInsightSampleQueries('large-payload-streaming', largePayloadStreamingSamples);
             updateInsightSampleQueries('slow-parse-plan-times', slowParsePlanSamples);
             updateJoinSampleQueries(complexJoinOperationsSamples); // Custom function with flags column
+            updateConcurrentConflictsSampleQueries(concurrentConflictsSamples, flagCounts); // Custom function with service pressure flags
 
             // Special handling for timeout queries (3-column table with 10 entries)
             updateTimeoutQueriesTable(actualTimeoutsSamples, approachingTimeoutsSamples);
@@ -14325,6 +14596,161 @@ function generateElapsedTimeChart(requests) {
                 row.appendChild(dateCell);
                 row.appendChild(flagsCell);
                 row.appendChild(joinTimeCell);
+                row.appendChild(statementCell);
+                tbody.appendChild(row);
+            });
+        }
+
+        // Update Concurrent Conflicts sample queries table
+        function updateConcurrentConflictsSampleQueries(queries, flagCountsData) {
+            const tbody = document.getElementById('concurrent-query-conflicts-sample-queries-tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            insightSampleQueries['concurrent-query-conflicts'] = queries;
+            
+            // Update flag breakdown
+            const flagGrid = document.getElementById('concurrent-conflicts-flag-grid');
+            if (flagGrid && flagCountsData) {
+                flagGrid.innerHTML = '';
+                
+                Object.entries(flagCountsData).forEach(([flag, data]) => {
+                    if (data.count > 0) {
+                        const color = ['B', 'D', 'F', 'H'].includes(flag) ? '#dc3545' : '#fd7e14';
+                        const severity = ['B', 'D', 'F', 'H'].includes(flag) ? '🔴 Critical' : '🟡 High';
+                        
+                        const flagDiv = document.createElement('div');
+                        flagDiv.style.padding = '8px';
+                        flagDiv.style.marginBottom = '6px';
+                        flagDiv.style.backgroundColor = '#fff';
+                        flagDiv.style.border = `2px solid ${color}`;
+                        flagDiv.style.borderRadius = '4px';
+                        flagDiv.style.fontSize = '11px';
+                        flagDiv.innerHTML = `
+                            <strong style="color: ${color};">${flag}:</strong> 
+                            <span style="color: #495057;">${data.name}</span>
+                            <span style="float: right; font-weight: bold; color: ${color};">(${data.count}) ${severity}</span>
+                        `;
+                        flagGrid.appendChild(flagDiv);
+                    }
+                });
+            }
+            
+            // Populate table rows
+            queries.forEach((query, index) => {
+                const formattedDate = query.requestTime || "";
+                const flags = query.flags || [];
+                const flagDetails = query.flagDetails || {};
+                
+                const statementId = `concurrent-query-conflicts-statement-${index}`;
+                const isLongStatement = query.statement.length > 500;
+                
+                const row = document.createElement('tr');
+                
+                // Create date cell
+                const dateCell = document.createElement('td');
+                dateCell.style.whiteSpace = 'nowrap';
+                dateCell.style.textAlign = 'center';
+                dateCell.style.fontSize = '11px';
+                dateCell.textContent = formattedDate;
+                
+                // Create flags cell with tooltips
+                const flagsCell = document.createElement('td');
+                flagsCell.style.fontWeight = 'bold';
+                flagsCell.style.textAlign = 'center';
+                flagsCell.style.fontSize = '12px';
+                
+                if (flags.length > 0) {
+                    flagsCell.innerHTML = '';
+                    flags.forEach((flag, idx) => {
+                        const detail = flagDetails[flag] || '';
+                        const color = ['B', 'D', 'F', 'H'].includes(flag) ? '#dc3545' : '#fd7e14';
+                        
+                        const flagSpan = document.createElement('span');
+                        flagSpan.textContent = flag;
+                        flagSpan.style.color = color;
+                        flagSpan.className = 'join-flag-tooltip';  // Reuse same tooltip class
+                        flagSpan.setAttribute('data-tooltip', detail);
+                        
+                        flagsCell.appendChild(flagSpan);
+                        
+                        if (idx < flags.length - 1) {
+                            flagsCell.appendChild(document.createTextNode(', '));
+                        }
+                    });
+                } else {
+                    flagsCell.textContent = '-';
+                }
+                
+                // Create Parse+Plan cell
+                const parsePlanCell = document.createElement('td');
+                parsePlanCell.style.textAlign = 'center';
+                parsePlanCell.style.fontSize = '11px';
+                parsePlanCell.textContent = query.parsePlanTime !== undefined ? `${query.parsePlanTime.toFixed(2)}ms` : 'N/A';
+                
+                // Create Fetch/Doc cell
+                const fetchPerDocCell = document.createElement('td');
+                fetchPerDocCell.style.textAlign = 'center';
+                fetchPerDocCell.style.fontSize = '11px';
+                fetchPerDocCell.textContent = query.fetchPerDoc !== null ? `${query.fetchPerDoc.toFixed(2)}ms` : 'N/A';
+                
+                // Create Scan Rate cell
+                const scanRateCell = document.createElement('td');
+                scanRateCell.style.textAlign = 'center';
+                scanRateCell.style.fontSize = '11px';
+                scanRateCell.textContent = query.indexScanRate !== null ? `${Math.round(query.indexScanRate).toLocaleString()}/sec` : 'N/A';
+                
+                // Create Kernel% cell
+                const kernelCell = document.createElement('td');
+                kernelCell.style.textAlign = 'center';
+                kernelCell.style.fontSize = '11px';
+                kernelCell.style.fontWeight = query.kernelPercent !== null && query.kernelPercent >= 30 ? 'bold' : 'normal';
+                kernelCell.style.color = query.kernelPercent !== null && query.kernelPercent >= 30 ? '#dc3545' : '#495057';
+                kernelCell.textContent = query.kernelPercent !== null ? `${query.kernelPercent.toFixed(1)}%` : 'N/A';
+                
+                // Create statement cell
+                const statementCell = document.createElement('td');
+                statementCell.className = 'statement-cell';
+                statementCell.style.fontFamily = 'monospace';
+                statementCell.style.fontSize = '11px';
+                
+                if (isLongStatement) {
+                    const truncated = query.statement.substring(0, 500);
+                    statementCell.innerHTML = `
+                        <div id="${statementId}-truncated">
+                            <span>${escapeHtml(truncated)}...</span>
+                            <br>
+                            <button onclick="toggleInsightStatement('${statementId}', true)" 
+                                    class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.SHOW_MORE}</button>
+                            <button onclick="copyInsightStatement('concurrent-query-conflicts', ${index}, event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                        <div id="${statementId}-full" style="display: none;">
+                            <span>${escapeHtml(query.statement)}</span>
+                            <br>
+                            <button onclick="toggleInsightStatement('${statementId}', false)" 
+                                    class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.HIDE}</button>
+                            <button onclick="copyInsightStatement('concurrent-query-conflicts', ${index}, event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                    `;
+                } else {
+                    statementCell.innerHTML = `
+                        <div>
+                            <span>${escapeHtml(query.statement)}</span>
+                            <br>
+                            <button onclick="copyInsightStatement('concurrent-query-conflicts', ${index}, event)" 
+                                    class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                        </div>
+                    `;
+                }
+                
+                row.appendChild(dateCell);
+                row.appendChild(flagsCell);
+                row.appendChild(parsePlanCell);
+                row.appendChild(fetchPerDocCell);
+                row.appendChild(scanRateCell);
+                row.appendChild(kernelCell);
                 row.appendChild(statementCell);
                 tbody.appendChild(row);
             });

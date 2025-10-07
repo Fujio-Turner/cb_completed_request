@@ -53,6 +53,13 @@
         #complex-joins .accordion[data-locked='true'] .accordion-header::before{transform:rotate(90deg);color:#0ea5e9;border-color:#0ea5e9;background:rgba(14,165,233,0.1)}
         #complex-joins .accordion[data-locked='true'] .accordion-header::after{content:'Locked — click to close';color:#0ea5e9;font-weight:700;background:rgba(14,165,233,0.12);padding:2px 6px;border-radius:999px}
 
+        #concurrent-conflicts .accordion-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+        #concurrent-conflicts .accordion-header::after{content:'click to keep open/close';font-size:12px;color:#94a3b8;transition:color .2s ease, background .2s ease}
+        #concurrent-conflicts .accordion-header::before{content:'▶';display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;border:1px solid #94a3b8;color:#94a3b8;margin-right:8px;font-size:12px;transform:rotate(0deg);transition:transform .3s ease, color .3s ease, border-color .3s ease, background .3s ease;background:#fff}
+        #concurrent-conflicts .accordion[data-locked='true'] .accordion-header{background:#f0f8ff}
+        #concurrent-conflicts .accordion[data-locked='true'] .accordion-header::before{transform:rotate(90deg);color:#0ea5e9;border-color:#0ea5e9;background:rgba(14,165,233,0.1)}
+        #concurrent-conflicts .accordion[data-locked='true'] .accordion-header::after{content:'Locked — click to close';color:#0ea5e9;font-weight:700;background:rgba(14,165,233,0.12);padding:2px 6px;border-radius:999px}
+
         /* Elapsed Time Filter examples accordion (same hover/lock behavior) */
         #elapsedTimeExamples .accordion-content{transition:max-height .5s ease, padding .5s ease}
         #elapsedTimeExamples.slow-close .accordion-content{transition:max-height .7s ease, padding .7s ease}
@@ -675,6 +682,88 @@ Flags Triggered:
                 <p style="color:#4a5568;font-size:0.95em;margin-top:15px;"><b>💡 Recommendation:</b> Monitor JOIN queries with multiple complexity flags (especially A, B, D) as they often indicate systemic design issues. Consider denormalizing frequently-joined data paths or restructuring queries to reduce JOIN overhead.</p>
             </div>
 
+            <div class="feature" id="concurrent-conflicts">
+                <strong>⚠️ Concurrent Query Conflicts <span class="badge-beta">BETA</span> <a href="#concurrent-conflicts" class="anchor-link">#</a></strong>
+                <p>Concurrent query conflicts occur when Couchbase services (Query, Data, Index) become overloaded, causing resource contention and performance degradation. Unlike peak vs. off-peak analysis, this insight detects service-level pressure through phase timing anomalies, regardless of when queries run.</p>
+                
+                <div class="accordion" id="service-pressure-indicators">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Service Pressure Indicators (Flags A-H)</div>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><b>🟡 Flag A - Query Service Warning:</b> Parse+Plan time >1ms (should be <1ms). Indicates Query Service CPU pressure when running hundreds of queries/sec on an 8-core system.</li>
+                            <li><b>🔴 Flag B - Query Service Critical:</b> Parse+Plan time >10ms. Query Service critically overloaded, immediate scaling required.</li>
+                            <li><b>🟡 Flag C - Data Service Warning:</b> Fetch >5ms per document (should be <1ms). KV service under pressure, possibly due to memory/disk I/O contention.</li>
+                            <li><b>🔴 Flag D - Data Service Critical:</b> Fetch >10ms per document. KV service critically slow, immediate investigation required.</li>
+                            <li><b>🟡 Flag E - Index Service Warning:</b> Index scan <5K records/sec (should be >10K). Index service running slow, potentially due to resource constraints.</li>
+                            <li><b>🔴 Flag F - Index Service Critical:</b> Index scan <1K records/sec. Index service critically slow, add replicas or optimize indexes.</li>
+                            <li><b>🟡 Flag G - CPU Contention:</b> Kernel time >30% of elapsed time. CPU scheduling overhead indicating processes fighting for cores.</li>
+                            <li><b>🔴 Flag H - System-Wide Pressure:</b> Multiple services (2+) under pressure simultaneously. System-wide resource exhaustion detected.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="accordion" id="conflict-example">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Example - System-Wide Pressure</div>
+                    <div class="accordion-content">
+                        <pre style="background:#2d3748;color:#e2e8f0;padding:12px;border-radius:4px;overflow-x:auto;margin:10px 0;font-size:0.9em;">Query: SELECT o.*, c.* FROM orders o JOIN customers c ON o.customerId = c.id
+
+Metrics:
+- Parse+Plan:  5.0ms (Flag A - should be <1ms)
+- Fetch:       15ms per doc for 100 docs (Flag D - >10ms/doc)
+- Kernel Time: 6,000ms / 15,000ms = 40% (Flag G - >30%)
+- Services:    Query, Data, CPU/OS affected (Flag H)
+
+Flags Triggered: A, D, G, H
+Severity: 🔴 Critical - System-Wide Pressure
+
+This indicates the entire Couchbase cluster is under heavy load with 
+Query Service CPU contention, KV service slow fetches, and OS-level 
+CPU scheduling overhead.</pre>
+                    </div>
+                </div>
+
+                <div class="accordion" id="conflict-detection">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">How Detection Works</div>
+                    <div class="accordion-content">
+                        <p><b>Key Insight:</b> system:completed_requests only captures slow queries (>1 second). We detect service pressure by analyzing phase timing anomalies, not by comparing fast vs. slow query baselines.</p>
+                        <ul>
+                            <li><b>Query Service Pressure:</b> Parse+Plan time should be <1ms. Values >1ms indicate Query Service CPU contention.</li>
+                            <li><b>Data Service Pressure:</b> Calculate fetch-per-document ratio. Normal: <1ms/doc, Warning: >5ms/doc, Critical: >10ms/doc.</li>
+                            <li><b>Index Service Pressure:</b> Calculate index scan throughput (records/sec). Normal: >10K/sec, Warning: <5K/sec, Critical: <1K/sec.</li>
+                            <li><b>CPU Contention:</b> Kernel time percentage indicates OS scheduler overhead. Normal: <10%, Warning: >30%, Critical: >50%.</li>
+                            <li><b>System-Wide Issues:</b> When 2+ services show pressure simultaneously, flag as cluster-wide resource exhaustion.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="accordion" id="conflict-optimization">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Resolution Strategies</div>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><b>Query Service Pressure (A, B):</b> Scale Query nodes horizontally, reduce query concurrency, implement rate limiting.</li>
+                            <li><b>Data Service Pressure (C, D):</b> Review KV operations, check memory/disk I/O, add Data Service nodes, optimize document sizes.</li>
+                            <li><b>Index Service Pressure (E, F):</b> Add index replicas, optimize index definitions, scale Index Service nodes.</li>
+                            <li><b>CPU Contention (G):</b> Reduce concurrent query load, add CPU cores, review co-located processes, optimize query logic.</li>
+                            <li><b>System-Wide Pressure (H):</b> Critical - requires immediate cluster scaling or load reduction. Review workload distribution and resource allocation.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="accordion" id="conflict-vs-peak">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Service Pressure vs Peak Hour Analysis</div>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><b>Traditional Approach:</b> Compare query times during peak vs. off-peak hours to identify concurrency issues.</li>
+                            <li><b>Limitation:</b> system:completed_requests only captures slow queries (>1 second), so we can't establish fast baselines.</li>
+                            <li><b>Our Approach:</b> Detect service pressure through phase timing anomalies (Parse+Plan >1ms, Fetch >5ms/doc, etc.) which indicate resource contention.</li>
+                            <li><b>Advantage:</b> Works with slow-query-only data and directly identifies which service (Query, Data, Index, CPU) is under pressure.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <p style="color:#4a5568;font-size:0.95em;margin-top:15px;"><b>💡 Recommendation:</b> Queries with Flag H (System-Wide Pressure) indicate cluster-level resource exhaustion. Immediate action required: scale horizontally, optimize workload, or implement query throttling. Monitor individual service flags (A-G) to identify specific bottlenecks for targeted optimization.</p>
+            </div>
+
             <div class="back-to-top"><a href="#top">Back to top</a></div>
         </section>
         
@@ -879,7 +968,7 @@ Flags Triggered:
 
         // Glossary, Elapsed Time Filter, and Complex JOINs hover-to-open with slow close; click locks open
         document.addEventListener('DOMContentLoaded',()=>{
-            document.querySelectorAll('#part-4 .accordion, #elapsedTimeExamples, #complex-joins .accordion').forEach((acc)=>{
+            document.querySelectorAll('#part-4 .accordion, #elapsedTimeExamples, #complex-joins .accordion, #concurrent-conflicts .accordion').forEach((acc)=>{
                 const header = acc.querySelector('.accordion-header');
                 const content = acc.querySelector('.accordion-content');
                 if(!header||!content) return;

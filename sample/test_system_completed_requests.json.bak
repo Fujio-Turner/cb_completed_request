@@ -3099,7 +3099,6 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":3000,\"#itemsOut\":3000,\"execTime\":\"456.789ms\"}},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":3000,\"#itemsOut\":3000,\"execTime\":\"678.901ms\"}},{\"#operator\":\"Join\",\"#stats\":{\"#itemsIn\":3000,\"#itemsOut\":12000,\"execTime\":\"4.200s\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"execTime\":\"189.012ms\"}},{\"#operator\":\"Stream\",\"#stats\":{\"execTime\":\"70.123ms\"}}]}}"
-  }
 ,
 {
   "completed_requests": {
