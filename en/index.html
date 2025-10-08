@@ -1100,9 +1100,9 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title" onclick="toggleInsight('complex-join-operations')">Complex JOIN
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('complex-join-operations')">Complex JOIN
                                 Operations<span class="beta-badge">Beta</span></h4>
-                            <div class="insight-content" id="complex-join-operations-content">
+                            <div class="insight-content collapsed" id="complex-join-operations-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="complex-join-count">0 queries</span> (<span class="highlight-number" id="complex-join-percent">0%</span>) with JOIN operations detected, with <span class="highlight-number" id="complex-join-flagged-count">0</span> (<span class="highlight-number" id="complex-join-flagged-percent">0%</span>) flagged as complex. Average JOIN phase time: <span class="highlight-number" id="complex-join-avg-time">0s</span>.
                                 </p>
@@ -1306,9 +1306,9 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title" onclick="toggleInsight('concurrent-query-conflicts')">Concurrent
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('concurrent-query-conflicts')">Concurrent
                                 Query Conflicts<span class="beta-badge">Beta</span></h4>
-                            <div class="insight-content" id="concurrent-query-conflicts-content">
+                            <div class="insight-content collapsed" id="concurrent-query-conflicts-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="concurrent-conflicts-count">0 queries</span> (<span class="highlight-number" id="concurrent-conflicts-percent">0%</span>) show evidence of resource contention with service-level performance degradation.
                                 </p>
@@ -12311,10 +12311,19 @@ function generateElapsedTimeChart(requests) {
                 
                 // Activate the insight item if there are JOIN queries with issues
                 const complexJoinInsightItem = document.querySelector('#complex-join-operations-content').closest('.insight-item');
+                const complexJoinTitle = complexJoinInsightItem?.querySelector('.insight-title');
+                const complexJoinContent = document.getElementById('complex-join-operations-content');
+                
                 if (complexJoinInsightItem && joinQueriesWithIssuesCount > 0) {
                     complexJoinInsightItem.classList.add('active');
+                    // Auto-expand the content when there are issues
+                    if (complexJoinTitle) complexJoinTitle.classList.remove('collapsed');
+                    if (complexJoinContent) complexJoinContent.classList.remove('collapsed');
                 } else if (complexJoinInsightItem) {
                     complexJoinInsightItem.classList.remove('active');
+                    // Keep collapsed when no data
+                    if (complexJoinTitle) complexJoinTitle.classList.add('collapsed');
+                    if (complexJoinContent) complexJoinContent.classList.add('collapsed');
                 }
             } else {
                 // Reset to defaults
@@ -12341,8 +12350,14 @@ function generateElapsedTimeChart(requests) {
                 
                 // Deactivate the insight item
                 const complexJoinInsightItem = document.querySelector('#complex-join-operations-content').closest('.insight-item');
+                const complexJoinTitle = complexJoinInsightItem?.querySelector('.insight-title');
+                const complexJoinContent = document.getElementById('complex-join-operations-content');
+                
                 if (complexJoinInsightItem) {
                     complexJoinInsightItem.classList.remove('active');
+                    // Keep collapsed when no data
+                    if (complexJoinTitle) complexJoinTitle.classList.add('collapsed');
+                    if (complexJoinContent) complexJoinContent.classList.add('collapsed');
                 }
             }
 
@@ -12377,8 +12392,14 @@ function generateElapsedTimeChart(requests) {
                 
                 // Activate the insight item if there are conflicts
                 const concurrentConflictsInsightItem = document.querySelector('#concurrent-query-conflicts-content').closest('.insight-item');
+                const concurrentConflictsTitle = concurrentConflictsInsightItem?.querySelector('.insight-title');
+                const concurrentConflictsContent = document.getElementById('concurrent-query-conflicts-content');
+                
                 if (concurrentConflictsInsightItem) {
                     concurrentConflictsInsightItem.classList.add('active');
+                    // Auto-expand the content when there are conflicts
+                    if (concurrentConflictsTitle) concurrentConflictsTitle.classList.remove('collapsed');
+                    if (concurrentConflictsContent) concurrentConflictsContent.classList.remove('collapsed');
                 }
             } else {
                 // Reset to defaults
@@ -12399,8 +12420,14 @@ function generateElapsedTimeChart(requests) {
                 
                 // Deactivate the insight item
                 const concurrentConflictsInsightItem = document.querySelector('#concurrent-query-conflicts-content').closest('.insight-item');
+                const concurrentConflictsTitle = concurrentConflictsInsightItem?.querySelector('.insight-title');
+                const concurrentConflictsContent = document.getElementById('concurrent-query-conflicts-content');
+                
                 if (concurrentConflictsInsightItem) {
                     concurrentConflictsInsightItem.classList.remove('active');
+                    // Keep collapsed when no data
+                    if (concurrentConflictsTitle) concurrentConflictsTitle.classList.add('collapsed');
+                    if (concurrentConflictsContent) concurrentConflictsContent.classList.add('collapsed');
                 }
             }
 
