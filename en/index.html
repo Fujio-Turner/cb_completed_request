@@ -196,6 +196,12 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
                 NO_DATA: "No data",
                 LOADING: "Loading...",
 
+            // Timezone selection
+                TIMEZONE_LABEL: "Timezone:",
+                TIMEZONE_DETECTED: "Detected:",
+                TIMEZONE_UTC: "UTC",
+                TIMEZONE_AUTO_DETECTED: "Auto-detected from data",
+
             // Input panel toggle
                 SHOW_INPUT_PANEL: "Show",
                 HIDE_INPUT_PANEL: "Hide",
@@ -545,7 +551,7 @@ if (window.TEXT_CONSTANTS) {
                     </div>
                 </div>
 
-                <div class="filter-stack" style="margin-left: 15px; display: grid; grid-template-columns: 300px 200px auto; align-items: end; column-gap: 12px; row-gap: 0;">
+                <div class="filter-stack" style="margin-left: 15px; display: grid; grid-template-columns: 300px 200px auto; align-items: start; column-gap: 12px; row-gap: 0;">
                     <div style="display: flex; flex-direction: column; padding: 6px 8px;">
                         <label for="sql-statement-filter" class="filter-label">SQL++ Statement Filter</label>
                         <input type="text" id="sql-statement-filter" placeholder="e.g., FROM bucket WHERE type = 'order'"
@@ -560,16 +566,97 @@ if (window.TEXT_CONSTANTS) {
                             style="width: 100%; max-width: 100%; font-size: 11px; padding: 4px 6px;" />
                     </div>
 
-                    <label class="label-flex margin-top-5" style="margin: 0; display: flex; align-items: center; gap: 6px; padding: 6px 8px;">
-                        <input type="checkbox" id="exclude-system-queries" checked
-                            title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
-                            aria-label="Exclude system queries from analysis" />
-                        <span class="checkbox-label-text"
-                            title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
-                            style="font-size: 12px;">
-                            Exclude System
-                        </span>
-                    </label>
+                    <div class="filter-stack" style="margin-top: 0; margin-bottom: 0; padding: 6px 8px;">
+                        <label for="timezone-selector" class="filter-label" id="timezone-selector-label">
+                            <script>document.write(TEXT_CONSTANTS.TIMEZONE_LABEL);</script>
+                        </label>
+                        <select id="timezone-selector" 
+                                style="width: 100%; max-width: 100%; font-size: 11px; padding: 2px 4px;"
+                                title="Select timezone for displaying query timestamps"
+                                onchange="handleTimezoneChange()">
+                            <option value="" disabled selected>Auto-detect from data...</option>
+                            <option value="UTC">UTC (Coordinated Universal Time)</option>
+                            <optgroup label="Americas">
+                                <option value="America/New_York">America/New_York (EST/EDT)</option>
+                                <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+                                <option value="America/Denver">America/Denver (MST/MDT)</option>
+                                <option value="America/Phoenix">America/Phoenix (MST)</option>
+                                <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+                                <option value="America/Anchorage">America/Anchorage (AKST/AKDT)</option>
+                                <option value="America/Honolulu">America/Honolulu (HST)</option>
+                                <option value="America/Toronto">America/Toronto (EST/EDT)</option>
+                                <option value="America/Vancouver">America/Vancouver (PST/PDT)</option>
+                                <option value="America/Mexico_City">America/Mexico_City (CST/CDT)</option>
+                                <option value="America/Sao_Paulo">America/Sao_Paulo (BRT/BRST)</option>
+                                <option value="America/Buenos_Aires">America/Buenos_Aires (ART)</option>
+                                <option value="America/Santiago">America/Santiago (CLT/CLST)</option>
+                                <option value="America/Bogota">America/Bogota (COT)</option>
+                                <option value="America/Lima">America/Lima (PET)</option>
+                            </optgroup>
+                            <optgroup label="Europe">
+                                <option value="Europe/London">Europe/London (GMT/BST)</option>
+                                <option value="Europe/Dublin">Europe/Dublin (GMT/IST)</option>
+                                <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+                                <option value="Europe/Berlin">Europe/Berlin (CET/CEST)</option>
+                                <option value="Europe/Amsterdam">Europe/Amsterdam (CET/CEST)</option>
+                                <option value="Europe/Brussels">Europe/Brussels (CET/CEST)</option>
+                                <option value="Europe/Madrid">Europe/Madrid (CET/CEST)</option>
+                                <option value="Europe/Rome">Europe/Rome (CET/CEST)</option>
+                                <option value="Europe/Zurich">Europe/Zurich (CET/CEST)</option>
+                                <option value="Europe/Stockholm">Europe/Stockholm (CET/CEST)</option>
+                                <option value="Europe/Warsaw">Europe/Warsaw (CET/CEST)</option>
+                                <option value="Europe/Athens">Europe/Athens (EET/EEST)</option>
+                                <option value="Europe/Istanbul">Europe/Istanbul (TRT)</option>
+                                <option value="Europe/Moscow">Europe/Moscow (MSK)</option>
+                            </optgroup>
+                            <optgroup label="Asia">
+                                <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+                                <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                                <option value="Asia/Bangkok">Asia/Bangkok (ICT)</option>
+                                <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
+                                <option value="Asia/Hong_Kong">Asia/Hong_Kong (HKT)</option>
+                                <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
+                                <option value="Asia/Taipei">Asia/Taipei (CST)</option>
+                                <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+                                <option value="Asia/Seoul">Asia/Seoul (KST)</option>
+                                <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
+                                <option value="Asia/Manila">Asia/Manila (PST)</option>
+                                <option value="Asia/Karachi">Asia/Karachi (PKT)</option>
+                                <option value="Asia/Dhaka">Asia/Dhaka (BST)</option>
+                                <option value="Asia/Riyadh">Asia/Riyadh (AST)</option>
+                                <option value="Asia/Tel_Aviv">Asia/Tel_Aviv (IST/IDT)</option>
+                            </optgroup>
+                            <optgroup label="Australia & Pacific">
+                                <option value="Australia/Sydney">Australia/Sydney (AEDT/AEST)</option>
+                                <option value="Australia/Melbourne">Australia/Melbourne (AEDT/AEST)</option>
+                                <option value="Australia/Brisbane">Australia/Brisbane (AEST)</option>
+                                <option value="Australia/Perth">Australia/Perth (AWST)</option>
+                                <option value="Australia/Adelaide">Australia/Adelaide (ACDT/ACST)</option>
+                                <option value="Pacific/Auckland">Pacific/Auckland (NZDT/NZST)</option>
+                                <option value="Pacific/Fiji">Pacific/Fiji (FJT/FJST)</option>
+                                <option value="Pacific/Guam">Pacific/Guam (ChST)</option>
+                            </optgroup>
+                            <optgroup label="Africa">
+                                <option value="Africa/Cairo">Africa/Cairo (EET)</option>
+                                <option value="Africa/Johannesburg">Africa/Johannesburg (SAST)</option>
+                                <option value="Africa/Lagos">Africa/Lagos (WAT)</option>
+                                <option value="Africa/Nairobi">Africa/Nairobi (EAT)</option>
+                                <option value="Africa/Casablanca">Africa/Casablanca (WET/WEST)</option>
+                            </optgroup>
+                        </select>
+                        <span id="timezone-info" class="filter-help"></span>
+                        
+                        <label class="label-flex" style="margin: 4px 0 0 0; display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" id="exclude-system-queries" checked
+                                title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
+                                aria-label="Exclude system queries from analysis" />
+                            <span class="checkbox-label-text"
+                                title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
+                                style="font-size: 12px;">
+                                Exclude System
+                            </span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -4794,7 +4881,7 @@ if (window.TEXT_CONSTANTS) {
             if (!requests || requests.length === 0) return "minute";
 
             const times = requests
-                .map((r) => new Date(r.requestTime))
+                .map((r) => getChartDate(r.requestTime))
                 .filter((t) => !isNaN(t));
             if (times.length === 0) return "minute";
 
@@ -5110,7 +5197,7 @@ function renderQueryGroupPhaseTimesChart(group) {
             let stepSize = 1;
             if (requests && requests.length > 0) {
                 const times = requests
-                    .map((r) => new Date(r.requestTime))
+                    .map((r) => getChartDate(r.requestTime))
                     .filter((t) => !isNaN(t));
                 if (times.length > 0) {
                     const minTime = Math.min(...times);
@@ -5428,7 +5515,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 if (!request.requestTime) return;
 
                 // Parse requestTime and round based on selected grouping
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
 
                 const key = timeKey.toISOString();
@@ -5694,7 +5781,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 if (!request.requestTime || !request.plan) return;
 
                 // Parse requestTime and round based on selected grouping
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
 
                 const key = timeKey.toISOString();
@@ -5957,7 +6044,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 if (!request.requestTime || !request.plan) return;
 
                 // Parse requestTime and round based on selected grouping
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
 
                 const key = timeKey.toISOString();
@@ -6204,7 +6291,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 if (!request.requestTime) return;
 
                 // Parse requestTime and round based on selected grouping
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
 
                 const key = timeKey.toISOString();
@@ -6581,7 +6668,7 @@ function renderQueryGroupPhaseTimesChart(group) {
             const timeGroups = {};
 
             requests.forEach((request) => {
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
                 const key = timeKey.toISOString();
 
@@ -6947,7 +7034,7 @@ function renderQueryGroupPhaseTimesChart(group) {
 
 
             requests.forEach((request) => {
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
                 const key = timeKey.toISOString();
 
@@ -7313,7 +7400,7 @@ function renderQueryGroupPhaseTimesChart(group) {
             const timeGroups = {};
 
             requests.forEach((request) => {
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
                 const key = timeKey.toISOString();
 
@@ -7600,7 +7687,7 @@ function renderQueryGroupPhaseTimesChart(group) {
             };
 
             requests.forEach((request) => {
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
                 const key = timeKey.toISOString();
 
@@ -7794,7 +7881,7 @@ function renderQueryGroupPhaseTimesChart(group) {
             };
 
             requests.forEach((request) => {
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
                 const key = timeKey.toISOString();
 
@@ -7977,7 +8064,7 @@ function renderQueryGroupPhaseTimesChart(group) {
             const timeGroups = {};
 
             requests.forEach((request) => {
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
                 const key = timeKey.toISOString();
 
@@ -8146,7 +8233,7 @@ function renderQueryGroupPhaseTimesChart(group) {
             const timeGroups = {};
 
             requests.forEach((request) => {
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
                 const key = timeKey.toISOString();
 
@@ -8315,7 +8402,7 @@ function renderQueryGroupPhaseTimesChart(group) {
             const timeGroups = {};
 
             requests.forEach((request) => {
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
                 const key = timeKey.toISOString();
 
@@ -8552,7 +8639,7 @@ function renderQueryGroupPhaseTimesChart(group) {
             const timeGroups = {};
 
             requests.forEach((request) => {
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
                 const key = timeKey.toISOString();
 
@@ -8921,7 +9008,7 @@ function renderQueryGroupPhaseTimesChart(group) {
             const timeGroups = {};
 
             requests.forEach((request) => {
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
                 const key = timeKey.toISOString();
 
@@ -9350,7 +9437,7 @@ function renderQueryGroupPhaseTimesChart(group) {
             const timeGroups = {};
 
             requests.forEach((request) => {
-                const requestDate = new Date(request.requestTime);
+                const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
                 const key = timeKey.toISOString();
 
@@ -10056,16 +10143,101 @@ function renderQueryGroupPhaseTimesChart(group) {
             return new Date(isoString);
         }
 
-        // Convert Date to datetime-local input format
-        function toDateTimeLocal(date) {
+        // Convert requestTime string to Date in selected timezone for chart display
+        function getChartDate(requestTime) {
+            if (!requestTime) return null;
+            const date = parseCouchbaseDateTime(requestTime);
+            if (!date || isNaN(date.getTime())) return null;
+            
+            // If no timezone selected or UTC, return as-is
+            if (!currentTimezone || currentTimezone === "UTC") {
+                return date;
+            }
+            
+            // Convert to selected timezone for display
+            return convertToTimezone(date, currentTimezone);
+        }
+
+        // Convert Date to specified timezone and return Date object
+        function convertToTimezone(date, timezone) {
+            if (!date || isNaN(date.getTime())) return null;
+            
+            // If timezone is UTC or not specified, return original date
+            if (!timezone || timezone === "UTC") {
+                return date;
+            }
+            
+            try {
+                // Convert to target timezone string, then parse back to Date
+                const options = {
+                    timeZone: timezone,
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                };
+                
+                const formatter = new Intl.DateTimeFormat('en-US', options);
+                const parts = formatter.formatToParts(date);
+                
+                const getValue = (type) => parts.find(p => p.type === type)?.value;
+                const year = getValue('year');
+                const month = getValue('month');
+                const day = getValue('day');
+                const hour = getValue('hour');
+                const minute = getValue('minute');
+                const second = getValue('second');
+                
+                // Create new date in local time zone with the converted values
+                return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`);
+            } catch (e) {
+                console.error("Error converting timezone:", e);
+                return date; // Return original date on error
+            }
+        }
+
+        // Convert Date to datetime-local input format in selected timezone
+        function toDateTimeLocal(date, timezone) {
             if (!date || isNaN(date.getTime())) return "";
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, "0");
-            const day = String(date.getDate()).padStart(2, "0");
-            const hours = String(date.getHours()).padStart(2, "0");
-            const minutes = String(date.getMinutes()).padStart(2, "0");
-            const seconds = String(date.getSeconds()).padStart(2, "0");
-            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+            
+            // Use currentTimezone if timezone not specified, default to UTC if still undefined
+            const tz = timezone || currentTimezone || "UTC";
+            
+            try {
+                // Convert to target timezone (or return original if UTC)
+                const convertedDate = convertToTimezone(date, tz);
+                if (!convertedDate || isNaN(convertedDate.getTime())) {
+                    // Fallback to original date if conversion fails
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, "0");
+                    const day = String(date.getDate()).padStart(2, "0");
+                    const hours = String(date.getHours()).padStart(2, "0");
+                    const minutes = String(date.getMinutes()).padStart(2, "0");
+                    const seconds = String(date.getSeconds()).padStart(2, "0");
+                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+                }
+                
+                const year = convertedDate.getFullYear();
+                const month = String(convertedDate.getMonth() + 1).padStart(2, "0");
+                const day = String(convertedDate.getDate()).padStart(2, "0");
+                const hours = String(convertedDate.getHours()).padStart(2, "0");
+                const minutes = String(convertedDate.getMinutes()).padStart(2, "0");
+                const seconds = String(convertedDate.getSeconds()).padStart(2, "0");
+                return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+            } catch (e) {
+                console.error("Error in toDateTimeLocal:", e);
+                // Fallback to simple formatting without timezone conversion
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, "0");
+                const day = String(date.getDate()).padStart(2, "0");
+                const hours = String(date.getHours()).padStart(2, "0");
+                const minutes = String(date.getMinutes()).padStart(2, "0");
+                const seconds = String(date.getSeconds()).padStart(2, "0");
+                return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+            }
         }
 
         // Filter requests by date range
@@ -13213,7 +13385,7 @@ function generateElapsedTimeChart(requests) {
                         plan = JSON.parse(item.plan);
                     } catch (e) {
                         console.warn(`${TEXT_CONSTANTS.JSON_PARSING_ERROR} plan for request:`, e.message);
-                        showSlidingNotification(`${TEXT_CONSTANTS.ERROR_PARSING_JSON} ${e.message}`, "warning");
+                        showToast(`${TEXT_CONSTANTS.ERROR_PARSING_JSON} ${e.message}`, "warning");
                         plan = null;
                     }
                 } else {
@@ -13326,6 +13498,11 @@ function generateElapsedTimeChart(requests) {
 
             // Pre-calculate commonly used values using cached data
             const elapsedTimeMs = parseTime(request.elapsedTime);
+            
+            // DO NOT convert requestTime here - keep it in original UTC/ISO format
+            // Timezone conversion should only happen in display layer (tables, charts)
+            // to avoid breaking date filtering and comparisons
+            
             const processedRequest = {
                 ...request,
                 plan: plan,
@@ -13730,6 +13907,31 @@ function generateElapsedTimeChart(requests) {
                     return;
                 }
 
+                // Detect timezone from the data
+                detectedTimezone = detectTimezoneFromData(processData);
+                const timezoneSelector = document.getElementById("timezone-selector");
+                
+                // Only auto-set timezone if user hasn't manually picked one
+                if (timezoneSelector && !timeZoneUserPicked) {
+                    // Set the dropdown to detected timezone if available in options
+                    const options = Array.from(timezoneSelector.options).map(opt => opt.value);
+                    if (options.includes(detectedTimezone)) {
+                        timezoneSelector.value = detectedTimezone;
+                    } else {
+                        timezoneSelector.value = "UTC";
+                    }
+                    currentTimezone = timezoneSelector.value;
+                } else if (timezoneSelector) {
+                    // Preserve user's timezone selection
+                    currentTimezone = timezoneSelector.value;
+                }
+                
+                // Update timezone info display
+                const timezoneInfo = document.getElementById("timezone-info");
+                if (timezoneInfo) {
+                    timezoneInfo.textContent = `${TEXT_CONSTANTS.TIMEZONE_DETECTED} ${detectedTimezone}`;
+                }
+
                 if (Array.isArray(processData)) {
                     // Process data in smaller batches for maximum UI responsiveness
                     const batchSize = 75; // Further reduced for smoother progress updates
@@ -13859,123 +14061,77 @@ function generateElapsedTimeChart(requests) {
             } catch (e) {
                 console.error(`${TEXT_CONSTANTS.JSON_PARSING_ERROR}`, e);
                 console.log(`${TEXT_CONSTANTS.JSON_PARSING_ERROR}`, e);
-                showSlidingNotification(`${TEXT_CONSTANTS.ERROR_PARSING_JSON} ${e.message}`, "error");
+                showToast(`${TEXT_CONSTANTS.ERROR_PARSING_JSON} ${e.message}`, "error");
                 document.getElementById("progress-container").style.display = "none";
             }
         }
 
-        // Toast notification system
-        function showToast(message, type = "info") {
+        // Toast notification system - slides down from top-left corner for 10 seconds
+        function showToast(message, type = "info", durationMs = 10000) {
             // Remove any existing toasts
-            const existingToasts = document.querySelectorAll(".toast");
+            const existingToasts = document.querySelectorAll(".toast, .sliding-toast");
             existingToasts.forEach((toast) => toast.remove());
 
             const toast = document.createElement("div");
-            toast.className = `toast toast-${type}`;
+            toast.className = "sliding-toast";
             toast.textContent = message;
             toast.style.cssText = `
           position: fixed;
-          top: 20px;
-          right: 20px;
+          top: -50px;
+          left: 20px;
           padding: 12px 20px;
-          border-radius: 4px;
-          color: white;
-          font-weight: bold;
-          z-index: 10000;
-          max-width: 300px;
+          border-radius: 6px;
+          background: #e3f2fd;
+          border: 1px solid #bbdefb;
+          color: #0d47a1;
+          font-size: 13px;
+          font-weight: 600;
+          z-index: 10001;
+          max-width: 360px;
           word-wrap: break-word;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          transition: all 0.35s ease-out;
+          transform: translateY(0px);
         `;
 
+            // Color scheme by type
             if (type === "error") {
-                toast.style.backgroundColor = "#f44336";
+                toast.style.background = "#f8d7da";
+                toast.style.border = "1px solid #f5c2c7";
+                toast.style.color = "#842029";
             } else if (type === "warning") {
-                toast.style.backgroundColor = "#ff9800";
+                toast.style.background = "#fff3cd";
+                toast.style.border = "1px solid #ffeaa7";
+                toast.style.color = "#856404";
             } else if (type === "success") {
-                toast.style.backgroundColor = "#4caf50";
-            } else {
-                toast.style.backgroundColor = "#2196f3";
+                toast.style.background = "#d1e7dd";
+                toast.style.border = "1px solid #badbcc";
+                toast.style.color = "#0f5132";
             }
 
             document.body.appendChild(toast);
 
-            // Fade in
-            setTimeout(() => (toast.style.opacity = "1"), 10);
+            // Slide down
+            setTimeout(() => {
+                toast.style.top = "20px";
+                toast.style.transform = "translateY(0px)";
+            }, 10);
 
-            // Remove after 4 seconds
+            // Auto-hide
             setTimeout(() => {
                 toast.style.opacity = "0";
+                toast.style.transform = "translateY(-10px)";
                 setTimeout(() => {
                     if (toast.parentNode) {
                         document.body.removeChild(toast);
                     }
-                }, 300);
-            }, 4000);
+                }, 400);
+            }, durationMs);
             }
 
-            // Sliding notification (upper-left) used for prominent messages
+            // Redirect to showToast for consistency
             function showSlidingNotification(message, type = "info", durationMs = 8000) {
-                // Remove existing sliding toasts
-                const existing = document.querySelectorAll(".sliding-toast");
-                existing.forEach(t => t.remove());
-
-                const toast = document.createElement("div");
-                toast.className = "sliding-toast";
-                toast.textContent = message;
-                toast.style.cssText = `
-                    position: fixed;
-                    top: -50px;
-                    left: 20px;
-                    padding: 12px 20px;
-                    border-radius: 6px;
-                    background: #e3f2fd;
-                    border: 1px solid #bbdefb;
-                    color: #0d47a1;
-                    font-size: 13px;
-                    font-weight: 600;
-                    z-index: 10001;
-                    max-width: 360px;
-                    word-wrap: break-word;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    transition: all 0.35s ease-out;
-                    transform: translateY(0px);
-                `;
-
-                // Color scheme by type
-                if (type === "error") {
-                    toast.style.background = "#f8d7da";
-                    toast.style.border = "1px solid #f5c2c7";
-                    toast.style.color = "#842029";
-                } else if (type === "warning") {
-                    toast.style.background = "#fff3cd";
-                    toast.style.border = "1px solid #ffeaa7";
-                    toast.style.color = "#856404";
-                } else if (type === "success") {
-                    toast.style.background = "#d1e7dd";
-                    toast.style.border = "1px solid #badbcc";
-                    toast.style.color = "#0f5132";
-                }
-
-                document.body.appendChild(toast);
-
-                // Slide down
-                setTimeout(() => {
-                    toast.style.top = "20px";
-                    toast.style.transform = "translateY(0px)";
-                }, 10);
-
-                // Auto-hide
-                setTimeout(() => {
-                    toast.style.opacity = "0";
-                    toast.style.transform = "translateY(-10px)";
-                    setTimeout(() => {
-                        if (toast.parentNode) {
-                            document.body.removeChild(toast);
-                        }
-                    }, 400);
-                }, durationMs);
+                showToast(message, type, durationMs);
             }
 
             // Input panel auto-hide helpers (Issue #88)
@@ -14113,8 +14269,9 @@ function generateElapsedTimeChart(requests) {
 
                     originalStartDate = minDate;
                     originalEndDate = maxDate;
-                    startDateInput.value = toDateTimeLocal(startWithBuffer);
-                    endDateInput.value = toDateTimeLocal(endWithBuffer);
+                    // Use UTC for datepicker to avoid timezone conversion issues
+                    startDateInput.value = toDateTimeLocal(startWithBuffer, "UTC");
+                    endDateInput.value = toDateTimeLocal(endWithBuffer, "UTC");
                 }
             } else {
                 // Use existing originalRequests if available, otherwise use current data
@@ -14136,6 +14293,17 @@ function generateElapsedTimeChart(requests) {
                 startDate,
                 endDate
             );
+            
+            // Debug logging for filtering
+            console.log(`Date filtering: ${filteredAllRequests.length} requests -> ${filteredRequests.length} after date range filter`);
+            if (filteredRequests.length === 0 && filteredAllRequests.length > 0) {
+                console.warn("⚠️ All requests filtered out by date range!");
+                console.log("Start date:", startDate);
+                console.log("End date:", endDate);
+                if (filteredAllRequests.length > 0) {
+                    console.log("First request time:", filteredAllRequests[0].requestTime);
+                }
+            }
 
             // Store filtered requests globally for Index/Query Flow tab activation
             window.filteredRequests = filteredRequests;
@@ -14237,8 +14405,9 @@ function generateElapsedTimeChart(requests) {
 
             if (type === "original") {
                 if (originalStartDate && originalEndDate) {
-                    startDateInput.value = toDateTimeLocal(originalStartDate);
-                    endDateInput.value = toDateTimeLocal(originalEndDate);
+                    // Use UTC for datepickers to avoid timezone filtering issues
+                    startDateInput.value = toDateTimeLocal(originalStartDate, "UTC");
+                    endDateInput.value = toDateTimeLocal(originalEndDate, "UTC");
                 }
             } else if (type === "1day" || type === "1hour" || type === "1week") {
                 const endDate = endDateInput.value
@@ -14254,7 +14423,8 @@ function generateElapsedTimeChart(requests) {
                     startDate.setDate(startDate.getDate() - 7);
                 }
 
-                startDateInput.value = toDateTimeLocal(startDate);
+                // Use UTC for datepickers to avoid timezone filtering issues
+                startDateInput.value = toDateTimeLocal(startDate, "UTC");
             }
 
             // Show reminder to click Parse JSON
@@ -16372,6 +16542,73 @@ function generateElapsedTimeChart(requests) {
         // Version management
         const APP_VERSION = "3.17.1";
         const LAST_UPDATED = "2025-10-05";
+
+        // Timezone management - initialize early to avoid undefined errors
+        let detectedTimezone = "UTC"; // Timezone detected from data
+        let currentTimezone = "UTC"; // Currently selected timezone (default to UTC)
+        let timeZoneUserPicked = false; // Track if user manually selected a timezone
+
+        // Detect timezone from requestTime string
+        function detectTimezoneFromData(processData) {
+            if (!processData || processData.length === 0) return "UTC";
+            
+            // Get first requestTime that exists
+            for (let i = 0; i < Math.min(processData.length, 10); i++) {
+                const item = processData[i];
+                const request = item.completed_requests || item;
+                if (request.requestTime) {
+                    const requestTime = request.requestTime;
+                    // Check for timezone offset (e.g., "2025-01-15T10:30:00-05:00" or "2025-01-15T10:30:00+00:00")
+                    const offsetMatch = requestTime.match(/([+-]\d{2}:\d{2})$/);
+                    if (offsetMatch) {
+                        const offset = offsetMatch[1];
+                        if (offset === "+00:00" || offset === "-00:00") {
+                            return "UTC";
+                        }
+                        // Map common offsets to timezone names
+                        const offsetToTimezone = {
+                            "-10:00": "America/Honolulu",
+                            "-09:00": "America/Anchorage",
+                            "-08:00": "America/Los_Angeles",
+                            "-07:00": "America/Denver",
+                            "-06:00": "America/Chicago",
+                            "-05:00": "America/New_York",
+                            "-03:00": "America/Sao_Paulo",
+                            "+00:00": "UTC",
+                            "+01:00": "Europe/Paris",
+                            "+02:00": "Europe/Athens",
+                            "+03:00": "Europe/Moscow",
+                            "+04:00": "Asia/Dubai",
+                            "+05:30": "Asia/Kolkata",
+                            "+06:00": "Asia/Dhaka",
+                            "+07:00": "Asia/Bangkok",
+                            "+08:00": "Asia/Shanghai",
+                            "+09:00": "Asia/Tokyo",
+                            "+09:30": "Australia/Adelaide",
+                            "+10:00": "Australia/Sydney",
+                            "+11:00": "Pacific/Guam",
+                            "+12:00": "Pacific/Auckland"
+                        };
+                        return offsetToTimezone[offset] || "UTC";
+                    }
+                    // If no offset, assume UTC
+                    return "UTC";
+                }
+            }
+            return "UTC";
+        }
+
+        // Handle timezone change - called when user manually changes dropdown
+        function handleTimezoneChange() {
+            const timezoneSelector = document.getElementById("timezone-selector");
+            if (!timezoneSelector) return;
+            
+            currentTimezone = timezoneSelector.value;
+            timeZoneUserPicked = true; // User manually picked a timezone
+            
+            // Show message that user needs to re-parse
+            showToast(TEXT_CONSTANTS.FILTERS_CHANGED_REMINDER, "warning");
+        }
 
         function getVersionInfo() {
             return {
