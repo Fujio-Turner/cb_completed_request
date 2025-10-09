@@ -8889,9 +8889,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                         {
                             label: "Doc Fetch - bottom 10%",
                             data: sortedData.map((item) => item.fetchP10),
-                            borderColor: "rgba(200, 162, 235, 1)", // Light purple
-                            backgroundColor: "rgba(200, 162, 235, 0.1)",
-                            borderWidth: 1,
+                            borderColor: "rgba(102, 51, 153, 1)", // Medium-dark purple
+                            backgroundColor: "rgba(102, 51, 153, 0.1)",
+                            borderWidth: 2,
                             borderDash: [5, 5],
                             fill: false,
                             tension: 0.3,
@@ -8924,9 +8924,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                         {
                             label: "Index Scan - bottom 10%",
                             data: sortedData.map((item) => item.scanP10),
-                            borderColor: "rgba(255, 224, 130, 1)", // Light yellow
-                            backgroundColor: "rgba(255, 224, 130, 0.1)",
-                            borderWidth: 1,
+                            borderColor: "rgba(204, 102, 0, 1)", // Dark orange
+                            backgroundColor: "rgba(204, 102, 0, 0.1)",
+                            borderWidth: 2,
                             borderDash: [5, 5],
                             fill: false,
                             tension: 0.3,
