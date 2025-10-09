@@ -2955,7 +2955,8 @@ if (window.TEXT_CONSTANTS) {
                     const indexesAndKeys = extractIndexesAndKeys(request);
                     const planTreeHtml = buildEnhancedPlanModal(
                         request.plan,
-                        indexesAndKeys
+                        indexesAndKeys,
+                        request
                     );
                     document.getElementById("plan-modal-body").innerHTML = planTreeHtml;
                     document.getElementById("plan-modal").style.display = "block";
@@ -3090,7 +3091,7 @@ if (window.TEXT_CONSTANTS) {
         }
 
         // Build enhanced plan modal with indexes and keys
-        function buildEnhancedPlanModal(plan, indexesAndKeys) {
+        function buildEnhancedPlanModal(plan, indexesAndKeys, request) {
             let html = '<div style="margin-bottom: 20px;">';
 
             // Indexes section
@@ -3190,8 +3191,34 @@ if (window.TEXT_CONSTANTS) {
 
             // Execution plan section
             html += '<div style="border-top: 1px solid #ddd; padding-top: 15px;">';
-            html +=
-                `<h3 style="margin: 0 0 10px 0; color: #333; font-size: 16px;">${TEXT_CONSTANTS.EXECUTION_PLAN_HEADER}</h3>`;
+            
+            // Parse time above Execution Plan
+            if (request && request.phaseTimes && request.phaseTimes.parse) {
+                const parseTimeStr = request.phaseTimes.parse;
+                const parseMs = parseTime(parseTimeStr);
+                const parseColor = parseMs >= 1 ? '#dc3545' : '#333';
+                
+                html += `<div style="margin-bottom: 10px;">`;
+                html += `<span style="color: #333; font-size: 14px;">Parse Statement: </span>`;
+                html += `<span style="color: ${parseColor}; font-weight: bold; font-size: 14px;">${parseTimeStr}</span>`;
+                html += `</div>`;
+            }
+            
+            // Execution Plan header with Plan time
+            let executionPlanHeader = TEXT_CONSTANTS.EXECUTION_PLAN_HEADER;
+            if (request && request.phaseTimes && request.phaseTimes.plan) {
+                const planTimeStr = request.phaseTimes.plan;
+                const planMs = parseTime(planTimeStr);
+                const planColor = planMs >= 1 ? '#dc3545' : '#333';
+                
+                html += `<h3 style="margin: 0 0 10px 0; color: #333; font-size: 16px;">`;
+                html += executionPlanHeader;
+                html += ` <span style="color: ${planColor}; font-weight: bold;">${planTimeStr}</span>`;
+                html += `</h3>`;
+            } else {
+                html += `<h3 style="margin: 0 0 10px 0; color: #333; font-size: 16px;">${executionPlanHeader}</h3>`;
+            }
+            
             html += "<ul>" + buildPlanTree(plan) + "</ul>";
             html += "</div>";
 
