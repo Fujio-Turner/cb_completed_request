@@ -13883,11 +13883,11 @@ function generateElapsedTimeChart(requests) {
                 return;
             }
 
-            if (jsonInput.length > 50 * 1024 * 1024) {
-                // 50MB limit
-                showToast(TEXT_CONSTANTS.INPUT_TOO_LARGE, "error");
-                return;
-            }
+            // if (jsonInput.length > 50 * 1024 * 1024) {
+            //     // 50MB limit
+            //     showToast(TEXT_CONSTANTS.INPUT_TOO_LARGE, "error");
+            //     return;
+            // }
 
             try {
                 const data = JSON.parse(jsonInput);
