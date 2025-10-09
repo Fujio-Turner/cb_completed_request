@@ -57,8 +57,8 @@ parser.add_argument("-f", "--file", required=True, help="Input JSON file path")
 parser.add_argument("-n", "--number", type=int, required=True, help="Number of elements to process (ignored if --random is used)")
 parser.add_argument("-o", "--output", required=True, help="Output JSON file path")
 parser.add_argument("-r", "--requestId", action="store_true", help="Sort by requestId before processing")
-parser.add_argument("-s", "--random", type=float, nargs="?", const=25.0, help="Select a random percentage of records (default 25%), overrides --number")
-
+##parser.add_argument("-s", "--random", type=float, nargs="?", const=25.0, help="Select a random percentage of records (default 25%), overrides --number")
+parser.add_argument("-s", "--random", type=float, nargs="?", const=25.0, help="Select a random percentage of records (default 25%%), overrides --number")
 # Parse arguments
 args = parser.parse_args()
 
