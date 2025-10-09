@@ -69,6 +69,94 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         .pattern-analysis-grid { display: grid !important; grid-template-columns: 1fr; grid-template-rows: 400px; gap: 20px; margin-top: 20px !important; margin-bottom: 0; clear: both !important; position: relative; z-index: 0; }
         /* Remove inflated min-height on draggable tiles in dashboard */
         #dashboard .draggable-chart { min-height: 0 !important; }
+
+        /* Chart Expand/Fullscreen Feature (Issue #139) */
+        .chart-expand-btn {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: 1px solid #0056b3;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content:center;
+            font-size: 14px;
+            user-select: none;
+            z-index: 1000;
+            transition: background 0.2s;
+        }
+        .chart-expand-btn:hover {
+            background: #0056b3;
+        }
+        .chart-fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 20000;
+            align-items: center;
+            justify-content: center;
+        }
+        .chart-fullscreen-overlay.active {
+            display: flex;
+        }
+        .chart-fullscreen-content {
+            position: relative;
+            width: 90%;
+            height: 85%;
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .chart-collapse-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 20001;
+            transition: background 0.2s;
+        }
+        .chart-collapse-btn:hover {
+            background: #c82333;
+        }
+        .chart-reset-zoom-btn {
+            position: absolute;
+            top: 10px;
+            right: 50px;
+            padding: 8px 16px;
+            cursor: pointer;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 20001;
+            transition: background 0.2s;
+        }
+        .chart-reset-zoom-btn:hover {
+            background: #545b62;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/jquery-ui.min.js" integrity="sha512-MSOo1aY+3pXCOCdGAYoBZ6YGI0aragoQsg1mKKBHXCYPIWxamwOE7Drh+N5CPgGI5SA9IEKJiPjdfqWFWmZtRA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
@@ -1511,10 +1599,12 @@ if (window.TEXT_CONSTANTS) {
             </div>
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="duration-buckets" data-position="timeline-1">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="duration-buckets-chart"></canvas>
                 </div>
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="query-types" data-position="timeline-2">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="query-types-chart"></canvas>
                 </div>
@@ -1522,10 +1612,12 @@ if (window.TEXT_CONSTANTS) {
 
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="operations" data-position="timeline-3">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="operations-chart"></canvas>
                 </div>
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="filter" data-position="timeline-4">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="filter-chart"></canvas>
                 </div>
@@ -1533,10 +1625,12 @@ if (window.TEXT_CONSTANTS) {
 
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="result-count" data-position="timeline-5">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="result-count-chart"></canvas>
                 </div>
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="result-size" data-position="timeline-6">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="result-size-chart"></canvas>
                 </div>
@@ -1544,10 +1638,12 @@ if (window.TEXT_CONSTANTS) {
 
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="timeline" data-position="timeline-7">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="timeline-chart"></canvas>
                 </div>
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="memory" data-position="timeline-8">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="memory-chart"></canvas>
                 </div>
@@ -1556,18 +1652,22 @@ if (window.TEXT_CONSTANTS) {
             <!-- Execution Analysis Charts - Draggable Grid -->
             <div id="charts-grid" class="display-flex gap-20 margin-bottom-20" style="flex-wrap: wrap;">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-kernel" data-position="top-left">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="exec-vs-kernel-chart"></canvas>
                 </div>
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-serv" data-position="top-right">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="exec-vs-serv-chart"></canvas>
                 </div>
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-elapsed" data-position="bottom-left">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="exec-vs-elapsed-chart"></canvas>
                 </div>
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="service-time-analysis" data-position="bottom-right">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="service-time-analysis-chart"></canvas>
                 </div>
@@ -1576,9 +1676,11 @@ if (window.TEXT_CONSTANTS) {
             <!-- CPU/Kernel/Elapsed Time Analysis & Enhanced Operations - Side by Side -->
             <div class="display-flex gap-20 margin-bottom-20 with-margin-top-20">
                 <div class="flex-1-height-400 chart-container">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <canvas id="cpu-time-chart"></canvas>
                 </div>
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="enhanced-operations" data-position="bottom-full">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="enhanced-operations-chart"></canvas>
                 </div>
@@ -1587,10 +1689,12 @@ if (window.TEXT_CONSTANTS) {
             <!-- Row 7: Parse and Plan Duration Distribution Charts -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="parse-duration" data-position="timeline-row7-1">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="parse-duration-chart"></canvas>
                 </div>
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="plan-duration" data-position="timeline-row7-2">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="plan-duration-chart"></canvas>
                 </div>
@@ -18665,6 +18769,104 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 console.warn('Failed to initialize input toggle tab', e);
             }
         });
+    </script>
+
+    <!-- Fullscreen Chart Overlay (Issue #139) -->
+    <div id="chart-fullscreen-overlay" class="chart-fullscreen-overlay">
+        <div class="chart-fullscreen-content">
+            <button class="chart-reset-zoom-btn" title="Reset zoom">Reset Zoom</button>
+            <div class="chart-collapse-btn" title="Collapse chart">✕</div>
+            <canvas id="fullscreen-chart-canvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Chart Expand/Collapse Functionality (Issue #139)
+        (function() {
+            const overlay = document.getElementById('chart-fullscreen-overlay');
+            const fullscreenCanvas = document.getElementById('fullscreen-chart-canvas');
+            const collapseBtn = overlay.querySelector('.chart-collapse-btn');
+            const resetZoomBtn = overlay.querySelector('.chart-reset-zoom-btn');
+            let fullscreenChart = null;
+            let originalChart = null;
+
+            // Function to expand chart
+            function expandChart(chartContainer) {
+                const canvas = chartContainer.querySelector('canvas');
+                if (!canvas || !canvas.id) return;
+
+                // Get the original Chart.js instance
+                originalChart = Chart.getChart(canvas);
+                if (!originalChart) return;
+
+                // Show overlay
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+
+                // Clone chart configuration
+                const config = {
+                    type: originalChart.config.type,
+                    data: JSON.parse(JSON.stringify(originalChart.config.data)),
+                    options: JSON.parse(JSON.stringify(originalChart.config.options))
+                };
+
+                // Create fullscreen chart
+                setTimeout(() => {
+                    fullscreenChart = new Chart(fullscreenCanvas, config);
+                }, 100);
+            }
+
+            // Function to collapse chart
+            function collapseChart() {
+                // Destroy fullscreen chart
+                if (fullscreenChart) {
+                    fullscreenChart.destroy();
+                    fullscreenChart = null;
+                }
+
+                // Hide overlay
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+                originalChart = null;
+            }
+
+            // Function to reset zoom on fullscreen chart
+            function resetZoom() {
+                if (fullscreenChart) {
+                    fullscreenChart.resetZoom();
+                }
+            }
+
+            // Attach expand listeners to all expand buttons
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('chart-expand-btn')) {
+                    const chartContainer = e.target.closest('.chart-container');
+                    if (chartContainer) {
+                        expandChart(chartContainer);
+                    }
+                }
+            });
+
+            // Collapse button click
+            collapseBtn.addEventListener('click', collapseChart);
+
+            // Reset zoom button click
+            resetZoomBtn.addEventListener('click', resetZoom);
+
+            // Close on overlay background click
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    collapseChart();
+                }
+            });
+
+            // Close on Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && overlay.classList.contains('active')) {
+                    collapseChart();
+                }
+            });
+        })();
     </script>
 </body>
 
