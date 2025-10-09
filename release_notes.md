@@ -1,3 +1,9 @@
+### Version 3.18.0 (October 8, 2025)
+- **New: Insights (Beta)** - Advanced query insights and analysis capabilities (closes #138)
+- **New: Enhanced Chart** - Improved visualization features (closes #137)
+- **New: Timezone Awareness** - Full timezone support for global users (closes #136)
+- Enhancement: Additional performance improvements (closes #134, #133)
+
 ### Version 3.17.1 (October 5, 2025)
 - Fix: Timeline control order reorganized for better user experience (closes #132)
 - Fix: analysis_hub.html reference links now navigate to exact sections (closes #131)

@@ -1,0 +1,90 @@
+# Release Log - Version 3.18.0
+**Release Date:** 2025-10-08  
+**Previous Version:** 3.17.1  
+**New Version:** 3.18.0
+
+This file tracks all changes made during the release process.
+
+## 📋 Release Checklist Progress
+
+### ✅ Branch & Issue Information
+- [x] **Issues Resolved:** #138, #137, #136, #134, #133
+- [x] **Version Type:** MINOR - New Insights (Beta), New Chart, Timezone awareness
+
+### ✅ Version Information  
+- [x] **Previous Version:** 3.17.1
+- [x] **New Version:** 3.18.0
+- [x] **Release Date:** 2025-10-08
+- [x] **Version Type:** MINOR - New features: Insights (Beta), New Chart, Timezone awareness
+
+---
+
+## 🌐 HTML Files Updates (English-only as of v3.13.x)
+
+### ✅ English (index.html)
+- [x] **Meta version tag:** Updated to 3.18.0
+- [x] **Meta last-updated tag:** Updated to 2025-10-08
+- [x] **Title tag:** Updated to v3.18.0
+- [x] **Version info display:** Updated to v3.18.0
+- [x] **JavaScript APP_VERSION:** N/A (not in this file)
+- [x] **JavaScript LAST_UPDATED:** N/A (not in this file)
+
+### ✅ English (en/index.html)
+- [x] **Meta version tag:** Updated to 3.18.0
+- [x] **Meta last-updated tag:** Updated to 2025-10-08
+- [x] **Title tag:** Updated to v3.18.0
+- [x] **Version info display:** Updated to v3.18.0
+- [x] **JavaScript APP_VERSION:** Updated to 3.18.0
+- [x] **JavaScript LAST_UPDATED:** Updated to 2025-10-08
+- [x] **Header comment:** Version and Last Updated updated
+
+---
+
+## 📚 Documentation Updates
+
+### ✅ AGENT.md
+- [x] **Main heading:** Updated to v3.18.0
+- [x] **Version Management section:** Updated to 3.18.0 (Last Updated: 2025-10-08)
+
+### ✅ README Files
+- [x] **Main heading:** Updated to v3.18.0
+- [x] **Release Notes:** Added v3.18.0 entry with GitHub issues
+
+---
+
+## 🔍 Verification & Testing
+- [x] **Run:** python3 python/validate_js_syntax.py - PASSED
+- [x] **Run:** python3 python/RELEASE_WORK_CHECK.py - 1 minor issue (historical comment)
+
+### ✅ Dockerfile & GitHub Actions
+- [x] **Dockerfile:** LABEL version updated to 3.18.0
+- [x] **GitHub Actions:** Docker tags updated to 3.18.0 and v3.18.0
+
+---
+
+## 📝 Release Features
+- **New Insights (Beta):** Advanced query insights and analysis
+- **New Chart:** Enhanced visualization capabilities
+- **Timezone Awareness:** Proper timezone handling for global users
+
+**Closes:** #138, #137, #136, #134, #133
+
+---
+
+## ✅ Release Complete
+- [x] **All version updates:** Complete and verified
+- [x] **All tests passed:** JavaScript syntax validation passed
+- [x] **Documentation updated:** All files current
+- [x] **release_notes.md:** Updated with v3.18.0 features and GitHub issues
+
+**Files Modified:**
+- index.html
+- en/index.html
+- AGENT.md
+- README.md
+- release_notes.md
+- Dockerfile
+- .github/workflows/docker-build-push.yml
+
+**Release Completed By:** Fujio Turner (via Amp AI)
+**Release Completion Date:** 2025-10-08 23:20:00
