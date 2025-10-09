@@ -260,7 +260,7 @@
                                 </span>
                             </div>
                             <div class="accordion" id="elapsedTimeExamples" style="margin-top:12px">
-                                <div class="accordion-header" onclick="toggleAccordion(this)">Filter Examples</div>
+                                <div class="accordion-header" onclick="toggleAccordion(this)">Elapsed Filter Examples</div>
                                 <div class="accordion-content">
                                     <p>Filter by the <code>elapsedTime</code> of each query using comparisons and ranges. Supported: <code>&lt;</code>, <code>&lt;=</code>, <code>=</code>, <code>&gt;</code>, <code>&gt;=</code>, ranges like <code>100-500ms</code> or <code>0.5s-2s</code>, unit-inferred ranges like <code>3-15s</code>, shorthand <code>500ms+</code> (means <code>&gt;= 500ms</code>), and bare numbers (e.g., <code>150</code> means <code>&gt;= 150ms</code>).</p>
                                     <ul>
@@ -270,6 +270,15 @@
                                         <li><b>Bare number:</b> <code>150</code> is interpreted as <code>&gt;=150ms</code></li>
                                     </ul>
                                 </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <b>Timezone Picker</b> — Adjust the charts/graphs x-axis time to display in your chosen timezone. Select from the dropdown to convert all timestamps accordingly.
+                            <div class="gallery" style="margin:8px 0 0">
+                                <span class="hover-swap">
+                                    <img src="img/timezones.png" alt="Timezone picker dropdown" style="width:240px;height:auto" loading="lazy">
+                                </span>
                             </div>
                         </li>
 
