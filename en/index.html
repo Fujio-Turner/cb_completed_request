@@ -1675,11 +1675,12 @@ if (window.TEXT_CONSTANTS) {
 
             <!-- CPU/Kernel/Elapsed Time Analysis & Enhanced Operations - Side by Side -->
             <div class="display-flex gap-20 margin-bottom-20 with-margin-top-20">
-                <div class="flex-1-height-400 chart-container">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="cpu-time" data-position="timeline-cpu-1">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="cpu-time-chart"></canvas>
                 </div>
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="enhanced-operations" data-position="bottom-full">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="enhanced-operations" data-position="timeline-cpu-2">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="enhanced-operations-chart"></canvas>
@@ -8600,8 +8601,8 @@ function renderQueryGroupPhaseTimesChart(group) {
                             label: "CPU as % of Kernel",
                             data: cpuKernPercentData,
                             type: "line",
-                            backgroundColor: "rgba(255, 206, 86, 0.8)", // Yellow
-                            borderColor: "rgba(255, 206, 86, 1)",
+                            backgroundColor: "rgba(139, 0, 0, 0.8)", // Dark Red
+                            borderColor: "rgba(139, 0, 0, 1)",
                             borderWidth: 2,
                             fill: false,
                             yAxisID: "y1",
@@ -8612,8 +8613,8 @@ function renderQueryGroupPhaseTimesChart(group) {
                             label: "CPU as % of Elapsed (dotted)",
                             data: cpuElapsedPercentData,
                             type: "line",
-                            backgroundColor: "rgba(153, 102, 255, 0.8)", // Purple
-                            borderColor: "rgba(153, 102, 255, 1)",
+                            backgroundColor: "rgba(0, 128, 128, 0.8)", // Dark Teal
+                            borderColor: "rgba(0, 128, 128, 1)",
                             borderWidth: 2,
                             borderDash: [5, 5], // Dotted line
                             fill: false,
