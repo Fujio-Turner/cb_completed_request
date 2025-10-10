@@ -1637,10 +1637,10 @@ if (window.TEXT_CONSTANTS) {
             </div>
 
             <div class="display-flex gap-20 margin-bottom-20">
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="timeline" data-position="timeline-7">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="doc-size-bubble" data-position="timeline-7" style="max-width: 50%;">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <canvas id="timeline-chart"></canvas>
+                    <canvas id="doc-size-bubble-chart"></canvas>
                 </div>
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="memory" data-position="timeline-8">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
@@ -1699,6 +1699,16 @@ if (window.TEXT_CONSTANTS) {
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="plan-duration-chart"></canvas>
                 </div>
+            </div>
+
+            <!-- Row 8: Query Performance Timeline KernTime Chart -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="timeline" data-position="timeline-row8-1">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="timeline-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400"></div>
             </div>
         </div>
 
@@ -2142,6 +2152,7 @@ if (window.TEXT_CONSTANTS) {
                 window.resultSizeChart,
                 window.cpuTimeChart,
                 window.serviceTimeAnalysisChart,
+                window.docSizeBubbleChart,
                 window.execVsKernelChart,
                 window.execVsServChart,
                 window.execVsElapsedChart,
@@ -6776,6 +6787,9 @@ function renderQueryGroupPhaseTimesChart(group) {
             // Create Service Time Analysis Chart
             createServiceTimeAnalysisChart(requests, grouping);
 
+            // Create Document Size Bubble Chart
+            createDocumentSizeBubbleChart(requests, grouping);
+
             // Create ExecTime vs Kernel Time Chart
             createExecVsKernelChart(requests, grouping);
 
@@ -9064,6 +9078,179 @@ function renderQueryGroupPhaseTimesChart(group) {
             registerTimelineChart(window.serviceTimeAnalysisChart, ctx);
         }
 
+        function createDocumentSizeBubbleChart(requests, grouping) {
+            const canvas = document.getElementById("doc-size-bubble-chart");
+            if (!canvas) return;
+
+            const ctx = canvas.getContext("2d");
+
+            if (window.docSizeBubbleChart) {
+                window.docSizeBubbleChart.destroy();
+            }
+
+            const sizeRanges = [
+                { label: "0 bytes", min: 0, max: 0, color: "rgba(128, 128, 128, 0.7)" },                   // Gray
+                { label: "1-10 bytes", min: 1, max: 10, color: "rgba(255, 0, 255, 0.7)" },                // Magenta
+                { label: "10-100 bytes", min: 10, max: 100, color: "rgba(128, 0, 255, 0.7)" },            // Purple
+                { label: "100-1K bytes", min: 100, max: 1000, color: "rgba(0, 0, 200, 0.7)" },            // Dark Blue
+                { label: "1K-10K bytes", min: 1000, max: 10000, color: "rgba(0, 200, 255, 0.7)" },        // Cyan
+                { label: "10K-100K bytes", min: 10000, max: 100000, color: "rgba(0, 180, 0, 0.7)" },      // Green
+                { label: "100K-1MB", min: 100000, max: 1000000, color: "rgba(150, 200, 0, 0.7)" },        // Yellow-Green
+                { label: "1MB-5MB", min: 1000000, max: 5000000, color: "rgba(255, 220, 0, 0.7)" },        // Bright Yellow
+                { label: "5MB-10MB", min: 5000000, max: 10000000, color: "rgba(255, 150, 0, 0.7)" },      // Orange
+                { label: "10MB-15MB", min: 10000000, max: 15000000, color: "rgba(255, 80, 0, 0.7)" },     // Red-Orange
+                { label: "15MB-20MB", min: 15000000, max: 20000000, color: "rgba(220, 0, 0, 0.7)" },      // Red
+            ];
+
+            const timeGroups = {};
+
+            requests.forEach((request) => {
+                const resultCount = request.resultCount || 0;
+                const resultSize = request.resultSize || 0;
+
+                if (resultCount === 0 || resultSize === 0) return;
+
+                const avgDocSize = resultSize / resultCount;
+
+                const requestDate = getChartDate(request.requestTime);
+                const timeKey = roundTimestamp(requestDate, grouping, requests);
+                const key = timeKey.toISOString();
+
+                if (!timeGroups[key]) {
+                    timeGroups[key] = {
+                        timestamp: timeKey,
+                        sizeRangeCounts: {},
+                    };
+                    sizeRanges.forEach(range => {
+                        timeGroups[key].sizeRangeCounts[range.label] = 0;
+                    });
+                }
+
+                for (const range of sizeRanges) {
+                    if (avgDocSize >= range.min && avgDocSize < range.max) {
+                        timeGroups[key].sizeRangeCounts[range.label]++;
+                        break;
+                    }
+                    if (range.max === Infinity && avgDocSize >= range.min) {
+                        timeGroups[key].sizeRangeCounts[range.label]++;
+                        break;
+                    }
+                }
+            });
+
+            const sortedTimeGroups = Object.values(timeGroups)
+                .sort((a, b) => a.timestamp - b.timestamp);
+
+            if (sortedTimeGroups.length === 0) {
+                console.log("No document size data for bubble chart");
+                return;
+            }
+
+            const datasets = sizeRanges.map(range => {
+                return {
+                    label: range.label,
+                    data: sortedTimeGroups.map(group => ({
+                        x: group.timestamp,
+                        y: group.sizeRangeCounts[range.label],
+                        r: Math.sqrt(group.sizeRangeCounts[range.label]) * 5,
+                    })),
+                    backgroundColor: range.color,
+                    borderColor: range.color.replace('0.6', '1'),
+                    borderWidth: 1,
+                };
+            });
+
+            window.docSizeBubbleChart = new Chart(ctx, {
+                type: "bubble",
+                data: { datasets },
+                plugins: [verticalLinePlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "Document Size Distribution Over Time",
+                            font: { size: 16, weight: "bold" },
+                        },
+                        legend: {
+                            display: true,
+                            position: "top",
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const label = context.dataset.label || "";
+                                    const count = context.parsed.y;
+                                    return `${label}: ${count} queries`;
+                                }
+                            }
+                        },
+                        zoom: {
+                            limits: {
+                                x: { min: "original", max: "original" },
+                                y: { min: "original", max: "original" },
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: "xy",
+                                onPan: function ({ chart }) {
+                                    currentTimeRange.min = new Date(chart.scales.x.min);
+                                    currentTimeRange.max = new Date(chart.scales.x.max);
+                                    updateTimeRangeDisplay();
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                },
+                            },
+                            zoom: {
+                                wheel: { enabled: false },
+                                pinch: { enabled: true },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: "rgba(100,100,100,0.4)",
+                                    borderColor: "rgba(50,50,50,0.8)",
+                                    borderWidth: 2,
+                                },
+                                mode: "xy",
+                                onZoom: function ({ chart }) {
+                                    currentTimeRange.min = new Date(chart.scales.x.min);
+                                    currentTimeRange.max = new Date(chart.scales.x.max);
+                                    updateTimeRangeDisplay();
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            type: "time",
+                            time: {
+                                unit: grouping === "minute" ? "minute" : grouping === "hour" ? "hour" : "day",
+                                displayFormats: {
+                                    minute: "MMM d, HH:mm",
+                                    hour: "MMM d, HH:mm",
+                                    day: "MMM d",
+                                },
+                            },
+                            title: {
+                                display: true,
+                                text: "Request Time",
+                            },
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: "Query Count",
+                            },
+                        },
+                    },
+                },
+            });
+
+            // Register chart for crosshair synchronization
+            registerTimelineChart(window.docSizeBubbleChart, ctx);
+        }
+
         // Create Execution Analysis Chart (ExecTime vs ServTime/KernTime percentages)
         function createExecVsKernelChart(requests, grouping) {
             const canvas = document.getElementById("exec-vs-kernel-chart");
@@ -10247,6 +10434,9 @@ function renderQueryGroupPhaseTimesChart(group) {
         if (window.serviceTimeAnalysisChart) {
           window.serviceTimeAnalysisChart.resetZoom();
         }
+        if (window.docSizeBubbleChart) {
+          window.docSizeBubbleChart.resetZoom();
+        }
         if (window.execVsKernelChart) {
           window.execVsKernelChart.resetZoom();
         }
@@ -10452,6 +10642,19 @@ function renderQueryGroupPhaseTimesChart(group) {
                     delete window.serviceTimeAnalysisChart.options.scales.y.min;
                 }
                 window.serviceTimeAnalysisChart.update();
+            }
+
+            // Update document size bubble chart Y-axis scale
+            if (window.docSizeBubbleChart) {
+                window.docSizeBubbleChart.options.scales.y.type = scaleType;
+                if (scaleType === "logarithmic") {
+                    window.docSizeBubbleChart.options.scales.y.beginAtZero = false;
+                    window.docSizeBubbleChart.options.scales.y.min = 1;
+                } else {
+                    window.docSizeBubbleChart.options.scales.y.beginAtZero = true;
+                    delete window.docSizeBubbleChart.options.scales.y.min;
+                }
+                window.docSizeBubbleChart.update();
             }
 
             // Update execution vs kernel chart Y-axis scale
