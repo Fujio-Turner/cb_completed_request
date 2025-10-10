@@ -1610,11 +1610,12 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
 
+            <!-- Row 2: Enhanced Database Operations & Filter Operations -->
             <div class="display-flex gap-20 margin-bottom-20">
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="operations" data-position="timeline-3">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="enhanced-operations" data-position="timeline-3">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <canvas id="operations-chart"></canvas>
+                    <canvas id="enhanced-operations-chart"></canvas>
                 </div>
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="filter" data-position="timeline-4">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
@@ -1672,24 +1673,28 @@ if (window.TEXT_CONSTANTS) {
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="exec-vs-elapsed-chart"></canvas>
                 </div>
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="service-time-analysis" data-position="bottom-right">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="index-scan-throughput" data-position="bottom-right">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <canvas id="service-time-analysis-chart"></canvas>
+                    <canvas id="index-scan-throughput-chart"></canvas>
                 </div>
             </div>
 
-            <!-- CPU/Kernel/Elapsed Time Analysis & Enhanced Operations - Side by Side -->
+            <!-- Service Time Charts - Index and Fetch separate -->
+            <div class="display-flex gap-20 margin-bottom-20 with-margin-top-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="doc-fetch-throughput" data-position="service-time-1">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="doc-fetch-throughput-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- CPU/Kernel/Elapsed Time Analysis -->
             <div class="display-flex gap-20 margin-bottom-20 with-margin-top-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="cpu-time" data-position="timeline-cpu-1">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="cpu-time-chart"></canvas>
-                </div>
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="enhanced-operations" data-position="timeline-cpu-2">
-                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
-                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <canvas id="enhanced-operations-chart"></canvas>
                 </div>
             </div>
 
@@ -2148,7 +2153,6 @@ if (window.TEXT_CONSTANTS) {
             isZoomSyncing = true;
 
             const charts = [
-                window.operationsChart,
                 window.filterChart,
                 window.timelineChart,
                 window.queryTypesChart,
@@ -2157,7 +2161,8 @@ if (window.TEXT_CONSTANTS) {
                 window.resultCountChart,
                 window.resultSizeChart,
                 window.cpuTimeChart,
-                window.serviceTimeAnalysisChart,
+                window.indexScanThroughputChart,
+                window.docFetchThroughputChart,
                 window.docSizeBubbleChart,
                 window.execVsKernelChart,
                 window.execVsServChart,
@@ -5650,270 +5655,7 @@ function renderQueryGroupPhaseTimesChart(group) {
             };
         }
 
-        // Generate operations chart showing index scan vs fetch operations
-        function generateOperationsChart(requests) {
-            // Destroy existing chart if it exists - do this first
-            if (window.operationsChart) {
-                window.operationsChart.destroy();
-                window.operationsChart = null;
-            }
-
-            const canvas = document.getElementById("operations-chart");
-            const ctx = canvas.getContext("2d");
-
-            // Group requests by selected time unit
-            const timeGroups = {};
-            const grouping = getTimeGrouping();
-
-            requests.forEach((request) => {
-                if (!request.requestTime) return;
-
-                // Parse requestTime and round based on selected grouping
-                const requestDate = getChartDate(request.requestTime);
-                const timeKey = roundTimestamp(requestDate, grouping, requests);
-
-                const key = timeKey.toISOString();
-
-                if (!timeGroups[key]) {
-                    timeGroups[key] = {
-                        timestamp: timeKey,
-                        totalIndexScan: 0,
-                        totalFetch: 0,
-                        indexScanQueryCount: 0,
-                    };
-                }
-
-                // Use pre-calculated values from indexInfo
-                const indexInfo = request.indexInfo || {
-                    stats: { primaryScan: 0, indexScan: 0, fetch: 0 },
-                };
-                const { primaryScan, indexScan, fetch } = indexInfo.stats;
-
-                timeGroups[key].totalIndexScan += primaryScan + indexScan;
-                timeGroups[key].totalFetch += fetch;
-
-                // Count queries that performed index scans
-                if (primaryScan > 0 || indexScan > 0) {
-                    timeGroups[key].indexScanQueryCount++;
-                }
-            });
-
-            // Convert to sorted array
-            const sortedData = Object.values(timeGroups).sort(
-                (a, b) => a.timestamp - b.timestamp
-            );
-
-            // Prepare chart data
-            const labels = sortedData.map((item) => item.timestamp);
-            const indexScanData = sortedData.map((item) => item.totalIndexScan);
-            const fetchData = sortedData.map((item) => item.totalFetch);
-            const avgIndexScanData = sortedData.map((item) =>
-                item.indexScanQueryCount > 0 ? Math.round(item.totalIndexScan / item.indexScanQueryCount) : null
-            );
-
-            // Create new side-by-side bar chart
-            window.operationsChart = new Chart(ctx, {
-                type: "bar",
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: "Index Scan Items",
-                            data: indexScanData,
-                            backgroundColor: "#007bff", // Blue
-                            borderColor: "#0056b3",
-                            borderWidth: 1,
-                            yAxisID: "y",
-                            order: 1, // Blue bars on left
-                        },
-                        {
-                            label: "Fetch Documents",
-                            data: fetchData,
-                            backgroundColor: "#28a745", // Green
-                            borderColor: "#1e7e34",
-                            borderWidth: 1,
-                            yAxisID: "y",
-                            order: 2, // Green bars on right
-                        },
-                        {
-                            label: "Avg Index Scans per Query",
-                            data: avgIndexScanData,
-                            type: "line",
-                            backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange
-                            borderColor: "rgba(255, 165, 0, 1)",
-                            borderWidth: 2,
-                            fill: false,
-                            yAxisID: "y1",
-                            order: 1,
-                            spanGaps: false,
-                            tension: 0.3,
-                        },
-                    ],
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: "Database Operations Timeline: Index Scans vs Document Fetches",
-                        },
-                        legend: {
-                            display: true,
-                            position: "top",
-                        },
-                        zoom: {
-                            limits: {
-                                x: { min: "original", max: "original" },
-                                y: { min: "original", max: "original" },
-                            },
-                            pan: {
-                                enabled: true,
-                                mode: "xy",
-                                onPan: function ({ chart }) {
-                                    // Sync pan with other charts
-                                    if (window.filterChart && chart !== window.filterChart) {
-                                        window.filterChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.timelineChart &&
-                                        chart !== window.timelineChart
-                                    ) {
-                                        window.timelineChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.queryTypesChart &&
-                                        chart !== window.queryTypesChart
-                                    ) {
-                                        window.queryTypesChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.durationBucketsChart &&
-                                        chart !== window.durationBucketsChart
-                                    ) {
-                                        window.durationBucketsChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.durationBucketsChart &&
-                                        chart !== window.durationBucketsChart
-                                    ) {
-                                        window.durationBucketsChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.durationBucketsChart &&
-                                        chart !== window.durationBucketsChart
-                                    ) {
-                                        window.durationBucketsChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (
-                                        window.durationBucketsChart &&
-                                        chart !== window.durationBucketsChart
-                                    ) {
-                                        window.durationBucketsChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                    if (window.memoryChart && chart !== window.memoryChart) {
-                                        window.memoryChart.zoomScale(
-                                            "x",
-                                            { min: chart.scales.x.min, max: chart.scales.x.max },
-                                            "none"
-                                        );
-                                    }
-                                },
-                            },
-                            zoom: {
-                                wheel: {
-                                    enabled: false,
-                                },
-                                pinch: {
-                                    enabled: true,
-                                },
-                                drag: {
-                                    enabled: true,
-                                    backgroundColor: "rgba(100,100,100,0.4)",
-                                    borderColor: "rgba(50,50,50,0.8)",
-                                    borderWidth: 2,
-                                },
-                                mode: "xy",
-                                onZoom: function ({ chart }) {
-                                    // Sync zoom with other charts
-                                    syncChartZoom(
-                                        chart,
-                                        chart.scales.x.min,
-                                        chart.scales.x.max
-                                    );
-                                },
-                            },
-                        },
-                    },
-                    scales: {
-                        x: {
-                            type: "time",
-                            time: getCurrentTimeConfig(requests),
-                            title: {
-                                display: true,
-                                text: "Request Time",
-                            },
-                        },
-                        y: {
-                            type: "linear",
-                            position: "left",
-                            title: {
-                                display: true,
-                                text: "Operation Count",
-                            },
-                            beginAtZero: true,
-                        },
-                        y1: {
-                            type: "linear",
-                            position: "right",
-                            title: {
-                                display: true,
-                                text: "Avg Index Scans per Query",
-                            },
-                            beginAtZero: true,
-                            grid: {
-                                drawOnChartArea: false,
-                            },
-                        },
-                    },
-                    interaction: {
-                        mode: "index",
-                        intersect: false,
-                    },
-                },
-                plugins: [verticalLinePlugin]
-            });
-
-            // Register chart for crosshair synchronization
-            registerTimelineChart(window.operationsChart, ctx);
-        }
+        // [REMOVED] generateOperationsChart - Replaced by Enhanced Database Operations chart
 
         // Generate enhanced operations chart with detailed In/Out tracking
         function generateEnhancedOperationsChart(requests) {
@@ -6790,8 +6532,9 @@ function renderQueryGroupPhaseTimesChart(group) {
             // Create CPU/Kernel/Elapsed Time Chart
             createCpuTimeChart(requests, grouping);
 
-            // Create Service Time Analysis Chart
-            createServiceTimeAnalysisChart(requests, grouping);
+            // Create Service Time Throughput Charts (split into Index and Fetch)
+            createIndexScanThroughputChart(requests, grouping);
+            createDocFetchThroughputChart(requests, grouping);
 
             // Create Document Size Bubble Chart
             createDocumentSizeBubbleChart(requests, grouping);
@@ -8783,19 +8526,19 @@ function renderQueryGroupPhaseTimesChart(group) {
             registerTimelineChart(window.cpuTimeChart, ctx);
         }
 
-        // Create Service Time Analysis Chart - Doc Fetch vs Index Scan with percentiles
-        function createServiceTimeAnalysisChart(requests, grouping) {
-            const canvas = document.getElementById("service-time-analysis-chart");
+        // Create Index Scan Throughput Chart with Average Count on 2nd Y-axis
+        function createIndexScanThroughputChart(requests, grouping) {
+            const canvas = document.getElementById("index-scan-throughput-chart");
             if (!canvas) return;
 
             const ctx = canvas.getContext("2d");
 
             // Destroy existing chart if it exists
-            if (window.serviceTimeAnalysisChart) {
-                window.serviceTimeAnalysisChart.destroy();
+            if (window.indexScanThroughputChart) {
+                window.indexScanThroughputChart.destroy();
             }
 
-            // Group requests by time and collect throughput data (records/ms) for Fetch and IndexScan operations
+            // Group requests by time and collect throughput data (records/ms) for Index Scan operations
             const timeGroups = {};
 
             requests.forEach((request) => {
@@ -8806,8 +8549,8 @@ function renderQueryGroupPhaseTimesChart(group) {
                 if (!timeGroups[key]) {
                     timeGroups[key] = {
                         timestamp: timeKey,
-                        fetchThroughputs: [],  // records/ms
                         scanThroughputs: [],   // records/ms
+                        scanItemCounts: [],    // item counts for average
                     };
                 }
 
@@ -8816,28 +8559,14 @@ function renderQueryGroupPhaseTimesChart(group) {
                     try {
                         const plan = typeof request.plan === 'string' ? JSON.parse(request.plan) : request.plan;
                         
-                        // Recursive function to find Fetch and Scan operators
+                        // Recursive function to find Index Scan operators
                         const extractOperatorThroughput = (node) => {
                             if (!node) return;
                             
                             const operator = node['#operator'] || node.operator;
                             const stats = node['#stats'] || node.stats || {};
                             const servTime = stats.servTime;
-                            const itemsOut = stats['#itemsOut'] || stats.itemsOut || 0;
                             const itemsIn = stats['#itemsIn'] || stats.itemsIn || 0;
-                            
-                            // Check for Fetch operator - use itemsOut / servTime
-                            if (operator === 'Fetch' && servTime) {
-                                const servTimeMs = parseTime(servTime);
-                                if (!isNaN(servTimeMs) && servTimeMs > 0 && itemsOut > 0) {
-                                    const throughput = itemsOut / servTimeMs; // records per ms
-                                    timeGroups[key].fetchThroughputs.push(throughput);
-                                    // Debug logging for extreme values
-                                    if (throughput > 10000) {
-                                        console.log(`High Fetch throughput: ${throughput.toFixed(2)} records/ms (${itemsOut} items / ${servTimeMs.toFixed(3)}ms)`);
-                                    }
-                                }
-                            }
                             
                             // Check for Index Scan operators - use itemsIn / servTime
                             if ((operator && (operator.includes('Scan') || operator.includes('scan'))) && servTime) {
@@ -8845,10 +8574,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                                 if (!isNaN(servTimeMs) && servTimeMs > 0 && itemsIn > 0) {
                                     const throughput = itemsIn / servTimeMs; // records per ms
                                     timeGroups[key].scanThroughputs.push(throughput);
-                                    // Debug logging for extreme values
-                                    if (throughput > 10000) {
-                                        console.log(`High Scan throughput: ${throughput.toFixed(2)} records/ms (${itemsIn} items / ${servTimeMs.toFixed(3)}ms)`);
-                                    }
+                                    timeGroups[key].scanItemCounts.push(itemsIn); // Track item count
                                 }
                             }
                             
@@ -8866,13 +8592,12 @@ function renderQueryGroupPhaseTimesChart(group) {
                 }
             });
 
-            // Calculate percentiles for each time group
+            // Calculate percentiles and averages for each time group
             const sortedData = Object.values(timeGroups)
-                .filter(group => group.fetchThroughputs.length > 0 || group.scanThroughputs.length > 0)
+                .filter(group => group.scanThroughputs.length > 0)
                 .sort((a, b) => a.timestamp - b.timestamp)
                 .map(item => {
                     // Sort arrays for percentile calculation
-                    const fetchSorted = [...item.fetchThroughputs].sort((a, b) => a - b);
                     const scanSorted = [...item.scanThroughputs].sort((a, b) => a - b);
                     
                     // Calculate percentiles (90th = top 10%, 50th = median, 10th = bottom 10%)
@@ -8882,72 +8607,38 @@ function renderQueryGroupPhaseTimesChart(group) {
                         return arr[Math.max(0, index)];
                     };
                     
+                    // Calculate average item count
+                    const avgItemCount = item.scanItemCounts.length > 0
+                        ? item.scanItemCounts.reduce((sum, val) => sum + val, 0) / item.scanItemCounts.length
+                        : 0;
+                    
                     return {
                         timestamp: item.timestamp,
-                        // Doc Fetch percentiles (throughput in records/ms)
-                        fetchP90: getPercentile(fetchSorted, 90),
-                        fetchP50: getPercentile(fetchSorted, 50),
-                        fetchP10: getPercentile(fetchSorted, 10),
-                        fetchCount: fetchSorted.length,
                         // Index Scan percentiles (throughput in records/ms)
                         scanP90: getPercentile(scanSorted, 90),
                         scanP50: getPercentile(scanSorted, 50),
                         scanP10: getPercentile(scanSorted, 10),
                         scanCount: scanSorted.length,
+                        avgItemCount: avgItemCount,
                     };
                 });
 
             if (sortedData.length === 0) {
-                console.log("No service time data found for chart");
+                console.log("No index scan throughput data found for chart");
                 return;
             }
 
             // Prepare chart data
             const labels = sortedData.map((item) => item.timestamp);
 
-            window.serviceTimeAnalysisChart = new Chart(ctx, {
+            window.indexScanThroughputChart = new Chart(ctx, {
                 type: "line",
                 data: {
                     labels: labels,
                     datasets: [
-                        // Doc Fetch datasets (purple shades) - itemsOut/servTime
+                        // Index Scan throughput datasets (orange/yellow shades) - itemsIn/servTime
                         {
-                            label: "Doc Fetch - top 10%",
-                            data: sortedData.map((item) => item.fetchP90),
-                            borderColor: "rgba(128, 0, 128, 1)", // Dark purple
-                            backgroundColor: "rgba(128, 0, 128, 0.1)",
-                            borderWidth: 3,
-                            fill: false,
-                            tension: 0.3,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                        },
-                        {
-                            label: "Doc Fetch - middle",
-                            data: sortedData.map((item) => item.fetchP50),
-                            borderColor: "rgba(153, 102, 255, 1)", // Medium purple
-                            backgroundColor: "rgba(153, 102, 255, 0.1)",
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.3,
-                            pointRadius: 3,
-                            pointHoverRadius: 5,
-                        },
-                        {
-                            label: "Doc Fetch - bottom 10%",
-                            data: sortedData.map((item) => item.fetchP10),
-                            borderColor: "rgba(102, 51, 153, 1)", // Medium-dark purple
-                            backgroundColor: "rgba(102, 51, 153, 0.1)",
-                            borderWidth: 2,
-                            borderDash: [5, 5],
-                            fill: false,
-                            tension: 0.3,
-                            pointRadius: 2,
-                            pointHoverRadius: 4,
-                        },
-                        // Index Scan datasets (orange/yellow shades) - itemsIn/servTime
-                        {
-                            label: "Index Scan - top 10%",
+                            label: "Scan Throughput - top 10%",
                             data: sortedData.map((item) => item.scanP90),
                             borderColor: "rgba(255, 140, 0, 1)", // Dark orange
                             backgroundColor: "rgba(255, 140, 0, 0.1)",
@@ -8956,9 +8647,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                             tension: 0.3,
                             pointRadius: 4,
                             pointHoverRadius: 6,
+                            yAxisID: 'y',
                         },
                         {
-                            label: "Index Scan - middle",
+                            label: "Scan Throughput - middle",
                             data: sortedData.map((item) => item.scanP50),
                             borderColor: "rgba(255, 193, 7, 1)", // Medium orange/yellow
                             backgroundColor: "rgba(255, 193, 7, 0.1)",
@@ -8967,9 +8659,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                             tension: 0.3,
                             pointRadius: 3,
                             pointHoverRadius: 5,
+                            yAxisID: 'y',
                         },
                         {
-                            label: "Index Scan - bottom 10%",
+                            label: "Scan Throughput - bottom 10%",
                             data: sortedData.map((item) => item.scanP10),
                             borderColor: "rgba(204, 102, 0, 1)", // Dark orange
                             backgroundColor: "rgba(204, 102, 0, 0.1)",
@@ -8979,6 +8672,21 @@ function renderQueryGroupPhaseTimesChart(group) {
                             tension: 0.3,
                             pointRadius: 2,
                             pointHoverRadius: 4,
+                            yAxisID: 'y',
+                        },
+                        // Average item count line (2nd y-axis)
+                        {
+                            label: "Avg Item Count",
+                            data: sortedData.map((item) => item.avgItemCount),
+                            borderColor: "rgba(0, 128, 255, 1)", // Blue
+                            backgroundColor: "rgba(0, 128, 255, 0.1)",
+                            borderWidth: 2,
+                            borderDash: [10, 5],
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y1', // Second y-axis
                         },
                     ],
                 },
@@ -8988,7 +8696,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                     plugins: {
                         title: {
                             display: true,
-                            text: "Service Time Throughput: Doc Fetch-OUT vs Index Scan-IN (records/ms)",
+                            text: "Index Scan Throughput (records/ms) & Avg Count",
                             font: {
                                 size: 16,
                                 weight: 'bold'
@@ -9003,15 +8711,15 @@ function renderQueryGroupPhaseTimesChart(group) {
                                 label: function (context) {
                                     const label = context.dataset.label || '';
                                     const value = context.parsed.y;
+                                    if (label.includes('Avg Item Count')) {
+                                        return `${label}: ${Math.round(value)} items`;
+                                    }
                                     return value !== null ? `${label}: ${Math.round(value)}/ms` : label;
                                 },
                                 afterBody: function (tooltipItems) {
                                     const dataIndex = tooltipItems[0].dataIndex;
                                     const data = sortedData[dataIndex];
-                                    return [
-                                        `Doc Fetch samples: ${data.fetchCount}`,
-                                        `Index Scan samples: ${data.scanCount}`,
-                                    ];
+                                    return [`Index Scan samples: ${data.scanCount}`];
                                 }
                             }
                         },
@@ -9071,6 +8779,18 @@ function renderQueryGroupPhaseTimesChart(group) {
                             },
                             beginAtZero: true,
                         },
+                        y1: {
+                            type: "linear",
+                            position: "right",
+                            title: {
+                                display: true,
+                                text: "Avg Item Count",
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        },
                     },
                     interaction: {
                         mode: "index",
@@ -9081,7 +8801,285 @@ function renderQueryGroupPhaseTimesChart(group) {
             });
 
             // Register chart for crosshair synchronization
-            registerTimelineChart(window.serviceTimeAnalysisChart, ctx);
+            registerTimelineChart(window.indexScanThroughputChart, ctx);
+        }
+
+        // Create Doc Fetch Throughput Chart with Average Count on 2nd Y-axis
+        function createDocFetchThroughputChart(requests, grouping) {
+            const canvas = document.getElementById("doc-fetch-throughput-chart");
+            if (!canvas) return;
+
+            const ctx = canvas.getContext("2d");
+
+            // Destroy existing chart if it exists
+            if (window.docFetchThroughputChart) {
+                window.docFetchThroughputChart.destroy();
+            }
+
+            // Group requests by time and collect throughput data (records/ms) for Doc Fetch operations
+            const timeGroups = {};
+
+            requests.forEach((request) => {
+                const requestDate = getChartDate(request.requestTime);
+                const timeKey = roundTimestamp(requestDate, grouping, requests);
+                const key = timeKey.toISOString();
+
+                if (!timeGroups[key]) {
+                    timeGroups[key] = {
+                        timestamp: timeKey,
+                        fetchThroughputs: [],   // records/ms
+                        fetchItemCounts: [],    // item counts for average
+                    };
+                }
+
+                // Extract servTime and item counts from plan operators
+                if (request.plan) {
+                    try {
+                        const plan = typeof request.plan === 'string' ? JSON.parse(request.plan) : request.plan;
+                        
+                        // Recursive function to find Fetch operators
+                        const extractOperatorThroughput = (node) => {
+                            if (!node) return;
+                            
+                            const operator = node['#operator'] || node.operator;
+                            const stats = node['#stats'] || node.stats || {};
+                            const servTime = stats.servTime;
+                            const itemsOut = stats['#itemsOut'] || stats.itemsOut || 0;
+                            
+                            // Check for Fetch operator - use itemsOut / servTime
+                            if (operator === 'Fetch' && servTime) {
+                                const servTimeMs = parseTime(servTime);
+                                if (!isNaN(servTimeMs) && servTimeMs > 0 && itemsOut > 0) {
+                                    const throughput = itemsOut / servTimeMs; // records per ms
+                                    timeGroups[key].fetchThroughputs.push(throughput);
+                                    timeGroups[key].fetchItemCounts.push(itemsOut); // Track item count
+                                }
+                            }
+                            
+                            // Recursively search child nodes
+                            if (node['~child']) extractOperatorThroughput(node['~child']);
+                            if (node['~children']) {
+                                node['~children'].forEach(child => extractOperatorThroughput(child));
+                            }
+                        };
+                        
+                        extractOperatorThroughput(plan);
+                    } catch (e) {
+                        // Skip parsing errors
+                    }
+                }
+            });
+
+            // Calculate percentiles and averages for each time group
+            const sortedData = Object.values(timeGroups)
+                .filter(group => group.fetchThroughputs.length > 0)
+                .sort((a, b) => a.timestamp - b.timestamp)
+                .map(item => {
+                    // Sort arrays for percentile calculation
+                    const fetchSorted = [...item.fetchThroughputs].sort((a, b) => a - b);
+                    
+                    // Calculate percentiles (90th = top 10%, 50th = median, 10th = bottom 10%)
+                    const getPercentile = (arr, percentile) => {
+                        if (arr.length === 0) return null;
+                        const index = Math.ceil((percentile / 100) * arr.length) - 1;
+                        return arr[Math.max(0, index)];
+                    };
+                    
+                    // Calculate average item count
+                    const avgItemCount = item.fetchItemCounts.length > 0
+                        ? item.fetchItemCounts.reduce((sum, val) => sum + val, 0) / item.fetchItemCounts.length
+                        : 0;
+                    
+                    return {
+                        timestamp: item.timestamp,
+                        // Doc Fetch percentiles (throughput in records/ms)
+                        fetchP90: getPercentile(fetchSorted, 90),
+                        fetchP50: getPercentile(fetchSorted, 50),
+                        fetchP10: getPercentile(fetchSorted, 10),
+                        fetchCount: fetchSorted.length,
+                        avgItemCount: avgItemCount,
+                    };
+                });
+
+            if (sortedData.length === 0) {
+                console.log("No doc fetch throughput data found for chart");
+                return;
+            }
+
+            // Prepare chart data
+            const labels = sortedData.map((item) => item.timestamp);
+
+            window.docFetchThroughputChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        // Doc Fetch throughput datasets (purple shades) - itemsOut/servTime
+                        {
+                            label: "Fetch Throughput - top 10%",
+                            data: sortedData.map((item) => item.fetchP90),
+                            borderColor: "rgba(128, 0, 128, 1)", // Dark purple
+                            backgroundColor: "rgba(128, 0, 128, 0.1)",
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            yAxisID: 'y',
+                        },
+                        {
+                            label: "Fetch Throughput - middle",
+                            data: sortedData.map((item) => item.fetchP50),
+                            borderColor: "rgba(153, 102, 255, 1)", // Medium purple
+                            backgroundColor: "rgba(153, 102, 255, 0.1)",
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y',
+                        },
+                        {
+                            label: "Fetch Throughput - bottom 10%",
+                            data: sortedData.map((item) => item.fetchP10),
+                            borderColor: "rgba(102, 51, 153, 1)", // Medium-dark purple
+                            backgroundColor: "rgba(102, 51, 153, 0.1)",
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 2,
+                            pointHoverRadius: 4,
+                            yAxisID: 'y',
+                        },
+                        // Average item count line (2nd y-axis)
+                        {
+                            label: "Avg Item Count",
+                            data: sortedData.map((item) => item.avgItemCount),
+                            borderColor: "rgba(0, 128, 255, 1)", // Blue
+                            backgroundColor: "rgba(0, 128, 255, 0.1)",
+                            borderWidth: 2,
+                            borderDash: [10, 5],
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y1', // Second y-axis
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "Doc Fetch Throughput (records/ms) & Avg Count",
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    if (label.includes('Avg Item Count')) {
+                                        return `${label}: ${Math.round(value)} items`;
+                                    }
+                                    return value !== null ? `${label}: ${Math.round(value)}/ms` : label;
+                                },
+                                afterBody: function (tooltipItems) {
+                                    const dataIndex = tooltipItems[0].dataIndex;
+                                    const data = sortedData[dataIndex];
+                                    return [`Doc Fetch samples: ${data.fetchCount}`];
+                                }
+                            }
+                        },
+                        zoom: {
+                            limits: {
+                                x: { min: "original", max: "original" },
+                                y: { min: "original", max: "original" },
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: "xy",
+                                onPan: function ({ chart }) {
+                                    currentTimeRange.min = new Date(chart.scales.x.min);
+                                    currentTimeRange.max = new Date(chart.scales.x.max);
+                                    updateTimeRangeDisplay();
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                },
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: false,
+                                },
+                                pinch: {
+                                    enabled: true,
+                                },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: "rgba(100,100,100,0.4)",
+                                    borderColor: "rgba(50,50,50,0.8)",
+                                    borderWidth: 2,
+                                },
+                                mode: "xy",
+                                onZoom: function ({ chart }) {
+                                    currentTimeRange.min = new Date(chart.scales.x.min);
+                                    currentTimeRange.max = new Date(chart.scales.x.max);
+                                    updateTimeRangeDisplay();
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            type: "time",
+                            time: getCurrentTimeConfig(requests),
+                            title: {
+                                display: true,
+                                text: "Request Time",
+                            },
+                        },
+                        y: {
+                            type: "linear",
+                            position: "left",
+                            title: {
+                                display: true,
+                                text: "Throughput (records/ms)",
+                            },
+                            beginAtZero: true,
+                        },
+                        y1: {
+                            type: "linear",
+                            position: "right",
+                            title: {
+                                display: true,
+                                text: "Avg Item Count",
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        },
+                    },
+                    interaction: {
+                        mode: "index",
+                        intersect: false,
+                    },
+                },
+                plugins: [verticalLinePlugin]
+            });
+
+            // Register chart for crosshair synchronization
+            registerTimelineChart(window.docFetchThroughputChart, ctx);
         }
 
         function createDocumentSizeBubbleChart(requests, grouping) {
@@ -10448,9 +10446,6 @@ function renderQueryGroupPhaseTimesChart(group) {
             if (window.timelineChart) {
                 window.timelineChart.resetZoom();
             }
-            if (window.operationsChart) {
-                window.operationsChart.resetZoom();
-            }
             if (window.filterChart) {
                 window.filterChart.resetZoom();
             }
@@ -10472,8 +10467,11 @@ function renderQueryGroupPhaseTimesChart(group) {
             if (window.cpuTimeChart) {
             window.cpuTimeChart.resetZoom();
             }
-        if (window.serviceTimeAnalysisChart) {
-          window.serviceTimeAnalysisChart.resetZoom();
+        if (window.indexScanThroughputChart) {
+          window.indexScanThroughputChart.resetZoom();
+        }
+        if (window.docFetchThroughputChart) {
+          window.docFetchThroughputChart.resetZoom();
         }
         if (window.docSizeBubbleChart) {
           window.docSizeBubbleChart.resetZoom();
@@ -10555,24 +10553,6 @@ function renderQueryGroupPhaseTimesChart(group) {
             ).value;
             const scaleType =
                 selectedScale === "logarithmic" ? "logarithmic" : "linear";
-
-            // Update operations chart Y-axis scale
-            if (window.operationsChart) {
-                window.operationsChart.options.scales.y.type = scaleType;
-                window.operationsChart.options.scales.y1.type = scaleType;
-                if (scaleType === "logarithmic") {
-                    window.operationsChart.options.scales.y.beginAtZero = false;
-                    window.operationsChart.options.scales.y.min = 1; // Avoid log(0)
-                    window.operationsChart.options.scales.y1.beginAtZero = false;
-                    window.operationsChart.options.scales.y1.min = 0.1; // Avoid log(0)
-                } else {
-                    window.operationsChart.options.scales.y.beginAtZero = true;
-                    window.operationsChart.options.scales.y1.beginAtZero = true;
-                    delete window.operationsChart.options.scales.y.min;
-                    delete window.operationsChart.options.scales.y1.min;
-                }
-                window.operationsChart.update();
-            }
 
             // Update filter chart Y-axis scale
             if (window.filterChart) {
@@ -10672,17 +10652,30 @@ function renderQueryGroupPhaseTimesChart(group) {
                 window.cpuTimeChart.update();
             }
 
-            // Update service time analysis chart Y-axis scale
-            if (window.serviceTimeAnalysisChart) {
-                window.serviceTimeAnalysisChart.options.scales.y.type = scaleType;
+            // Update index scan throughput chart Y-axis scale
+            if (window.indexScanThroughputChart) {
+                window.indexScanThroughputChart.options.scales.y.type = scaleType;
                 if (scaleType === "logarithmic") {
-                    window.serviceTimeAnalysisChart.options.scales.y.beginAtZero = false;
-                    window.serviceTimeAnalysisChart.options.scales.y.min = 0.001; // Avoid log(0) for small throughput
+                    window.indexScanThroughputChart.options.scales.y.beginAtZero = false;
+                    window.indexScanThroughputChart.options.scales.y.min = 0.001;
                 } else {
-                    window.serviceTimeAnalysisChart.options.scales.y.beginAtZero = true;
-                    delete window.serviceTimeAnalysisChart.options.scales.y.min;
+                    window.indexScanThroughputChart.options.scales.y.beginAtZero = true;
+                    delete window.indexScanThroughputChart.options.scales.y.min;
                 }
-                window.serviceTimeAnalysisChart.update();
+                window.indexScanThroughputChart.update();
+            }
+
+            // Update doc fetch throughput chart Y-axis scale
+            if (window.docFetchThroughputChart) {
+                window.docFetchThroughputChart.options.scales.y.type = scaleType;
+                if (scaleType === "logarithmic") {
+                    window.docFetchThroughputChart.options.scales.y.beginAtZero = false;
+                    window.docFetchThroughputChart.options.scales.y.min = 0.001;
+                } else {
+                    window.docFetchThroughputChart.options.scales.y.beginAtZero = true;
+                    delete window.docFetchThroughputChart.options.scales.y.min;
+                }
+                window.docFetchThroughputChart.update();
             }
 
             // Update document size bubble chart Y-axis scale
@@ -10816,7 +10809,6 @@ function renderQueryGroupPhaseTimesChart(group) {
                 updateOptimizerLabel(requests);
 
                 // Regenerate all charts with new time grouping
-                generateOperationsChart(requests);
                 generateFilterChart(requests);
                 generateTimelineChart(requests);
             } catch (e) {
@@ -14330,7 +14322,6 @@ function generateElapsedTimeChart(requests) {
                                 const sampleStep = Math.max(1, Math.floor(filteredRequests.length / sampleSize));
                                 const timelineSample = filteredRequests.filter((_, i) => i % sampleStep === 0);
                                 console.log(`${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${timelineSample.length} ${TEXT_CONSTANTS.OF_TOTAL} ${filteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
-                                generateOperationsChart(filteredRequests);
                                 generateFilterChart(filteredRequests);
                                 generateTimelineChart(timelineSample);
                                 setTimeout(() => setupChartDragAndDrop(), 100);
@@ -14385,7 +14376,6 @@ function generateElapsedTimeChart(requests) {
                                 console.log(`${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${timelineSample.length} ${TEXT_CONSTANTS.OF_TOTAL} ${filteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
 
                                 // Use full data for aggregation charts that sum/count data
-                                generateOperationsChart(filteredRequests);
                                 generateFilterChart(filteredRequests);
                                 // Use sampled data only for individual request timeline
                                 generateTimelineChart(timelineSample);
