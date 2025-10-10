@@ -1624,6 +1624,7 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
 
+            <!-- Row 3: Result Count & Result Size -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="result-count" data-position="timeline-5">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
@@ -1637,8 +1638,28 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
 
+            <!-- Row 4: Index Scan Throughput & Doc Fetch Throughput -->
             <div class="display-flex gap-20 margin-bottom-20">
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="doc-size-bubble" data-position="timeline-7" style="max-width: 50%; position: relative;">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="index-scan-throughput" data-position="timeline-7">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="index-scan-throughput-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="doc-fetch-throughput" data-position="timeline-8">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="doc-fetch-throughput-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 5: Query Performance Timeline KernTime & Document Size Distribution -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="timeline" data-position="timeline-9">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="timeline-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="doc-size-bubble" data-position="timeline-10" style="position: relative;">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <div style="position: absolute; top: 10px; right: 50px; z-index: 10; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 4px; font-size: 12px;">
@@ -1649,77 +1670,58 @@ if (window.TEXT_CONSTANTS) {
                     </div>
                     <canvas id="doc-size-bubble-chart"></canvas>
                 </div>
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="memory" data-position="timeline-8">
+            </div>
+
+            <!-- Row 6: CPU/Kernel/Elapsed Time & Memory -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="cpu-time" data-position="timeline-11">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="cpu-time-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="memory" data-position="timeline-12">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="memory-chart"></canvas>
                 </div>
             </div>
 
-            <!-- Execution Analysis Charts - Draggable Grid -->
-            <div id="charts-grid" class="display-flex gap-20 margin-bottom-20" style="flex-wrap: wrap;">
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-kernel" data-position="top-left">
-                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
-                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <canvas id="exec-vs-kernel-chart"></canvas>
-                </div>
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-serv" data-position="top-right">
-                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
-                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <canvas id="exec-vs-serv-chart"></canvas>
-                </div>
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-elapsed" data-position="bottom-left">
+            <!-- Row 7: ExecTime vs Elapsed & ExecTime vs ServiceTime -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-elapsed" data-position="timeline-13">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="exec-vs-elapsed-chart"></canvas>
                 </div>
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="index-scan-throughput" data-position="bottom-right">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-serv" data-position="timeline-14">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <canvas id="index-scan-throughput-chart"></canvas>
+                    <canvas id="exec-vs-serv-chart"></canvas>
                 </div>
             </div>
 
-            <!-- Service Time Charts - Index and Fetch separate -->
-            <div class="display-flex gap-20 margin-bottom-20 with-margin-top-20">
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="doc-fetch-throughput" data-position="service-time-1">
-                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
-                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <canvas id="doc-fetch-throughput-chart"></canvas>
-                </div>
-            </div>
-
-            <!-- CPU/Kernel/Elapsed Time Analysis -->
-            <div class="display-flex gap-20 margin-bottom-20 with-margin-top-20">
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="cpu-time" data-position="timeline-cpu-1">
-                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
-                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <canvas id="cpu-time-chart"></canvas>
-                </div>
-            </div>
-
-            <!-- Row 7: Parse and Plan Duration Distribution Charts -->
+            <!-- Row 8: ExecTime vs Kernel & Blank Placeholder -->
             <div class="display-flex gap-20 margin-bottom-20">
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="parse-duration" data-position="timeline-row7-1">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-kernel" data-position="timeline-15">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="exec-vs-kernel-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400"></div>
+            </div>
+
+            <!-- Row 9: Parse Duration & Plan Duration -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="parse-duration" data-position="timeline-16">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="parse-duration-chart"></canvas>
                 </div>
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="plan-duration" data-position="timeline-row7-2">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="plan-duration" data-position="timeline-17">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="plan-duration-chart"></canvas>
                 </div>
-            </div>
-
-            <!-- Row 8: Query Performance Timeline KernTime Chart -->
-            <div class="display-flex gap-20 margin-bottom-20">
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="timeline" data-position="timeline-row8-1">
-                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
-                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <canvas id="timeline-chart"></canvas>
-                </div>
-                <div class="flex-1-height-400"></div>
             </div>
         </div>
 
