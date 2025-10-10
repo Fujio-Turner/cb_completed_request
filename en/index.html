@@ -519,6 +519,10 @@ if (window.TEXT_CONSTANTS) {
       /* Bug report floating link */
       .bug-report-link { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.1); color: #333; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; font-family: monospace; z-index: 999; opacity: 0.7; text-decoration: none; transition: opacity 0.3s ease, background 0.3s ease; }
       .bug-report-link:hover { opacity: 1; background: rgba(0,0,0,0.2); }
+      
+      /* Floating unstake button (Issue #148) */
+      #floating-unstake-btn { position: fixed; top: 50%; left: 10px; transform: translateY(-50%); background: #ff6b35; color: #fff; padding: 8px 12px; border-radius: 5px; font-size: 0.85em; font-weight: bold; z-index: 999; cursor: pointer; border: none; box-shadow: 0 4px 8px rgba(0,0,0,0.3); transition: all 0.3s ease; display: none; white-space: nowrap; }
+      #floating-unstake-btn:hover { background: #ff5722; box-shadow: 0 6px 12px rgba(0,0,0,0.4); transform: translateY(-50%) scale(1.05); }
     </style>
 </head>
 
@@ -530,6 +534,12 @@ if (window.TEXT_CONSTANTS) {
 
     <!-- Bug report link (bottom-right) -->
     <a id="bug-report-link" class="bug-report-link" href="https://github.com/Fujio-Turner/cb_completed_request/issues" target="_blank" rel="noopener noreferrer">Report a Bug Click Here</a>
+    
+    <!-- Floating unstake button (left center) - Issue #148 -->
+    <button id="floating-unstake-btn" onclick="removeVerticalStake()">
+        Remove Stake
+    </button>
+    
     <script>
       (function(){
         var setBugText = function(){
@@ -1586,10 +1596,6 @@ if (window.TEXT_CONSTANTS) {
                     class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray">
                     Reset Zoom
                 </button>
-                <button id="unstake-btn" onclick="removeVerticalStake()" style="display:none;"
-                    class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray">
-                    🔹 Remove Stake
-                </button>
                 <button id="use-time-range-btn" onclick="useCurrentTimeRange()"
                     class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray">
                     Use Charts Current X-Axis Date Range
@@ -2245,13 +2251,10 @@ if (window.TEXT_CONSTANTS) {
                 }
             });
             
-            // Show the unstake button with bright color
-            const unstakeBtn = document.getElementById('unstake-btn');
+            // Show the floating unstake button
+            const unstakeBtn = document.getElementById('floating-unstake-btn');
             if (unstakeBtn) {
-                unstakeBtn.style.display = 'inline-block';
-                unstakeBtn.style.backgroundColor = '#ff6b35';
-                unstakeBtn.style.color = '#fff';
-                unstakeBtn.style.fontWeight = 'bold';
+                unstakeBtn.style.display = 'block';
             }
         }
 
@@ -2285,51 +2288,72 @@ if (window.TEXT_CONSTANTS) {
                 }
             });
             
-            // Hide the unstake button and reset style
-            const unstakeBtn = document.getElementById('unstake-btn');
+            // Hide the floating unstake button
+            const unstakeBtn = document.getElementById('floating-unstake-btn');
             if (unstakeBtn) {
                 unstakeBtn.style.display = 'none';
-                unstakeBtn.style.backgroundColor = '';
-                unstakeBtn.style.color = '';
-                unstakeBtn.style.fontWeight = '';
             }
         }
 
         function attachDoubleClickHandler(chartInstance) {
-            if (!chartInstance) {
-                console.log('attachDoubleClickHandler: no chart instance');
+            if (!chartInstance || !chartInstance.canvas) {
                 return;
             }
             
-            if (!chartInstance.canvas) {
-                console.log('attachDoubleClickHandler: chart has no canvas', chartInstance);
+            const canvasId = chartInstance.canvas.id;
+            const canvasElement = chartInstance.canvas;
+            
+            // Check if handler already attached to avoid duplicates
+            if (canvasElement._stakeHandlerAttached) {
                 return;
             }
             
-            console.log('Attaching double-click handler to chart:', chartInstance.canvas.id);
-            
-            chartInstance.canvas.addEventListener('dblclick', (event) => {
+            // Store the handler function so we can reference the current chart
+            const handleDoubleClick = (event) => {
                 // Prevent default zoom behavior
                 event.preventDefault();
                 event.stopPropagation();
                 
-                console.log('Double-click detected on chart:', chartInstance.canvas.id);
+                // Get the current chart instance from window (in case it was recreated)
+                const currentChartMap = {
+                    'filter-chart': window.filterChart,
+                    'timeline-chart': window.timelineChart,
+                    'query-types-chart': window.queryTypesChart,
+                    'duration-buckets-chart': window.durationBucketsChart,
+                    'memory-chart': window.memoryChart,
+                    'result-count-chart': window.resultCountChart,
+                    'result-size-chart': window.resultSizeChart,
+                    'cpu-time-chart': window.cpuTimeChart,
+                    'index-scan-throughput-chart': window.indexScanThroughputChart,
+                    'doc-fetch-throughput-chart': window.docFetchThroughputChart,
+                    'doc-size-bubble-chart': window.docSizeBubbleChart,
+                    'exec-vs-kernel-chart': window.execVsKernelChart,
+                    'exec-vs-serv-chart': window.execVsServChart,
+                    'exec-vs-elapsed-chart': window.execVsElapsedChart,
+                    'enhanced-operations-chart': window.enhancedOperationsChart,
+                    'parse-duration-chart': window.parseDurationChart,
+                    'plan-duration-chart': window.planDurationChart,
+                };
                 
-                const rect = chartInstance.canvas.getBoundingClientRect();
+                const currentChart = currentChartMap[canvasId];
+                if (!currentChart) {
+                    return;
+                }
+                
+                const rect = event.target.getBoundingClientRect();
                 const x = event.clientX - rect.left;
                 
-                console.log('Click position x:', x);
-                
-                const xScale = chartInstance.scales.x;
+                const xScale = currentChart.scales.x;
                 if (xScale) {
                     const timestamp = xScale.getValueForPixel(x);
-                    console.log('Timestamp from click:', timestamp, new Date(timestamp));
-                    console.log('Adding stake at position:', timestamp);
                     addVerticalStake(timestamp);
-                } else {
-                    console.log('No x scale found on chart');
                 }
-            }, true);
+            };
+            
+            canvasElement.addEventListener('dblclick', handleDoubleClick, true);
+            
+            // Mark as attached
+            canvasElement._stakeHandlerAttached = true;
         }
 
         // Toast notification system
@@ -6709,8 +6733,6 @@ function renderQueryGroupPhaseTimesChart(group) {
 
         // Attach double-click handlers to all timeline charts
         function attachTimelineDoubleClickHandlers() {
-            console.log('Attaching timeline double-click handlers...');
-            
             const charts = [
                 window.filterChart,
                 window.timelineChart,
@@ -6731,17 +6753,11 @@ function renderQueryGroupPhaseTimesChart(group) {
                 window.planDurationChart,
             ];
 
-            let attachedCount = 0;
-            charts.forEach((chart, index) => {
+            charts.forEach((chart) => {
                 if (chart) {
                     attachDoubleClickHandler(chart);
-                    attachedCount++;
-                } else {
-                    console.log('Chart at index', index, 'is null/undefined');
                 }
             });
-            
-            console.log(`Attached handlers to ${attachedCount} out of ${charts.length} charts`);
         }
 
         // Create Query Types Scatter Plot Chart
