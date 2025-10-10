@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.18.0
+# Couchbase Slow Query Analysis Tool v3.19.0
 
 
 

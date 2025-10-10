@@ -1,3 +1,12 @@
+### Version 3.19.0 (October 9, 2025)
+- **New: Dashboard enhancements** - Log scale checkbox for better data visualization (closes #146)
+- **New: Bubble chart** - Advanced visualization for query performance analysis (closes #145)
+- **Enhancement: Code organization** - Moved dashboard code for better maintainability (closes #144)
+- **Enhancement: Analysis Hub** - Updated analysis hub with improved features (closes #143)
+- **Enhancement: Parse and Plan** - Enhanced parse and plan visualization (closes #142)
+- **Enhancement: Chart styling** - Updated line colors for better readability (closes #141)
+- **Enhancement: UI improvements** - Full screen expand capability and color improvements (closes #139)
+
 ### Version 3.18.0 (October 8, 2025)
 - **New: Insights (Beta)** - Advanced query insights and analysis capabilities (closes #138)
 - **New: Enhanced Chart** - Improved visualization features (closes #137)

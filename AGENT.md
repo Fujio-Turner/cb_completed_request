@@ -1,7 +1,7 @@
-# Couchbase Slow Query Analysis Tool v3.18.0
+# Couchbase Slow Query Analysis Tool v3.19.0
 
 ## Version Management
-- **Current Version**: 3.18.0 (Last Updated: 2025-10-08)
+- **Current Version**: 3.19.0 (Last Updated: 2025-10-09)
 
 ### Workflow Order for Updates
 When making changes, follow this order:
