@@ -7779,6 +7779,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                 window.parseDurationChart.destroy();
             }
 
+            // Get all timeline buckets to ensure charts share same x-axis (universal alignment)
+            const timeBuckets = getTimelineBucketsFromRequests(requests, grouping);
+            
             const timeGroups = {};
             const buckets = ["1-333µs", "333-666µs", "666µs-1ms", "1-1.3ms", "1.3-1.6ms", "1.6-2ms", "2-10ms", "10-100ms", "100-500ms", "500ms+"];
             const bucketColors = {
@@ -7794,15 +7797,17 @@ function renderQueryGroupPhaseTimesChart(group) {
                 "500ms+": "rgba(80, 0, 0, 0.8)"             // Very dark red
             };
 
+            // Initialize all time buckets with zero counts
+            timeBuckets.forEach(ts => {
+                const key = ts.toISOString();
+                timeGroups[key] = { timestamp: ts };
+                buckets.forEach(b => timeGroups[key][b] = 0);
+            });
+
             requests.forEach((request) => {
                 const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
                 const key = timeKey.toISOString();
-
-                if (!timeGroups[key]) {
-                    timeGroups[key] = { timestamp: timeKey };
-                    buckets.forEach(b => timeGroups[key][b] = 0);
-                }
 
                 const parseDurationMs = request.phaseTimes?.parse ? parseTime(request.phaseTimes.parse) : 0;
                 
@@ -7818,7 +7823,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 else if (parseDurationMs > 500.0) timeGroups[key]["500ms+"]++;
             });
 
-            const sortedGroups = Object.values(timeGroups).sort((a, b) => a.timestamp - b.timestamp);
+            const sortedGroups = timeBuckets.map(ts => timeGroups[ts.toISOString()]);
 
             const datasets = buckets.map((bucket) => {
                 const data = [];
@@ -7973,6 +7978,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                 window.planDurationChart.destroy();
             }
 
+            // Get all timeline buckets to ensure charts share same x-axis (universal alignment)
+            const timeBuckets = getTimelineBucketsFromRequests(requests, grouping);
+            
             const timeGroups = {};
             const buckets = ["1-333µs", "333-666µs", "666µs-1ms", "1-1.3ms", "1.3-1.6ms", "1.6-2ms", "2-10ms", "10-100ms", "100-500ms", "500ms+"];
             const bucketColors = {
@@ -7988,15 +7996,17 @@ function renderQueryGroupPhaseTimesChart(group) {
                 "500ms+": "rgba(80, 0, 0, 0.8)"             // Very dark red
             };
 
+            // Initialize all time buckets with zero counts
+            timeBuckets.forEach(ts => {
+                const key = ts.toISOString();
+                timeGroups[key] = { timestamp: ts };
+                buckets.forEach(b => timeGroups[key][b] = 0);
+            });
+
             requests.forEach((request) => {
                 const requestDate = getChartDate(request.requestTime);
                 const timeKey = roundTimestamp(requestDate, grouping, requests);
                 const key = timeKey.toISOString();
-
-                if (!timeGroups[key]) {
-                    timeGroups[key] = { timestamp: timeKey };
-                    buckets.forEach(b => timeGroups[key][b] = 0);
-                }
 
                 const planDurationMs = request.phaseTimes?.plan ? parseTime(request.phaseTimes.plan) : 0;
                 
@@ -8012,7 +8022,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 else if (planDurationMs > 500.0) timeGroups[key]["500ms+"]++;
             });
 
-            const sortedGroups = Object.values(timeGroups).sort((a, b) => a.timestamp - b.timestamp);
+            const sortedGroups = timeBuckets.map(ts => timeGroups[ts.toISOString()]);
 
             const datasets = buckets.map((bucket) => {
                 const data = [];
