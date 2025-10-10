@@ -5208,6 +5208,18 @@ if (window.TEXT_CONSTANTS) {
             return date;
         }
 
+        // Helper function to get all timeline buckets from requests (Issue #148 - ensures charts share same x-axis)
+        function getTimelineBucketsFromRequests(requests, grouping) {
+            const seen = new Set();
+            for (const r of requests) {
+                const dt = roundTimestamp(getChartDate(r.requestTime), grouping, requests);
+                seen.add(dt.toISOString());
+            }
+            return Array.from(seen)
+                .map(s => new Date(s))
+                .sort((a, b) => a - b);
+        }
+
         // Helper function to automatically determine optimal time unit based on data span
         function getOptimalTimeUnit(requests) {
             if (!requests || requests.length === 0) return "minute";
@@ -7323,7 +7335,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                     plugins: {
                         title: {
                             display: true,
-                            text: "Query Duration Distribution by Time Buckets (Bubble Size = Query Count)",
+                            text: "Query's Avg Document Size (Bubble Size = Query Count)",
                         },
                         legend: {
                             display: true,
@@ -7435,19 +7447,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                     scales: {
                         x: {
                             type: "time",
-                            time: {
-                                displayFormats: {
-                                    millisecond: "HH:mm:ss.SSS",
-                                    second: "HH:mm:ss",
-                                    minute: "HH:mm",
-                                    hour: "HH:mm",
-                                    day: "MM/dd",
-                                    week: "MM/dd",
-                                    month: "MM/yy",
-                                    quarter: "MM/yy",
-                                    year: "yyyy",
-                                },
-                            },
+                            time: getCurrentTimeConfig(requests),
                             title: {
                                 display: true,
                                 text: "Request Time",
@@ -8797,36 +8797,39 @@ function renderQueryGroupPhaseTimesChart(group) {
                 }
             });
 
-            // Calculate percentiles and averages for each time group
-            const sortedData = Object.values(timeGroups)
-                .filter(group => group.scanThroughputs.length > 0)
-                .sort((a, b) => a.timestamp - b.timestamp)
-                .map(item => {
-                    // Sort arrays for percentile calculation
-                    const scanSorted = [...item.scanThroughputs].sort((a, b) => a - b);
-                    
-                    // Calculate percentiles (90th = top 10%, 50th = median, 10th = bottom 10%)
-                    const getPercentile = (arr, percentile) => {
-                        if (arr.length === 0) return null;
-                        const index = Math.ceil((percentile / 100) * arr.length) - 1;
-                        return arr[Math.max(0, index)];
-                    };
-                    
-                    // Calculate average item count
-                    const avgItemCount = item.scanItemCounts.length > 0
-                        ? item.scanItemCounts.reduce((sum, val) => sum + val, 0) / item.scanItemCounts.length
-                        : 0;
-                    
-                    return {
-                        timestamp: item.timestamp,
-                        // Index Scan percentiles (throughput in records/ms)
-                        scanP90: getPercentile(scanSorted, 90),
-                        scanP50: getPercentile(scanSorted, 50),
-                        scanP10: getPercentile(scanSorted, 10),
-                        scanCount: scanSorted.length,
-                        avgItemCount: avgItemCount,
-                    };
-                });
+            // Get all timeline buckets to ensure charts share same x-axis (Issue #148)
+            const buckets = getTimelineBucketsFromRequests(requests, grouping);
+            
+            // Calculate percentiles and averages for each time bucket
+            const sortedData = buckets.map(ts => {
+                const key = ts.toISOString();
+                const group = timeGroups[key] || { scanThroughputs: [], scanItemCounts: [], timestamp: ts };
+                
+                // Sort arrays for percentile calculation
+                const scanSorted = [...group.scanThroughputs].sort((a, b) => a - b);
+                
+                // Calculate percentiles (90th = top 10%, 50th = median, 10th = bottom 10%)
+                const getPercentile = (arr, percentile) => {
+                    if (arr.length === 0) return null;
+                    const index = Math.ceil((percentile / 100) * arr.length) - 1;
+                    return arr[Math.max(0, index)];
+                };
+                
+                // Calculate average item count
+                const avgItemCount = group.scanItemCounts.length > 0
+                    ? group.scanItemCounts.reduce((sum, val) => sum + val, 0) / group.scanItemCounts.length
+                    : null;
+                
+                return {
+                    timestamp: ts,
+                    // Index Scan percentiles (throughput in records/ms)
+                    scanP90: getPercentile(scanSorted, 90),
+                    scanP50: getPercentile(scanSorted, 50),
+                    scanP10: getPercentile(scanSorted, 10),
+                    scanCount: scanSorted.length,
+                    avgItemCount: avgItemCount,
+                };
+            });
 
             if (sortedData.length === 0) {
                 console.log("No index scan throughput data found for chart");
@@ -9075,36 +9078,39 @@ function renderQueryGroupPhaseTimesChart(group) {
                 }
             });
 
-            // Calculate percentiles and averages for each time group
-            const sortedData = Object.values(timeGroups)
-                .filter(group => group.fetchThroughputs.length > 0)
-                .sort((a, b) => a.timestamp - b.timestamp)
-                .map(item => {
-                    // Sort arrays for percentile calculation
-                    const fetchSorted = [...item.fetchThroughputs].sort((a, b) => a - b);
-                    
-                    // Calculate percentiles (90th = top 10%, 50th = median, 10th = bottom 10%)
-                    const getPercentile = (arr, percentile) => {
-                        if (arr.length === 0) return null;
-                        const index = Math.ceil((percentile / 100) * arr.length) - 1;
-                        return arr[Math.max(0, index)];
-                    };
-                    
-                    // Calculate average item count
-                    const avgItemCount = item.fetchItemCounts.length > 0
-                        ? item.fetchItemCounts.reduce((sum, val) => sum + val, 0) / item.fetchItemCounts.length
-                        : 0;
-                    
-                    return {
-                        timestamp: item.timestamp,
-                        // Doc Fetch percentiles (throughput in records/ms)
-                        fetchP90: getPercentile(fetchSorted, 90),
-                        fetchP50: getPercentile(fetchSorted, 50),
-                        fetchP10: getPercentile(fetchSorted, 10),
-                        fetchCount: fetchSorted.length,
-                        avgItemCount: avgItemCount,
-                    };
-                });
+            // Get all timeline buckets to ensure charts share same x-axis (Issue #148)
+            const buckets = getTimelineBucketsFromRequests(requests, grouping);
+            
+            // Calculate percentiles and averages for each time bucket
+            const sortedData = buckets.map(ts => {
+                const key = ts.toISOString();
+                const group = timeGroups[key] || { fetchThroughputs: [], fetchItemCounts: [], timestamp: ts };
+                
+                // Sort arrays for percentile calculation
+                const fetchSorted = [...group.fetchThroughputs].sort((a, b) => a - b);
+                
+                // Calculate percentiles (90th = top 10%, 50th = median, 10th = bottom 10%)
+                const getPercentile = (arr, percentile) => {
+                    if (arr.length === 0) return null;
+                    const index = Math.ceil((percentile / 100) * arr.length) - 1;
+                    return arr[Math.max(0, index)];
+                };
+                
+                // Calculate average item count
+                const avgItemCount = group.fetchItemCounts.length > 0
+                    ? group.fetchItemCounts.reduce((sum, val) => sum + val, 0) / group.fetchItemCounts.length
+                    : null;
+                
+                return {
+                    timestamp: ts,
+                    // Doc Fetch percentiles (throughput in records/ms)
+                    fetchP90: getPercentile(fetchSorted, 90),
+                    fetchP50: getPercentile(fetchSorted, 50),
+                    fetchP10: getPercentile(fetchSorted, 10),
+                    fetchCount: fetchSorted.length,
+                    avgItemCount: avgItemCount,
+                };
+            });
 
             if (sortedData.length === 0) {
                 console.log("No doc fetch throughput data found for chart");
@@ -9374,13 +9380,18 @@ function renderQueryGroupPhaseTimesChart(group) {
             };
 
             const datasets = sizeRanges.map(range => {
+                const data = sortedTimeGroups.map(group => ({
+                    x: group.timestamp,
+                    y: group.sizeRangeCounts[range.label],
+                    r: calculateBubbleRadius(group.sizeRangeCounts[range.label]),
+                }));
+                
+                // Calculate total count for this size range
+                const totalCount = data.reduce((sum, point) => sum + point.y, 0);
+                
                 return {
-                    label: range.label,
-                    data: sortedTimeGroups.map(group => ({
-                        x: group.timestamp,
-                        y: group.sizeRangeCounts[range.label],
-                        r: calculateBubbleRadius(group.sizeRangeCounts[range.label]),
-                    })),
+                    label: `${range.label} (${totalCount} total)`,
+                    data: data,
                     backgroundColor: range.color,
                     borderColor: range.color.replace('0.6', '1'),
                     borderWidth: 1,
