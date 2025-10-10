@@ -1637,9 +1637,15 @@ if (window.TEXT_CONSTANTS) {
             </div>
 
             <div class="display-flex gap-20 margin-bottom-20">
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="doc-size-bubble" data-position="timeline-7" style="max-width: 50%;">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="doc-size-bubble" data-position="timeline-7" style="max-width: 50%; position: relative;">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <div style="position: absolute; top: 10px; right: 50px; z-index: 10; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 4px; font-size: 12px;">
+                        <label style="cursor: pointer; user-select: none;">
+                            <input type="checkbox" id="bubble-log-scale-toggle" style="cursor: pointer; margin-right: 5px;" checked>
+                            Log Scale Bubbles
+                        </label>
+                    </div>
                     <canvas id="doc-size-bubble-chart"></canvas>
                 </div>
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="memory" data-position="timeline-8">
@@ -9088,6 +9094,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                 window.docSizeBubbleChart.destroy();
             }
 
+            // Store requests and grouping for checkbox toggle
+            window.docSizeBubbleChartData = { requests, grouping };
+
             const sizeRanges = [
                 { label: "0 bytes", min: 0, max: 0, color: "rgba(128, 128, 128, 0.7)" },                   // Gray
                 { label: "1-10 bytes", min: 1, max: 10, color: "rgba(255, 0, 255, 0.7)" },                // Magenta
@@ -9146,13 +9155,28 @@ function renderQueryGroupPhaseTimesChart(group) {
                 return;
             }
 
+            // Check if log scale is enabled
+            const useLogScale = document.getElementById('bubble-log-scale-toggle')?.checked || false;
+
+            // Function to calculate bubble radius
+            const calculateBubbleRadius = (count) => {
+                if (count === 0) return 0;
+                if (useLogScale) {
+                    // Logarithmic scale: log10(count + 1) * 8
+                    return Math.log10(count + 1) * 8;
+                } else {
+                    // Linear scale: sqrt(count) * 5
+                    return Math.sqrt(count) * 5;
+                }
+            };
+
             const datasets = sizeRanges.map(range => {
                 return {
                     label: range.label,
                     data: sortedTimeGroups.map(group => ({
                         x: group.timestamp,
                         y: group.sizeRangeCounts[range.label],
-                        r: Math.sqrt(group.sizeRangeCounts[range.label]) * 5,
+                        r: calculateBubbleRadius(group.sizeRangeCounts[range.label]),
                     })),
                     backgroundColor: range.color,
                     borderColor: range.color.replace('0.6', '1'),
@@ -9249,6 +9273,23 @@ function renderQueryGroupPhaseTimesChart(group) {
 
             // Register chart for crosshair synchronization
             registerTimelineChart(window.docSizeBubbleChart, ctx);
+
+            // Add event listener for log scale toggle
+            const logScaleToggle = document.getElementById('bubble-log-scale-toggle');
+            if (logScaleToggle) {
+                // Remove existing listener if any
+                logScaleToggle.removeEventListener('change', window.bubbleLogScaleHandler);
+                
+                // Create and store handler
+                window.bubbleLogScaleHandler = function() {
+                    if (window.docSizeBubbleChartData) {
+                        const { requests, grouping } = window.docSizeBubbleChartData;
+                        createDocumentSizeBubbleChart(requests, grouping);
+                    }
+                };
+                
+                logScaleToggle.addEventListener('change', window.bubbleLogScaleHandler);
+            }
         }
 
         // Create Execution Analysis Chart (ExecTime vs ServTime/KernTime percentages)
