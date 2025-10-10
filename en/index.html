@@ -33,6 +33,9 @@
     <!-- Include Chart.js zoom plugin -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js" integrity="sha512-FRGbE3pigbYamZnw4+uT4t63+QJOfg4MXSgzPn2t8AWg9ofmFvZ/0Z37ZpCawjfXLBSVX2p2CncsmUH2hzsgJg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
+    <!-- Include Chart.js annotation plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js" integrity="sha512-Hn1w6YiiFw6p6S2lXv6yKeqTk0PLVzeCwWY9n32beuPjQ5HLcvz5l2QsP+KilEr1ws37rCTw3bZpvfvVIeTh0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
     <!-- Include Hammer.js for touch/gesture support -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" integrity="sha512-UXumZrZNiOwnTcZSHLOfcTs0aos2MzBWHXOHOuB0J/R44QB0dwY5JgfbvljXcklVf65Gc4El6RjZ+lnwd2az2g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
@@ -1583,6 +1586,10 @@ if (window.TEXT_CONSTANTS) {
                     class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray">
                     Reset Zoom
                 </button>
+                <button id="unstake-btn" onclick="removeVerticalStake()" style="display:none;"
+                    class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray">
+                    🔹 Remove Stake
+                </button>
                 <button id="use-time-range-btn" onclick="useCurrentTimeRange()"
                     class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray">
                     Use Charts Current X-Axis Date Range
@@ -2183,6 +2190,146 @@ if (window.TEXT_CONSTANTS) {
             setTimeout(() => {
                 isZoomSyncing = false;
             }, 100);
+        }
+
+        // Vertical stake line functions (Issue #148)
+        function addVerticalStake(timestamp) {
+            verticalStakePosition = timestamp;
+            
+            const charts = [
+                window.filterChart,
+                window.timelineChart,
+                window.queryTypesChart,
+                window.durationBucketsChart,
+                window.memoryChart,
+                window.resultCountChart,
+                window.resultSizeChart,
+                window.cpuTimeChart,
+                window.indexScanThroughputChart,
+                window.docFetchThroughputChart,
+                window.docSizeBubbleChart,
+                window.execVsKernelChart,
+                window.execVsServChart,
+                window.execVsElapsedChart,
+                window.enhancedOperationsChart,
+                window.parseDurationChart,
+                window.planDurationChart,
+            ];
+
+            charts.forEach((chart) => {
+                if (chart && chart.options.plugins) {
+                    if (!chart.options.plugins.annotation) {
+                        chart.options.plugins.annotation = { annotations: {} };
+                    }
+                    
+                    chart.options.plugins.annotation.annotations.verticalStake = {
+                        type: 'line',
+                        xMin: timestamp,
+                        xMax: timestamp,
+                        borderColor: '#007bff',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        label: {
+                            display: true,
+                            content: 'Staked',
+                            position: 'start',
+                            backgroundColor: '#007bff',
+                            color: '#fff',
+                            font: {
+                                size: 10
+                            }
+                        }
+                    };
+                    
+                    chart.update('none');
+                }
+            });
+            
+            // Show the unstake button with bright color
+            const unstakeBtn = document.getElementById('unstake-btn');
+            if (unstakeBtn) {
+                unstakeBtn.style.display = 'inline-block';
+                unstakeBtn.style.backgroundColor = '#ff6b35';
+                unstakeBtn.style.color = '#fff';
+                unstakeBtn.style.fontWeight = 'bold';
+            }
+        }
+
+        function removeVerticalStake() {
+            verticalStakePosition = null;
+            
+            const charts = [
+                window.filterChart,
+                window.timelineChart,
+                window.queryTypesChart,
+                window.durationBucketsChart,
+                window.memoryChart,
+                window.resultCountChart,
+                window.resultSizeChart,
+                window.cpuTimeChart,
+                window.indexScanThroughputChart,
+                window.docFetchThroughputChart,
+                window.docSizeBubbleChart,
+                window.execVsKernelChart,
+                window.execVsServChart,
+                window.execVsElapsedChart,
+                window.enhancedOperationsChart,
+                window.parseDurationChart,
+                window.planDurationChart,
+            ];
+
+            charts.forEach((chart) => {
+                if (chart && chart.options.plugins && chart.options.plugins.annotation) {
+                    delete chart.options.plugins.annotation.annotations.verticalStake;
+                    chart.update('none');
+                }
+            });
+            
+            // Hide the unstake button and reset style
+            const unstakeBtn = document.getElementById('unstake-btn');
+            if (unstakeBtn) {
+                unstakeBtn.style.display = 'none';
+                unstakeBtn.style.backgroundColor = '';
+                unstakeBtn.style.color = '';
+                unstakeBtn.style.fontWeight = '';
+            }
+        }
+
+        function attachDoubleClickHandler(chartInstance) {
+            if (!chartInstance) {
+                console.log('attachDoubleClickHandler: no chart instance');
+                return;
+            }
+            
+            if (!chartInstance.canvas) {
+                console.log('attachDoubleClickHandler: chart has no canvas', chartInstance);
+                return;
+            }
+            
+            console.log('Attaching double-click handler to chart:', chartInstance.canvas.id);
+            
+            chartInstance.canvas.addEventListener('dblclick', (event) => {
+                // Prevent default zoom behavior
+                event.preventDefault();
+                event.stopPropagation();
+                
+                console.log('Double-click detected on chart:', chartInstance.canvas.id);
+                
+                const rect = chartInstance.canvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                
+                console.log('Click position x:', x);
+                
+                const xScale = chartInstance.scales.x;
+                if (xScale) {
+                    const timestamp = xScale.getValueForPixel(x);
+                    console.log('Timestamp from click:', timestamp, new Date(timestamp));
+                    console.log('Adding stake at position:', timestamp);
+                    addVerticalStake(timestamp);
+                } else {
+                    console.log('No x scale found on chart');
+                }
+            }, true);
         }
 
         // Toast notification system
@@ -6555,6 +6702,46 @@ function renderQueryGroupPhaseTimesChart(group) {
 
             // Initialize drag and drop for execution analysis charts
             setupChartDragAndDrop();
+
+            // Attach double-click handlers for vertical stake feature (Issue #148)
+            attachTimelineDoubleClickHandlers();
+        }
+
+        // Attach double-click handlers to all timeline charts
+        function attachTimelineDoubleClickHandlers() {
+            console.log('Attaching timeline double-click handlers...');
+            
+            const charts = [
+                window.filterChart,
+                window.timelineChart,
+                window.queryTypesChart,
+                window.durationBucketsChart,
+                window.memoryChart,
+                window.resultCountChart,
+                window.resultSizeChart,
+                window.cpuTimeChart,
+                window.indexScanThroughputChart,
+                window.docFetchThroughputChart,
+                window.docSizeBubbleChart,
+                window.execVsKernelChart,
+                window.execVsServChart,
+                window.execVsElapsedChart,
+                window.enhancedOperationsChart,
+                window.parseDurationChart,
+                window.planDurationChart,
+            ];
+
+            let attachedCount = 0;
+            charts.forEach((chart, index) => {
+                if (chart) {
+                    attachDoubleClickHandler(chart);
+                    attachedCount++;
+                } else {
+                    console.log('Chart at index', index, 'is null/undefined');
+                }
+            });
+            
+            console.log(`Attached handlers to ${attachedCount} out of ${charts.length} charts`);
         }
 
         // Create Query Types Scatter Plot Chart
@@ -17240,6 +17427,9 @@ const LAST_UPDATED = "2025-10-09";
         let detectedTimezone = "UTC"; // Timezone detected from data
         let currentTimezone = "UTC"; // Currently selected timezone (default to UTC)
         let timeZoneUserPicked = false; // Track if user manually selected a timezone
+
+        // Vertical stake line for timeline charts (Issue #148)
+        let verticalStakePosition = null; // Timestamp where the blue dotted line is staked
 
         // Detect timezone from requestTime string
         function detectTimezoneFromData(processData) {
