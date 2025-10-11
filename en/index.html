@@ -7904,23 +7904,27 @@ size: 12
             
             const collections = new Set();
             
-            // Match FROM `bucket`.`scope`.`collection` or FROM `bucket`
-            // Also match JOIN patterns
+            // Match both quoted and unquoted identifiers
+            // Patterns handle: FROM `bucket`.`scope`.`collection`, FROM `bucket`, FROM bucket, etc.
             const patterns = [
-                /FROM\s+`([^`]+)`\.`([^`]+)`\.`([^`]+)`/gi,
-                /JOIN\s+`([^`]+)`\.`([^`]+)`\.`([^`]+)`/gi,
-                /FROM\s+`([^`]+)`(?:\s|,|$|WHERE|GROUP|ORDER|LIMIT)/gi,
-                /JOIN\s+`([^`]+)`(?:\s|,|$|WHERE|GROUP|ORDER|LIMIT)/gi
+                // Quoted three-part: `bucket`.`scope`.`collection`
+                /(?:FROM|JOIN)\s+`([^`]+)`\.`([^`]+)`\.`([^`]+)`/gi,
+                // Unquoted three-part: bucket.scope.collection
+                /(?:FROM|JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)/gi,
+                // Quoted single: `bucket`
+                /(?:FROM|JOIN)\s+`([^`]+)`(?:\s+(?:AS\s+)?[a-zA-Z_]|\s|,|$|WHERE|GROUP|ORDER|LIMIT|UNNEST|JOIN)/gi,
+                // Unquoted single: bucket
+                /(?:FROM|JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+(?:AS\s+)?[a-zA-Z_]|\s|,|$|WHERE|GROUP|ORDER|LIMIT|UNNEST|JOIN)/gi
             ];
             
-            patterns.forEach(pattern => {
+            patterns.forEach((pattern, patternIndex) => {
                 let match;
                 while ((match = pattern.exec(sql)) !== null) {
                     if (match.length === 4) {
-                        // bucket.scope.collection
+                        // Three-part: bucket.scope.collection
                         collections.add(`${match[1]}.${match[2]}.${match[3]}`);
                     } else if (match.length === 2) {
-                        // bucket only - defaults to bucket._default._default
+                        // Single part: bucket only - defaults to bucket._default._default
                         collections.add(`${match[1]}._default._default`);
                     }
                 }
