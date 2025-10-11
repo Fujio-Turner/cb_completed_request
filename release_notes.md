@@ -1,3 +1,10 @@
+### Version 3.20.0 (October 11, 2025)
+- **New: Timeline Buckets chart** - Line chart visualization for time-bucketed query analysis (closes #150)
+- **New: Service TimeThroughput split** - Split into Doc and Index metrics with Avg Count Line on 2nd y-axis (closes #147)
+- **New: Vertical stake line** - Blue dotted vertical line across all Timeline charts via double-click (closes #148)
+- **Enhancement: Timeline UI cleanup** - Consistent date formats, unified font sizes, removed "Timeline" and "(Beta)" from titles, minified tooltips (closes #149)
+- **Enhancement: X-axis consistency** - All Timeline charts now use consistent time configuration and universal bucket alignment
+
 ### Version 3.19.0 (October 9, 2025)
 - **New: Dashboard enhancements** - Log scale checkbox for better data visualization (closes #146)
 - **New: Bubble chart** - Advanced visualization for query performance analysis (closes #145)
