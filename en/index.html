@@ -1610,6 +1610,20 @@ if (window.TEXT_CONSTANTS) {
                         Logarithmic</label>
                 </div>
             </div>
+
+            <!-- Row 1: Collection Queries with Custom Legend -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="collection-queries" data-position="timeline-0">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="collection-queries-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container" id="collection-queries-legend-container" style="overflow-y: auto; background-color: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <!-- Custom legend will be populated here -->
+                </div>
+            </div>
+
+            <!-- Row 2: Duration Buckets & Query Types -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="duration-buckets" data-position="timeline-1">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
@@ -1623,7 +1637,7 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
 
-            <!-- Row 2: Enhanced Database Operations & Filter Operations -->
+            <!-- Row 3: Enhanced Database Operations & Filter Operations -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="enhanced-operations" data-position="timeline-3">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
@@ -1637,7 +1651,7 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
 
-            <!-- Row 3: Result Count & Result Size -->
+            <!-- Row 4: Result Count & Result Size -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="result-count" data-position="timeline-5">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
@@ -1651,7 +1665,7 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
 
-            <!-- Row 4: Index Scan Throughput & Doc Fetch Throughput -->
+            <!-- Row 5: Index Scan Throughput & Doc Fetch Throughput -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="index-scan-throughput" data-position="timeline-7">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
@@ -1665,7 +1679,7 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
 
-            <!-- Row 5: Query Performance Timeline KernTime & Document Size Distribution -->
+            <!-- Row 6: Query Performance Timeline KernTime & Document Size Distribution -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="timeline" data-position="timeline-9">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
@@ -1685,7 +1699,7 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
 
-            <!-- Row 6: CPU/Kernel/Elapsed Time & Memory -->
+            <!-- Row 7: CPU/Kernel/Elapsed Time & Memory -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="cpu-time" data-position="timeline-11">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
@@ -1699,7 +1713,7 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
 
-            <!-- Row 7: ExecTime vs Elapsed & ExecTime vs ServiceTime -->
+            <!-- Row 8: ExecTime vs Elapsed & ExecTime vs ServiceTime -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-elapsed" data-position="timeline-13">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
@@ -1723,19 +1737,7 @@ if (window.TEXT_CONSTANTS) {
                 <div class="flex-1-height-400"></div>
             </div>
 
-            <!-- Row 9: Collection Queries with Custom Legend -->
-            <div class="display-flex gap-20 margin-bottom-20">
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="collection-queries" data-position="timeline-15b">
-                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
-                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <canvas id="collection-queries-chart"></canvas>
-                </div>
-                <div class="flex-1-height-400 chart-container" id="collection-queries-legend-container" style="overflow-y: auto; background-color: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-                    <!-- Custom legend will be populated here -->
-                </div>
-            </div>
-
-            <!-- Row 10: Parse Duration & Plan Duration -->
+            <!-- Row 9: Parse Duration & Plan Duration -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="parse-duration" data-position="timeline-16">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
@@ -8049,9 +8051,27 @@ size: 12
                                 modifierKey: "shift"
                             },
                             zoom: {
-                                wheel: { enabled: true },
-                                pinch: { enabled: true },
-                                mode: "x"
+                                wheel: {
+                                    enabled: false
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: "rgba(100,100,100,0.4)",
+                                    borderColor: "rgba(50,50,50,0.8)",
+                                    borderWidth: 2
+                                },
+                                mode: "xy",
+                                onZoom: function ({ chart }) {
+                                    // Update current time range
+                                    currentTimeRange.min = new Date(chart.scales.x.min);
+                                    currentTimeRange.max = new Date(chart.scales.x.max);
+                                    updateTimeRangeDisplay();
+                                    // Sync zoom with other charts
+                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                }
                             }
                         }
                     },
@@ -8078,34 +8098,100 @@ size: 12
                         axis: "x",
                         intersect: false
                     }
-                }
+                },
+                plugins: [verticalLinePlugin]
             });
 
-            // Generate custom HTML legend
+            // Register chart for timeline zoom sync
+            registerTimelineChart(window.collectionQueriesChart, ctx);
+
+            // Store datasets globally for re-sorting
+            window.collectionDatasetsForLegend = datasets;
+            
+            // Generate custom HTML legend with sort dropdown
+            renderCollectionLegend('queries');
+        }
+
+        // Render collection legend with specified sort order
+        function renderCollectionLegend(sortBy = 'queries') {
             const legendContainer = document.getElementById("collection-queries-legend-container");
-            if (legendContainer) {
-                let legendHTML = '<div style="font-weight: bold; margin-bottom: 15px; font-size: 14px; padding-bottom: 8px; border-bottom: 2px solid #dee2e6; color: #495057;">Collections Legend</div>';
-                legendHTML += '<div style="display: flex; flex-direction: column; gap: 6px;">';
-                
-                datasets.forEach((dataset, index) => {
-                    const color = dataset.borderColor;
-                    legendHTML += `
-                        <div id="collection-legend-item-${index}" style="display: flex; align-items: center; cursor: pointer; padding: 6px 8px; border-radius: 4px; transition: all 0.2s; border: 1px solid transparent;"
-                             onmouseover="this.style.backgroundColor='#f8f9fa'; this.style.borderColor='#dee2e6';"
-                             onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='transparent';"
-                             onclick="toggleCollectionDataset(${index})">
-                            <div style="width: 24px; height: 3px; background-color: ${color}; margin-right: 10px; border-radius: 2px; flex-shrink: 0;"></div>
-                            <div style="flex: 1; font-size: 11px; line-height: 1.4;">
-                                <div id="collection-legend-label-${index}" style="font-weight: 600; color: #343a40; transition: text-decoration 0.2s;">${dataset.label}</div>
-                                <div id="collection-legend-count-${index}" style="color: #6c757d; font-size: 10px; margin-top: 2px; transition: text-decoration 0.2s;">${dataset.total} queries</div>
-                            </div>
+            if (!legendContainer || !window.collectionDatasetsForLegend) return;
+            
+            const datasets = window.collectionDatasetsForLegend;
+            
+            // Create sticky header with show/hide buttons and sort dropdown
+            let legendHTML = `
+                <div style="position: sticky; top: 0; background-color: #fff; z-index: 10; padding-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #dee2e6;">
+                        <div style="font-weight: bold; font-size: 14px; color: #495057;">Collections Legend</div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <button onclick="showAllCollections()" style="font-size: 11px; padding: 4px 10px; border: 1px solid #28a745; background: #28a745; color: #fff; border-radius: 3px; cursor: pointer; font-weight: 600; transition: background 0.2s;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">Show All</button>
+                            <button onclick="hideAllCollections()" style="font-size: 11px; padding: 4px 10px; border: 1px solid #dc3545; background: #dc3545; color: #fff; border-radius: 3px; cursor: pointer; font-weight: 600; transition: background 0.2s;" onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">Hide All</button>
                         </div>
-                    `;
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label for="collection-sort-select" style="font-size: 11px; color: #6c757d; font-weight: 600;">Sort By:</label>
+                            <select id="collection-sort-select" onchange="renderCollectionLegend(this.value)" style="font-size: 11px; padding: 3px 6px; border: 1px solid #dee2e6; border-radius: 3px; background: #fff; cursor: pointer;">
+                                <option value="queries" ${sortBy === 'queries' ? 'selected' : ''}>Queries</option>
+                                <option value="name" ${sortBy === 'name' ? 'selected' : ''}>Name</option>
+                                <option value="bucket" ${sortBy === 'bucket' ? 'selected' : ''}>Bucket</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Sort datasets based on selection
+            let sortedDatasets = [...datasets];
+            if (sortBy === 'queries') {
+                // Sort by total queries (descending)
+                sortedDatasets.sort((a, b) => b.total - a.total);
+            } else if (sortBy === 'name') {
+                // Sort alphabetically by collection name
+                sortedDatasets.sort((a, b) => a.label.localeCompare(b.label));
+            } else if (sortBy === 'bucket') {
+                // Sort by bucket.scope.collection
+                sortedDatasets.sort((a, b) => {
+                    const aParts = a.label.split('.');
+                    const bParts = b.label.split('.');
+                    
+                    // Compare bucket
+                    if (aParts[0] !== bParts[0]) return aParts[0].localeCompare(bParts[0]);
+                    // Compare scope
+                    if (aParts[1] !== bParts[1]) return aParts[1].localeCompare(bParts[1]);
+                    // Compare collection
+                    return aParts[2].localeCompare(bParts[2]);
                 });
-                
-                legendHTML += '</div>';
-                legendContainer.innerHTML = legendHTML;
             }
+            
+            legendHTML += '<div style="display: flex; flex-direction: column; gap: 6px;">';
+            
+            sortedDatasets.forEach((dataset) => {
+                // Find original index
+                const originalIndex = datasets.indexOf(dataset);
+                const color = dataset.borderColor;
+                
+                // Check if dataset is currently hidden
+                const chart = window.collectionQueriesChart;
+                const isHidden = chart && chart.getDatasetMeta(originalIndex).hidden;
+                const opacity = isHidden ? '0.5' : '1';
+                const textDecoration = isHidden ? 'line-through' : 'none';
+                
+                legendHTML += `
+                    <div id="collection-legend-item-${originalIndex}" style="display: flex; align-items: center; cursor: pointer; padding: 6px 8px; border-radius: 4px; transition: all 0.2s; border: 1px solid transparent; opacity: ${opacity};"
+                         onmouseover="this.style.backgroundColor='#f8f9fa'; this.style.borderColor='#dee2e6';"
+                         onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='transparent';"
+                         onclick="toggleCollectionDataset(${originalIndex})">
+                        <div style="width: 24px; height: 3px; background-color: ${color}; margin-right: 10px; border-radius: 2px; flex-shrink: 0;"></div>
+                        <div style="flex: 1; font-size: 11px; line-height: 1.4;">
+                            <div id="collection-legend-label-${originalIndex}" style="font-weight: 600; color: #343a40; transition: text-decoration 0.2s; text-decoration: ${textDecoration};">${dataset.label}</div>
+                            <div id="collection-legend-count-${originalIndex}" style="color: #6c757d; font-size: 10px; margin-top: 2px; transition: text-decoration 0.2s; text-decoration: ${textDecoration};">${dataset.total} queries</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            legendHTML += '</div>';
+            legendContainer.innerHTML = legendHTML;
         }
 
         // Toggle dataset visibility for collection queries chart
@@ -8133,6 +8219,54 @@ size: 12
                 if (legendCount) legendCount.style.textDecoration = 'none';
                 if (legendItem) legendItem.style.opacity = '1';
             }
+        }
+
+        // Show all collection datasets
+        function showAllCollections() {
+            const chart = window.collectionQueriesChart;
+            if (!chart) return;
+            
+            const datasets = window.collectionDatasetsForLegend;
+            if (!datasets) return;
+            
+            // Show all datasets
+            datasets.forEach((dataset, index) => {
+                const meta = chart.getDatasetMeta(index);
+                meta.hidden = false;
+            });
+            
+            chart.update();
+            
+            // Get current sort order
+            const sortSelect = document.getElementById('collection-sort-select');
+            const currentSort = sortSelect ? sortSelect.value : 'queries';
+            
+            // Re-render legend to update styling
+            renderCollectionLegend(currentSort);
+        }
+
+        // Hide all collection datasets
+        function hideAllCollections() {
+            const chart = window.collectionQueriesChart;
+            if (!chart) return;
+            
+            const datasets = window.collectionDatasetsForLegend;
+            if (!datasets) return;
+            
+            // Hide all datasets
+            datasets.forEach((dataset, index) => {
+                const meta = chart.getDatasetMeta(index);
+                meta.hidden = true;
+            });
+            
+            chart.update();
+            
+            // Get current sort order
+            const sortSelect = document.getElementById('collection-sort-select');
+            const currentSort = sortSelect ? sortSelect.value : 'queries';
+            
+            // Re-render legend to update styling
+            renderCollectionLegend(currentSort);
         }
 
         // Create Parse Duration Distribution Chart
@@ -11199,6 +11333,9 @@ size: 12
         }
         if (window.enhancedOperationsChart) {
           window.enhancedOperationsChart.resetZoom();
+        }
+        if (window.collectionQueriesChart) {
+          window.collectionQueriesChart.resetZoom();
         }
         if (window.parseDurationChart) {
           window.parseDurationChart.resetZoom();
