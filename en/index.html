@@ -9610,8 +9610,8 @@ size: 12
                             
                             if (!y) return;
                             
-                            // Draw threshold line at 100 records/ms
-                            const yPosition = y.getPixelForValue(100);
+                            // Draw threshold line at 50 records/ms
+                            const yPosition = y.getPixelForValue(50);
                             
                             // Only draw if the line is within the chart area
                             if (yPosition < chart.chartArea.top || yPosition > chart.chartArea.bottom) {
@@ -9632,7 +9632,7 @@ size: 12
                             ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
                             ctx.font = 'bold 11px Arial';
                             ctx.textAlign = 'right';
-                            ctx.fillText('100/ms threshold', right - 5, yPosition - 5);
+                            ctx.fillText('50/ms threshold', right - 5, yPosition - 5);
                             
                             ctx.restore();
                         }
@@ -9940,8 +9940,8 @@ size: 12
                             
                             if (!y) return;
                             
-                            // Draw threshold line at 10 records/ms
-                            const yPosition = y.getPixelForValue(10);
+                            // Draw threshold line at 5 records/ms
+                            const yPosition = y.getPixelForValue(5);
                             
                             // Only draw if the line is within the chart area
                             if (yPosition < chart.chartArea.top || yPosition > chart.chartArea.bottom) {
@@ -9962,7 +9962,7 @@ size: 12
                             ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
                             ctx.font = 'bold 11px Arial';
                             ctx.textAlign = 'right';
-                            ctx.fillText('10/ms threshold', right - 5, yPosition - 5);
+                            ctx.fillText('5/ms threshold', right - 5, yPosition - 5);
                             
                             ctx.restore();
                         }
