@@ -6030,7 +6030,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                     plugins: {
                         title: {
                             display: true,
-                            text: "Enhanced Database Operations: Detailed In/Out Analysis - (Beta)",
+                            text: "Enhanced Database Operations: Detailed In/Out Analysis",
+                            font: {
+size: 12
+                            }
                         },
                         legend: {
                             display: true,
@@ -6218,7 +6221,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                     plugins: {
                         title: {
                             display: true,
-                            text: "Filter Operations Timeline: Efficiency Analysis (IN vs OUT)",
+                            text: "Filter Operations: Efficiency Analysis (IN vs OUT)",
+                            font: {
+size: 12
+                            }
                         },
                         legend: {
                             display: true,
@@ -6577,7 +6583,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                     plugins: {
                         title: {
                             display: true,
-                            text: "Query Performance Timeline: KernTime % of ExecutionTime",
+                            text: "Query Performance: KernTime % of ExecutionTime",
+                            font: {
+size: 12
+                            }
                         },
                         legend: {
                             display: true,
@@ -6972,6 +6981,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                         title: {
                             display: true,
                             text: TEXT_CONSTANTS.QUERY_DURATION_CHART_TITLE,
+                            font: {
+size: 12
+                            }
                         },
                         legend: {
                             display: true,
@@ -7335,7 +7347,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                     plugins: {
                         title: {
                             display: true,
-                            text: "Query's Avg Document Size (Bubble Size = Query Count)",
+                            text: "Query Duration Distrubution (Bubble Size = Query Count)",
+                            font: {
+                                size: 12
+                            }
                         },
                         legend: {
                             display: true,
@@ -7579,6 +7594,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                         title: {
                             display: true,
                             text: "Total Query Process Memory Usage",
+                            font: {
+size: 12
+                            }
                         },
                         legend: {
                             display: true,
@@ -7875,7 +7893,13 @@ function renderQueryGroupPhaseTimesChart(group) {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        title: { display: true, text: "Parse Duration Distribution by Time Buckets (Bubble Size = Query Count)" },
+                        title: { 
+                            display: true, 
+                            text: "Parse Duration Distribution by Time Buckets (Bubble Size = Query Count)",
+                            font: {
+size: 12
+                            }
+                        },
                         legend: { display: true, position: "top" },
                         tooltip: {
                             callbacks: {
@@ -7924,19 +7948,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                     scales: {
                         x: {
                             type: "time",
-                            time: {
-                                displayFormats: {
-                                    millisecond: "HH:mm:ss.SSS",
-                                    second: "HH:mm:ss",
-                                    minute: "HH:mm",
-                                    hour: "HH:mm",
-                                    day: "MM/dd",
-                                    week: "MM/dd",
-                                    month: "MM/yy",
-                                    quarter: "MM/yy",
-                                    year: "yyyy"
-                                }
-                            },
+                            time: getCurrentTimeConfig(requests),
                             title: { display: true, text: "Request Time" }
                         },
                         y: {
@@ -8074,7 +8086,13 @@ function renderQueryGroupPhaseTimesChart(group) {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        title: { display: true, text: "Plan Duration Distribution by Time Buckets (Note: Prepared statements skip parse/plan phases)" },
+                        title: { 
+                            display: true, 
+                            text: "Plan Duration Distribution by Time Buckets (Note: Prepared statements skip parse/plan phases)",
+                            font: {
+size: 12
+                            }
+                        },
                         legend: { display: true, position: "top" },
                         tooltip: {
                             callbacks: {
@@ -8123,19 +8141,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                     scales: {
                         x: {
                             type: "time",
-                            time: {
-                                displayFormats: {
-                                    millisecond: "HH:mm:ss.SSS",
-                                    second: "HH:mm:ss",
-                                    minute: "HH:mm",
-                                    hour: "HH:mm",
-                                    day: "MM/dd",
-                                    week: "MM/dd",
-                                    month: "MM/yy",
-                                    quarter: "MM/yy",
-                                    year: "yyyy"
-                                }
-                            },
+                            time: getCurrentTimeConfig(requests),
                             title: { display: true, text: "Request Time" }
                         },
                         y: {
@@ -8246,6 +8252,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                         title: {
                             display: true,
                             text: "Result Count Analysis: Total vs Average per Query",
+                            font: {
+size: 12
+                            }
                         },
                         legend: {
                             display: true,
@@ -8415,6 +8424,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                         title: {
                             display: true,
                             text: "Result Size Analysis: Total vs Average per Query",
+                            font: {
+size: 12
+                            }
                         },
                         legend: {
                             display: true,
@@ -8635,7 +8647,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                     plugins: {
                         title: {
                             display: true,
-                            text: "CPU/Kernel/Elapsed Time Analysis - (Beta)",
+                            text: "CPU/Kernel/Elapsed Time Analysis",
+                            font: {
+size: 12
+                            }
                         },
                         legend: {
                             display: true,
@@ -8896,8 +8911,8 @@ function renderQueryGroupPhaseTimesChart(group) {
                         {
                             label: "Avg Item Count",
                             data: sortedData.map((item) => item.avgItemCount),
-                            borderColor: "rgba(0, 128, 255, 1)", // Blue
-                            backgroundColor: "rgba(0, 128, 255, 0.1)",
+                            borderColor: "rgba(0, 128, 0, 1)", // Dark Green
+                            backgroundColor: "rgba(0, 128, 0, 0.1)",
                             borderWidth: 2,
                             borderDash: [10, 5],
                             fill: false,
@@ -8916,8 +8931,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                             display: true,
                             text: "Index Scan Throughput (records/ms) & Avg Count",
                             font: {
-                                size: 16,
-                                weight: 'bold'
+size: 12
                             }
                         },
                         legend: {
@@ -9177,8 +9191,8 @@ function renderQueryGroupPhaseTimesChart(group) {
                         {
                             label: "Avg Item Count",
                             data: sortedData.map((item) => item.avgItemCount),
-                            borderColor: "rgba(0, 128, 255, 1)", // Blue
-                            backgroundColor: "rgba(0, 128, 255, 0.1)",
+                            borderColor: "rgba(0, 128, 0, 1)", // Dark Green
+                            backgroundColor: "rgba(0, 128, 0, 0.1)",
                             borderWidth: 2,
                             borderDash: [10, 5],
                             fill: false,
@@ -9197,8 +9211,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                             display: true,
                             text: "Doc Fetch Throughput (records/ms) & Avg Count",
                             font: {
-                                size: 16,
-                                weight: 'bold'
+size: 12
                             }
                         },
                         legend: {
@@ -9418,8 +9431,8 @@ function renderQueryGroupPhaseTimesChart(group) {
                     plugins: {
                         title: {
                             display: true,
-                            text: "Document Size Distribution Over Time",
-                            font: { size: 16, weight: "bold" },
+                            text: "Query's Avg Document Size (Bubble Size = Query Count)",
+                            font: { size: 12 },
                         },
                         legend: {
                             display: true,
@@ -9776,7 +9789,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                     plugins: {
                         title: {
                             display: true,
-                            text: "ExecTime vs Highest Kernel Time (%) By Query Steps - (Beta)",
+                            text: "ExecTime vs Highest Kernel Time (%) By Query Steps",
+                            font: {
+size: 12
+                            }
                         },
                         legend: {
                             display: true,
@@ -10095,7 +10111,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                     plugins: {
                         title: {
                             display: true,
-                            text: "ExecTime vs ServTime (%) by Services in Query Execution - (Beta)",
+                            text: "ExecTime vs ServTime (%) by Services in Query Execution",
+                            font: {
+size: 12
+                            }
                         },
                         legend: {
                             display: true,
@@ -10572,7 +10591,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                     plugins: {
                         title: {
                             display: true,
-                            text: "ExecTime vs Elapsed Time (%) By Query Steps - (Beta)",
+                            text: "ExecTime vs Elapsed Time (%) By Query Steps",
+                            font: {
+size: 12
+                            }
                         },
                         legend: {
                             display: true,
