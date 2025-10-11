@@ -6032,12 +6032,21 @@ function renderQueryGroupPhaseTimesChart(group) {
                             display: true,
                             text: "Enhanced Database Operations: Detailed In/Out Analysis",
                             font: {
-size: 12
+                                size: 12
                             }
                         },
                         legend: {
                             display: true,
                             position: "top",
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = Math.round(context.parsed.y).toLocaleString();
+                                    return `${label}: ${value}`;
+                                }
+                            }
                         },
                         zoom: {
                             limits: {
@@ -7347,7 +7356,7 @@ size: 12
                     plugins: {
                         title: {
                             display: true,
-                            text: "Query Duration Distrubution (Bubble Size = Query Count)",
+                            text: "Query Duration Distrubution By Time Buckets (Bubble Size = Query Count)",
                             font: {
                                 size: 12
                             }
@@ -7605,15 +7614,21 @@ size: 12
                         tooltip: {
                             callbacks: {
                                 label: function (context) {
-                                    const dataIndex = context.dataIndex;
-                                    const memoryMB = context.parsed.y;
-                                    const queryCount = sortedData[dataIndex].queryCount;
-                                    return [
-                                        `Memory Usage: ${memoryMB.toFixed(2)} MB`,
-                                        `Queries: ${queryCount}`,
-                                        `Avg per Query: ${(memoryMB / queryCount).toFixed(2)} MB`,
-                                    ];
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    if (label.includes('Memory Usage')) {
+                                        return `Memory Usage (MB): ${value.toLocaleString('en-US', {minimumFractionDigits: 3, maximumFractionDigits: 3})}`;
+                                    }
+                                    if (label.includes('Avg per Query')) {
+                                        return `Avg per Query (MB): ${value.toLocaleString('en-US', {minimumFractionDigits: 3, maximumFractionDigits: 3})}`;
+                                    }
+                                    return `${label}: ${value.toLocaleString('en-US', {minimumFractionDigits: 3, maximumFractionDigits: 3})}`;
                                 },
+                                afterBody: function (tooltipItems) {
+                                    const dataIndex = tooltipItems[0].dataIndex;
+                                    const data = sortedData[dataIndex];
+                                    return [`Queries: ${data.queryCount.toLocaleString()}`];
+                                }
                             },
                         },
                         zoom: {
@@ -7812,7 +7827,7 @@ size: 12
                 "2-10ms": "rgba(220, 20, 60, 0.7)",         // Crimson
                 "10-100ms": "rgba(178, 34, 34, 0.7)",       // Firebrick
                 "100-500ms": "rgba(139, 0, 0, 0.7)",        // Dark red
-                "500ms+": "rgba(80, 0, 0, 0.8)"             // Very dark red
+                "500ms+": "rgba(0, 0, 0, 0.8)"              // Black
             };
 
             // Initialize all time buckets with zero counts
@@ -8005,7 +8020,7 @@ size: 12
                 "2-10ms": "rgba(220, 20, 60, 0.7)",         // Crimson
                 "10-100ms": "rgba(178, 34, 34, 0.7)",       // Firebrick
                 "100-500ms": "rgba(139, 0, 0, 0.7)",        // Dark red
-                "500ms+": "rgba(80, 0, 0, 0.8)"             // Very dark red
+                "500ms+": "rgba(0, 0, 0, 0.8)"              // Black
             };
 
             // Initialize all time buckets with zero counts
@@ -8253,11 +8268,20 @@ size: 12
                             display: true,
                             text: "Result Count Analysis: Total vs Average per Query",
                             font: {
-size: 12
+                                size: 12
                             }
                         },
                         legend: {
                             display: true,
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = Math.round(context.parsed.y).toLocaleString();
+                                    return `${label}: ${value}`;
+                                }
+                            }
                         },
                         zoom: {
                             limits: {
@@ -8594,7 +8618,7 @@ size: 12
                             borderColor: "rgba(54, 162, 235, 1)",
                             borderWidth: 1,
                             yAxisID: "y",
-                            order: 1,
+                            order: 3,
                         },
                         {
                             label: "Avg Kernel Time (ms)",
@@ -8612,7 +8636,7 @@ size: 12
                             borderColor: "rgba(75, 192, 192, 1)",
                             borderWidth: 1,
                             yAxisID: "y",
-                            order: 3,
+                            order: 1,
                         },
                         {
                             label: "CPU as % of Kernel",
@@ -8623,7 +8647,7 @@ size: 12
                             borderWidth: 2,
                             fill: false,
                             yAxisID: "y1",
-                            order: 1,
+                            order: 5,
                             tension: 0.3,
                         },
                         {
@@ -8636,7 +8660,7 @@ size: 12
                             borderDash: [5, 5], // Dotted line
                             fill: false,
                             yAxisID: "y1",
-                            order: 0,
+                            order: 4,
                             tension: 0.3,
                         },
                     ],
@@ -8657,14 +8681,32 @@ size: 12
                         },
                         tooltip: {
                             callbacks: {
+                                label: function (context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    
+                                    if (label.includes('Avg CPU Time')) {
+                                        return `Avg CPU (ms): ${Math.round(value).toLocaleString()}`;
+                                    }
+                                    if (label.includes('Avg Kernel Time')) {
+                                        return `Avg Kernel (ms): ${Math.round(value).toLocaleString()}`;
+                                    }
+                                    if (label.includes('Avg Elapsed Time')) {
+                                        return `Avg Elapsed (ms): ${Math.round(value).toLocaleString()}`;
+                                    }
+                                    if (label.includes('CPU as % of Kernel')) {
+                                        return `CPU % of Kernel: ${Math.round(value).toLocaleString()}%`;
+                                    }
+                                    if (label.includes('CPU as % of Elapsed')) {
+                                        return `CPU % of Elapsed: ${Math.round(value).toLocaleString()}%`;
+                                    }
+                                    return `${label}: ${Math.round(value).toLocaleString()}`;
+                                },
                                 afterBody: function (tooltipItems) {
                                     const dataIndex = tooltipItems[0].dataIndex;
                                     const data = sortedData[dataIndex];
                                     return [
-                                        `Queries: ${data.queryCount}`,
-                                        `CPU: ${data.avgCpuTime.toFixed(2)}ms`,
-                                        `Kernel: ${data.avgKernTime.toFixed(2)}ms`,
-                                        `Elapsed: ${data.avgElapsedTime.toFixed(2)}ms`
+                                        `Queries: ${data.queryCount.toLocaleString()}`
                                     ];
                                 }
                             }
@@ -8907,9 +8949,9 @@ size: 12
                             pointHoverRadius: 4,
                             yAxisID: 'y',
                         },
-                        // Average item count line (2nd y-axis)
+                        // Average records scanned per query (2nd y-axis)
                         {
-                            label: "Avg Item Count",
+                            label: "Avg Records Scanned per Query",
                             data: sortedData.map((item) => item.avgItemCount),
                             borderColor: "rgba(0, 128, 0, 1)", // Dark Green
                             backgroundColor: "rgba(0, 128, 0, 0.1)",
@@ -8929,7 +8971,7 @@ size: 12
                     plugins: {
                         title: {
                             display: true,
-                            text: "Index Scan Throughput (records/ms) & Avg Count",
+                            text: "Index Scan Throughput (records/ms) & Avg Records Scanned per Query",
                             font: {
 size: 12
                             }
@@ -8943,15 +8985,24 @@ size: 12
                                 label: function (context) {
                                     const label = context.dataset.label || '';
                                     const value = context.parsed.y;
-                                    if (label.includes('Avg Item Count')) {
-                                        return `${label}: ${Math.round(value)} items`;
+                                    if (label.includes('Avg Records Scanned')) {
+                                        return `Avg / Query: ${Math.round(value).toLocaleString()} records`;
                                     }
-                                    return value !== null ? `${label}: ${Math.round(value)}/ms` : label;
+                                    if (label.includes('top 10%')) {
+                                        return `top 10%: ${Math.round(value).toLocaleString()}/ms`;
+                                    }
+                                    if (label.includes('middle')) {
+                                        return `middle: ${Math.round(value).toLocaleString()}/ms`;
+                                    }
+                                    if (label.includes('bottom 10%')) {
+                                        return `bottom 10%: ${Math.round(value).toLocaleString()}/ms`;
+                                    }
+                                    return value !== null ? `${label}: ${Math.round(value).toLocaleString()}/ms` : label;
                                 },
                                 afterBody: function (tooltipItems) {
                                     const dataIndex = tooltipItems[0].dataIndex;
                                     const data = sortedData[dataIndex];
-                                    return [`Index Scan samples: ${data.scanCount}`];
+                                    return [`Index Scan Sample: ${data.scanCount.toLocaleString()}`];
                                 }
                             }
                         },
@@ -9016,7 +9067,7 @@ size: 12
                             position: "right",
                             title: {
                                 display: true,
-                                text: "Avg Item Count",
+                                text: "Avg Records Scanned per Query",
                             },
                             beginAtZero: true,
                             grid: {
@@ -9187,9 +9238,9 @@ size: 12
                             pointHoverRadius: 4,
                             yAxisID: 'y',
                         },
-                        // Average item count line (2nd y-axis)
+                        // Average documents fetched per query (2nd y-axis)
                         {
-                            label: "Avg Item Count",
+                            label: "Avg Docs Fetched per Query",
                             data: sortedData.map((item) => item.avgItemCount),
                             borderColor: "rgba(0, 128, 0, 1)", // Dark Green
                             backgroundColor: "rgba(0, 128, 0, 0.1)",
@@ -9209,7 +9260,7 @@ size: 12
                     plugins: {
                         title: {
                             display: true,
-                            text: "Doc Fetch Throughput (records/ms) & Avg Count",
+                            text: "Doc Fetch Throughput (records/ms) & Avg Docs Fetched per Query",
                             font: {
 size: 12
                             }
@@ -9223,15 +9274,24 @@ size: 12
                                 label: function (context) {
                                     const label = context.dataset.label || '';
                                     const value = context.parsed.y;
-                                    if (label.includes('Avg Item Count')) {
-                                        return `${label}: ${Math.round(value)} items`;
+                                    if (label.includes('Avg Docs Fetched')) {
+                                        return `Avg / Query: ${Math.round(value).toLocaleString()} docs`;
                                     }
-                                    return value !== null ? `${label}: ${Math.round(value)}/ms` : label;
+                                    if (label.includes('top 10%')) {
+                                        return `top 10%: ${Math.round(value).toLocaleString()}/ms`;
+                                    }
+                                    if (label.includes('middle')) {
+                                        return `middle: ${Math.round(value).toLocaleString()}/ms`;
+                                    }
+                                    if (label.includes('bottom 10%')) {
+                                        return `bottom 10%: ${Math.round(value).toLocaleString()}/ms`;
+                                    }
+                                    return value !== null ? `${label}: ${Math.round(value).toLocaleString()}/ms` : label;
                                 },
                                 afterBody: function (tooltipItems) {
                                     const dataIndex = tooltipItems[0].dataIndex;
                                     const data = sortedData[dataIndex];
-                                    return [`Doc Fetch samples: ${data.fetchCount}`];
+                                    return [`Docs Fetch Sample: ${data.fetchCount.toLocaleString()}`];
                                 }
                             }
                         },
@@ -9296,7 +9356,7 @@ size: 12
                             position: "right",
                             title: {
                                 display: true,
-                                text: "Avg Item Count",
+                                text: "Avg Docs Fetched per Query",
                             },
                             beginAtZero: true,
                             grid: {
@@ -9800,9 +9860,6 @@ size: 12
                         },
                         tooltip: {
                             callbacks: {
-                                beforeBody: function() {
-                                    return 'ExecTime vs Highest Kernel Time (%):';
-                                },
                                 label: function(context) {
                                     const value = context.parsed.y;
                                     if (value === null || value === undefined) return null;
@@ -10122,9 +10179,6 @@ size: 12
                         },
                         tooltip: {
                             callbacks: {
-                                beforeBody: function() {
-                                    return 'ExecTime Vs ServTime (%) | Avg ServTime';
-                                },
                                 label: function(context) {
                                 const value = context.parsed.y;
                                 if (value === null || value === undefined) return null;
@@ -10602,9 +10656,6 @@ size: 12
                         },
                         tooltip: {
                             callbacks: {
-                                beforeBody: function() {
-                                    return 'ExecTime vs Elapsed Time (%):';
-                                },
                                 label: function(context) {
                                     const value = context.parsed.y;
                                     if (value === null || value === undefined) return null;

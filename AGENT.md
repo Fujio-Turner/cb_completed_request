@@ -92,6 +92,45 @@ html += '<button onclick="copy()">Copy</button>';
 - Timeline charts with dual y-axis and performance indicators
 - Index/Query Flow visualization with performance highlighting
 
+## Timeline Charts - X-Axis Consistency (Issue #148)
+**IMPORTANT**: All charts in the Timeline tab MUST use `getCurrentTimeConfig(requests)` for x-axis time configuration to ensure consistent date formatting and alignment across all charts.
+
+### Correct X-Axis Configuration:
+```javascript
+scales: {
+    x: {
+        type: "time",
+        time: getCurrentTimeConfig(requests),  // ✅ Ensures consistent formatting
+        title: {
+            display: true,
+            text: "Request Time"
+        }
+    },
+    // ... other scale configs
+}
+```
+
+### Universal Time Bucket Alignment:
+For charts that aggregate data into time buckets, use `getTimelineBucketsFromRequests()` to ensure all charts share identical x-axis ranges:
+
+```javascript
+// Get all timeline buckets to ensure charts share same x-axis
+const buckets = getTimelineBucketsFromRequests(requests, grouping);
+
+// Map data to all buckets (use null for missing data points)
+const sortedData = buckets.map(ts => {
+    const key = ts.toISOString();
+    const group = timeGroups[key] || { /* default empty data */ };
+    // ... process data, return null if no data for this bucket
+});
+```
+
+### Why This Matters:
+- Consistent date format (e.g., "Jul 16", "Aug 05" instead of "07/16", "08/05")
+- Aligned x-axis ranges across all timeline charts
+- Synchronized zoom and pan behavior
+- Proper vertical stake line alignment (Issue #148)
+
 ## Documentation and Workflow Tools
 
 ### Process Visualization
