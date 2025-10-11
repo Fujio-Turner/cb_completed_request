@@ -8011,7 +8011,7 @@ size: 12
                     borderWidth: 2,
                     fill: false,
                     spanGaps: false,
-                    tension: 0.1,
+                    tension: 0.3,
                     total: total  // Store total for legend
                 };
             });
@@ -8041,7 +8041,14 @@ size: 12
                         },
                         tooltip: {
                             mode: "index",
-                            intersect: false
+                            intersect: false,
+                            filter: function(tooltipItem) {
+                                // Only show tooltip for visible datasets
+                                const chart = window.collectionQueriesChart;
+                                if (!chart) return true;
+                                const meta = chart.getDatasetMeta(tooltipItem.datasetIndex);
+                                return !meta.hidden;
+                            }
                         },
                         zoom: {
                             limits: { x: { min: "original", max: "original" }, y: { min: "original", max: "original" } },
@@ -8182,9 +8189,9 @@ size: 12
                          onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='transparent';"
                          onclick="toggleCollectionDataset(${originalIndex})">
                         <div style="width: 24px; height: 3px; background-color: ${color}; margin-right: 10px; border-radius: 2px; flex-shrink: 0;"></div>
-                        <div style="flex: 1; font-size: 11px; line-height: 1.4;">
-                            <div id="collection-legend-label-${originalIndex}" style="font-weight: 600; color: #343a40; transition: text-decoration 0.2s; text-decoration: ${textDecoration};">${dataset.label}</div>
-                            <div id="collection-legend-count-${originalIndex}" style="color: #6c757d; font-size: 10px; margin-top: 2px; transition: text-decoration 0.2s; text-decoration: ${textDecoration};">${dataset.total} queries</div>
+                        <div style="flex: 1; line-height: 1.4;">
+                            <div id="collection-legend-label-${originalIndex}" style="font-weight: 600; color: #343a40; font-size: 16px; transition: text-decoration 0.2s; text-decoration: ${textDecoration};">${dataset.label}</div>
+                            <div id="collection-legend-count-${originalIndex}" style="color: #6c757d; font-size: 14px; margin-top: 2px; transition: text-decoration 0.2s; text-decoration: ${textDecoration};">${dataset.total} queries</div>
                         </div>
                     </div>
                 `;
@@ -9464,12 +9471,13 @@ size: 12
                             borderColor: "rgba(0, 128, 0, 1)", // Dark Green
                             backgroundColor: "rgba(0, 128, 0, 0.1)",
                             borderWidth: 2,
-                            borderDash: [10, 5],
+                            borderDash: [20, 3, 3, 3, 3, 3, 3, 3],
                             fill: false,
                             spanGaps: false,
                             tension: 0.3,
                             pointRadius: 3,
                             pointHoverRadius: 5,
+                            pointStyle: 'rect',
                             yAxisID: 'y1', // Second y-axis
                         },
                     ],
@@ -9757,12 +9765,13 @@ size: 12
                             borderColor: "rgba(0, 128, 0, 1)", // Dark Green
                             backgroundColor: "rgba(0, 128, 0, 0.1)",
                             borderWidth: 2,
-                            borderDash: [10, 5],
+                            borderDash: [20, 3, 3, 3, 3, 3, 3, 3],
                             fill: false,
                             spanGaps: false,
                             tension: 0.3,
                             pointRadius: 3,
                             pointHoverRadius: 5,
+                            pointStyle: 'rect',
                             yAxisID: 'y1', // Second y-axis
                         },
                     ],
