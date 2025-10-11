@@ -1723,7 +1723,19 @@ if (window.TEXT_CONSTANTS) {
                 <div class="flex-1-height-400"></div>
             </div>
 
-            <!-- Row 9: Parse Duration & Plan Duration -->
+            <!-- Row 9: Collection Queries with Custom Legend -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="collection-queries" data-position="timeline-15b">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="collection-queries-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container" id="collection-queries-legend-container" style="overflow-y: auto; background-color: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <!-- Custom legend will be populated here -->
+                </div>
+            </div>
+
+            <!-- Row 10: Parse Duration & Plan Duration -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="parse-duration" data-position="timeline-16">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
@@ -2183,6 +2195,7 @@ if (window.TEXT_CONSTANTS) {
                 window.execVsServChart,
                 window.execVsElapsedChart,
                 window.enhancedOperationsChart,
+                window.collectionQueriesChart,
                 window.parseDurationChart,
                 window.planDurationChart,
             ];
@@ -2218,6 +2231,7 @@ if (window.TEXT_CONSTANTS) {
                 window.execVsServChart,
                 window.execVsElapsedChart,
                 window.enhancedOperationsChart,
+                window.collectionQueriesChart,
                 window.parseDurationChart,
                 window.planDurationChart,
             ];
@@ -2277,6 +2291,7 @@ if (window.TEXT_CONSTANTS) {
                 window.execVsServChart,
                 window.execVsElapsedChart,
                 window.enhancedOperationsChart,
+                window.collectionQueriesChart,
                 window.parseDurationChart,
                 window.planDurationChart,
             ];
@@ -2331,6 +2346,7 @@ if (window.TEXT_CONSTANTS) {
                     'exec-vs-serv-chart': window.execVsServChart,
                     'exec-vs-elapsed-chart': window.execVsElapsedChart,
                     'enhanced-operations-chart': window.enhancedOperationsChart,
+                    'collection-queries-chart': window.collectionQueriesChart,
                     'parse-duration-chart': window.parseDurationChart,
                     'plan-duration-chart': window.planDurationChart,
                 };
@@ -6794,6 +6810,9 @@ size: 12
             // Create Memory Usage Chart
             createMemoryChart(requests, grouping);
 
+            // Create Collection Queries Chart
+            createCollectionQueriesChart(requests, grouping);
+
             // Create Parse Duration Chart
             createParseDurationChart(requests, grouping);
 
@@ -6853,6 +6872,7 @@ size: 12
                 window.execVsServChart,
                 window.execVsElapsedChart,
                 window.enhancedOperationsChart,
+                window.collectionQueriesChart,
                 window.parseDurationChart,
                 window.planDurationChart,
             ];
@@ -7875,6 +7895,245 @@ size: 12
                 ctx.restore();
             }
         };
+
+        // Extract bucket.scope.collection from SQL statement
+        function extractCollectionsFromSQL(sql) {
+            if (!sql) return [];
+            
+            const collections = new Set();
+            
+            // Match FROM `bucket`.`scope`.`collection` or FROM `bucket`
+            // Also match JOIN patterns
+            const patterns = [
+                /FROM\s+`([^`]+)`\.`([^`]+)`\.`([^`]+)`/gi,
+                /JOIN\s+`([^`]+)`\.`([^`]+)`\.`([^`]+)`/gi,
+                /FROM\s+`([^`]+)`(?:\s|,|$|WHERE|GROUP|ORDER|LIMIT)/gi,
+                /JOIN\s+`([^`]+)`(?:\s|,|$|WHERE|GROUP|ORDER|LIMIT)/gi
+            ];
+            
+            patterns.forEach(pattern => {
+                let match;
+                while ((match = pattern.exec(sql)) !== null) {
+                    if (match.length === 4) {
+                        // bucket.scope.collection
+                        collections.add(`${match[1]}.${match[2]}.${match[3]}`);
+                    } else if (match.length === 2) {
+                        // bucket only - defaults to bucket._default._default
+                        collections.add(`${match[1]}._default._default`);
+                    }
+                }
+            });
+            
+            return Array.from(collections);
+        }
+
+        // Create Collection Queries Chart
+        function createCollectionQueriesChart(requests, grouping) {
+            const canvas = document.getElementById("collection-queries-chart");
+            if (!canvas) return;
+
+            const ctx = canvas.getContext("2d");
+
+            if (window.collectionQueriesChart) {
+                window.collectionQueriesChart.destroy();
+            }
+
+            if (!requests || requests.length === 0) {
+                console.log(TEXT_CONSTANTS.NO_DATA_AVAILABLE || "No data available");
+                return;
+            }
+
+            // Get all timeline buckets
+            const timeBuckets = getTimelineBucketsFromRequests(requests, grouping);
+            const timeGroups = {};
+
+            // Initialize time buckets
+            timeBuckets.forEach(ts => {
+                timeGroups[ts.toISOString()] = {};
+            });
+
+            // Count queries per collection per time bucket
+            requests.forEach((request) => {
+                const sql = request.statement || request.preparedText || "";
+                const collections = extractCollectionsFromSQL(sql);
+                
+                const requestDate = getChartDate(request.requestTime);
+                const timeKey = roundTimestamp(requestDate, grouping, requests);
+                const key = timeKey.toISOString();
+
+                collections.forEach(collection => {
+                    if (!timeGroups[key][collection]) {
+                        timeGroups[key][collection] = 0;
+                    }
+                    timeGroups[key][collection]++;
+                });
+            });
+
+            // Get all unique collections
+            const allCollections = new Set();
+            Object.values(timeGroups).forEach(group => {
+                Object.keys(group).forEach(collection => allCollections.add(collection));
+            });
+
+            // Generate colors for each collection
+            const colorPalette = [
+                'rgba(75, 192, 192, 1)',
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)',
+                'rgba(199, 199, 199, 1)',
+                'rgba(83, 102, 255, 1)',
+                'rgba(255, 99, 255, 1)',
+                'rgba(99, 255, 132, 1)'
+            ];
+
+            // Create datasets for each collection
+            const datasets = Array.from(allCollections).map((collection, index) => {
+                const data = timeBuckets.map(ts => {
+                    const key = ts.toISOString();
+                    return timeGroups[key][collection] || null;
+                });
+
+                const color = colorPalette[index % colorPalette.length];
+                
+                // Calculate total for this collection
+                const total = data.reduce((sum, val) => sum + (val || 0), 0);
+
+                return {
+                    label: collection,
+                    data: data,
+                    borderColor: color,
+                    backgroundColor: color.replace('1)', '0.1)'),
+                    borderWidth: 2,
+                    fill: false,
+                    spanGaps: false,
+                    tension: 0.1,
+                    total: total  // Store total for legend
+                };
+            });
+
+            window.collectionQueriesChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: timeBuckets,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "Queries per Bucket.Scope.Collection",
+                            font: { size: 12 }
+                        },
+                        subtitle: {
+                            display: true,
+                            text: "(Bucket only = bucket._default._default)",
+                            font: { size: 10 }
+                        },
+                        legend: {
+                            display: false  // Disable Chart.js legend, use custom HTML legend
+                        },
+                        tooltip: {
+                            mode: "index",
+                            intersect: false
+                        },
+                        zoom: {
+                            limits: { x: { min: "original", max: "original" }, y: { min: "original", max: "original" } },
+                            pan: {
+                                enabled: true,
+                                mode: "x",
+                                modifierKey: "shift"
+                            },
+                            zoom: {
+                                wheel: { enabled: true },
+                                pinch: { enabled: true },
+                                mode: "x"
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: "time",
+                            time: getCurrentTimeConfig(requests),
+                            title: {
+                                display: true,
+                                text: "Request Time"
+                            }
+                        },
+                        y: {
+                            type: "linear",
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: "Query Count"
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: "nearest",
+                        axis: "x",
+                        intersect: false
+                    }
+                }
+            });
+
+            // Generate custom HTML legend
+            const legendContainer = document.getElementById("collection-queries-legend-container");
+            if (legendContainer) {
+                let legendHTML = '<div style="font-weight: bold; margin-bottom: 15px; font-size: 14px; padding-bottom: 8px; border-bottom: 2px solid #dee2e6; color: #495057;">Collections Legend</div>';
+                legendHTML += '<div style="display: flex; flex-direction: column; gap: 6px;">';
+                
+                datasets.forEach((dataset, index) => {
+                    const color = dataset.borderColor;
+                    legendHTML += `
+                        <div id="collection-legend-item-${index}" style="display: flex; align-items: center; cursor: pointer; padding: 6px 8px; border-radius: 4px; transition: all 0.2s; border: 1px solid transparent;"
+                             onmouseover="this.style.backgroundColor='#f8f9fa'; this.style.borderColor='#dee2e6';"
+                             onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='transparent';"
+                             onclick="toggleCollectionDataset(${index})">
+                            <div style="width: 24px; height: 3px; background-color: ${color}; margin-right: 10px; border-radius: 2px; flex-shrink: 0;"></div>
+                            <div style="flex: 1; font-size: 11px; line-height: 1.4;">
+                                <div id="collection-legend-label-${index}" style="font-weight: 600; color: #343a40; transition: text-decoration 0.2s;">${dataset.label}</div>
+                                <div id="collection-legend-count-${index}" style="color: #6c757d; font-size: 10px; margin-top: 2px; transition: text-decoration 0.2s;">${dataset.total} queries</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                legendHTML += '</div>';
+                legendContainer.innerHTML = legendHTML;
+            }
+        }
+
+        // Toggle dataset visibility for collection queries chart
+        function toggleCollectionDataset(index) {
+            const chart = window.collectionQueriesChart;
+            if (!chart) return;
+            
+            const meta = chart.getDatasetMeta(index);
+            meta.hidden = !meta.hidden;
+            chart.update();
+            
+            // Update legend item styling
+            const legendItem = document.getElementById(`collection-legend-item-${index}`);
+            const legendLabel = document.getElementById(`collection-legend-label-${index}`);
+            const legendCount = document.getElementById(`collection-legend-count-${index}`);
+            
+            if (meta.hidden) {
+                // Apply strikethrough and reduce opacity
+                if (legendLabel) legendLabel.style.textDecoration = 'line-through';
+                if (legendCount) legendCount.style.textDecoration = 'line-through';
+                if (legendItem) legendItem.style.opacity = '0.5';
+            } else {
+                // Remove strikethrough and restore opacity
+                if (legendLabel) legendLabel.style.textDecoration = 'none';
+                if (legendCount) legendCount.style.textDecoration = 'none';
+                if (legendItem) legendItem.style.opacity = '1';
+            }
+        }
 
         // Create Parse Duration Distribution Chart
         function createParseDurationChart(requests, grouping) {
@@ -11234,6 +11493,19 @@ size: 12
                     delete window.enhancedOperationsChart.options.scales.y1.min;
                 }
                 window.enhancedOperationsChart.update();
+            }
+
+            // Update collection queries chart Y-axis scale
+            if (window.collectionQueriesChart) {
+                window.collectionQueriesChart.options.scales.y.type = scaleType;
+                if (scaleType === "logarithmic") {
+                    window.collectionQueriesChart.options.scales.y.beginAtZero = false;
+                    window.collectionQueriesChart.options.scales.y.min = 1; // Avoid log(0)
+                } else {
+                    window.collectionQueriesChart.options.scales.y.beginAtZero = true;
+                    delete window.collectionQueriesChart.options.scales.y.min;
+                }
+                window.collectionQueriesChart.update();
             }
 
             // Note: parseDurationChart and planDurationChart use fixed y-axis positions
