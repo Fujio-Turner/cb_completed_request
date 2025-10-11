@@ -7987,7 +7987,14 @@ size: 12
                             display: true, 
                             text: "Parse Duration Distribution by Time Buckets (Bubble Size = Query Count)",
                             font: {
-size: 12
+                                size: 12
+                            }
+                        },
+                        subtitle: {
+                            display: true,
+                            text: "(Note: Prepared statements skip parse/plan phases)",
+                            font: {
+                                size: 10
                             }
                         },
                         legend: { display: true, position: "top" },
@@ -8178,9 +8185,16 @@ size: 12
                     plugins: {
                         title: { 
                             display: true, 
-                            text: "Plan Duration Distribution by Time Buckets (Note: Prepared statements skip parse/plan phases)",
+                            text: "Plan Duration Distribution by Time Buckets",
                             font: {
-size: 12
+                                size: 12
+                            }
+                        },
+                        subtitle: {
+                            display: true,
+                            text: "(Note: Prepared statements skip parse/plan phases)",
+                            font: {
+                                size: 10
                             }
                         },
                         legend: { display: true, position: "top" },
