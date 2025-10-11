@@ -8136,6 +8136,7 @@ size: 12
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #dee2e6;">
                         <div style="font-weight: bold; font-size: 14px; color: #495057;">Collections Legend</div>
                         <div style="display: flex; align-items: center; gap: 6px;">
+                            <input type="text" id="collection-search-input" placeholder="Search collections..." style="font-size: 11px; padding: 3px 8px; border: 1px solid #dee2e6; border-radius: 3px; width: 150px;" oninput="filterCollectionLegend(this.value)">
                             <button onclick="showAllCollections()" style="font-size: 11px; padding: 4px 10px; border: 1px solid #28a745; background: #28a745; color: #fff; border-radius: 3px; cursor: pointer; font-weight: 600; transition: background 0.2s;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">Show All</button>
                             <button onclick="hideAllCollections()" style="font-size: 11px; padding: 4px 10px; border: 1px solid #dc3545; background: #dc3545; color: #fff; border-radius: 3px; cursor: pointer; font-weight: 600; transition: background 0.2s;" onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">Hide All</button>
                         </div>
@@ -8188,7 +8189,7 @@ size: 12
                 const textDecoration = isHidden ? 'line-through' : 'none';
                 
                 legendHTML += `
-                    <div id="collection-legend-item-${originalIndex}" style="display: flex; align-items: center; cursor: pointer; padding: 6px 8px; border-radius: 4px; transition: all 0.2s; border: 1px solid transparent; opacity: ${opacity};"
+                    <div id="collection-legend-item-${originalIndex}" class="legend-item" data-collection-name="${dataset.label}" style="display: flex; align-items: center; cursor: pointer; padding: 6px 8px; border-radius: 4px; transition: all 0.2s; border: 1px solid transparent; opacity: ${opacity};"
                          onmouseover="this.style.backgroundColor='#f8f9fa'; this.style.borderColor='#dee2e6';"
                          onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='transparent';"
                          onclick="toggleCollectionDataset(${originalIndex})">
@@ -8278,6 +8279,23 @@ size: 12
             
             // Re-render legend to update styling
             renderCollectionLegend(currentSort);
+        }
+
+        // Filter collection legend by search string
+        function filterCollectionLegend(searchText) {
+            const legendItems = document.querySelectorAll('#collection-queries-legend-container .legend-item');
+            const searchLower = searchText.toLowerCase().trim();
+            
+            legendItems.forEach(item => {
+                const collectionName = item.getAttribute('data-collection-name');
+                if (!collectionName) return;
+                
+                if (searchLower === '' || collectionName.toLowerCase().includes(searchLower)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
         }
 
         // Create Parse Duration Distribution Chart
