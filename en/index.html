@@ -9601,7 +9601,43 @@ size: 12
                         intersect: false,
                     },
                 },
-                plugins: [verticalLinePlugin]
+                plugins: [
+                    verticalLinePlugin,
+                    {
+                        id: 'indexScanThresholdLine',
+                        afterDatasetsDraw(chart) {
+                            const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+                            
+                            if (!y) return;
+                            
+                            // Draw threshold line at 100 records/ms
+                            const yPosition = y.getPixelForValue(100);
+                            
+                            // Only draw if the line is within the chart area
+                            if (yPosition < chart.chartArea.top || yPosition > chart.chartArea.bottom) {
+                                return;
+                            }
+                            
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+                            ctx.lineWidth = 2;
+                            ctx.setLineDash([5, 5]);
+                            ctx.moveTo(left, yPosition);
+                            ctx.lineTo(right, yPosition);
+                            ctx.stroke();
+                            ctx.setLineDash([]);
+                            
+                            // Add label
+                            ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+                            ctx.font = 'bold 11px Arial';
+                            ctx.textAlign = 'right';
+                            ctx.fillText('100/ms threshold', right - 5, yPosition - 5);
+                            
+                            ctx.restore();
+                        }
+                    }
+                ]
             });
 
             // Register chart for crosshair synchronization
@@ -9895,7 +9931,43 @@ size: 12
                         intersect: false,
                     },
                 },
-                plugins: [verticalLinePlugin]
+                plugins: [
+                    verticalLinePlugin,
+                    {
+                        id: 'docFetchThresholdLine',
+                        afterDatasetsDraw(chart) {
+                            const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+                            
+                            if (!y) return;
+                            
+                            // Draw threshold line at 10 records/ms
+                            const yPosition = y.getPixelForValue(10);
+                            
+                            // Only draw if the line is within the chart area
+                            if (yPosition < chart.chartArea.top || yPosition > chart.chartArea.bottom) {
+                                return;
+                            }
+                            
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+                            ctx.lineWidth = 2;
+                            ctx.setLineDash([5, 5]);
+                            ctx.moveTo(left, yPosition);
+                            ctx.lineTo(right, yPosition);
+                            ctx.stroke();
+                            ctx.setLineDash([]);
+                            
+                            // Add label
+                            ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+                            ctx.font = 'bold 11px Arial';
+                            ctx.textAlign = 'right';
+                            ctx.fillText('10/ms threshold', right - 5, yPosition - 5);
+                            
+                            ctx.restore();
+                        }
+                    }
+                ]
             });
 
             // Register chart for crosshair synchronization
