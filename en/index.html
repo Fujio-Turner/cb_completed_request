@@ -5917,10 +5917,27 @@ function renderQueryGroupPhaseTimesChart(group) {
                 }
             });
 
-            // Convert to sorted array
-            const sortedData = Object.values(timeGroups).sort(
-                (a, b) => a.timestamp - b.timestamp
-            );
+            // Get all timeline buckets to ensure charts share same x-axis (Issue #148)
+            const buckets = getTimelineBucketsFromRequests(requests, grouping);
+            
+            // Map data to all buckets (use default values for missing data points)
+            const sortedData = buckets.map(ts => {
+                const key = ts.toISOString();
+                const group = timeGroups[key];
+                if (group) {
+                    return group;
+                } else {
+                    return {
+                        timestamp: ts,
+                        totalIndexIn: 0,
+                        totalIndexOut: 0,
+                        totalFetchIn: 0,
+                        totalFetchOut: 0,
+                        indexQueryCount: 0,
+                        fetchQueryCount: 0,
+                    };
+                }
+            });
 
             // Prepare chart data
             const labels = sortedData.map((item) => item.timestamp);
@@ -6030,7 +6047,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                     plugins: {
                         title: {
                             display: true,
-                            text: "Enhanced Database Operations: Detailed In/Out Analysis",
+                            text: "Detailed Index & Document Operations",
                             font: {
                                 size: 12
                             }
@@ -6044,7 +6061,32 @@ function renderQueryGroupPhaseTimesChart(group) {
                                 label: function(context) {
                                     const label = context.dataset.label || '';
                                     const value = Math.round(context.parsed.y).toLocaleString();
+                                    
+                                    if (label.includes('Avg Index In per Query')) {
+                                        return `Avg Index In: ${value}`;
+                                    }
+                                    if (label.includes('Avg Document Out per Query')) {
+                                        return `Avg Doc Out: ${value}`;
+                                    }
+                                    if (label === 'Index In') {
+                                        return `Index In: ${value}`;
+                                    }
+                                    if (label === 'Index Out') {
+                                        return `Index Out: ${value}`;
+                                    }
+                                    if (label === 'Document Fetch In') {
+                                        return `Doc Fetch In: ${value}`;
+                                    }
+                                    if (label === 'Document Fetch Out') {
+                                        return `Doc Fetch Out: ${value}`;
+                                    }
                                     return `${label}: ${value}`;
+                                },
+                                afterBody: function (tooltipItems) {
+                                    const dataIndex = tooltipItems[0].dataIndex;
+                                    const data = sortedData[dataIndex];
+                                    const totalQueries = Math.max(data.indexQueryCount, data.fetchQueryCount);
+                                    return [`Queries: ${totalQueries.toLocaleString()}`];
                                 }
                             }
                         },
@@ -6147,8 +6189,11 @@ function renderQueryGroupPhaseTimesChart(group) {
                         timestamp: timeKey,
                         filtersEqual: 0,
                         filtersNotEqual: 0,
+                        queryCount: 0,
                     };
                 }
+                
+                timeGroups[key].queryCount++;
 
                 // Find all Filter operators in the plan
                 const operators = getOperators(request.plan);
@@ -6169,10 +6214,24 @@ function renderQueryGroupPhaseTimesChart(group) {
                 });
             });
 
-            // Convert to sorted array
-            const sortedData = Object.values(timeGroups).sort(
-                (a, b) => a.timestamp - b.timestamp
-            );
+            // Get all timeline buckets to ensure charts share same x-axis (Issue #148)
+            const buckets = getTimelineBucketsFromRequests(requests, grouping);
+            
+            // Map data to all buckets (use default values for missing data points)
+            const sortedData = buckets.map(ts => {
+                const key = ts.toISOString();
+                const group = timeGroups[key];
+                if (group) {
+                    return group;
+                } else {
+                    return {
+                        timestamp: ts,
+                        filtersEqual: 0,
+                        filtersNotEqual: 0,
+                        queryCount: 0,
+                    };
+                }
+            });
 
             // Prepare chart data
             const labels = sortedData.map((item) => item.timestamp);
@@ -6232,12 +6291,26 @@ function renderQueryGroupPhaseTimesChart(group) {
                             display: true,
                             text: "Filter Operations: Efficiency Analysis (IN vs OUT)",
                             font: {
-size: 12
+                                size: 12
                             }
                         },
                         legend: {
                             display: true,
                             position: "top",
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = Math.round(context.parsed.y).toLocaleString();
+                                    return `${label}: ${value}`;
+                                },
+                                afterBody: function (tooltipItems) {
+                                    const dataIndex = tooltipItems[0].dataIndex;
+                                    const data = sortedData[dataIndex];
+                                    return [`Queries: ${data.queryCount.toLocaleString()}`];
+                                }
+                            }
                         },
                         zoom: {
                             limits: {
@@ -8280,6 +8353,11 @@ size: 12
                                     const label = context.dataset.label || '';
                                     const value = Math.round(context.parsed.y).toLocaleString();
                                     return `${label}: ${value}`;
+                                },
+                                afterBody: function (tooltipItems) {
+                                    const dataIndex = tooltipItems[0].dataIndex;
+                                    const data = sortedData[dataIndex];
+                                    return [`Queries: ${data.queryCount.toLocaleString()}`];
                                 }
                             }
                         },
@@ -8449,11 +8527,25 @@ size: 12
                             display: true,
                             text: "Result Size Analysis: Total vs Average per Query",
                             font: {
-size: 12
+                                size: 12
                             }
                         },
                         legend: {
                             display: true,
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: ${value.toLocaleString('en-US', {minimumFractionDigits: 3, maximumFractionDigits: 3})}`;
+                                },
+                                afterBody: function (tooltipItems) {
+                                    const dataIndex = tooltipItems[0].dataIndex;
+                                    const data = sortedData[dataIndex];
+                                    return [`Queries: ${data.queryCount.toLocaleString()}`];
+                                }
+                            }
                         },
                         zoom: {
                             limits: {
@@ -8612,10 +8704,35 @@ size: 12
                     labels: labels,
                     datasets: [
                         {
-                            label: "Avg CPU Time (ms)",
-                            data: avgCpuTimeData,
-                            backgroundColor: "rgba(54, 162, 235, 0.8)", // Blue
-                            borderColor: "rgba(54, 162, 235, 1)",
+                            label: "CPU as % of Elapsed (dotted)",
+                            data: cpuElapsedPercentData,
+                            type: "line",
+                            backgroundColor: "rgba(0, 128, 128, 0.8)", // Dark Teal
+                            borderColor: "rgba(0, 128, 128, 1)",
+                            borderWidth: 2,
+                            borderDash: [5, 5], // Dotted line
+                            fill: false,
+                            yAxisID: "y1",
+                            order: 5,
+                            tension: 0.3,
+                        },
+                        {
+                            label: "CPU as % of Kernel",
+                            data: cpuKernPercentData,
+                            type: "line",
+                            backgroundColor: "rgba(139, 0, 0, 0.8)", // Dark Red
+                            borderColor: "rgba(139, 0, 0, 1)",
+                            borderWidth: 2,
+                            fill: false,
+                            yAxisID: "y1",
+                            order: 4,
+                            tension: 0.3,
+                        },
+                        {
+                            label: "Avg Elapsed Time (ms)",
+                            data: avgElapsedTimeData,
+                            backgroundColor: "rgba(75, 192, 192, 0.8)", // Teal
+                            borderColor: "rgba(75, 192, 192, 1)",
                             borderWidth: 1,
                             yAxisID: "y",
                             order: 3,
@@ -8630,38 +8747,13 @@ size: 12
                             order: 2,
                         },
                         {
-                            label: "Avg Elapsed Time (ms)",
-                            data: avgElapsedTimeData,
-                            backgroundColor: "rgba(75, 192, 192, 0.8)", // Teal
-                            borderColor: "rgba(75, 192, 192, 1)",
+                            label: "Avg CPU Time (ms)",
+                            data: avgCpuTimeData,
+                            backgroundColor: "rgba(54, 162, 235, 0.8)", // Blue
+                            borderColor: "rgba(54, 162, 235, 1)",
                             borderWidth: 1,
                             yAxisID: "y",
                             order: 1,
-                        },
-                        {
-                            label: "CPU as % of Kernel",
-                            data: cpuKernPercentData,
-                            type: "line",
-                            backgroundColor: "rgba(139, 0, 0, 0.8)", // Dark Red
-                            borderColor: "rgba(139, 0, 0, 1)",
-                            borderWidth: 2,
-                            fill: false,
-                            yAxisID: "y1",
-                            order: 5,
-                            tension: 0.3,
-                        },
-                        {
-                            label: "CPU as % of Elapsed (dotted)",
-                            data: cpuElapsedPercentData,
-                            type: "line",
-                            backgroundColor: "rgba(0, 128, 128, 0.8)", // Dark Teal
-                            borderColor: "rgba(0, 128, 128, 1)",
-                            borderWidth: 2,
-                            borderDash: [5, 5], // Dotted line
-                            fill: false,
-                            yAxisID: "y1",
-                            order: 4,
-                            tension: 0.3,
                         },
                     ],
                 },
@@ -8673,7 +8765,7 @@ size: 12
                             display: true,
                             text: "CPU/Kernel/Elapsed Time Analysis",
                             font: {
-size: 12
+                            size: 12
                             }
                         },
                         legend: {
@@ -9002,7 +9094,7 @@ size: 12
                                 afterBody: function (tooltipItems) {
                                     const dataIndex = tooltipItems[0].dataIndex;
                                     const data = sortedData[dataIndex];
-                                    return [`Index Scan Sample: ${data.scanCount.toLocaleString()}`];
+                                    return [`Queries: ${data.scanCount.toLocaleString()}`];
                                 }
                             }
                         },
@@ -9291,7 +9383,7 @@ size: 12
                                 afterBody: function (tooltipItems) {
                                     const dataIndex = tooltipItems[0].dataIndex;
                                     const data = sortedData[dataIndex];
-                                    return [`Docs Fetch Sample: ${data.fetchCount.toLocaleString()}`];
+                                    return [`Queries: ${data.fetchCount.toLocaleString()}`];
                                 }
                             }
                         },
@@ -9439,8 +9531,26 @@ size: 12
                 }
             });
 
-            const sortedTimeGroups = Object.values(timeGroups)
-                .sort((a, b) => a.timestamp - b.timestamp);
+            // Get all timeline buckets to ensure charts share same x-axis (Issue #148)
+            const buckets = getTimelineBucketsFromRequests(requests, grouping);
+            
+            // Map data to all buckets (use default values for missing data points)
+            const sortedTimeGroups = buckets.map(ts => {
+                const key = ts.toISOString();
+                const group = timeGroups[key];
+                if (group) {
+                    return group;
+                } else {
+                    const emptyGroup = {
+                        timestamp: ts,
+                        sizeRangeCounts: {},
+                    };
+                    sizeRanges.forEach(range => {
+                        emptyGroup.sizeRangeCounts[range.label] = 0;
+                    });
+                    return emptyGroup;
+                }
+            });
 
             if (sortedTimeGroups.length === 0) {
                 console.log("No document size data for bubble chart");
@@ -9544,14 +9654,7 @@ size: 12
                     scales: {
                         x: {
                             type: "time",
-                            time: {
-                                unit: grouping === "minute" ? "minute" : grouping === "hour" ? "hour" : "day",
-                                displayFormats: {
-                                    minute: "MMM d, HH:mm",
-                                    hour: "MMM d, HH:mm",
-                                    day: "MMM d",
-                                },
-                            },
+                            time: getCurrentTimeConfig(requests),
                             title: {
                                 display: true,
                                 text: "Request Time",
