@@ -15297,6 +15297,9 @@ function generateElapsedTimeChart(requests) {
                                 
                                 // Re-initialize drag and drop for timeline charts
                                 setTimeout(() => setupChartDragAndDrop(), 100);
+                                
+                                // Show timeline-specific feature notifications (Issue #151)
+                                showTimelineFeatureNotifications();
                                 break;
                             case 'index-query-flow':
                                 buildIndexQueryFlow(filteredRequests);
@@ -15312,6 +15315,82 @@ function generateElapsedTimeChart(requests) {
                     } catch (e) {
                         console.error(`${TEXT_CONSTANTS.ERROR_LAZY_LOADING} ${tabId} ${TEXT_CONSTANTS.TAB_IN}`, e);
                     }
+                }
+            });
+        }
+
+        // Feature Notification System (Issue #151)
+        // Manages new feature tips and announcements with version tracking
+        const FEATURE_NOTIFICATIONS = {
+            'stake-line-tip': {
+                message: "💡 NEW: Double Click on any chart to place a vertical Stake line that syncs across all timeline charts. Click 'Remove Stake' button, on the side, to remove it.",
+                type: "info",
+                duration: 15000,
+                version: "3.20.0",
+                trigger: "timeline-tab"  // When to show: "timeline-tab", "startup", "onclick"
+            }
+            // Add more feature notifications here as needed
+            // Example:
+            // 'collection-chart-tip': {
+            //     message: "🎯 New: Collection queries chart now shows query distribution across buckets!",
+            //     type: "success",
+            //     duration: 12000,
+            //     version: "3.20.0",
+            //     trigger: "timeline-tab"
+            // }
+        };
+
+        // Track which notifications have been shown (in-memory only, resets on page load)
+        const shownFeatureNotifications = new Set();
+
+        /**
+         * Show notification for a new feature
+         * @param {string} featureKey - Key from FEATURE_NOTIFICATIONS
+         * @param {boolean} forceShow - Force show even if already seen (for onclick events)
+         */
+        function newFeatureNotification(featureKey, forceShow = false) {
+            const feature = FEATURE_NOTIFICATIONS[featureKey];
+            if (!feature) {
+                console.warn(`Feature notification '${featureKey}' not found`);
+                return;
+            }
+
+            // Check if already shown this page load
+            if (shownFeatureNotifications.has(featureKey) && !forceShow) {
+                return; // Already shown
+            }
+
+            // Mark as shown
+            shownFeatureNotifications.add(featureKey);
+
+            // Show notification
+            setTimeout(() => {
+                showToast(feature.message, feature.type, feature.duration);
+            }, 800);
+        }
+
+        /**
+         * Show all startup feature notifications
+         * Call this after data is parsed and app is ready
+         */
+        function showStartupFeatureNotifications() {
+            Object.keys(FEATURE_NOTIFICATIONS).forEach(featureKey => {
+                const feature = FEATURE_NOTIFICATIONS[featureKey];
+                if (feature.trigger === "startup") {
+                    newFeatureNotification(featureKey);
+                }
+            });
+        }
+
+        /**
+         * Show timeline-specific feature notifications
+         * Call this when Timeline tab is activated
+         */
+        function showTimelineFeatureNotifications() {
+            Object.keys(FEATURE_NOTIFICATIONS).forEach(featureKey => {
+                const feature = FEATURE_NOTIFICATIONS[featureKey];
+                if (feature.trigger === "timeline-tab") {
+                    newFeatureNotification(featureKey);
                 }
             });
         }
@@ -15680,12 +15759,11 @@ function generateElapsedTimeChart(requests) {
 
             const toast = document.createElement("div");
             toast.className = "sliding-toast";
-            toast.textContent = message;
             toast.style.cssText = `
           position: fixed;
           top: -50px;
           left: 20px;
-          padding: 12px 20px;
+          padding: 12px 40px 12px 20px;
           border-radius: 6px;
           background: #e3f2fd;
           border: 1px solid #bbdefb;
@@ -15699,6 +15777,45 @@ function generateElapsedTimeChart(requests) {
           transition: all 0.35s ease-out;
           transform: translateY(0px);
         `;
+
+            // Add message text
+            const messageSpan = document.createElement("span");
+            messageSpan.textContent = message;
+            toast.appendChild(messageSpan);
+
+            // Add close button
+            const closeBtn = document.createElement("button");
+            closeBtn.innerHTML = "×";
+            closeBtn.style.cssText = `
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: transparent;
+          border: none;
+          color: inherit;
+          font-size: 20px;
+          font-weight: bold;
+          cursor: pointer;
+          padding: 0;
+          width: 20px;
+          height: 20px;
+          line-height: 20px;
+          text-align: center;
+          opacity: 0.6;
+          transition: opacity 0.2s;
+        `;
+            closeBtn.onmouseover = () => closeBtn.style.opacity = "1";
+            closeBtn.onmouseout = () => closeBtn.style.opacity = "0.6";
+            closeBtn.onclick = () => {
+                toast.style.opacity = "0";
+                toast.style.transform = "translateY(-10px)";
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 400);
+            };
+            toast.appendChild(closeBtn);
 
             // Color scheme by type
             if (type === "error") {
