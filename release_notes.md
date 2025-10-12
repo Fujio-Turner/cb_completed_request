@@ -1,3 +1,10 @@
+### Version 3.21.0 (October 12, 2025)
+- **New: Timeline first-time tooltip** - Big tooltip guide for creating stakes when clicking Timeline tab, shown only once (closes #151)
+- **Enhancement: Timeline charts design** - Improved visual design and layout for better user experience (closes #152)
+- **Fix: Timeline chart legends** - Now displays all query bucket names correctly (closes #153)
+- **Enhancement: Threshold lines** - Added 100/ms threshold to Index Scan chart and 10/ms to Doc Fetch chart (closes #154)
+- **Enhancement: Timeline Queries Legend search** - Added search bar to filter and find queries in legend (closes #155)
+
 ### Version 3.20.0 (October 11, 2025)
 - **New: Timeline Buckets chart** - Line chart visualization for time-bucketed query analysis (closes #150)
 - **New: Service TimeThroughput split** - Split into Doc and Index metrics with Avg Count Line on 2nd y-axis (closes #147)
