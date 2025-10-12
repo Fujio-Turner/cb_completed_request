@@ -103,11 +103,17 @@ Insert a floating development build banner at the bottom of both HTML files:
 **Banner HTML:**
 ```html
 <!-- DEV BUILD BANNER - Remove before release -->
-<div id="dev-build-banner" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #ff0000; color: #ffffff; padding: 15px 30px; border-radius: 8px; font-size: 20px; font-weight: bold; z-index: 99999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); text-align: center; font-family: Arial, sans-serif; letter-spacing: 1px;">
+<div id="dev-build-banner" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(255, 0, 0, 0.75); color: #ffffff; padding: 8px 20px; border-radius: 6px; font-size: 16px; font-weight: bold; z-index: 99999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); text-align: center; font-family: Arial, sans-serif; letter-spacing: 1px;">
     ⚠️ DEV BUILD: 3.21.0-post ⚠️
 </div>
 <!-- END DEV BUILD BANNER -->
 ```
+
+**Design Notes:**
+- Background is 75% transparent red (`rgba(255, 0, 0, 0.75)`) to allow seeing content underneath
+- Compact padding (8px/20px) for minimal height
+- Smaller 16px font for less screen real estate
+- Still highly visible with bold white text and drop shadow
 
 **Insertion Script:**
 ```bash
@@ -124,7 +130,7 @@ add_dev_banner() {
     
     # Create banner HTML
     local banner="<!-- DEV BUILD BANNER - Remove before release -->
-<div id=\"dev-build-banner\" style=\"position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #ff0000; color: #ffffff; padding: 15px 30px; border-radius: 8px; font-size: 20px; font-weight: bold; z-index: 99999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); text-align: center; font-family: Arial, sans-serif; letter-spacing: 1px;\">
+<div id=\"dev-build-banner\" style=\"position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(255, 0, 0, 0.75); color: #ffffff; padding: 8px 20px; border-radius: 6px; font-size: 16px; font-weight: bold; z-index: 99999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); text-align: center; font-family: Arial, sans-serif; letter-spacing: 1px;\">
     ⚠️ DEV BUILD: ${version} ⚠️
 </div>
 <!-- END DEV BUILD BANNER -->"
@@ -430,10 +436,10 @@ graph TD
 Post-release setup is successful when:
 
 1. ✅ Version shows `-post` suffix everywhere (AGENT.md, HTML files, Dockerfile)
-2. ✅ Red "DEV BUILD" banner visible at bottom of both index.html and en/index.html
+2. ✅ Semi-transparent red "DEV BUILD" banner visible at bottom of both index.html and en/index.html
 3. ✅ You are on a non-main branch
 4. ✅ Changes committed to your feature branch
-5. ✅ Banner is highly visible when opening the app in browser
+5. ✅ Banner is highly visible when opening the app in browser (red, but transparent enough to see through)
 
 ---
 
