@@ -1,12 +1,14 @@
-# Couchbase Slow Query Analysis Tool v3.21.0
+# Couchbase Slow Query Analysis Tool v3.21.0-post
 
 ## Version Management
-- **Current Version**: 3.21.0 (Last Updated: 2025-10-12)
+- **Current Version**: 3.21.0-post (Last Updated: 2025-10-12)
 
 ### Workflow Order for Updates
 When making changes, follow this order:
-1. **Update Version** → Follow settings/VERSION_UPDATE_GUIDE.md
-2. **Update README Release Notes** → Add release notes as needed
+1. **After Release (on non-main branch)** → Follow settings/POST_RELEASE_GUIDE.md to add "-post" suffix and dev banner
+2. **Before Release** → Follow settings/RELEASE_GUIDE.md (includes removing dev banner)
+3. **Update Version** → Follow settings/VERSION_UPDATE_GUIDE.md
+4. **Update README Release Notes** → Add release notes as needed
 
 Note: Only update the English UI (en/index.html) by default. Do not update other language files unless explicitly requested.
 

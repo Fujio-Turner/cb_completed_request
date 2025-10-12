@@ -17,6 +17,33 @@ This guide orchestrates a full release process by combining all other guides and
 
 ## 🔄 Complete Release Process
 
+### **Step 0: Remove Dev Build Banner (If Present)**
+
+If you're releasing from a post-release development branch, first remove the dev banner:
+
+```bash
+# Check if dev banner exists
+if grep -q "DEV BUILD BANNER" index.html; then
+    echo "⚠️  Found dev build banner - removing..."
+    
+    # Remove banner from index.html
+    sed -i '' '/<!-- DEV BUILD BANNER/,/<!-- END DEV BUILD BANNER -->/d' index.html
+    
+    # Remove banner from en/index.html
+    sed -i '' '/<!-- DEV BUILD BANNER/,/<!-- END DEV BUILD BANNER -->/d' en/index.html
+    
+    echo "✅ Dev banner removed"
+else
+    echo "✅ No dev banner found"
+fi
+
+# Verify removal
+grep "DEV BUILD BANNER" index.html en/index.html
+# Should return nothing (or "No such file or directory" which is fine)
+```
+
+**⚠️ CRITICAL:** Release cannot proceed with dev banner present! The RELEASE_WORK_CHECK.py script will fail if the banner is still there.
+
 ### **Step 1: Initialize Release Log**
 ```bash
 # Create timestamped release log from template in logs folder

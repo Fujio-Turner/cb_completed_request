@@ -110,6 +110,28 @@ def check_javascript_syntax():
         
     return []
 
+def check_dev_banner():
+    """Check that dev build banner has been removed"""
+    print("🔍 Checking for development build banner...")
+    issues = []
+    
+    # Check index.html
+    output, _ = run_command('grep -n "DEV BUILD BANNER" index.html', quiet=True)
+    if output:
+        issues.append("❌ CRITICAL: Dev build banner still present in index.html (must be removed for release)")
+    
+    # Check en/index.html
+    output, _ = run_command('grep -n "DEV BUILD BANNER" en/index.html', quiet=True)
+    if output:
+        issues.append("❌ CRITICAL: Dev build banner still present in en/index.html (must be removed for release)")
+    
+    # Check for -post version suffix
+    output, _ = run_command('grep -E "(version|Version).*-post" index.html en/index.html AGENT.md 2>/dev/null', quiet=True)
+    if output:
+        issues.append("❌ CRITICAL: Found '-post' version suffix (must be removed for production release)")
+    
+    return issues
+
 def strip_scripts_and_inline_js(html: str) -> str:
     """Remove <script>...</script> blocks and inline JS handler attribute values from HTML."""
     # Remove script blocks
@@ -253,6 +275,10 @@ def main():
     
     # Check 5: HTML structure
     issues = check_html_structure()
+    all_issues.extend(issues)
+    
+    # Check 6: Dev banner removed
+    issues = check_dev_banner()
     all_issues.extend(issues)
     
     # Print final summary
