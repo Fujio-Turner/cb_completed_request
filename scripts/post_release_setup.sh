@@ -72,7 +72,7 @@ add_banner() {
     awk -v version="$POST_VERSION" '
     /<\/body>/ {
         print "<!-- DEV BUILD BANNER - Remove before release -->"
-        print "<div id=\"dev-build-banner\" style=\"position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #ff0000; color: #ffffff; padding: 15px 30px; border-radius: 8px; font-size: 20px; font-weight: bold; z-index: 99999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); text-align: center; font-family: Arial, sans-serif; letter-spacing: 1px;\">"
+        print "<div id=\"dev-build-banner\" style=\"position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(255, 0, 0, 0.75); color: #ffffff; padding: 8px 20px; border-radius: 6px; font-size: 16px; font-weight: bold; z-index: 99999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); text-align: center; font-family: Arial, sans-serif; letter-spacing: 1px;\">"
         print "    ⚠️ DEV BUILD: " version " ⚠️"
         print "</div>"
         print "<!-- END DEV BUILD BANNER -->"
