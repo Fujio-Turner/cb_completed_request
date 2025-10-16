@@ -5557,102 +5557,24 @@ function renderQueryGroupPhaseTimesChart(group) {
             // Use exactly the unit that was requested
             let actualUnit = requestedGrouping;
 
-            // Calculate appropriate stepSize based on data span to prevent Chart.js errors
-            let stepSize = 1;
-            if (requests && requests.length > 0) {
-                const times = requests
-                    .map((r) => getChartDate(r.requestTime))
-                    .filter((t) => !isNaN(t));
-                if (times.length > 0) {
-                    const minTime = Math.min(...times);
-                    const maxTime = Math.max(...times);
-                    const timeSpanMs = maxTime - minTime;
-
-                    // Calculate stepSize to keep data points reasonable (max ~1000 points)
-                    switch (actualUnit) {
-                        case "second":
-                            stepSize = Math.max(1, Math.ceil(timeSpanMs / (1000 * 1000))); // timeSpanMs / (1000ms * 1000 points)
-                            break;
-                        case "minute":
-                            stepSize = Math.max(
-                                1,
-                                Math.ceil(timeSpanMs / (60 * 1000 * 1000))
-                            ); // timeSpanMs / (60s * 1000ms * 1000 points)
-                            break;
-                        case "hour":
-                            stepSize = Math.max(
-                                1,
-                                Math.ceil(timeSpanMs / (60 * 60 * 1000 * 1000))
-                            ); // timeSpanMs / (3600s * 1000ms * 1000 points)
-                            break;
-                        case "day":
-                            stepSize = Math.max(
-                                1,
-                                Math.ceil(timeSpanMs / (24 * 60 * 60 * 1000 * 1000))
-                            ); // timeSpanMs / (86400s * 1000ms * 1000 points)
-                            break;
-                        case "week":
-                            stepSize = Math.max(
-                                1,
-                                Math.ceil(timeSpanMs / (7 * 24 * 60 * 60 * 1000 * 1000))
-                            ); // timeSpanMs / (604800s * 1000ms * 1000 points)
-                            break;
-                        case "month":
-                            stepSize = Math.max(
-                                1,
-                                Math.ceil(timeSpanMs / (30 * 24 * 60 * 60 * 1000 * 1000))
-                            ); // timeSpanMs / (~2592000s * 1000ms * 1000 points)
-                            break;
-                        case "year":
-                            stepSize = Math.max(
-                                1,
-                                Math.ceil(timeSpanMs / (365 * 24 * 60 * 60 * 1000 * 1000))
-                            ); // timeSpanMs / (~31536000s * 1000ms * 1000 points)
-                            break;
-                    }
-                }
-            }
-
-            // Return appropriate config based on actual unit
-            const configs = {
-                second: {
-                    unit: "second",
-                    stepSize: stepSize,
-                    displayFormats: { second: "HH:mm:ss" },
+            // For x-axis display, let Chart.js automatically determine the best format
+            // Data is already bucketed by the requested grouping via roundTimestamp()
+            // This prevents Chart.js errors when trying to display too many ticks
+            return {
+                displayFormats: {
+                    millisecond: "HH:mm:ss.SSS",
+                    second: "HH:mm:ss",
+                    minute: "MMM dd HH:mm",
+                    hour: "MMM dd HH:mm",
+                    day: "MMM dd",
+                    week: "MMM dd",
+                    month: "MMM yyyy",
+                    quarter: "MMM yyyy",
+                    year: "yyyy"
                 },
-                minute: {
-                    unit: "minute",
-                    stepSize: stepSize,
-                    displayFormats: { minute: "MMM dd HH:mm" },
-                },
-                hour: {
-                    unit: "hour",
-                    stepSize: stepSize,
-                    displayFormats: { hour: "MMM dd HH:mm" },
-                },
-                day: {
-                    unit: "day",
-                    stepSize: stepSize,
-                    displayFormats: { day: "MMM dd" },
-                },
-                week: {
-                    unit: "week",
-                    stepSize: stepSize,
-                    displayFormats: { week: "MMM dd" },
-                },
-                month: {
-                    unit: "month",
-                    stepSize: stepSize,
-                    displayFormats: { month: "MMM yyyy" },
-                },
-                year: {
-                    unit: "year",
-                    stepSize: stepSize,
-                    displayFormats: { year: "yyyy" },
-                },
+                // Don't force a specific unit - let Chart.js adapt based on zoom level
+                // Data decimation will handle rendering performance
             };
-
-            return configs[actualUnit] || configs["minute"];
         }
 
         // Helper function to get current time config with requests data
@@ -6065,6 +5987,12 @@ function renderQueryGroupPhaseTimesChart(group) {
                 options: {
                     responsive: true,
                     plugins: {
+                        decimation: {
+                            enabled: true,
+                            algorithm: 'lttb',
+                            samples: 1000,
+                            threshold: 1000
+                        },
                         title: {
                             display: true,
                             text: "Detailed Index & Document Operations",
@@ -6308,6 +6236,12 @@ function renderQueryGroupPhaseTimesChart(group) {
                 options: {
                     responsive: true,
                     plugins: {
+                        decimation: {
+                            enabled: true,
+                            algorithm: 'lttb',
+                            samples: 1000,
+                            threshold: 1000
+                        },
                         title: {
                             display: true,
                             text: "Filter Operations: Efficiency Analysis (IN vs OUT)",
@@ -6684,6 +6618,12 @@ function renderQueryGroupPhaseTimesChart(group) {
                         },
                     },
                     plugins: {
+                        decimation: {
+                            enabled: true,
+                            algorithm: 'lttb',
+                            samples: 1000,
+                            threshold: 1000
+                        },
                         title: {
                             display: true,
                             text: "Query Performance: KernTime % of ExecutionTime",
@@ -7085,6 +7025,12 @@ size: 12
                 options: {
                     responsive: true,
                     plugins: {
+                        decimation: {
+                            enabled: true,
+                            algorithm: 'lttb',
+                            samples: 1000,
+                            threshold: 1000
+                        },
                         title: {
                             display: true,
                             text: TEXT_CONSTANTS.QUERY_DURATION_CHART_TITLE,
@@ -7699,6 +7645,12 @@ size: 12
                 options: {
                     responsive: true,
                     plugins: {
+                        decimation: {
+                            enabled: true,
+                            algorithm: 'lttb',
+                            samples: 1000,
+                            threshold: 1000
+                        },
                         title: {
                             display: true,
                             text: "Total Query Process Memory Usage",
@@ -11807,27 +11759,6 @@ size: 12
                 }
             }
 
-            // Validate date range for the selected grouping
-            const grouping = getTimeGrouping();
-            const startDateInput = document.getElementById("start-date");
-            const endDateInput = document.getElementById("end-date");
-            const startDate = startDateInput.value
-                ? new Date(startDateInput.value)
-                : null;
-            const endDate = endDateInput.value
-                ? new Date(endDateInput.value)
-                : null;
-
-            const validation = validateDateRangeForGrouping(
-                startDate,
-                endDate,
-                grouping
-            );
-            if (!validation.valid) {
-                alert(validation.message);
-                return;
-            }
-
             try {
                 // Update the optimizer label to show current optimization
                 updateOptimizerLabel(requests);
@@ -11837,9 +11768,6 @@ size: 12
                 generateTimelineChart(requests);
             } catch (e) {
                 console.error("Error regenerating charts:", e);
-                alert(
-                    "Error generating charts. Try reducing the date range or selecting a coarser time grouping."
-                );
             }
         }
 
@@ -16139,28 +16067,6 @@ function generateElapsedTimeChart(requests) {
 
             // Store filtered requests globally for Index/Query Flow tab activation
             window.filteredRequests = filteredRequests;
-
-            // Validate date range for current time grouping
-            const grouping = getTimeGrouping();
-            const validation = validateDateRangeForGrouping(
-                startDate,
-                endDate,
-                grouping
-            );
-            if (!validation.valid) {
-                alert(validation.message);
-                // Still continue with table generation, just skip charts
-                updateFilterInfo(filteredAllRequests.length, filteredRequests.length);
-                generateTable(filteredRequests);
-                generateAnalysisTable(filteredRequests);
-                // buildIndexQueryFlow will be lazy loaded when index-query-flow tab is activated
-                // Only reset flow diagram if no query was previously selected
-                const flowDiagramValidation = document.getElementById("flow-diagram");
-                if (!flowDiagramValidation.hasChildNodes() || flowDiagramValidation.children.length === 0) {
-                    flowDiagramValidation.innerHTML = TEXT_CONSTANTS.SELECT_QUERY_FLOW;
-                }
-                return;
-            }
 
             // Store filtered data globally for lazy loading
             window.currentFilteredRequests = filteredRequests;
