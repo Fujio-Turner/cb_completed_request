@@ -841,9 +841,9 @@ if (window.TEXT_CONSTANTS) {
             </div>
 
             <!-- Query Pattern Analysis Row -->
-            <div class="pattern-analysis-grid">
+            <div class="pattern-analysis-grid with-margin-top-20">
                 <!-- Query Pattern Features Bar Chart -->
-                <div class="chart-container with-margin-top-20 draggable-chart" data-chart-id="query-pattern" data-position="dashboard-3">
+                <div class="chart-container draggable-chart" data-chart-id="query-pattern" data-position="dashboard-3">
                     <h3 class="chart-title fixed-height">Query Pattern Features</h3>
                     <div class="height-350-relative">
                         <canvas id="query-pattern-chart"></canvas>
@@ -851,51 +851,8 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
 
-            <!-- Data Tables Row -->
-            <div class="dashboard-tables-grid">
-                <!-- User Query Count Table -->
-                <div class="table-container with-margin-top-40">
-                    <h3 class="chart-title">Users by Query Count</h3>
-                    <div class="table-scroll">
-                        <table id="user-count-table" class="table-full">
-                            <thead class="sticky-header">
-                                <tr>
-                                    <th class="width-80px">Count</th>
-                                    <th>User</th>
-                                </tr>
-                            </thead>
-                            <tbody id="user-count-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Index Usage Count Table -->
-                <div class="table-container with-margin-top-40">
-                    <h3 class="chart-title">Index Usage Count</h3>
-                    <div class="table-subheader">
-                        Note: #primary count shows total operations, not unique queries
-                    </div>
-                    <div class="table-scroll">
-                        <table id="index-count-table" class="table-full">
-                            <thead class="sticky-header">
-                                <tr>
-                                    <th class="padding-8 text-align-center border-bottom width-80px">
-                                        Count
-                                    </th>
-                                    <th class="padding-8 text-align-center border-bottom">
-                                        Index Name
-                                    </th>
-                                    <th class="padding-8 text-align-center border-bottom">
-                                        Bucket.Scope.Collection
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody id="index-count-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="grid-3-col gap-20 margin-bottom-20">
+            <!-- Pie Charts Row -->
+            <div class="grid-3-col gap-20 with-margin-top-20">
                 <!-- Statement Type Pie Chart -->
                 <div class="chart-card">
                     <h3 class="chart-card-header">Statement Type</h3>
@@ -917,6 +874,51 @@ if (window.TEXT_CONSTANTS) {
                     <h3 class="chart-card-header">Index Scan Consistency</h3>
                     <div class="chart-card-content">
                         <canvas id="scan-consistency-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Tables Row -->
+            <div class="dashboard-tables-grid with-margin-top-20">
+                <!-- User Query Count Table -->
+                <div class="table-container">
+                    <h3 class="chart-title">Users by Query Count</h3>
+                    <div class="table-scroll">
+                        <table id="user-count-table" class="table-full">
+                            <thead class="sticky-header">
+                                <tr>
+                                    <th class="width-80px">Count</th>
+                                    <th>User</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-count-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Index Usage Count Table -->
+                <div class="table-container">
+                    <h3 class="chart-title">Index Usage Count</h3>
+                    <div class="table-subheader">
+                        Note: #primary count shows total operations, not unique queries
+                    </div>
+                    <div class="table-scroll">
+                        <table id="index-count-table" class="table-full">
+                            <thead class="sticky-header">
+                                <tr>
+                                    <th class="padding-8 text-align-center border-bottom width-80px">
+                                        Count
+                                    </th>
+                                    <th class="padding-8 text-align-center border-bottom">
+                                        Index Name
+                                    </th>
+                                    <th class="padding-8 text-align-center border-bottom">
+                                        Bucket.Scope.Collection
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="index-count-body"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
