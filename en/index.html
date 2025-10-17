@@ -2421,6 +2421,10 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
 
         // Memory cleanup for charts
+        // ============================================================
+        // DESTROY ALL CHARTS (Step 6 Enhancement)
+        // Properly cleanup Chart.js instances and event listeners
+        // ============================================================
         function destroyAllCharts() {
             const chartNames = [
                 "operationsChart",
@@ -2444,25 +2448,38 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 "enhancedOperationsChart",
                 "parseDurationChart",
                 "planDurationChart",
+                "collectionQueriesChart",
+                "indexScanThroughputChart",
+                "docFetchThroughputChart",
+                "docSizeBubbleChart",
+                "queryGroupPhaseTimesChart"
             ];
 
+            let destroyedCount = 0;
             chartNames.forEach((chartName) => {
                 if (window[chartName]) {
-                    // Remove event listeners if they exist
-                    if (window[chartName]._crosshairHandlers && window[chartName].canvas) {
-                        const canvas = window[chartName].canvas;
-                        const handlers = window[chartName]._crosshairHandlers;
-                        canvas.removeEventListener('mousemove', handlers.mousemove);
-                        canvas.removeEventListener('mouseleave', handlers.mouseleave);
-                    }
+                    try {
+                        // Remove event listeners if they exist
+                        if (window[chartName]._crosshairHandlers && window[chartName].canvas) {
+                            const canvas = window[chartName].canvas;
+                            const handlers = window[chartName]._crosshairHandlers;
+                            canvas.removeEventListener('mousemove', handlers.mousemove);
+                            canvas.removeEventListener('mouseleave', handlers.mouseleave);
+                        }
 
-                    window[chartName].destroy();
-                    window[chartName] = null;
+                        window[chartName].destroy();
+                        window[chartName] = null;
+                        destroyedCount++;
+                    } catch (e) {
+                        console.warn(`Failed to destroy chart: ${chartName}`, e);
+                    }
                 }
             });
 
             // Clear timeline charts array
             timelineCharts.length = 0;
+            
+            console.log(`🧹 Destroyed ${destroyedCount} chart instances`);
         }
 
         // Global system query filtering
@@ -2817,10 +2834,19 @@ LET bid = CONCAT("", s.bucket_id, ""),
         const timestampRoundingCache = new Map(); // Cache rounded timestamps
 
         // Clear caches to prevent memory leaks and stale data between parses
+        // ============================================================
+        // MEMORY LEAK PREVENTION (Step 6)
+        // Clear all caches and destroy charts on new parse
+        // ============================================================
         function clearCaches() {
+            // Destroy all Chart.js instances to prevent memory leaks
+            destroyAllCharts();
+            
+            // Clear data caches
             parseTimeCache.clear();
             normalizeStatementCache.clear();
             timestampRoundingCache.clear(); // Critical for Timeline tab performance
+            
             // WeakMaps (operatorsCache, planStatsCache, timeUnitCache) clean themselves automatically
             console.log(TEXT_CONSTANTS.ALL_CACHES_CLEARED);
         }
