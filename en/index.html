@@ -161,13 +161,13 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
             background: #545b62;
         }
 
-        /* Category counter badge (Issue #161) */
+        /* Category counter badge (Issue #161, updated #164 for fraction display) */
         .category-counter {
             background: #dc3545;
             color: white;
-            padding: 6px 16px;
-            border-radius: 24px;
-            font-size: 24px;
+            padding: 5px 13px;
+            border-radius: 19px;
+            font-size: 19px;
             font-weight: bold;
             margin-left: 10px;
             display: none;
@@ -192,6 +192,17 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
             max-width: 300px;
             overflow: hidden;
             word-wrap: break-word;
+        }
+
+        /* Insights Badge (Issue #164) - Red badge showing insight fraction */
+        .insights-badge {
+            background: #dc3545;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: bold;
+            margin-left: 8px;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/jquery-ui.min.js" integrity="sha512-MSOo1aY+3pXCOCdGAYoBZ6YGI0aragoQsg1mKKBHXCYPIWxamwOE7Drh+N5CPgGI5SA9IEKJiPjdfqWFWmZtRA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -810,7 +821,7 @@ if (window.TEXT_CONSTANTS) {
             </li>
             <li role="tab">
                 <a href="#insights" aria-controls="insights" tabindex="0">Insights <span
-                        class="beta-badge">Beta</span></a>
+                        id="insights-badge" class="insights-badge" style="display:none;">0</span></a>
             </li>
             <li role="tab">
                 <a href="#timeline" aria-controls="timeline" tabindex="0">Timeline</a>
@@ -1090,7 +1101,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('pagination-index-overfetch')">ORDER BY / LIMIT / OFFSET Index Over-Scan<span class="beta-badge">Beta</span></h4>
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('pagination-index-overfetch')">ORDER BY / LIMIT / OFFSET Index Over-Scan<span class="live-badge">Live</span></h4>
                             <div class="insight-content collapsed" id="pagination-index-overfetch-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="pagination-overfetch-count">0 queries</span> (<span class="highlight-number" id="pagination-overfetch-percent">0%</span>) with `ORDER BY` + `LIMIT ` + `OFFSET ` scanned an Avg of <span id="pagination-overfetch-avg-items">0</span> items from the index(es).
@@ -1213,7 +1224,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('slow-parse-plan-times')">Slow Parse/Plan Times<span class="beta-badge">Beta</span></h4>
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('slow-parse-plan-times')">Slow Parse/Plan Times<span class="live-badge">Live</span></h4>
                             <div class="insight-content collapsed" id="slow-parse-plan-times-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="slow-parse-plan-count">0 queries</span> (<span class="highlight-number" id="slow-parse-plan-percent">0%</span>) have parse or plan times greater than 1ms with avg parse: <span class="highlight-number" id="avg-parse-time">0ms</span> and avg plan: <span class="highlight-number" id="avg-plan-time">0ms</span>, which may indicate high CPU utilization or kernel time wait issues.
@@ -14934,10 +14945,21 @@ function generateElapsedTimeChart(requests) {
             });
 
             // Auto-expand individual insights that have issues (non-zero values)
-            autoExpandInsightsWithIssues();
+            const totalInsights = autoExpandInsightsWithIssues();
+            
+            // Update Insights tab badge (Issue #164)
+            const badge = document.getElementById('insights-badge');
+            if (badge) {
+                if (totalInsights > 0) {
+                    badge.textContent = totalInsights; // Simple count, not fraction
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
         }
 
-        // Auto-expand insights with actual issues found
+        // Auto-expand insights with actual issues found (returns total count - Issue #164)
         function autoExpandInsightsWithIssues() {
             const insights = [
                 { id: 'inefficient-index-scans', checkElement: 'inefficient-index-scans-count' },
@@ -14957,6 +14979,8 @@ function generateElapsedTimeChart(requests) {
                 { id: 'timeout-prone-queries', checkElements: ['approaching-timeout-count', 'actual-timeout-count'] },
                 { id: 'concurrent-query-conflicts', checkElement: 'concurrent-conflicts-count' }
             ];
+
+            let totalInsightsWithIssues = 0;
 
             insights.forEach(insight => {
                 const titleElement = document.querySelector(`[onclick="toggleInsight('${insight.id}')"]`);
@@ -14986,6 +15010,7 @@ function generateElapsedTimeChart(requests) {
 
                 // Set accordion state based on whether issues were found
                 if (hasIssues) {
+                    totalInsightsWithIssues++; // Count insights with issues (Issue #164)
                     // Expand insight with issues
                     if (titleElement) titleElement.classList.remove('collapsed');
                     if (contentElement) contentElement.classList.remove('collapsed');
@@ -15018,6 +15043,9 @@ function generateElapsedTimeChart(requests) {
 
             // Update category counters (Issue #161)
             updateCategoryCounters();
+            
+            // Return total count for badge update (Issue #164)
+            return totalInsightsWithIssues;
         }
 
         // Update category counters with count of active insights (Issue #161)
@@ -15031,6 +15059,7 @@ function generateElapsedTimeChart(requests) {
 
             Object.keys(categories).forEach(categoryId => {
                 const insightIds = categories[categoryId];
+                const totalInCategory = insightIds.length;
                 let activeCount = 0;
 
                 insightIds.forEach(insightId => {
@@ -15046,7 +15075,8 @@ function generateElapsedTimeChart(requests) {
                 const counterElement = document.getElementById(`${categoryId}-counter`);
                 if (counterElement) {
                     if (activeCount > 0) {
-                        counterElement.textContent = activeCount;
+                        // Show fraction format (Issue #164)
+                        counterElement.textContent = `${activeCount}/${totalInCategory}`;
                         counterElement.classList.add('active');
                     } else {
                         counterElement.textContent = '';
