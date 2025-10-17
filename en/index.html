@@ -3049,55 +3049,91 @@ LET bid = CONCAT("", s.bucket_id, ""),
         }
 
         // Function to copy operator stats to clipboard
+        // ============================================================
+        // CLIPBOARD UTILITIES MODULE (Optimization Step 2c)
+        // Consolidated clipboard copy functions with visual feedback
+        // ============================================================
+        const ClipboardUtils = {
+            // Copy text to clipboard with button feedback
+            copyToClipboard(text, button, options = {}) {
+                const {
+                    successText = TEXT_CONSTANTS.COPIED || "Copied!",
+                    originalText = button.textContent,
+                    successColor = "#4CAF50",
+                    duration = 1000,
+                    useToast = false
+                } = options;
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard
+                        .writeText(text)
+                        .then(() => {
+                            this._showButtonFeedback(button, successText, originalText, successColor, duration);
+                            if (useToast) showToast(TEXT_CONSTANTS.COPIED_CLIPBOARD);
+                        })
+                        .catch((err) => {
+                            console.error("Failed to copy:", err);
+                            this._fallbackCopy(text, button);
+                        });
+                } else {
+                    this._fallbackCopy(text, button);
+                }
+            },
+
+            // Show visual feedback on button
+            _showButtonFeedback(button, successText, originalText, successColor, duration) {
+                const originalBg = button.style.backgroundColor;
+                button.textContent = successText;
+                button.style.backgroundColor = successColor;
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.backgroundColor = originalBg;
+                }, duration);
+            },
+
+            // Fallback copy for older browsers
+            _fallbackCopy(text, button) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.top = "-1000px";
+                textArea.style.left = "-1000px";
+                textArea.setAttribute("aria-hidden", "true");
+                textArea.setAttribute("tabindex", "-1");
+
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    const successful = document.execCommand("copy");
+                    if (successful) {
+                        showToast(TEXT_CONSTANTS.COPIED_CLIPBOARD);
+                    } else {
+                        showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
+                    }
+                } catch (err) {
+                    console.error("Fallback: Unable to copy", err);
+                    showToast("Failed to copy to clipboard", "error");
+                }
+
+                document.body.removeChild(textArea);
+            }
+        };
+
+        // Backward compatibility wrappers
         function copyOperatorStats(button) {
             const modalBody = document.getElementById("operator-modal-body");
             const text = modalBody.innerText || modalBody.textContent;
-
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard
-                    .writeText(text)
-                    .then(() => {
-                        button.textContent = TEXT_CONSTANTS.COPIED;
-                        setTimeout(() => {
-                            button.textContent = TEXT_CONSTANTS.COPY_STATS;
-                        }, 2000);
-                    })
-                    .catch((err) => {
-                        console.error("Failed to copy: ", err);
-                        fallbackCopyTextToClipboard(text, button);
-                    });
-            } else {
-                fallbackCopyTextToClipboard(text, button);
-            }
+            ClipboardUtils.copyToClipboard(text, button, {
+                successText: TEXT_CONSTANTS.COPIED,
+                originalText: TEXT_CONSTANTS.COPY_STATS,
+                duration: 2000
+            });
         }
 
-        // Fallback copy function for older browsers
         function fallbackCopyTextToClipboard(text, button) {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.top = "-1000px";
-            textArea.style.left = "-1000px";
-            textArea.setAttribute("aria-hidden", "true");
-            textArea.setAttribute("tabindex", "-1");
-
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-
-            try {
-                const successful = document.execCommand("copy");
-                if (successful) {
-                    showToast(TEXT_CONSTANTS.COPIED_CLIPBOARD);
-                } else {
-                    showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
-                }
-            } catch (err) {
-                console.error("Fallback: Oops, unable to copy", err);
-                showToast("Failed to copy to clipboard", "error");
-            }
-
-            document.body.removeChild(textArea);
+            ClipboardUtils._fallbackCopy(text, button);
         }
 
         // Generate flow diagram
@@ -4681,24 +4717,9 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 alert(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
                 return;
             }
-
-            navigator.clipboard
-                .writeText(statement)
-                .then(() => {
-                    // Show brief feedback
-                    const button = event.target;
-                    const originalText = button.textContent;
-                    button.textContent = "copied!";
-                    button.style.backgroundColor = "#4CAF50";
-                    setTimeout(() => {
-                        button.textContent = originalText;
-                        button.style.backgroundColor = "";
-                    }, 1000);
-                })
-                .catch((err) => {
-                    console.error("Failed to copy statement:", err);
-                    alert(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD);
-                });
+            ClipboardUtils.copyToClipboard(statement, event.target, {
+                successText: "copied!"
+            });
         }
 
         // Toggle analysis statement display between truncated and full view
@@ -4725,24 +4746,9 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 alert(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
                 return;
             }
-
-            navigator.clipboard
-                .writeText(statement)
-                .then(() => {
-                    // Show brief feedback
-                    const button = event.target;
-                    const originalText = button.textContent;
-                    button.textContent = "copied!";
-                    button.style.backgroundColor = "#4CAF50";
-                    setTimeout(() => {
-                        button.textContent = originalText;
-                        button.style.backgroundColor = "";
-                    }, 1000);
-                })
-                .catch((err) => {
-                    console.error("Failed to copy statement:", err);
-                    alert(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD);
-                });
+            ClipboardUtils.copyToClipboard(statement, event.target, {
+                successText: "copied!"
+            });
         }
 
         // Calculate statistics for a group of requests based on SQL++ query logic
@@ -18434,47 +18440,18 @@ function generateElapsedTimeChart(requests) {
         }
 
         function copyQueryText(text, event) {
-            navigator.clipboard.writeText(text).then(() => {
-                // Brief visual feedback
-                const button = event ? event.target : window.event.target;
-                const originalText = button.textContent;
-                button.textContent = "Copied!";
-                button.style.backgroundColor = "#4CAF50";
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.style.backgroundColor = "";
-                }, 1000);
-            });
+            const button = event ? event.target : window.event.target;
+            ClipboardUtils.copyToClipboard(text, button);
         }
 
         function copyIndexName(indexName, event) {
-            navigator.clipboard.writeText(indexName).then(() => {
-                // Brief visual feedback
-                const button = event.target;
-                const originalText = button.textContent;
-                const originalBg = button.style.backgroundColor;
-                button.textContent = "Copied!";
-                button.style.backgroundColor = "#4CAF50";
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.style.backgroundColor = originalBg;
-                }, 1000);
-            });
+            ClipboardUtils.copyToClipboard(indexName, event.target);
         }
 
         // Copy to clipboard function for indexes and keys
         function copyToClipboard(text, event) {
-            navigator.clipboard.writeText(text).then(() => {
-                // Brief visual feedback
-                const button = event.target;
-                const originalText = button.textContent;
-                const originalBg = button.style.backgroundColor;
-                button.textContent = "Copied!";
-                button.style.backgroundColor = "#28a745";
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.style.backgroundColor = originalBg;
-                }, 1000);
+            ClipboardUtils.copyToClipboard(text, event.target, {
+                successColor: "#28a745"
             });
         }
 
