@@ -5173,121 +5173,125 @@ LET bid = CONCAT("", s.bucket_id, ""),
             }
         }
 
-        // Helper function to get time grouping settings
-        function getTimeGrouping() {
-            const dropdown = document.getElementById('time-grouping-select');
-            return dropdown ? dropdown.value : "optimizer";
-        }
+        // ============================================================
+        // CHART TIME UTILITIES MODULE (Optimization Step 2a)
+        // Consolidated time-related chart helper functions
+        // ============================================================
+        const ChartTimeUtils = {
+            // Get time grouping setting from dropdown
+            getTimeGrouping() {
+                const dropdown = document.getElementById('time-grouping-select');
+                return dropdown ? dropdown.value : "optimizer";
+            },
 
-        // Helper function to round timestamp based on grouping and optimal unit
-        function roundTimestamp(timestamp, grouping, requests) {
-            // Create cache key for this specific timestamp+grouping combination
-            const cacheKey = `${timestamp.getTime()}-${grouping}`;
-            if (timestampRoundingCache.has(cacheKey)) {
-                return timestampRoundingCache.get(cacheKey);
-            }
+            // Automatically determine optimal time unit based on data span
+            getOptimalTimeUnit(requests) {
+                if (!requests || requests.length === 0) return "minute";
 
-            const date = new Date(timestamp);
+                const times = requests
+                    .map((r) => getChartDate(r.requestTime))
+                    .filter((t) => !isNaN(t));
+                if (times.length === 0) return "minute";
 
-            // Determine actual unit to use with caching
-            let actualUnit;
-            if (grouping === "optimizer") {
-                // Cache the optimal unit per request array to avoid repeated analysis
-                if (timeUnitCache.has(requests)) {
-                    actualUnit = timeUnitCache.get(requests);
-                } else {
-                    actualUnit = getOptimalTimeUnit(requests);
-                    timeUnitCache.set(requests, actualUnit);
-                }
-            } else {
-                // Use exactly what the user selected
-                actualUnit = grouping;
-            }
+                const minTime = Math.min(...times);
+                const maxTime = Math.max(...times);
+                const timeSpanMs = maxTime - minTime;
+                const timeSpanHours = timeSpanMs / (1000 * 60 * 60);
+                const timeSpanDays = timeSpanHours / 24;
 
-            // Round based on actual unit
-            switch (actualUnit) {
-                case "second":
-                    date.setMilliseconds(0);
-                    break;
-                case "5min":
-                    const minutes5 = Math.floor(date.getMinutes() / 5) * 5;
-                    date.setMinutes(minutes5, 0, 0);
-                    break;
-                case "minute":
-                    date.setSeconds(0, 0);
-                    break;
-                case "hour":
-                    date.setMinutes(0, 0, 0);
-                    break;
-                case "day":
-                    date.setHours(0, 0, 0, 0);
-                    break;
-                case "week":
-                    const dayOfWeek = date.getDay();
-                    date.setDate(date.getDate() - dayOfWeek);
-                    date.setHours(0, 0, 0, 0);
-                    break;
-                case "month":
-                    date.setDate(1);
-                    date.setHours(0, 0, 0, 0);
-                    break;
-                case "year":
-                    date.setMonth(0, 1);
-                    date.setHours(0, 0, 0, 0);
-                    break;
-                default:
-                    date.setSeconds(0, 0);
-            }
-
-            // Cache the result
-            timestampRoundingCache.set(cacheKey, date);
-            return date;
-        }
-
-        // Helper function to get all timeline buckets from requests (Issue #148 - ensures charts share same x-axis)
-        function getTimelineBucketsFromRequests(requests, grouping) {
-            const seen = new Set();
-            for (const r of requests) {
-                const dt = roundTimestamp(getChartDate(r.requestTime), grouping, requests);
-                seen.add(dt.toISOString());
-            }
-            return Array.from(seen)
-                .map(s => new Date(s))
-                .sort((a, b) => a - b);
-        }
-
-        // Helper function to automatically determine optimal time unit based on data span
-        function getOptimalTimeUnit(requests) {
-            if (!requests || requests.length === 0) return "minute";
-
-            const times = requests
-                .map((r) => getChartDate(r.requestTime))
-                .filter((t) => !isNaN(t));
-            if (times.length === 0) return "minute";
-
-            const minTime = Math.min(...times);
-            const maxTime = Math.max(...times);
-            const timeSpanMs = maxTime - minTime;
-            const timeSpanHours = timeSpanMs / (1000 * 60 * 60);
-            const timeSpanDays = timeSpanHours / 24;
-
-            // Choose time unit based on span to keep Chart.js happy
-            if (timeSpanDays > 365) {
-                return "year";
-            } else if (timeSpanDays > 60) {
-                return "month";
-            } else if (timeSpanDays > 14) {
-                return "week";
-            } else if (timeSpanDays > 2) {
-                return "day";
-            } else if (timeSpanHours > 2) {
-                return "hour";
-            } else if (timeSpanHours > 0.1) {
-                return "minute";
-            } else {
+                // Choose time unit based on span to keep Chart.js happy
+                if (timeSpanDays > 365) return "year";
+                if (timeSpanDays > 60) return "month";
+                if (timeSpanDays > 14) return "week";
+                if (timeSpanDays > 2) return "day";
+                if (timeSpanHours > 2) return "hour";
+                if (timeSpanHours > 0.1) return "minute";
                 return "second";
+            },
+
+            // Round timestamp based on grouping and optimal unit
+            roundTimestamp(timestamp, grouping, requests) {
+                // Create cache key for this specific timestamp+grouping combination
+                const cacheKey = `${timestamp.getTime()}-${grouping}`;
+                if (timestampRoundingCache.has(cacheKey)) {
+                    return timestampRoundingCache.get(cacheKey);
+                }
+
+                const date = new Date(timestamp);
+
+                // Determine actual unit to use with caching
+                let actualUnit;
+                if (grouping === "optimizer") {
+                    // Cache the optimal unit per request array to avoid repeated analysis
+                    if (timeUnitCache.has(requests)) {
+                        actualUnit = timeUnitCache.get(requests);
+                    } else {
+                        actualUnit = this.getOptimalTimeUnit(requests);
+                        timeUnitCache.set(requests, actualUnit);
+                    }
+                } else {
+                    // Use exactly what the user selected
+                    actualUnit = grouping;
+                }
+
+                // Round based on actual unit
+                switch (actualUnit) {
+                    case "second":
+                        date.setMilliseconds(0);
+                        break;
+                    case "5min":
+                        const minutes5 = Math.floor(date.getMinutes() / 5) * 5;
+                        date.setMinutes(minutes5, 0, 0);
+                        break;
+                    case "minute":
+                        date.setSeconds(0, 0);
+                        break;
+                    case "hour":
+                        date.setMinutes(0, 0, 0);
+                        break;
+                    case "day":
+                        date.setHours(0, 0, 0, 0);
+                        break;
+                    case "week":
+                        const dayOfWeek = date.getDay();
+                        date.setDate(date.getDate() - dayOfWeek);
+                        date.setHours(0, 0, 0, 0);
+                        break;
+                    case "month":
+                        date.setDate(1);
+                        date.setHours(0, 0, 0, 0);
+                        break;
+                    case "year":
+                        date.setMonth(0, 1);
+                        date.setHours(0, 0, 0, 0);
+                        break;
+                    default:
+                        date.setSeconds(0, 0);
+                }
+
+                // Cache the result
+                timestampRoundingCache.set(cacheKey, date);
+                return date;
+            },
+
+            // Get all timeline buckets from requests (Issue #148 - ensures charts share same x-axis)
+            getTimelineBucketsFromRequests(requests, grouping) {
+                const seen = new Set();
+                for (const r of requests) {
+                    const dt = this.roundTimestamp(getChartDate(r.requestTime), grouping, requests);
+                    seen.add(dt.toISOString());
+                }
+                return Array.from(seen)
+                    .map(s => new Date(s))
+                    .sort((a, b) => a - b);
             }
-        }
+        };
+
+        // Backward compatibility - keep original function names as aliases
+        const getTimeGrouping = () => ChartTimeUtils.getTimeGrouping();
+        const getOptimalTimeUnit = (requests) => ChartTimeUtils.getOptimalTimeUnit(requests);
+        const roundTimestamp = (timestamp, grouping, requests) => ChartTimeUtils.roundTimestamp(timestamp, grouping, requests);
+        const getTimelineBucketsFromRequests = (requests, grouping) => ChartTimeUtils.getTimelineBucketsFromRequests(requests, grouping);
 
 // Render horizontal bar chart for Query Groups using avgPhaseTimeline (with specific row ordering)
 function renderQueryGroupPhaseTimesChart(group) {
