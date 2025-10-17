@@ -15613,7 +15613,8 @@ function generateElapsedTimeChart(requests) {
                                 break;
                             }
                             case 'index-query-flow':
-                                buildIndexQueryFlow(filteredRequests);
+                                // Use current filtered data from global variables (Step 5 fix)
+                                buildIndexQueryFlow(window.filteredRequests || window.currentFilteredRequests || filteredRequests);
                                 break;
                             case 'insights':
                                 // nothing
@@ -15652,16 +15653,19 @@ function generateElapsedTimeChart(requests) {
                                 // No need to regenerate when switching tabs
                                 break;
                             case 'timeline':
+                                // Use current filtered data from global variables (Step 5 fix)
+                                const currentData = window.filteredRequests || window.currentFilteredRequests || filteredRequests;
+                                
                                 // For aggregation-based charts (operations, filter), use full data
                                 // For timeline chart (individual request visualization), use sampling for performance
-                                const sampleSize = Math.min(500, filteredRequests.length);
-                                const sampleStep = Math.max(1, Math.floor(filteredRequests.length / sampleSize));
-                                const timelineSample = filteredRequests.filter((_, i) => i % sampleStep === 0);
+                                const sampleSize = Math.min(500, currentData.length);
+                                const sampleStep = Math.max(1, Math.floor(currentData.length / sampleSize));
+                                const timelineSample = currentData.filter((_, i) => i % sampleStep === 0);
 
-                                console.log(`${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${timelineSample.length} ${TEXT_CONSTANTS.OF_TOTAL} ${filteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
+                                console.log(`${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${timelineSample.length} ${TEXT_CONSTANTS.OF_TOTAL} ${currentData.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
 
                                 // Use full data for aggregation charts that sum/count data
-                                generateFilterChart(filteredRequests);
+                                generateFilterChart(currentData);
                                 // Use sampled data only for individual request timeline
                                 generateTimelineChart(timelineSample);
                                 
@@ -15672,7 +15676,8 @@ function generateElapsedTimeChart(requests) {
                                 showTimelineFeatureNotifications();
                                 break;
                             case 'index-query-flow':
-                                buildIndexQueryFlow(filteredRequests);
+                                // Use current filtered data from global variables (Step 5 fix)
+                                buildIndexQueryFlow(window.filteredRequests || window.currentFilteredRequests || filteredRequests);
                                 break;
                             case 'insights':
                                 // Insights don't need chart generation, they use cached data
@@ -19492,8 +19497,8 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
             // Initialize theme from localStorage
 
-            // Enhance keyboard navigation
-            enhanceKeyboardNavigation();
+            // Defer keyboard navigation enhancement (Step 8 - not critical for initial load)
+            setTimeout(() => enhanceKeyboardNavigation(), 1000);
 
             // Initialize tabs with enhanced accessibility
             $("#tabs").tabs({
@@ -20292,7 +20297,18 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         }
 
         // Wire up Report Maker buttons on DOMContentLoaded
-        document.addEventListener('DOMContentLoaded', () => {
+        // ============================================================
+        // LAZY REPORT MAKER INITIALIZATION (Step 8)
+        // Only initialize Report Maker when tab is first accessed
+        // ============================================================
+        let reportMakerInitialized = false;
+
+        function initializeReportMaker() {
+            if (reportMakerInitialized) return;
+            reportMakerInitialized = true;
+            
+            console.log('📄 Initializing Report Maker (lazy load)');
+            
             const t = (k, d) => (window.TEXT_CONSTANTS && TEXT_CONSTANTS[k]) ? TEXT_CONSTANTS[k] : d;
 
             const btnPreview = document.getElementById('btn-preview-report');
@@ -20324,8 +20340,21 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (lChartsImg) lChartsImg.textContent = t('CONVERT_CHARTS_TO_IMAGES', 'Convert charts to images for printing');
 
             populateReportMakerTimelineCharts();
+        }
 
-            // Setup input toggle tab and styles (Issue #88)
+        // Initialize essential UI on page load (Step 8)
+        document.addEventListener('DOMContentLoaded', () => {
+            // Setup lazy Report Maker initialization
+            $('#tabs').on('tabsactivate', function(event, ui) {
+                const tabId = ui.newPanel.attr('id');
+                if (tabId === 'report-maker') {
+                    initializeReportMaker();
+                }
+            });
+
+            // Initialize input toggle tab (must run immediately, not deferred)
+            const t = (k, d) => (window.TEXT_CONSTANTS && TEXT_CONSTANTS[k]) ? TEXT_CONSTANTS[k] : d;
+            
             try {
                 // Inject minimal CSS for the toggle tab
                 const css = `
@@ -20360,8 +20389,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     tab.className = 'toggle-input-tab';
                     tab.setAttribute('aria-controls', 'input-section');
                     tab.setAttribute('aria-expanded', 'false');
-                    tab.title = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.TOGGLE_INPUT_TOOLTIP) || '← Click to Show/Hide Data & Filters';
-                    tab.textContent = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.SHOW_INPUT_PANEL) || 'Show';
+                    tab.title = t('TOGGLE_INPUT_TOOLTIP', '← Click to Show/Hide Data & Filters');
+                    tab.textContent = t('SHOW_INPUT_PANEL', 'Show');
                     tab.addEventListener('click', toggleInputSection);
                     document.body.appendChild(tab);
                 }
@@ -20372,7 +20401,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     tooltip = document.createElement('div');
                     tooltip.id = 'toggle-input-tooltip';
                     tooltip.className = 'toggle-input-tooltip';
-                    tooltip.textContent = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.TOGGLE_INPUT_TOOLTIP) || '← Click to Show/Hide Data & Filters';
+                    tooltip.textContent = t('TOGGLE_INPUT_TOOLTIP', '← Click to Show/Hide Data & Filters');
                     document.body.appendChild(tooltip);
                 }
                 
@@ -20387,9 +20416,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 });
                 
                 // Ensure initial label matches current state (input is visible at load)
-                const hideLabel = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.HIDE_INPUT_PANEL) || 'Hide';
+                const hideLabel = t('HIDE_INPUT_PANEL', 'Hide');
                 tab.textContent = '↑';
-                tab.title = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.TOGGLE_INPUT_TOOLTIP) || '← Click to Show/Hide Data & Filters';
+                tab.title = t('TOGGLE_INPUT_TOOLTIP', '← Click to Show/Hide Data & Filters');
                 tab.setAttribute('aria-expanded', 'true');
                 tab.classList.remove('hidden');
                 tab.classList.add('showing');
@@ -20397,12 +20426,12 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 // Create fixed help badge (always visible top-right)
                 let help = document.getElementById('help-fixed-badge');
                 if (!help) {
-                help = document.createElement('div');
-                help.id = 'help-fixed-badge';
-                help.className = 'help-fixed-badge';
-                const helpText = t('HELP_DEBUG_TIPS', 'NEED HELP? Debugging + Tool Tips — Click Here');
-                help.innerHTML = `<a href="https://cb.fuj.io/analysis_hub#introduction" target="_blank" rel="noopener">${helpText}</a>`;
-                document.body.appendChild(help);
+                    help = document.createElement('div');
+                    help.id = 'help-fixed-badge';
+                    help.className = 'help-fixed-badge';
+                    const helpText = t('HELP_DEBUG_TIPS', 'NEED HELP? Debugging + Tool Tips — Click Here');
+                    help.innerHTML = `<a href="https://cb.fuj.io/analysis_hub#introduction" target="_blank" rel="noopener">${helpText}</a>`;
+                    document.body.appendChild(help);
                 }
 
                 // Create fixed queries count badge (center top)
