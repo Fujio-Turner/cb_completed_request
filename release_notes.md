@@ -1,3 +1,11 @@
+### Version 3.22.0 (October 16, 2025)
+- **New: SQL HTML Analysis** - Added HTML visualization for SQL query analysis (closes #163)
+- **Enhancement: Array Query Finding** - Improved detection and analysis of array queries (closes #162)
+- **Enhancement: Dashboard UI** - Reorganized dashboard layout with improved fonts and styling (closes #161)
+- **Fix: Lazy Load Performance** - Fixed lazy loading issues for better performance (closes #160)
+- **Fix: Time Picker Alerts** - Removed unnecessary alerts during time selection (closes #158)
+- **Enhancement: SQL Query Display** - Updated SQL query display with better formatting and hidden line handling (closes #157)
+
 ### Version 3.21.0 (October 12, 2025)
 - **New: Timeline first-time tooltip** - Big tooltip guide for creating stakes when clicking Timeline tab, shown only once (closes #151)
 - **Enhancement: Timeline charts design** - Improved visual design and layout for better user experience (closes #152)
