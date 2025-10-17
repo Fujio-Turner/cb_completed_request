@@ -1913,6 +1913,7 @@ if (window.TEXT_CONSTANTS) {
                             <option value="Name">Name</option>
                             <option value="Bucket">Bucket</option>
                             <option value="LastScanned">Last Scanned</option>
+                            <option value="OldestScanned">Oldest Scanned</option>
                         </select>
                     </div>
                 </div>
@@ -19122,6 +19123,22 @@ const LAST_UPDATED = "2025-10-12";
                 sorted.forEach((index) => {
                     html += createIndexHTML(index);
                 });
+            } else if (sortBy === "OldestScanned") {
+                // Sort by oldest scanned time (oldest first, exclude never scanned)
+                const sorted = [...filteredIndexData]
+                    .filter((index) => {
+                        const lastScan = index.metadata?.last_scan_time || 0;
+                        return lastScan !== 0; // Exclude never scanned indexes
+                    })
+                    .sort((a, b) => {
+                        const aLastScan = a.metadata?.last_scan_time;
+                        const bLastScan = b.metadata?.last_scan_time;
+                        // Sort by timestamp (oldest first)
+                        return new Date(aLastScan) - new Date(bLastScan);
+                    });
+                sorted.forEach((index) => {
+                    html += createIndexHTML(index);
+                });
             } else {
                 // Sort by name (default)
                 const sorted = [...filteredIndexData].sort((a, b) =>
@@ -19192,21 +19209,18 @@ const LAST_UPDATED = "2025-10-12";
                     </div>
                     <div class="index-statement">
                         ${index.indexString}
-                        <button class="btn-standard copy-btn" onclick="copyIndexDefinition('${index.indexString.replace(
-                    /'/g,
-                    "\\'"
-                )}', event)">Copy</button>
+                        <button class="btn-standard copy-btn" onclick="copyIndexDefinition(this, event)" data-index-string="${index.indexString.replace(/"/g, '&quot;')}">Copy</button>
                     </div>
                 </div>
             `;
         }
 
         // Copy index definition to clipboard
-        function copyIndexDefinition(indexString, event) {
+        function copyIndexDefinition(button, event) {
+            const indexString = button.getAttribute('data-index-string');
             navigator.clipboard
                 .writeText(indexString)
                 .then(() => {
-                    const button = event.target;
                     const originalText = button.textContent;
                     button.textContent = "Copied!";
                     button.style.backgroundColor = "#28a745";
