@@ -175,6 +175,24 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         .category-counter.active {
             display: inline-block;
         }
+
+        /* DOM Optimization (Step 7) - Table cell styles moved from inline */
+        .td-request-time {
+            width: 120px;
+            max-width: 120px;
+            overflow: hidden;
+            word-wrap: break-word;
+            font-size: 11px;
+        }
+        .td-request-id {
+            white-space: nowrap;
+        }
+        .td-statement {
+            width: 300px;
+            max-width: 300px;
+            overflow: hidden;
+            word-wrap: break-word;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/jquery-ui.min.js" integrity="sha512-MSOo1aY+3pXCOCdGAYoBZ6YGI0aragoQsg1mKKBHXCYPIWxamwOE7Drh+N5CPgGI5SA9IEKJiPjdfqWFWmZtRA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
@@ -4594,27 +4612,20 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     }
 
                     if (col === "request\nTime") {
-                        // Set fixed width for requestTime column to handle long ISO-8601 timestamps
-                        td.style.width = "120px";
-                        td.style.maxWidth = "120px";
-                        td.style.overflow = "hidden";
-                        td.style.wordWrap = "break-word";
-                        td.style.fontSize = "11px";
+                        // Use CSS class instead of inline styles (Step 7 optimization)
+                        td.className = "td-request-time";
                         td.textContent = value || "";
                     } else if (col === "requestId") {
                         const reqId = (rowData.request && rowData.request.requestId) || rowData.requestId || value || "";
                         const safeId = String(reqId);
-                        td.style.whiteSpace = 'nowrap';
+                        td.className = "td-request-id";
                         td.innerHTML = `
                           <code style="font-size:11px;">${escapeHtml(safeId)}</code>
                           <button data-id="${escapeHtml(safeId)}" onclick="copyRequestId(this.dataset.id, event)" class="btn-standard" style="margin-left:6px;">${TEXT_CONSTANTS.COPY}</button>
                         `;
                     } else if (col === "statement") {
-                        // Set fixed width for statement column
-                        td.style.width = "300px";
-                        td.style.maxWidth = "300px";
-                        td.style.overflow = "hidden";
-                        td.style.wordWrap = "break-word";
+                        // Use CSS class instead of inline styles (Step 7 optimization)
+                        td.className = "td-statement";
                         // Handle statement column with truncation and controls
                         const statement = value || "";
                         const statementId = `statement-${globalIndex}`;
