@@ -2684,7 +2684,12 @@ LET bid = CONCAT("", s.bucket_id, ""),
             totalMs += minutes * 60 * 1000; // Minutes to milliseconds
             totalMs += seconds * 1000; // Seconds to milliseconds
 
-            // Cache the result before returning
+            // Cache the result with size limit (Step 9)
+            if (parseTimeCache.size >= CACHE_LIMITS.parseTime) {
+                // Clear oldest entries (first 20%) when limit reached
+                const keysToDelete = Array.from(parseTimeCache.keys()).slice(0, Math.floor(CACHE_LIMITS.parseTime * 0.2));
+                keysToDelete.forEach(key => parseTimeCache.delete(key));
+            }
             parseTimeCache.set(timeStr, totalMs);
             return totalMs;
         }
@@ -2749,18 +2754,11 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
 
 
-        // Cache for normalized statements with size limit
-        const normalizeCache = new Map();
-        const MAX_CACHE_SIZE = 5000;
-
         // Normalize statement by replacing literals and numbers with "?" (with improved caching)
         function normalizeStatement(statement) {
             if (!statement) return "";
 
-            // Check both caches (legacy and new)
-            if (normalizeCache.has(statement)) {
-                return normalizeCache.get(statement);
-            }
+            // Check cache (Step 9 - unified cache)
             if (normalizeStatementCache.has(statement)) {
                 return normalizeStatementCache.get(statement);
             }
@@ -2770,15 +2768,13 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 .replace(/'(?:[^'\\]|\\.)*'/g, "?")
                 .replace(/\b\d+\.?\d*\b/g, "?");
 
-            // Cache the result with size management
-            if (normalizeCache.size >= MAX_CACHE_SIZE) {
-                // Remove oldest entries (LRU-like behavior)
-                const firstKey = normalizeCache.keys().next().value;
-                normalizeCache.delete(firstKey);
+            // Cache with size limit (Step 9)
+            if (normalizeStatementCache.size >= CACHE_LIMITS.normalizeStatement) {
+                // Clear oldest 20% when limit reached
+                const keysToDelete = Array.from(normalizeStatementCache.keys())
+                    .slice(0, Math.floor(CACHE_LIMITS.normalizeStatement * 0.2));
+                keysToDelete.forEach(key => normalizeStatementCache.delete(key));
             }
-            normalizeCache.set(statement, normalized);
-
-            // Also cache in the new cache
             normalizeStatementCache.set(statement, normalized);
 
             return normalized;
@@ -2844,12 +2840,22 @@ LET bid = CONCAT("", s.bucket_id, ""),
         }
 
         // Caches for performance optimization to avoid reprocessing
-        const operatorsCache = new WeakMap();
+        // ============================================================
+        // CACHING STRATEGY (Step 9)
+        // All caches with size limits to prevent unbounded growth
+        // ============================================================
+        const CACHE_LIMITS = {
+            parseTime: 10000,           // Time string parsing results
+            normalizeStatement: 5000,   // Normalized SQL statements
+            timestampRounding: 5000,    // Rounded timestamp calculations
+        };
+
+        const operatorsCache = new WeakMap();       // Auto-cleaned by GC
         const parseTimeCache = new Map();
         const normalizeStatementCache = new Map();
-        const planStatsCache = new WeakMap();
-        const timeUnitCache = new WeakMap(); // Cache optimal time units per request array
-        const timestampRoundingCache = new Map(); // Cache rounded timestamps
+        const planStatsCache = new WeakMap();       // Auto-cleaned by GC
+        const timeUnitCache = new WeakMap();        // Auto-cleaned by GC
+        const timestampRoundingCache = new Map();
 
         // Clear caches to prevent memory leaks and stale data between parses
         // ============================================================
@@ -2869,9 +2875,13 @@ LET bid = CONCAT("", s.bucket_id, ""),
             console.log(TEXT_CONSTANTS.ALL_CACHES_CLEARED);
         }
 
-        // Performance benchmarking helper
+        // Performance benchmarking helper (Step 9 enhancement)
         function logCacheStats() {
-            console.log(`${TEXT_CONSTANTS.CACHE_STATS} ${parseTimeCache.size}, normalizeStatement: ${normalizeStatementCache.size}, timestampRounding: ${timestampRoundingCache.size}`);
+            const parsePercent = ((parseTimeCache.size / CACHE_LIMITS.parseTime) * 100).toFixed(1);
+            const normalizePercent = ((normalizeStatementCache.size / CACHE_LIMITS.normalizeStatement) * 100).toFixed(1);
+            const timestampPercent = ((timestampRoundingCache.size / CACHE_LIMITS.timestampRounding) * 100).toFixed(1);
+            
+            console.log(`Cache stats - parseTime: ${parseTimeCache.size}/${CACHE_LIMITS.parseTime} (${parsePercent}%), normalizeStatement: ${normalizeStatementCache.size}/${CACHE_LIMITS.normalizeStatement} (${normalizePercent}%), timestampRounding: ${timestampRoundingCache.size}/${CACHE_LIMITS.timestampRounding} (${timestampPercent}%)`);
         }
 
         // Recursively extract operators from the plan
@@ -5357,7 +5367,13 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         date.setSeconds(0, 0);
                 }
 
-                // Cache the result
+                // Cache the result with size limit (Step 9)
+                if (timestampRoundingCache.size >= CACHE_LIMITS.timestampRounding) {
+                    // Clear oldest 20% when limit reached
+                    const keysToDelete = Array.from(timestampRoundingCache.keys())
+                        .slice(0, Math.floor(CACHE_LIMITS.timestampRounding * 0.2));
+                    keysToDelete.forEach(key => timestampRoundingCache.delete(key));
+                }
                 timestampRoundingCache.set(cacheKey, date);
                 return date;
             },
@@ -16345,10 +16361,8 @@ function generateElapsedTimeChart(requests) {
             document.getElementById("json-input").placeholder =
                 "Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests;";
 
-            // Clear normalize cache if it gets too large to prevent memory issues
-            if (normalizeCache.size > 5000) {
-                normalizeCache.clear();
-            }
+            // Cache management now handled automatically by size limits (Step 9)
+            // No manual clearing needed - cache evicts oldest 20% when limit reached
 
             // Filtering now happens during parsing, so we can use requests directly
             const filteredAllRequests = allRequests;
