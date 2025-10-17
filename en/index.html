@@ -2655,51 +2655,62 @@ LET bid = CONCAT("", s.bucket_id, ""),
         }
 
         // Format time in standardized mm:ss.sss format
-        function formatTime(milliseconds) {
-            if (!milliseconds || isNaN(milliseconds) || milliseconds <= 0) {
-                return "00:00.000";
-            }
+        // ============================================================
+        // FORMATTERS MODULE (Optimization Step 2b)
+        // Consolidated formatting helper functions
+        // ============================================================
+        const Formatters = {
+            // Format milliseconds to MM:SS.mmm
+            formatTime(milliseconds) {
+                if (!milliseconds || isNaN(milliseconds) || milliseconds <= 0) {
+                    return "00:00.000";
+                }
 
-            // Handle very small values (less than 1ms) by rounding to nearest millisecond
-            // but ensuring they show as at least 0.001 if they're greater than 0
-            if (milliseconds < 1) {
-                milliseconds = Math.max(0.001, Math.round(milliseconds * 1000) / 1000);
-            }
+                // Handle very small values (less than 1ms) by rounding to nearest millisecond
+                // but ensuring they show as at least 0.001 if they're greater than 0
+                if (milliseconds < 1) {
+                    milliseconds = Math.max(0.001, Math.round(milliseconds * 1000) / 1000);
+                }
 
-            const totalSeconds = Math.floor(milliseconds / 1000);
-            const remainingMs = milliseconds % 1000;
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
+                const totalSeconds = Math.floor(milliseconds / 1000);
+                const remainingMs = milliseconds % 1000;
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
 
-            // Format with leading zeros
-            const formattedMinutes = minutes.toString().padStart(2, "0");
-            const formattedSeconds = seconds.toString().padStart(2, "0");
+                // Format with leading zeros
+                const formattedMinutes = minutes.toString().padStart(2, "0");
+                const formattedSeconds = seconds.toString().padStart(2, "0");
 
-            // Format milliseconds as 3-digit integer (rounded)
-            formattedMs = Math.round(remainingMs).toString().padStart(3, "0");
+                // Format milliseconds as 3-digit integer (rounded)
+                const formattedMs = Math.round(remainingMs).toString().padStart(3, "0");
 
-            return `${formattedMinutes}:${formattedSeconds}.${formattedMs}`;
-        }
+                return `${formattedMinutes}:${formattedSeconds}.${formattedMs}`;
+            },
 
-        // Format original time value for tooltip display
-        function formatTimeTooltip(timeStr, milliseconds) {
-            if (!timeStr || timeStr === "N/A") {
+            // Format original time value for tooltip display
+            formatTimeTooltip(timeStr, milliseconds) {
+                if (!timeStr || timeStr === "N/A") {
+                    return "";
+                }
+
+                // If it's a very small value, show the original string for precision
+                if (milliseconds < 1) {
+                    return `Original: ${timeStr}`;
+                }
+
+                // For larger values, show both formatted time and original
+                const formatted = this.formatTime(milliseconds);
+                if (timeStr !== formatted) {
+                    return `Original: ${timeStr}`;
+                }
+
                 return "";
             }
+        };
 
-            // If it's a very small value, show the original string for precision
-            if (milliseconds < 1) {
-                return `Original: ${timeStr}`;
-            }
-
-            // For larger values, show both formatted time and original
-            const formatted = formatTime(milliseconds);
-            if (timeStr !== formatted) {
-                return `Original: ${timeStr}`;
-            }
-
-            return "";
-        }
+        // Backward compatibility - keep original function names as aliases
+        const formatTime = (milliseconds) => Formatters.formatTime(milliseconds);
+        const formatTimeTooltip = (timeStr, milliseconds) => Formatters.formatTimeTooltip(timeStr, milliseconds);
 
 
 
@@ -3490,53 +3501,58 @@ LET bid = CONCAT("", s.bucket_id, ""),
         }
 
         // Format time values for better readability
-        function formatTimeValue(timeStr) {
-            if (!timeStr || timeStr === "N/A")
-                return '<span style="color: #999;">N/A</span>';
+        // Format time value with color coding for HTML display
+        const formatTimeValue = (function() {
+            return function(timeStr) {
+                if (!timeStr || timeStr === "N/A")
+                    return '<span style="color: #999;">N/A</span>';
 
-            // Parse time and check if it's a high value (potential bottleneck)
-            const timeMs = parseTime(timeStr);
-            const isBottleneck = timeMs > 60000; // > 1 minute
-            const isWarning = timeMs > 10000; // > 10 seconds
+                // Parse time and check if it's a high value (potential bottleneck)
+                const timeMs = parseTime(timeStr);
+                const isBottleneck = timeMs > 60000; // > 1 minute
+                const isWarning = timeMs > 10000; // > 10 seconds
 
-            let color = "#333";
-            let bgColor = "transparent";
-            let fontWeight = "normal";
+                let color = "#333";
+                let bgColor = "transparent";
+                let fontWeight = "normal";
 
-            if (isBottleneck) {
-                color = "#dc3545";
-                bgColor = "#fff5f5";
-                fontWeight = "bold";
-            } else if (isWarning) {
-                color = "#fd7e14";
-                bgColor = "#fff4e6";
-                fontWeight = "bold";
-            }
+                if (isBottleneck) {
+                    color = "#dc3545";
+                    bgColor = "#fff5f5";
+                    fontWeight = "bold";
+                } else if (isWarning) {
+                    color = "#fd7e14";
+                    bgColor = "#fff4e6";
+                    fontWeight = "bold";
+                }
 
-            return `<span style="color: ${color}; background: ${bgColor}; font-weight: ${fontWeight}; padding: 1px 4px; border-radius: 3px;">${timeStr}</span>`;
-        }
+                return `<span style="color: ${color}; background: ${bgColor}; font-weight: ${fontWeight}; padding: 1px 4px; border-radius: 3px;">${timeStr}</span>`;
+            };
+        })();
 
-        // Format item count with color coding
-        function formatItemCount(count) {
-            if (count === undefined || count === null)
-                return '<span style="color: #999;">N/A</span>';
+        // Format item count with color coding for HTML display
+        const formatItemCount = (function() {
+            return function(count) {
+                if (count === undefined || count === null)
+                    return '<span style="color: #999;">N/A</span>';
 
-            const numCount = typeof count === "number" ? count : parseInt(count);
-            let color = "#333";
-            let icon = "";
+                const numCount = typeof count === "number" ? count : parseInt(count);
+                let color = "#333";
+                let icon = "";
 
-            if (numCount > 1000000) {
-                color = "#dc3545";
-                icon = "⚠️ ";
-            } else if (numCount > 100000) {
-                color = "#fd7e14";
-                icon = "⚡ ";
-            } else if (numCount > 10000) {
-                color = "#ffc107";
-            }
+                if (numCount > 1000000) {
+                    color = "#dc3545";
+                    icon = "⚠️ ";
+                } else if (numCount > 100000) {
+                    color = "#fd7e14";
+                    icon = "⚡ ";
+                } else if (numCount > 10000) {
+                    color = "#ffc107";
+                }
 
-            return `<span style="color: ${color};">${icon}${numCount.toLocaleString()}</span>`;
-        }
+                return `<span style="color: ${color};">${icon}${numCount.toLocaleString()}</span>`;
+            };
+        })();
 
         // Build plan tree for modal with enhanced formatting
         function buildPlanTree(operator) {
