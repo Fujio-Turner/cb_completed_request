@@ -1,3 +1,7 @@
+### Version 3.23.0 (October 17, 2025)
+- **Enhancement: Analysis Hub Navigation** - Fixed CSS modal jump issue, improved accordion display (closes #164)
+- **Enhancement: Performance Optimization** - Improved analysis_hub.html performance and tab loading (closes #135)
+
 ### Version 3.22.0 (October 16, 2025)
 - **New: SQL HTML Analysis** - Added HTML visualization for SQL query analysis (closes #163)
 - **Enhancement: Array Query Finding** - Improved detection and analysis of array queries (closes #162)

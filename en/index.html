@@ -2,7 +2,7 @@
 <html lang="en">
 <!--
     Couchbase Query Analyzer
-    Version: 3.22.0-post
+    Version: 3.23.0
     Last Updated: 2025-10-16
     
     🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
@@ -18,9 +18,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.22.0-post" />
+    <meta name="version" content="3.23.0" />
     <meta name="last-updated" content="2025-10-16" />
-    <title>Query Analyzer v3.22.0-post</title>
+    <title>Query Analyzer v3.23.0</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/themes/base/jquery-ui.min.css" integrity="sha512-TFee0335YRJoyiqz8hA8KV3P0tXa5CpRBSoM0Wnkn7JoJx1kaq1yXL/rb8YFpWXkMOjRcv5txv+C6UluttluCQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -573,7 +573,7 @@ if (window.TEXT_CONSTANTS) {
 <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v3.22.0-post
+        v3.23.0
     </div>
 
     <!-- Bug report link (bottom-right) -->
@@ -15747,7 +15747,7 @@ function generateElapsedTimeChart(requests) {
                 message: "💡 NEW: Double Click on any chart to place a vertical Stake line that syncs across all timeline charts. Click 'Remove Stake' button, on the side, to remove it.",
                 type: "info",
                 duration: 15000,
-                version: "3.22.0",
+                version: "3.23.0",
                 trigger: "timeline-tab"  // When to show: "timeline-tab", "startup", "onclick"
             }
             // Add more feature notifications here as needed
@@ -15756,7 +15756,7 @@ function generateElapsedTimeChart(requests) {
             //     message: "🎯 New: Collection queries chart now shows query distribution across buckets!",
             //     type: "success",
             //     duration: 12000,
-            //     version: "3.22.0",
+            //     version: "3.23.0",
             //     trigger: "timeline-tab"
             // }
         };
@@ -18650,7 +18650,7 @@ function generateElapsedTimeChart(requests) {
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = "3.22.0-post";
+        const APP_VERSION = "3.23.0";
 const LAST_UPDATED = "2025-10-16";
 
         // Timezone management - initialize early to avoid undefined errors
@@ -20590,11 +20590,6 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             });
         })();
     </script>
-<!-- DEV BUILD BANNER - Remove before release -->
-<div id="dev-build-banner" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(255, 0, 0, 0.75); color: #ffffff; padding: 8px 20px; border-radius: 6px; font-size: 16px; font-weight: bold; z-index: 99999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); text-align: center; font-family: Arial, sans-serif; letter-spacing: 1px;">
-    ⚠️ DEV BUILD: 3.22.0-post ⚠️
-</div>
-<!-- END DEV BUILD BANNER -->
 </body>
 
 </html>
