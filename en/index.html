@@ -14806,12 +14806,14 @@ function generateElapsedTimeChart(requests) {
                 { id: 'slow-parse-plan-times', checkElement: 'slow-parse-plan-count' },
                 { id: 'slow-use-key-queries', checkElement: 'slow-use-keys-count' },
                 { id: 'missing-where-clauses', checkElement: 'missing-where-count' },
+                { id: 'complex-join-operations', checkElement: 'complex-join-count' },
                 { id: 'inefficient-like-operations', checkElement: 'inefficient-like-count' },
                 { id: 'select-star-usage', checkElement: 'select-star-count' },
                 { id: 'pagination-index-overfetch', checkElement: 'pagination-overfetch-count' },
                 { id: 'large-result-set-queries', checkElement: 'large-results-count' },
                 { id: 'large-payload-streaming', checkElement: 'large-payload-count' },
-                { id: 'timeout-prone-queries', checkElements: ['approaching-timeout-count', 'actual-timeout-count'] }
+                { id: 'timeout-prone-queries', checkElements: ['approaching-timeout-count', 'actual-timeout-count'] },
+                { id: 'concurrent-query-conflicts', checkElement: 'concurrent-conflicts-count' }
             ];
 
             insights.forEach(insight => {
@@ -14882,7 +14884,7 @@ function generateElapsedTimeChart(requests) {
                 'index-issues': ['inefficient-index-scans', 'slow-index-scan-times', 'primary-index-over-usage', 'pagination-index-overfetch'],
                 'resource-issues': ['high-kernel-time-queries', 'high-memory-usage', 'slow-parse-plan-times', 'slow-use-key-queries'],
                 'pattern-analysis': ['missing-where-clauses', 'complex-join-operations', 'inefficient-like-operations', 'select-star-usage'],
-                'performance-opportunities': ['large-payload-streaming', 'timeout-prone-queries', 'large-result-set-queries', 'request-cache-optimization']
+                'performance-opportunities': ['large-payload-streaming', 'large-result-set-queries', 'timeout-prone-queries', 'concurrent-query-conflicts']
             };
 
             Object.keys(categories).forEach(categoryId => {
