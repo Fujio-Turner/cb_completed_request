@@ -5196,6 +5196,35 @@ LET bid = CONCAT("", s.bucket_id, ""),
         }
 
         // ============================================================
+        // PERFORMANCE UTILITIES MODULE (Optimization Step 3)
+        // Throttle and debounce functions for performance optimization
+        // ============================================================
+        const PerformanceUtils = {
+            // Throttle: Limits function calls to once per wait period
+            // Good for: scroll, resize, mousemove, pan/zoom handlers
+            throttle(func, wait) {
+                let inThrottle;
+                return function(...args) {
+                    if (!inThrottle) {
+                        func.apply(this, args);
+                        inThrottle = true;
+                        setTimeout(() => inThrottle = false, wait);
+                    }
+                };
+            },
+
+            // Debounce: Delays function execution until wait period after last call
+            // Good for: search input, form validation
+            debounce(func, wait) {
+                let timeout;
+                return function(...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            }
+        };
+
+        // ============================================================
         // CHART TIME UTILITIES MODULE (Optimization Step 2a)
         // Consolidated time-related chart helper functions
         // ============================================================
@@ -5314,6 +5343,14 @@ LET bid = CONCAT("", s.bucket_id, ""),
         const getOptimalTimeUnit = (requests) => ChartTimeUtils.getOptimalTimeUnit(requests);
         const roundTimestamp = (timestamp, grouping, requests) => ChartTimeUtils.roundTimestamp(timestamp, grouping, requests);
         const getTimelineBucketsFromRequests = (requests, grouping) => ChartTimeUtils.getTimelineBucketsFromRequests(requests, grouping);
+
+        // ============================================================
+        // THROTTLED FUNCTION WRAPPERS (Optimization Step 3)
+        // Created after PerformanceUtils is defined
+        // ============================================================
+        // Throttled version of syncChartZoom for onPan/onZoom handlers
+        // Reduces calls from ~60/sec to ~10/sec during pan/zoom operations
+        const syncChartZoomThrottled = PerformanceUtils.throttle(syncChartZoom, 100);
 
 // Render horizontal bar chart for Query Groups using avgPhaseTimeline (with specific row ordering)
 function renderQueryGroupPhaseTimesChart(group) {
@@ -6238,7 +6275,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                                 enabled: true,
                                 mode: "xy",
                                 onPan: function ({ chart }) {
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                             zoom: {
@@ -6252,7 +6289,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                                 },
                                 mode: "xy",
                                 onZoom: function ({ chart }) {
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -8206,7 +8243,7 @@ size: 12
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
                                     // Sync zoom with other charts
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 }
                             }
                         }
@@ -8567,7 +8604,7 @@ size: 12
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 }
                             },
                             zoom: {
@@ -8584,7 +8621,7 @@ size: 12
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 }
                             }
                         }
@@ -8767,7 +8804,7 @@ size: 12
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 }
                             },
                             zoom: {
@@ -8784,7 +8821,7 @@ size: 12
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 }
                             }
                         }
@@ -8939,7 +8976,7 @@ size: 12
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
                                     // Sync pan with other charts
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                             zoom: {
@@ -8962,7 +8999,7 @@ size: 12
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
                                     // Sync zoom with other charts
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -9126,7 +9163,7 @@ size: 12
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
                                     // Sync pan with other charts
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                             zoom: {
@@ -9149,7 +9186,7 @@ size: 12
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
                                     // Sync zoom with other charts
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -9384,7 +9421,7 @@ size: 12
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
                                     // Sync pan with other charts
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                             zoom: {
@@ -9407,7 +9444,7 @@ size: 12
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
                                     // Sync zoom with other charts
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -9684,7 +9721,7 @@ size: 12
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                             zoom: {
@@ -9705,7 +9742,7 @@ size: 12
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -10016,7 +10053,7 @@ size: 12
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                             zoom: {
@@ -10037,7 +10074,7 @@ size: 12
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -10282,7 +10319,7 @@ size: 12
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                             zoom: {
@@ -10299,7 +10336,7 @@ size: 12
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -10665,7 +10702,7 @@ size: 12
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
                                     // Sync pan with other charts
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                             zoom: {
@@ -10688,7 +10725,7 @@ size: 12
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
                                     // Sync zoom with other charts
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -11008,7 +11045,7 @@ size: 12
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                             zoom: {
@@ -11025,7 +11062,7 @@ size: 12
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
@@ -11474,7 +11511,7 @@ size: 12
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                             zoom: {
@@ -11491,7 +11528,7 @@ size: 12
                                     currentTimeRange.min = new Date(chart.scales.x.min);
                                     currentTimeRange.max = new Date(chart.scales.x.max);
                                     updateTimeRangeDisplay();
-                                    syncChartZoom(chart, chart.scales.x.min, chart.scales.x.max);
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
                                 },
                             },
                         },
