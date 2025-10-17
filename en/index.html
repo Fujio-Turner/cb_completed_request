@@ -5784,6 +5784,155 @@ function renderQueryGroupPhaseTimesChart(group) {
 
         // [REMOVED] generateOperationsChart - Replaced by Enhanced Database Operations chart
 
+        // ========== Progressive Chart Loading System ==========
+        // Queue system for creating charts progressively to avoid UI blocking
+        const chartTasks = [];
+        let drainingCharts = false;
+        let totalCharts = 0;
+        let completedCharts = 0;
+
+        function enqueueChartTask(name, fn) {
+            chartTasks.push({ name, fn });
+            totalCharts++;
+            if (!drainingCharts) {
+                drainChartQueue();
+            }
+        }
+
+        function drainChartQueue() {
+            if (chartTasks.length === 0) {
+                drainingCharts = false;
+                return;
+            }
+            
+            drainingCharts = true;
+            requestAnimationFrame(() => {
+                const { name, fn } = chartTasks.shift();
+                completedCharts++;
+                
+                try {
+                    fn();
+                } catch (e) {
+                    console.error(`Chart creation failed: ${name}`, e);
+                }
+                
+                drainChartQueue();
+            });
+        }
+
+        // Lazy chart creation with IntersectionObserver
+        function lazyCreateChart(canvasId, chartName, createFn) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) {
+                console.warn(`Canvas not found: ${canvasId}`);
+                return;
+            }
+            
+            const container = canvas.closest('.chart-container');
+            if (!container) {
+                // No container, create immediately
+                enqueueChartTask(chartName, () => {
+                    createFn();
+                    attachHandlersToChart(canvasId);
+                });
+                return;
+            }
+            
+            // Use IntersectionObserver for lazy loading
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    if (entries.some(e => e.isIntersecting)) {
+                        observer.disconnect();
+                        enqueueChartTask(chartName, () => {
+                            createFn();
+                            attachHandlersToChart(canvasId);
+                        });
+                    }
+                }, { 
+                    root: null, 
+                    rootMargin: '200px', // Start loading 200px before visible
+                    threshold: 0.01 
+                });
+                observer.observe(container);
+            } else {
+                // Fallback: enqueue immediately if IntersectionObserver not supported
+                enqueueChartTask(chartName, () => {
+                    createFn();
+                    attachHandlersToChart(canvasId);
+                });
+            }
+        }
+
+        // Attach double-click handler and other handlers to a chart after creation
+        function attachHandlersToChart(canvasId) {
+            // Map canvas IDs to window chart objects
+            const chartMap = {
+                'filter-chart': window.filterChart,
+                'timeline-chart': window.timelineChart,
+                'query-types-chart': window.queryTypesChart,
+                'duration-buckets-chart': window.durationBucketsChart,
+                'memory-chart': window.memoryChart,
+                'result-count-chart': window.resultCountChart,
+                'result-size-chart': window.resultSizeChart,
+                'cpu-time-chart': window.cpuTimeChart,
+                'index-scan-throughput-chart': window.indexScanThroughputChart,
+                'doc-fetch-throughput-chart': window.docFetchThroughputChart,
+                'doc-size-bubble-chart': window.docSizeBubbleChart,
+                'exec-vs-kernel-chart': window.execVsKernelChart,
+                'exec-vs-serv-chart': window.execVsServChart,
+                'exec-vs-elapsed-chart': window.execVsElapsedChart,
+                'enhanced-operations-chart': window.enhancedOperationsChart,
+                'collection-queries-chart': window.collectionQueriesChart,
+                'parse-duration-chart': window.parseDurationChart,
+                'plan-duration-chart': window.planDurationChart,
+            };
+            
+            const chart = chartMap[canvasId];
+            if (chart) {
+                // Attach double-click handler
+                if (typeof attachDoubleClickHandler === 'function') {
+                    attachDoubleClickHandler(chart);
+                }
+                
+                // If a vertical stake is already active, apply it to this newly created chart
+                if (verticalStakePosition !== null && chart.options.plugins) {
+                    if (!chart.options.plugins.annotation) {
+                        chart.options.plugins.annotation = { annotations: {} };
+                    }
+                    
+                    chart.options.plugins.annotation.annotations.verticalStake = {
+                        type: 'line',
+                        xMin: verticalStakePosition,
+                        xMax: verticalStakePosition,
+                        borderColor: '#007bff',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        label: {
+                            display: true,
+                            content: 'Staked',
+                            position: 'start',
+                            backgroundColor: '#007bff',
+                            color: '#fff',
+                            font: {
+                                size: 10
+                            }
+                        }
+                    };
+                    
+                    chart.update('none');
+                }
+            }
+        }
+
+        // Reset chart loading counters
+        function resetChartLoadingCounters() {
+            chartTasks.length = 0;
+            drainingCharts = false;
+            totalCharts = 0;
+            completedCharts = 0;
+        }
+        // ========== End Progressive Chart Loading System ==========
+
         // Generate enhanced operations chart with detailed In/Out tracking
         function generateEnhancedOperationsChart(requests) {
             // Destroy existing chart if it exists
@@ -6394,6 +6543,9 @@ function renderQueryGroupPhaseTimesChart(group) {
 
             // Register chart for crosshair synchronization
             registerTimelineChart(window.filterChart, ctx);
+
+            // Attach double-click handler for vertical stake feature
+            attachDoubleClickHandler(window.filterChart);
         }
 
         // Generate timeline chart showing kernel time vs execution time performance
@@ -6745,57 +6897,34 @@ size: 12
             // Register chart for crosshair synchronization
             registerTimelineChart(window.timelineChart, ctx);
 
-            // Create Query Types Scatter Plot Chart
-            createQueryTypesChart(requests, grouping);
+            // Attach double-click handler to timeline chart immediately
+            attachDoubleClickHandler(window.timelineChart);
 
-            // Create Duration Buckets Chart
-            createDurationBucketsChart(requests, grouping);
+            // Reset chart loading counters for new batch
+            resetChartLoadingCounters();
 
-            // Create Memory Usage Chart
-            createMemoryChart(requests, grouping);
+            // Create charts progressively using IntersectionObserver + RAF
+            // This prevents UI blocking when loading many charts
+            // Handlers (double-click, drag) are attached automatically after each chart creation
+            lazyCreateChart('query-types-chart', 'Query Types', () => createQueryTypesChart(requests, grouping));
+            lazyCreateChart('duration-buckets-chart', 'Duration Buckets', () => createDurationBucketsChart(requests, grouping));
+            lazyCreateChart('memory-chart', 'Memory Usage', () => createMemoryChart(requests, grouping));
+            lazyCreateChart('collection-queries-chart', 'Collection Queries', () => createCollectionQueriesChart(requests, grouping));
+            lazyCreateChart('parse-duration-chart', 'Parse Duration', () => createParseDurationChart(requests, grouping));
+            lazyCreateChart('plan-duration-chart', 'Plan Duration', () => createPlanDurationChart(requests, grouping));
+            lazyCreateChart('result-count-chart', 'Result Count', () => createResultCountChart(requests, grouping));
+            lazyCreateChart('result-size-chart', 'Result Size', () => createResultSizeChart(requests, grouping));
+            lazyCreateChart('cpu-time-chart', 'CPU Time', () => createCpuTimeChart(requests, grouping));
+            lazyCreateChart('index-scan-throughput-chart', 'Index Scan Throughput', () => createIndexScanThroughputChart(requests, grouping));
+            lazyCreateChart('doc-fetch-throughput-chart', 'Doc Fetch Throughput', () => createDocFetchThroughputChart(requests, grouping));
+            lazyCreateChart('doc-size-bubble-chart', 'Doc Size Bubble', () => createDocumentSizeBubbleChart(requests, grouping));
+            lazyCreateChart('exec-vs-kernel-chart', 'Exec vs Kernel', () => createExecVsKernelChart(requests, grouping));
+            lazyCreateChart('exec-vs-serv-chart', 'Exec vs Serv', () => createExecVsServChart(requests, grouping));
+            lazyCreateChart('exec-vs-elapsed-chart', 'Exec vs Elapsed', () => createExecVsElapsedChart(requests, grouping));
+            lazyCreateChart('enhanced-operations-chart', 'Enhanced Operations', () => generateEnhancedOperationsChart(requests));
 
-            // Create Collection Queries Chart
-            createCollectionQueriesChart(requests, grouping);
-
-            // Create Parse Duration Chart
-            createParseDurationChart(requests, grouping);
-
-            // Create Plan Duration Chart
-            createPlanDurationChart(requests, grouping);
-
-            // Create Result Count Chart
-            createResultCountChart(requests, grouping);
-
-            // Create Result Size Chart
-            createResultSizeChart(requests, grouping);
-
-            // Create CPU/Kernel/Elapsed Time Chart
-            createCpuTimeChart(requests, grouping);
-
-            // Create Service Time Throughput Charts (split into Index and Fetch)
-            createIndexScanThroughputChart(requests, grouping);
-            createDocFetchThroughputChart(requests, grouping);
-
-            // Create Document Size Bubble Chart
-            createDocumentSizeBubbleChart(requests, grouping);
-
-            // Create ExecTime vs Kernel Time Chart
-            createExecVsKernelChart(requests, grouping);
-
-            // Create ExecTime vs ServTime Chart
-            createExecVsServChart(requests, grouping);
-
-            // Create ExecTime vs Elapsed Time Chart
-            createExecVsElapsedChart(requests, grouping);
-
-            // Create Enhanced Operations Chart
-            generateEnhancedOperationsChart(requests);
-
-            // Initialize drag and drop for execution analysis charts
-            setupChartDragAndDrop();
-
-            // Attach double-click handlers for vertical stake feature (Issue #148)
-            attachTimelineDoubleClickHandlers();
+            // Initialize drag and drop after a brief delay to let first charts render
+            setTimeout(() => setupChartDragAndDrop(), 100);
         }
 
         // Attach double-click handlers to all timeline charts
