@@ -15541,10 +15541,13 @@ function generateElapsedTimeChart(requests) {
 
 
 
+        // Track which tabs have been loaded (global for reset on new parse)
+        let loadedTabs = new Set();
+
         // Lazy chart loading setup - generate charts only when tabs are activated
         function setupLazyChartLoading(filteredRequests, fullDataset) {
-            // Track which tabs have been loaded
-            const loadedTabs = new Set();
+            // Clear loaded tabs to force regeneration with new data (Step 5 fix)
+            loadedTabs.clear();
 
             // Check currently active tab BEFORE marking dashboard as loaded (Issue #141 fix)
             // This ensures Dashboard refreshes properly when it's already the active tab
@@ -15558,7 +15561,8 @@ function generateElapsedTimeChart(requests) {
                     
                     // Generate charts for currently active tab if it's not dashboard
                     // Dashboard will be generated below regardless
-                    if (activeId && activeId !== 'dashboard' && !loadedTabs.has(activeId)) {
+                    // Always regenerate active tab on new parse (removed loadedTabs check - Step 5 fix)
+                    if (activeId && activeId !== 'dashboard') {
                         const loadStart = performance.now();
                         switch (activeId) {
                             case 'timeline': {
@@ -15973,6 +15977,48 @@ function generateElapsedTimeChart(requests) {
                     const elapsedFilterText = elapsedFilterInput ? elapsedFilterInput.value.trim() : "";
                     const elapsedPredicate = makeElapsedFilterPredicate(elapsedFilterText);
 
+                    // ============================================================
+                    // DATA PROCESSING OPTIMIZATION (Step 5)
+                    // Combined filter function to reduce redundant checks
+                    // ============================================================
+                    function shouldProcessRequest(request) {
+                        // Early exit for system query filtering
+                        if (isExcluding && shouldExcludeSystemQuery(request)) {
+                            return false;
+                        }
+
+                        // SQL statement filtering
+                        if (sqlFilterText && sqlFilterText.length > 0) {
+                            const statement = (request.statement || request.preparedText || "")
+                                .toLowerCase()
+                                .replace(/\s+/g, ' ')
+                                .trim();
+                            const filterText = sqlFilterText.replace(/\s+/g, ' ').trim();
+                            if (!statement.includes(filterText)) {
+                                return false;
+                            }
+                        }
+
+                        // Date range filtering
+                        if (startDate || endDate) {
+                            const requestDate = parseCouchbaseDateTime(request.requestTime);
+                            if (requestDate) {
+                                if (startDate && requestDate < startDate) return false;
+                                if (endDate && requestDate > endDate) return false;
+                            }
+                        }
+
+                        // Elapsed time filtering
+                        if (elapsedPredicate) {
+                            const elapsedMs = parseTime(request.elapsedTime || "");
+                            if (!elapsedPredicate(elapsedMs)) {
+                                return false;
+                            }
+                        }
+
+                        return true; // Passed all filters
+                    }
+
                     function processBatch(startIndex) {
                         const endIndex = Math.min(
                             startIndex + batchSize,
@@ -15984,44 +16030,10 @@ function generateElapsedTimeChart(requests) {
                                 const item = processData[i];
                                 const request = item.completed_requests || item;
 
-                                // Early filtering - skip expensive processing for filtered requests
-                                if (isExcluding && shouldExcludeSystemQuery(request)) {
+                                // Combined filter check (Step 5 optimization)
+                                if (!shouldProcessRequest(request)) {
                                     skippedCount++;
-                                    continue; // Skip this request
-                                }
-
-                                // Apply SQL statement filtering early
-                                if (sqlFilterText && sqlFilterText.length > 0) {
-                                    const statement = (request.statement || request.preparedText || "").toLowerCase().replace(/\s+/g, ' ').trim();
-                                    const filterText = sqlFilterText.replace(/\s+/g, ' ').trim();
-                                    if (!statement.includes(filterText)) {
-                                        skippedCount++;
-                                        continue; // Skip this request
-                                    }
-                                }
-
-                                // Apply date filtering early
-                                if (startDate || endDate) {
-                                    const requestDate = parseCouchbaseDateTime(request.requestTime);
-                                    if (requestDate) {
-                                        if (startDate && requestDate < startDate) {
-                                            skippedCount++;
-                                            continue;
-                                        }
-                                        if (endDate && requestDate > endDate) {
-                                            skippedCount++;
-                                            continue;
-                                        }
-                                    }
-                                }
-
-                                // Apply elapsedTime filter early (based on completed_requests.elapsedTime)
-                                if (elapsedPredicate) {
-                                    const elapsedMs = parseTime(request.elapsedTime || "");
-                                    if (!elapsedPredicate(elapsedMs)) {
-                                        skippedCount++;
-                                        continue;
-                                    }
+                                    continue;
                                 }
 
                                 // Only process requests that pass all filters
@@ -17173,8 +17185,7 @@ function generateElapsedTimeChart(requests) {
                 });
         }
 
-        // Track which tabs have been loaded
-        let loadedTabs = new Set();
+        // Use global loadedTabs from above (removed duplicate declaration - Step 5 fix)
 
         // Initialize jQuery UI Tabs with lazy loading
         $(function () {
@@ -17186,12 +17197,24 @@ function generateElapsedTimeChart(requests) {
                     if (!loadedTabs.has(tabId)) {
                         loadedTabs.add(tabId);
 
-                        if (tabId === "timeline" && originalRequests.length > 0) {
-                            // Generate timeline charts only when tab is activated
-                            generateTimelineChart(originalRequests);
-                        } else if (tabId === "dashboard" && originalRequests.length > 0) {
-                            // Generate dashboard charts only when tab is activated
-                            generateDashboardCharts(originalRequests);
+                        if (tabId === "timeline") {
+                            // Use current filtered requests, not cached data (Step 5 fix)
+                            const currentFilteredRequests = window.filteredRequests || window.currentFilteredRequests || originalRequests;
+                            if (currentFilteredRequests.length > 0) {
+                                // Sample for performance with large datasets
+                                const sampleSize = Math.min(500, currentFilteredRequests.length);
+                                const sampleStep = Math.max(1, Math.floor(currentFilteredRequests.length / sampleSize));
+                                const timelineSample = currentFilteredRequests.filter((_, i) => i % sampleStep === 0);
+                                console.log(`${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${timelineSample.length} ${TEXT_CONSTANTS.OF_TOTAL} ${currentFilteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
+                                generateFilterChart(currentFilteredRequests);
+                                generateTimelineChart(timelineSample);
+                            }
+                        } else if (tabId === "dashboard") {
+                            // Use current filtered requests, not cached data (Step 5 fix)
+                            const currentFilteredRequests = window.filteredRequests || window.currentFilteredRequests || originalRequests;
+                            if (currentFilteredRequests.length > 0) {
+                                generateDashboardCharts(currentFilteredRequests);
+                            }
                         }
                     }
 
