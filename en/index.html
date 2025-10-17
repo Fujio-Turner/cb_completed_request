@@ -5870,9 +5870,17 @@ function renderQueryGroupPhaseTimesChart(group) {
         let totalCharts = 0;
         let completedCharts = 0;
 
-        function enqueueChartTask(name, fn) {
-            chartTasks.push({ name, fn });
+        // ============================================================
+        // CHART QUEUE OPTIMIZATION (Step 4)
+        // Enhanced queue with priority and performance tracking
+        // ============================================================
+        function enqueueChartTask(name, fn, priority = 0) {
+            chartTasks.push({ name, fn, priority });
             totalCharts++;
+            
+            // Sort by priority (higher = sooner)
+            chartTasks.sort((a, b) => b.priority - a.priority);
+            
             if (!drainingCharts) {
                 drainChartQueue();
             }
@@ -5881,6 +5889,7 @@ function renderQueryGroupPhaseTimesChart(group) {
         function drainChartQueue() {
             if (chartTasks.length === 0) {
                 drainingCharts = false;
+                console.log(`✅ Chart queue complete: ${completedCharts}/${totalCharts} charts created`);
                 return;
             }
             
@@ -5889,18 +5898,21 @@ function renderQueryGroupPhaseTimesChart(group) {
                 const { name, fn } = chartTasks.shift();
                 completedCharts++;
                 
+                const startTime = performance.now();
                 try {
                     fn();
+                    const duration = (performance.now() - startTime).toFixed(2);
+                    console.log(`📊 Chart created [${completedCharts}/${totalCharts}]: ${name} (${duration}ms)`);
                 } catch (e) {
-                    console.error(`Chart creation failed: ${name}`, e);
+                    console.error(`❌ Chart creation failed: ${name}`, e);
                 }
                 
                 drainChartQueue();
             });
         }
 
-        // Lazy chart creation with IntersectionObserver
-        function lazyCreateChart(canvasId, chartName, createFn) {
+        // Lazy chart creation with IntersectionObserver and priority
+        function lazyCreateChart(canvasId, chartName, createFn, priority = 0) {
             const canvas = document.getElementById(canvasId);
             if (!canvas) {
                 console.warn(`Canvas not found: ${canvasId}`);
@@ -5909,11 +5921,11 @@ function renderQueryGroupPhaseTimesChart(group) {
             
             const container = canvas.closest('.chart-container');
             if (!container) {
-                // No container, create immediately
+                // No container, create immediately with given priority
                 enqueueChartTask(chartName, () => {
                     createFn();
                     attachHandlersToChart(canvasId);
-                });
+                }, priority);
                 return;
             }
             
@@ -5922,10 +5934,11 @@ function renderQueryGroupPhaseTimesChart(group) {
                 const observer = new IntersectionObserver((entries) => {
                     if (entries.some(e => e.isIntersecting)) {
                         observer.disconnect();
+                        // Visible charts get higher priority (base priority + 10)
                         enqueueChartTask(chartName, () => {
                             createFn();
                             attachHandlersToChart(canvasId);
-                        });
+                        }, priority + 10);
                     }
                 }, { 
                     root: null, 
@@ -5933,12 +5946,24 @@ function renderQueryGroupPhaseTimesChart(group) {
                     threshold: 0.01 
                 });
                 observer.observe(container);
+                
+                // Also enqueue with lower priority for background loading
+                // This ensures charts load even if user doesn't scroll
+                setTimeout(() => {
+                    if (observer) {
+                        enqueueChartTask(chartName, () => {
+                            observer.disconnect();
+                            createFn();
+                            attachHandlersToChart(canvasId);
+                        }, priority);
+                    }
+                }, 5000); // Background load after 5 seconds
             } else {
                 // Fallback: enqueue immediately if IntersectionObserver not supported
                 enqueueChartTask(chartName, () => {
                     createFn();
                     attachHandlersToChart(canvasId);
-                });
+                }, priority);
             }
         }
 
@@ -6009,6 +6034,7 @@ function renderQueryGroupPhaseTimesChart(group) {
             drainingCharts = false;
             totalCharts = 0;
             completedCharts = 0;
+            console.log('🔄 Chart queue reset');
         }
         // ========== End Progressive Chart Loading System ==========
 
