@@ -20,9 +20,31 @@ This guide orchestrates a full release process by combining all other guides and
 
 ## 🔄 Complete Release Process
 
-### **Step 0: Remove Dev Build Banner (If Present)**
+### **Step 0: Run E2E Tests FIRST (Before Any Changes)**
 
-If you're releasing from a post-release development branch, first remove the dev banner:
+🚨 **CRITICAL:** Run Playwright tests **BEFORE** updating any version numbers or files. If tests fail, you can fix them on a separate branch without having to revert version changes.
+
+```bash
+# Run full E2E test suite
+npm run test:e2e
+```
+
+**All tests must pass before proceeding!** If tests fail:
+1. Create a separate branch for test fixes: `git checkout -b fix/e2e-tests`
+2. Fix the failing tests
+3. Commit and merge the fixes
+4. Return to this guide and start over
+
+**Why test first?**
+- Prevents wasted work updating versions if code has issues
+- Allows you to fix problems on a separate branch
+- Ensures release candidate is actually working before version bump
+
+See [TESTING_WORKFLOW.md](./TESTING_WORKFLOW.md) and [PLAYWRIGHT_TESTING.md](../PLAYWRIGHT_TESTING.md) for details.
+
+### **Step 1: Remove Dev Build Banner (If Present)**
+
+If you're releasing from a post-release development branch, remove the dev banner:
 
 ```bash
 # Check if dev banner exists
@@ -47,7 +69,7 @@ grep "DEV BUILD BANNER" index.html en/index.html
 
 **⚠️ CRITICAL:** Release cannot proceed with dev banner present! The RELEASE_WORK_CHECK.py script will fail if the banner is still there.
 
-### **Step 1: Initialize Release Log**
+### **Step 2: Initialize Release Log**
 ```bash
 # Create timestamped release log from template in logs folder
 cp settings/release.template settings/logs/release_$(date +%Y%m%d_%H%M%S).txt
@@ -57,7 +79,7 @@ cp settings/release.template settings/logs/release_$(date +%Y%m%d_%H%M%S).txt
 
 **📝 CRITICAL:** Keep your release log file open and update it after each major step. This creates a permanent record of your release process.
 
-### **Step 2: Determine Version Number**  
+### **Step 3: Determine Version Number**  
 First, calculate what version number you'll be releasing:
 
 1. **Open:** [VERSION_CALCULATION_GUIDE.md](VERSION_CALCULATION_GUIDE.md)
@@ -68,7 +90,7 @@ First, calculate what version number you'll be releasing:
 6. **Document:** Your version decision, reasoning, and GitHub issue links
 7. **Result:** You should have your old and new version numbers ready with issue-based context
 
-### **Step 3: Follow VERSION_UPDATE_GUIDE.md**
+### **Step 4: Follow VERSION_UPDATE_GUIDE.md**
 Execute the complete version update process:
 
 1. **Open:** [VERSION_UPDATE_GUIDE.md](VERSION_UPDATE_GUIDE.md)
@@ -124,7 +146,7 @@ sed -i '' 's/^\s*Last Updated: .*/    Last Updated: YYYY-MM-DD/' en/index.html
 
 ```
 
-### **Step 4: English-only Release (no localization step)**
+### **Step 5: English-only Release (no localization step)**
 As of v3.13.x, we only ship the English tool. Do NOT run settings/LOCALIZATION_GUIDE.md.
 
 Do this instead:
@@ -139,7 +161,7 @@ Expected Outcome:
 - English-only artifacts updated and consistent (index.html, en/index.html, and analysis_hub.html)
 - No references to localized HTML files remain in index.html navigation
 
-### **Step 5: Comprehensive Release Testing**
+### **Step 6: Comprehensive Release Testing**
 🚨 **MANDATORY:** Run the complete verification script before proceeding:
 
 ```bash
@@ -212,14 +234,14 @@ python3 python/RELEASE_WORK_CHECK.py
 ```
 **Only proceed when ALL checks pass.**
 
-### **Step 6: Docker & Deployment**
+### **Step 7: Docker & Deployment**
 Complete the deployment preparation:
 
 1. **Verify Docker files:** Check Dockerfile and GitHub Actions workflow versions
 2. **Plan Docker Hub cleanup:** Note old versions to remove in release log
 3. **Update release log:** Complete "Docker & Deployment Updates" section
 
-### **Step 7: Final Release Documentation**
+### **Step 8: Final Release Documentation**
 Complete your release log and documentation:
 
 1. **🚨 CRITICAL - Update Release Notes:**
@@ -288,18 +310,23 @@ This release guide coordinates these files:
 
 ```mermaid
 graph TD
-    A[Start Release] --> B[Create Release Log from Template]
-    B --> C[Follow VERSION_CALCULATION_GUIDE.md]
-    C --> D[Determine Version Numbers - Dry Run]
-    D --> E[Follow VERSION_UPDATE_GUIDE.md]
-    E --> F[Update Release Log - Versions]
-    F --> G[🚨 MANDATORY: Run RELEASE_WORK_CHECK.py]
-    G --> H{All Checks Pass?}
-    H -->|❌ NO| I[Fix Issues]
-    I --> G
-    H -->|✅ YES| J[Complete Docker & Deployment]
-    J --> K[Finalize Release Log]
-    K --> L[Release Complete]
+    A[Start Release] --> B[🚨 Run E2E Tests FIRST]
+    B --> C{Tests Pass?}
+    C -->|❌ NO| D[Fix on Separate Branch]
+    D --> A
+    C -->|✅ YES| E[Remove Dev Banner]
+    E --> F[Create Release Log from Template]
+    F --> G[Follow VERSION_CALCULATION_GUIDE.md]
+    G --> H[Determine Version Numbers - Dry Run]
+    H --> I[Follow VERSION_UPDATE_GUIDE.md]
+    I --> J[Update Release Log - Versions]
+    J --> K[🚨 MANDATORY: Run RELEASE_WORK_CHECK.py]
+    K --> L{All Checks Pass?}
+    L -->|❌ NO| M[Fix Issues]
+    M --> K
+    L -->|✅ YES| N[Complete Docker & Deployment]
+    N --> O[Finalize Release Log]
+    O --> P[Release Complete]
 ```
 
 ## 🎯 Success Criteria

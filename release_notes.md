@@ -1,3 +1,10 @@
+### Version 3.24.0 (October 18, 2025)
+- **New: Playwright E2E Testing** - Added comprehensive end-to-end testing with Playwright for improved reliability
+- **Enhancement: Pattern Chart** - Improved pattern chart visualization with better sample data
+- **Enhancement: Help System** - Added help tooltips for flags and N/A values
+- **Fix: Join Counter** - Fixed join counter logic for accurate query analysis
+- **Enhancement: Badge Styling** - Improved version badge font styling
+
 ### Version 3.23.0 (October 17, 2025)
 - **Enhancement: Analysis Hub Navigation** - Fixed CSS modal jump issue, improved accordion display (closes #164)
 - **Enhancement: Performance Optimization** - Improved analysis_hub.html performance and tab loading (closes #135)
