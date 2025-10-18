@@ -14008,18 +14008,18 @@ function generateElapsedTimeChart(requests) {
                     // If any flags detected, this is a complex JOIN
                     if (flags.length > 0) {
                         joinQueriesWithIssuesCount++;
-                        
-                        // Add to sample queries (up to 5 unique)
-                        if (complexJoinOperationsSamples.length < 5 &&
-                            !complexJoinOperationsSamples.some(s => s.statement === (request.preparedText || request.statement))) {
-                            complexJoinOperationsSamples.push({
-                                requestTime: request.requestTime,
-                                statement: request.preparedText || request.statement,
-                                flags: flags,
-                                flagDetails: flagDetails,
-                                joinTime: joinPhaseTimeMs
-                            });
-                        }
+                    }
+                    
+                    // Add to sample queries (up to 5 unique) - collect ALL JOIN queries regardless of flags
+                    if (complexJoinOperationsSamples.length < 5 &&
+                        !complexJoinOperationsSamples.some(s => s.statement === (request.preparedText || request.statement))) {
+                        complexJoinOperationsSamples.push({
+                            requestTime: request.requestTime,
+                            statement: request.preparedText || request.statement,
+                            flags: flags,
+                            flagDetails: flagDetails,
+                            joinTime: joinPhaseTimeMs
+                        });
                     }
                 }
 
