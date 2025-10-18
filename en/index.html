@@ -16346,8 +16346,8 @@ function generateElapsedTimeChart(requests) {
                         $input.stop(true, true).fadeOut('slow', () => {
                             if (tab) {
                                 tab.setAttribute('aria-expanded', 'false');
-                                const label = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.SHOW_INPUT_PANEL) || 'Show';
-                                tab.textContent = '↓';
+                                const label = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.SHOW_INPUT_PANEL) || 'Show Data & Filters';
+                                tab.textContent = '▼ ' + label;
                                 tab.title = label;
                                 tab.classList.remove('showing');
                                 tab.classList.add('hidden');
@@ -16358,8 +16358,8 @@ function generateElapsedTimeChart(requests) {
                         input.style.display = 'none';
                         if (tab) {
                             tab.setAttribute('aria-expanded', 'false');
-                            const label = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.SHOW_INPUT_PANEL) || 'Show';
-                            tab.textContent = '↓';
+                            const label = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.SHOW_INPUT_PANEL) || 'Show Data & Filters';
+                            tab.textContent = '▼ ' + label;
                             tab.title = label;
                             tab.classList.remove('showing');
                             tab.classList.add('hidden');
@@ -16377,9 +16377,9 @@ function generateElapsedTimeChart(requests) {
                         $input.stop(true, true).fadeIn('slow', () => {
                             if (tab) {
                                 tab.setAttribute('aria-expanded', 'true');
-                                const label = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.HIDE_INPUT_PANEL) || 'Hide';
-                                tab.textContent = '↑';
-                                tab.title = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.TOGGLE_INPUT_TOOLTIP) || '← Click to Show/Hide Data & Filters';
+                                const label = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.HIDE_INPUT_PANEL) || 'Hide Data & Filters';
+                                tab.textContent = '▲ ' + label;
+                                tab.title = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.TOGGLE_INPUT_TOOLTIP) || 'Click to Show/Hide Data & Filters';
                                 tab.classList.remove('hidden');
                                 tab.classList.add('showing');
                             }
@@ -16388,9 +16388,9 @@ function generateElapsedTimeChart(requests) {
                         input.style.display = '';
                         if (tab) {
                             tab.setAttribute('aria-expanded', 'true');
-                            const label = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.HIDE_INPUT_PANEL) || 'Hide';
-                            tab.textContent = '↑';
-                            tab.title = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.TOGGLE_INPUT_TOOLTIP) || '← Click to Show/Hide Data & Filters';
+                            const label = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.HIDE_INPUT_PANEL) || 'Hide Data & Filters';
+                            tab.textContent = '▲ ' + label;
+                            tab.title = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.TOGGLE_INPUT_TOOLTIP) || 'Click to Show/Hide Data & Filters';
                             tab.classList.remove('hidden');
                             tab.classList.add('showing');
                         }
@@ -20449,14 +20449,15 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             try {
                 // Inject minimal CSS for the toggle tab
                 const css = `
-                .toggle-input-tab { position: fixed; left: 2px; top: 2px; z-index: 10001; color: #fff; border: 1px solid rgba(255,255,255,0.9); border-radius: 4px; width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; line-height: 1; letter-spacing: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer; }
+                .toggle-input-tab { position: fixed; left: 2px; top: 2px; z-index: 10001; color: #fff; border: 1px solid rgba(255,255,255,0.9); border-radius: 4px; width: auto; min-width: 165px; height: 32px; padding: 6px 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; line-height: 1; letter-spacing: 0; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer; white-space: nowrap; }
                 .toggle-input-tab::before { content: ''; position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; }
                 .toggle-input-tab.showing { background: #007bff; }
                 .toggle-input-tab.showing:hover { background: #0056b3; }
                 .toggle-input-tab.hidden { background: #28a745; }
                 .toggle-input-tab.hidden:hover { background: #1e7e34; }
-                .toggle-input-tooltip { position: fixed; left: 35px; top: 5px; z-index: 10002; background: #343a40; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.3); opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out; }
-                .toggle-input-tooltip.visible { opacity: 1; }
+                #input-section { padding-top: 30px; }
+                .toggle-input-tooltip { position: fixed; left: 35px; top: 5px; z-index: 10002; background: #343a40; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.3); opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out; display: none; }
+                .toggle-input-tooltip.visible { opacity: 0; display: none; }
                 .toggle-input-tooltip::before { content: ''; position: absolute; left: -6px; top: 50%; transform: translateY(-50%); border: 6px solid transparent; border-right-color: #343a40; }
                 .help-fixed-badge { position: fixed; right: 6px; top: 6px; z-index: 9998; background: #f1f3f5; color: #343a40; border: 1px solid #dee2e6; border-radius: 14px; padding: 4px 10px; font-size: 11px; font-weight: 700; box-shadow: 0 1px 6px rgba(0,0,0,0.12); }
                 .help-fixed-badge a { color: #007bff; text-decoration: none; }
@@ -20480,8 +20481,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     tab.className = 'toggle-input-tab';
                     tab.setAttribute('aria-controls', 'input-section');
                     tab.setAttribute('aria-expanded', 'false');
-                    tab.title = t('TOGGLE_INPUT_TOOLTIP', '← Click to Show/Hide Data & Filters');
-                    tab.textContent = t('SHOW_INPUT_PANEL', 'Show');
+                    tab.title = t('TOGGLE_INPUT_TOOLTIP', 'Click to Show/Hide Data & Filters');
+                    tab.textContent = '▼ ' + t('SHOW_INPUT_PANEL', 'Show Data & Filters');
                     tab.addEventListener('click', toggleInputSection);
                     document.body.appendChild(tab);
                 }
@@ -20492,7 +20493,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     tooltip = document.createElement('div');
                     tooltip.id = 'toggle-input-tooltip';
                     tooltip.className = 'toggle-input-tooltip';
-                    tooltip.textContent = t('TOGGLE_INPUT_TOOLTIP', '← Click to Show/Hide Data & Filters');
+                    tooltip.textContent = t('TOGGLE_INPUT_TOOLTIP', 'Click to Show/Hide Data & Filters');
                     document.body.appendChild(tooltip);
                 }
                 
@@ -20507,9 +20508,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 });
                 
                 // Ensure initial label matches current state (input is visible at load)
-                const hideLabel = t('HIDE_INPUT_PANEL', 'Hide');
-                tab.textContent = '↑';
-                tab.title = t('TOGGLE_INPUT_TOOLTIP', '← Click to Show/Hide Data & Filters');
+                const hideLabel = t('HIDE_INPUT_PANEL', 'Hide Data & Filters');
+                tab.textContent = '▲ ' + hideLabel;
+                tab.title = t('TOGGLE_INPUT_TOOLTIP', 'Click to Show/Hide Data & Filters');
                 tab.setAttribute('aria-expanded', 'true');
                 tab.classList.remove('hidden');
                 tab.classList.add('showing');
