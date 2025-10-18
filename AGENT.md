@@ -1,5 +1,37 @@
 # Couchbase Slow Query Analysis Tool v3.23.0-post-post
 
+## Setup and Installation
+
+### First-Time Setup
+When cloning this repository, install required dependencies:
+
+```bash
+# Install Node.js dependencies (for Playwright tests)
+npm install
+
+# Install Playwright browsers (required for E2E tests)
+npx playwright install
+
+# Python dependencies (for utility scripts in /python/)
+# Most Python scripts use standard library only
+# If needed: pip3 install <package-name>
+```
+
+### Testing
+```bash
+# Run Playwright E2E tests
+npm run test:e2e              # Full test suite (all browsers)
+npm run test:e2e:ui           # Interactive UI mode
+npm run test:e2e:headed       # See browser while testing
+npm run test:e2e:debug        # Debug mode
+npm run test:e2e:report       # View last test report
+
+# Run Jest unit tests (if available)
+npm test
+```
+
+See [PLAYWRIGHT_TESTING.md](./PLAYWRIGHT_TESTING.md) and [settings/TESTING_WORKFLOW.md](./settings/TESTING_WORKFLOW.md) for details.
+
 ## Version Management
 - **Current Version**: 3.23.0-post (Last Updated: 2025-10-17)
 

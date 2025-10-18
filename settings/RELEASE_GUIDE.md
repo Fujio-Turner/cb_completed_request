@@ -1,5 +1,8 @@
 # Complete Release Guide for Couchbase Query Analyzer
 
+> **⚠️ REQUIRED**: Run Playwright tests before release: `npm run test:e2e`  
+> All tests must pass. See [TESTING_WORKFLOW.md](./TESTING_WORKFLOW.md) for details.
+
 This guide orchestrates a full release process by combining all other guides and the release logging system. Use this guide when you want to create a new version release that includes version updates, localization updates, and complete documentation.
 
 ## 🎯 When to Use This Guide
