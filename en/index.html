@@ -13095,9 +13095,11 @@ function generateElapsedTimeChart(requests) {
                 EXECUTE: 0,
                 "SELECT *": 0,
                 COUNT: 0,
+                DISTINCT: 0,
                 // Left-center
                 "USE INDEX": 0,
                 "USE KEYS": 0,
+                LET: 0,
                 // Center
                 "No WHERE": 0,
                 // Center-right  
@@ -13113,6 +13115,7 @@ function generateElapsedTimeChart(requests) {
                 "ORDER BY": 0,
                 LIMIT: 0,
                 OFFSET: 0,
+                UNION: 0,
             };
 
             requests.forEach((request) => {
@@ -13177,6 +13180,11 @@ function generateElapsedTimeChart(requests) {
                     patternCounts["WITH"]++;
                 }
 
+                // LET
+                if (upperStatement.includes(" LET ")) {
+                    patternCounts["LET"]++;
+                }
+
                 // ARRAY QUERY - detects array query patterns with ANY/EVERY operators per Couchbase docs:
                 // 1. ANY + IN/WITHIN + SATISFIES + END pattern
                 // 2. EVERY + IN/WITHIN + SATISFIES + END pattern
@@ -13219,6 +13227,11 @@ function generateElapsedTimeChart(requests) {
                     patternCounts["COUNT"]++;
                 }
 
+                // DISTINCT
+                if (upperStatement.includes(" DISTINCT ")) {
+                    patternCounts["DISTINCT"]++;
+                }
+
                 // REGEX
                 if (statement.includes("REGEXP_") || /REGEX\s*\(/.test(statement)) {
                     patternCounts["REGEX"]++;
@@ -13232,6 +13245,11 @@ function generateElapsedTimeChart(requests) {
                 // LIMIT
                 if (statement.includes(" LIMIT ")) {
                     patternCounts["LIMIT"]++;
+                }
+
+                // UNION
+                if (upperStatement.includes(" UNION ")) {
+                    patternCounts["UNION"]++;
                 }
             });
 
