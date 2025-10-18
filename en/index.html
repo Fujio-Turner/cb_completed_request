@@ -1378,6 +1378,8 @@ if (window.TEXT_CONSTANTS) {
                                             </li>
                                         </ul>
                                         <em style="font-size: 10px; color: #856404;">💡 Hover over flags in the table above for detailed metrics</em>
+                                        <br>
+                                        <em style="font-size: 10px; color: #856404;">ℹ️ JOIN Time shows "N/A" when Couchbase doesn't report a separate join phase (query may be optimized)</em>
                                     </div>
                                 </div>
 
@@ -14030,10 +14032,10 @@ function generateElapsedTimeChart(requests) {
                     
                     // Add to sample queries (up to 5 unique) - collect ALL JOIN queries regardless of flags
                     if (complexJoinOperationsSamples.length < 5 &&
-                        !complexJoinOperationsSamples.some(s => s.statement === (request.preparedText || request.statement))) {
+                        !complexJoinOperationsSamples.some(s => s.statement === request.statement)) {
                         complexJoinOperationsSamples.push({
                             requestTime: request.requestTime,
-                            statement: request.preparedText || request.statement,
+                            statement: request.statement,  // Use original statement, not preparedText
                             flags: flags,
                             flagDetails: flagDetails,
                             joinTime: joinPhaseTimeMs

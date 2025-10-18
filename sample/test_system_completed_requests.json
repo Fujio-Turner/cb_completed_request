@@ -272,6 +272,62 @@
   },
   {
     "completed_requests": {
+      "clientContextID": "join-with-prepared-statement",
+      "cpuTime": "15.678ms",
+      "elapsedTime": "98.234ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$customerId": "cust12345"
+      },
+      "phaseCounts": {
+        "indexScan": 5,
+        "fetch": 5,
+        "join": 15
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "join": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "8.234µs",
+        "instantiate": "5.123µs",
+        "parse": "45.678µs",
+        "plan": "23.456µs",
+        "indexScan": "15.678ms",
+        "fetch": "25.901ms",
+        "join": "42.345ms",
+        "project": "8.901ms",
+        "run": "96.234ms",
+        "stream": "2.345ms"
+      },
+      "prepared": "prepared-join-statement-abc123",
+      "preparedText": "PREPARE SELECT o.orderId, o.total, c.name, c.email FROM orders o INNER JOIN customers c ON o.customerId = c.customerId WHERE c.customerId = $customerId",
+      "remoteAddr": "127.0.0.1:54321",
+      "requestId": "join-with-prepared-statement",
+      "requestTime": "2025-08-15T01:25:00.000Z",
+      "resultCount": 15,
+      "resultSize": 4800,
+      "scanConsistency": "not_bounded",
+      "serviceTime": "98.123ms",
+      "state": "completed",
+      "statement": "SELECT o.orderId, o.total, c.name, c.email FROM orders o INNER JOIN customers c ON o.customerId = c.customerId WHERE c.customerId = $customerId",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 5120,
+      "userAgent": "java-couchbase/3.4.8",
+      "users": "local:order_service",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-15T01:25:00.000Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"1.234µs\",\"servTime\":\"7.123µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:orders\",\"Priv\":7,\"Props\":0},{\"Target\":\"default:customers\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"2.345µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":20,\"execTime\":\"15.678ms\",\"kernTime\":\"14.2ms\",\"servTime\":\"13.8ms\"},\"index\":\"idx_orders_customerId\",\"keyspace\":\"orders\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"cust12345\\\"\",\"inclusion\":3,\"low\":\"\\\"cust12345\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"25.901ms\",\"kernTime\":\"24.1ms\",\"servTime\":\"23.5ms\"},\"keyspace\":\"orders\",\"namespace\":\"default\"},{\"#operator\":\"Join\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":15,\"#phaseSwitches\":20,\"execTime\":\"42.345ms\",\"kernTime\":\"39.8ms\",\"servTime\":\"40.2ms\"},\"alias\":\"c\",\"keyspace\":\"customers\",\"namespace\":\"default\",\"on\":\"(((`o`.`customerId`) = (`c`.`customerId`)))\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":15,\"#itemsOut\":15,\"#phaseSwitches\":30,\"execTime\":\"8.901ms\",\"kernTime\":\"8.2ms\"},\"result_terms\":[{\"expr\":\"(`o`.`orderId`)\"},{\"expr\":\"(`o`.`total`)\"},{\"expr\":\"(`c`.`name`)\"},{\"expr\":\"(`c`.`email`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":15,\"#itemsOut\":15,\"#phaseSwitches\":16,\"execTime\":\"2.345ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
       "clientContextID": "simple-document-get",
       "cpuTime": "0.234ms",
       "elapsedTime": "1.456s",
