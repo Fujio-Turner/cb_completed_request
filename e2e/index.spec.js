@@ -200,7 +200,7 @@ test.describe('Couchbase Query Analyzer - en/index.html', () => {
 
   test('should display version information', async ({ page }) => {
     const versionMeta = await page.locator('meta[name="version"]').getAttribute('content');
-    expect(versionMeta).toBe('3.24.0');
+    expect(versionMeta).toMatch(/3\.24\.0/); // Matches 3.24.0 or 3.24.0-post
   });
 
   test('should have responsive layout', async ({ page }) => {

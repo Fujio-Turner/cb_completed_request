@@ -1,6 +1,26 @@
+# Testing Documentation
+
+This folder contains all testing-related files for the Couchbase Query Analyzer.
+
+## 📚 Documentation
+
+### Regression Testing (Playwright E2E)
+- **[QUICK_START_REGRESSION_TESTS.md](./QUICK_START_REGRESSION_TESTS.md)** - Quick reference for regression tests
+- **[ISSUE_173_COMPLETE.md](./ISSUE_173_COMPLETE.md)** - Complete implementation of Issue #173
+- **[REGRESSION_TESTING_SUMMARY.md](./REGRESSION_TESTING_SUMMARY.md)** - Technical summary
+- **[REGRESSION_TESTING.md](./REGRESSION_TESTING.md)** - Detailed testing guide
+- **[PLAYWRIGHT_TESTING.md](./PLAYWRIGHT_TESTING.md)** - General Playwright documentation
+
+### Test Files
+- **[../e2e/regression-core.spec.js](../e2e/regression-core.spec.js)** - Core regression tests (16 tests)
+- **[../e2e/index.spec.js](../e2e/index.spec.js)** - General smoke tests
+- **Unit tests** (Jest) - See below
+
+---
+
 # Unit Tests Guide
 
-This folder contains Jest-based unit tests for the Couchbase Query Analyzer. The tests focus on pure, reusable helpers extracted into `en/core.js` and avoid coupling to the UI in `en/index.html`.
+This section describes Jest-based unit tests for the Couchbase Query Analyzer. The tests focus on pure, reusable helpers extracted into `en/core.js` and avoid coupling to the UI in `en/index.html`.
 
 ## How to run
 

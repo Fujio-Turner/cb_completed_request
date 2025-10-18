@@ -30,8 +30,10 @@ module.exports = defineConfig({
     },
   ],
   webServer: {
-    command: 'npx http-server -p 8080',
+    command: 'npx http-server -p 8080 --silent',
     port: 8080,
     reuseExistingServer: !process.env.CI,
+    stdout: 'ignore',
+    stderr: 'pipe',
   },
 });

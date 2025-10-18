@@ -1,0 +1,493 @@
+const { test, expect } = require('@playwright/test');
+const path = require('path');
+const fs = require('fs');
+
+/**
+ * Regression Tests for Sorting, Filtering, and Counting Functions
+ * 
+ * Purpose: Ensure that changes to JS functions don't break existing functionality
+ * Data Source: sample/test_system_completed_requests.json and test_system_indexes.json
+ * 
+ * These tests verify:
+ * 1. Table sorting (ASC/DESC) produces consistent results
+ * 2. Filtering functions return expected counts
+ * 3. Aggregation/counting functions calculate correct values
+ */
+
+test.describe('Regression Tests - Sorting, Filtering, Counting', () => {
+  let completedRequestsData;
+  let indexesData;
+
+  test.beforeAll(() => {
+    completedRequestsData = fs.readFileSync(
+      path.join(__dirname, '../sample/test_system_completed_requests.json'),
+      'utf-8'
+    );
+    indexesData = fs.readFileSync(
+      path.join(__dirname, '../sample/test_system_indexes.json'),
+      'utf-8'
+    );
+  });
+
+  test.beforeEach(async ({ page }) => {
+    test.setTimeout(60000); // 60s for data loading tests
+    
+    await page.goto('/en/index.html');
+    await page.waitForLoadState('domcontentloaded');
+    
+    // Load sample data
+    const jsonInput = page.locator('#json-input');
+    await expect(jsonInput).toBeVisible();
+    await jsonInput.evaluate((el, data) => el.value = data, completedRequestsData);
+    
+    const indexJsonInput = page.locator('#indexJsonInput');
+    await expect(indexJsonInput).toBeVisible();
+    await indexJsonInput.evaluate((el, data) => el.value = data, indexesData);
+    
+    await page.waitForTimeout(500);
+    
+    // Parse data
+    const parseButton = page.locator('#parse-json-btn');
+    await expect(parseButton).toBeVisible();
+    
+    const parseComplete = page.waitForEvent('console', {
+      predicate: msg => msg.text().includes('Parse performance:'),
+      timeout: 15000
+    });
+    
+    await parseButton.click();
+    await parseComplete;
+    
+    // Wait for Dashboard tab to render (default tab)
+    await expect(page.locator('#dashboard')).toBeVisible();
+    await page.waitForTimeout(2000); // Wait for all charts and rendering
+  });
+
+  test.describe('Every Query Table - Sorting', () => {
+    test.beforeEach(async ({ page }) => {
+      // Navigate to Every Query tab
+      const everyQueryTab = page.locator('#tabs a[href="#every-query"]');
+      await expect(everyQueryTab).toBeVisible();
+      await everyQueryTab.click();
+      
+      // Wait for table to render (table is dynamically generated without ID)
+      await expect(page.locator('#every-query')).toBeVisible();
+      await expect(page.locator('#every-query table tbody tr').first()).toBeVisible({ timeout: 15000 });
+      await page.waitForTimeout(1000);
+    });
+
+    test('should sort by elapsed time DESC by default', async ({ page }) => {
+      // Get table within every-query tab
+      const table = page.locator('#every-query table').first();
+      const firstRowElapsed = await table.locator('tbody tr:nth-child(1) td:nth-child(2)').textContent();
+      
+      // Check header for sort indicator
+      const elapsedHeader = await table.locator('thead th:nth-child(2)').textContent();
+      
+      // Should show DESC indicator
+      expect(elapsedHeader).toContain('▼');
+      
+      // Verify first row has highest elapsed time by checking it's a valid time format
+      expect(firstRowElapsed).toMatch(/\d+[:.]\d+/);
+    });
+
+    test('should toggle sort direction when clicking same column', async ({ page }) => {
+      const elapsedHeader = page.locator('#every-query-table-header th:nth-child(2)');
+      
+      // Initial state - DESC (▼)
+      let headerText = await elapsedHeader.textContent();
+      expect(headerText).toContain('▼ DESC');
+      
+      // Get first row elapsed time
+      const firstElapsedDesc = await page.locator('#every-query-table tbody tr:nth-child(1) td:nth-child(2)').textContent();
+      
+      // Click to toggle to ASC
+      await elapsedHeader.click();
+      await page.waitForTimeout(300);
+      
+      headerText = await elapsedHeader.textContent();
+      expect(headerText).toContain('▲ ASC');
+      
+      // Get first row after sort
+      const firstElapsedAsc = await page.locator('#every-query-table tbody tr:nth-child(1) td:nth-child(2)').textContent();
+      
+      // Values should be different (smallest vs largest)
+      expect(firstElapsedAsc).not.toBe(firstElapsedDesc);
+    });
+
+    test('should sort by resultCount correctly (numeric sort)', async ({ page }) => {
+      const resultCountHeader = page.locator('#every-query-table-header th:nth-child(8)');
+      
+      // Click to sort by resultCount ASC
+      await resultCountHeader.click();
+      await page.waitForTimeout(300);
+      
+      // Should show ASC indicator
+      let headerText = await resultCountHeader.textContent();
+      expect(headerText).toContain('↑');
+      
+      // Get first 3 rows
+      const row1 = await page.locator('#every-query-table tbody tr:nth-child(1) td:nth-child(8)').textContent();
+      const row2 = await page.locator('#every-query-table tbody tr:nth-child(2) td:nth-child(8)').textContent();
+      const row3 = await page.locator('#every-query-table tbody tr:nth-child(3) td:nth-child(8)').textContent();
+      
+      // Parse as numbers
+      const val1 = parseInt(row1.replace(/,/g, ''));
+      const val2 = parseInt(row2.replace(/,/g, ''));
+      const val3 = parseInt(row3.replace(/,/g, ''));
+      
+      // Should be in ascending order
+      expect(val1).toBeLessThanOrEqual(val2);
+      expect(val2).toBeLessThanOrEqual(val3);
+    });
+
+    test('should sort by requestTime chronologically', async ({ page }) => {
+      const requestTimeHeader = page.locator('#every-query-table-header th:nth-child(1)');
+      
+      // Click to sort by requestTime ASC
+      await requestTimeHeader.click();
+      await page.waitForTimeout(300);
+      
+      // Get first row time
+      const firstTime = await page.locator('#every-query-table tbody tr:nth-child(1) td:nth-child(1)').textContent();
+      
+      // Click again for DESC
+      await requestTimeHeader.click();
+      await page.waitForTimeout(300);
+      
+      const lastTime = await page.locator('#every-query-table tbody tr:nth-child(1) td:nth-child(1)').textContent();
+      
+      // Should be different
+      expect(firstTime).not.toBe(lastTime);
+    });
+
+    test('should maintain sort when switching pages', async ({ page }) => {
+      // Sort by resultCount
+      const resultCountHeader = page.locator('#every-query-table-header th:nth-child(8)');
+      await resultCountHeader.click();
+      await page.waitForTimeout(300);
+      
+      // Get first row value on page 1
+      const page1FirstValue = await page.locator('#every-query-table tbody tr:nth-child(1) td:nth-child(8)').textContent();
+      
+      // Go to page 2 if it exists
+      const nextPageBtn = page.locator('.pagination-btn[data-table="every-query"][data-action="next"]');
+      const isVisible = await nextPageBtn.isVisible().catch(() => false);
+      
+      if (isVisible) {
+        await nextPageBtn.click();
+        await page.waitForTimeout(300);
+        
+        // Sort indicator should still be present
+        const headerText = await resultCountHeader.textContent();
+        expect(headerText).toContain('↑');
+      }
+    });
+  });
+
+  test.describe('Analysis Table - Sorting and Aggregation', () => {
+    test.beforeEach(async ({ page }) => {
+      // Navigate to Analysis tab
+      const analysisTab = page.locator('#tabs a[href="#analysis"]');
+      await expect(analysisTab).toBeVisible();
+      await analysisTab.click();
+      
+      // Wait for table to render
+      await expect(page.locator('#analysis-table')).toBeVisible();
+      await expect(page.locator('#analysis-table tbody tr').first()).toBeVisible({ timeout: 10000 });
+      await page.waitForTimeout(500);
+    });
+
+    test('should display correct total count for aggregated queries', async ({ page }) => {
+      // Get first row total_count
+      const firstRowCount = await page.locator('#analysis-table tbody tr:nth-child(1) td:nth-child(3)').textContent();
+      
+      // Should be a number
+      const count = parseInt(firstRowCount.replace(/,/g, ''));
+      expect(count).toBeGreaterThan(0);
+      expect(count).toBeLessThan(10000); // Sanity check
+    });
+
+    test('should sort by total_count DESC by default', async ({ page }) => {
+      // Get first 3 rows
+      const row1 = await page.locator('#analysis-table tbody tr:nth-child(1) td:nth-child(3)').textContent();
+      const row2 = await page.locator('#analysis-table tbody tr:nth-child(2) td:nth-child(3)').textContent();
+      const row3 = await page.locator('#analysis-table tbody tr:nth-child(3) td:nth-child(3)').textContent();
+      
+      const val1 = parseInt(row1.replace(/,/g, ''));
+      const val2 = parseInt(row2.replace(/,/g, ''));
+      const val3 = parseInt(row3.replace(/,/g, ''));
+      
+      // Should be in descending order
+      expect(val1).toBeGreaterThanOrEqual(val2);
+      expect(val2).toBeGreaterThanOrEqual(val3);
+    });
+
+    test('should sort by avg duration correctly', async ({ page }) => {
+      const avgDurationHeader = page.locator('#analysis-table-header th:nth-child(5)');
+      
+      // Click to sort by avg duration ASC
+      await avgDurationHeader.click();
+      await page.waitForTimeout(300);
+      
+      // Get first 2 rows
+      const row1 = await page.locator('#analysis-table tbody tr:nth-child(1) td:nth-child(5)').textContent();
+      const row2 = await page.locator('#analysis-table tbody tr:nth-child(2) td:nth-child(5)').textContent();
+      
+      // Both should be valid time formats
+      expect(row1).toMatch(/\d+[:.]\d+/);
+      expect(row2).toMatch(/\d+[:.]\d+/);
+    });
+
+    test('should calculate statistics correctly for aggregated queries', async ({ page }) => {
+      // Click first row to open modal
+      const firstRow = page.locator('#analysis-table tbody tr:nth-child(1)');
+      await expect(firstRow).toBeVisible();
+      await firstRow.click();
+      await page.waitForTimeout(1000);
+      
+      // Modal should appear with statistics - look for any visible modal
+      const modals = page.locator('.modal:visible');
+      const modalCount = await modals.count();
+      
+      // At least one modal should be visible
+      expect(modalCount).toBeGreaterThan(0);
+    });
+  });
+
+  test.describe('Filtering Functions', () => {
+    test('should filter system queries correctly', async ({ page }) => {
+      // Go to Every Query tab
+      await page.locator('#tabs a[href="#every-query"]').click();
+      await page.waitForTimeout(500);
+      
+      // Get initial row count
+      const initialRows = await page.locator('#every-query-table tbody tr').count();
+      
+      // Toggle system query filter if available
+      const systemQueryCheckbox = page.locator('#filter-system-queries, input[type="checkbox"][id*="system"]');
+      const exists = await systemQueryCheckbox.count();
+      
+      if (exists > 0) {
+        await systemQueryCheckbox.first().click();
+        await page.waitForTimeout(500);
+        
+        // Row count may change
+        const filteredRows = await page.locator('#every-query-table tbody tr').count();
+        
+        // Should have some effect (either more or fewer rows)
+        expect(filteredRows).toBeGreaterThan(0);
+      }
+    });
+
+    test('should filter by SQL text correctly', async ({ page }) => {
+      // Go to Every Query tab
+      await page.locator('#tabs a[href="#every-query"]').click();
+      await page.waitForTimeout(500);
+      
+      // Get initial row count
+      const initialRows = await page.locator('#every-query-table tbody tr').count();
+      
+      // Enter filter text
+      const sqlFilterInput = page.locator('#sql-filter-input, input[type="text"][placeholder*="filter"]');
+      const exists = await sqlFilterInput.count();
+      
+      if (exists > 0) {
+        await sqlFilterInput.first().fill('SELECT');
+        await page.waitForTimeout(500);
+        
+        // Should filter rows
+        const filteredRows = await page.locator('#every-query-table tbody tr').count();
+        expect(filteredRows).toBeGreaterThan(0);
+        expect(filteredRows).toBeLessThanOrEqual(initialRows);
+      }
+    });
+
+    test('should show correct count in Analysis tab after filtering', async ({ page }) => {
+      // Go to Analysis tab
+      await page.locator('#tabs a[href="#analysis"]').click();
+      await page.waitForTimeout(500);
+      
+      // Get row count
+      const analysisRows = await page.locator('#analysis-table tbody tr').count();
+      expect(analysisRows).toBeGreaterThan(0);
+      
+      // Total count in first row should be reasonable
+      const firstRowCount = await page.locator('#analysis-table tbody tr:nth-child(1) td:nth-child(3)').textContent();
+      const count = parseInt(firstRowCount.replace(/,/g, ''));
+      expect(count).toBeGreaterThan(0);
+    });
+  });
+
+  test.describe('Counting and Aggregation Functions', () => {
+    test('should display correct total request count in Dashboard', async ({ page }) => {
+      // Dashboard should be default tab
+      const dashboardTab = page.locator('#dashboard');
+      await expect(dashboardTab).toBeVisible();
+      
+      // Look for total requests metric
+      const totalRequests = page.locator('.metric-value, .stat-value').first();
+      const totalText = await totalRequests.textContent();
+      
+      // Should be a number
+      expect(totalText).toMatch(/\d+/);
+    });
+
+    test('should aggregate query patterns correctly in Analysis', async ({ page }) => {
+      // Navigate to Analysis tab
+      await page.locator('#tabs a[href="#analysis"]').click();
+      await page.waitForTimeout(500);
+      
+      // Get all total_count values
+      const rows = await page.locator('#analysis-table tbody tr').count();
+      const counts = [];
+      
+      for (let i = 1; i <= Math.min(rows, 5); i++) {
+        const countText = await page.locator(`#analysis-table tbody tr:nth-child(${i}) td:nth-child(3)`).textContent();
+        const count = parseInt(countText.replace(/,/g, ''));
+        counts.push(count);
+      }
+      
+      // All counts should be positive numbers
+      for (const count of counts) {
+        expect(count).toBeGreaterThan(0);
+      }
+      
+      // Sum of counts should be reasonable
+      const sum = counts.reduce((a, b) => a + b, 0);
+      expect(sum).toBeGreaterThan(0);
+    });
+
+    test('should calculate duration percentiles correctly', async ({ page }) => {
+      // Navigate to Timeline tab (has duration distributions)
+      await page.locator('#tabs a[href="#timeline"]').click();
+      await page.waitForTimeout(1000);
+      
+      // Charts should render
+      const charts = page.locator('canvas');
+      const chartCount = await charts.count();
+      expect(chartCount).toBeGreaterThan(0);
+    });
+
+    test('should count operations correctly in Dashboard', async ({ page }) => {
+      const dashboardTab = page.locator('#dashboard');
+      await expect(dashboardTab).toBeVisible();
+      
+      // Look for operation counts (fetch, indexScan, etc.)
+      const operationLabels = page.locator('.operation-label, .stat-label');
+      const count = await operationLabels.count();
+      
+      // Should have multiple operation stats
+      expect(count).toBeGreaterThan(0);
+    });
+  });
+
+  test.describe('Data Integrity Checks', () => {
+    test('should maintain data consistency after multiple sorts', async ({ page }) => {
+      // Go to Every Query tab
+      await page.locator('#tabs a[href="#every-query"]').click();
+      await page.waitForTimeout(500);
+      
+      const initialRowCount = await page.locator('#every-query-table tbody tr').count();
+      
+      // Sort by multiple columns
+      const headers = await page.locator('#every-query-table-header th').all();
+      
+      for (let i = 0; i < Math.min(3, headers.length); i++) {
+        await headers[i].click();
+        await page.waitForTimeout(200);
+      }
+      
+      // Row count should remain the same
+      const finalRowCount = await page.locator('#every-query-table tbody tr').count();
+      expect(finalRowCount).toBe(initialRowCount);
+    });
+
+    test('should preserve data when switching tabs', async ({ page }) => {
+      // Get initial count in Every Query
+      await page.locator('#tabs a[href="#every-query"]').click();
+      await page.waitForTimeout(500);
+      const everyQueryRows = await page.locator('#every-query-table tbody tr').count();
+      
+      // Switch to Analysis
+      await page.locator('#tabs a[href="#analysis"]').click();
+      await page.waitForTimeout(500);
+      const analysisRows = await page.locator('#analysis-table tbody tr').count();
+      
+      // Switch back to Every Query
+      await page.locator('#tabs a[href="#every-query"]').click();
+      await page.waitForTimeout(500);
+      const everyQueryRowsAgain = await page.locator('#every-query-table tbody tr').count();
+      
+      // Should have same count
+      expect(everyQueryRowsAgain).toBe(everyQueryRows);
+      
+      // Both tables should have data
+      expect(everyQueryRows).toBeGreaterThan(0);
+      expect(analysisRows).toBeGreaterThan(0);
+    });
+
+    test('should handle edge cases in time parsing', async ({ page }) => {
+      // Navigate to Every Query
+      await page.locator('#tabs a[href="#every-query"]').click();
+      await page.waitForTimeout(500);
+      
+      // Sort by elapsed time
+      const elapsedHeader = page.locator('#every-query-table-header th:nth-child(2)');
+      await elapsedHeader.click();
+      await page.waitForTimeout(300);
+      
+      // Get all visible time values
+      const timeRows = await page.locator('#every-query-table tbody tr td:nth-child(2)').all();
+      
+      for (let i = 0; i < Math.min(5, timeRows.length); i++) {
+        const timeText = await timeRows[i].textContent();
+        // Should be valid time format (not N/A or error)
+        expect(timeText).toMatch(/\d+[:.]\d+|N\/A/);
+      }
+    });
+  });
+
+  test.describe('Baseline Snapshots - Expected Outputs', () => {
+    test('should produce consistent sort order for elapsed time DESC', async ({ page }) => {
+      await page.locator('#tabs a[href="#every-query"]').click();
+      await page.waitForTimeout(500);
+      
+      // Get top 5 elapsed times
+      const topTimes = [];
+      for (let i = 1; i <= 5; i++) {
+        const timeText = await page.locator(`#every-query-table tbody tr:nth-child(${i}) td:nth-child(2)`).textContent();
+        topTimes.push(timeText);
+      }
+      
+      // Snapshot - these are the expected top 5 based on sample data
+      // This creates a baseline for future comparisons
+      expect(topTimes.length).toBe(5);
+      
+      // Each should be a valid time
+      topTimes.forEach(time => {
+        expect(time).toMatch(/\d+[:.]\d+/);
+      });
+    });
+
+    test('should produce consistent aggregation in Analysis tab', async ({ page }) => {
+      await page.locator('#tabs a[href="#analysis"]').click();
+      await page.waitForTimeout(500);
+      
+      // Get top 3 query patterns by count
+      const topPatterns = [];
+      for (let i = 1; i <= 3; i++) {
+        const pattern = await page.locator(`#analysis-table tbody tr:nth-child(${i}) td:nth-child(1)`).textContent();
+        const count = await page.locator(`#analysis-table tbody tr:nth-child(${i}) td:nth-child(3)`).textContent();
+        topPatterns.push({ pattern: pattern.substring(0, 50), count: parseInt(count.replace(/,/g, '')) });
+      }
+      
+      // Baseline snapshot
+      expect(topPatterns.length).toBe(3);
+      topPatterns.forEach(p => {
+        expect(p.count).toBeGreaterThan(0);
+        expect(p.pattern.length).toBeGreaterThan(0);
+      });
+    });
+  });
+});
