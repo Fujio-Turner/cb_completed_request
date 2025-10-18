@@ -1,3 +1,8 @@
+### Version 3.24.1 (October 18, 2025)
+- **Fix: Docker Build** - Fixed Docker Hub authentication and automated builds (closes #174)
+- **Fix: GitHub Actions** - Resolved GitHub Actions workflow issues (closes #173)  
+- **Enhancement: Chart Styling** - Updated chart line colors for better readability (closes #140)
+
 ### Version 3.24.0 (October 18, 2025)
 - **New: Playwright E2E Testing** - Added comprehensive end-to-end testing with Playwright for improved reliability
 - **Enhancement: Pattern Chart** - Improved pattern chart visualization with better sample data

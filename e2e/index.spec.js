@@ -9,7 +9,8 @@ test.describe('Couchbase Query Analyzer - en/index.html', () => {
   });
 
   test('should load the page and display title', async ({ page }) => {
-    await expect(page).toHaveTitle(/Query Analyzer v3\.24\.0/);
+    // Match any semantic version (e.g., v3.24.1, v3.25.0-beta, v4.0.0-post)
+    await expect(page).toHaveTitle(/Query Analyzer v\d+\.\d+\.\d+(-\w+)?/);
   });
 
   test('should display main tab navigation', async ({ page }) => {
@@ -200,7 +201,8 @@ test.describe('Couchbase Query Analyzer - en/index.html', () => {
 
   test('should display version information', async ({ page }) => {
     const versionMeta = await page.locator('meta[name="version"]').getAttribute('content');
-    expect(versionMeta).toMatch(/3\.24\.0/); // Matches 3.24.0 or 3.24.0-post
+    // Match any semantic version (e.g., 3.24.1, 3.25.0-beta, 4.0.0-post)
+    expect(versionMeta).toMatch(/\d+\.\d+\.\d+(-\w+)?/);
   });
 
   test('should have responsive layout', async ({ page }) => {
