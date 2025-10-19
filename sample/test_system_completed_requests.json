@@ -11853,5 +11853,54 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-31T15:50:33.567Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.234\u00b5s\",\"servTime\":\"9.012\u00b5s\"},\"privileges\":{\"List\":[{\"Target\":\"default:users\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"4.890\u00b5s\"},\"~children\":[{\"#operator\":\"PrimaryScan3\",\"#stats\":{\"#itemsIn\":1500,\"#itemsOut\":1500,\"#phaseSwitches\":3000,\"execTime\":\"34.567ms\",\"kernTime\":\"32.1ms\",\"servTime\":\"30.5ms\"},\"index\":\"#primary\",\"keyspace\":\"users\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":1500,\"#itemsOut\":1500,\"#phaseSwitches\":3000,\"execTime\":\"45.678ms\",\"kernTime\":\"42.5ms\",\"servTime\":\"40.9ms\"},\"keyspace\":\"users\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":1500,\"#itemsOut\":327,\"#phaseSwitches\":1827,\"execTime\":\"12.345ms\",\"kernTime\":\"11.5ms\"},\"condition\":\"REGEXP_CONTAINS((`u`.`email`), '@(gmail|yahoo|hotmail)\\\\\\\\.com$')\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":327,\"#itemsOut\":327,\"#phaseSwitches\":654,\"execTime\":\"3.456ms\",\"kernTime\":\"3.2ms\"},\"result_terms\":[{\"expr\":\"(`u`.`userId`)\"},{\"expr\":\"(`u`.`email`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":327,\"#itemsOut\":327,\"#phaseSwitches\":328,\"execTime\":\"1.890ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "select-star-with-meta-test",
+      "cpuTime": "12.345ms",
+      "elapsedTime": "567.891ms",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 100,
+        "fetch": 100
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "10.123µs",
+        "instantiate": "5.678µs",
+        "parse": "23.456ms",
+        "plan": "34.567ms",
+        "indexScan": "45.678ms",
+        "fetch": "234.567ms",
+        "project": "12.345ms",
+        "run": "500.123ms",
+        "stream": "8.901ms"
+      },
+      "remoteAddr": "127.0.0.1:54321",
+      "requestId": "select-star-with-meta-test",
+      "requestTime": "2025-08-15T01:00:00.000Z",
+      "resultCount": 100,
+      "resultSize": 204800,
+      "scanConsistency": "unbounded",
+      "serviceTime": "567.234ms",
+      "state": "completed",
+      "statement": "Select *, meta().id FROM `test_bucket` WHERE status = 'active' LIMIT 100",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 2048,
+      "userAgent": "test-client/1.0",
+      "users": "local:test_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#stats\":{\"execTime\":\"1.0µs\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsOut\":100,\"execTime\":\"45.0ms\"},\"index\":\"idx_status\",\"keyspace\":\"test_bucket\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsOut\":100,\"execTime\":\"234.0ms\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsOut\":100,\"execTime\":\"12.0ms\"}},{\"#operator\":\"Limit\",\"#stats\":{\"#itemsOut\":100,\"execTime\":\"1.0ms\"},\"expr\":\"100\"},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsOut\":100,\"execTime\":\"8.0ms\"}}]}}"
   }
 ]

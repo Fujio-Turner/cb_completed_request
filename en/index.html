@@ -13240,8 +13240,8 @@ function generateElapsedTimeChart(requests) {
                     patternCounts["ARRAY QUERY"]++;
                 }
 
-                // SELECT * (only pure SELECT * queries, not qualified wildcards like c.*)
-                const selectStarMatch = upperStatement.match(/SELECT\s+\*\s+FROM/);
+                // SELECT * (matches SELECT * FROM or SELECT *, field FROM, but not qualified wildcards like c.*)
+                const selectStarMatch = upperStatement.match(/SELECT\s+\*[\s,]/);
                 if (selectStarMatch) {
                     patternCounts["SELECT *"]++;
                 }
@@ -13910,8 +13910,8 @@ function generateElapsedTimeChart(requests) {
                     }
                 }
 
-                // Count SELECT * usage (pure SELECT * FROM, not qualified wildcards like c.*)
-                const selectStarMatch = statement.match(/SELECT\s+\*\s+FROM/i);
+                // Count SELECT * usage (matches SELECT * FROM or SELECT *, field FROM, not qualified wildcards like c.*)
+                const selectStarMatch = statement.match(/SELECT\s+\*[\s,]/i);
                 if (selectStarMatch) {
                     selectStarCount++;
                     if (selectStarUsageSamples.length < 5 &&
