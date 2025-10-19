@@ -1,3 +1,7 @@
+### Version 3.24.2 (October 18, 2025)
+- **Fix: Issue #176** - Bug fix for issue #176
+- **Fix: Issue #175** - Bug fix for issue #175
+
 ### Version 3.24.1 (October 18, 2025)
 - **Fix: Docker Build** - Fixed Docker Hub authentication and automated builds (closes #174)
 - **Fix: GitHub Actions** - Resolved GitHub Actions workflow issues (closes #173)  
