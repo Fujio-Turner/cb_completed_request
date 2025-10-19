@@ -13247,12 +13247,12 @@ function generateElapsedTimeChart(requests) {
                 }
 
                 // LIKE (ensure it's an operator, not a backticked field name)
-                if (statement.includes(" LIKE ") && !statement.includes("`LIKE`")) {
+                if (upperStatement.includes(" LIKE ") && !upperStatement.includes("`LIKE`")) {
                     patternCounts["LIKE"]++;
                 }
 
                 // COUNT
-                if (statement.includes(" COUNT(")) {
+                if (upperStatement.includes(" COUNT(")) {
                     patternCounts["COUNT"]++;
                 }
 
@@ -13262,17 +13262,17 @@ function generateElapsedTimeChart(requests) {
                 }
 
                 // REGEX
-                if (statement.includes("REGEXP_") || /REGEX\s*\(/.test(statement)) {
+                if (upperStatement.includes("REGEXP_") || /REGEX\s*\(/i.test(statement)) {
                     patternCounts["REGEX"]++;
                 }
 
                 // EXECUTE
-                if (statement.startsWith("EXECUTE")) {
+                if (upperStatement.startsWith("EXECUTE")) {
                     patternCounts["EXECUTE"]++;
                 }
 
                 // LIMIT
-                if (statement.includes(" LIMIT ")) {
+                if (upperStatement.includes(" LIMIT ")) {
                     patternCounts["LIMIT"]++;
                 }
 
@@ -13895,9 +13895,9 @@ function generateElapsedTimeChart(requests) {
                 }
 
                 // Count inefficient LIKE operations with leading wildcards
-                if (statement.includes(" LIKE ")) {
+                if (statement.toUpperCase().includes(" LIKE ")) {
                     // Look for patterns like LIKE '%text' or LIKE "%text"
-                    const likeMatches = statement.match(/ LIKE\s+['"]%[^'"]*['"]?/g);
+                    const likeMatches = statement.match(/ LIKE\s+['"]%[^'"]*['"]?/gi);
                     if (likeMatches && likeMatches.length > 0) {
                         inefficientLikeCount++;
                         if (inefficientLikeOperationsSamples.length < 5 && 
@@ -13911,7 +13911,7 @@ function generateElapsedTimeChart(requests) {
                 }
 
                 // Count SELECT * usage (pure SELECT * FROM, not qualified wildcards like c.*)
-                const selectStarMatch = statement.match(/SELECT\s+\*\s+FROM/);
+                const selectStarMatch = statement.match(/SELECT\s+\*\s+FROM/i);
                 if (selectStarMatch) {
                     selectStarCount++;
                     if (selectStarUsageSamples.length < 5 &&
