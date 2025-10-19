@@ -612,6 +612,14 @@ if (window.TEXT_CONSTANTS) {
       .upload-box, .textarea-box { flex: 1; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 8px; }
       .or-divider { align-self: center; color: #6c757d; font-weight: 700; }
       .file-name { font-size: 11px; color: #6c757d; margin-top: 6px; }
+      
+      /* jQuery UI Autocomplete styling */
+      .ui-autocomplete {
+        max-height: 200px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 1000;
+      }
     </style>
  
      <!-- Input Section (outside tabs) -->
@@ -13368,7 +13376,8 @@ function generateElapsedTimeChart(requests) {
         }
  
         // Generate User Count Table
-        function generateUserCountTable(requests) {
+        // Helper function to get user list with counts (sorted by count descending)
+        function getUserListWithCounts(requests) {
             const userCounts = {};
 
             requests.forEach((request) => {
@@ -13379,6 +13388,77 @@ function generateElapsedTimeChart(requests) {
             const sortedUsers = Object.entries(userCounts).sort(
                 ([, a], [, b]) => b - a
             );
+
+            return sortedUsers;
+        }
+
+        // Initialize jQuery UI autocomplete for username search inputs
+        function initializeUsernameAutocomplete(requests) {
+            const sortedUsers = getUserListWithCounts(requests);
+            
+            // Format data for autocomplete: "username (count)" sorted alphabetically by username
+            const autocompleteData = sortedUsers
+                .map(([user, count]) => ({
+                    label: `${user} (${count})`,
+                    value: user
+                }))
+                .sort((a, b) => a.value.localeCompare(b.value));
+
+            // Destroy existing autocomplete instances before reinitializing
+            const analysisUsernameInput = $("#analysis-username-search");
+            const everyQueryUsernameInput = $("#username-search");
+            
+            if (analysisUsernameInput.hasClass("ui-autocomplete-input")) {
+                analysisUsernameInput.autocomplete("destroy");
+            }
+            if (everyQueryUsernameInput.hasClass("ui-autocomplete-input")) {
+                everyQueryUsernameInput.autocomplete("destroy");
+            }
+
+            // Track if we just selected an item to prevent double trigger
+            let justSelected = false;
+
+            // Initialize autocomplete for Analysis tab username search
+            analysisUsernameInput.autocomplete({
+                source: autocompleteData,
+                minLength: 0,
+                select: function(event, ui) {
+                    justSelected = true;
+                    $(this).val(ui.item.value);
+                    // Trigger native input event to fire the debounced search
+                    this.dispatchEvent(new Event('input', { bubbles: true }));
+                    // Reset flag after a short delay
+                    setTimeout(() => { justSelected = false; }, 100);
+                    return false;
+                }
+            }).focus(function() {
+                if (!justSelected) {
+                    $(this).autocomplete("search", $(this).val());
+                }
+            });
+
+            // Initialize autocomplete for Every Query tab username search
+            everyQueryUsernameInput.autocomplete({
+                source: autocompleteData,
+                minLength: 0,
+                select: function(event, ui) {
+                    justSelected = true;
+                    $(this).val(ui.item.value);
+                    // Trigger native input event to fire the debounced search
+                    this.dispatchEvent(new Event('input', { bubbles: true }));
+                    // Reset flag after a short delay
+                    setTimeout(() => { justSelected = false; }, 100);
+                    return false;
+                }
+            }).focus(function() {
+                if (!justSelected) {
+                    $(this).autocomplete("search", $(this).val());
+                }
+            });
+        }
+
+        function generateUserCountTable(requests) {
+            const sortedUsers = getUserListWithCounts(requests);
 
             const tbody = document.getElementById("user-count-body");
             tbody.innerHTML = "";
@@ -16521,6 +16601,9 @@ function generateElapsedTimeChart(requests) {
 
                 // Extract sample queries for display
                 extractSampleQueries(filteredRequests);
+
+                // Initialize username autocomplete with current filtered requests
+                initializeUsernameAutocomplete(filteredRequests);
 
                 // Also parse index data if available
                 parseIndexJSON();
