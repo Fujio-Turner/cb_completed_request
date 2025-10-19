@@ -1902,12 +1902,40 @@ if (window.TEXT_CONSTANTS) {
             <div class="height-100 position-relative background-f8 border-radius-8 overflow-hidden">
                 <!-- Summary counts above the flow chart -->
                 <div id="flow-summary"
-                    class="position-relative z-index-3 background-white padding-10-20 border-bottom display-flex justify-space-between align-center">
-                    <div class="font-bold color-333">
-                        Indexes Used: <span id="index-count">0</span>
+                    class="position-relative z-index-3 background-white padding-10-20 border-bottom">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div class="font-bold color-333">
+                            Indexes Used: <span id="index-count">0</span>
+                        </div>
+                        <div class="font-bold color-333">
+                            Queries Executed: <span id="query-count">0</span>
+                        </div>
                     </div>
-                    <div class="font-bold color-333">
-                        Queries Executed: <span id="query-count">0</span>
+                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <div>
+                            <label for="bucket-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Bucket:</label>
+                            <select id="bucket-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                <option value="All">All</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="scope-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Scope:</label>
+                            <select id="scope-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                <option value="All">All</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="collection-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Collection:</label>
+                            <select id="collection-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                <option value="All">All</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="index-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Index:</label>
+                            <select id="index-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                <option value="All">All</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div id="flow-canvas" class="width-100 calc-height-minus-50 position-relative overflow-auto">
@@ -17927,6 +17955,35 @@ function generateElapsedTimeChart(requests) {
                                     indexName.includes("primary") ||
                                     indexName.endsWith("_primary");
 
+                                // Extract bucket.scope.collection from the query statement
+                                const request = requestsToUse[requestIndex];
+                                const statement = request?.statement || request?.preparedText || "";
+                                let bucketScopeCollection = "unknown.unknown.unknown";
+                                
+                                const backtickMatch = statement.match(/FROM\s+`([^`]+)`/i);
+                                if (backtickMatch) {
+                                    const target = backtickMatch[1].trim();
+                                    const parts = target.split(".");
+                                    if (parts.length === 1) {
+                                        bucketScopeCollection = `${parts[0]}._default._default`;
+                                    } else if (parts.length === 2) {
+                                        bucketScopeCollection = `${parts[0]}.${parts[1]}._default`;
+                                    } else if (parts.length >= 3) {
+                                        bucketScopeCollection = `${parts[0]}.${parts[1]}.${parts[2]}`;
+                                    }
+                                } else {
+                                    // Try multi-part without backticks
+                                    const multiPartMatch = statement.match(/FROM\s+([a-zA-Z0-9_-]+\.[a-zA-Z0-9_.-]+)(?:\s|$|WHERE|JOIN|USE|LET|NEST)/i);
+                                    if (multiPartMatch) {
+                                        const target = multiPartMatch[1].trim();
+                                        const parts = target.split(".");
+                                        if (parts.length === 2) {
+                                            bucketScopeCollection = `${parts[0]}.${parts[1]}._default`;
+                                        } else if (parts.length >= 3) {
+                                            bucketScopeCollection = `${parts[0]}.${parts[1]}.${parts[2]}`;
+                                        }
+                                    }
+                                }
 
                                 allIndexes.set(indexName, {
                                     name: indexName,
@@ -17935,6 +17992,7 @@ function generateElapsedTimeChart(requests) {
                                     scanTimes: [],
                                     itemsScanned: [],
                                     itemsFetched: [],
+                                    bucketScopeCollection: bucketScopeCollection,
                                 });
                             }
 
@@ -18263,7 +18321,7 @@ function generateElapsedTimeChart(requests) {
             }
         }
 
-        function renderIndexQueryFlow(indexes, queries) {
+        function renderIndexQueryFlow(indexes, queries, selectedIndex = "All", selectedBucket = "All", selectedScope = "All", selectedCollection = "All") {
 
             const flowElements = document.getElementById("flow-elements");
 
@@ -18272,31 +18330,433 @@ function generateElapsedTimeChart(requests) {
                 return;
             }
 
+            // Issue #178: Populate filter dropdowns with cascading logic
+            const indexDropdown = document.getElementById("index-filter-dropdown");
+            const bucketDropdown = document.getElementById("bucket-filter-dropdown");
+            const scopeDropdown = document.getElementById("scope-filter-dropdown");
+            const collectionDropdown = document.getElementById("collection-filter-dropdown");
+            
+            // Store original data if not already stored
+            if (!window.flowOriginalIndexes) {
+                window.flowOriginalIndexes = indexes;
+                window.flowOriginalQueries = queries;
+            }
+            
+            // Use original data for building dropdowns
+            const originalIndexes = window.flowOriginalIndexes;
+            const originalQueries = window.flowOriginalQueries;
+            
+            // Extract all bucket/scope/collection combinations from queries
+            const queriesData = [];
+            originalQueries.forEach(query => {
+                // ONLY use statement field, NOT preparedText (preparedText often has incomplete/alias data)
+                let statement = query.statement;
+                if (!statement) return;
+                
+                // Match FROM clause - REQUIRE backticks for single-word buckets to avoid aliases
+                // Pattern 1: FROM `bucket` or FROM `bucket.scope.collection`
+                // Pattern 2: FROM bucket.scope.collection (multi-part, no backticks needed)
+                
+                let target = null;
+                let hasBackticks = false;
+                
+                // Try to match with backticks first (most reliable)
+                const backtickMatch = statement.match(/FROM\s+`([^`]+)`/i);
+                if (backtickMatch) {
+                    target = backtickMatch[1].trim();
+                    hasBackticks = true;
+                } else {
+                    // Try to match without backticks (must be multi-part like bucket.scope.collection)
+                    const multiPartMatch = statement.match(/FROM\s+([a-zA-Z0-9_-]+\.[a-zA-Z0-9_.-]+)(?:\s|$|WHERE|JOIN|USE|LET|NEST)/i);
+                    if (multiPartMatch) {
+                        target = multiPartMatch[1].trim();
+                    }
+                }
+                
+                // If we have no valid target, skip
+                if (!target) return;
+                
+                const parts = target.split(".").filter(p => p.length > 0);
+                let bucket, scope, collection;
+                
+                // Validate that parts look like real bucket names (not aliases)
+                const isValid = parts.every(p => /^[a-zA-Z0-9_-]+$/.test(p));
+                if (!isValid) return;
+                
+                // For single-part names, ONLY accept if they had backticks
+                if (parts.length === 1) {
+                    if (!hasBackticks) return; // Single word without backticks = alias
+                    
+                    bucket = parts[0];
+                    scope = "_default";
+                    collection = "_default";
+                } else if (parts.length === 2) {
+                    bucket = parts[0];
+                    scope = parts[1];
+                    collection = "_default";
+                } else if (parts.length >= 3) {
+                    bucket = parts[0];
+                    scope = parts[1];
+                    collection = parts[2];
+                }
+                
+                if (bucket && bucket.length > 0) {
+                    queriesData.push({ bucket, scope, collection, query });
+                }
+            });
+            
+            // Build cascading dropdown options based on current selections
+            // Track counts for each bucket/scope/collection
+            const bucketIndexCounts = new Map(); // bucket -> Set of index names
+            const scopeIndexCounts = new Map(); // "bucket.scope" -> Set of index names
+            const collectionIndexCounts = new Map(); // "bucket.scope.collection" -> Set of index names
+            const relevantIndexes = new Set();
+            
+            // Build a map of which indexes are used by which queries
+            const queryIndexMap = new Map(); // normalizedStatement -> Set of index names
+            if (indexQueryFlowData.connections) {
+                indexQueryFlowData.connections.forEach((connection) => {
+                    if (!queryIndexMap.has(connection.queryStatement)) {
+                        queryIndexMap.set(connection.queryStatement, new Set());
+                    }
+                    queryIndexMap.get(connection.queryStatement).add(connection.indexName);
+                });
+            }
+            
+            queriesData.forEach(data => {
+                // Get indexes for this query
+                const queryIndexes = queryIndexMap.get(data.query.normalizedStatement) || new Set();
+                
+                // Always count indexes for all buckets
+                if (!bucketIndexCounts.has(data.bucket)) {
+                    bucketIndexCounts.set(data.bucket, new Set());
+                }
+                queryIndexes.forEach(idx => bucketIndexCounts.get(data.bucket).add(idx));
+                
+                // Count indexes for scopes (only if bucket matches or "All")
+                if (selectedBucket === "All" || data.bucket === selectedBucket) {
+                    const scopeKey = `${data.bucket}.${data.scope}`;
+                    if (!scopeIndexCounts.has(scopeKey)) {
+                        scopeIndexCounts.set(scopeKey, new Set());
+                    }
+                    queryIndexes.forEach(idx => scopeIndexCounts.get(scopeKey).add(idx));
+                    
+                    // Count indexes for collections (only if bucket and scope match or "All")
+                    if (selectedScope === "All" || data.scope === selectedScope) {
+                        const collectionKey = `${data.bucket}.${data.scope}.${data.collection}`;
+                        if (!collectionIndexCounts.has(collectionKey)) {
+                            collectionIndexCounts.set(collectionKey, new Set());
+                        }
+                        queryIndexes.forEach(idx => collectionIndexCounts.get(collectionKey).add(idx));
+                        
+                        // Add to relevant indexes if all filters match
+                        if (selectedCollection === "All" || data.collection === selectedCollection) {
+                            queryIndexes.forEach(idx => relevantIndexes.add(idx));
+                        }
+                    }
+                }
+            });
+            
+            // Extract unique values from the Maps
+            const buckets = new Set(bucketIndexCounts.keys());
+            const scopes = new Set();
+            const collections = new Set();
+            
+            scopeIndexCounts.forEach((indexes, key) => {
+                const parts = key.split(".");
+                scopes.add(parts[1]); // Extract scope name
+            });
+            
+            collectionIndexCounts.forEach((indexes, key) => {
+                const parts = key.split(".");
+                collections.add(parts[2]); // Extract collection name
+            });
+            
+            // Calculate total indexes for "All" option - use originalIndexes to match top count
+            const allIndexesSet = new Set(originalIndexes.map(idx => idx.name));
+            
+            // Populate/rebuild bucket dropdown
+            const currentBucketValue = bucketDropdown.value;
+            bucketDropdown.innerHTML = `<option value="All">(All) (${allIndexesSet.size})</option>`;
+            Array.from(buckets).sort().forEach(bucket => {
+                const count = bucketIndexCounts.get(bucket)?.size || 0;
+                const option = document.createElement("option");
+                option.value = bucket;
+                option.textContent = `${bucket} (${count})`;
+                bucketDropdown.appendChild(option);
+            });
+            bucketDropdown.value = selectedBucket;
+            
+            // Populate/rebuild scope dropdown (cascading from bucket)
+            // Calculate total for scopes under current bucket
+            let scopeAllCount;
+            if (selectedBucket === "All") {
+                // Show total indexes when no bucket filter
+                scopeAllCount = allIndexesSet.size;
+            } else {
+                // Show indexes for selected bucket
+                scopeAllCount = bucketIndexCounts.get(selectedBucket)?.size || 0;
+            }
+            scopeDropdown.innerHTML = `<option value="All">(All) (${scopeAllCount})</option>`;
+            Array.from(scopes).sort().forEach(scope => {
+                // Find the count for this scope under the selected bucket
+                let count = 0;
+                if (selectedBucket === "All") {
+                    // Sum across all buckets for this scope
+                    scopeIndexCounts.forEach((indexes, key) => {
+                        if (key.endsWith("." + scope)) {
+                            indexes.forEach(idx => count++);
+                        }
+                    });
+                    // Deduplicate
+                    const scopeSet = new Set();
+                    scopeIndexCounts.forEach((indexes, key) => {
+                        if (key.endsWith("." + scope)) {
+                            indexes.forEach(idx => scopeSet.add(idx));
+                        }
+                    });
+                    count = scopeSet.size;
+                } else {
+                    const scopeKey = `${selectedBucket}.${scope}`;
+                    count = scopeIndexCounts.get(scopeKey)?.size || 0;
+                }
+                const option = document.createElement("option");
+                option.value = scope;
+                option.textContent = `${scope} (${count})`;
+                scopeDropdown.appendChild(option);
+            });
+            // Reset scope to "All" if current selection is not available
+            if (!scopes.has(selectedScope) && selectedScope !== "All") {
+                selectedScope = "All";
+            }
+            scopeDropdown.value = selectedScope;
+            
+            // Populate/rebuild collection dropdown (cascading from bucket+scope)
+            // Calculate total for collections under current bucket.scope
+            let collectionAllCount;
+            if (selectedBucket === "All" && selectedScope === "All") {
+                // Show total indexes when no filters
+                collectionAllCount = allIndexesSet.size;
+            } else if (selectedBucket !== "All" && selectedScope === "All") {
+                // Show indexes for selected bucket
+                collectionAllCount = bucketIndexCounts.get(selectedBucket)?.size || 0;
+            } else {
+                // Show indexes for selected bucket.scope
+                const scopeKey = `${selectedBucket}.${selectedScope}`;
+                collectionAllCount = scopeIndexCounts.get(scopeKey)?.size || 0;
+            }
+            collectionDropdown.innerHTML = `<option value="All">(All) (${collectionAllCount})</option>`;
+            Array.from(collections).sort().forEach(collection => {
+                // Find the count for this collection under the selected bucket.scope
+                let count = 0;
+                const collectionSet = new Set();
+                collectionIndexCounts.forEach((indexes, key) => {
+                    const parts = key.split(".");
+                    const keyBucket = parts[0];
+                    const keyScope = parts[1];
+                    const keyCollection = parts[2];
+                    if ((selectedBucket === "All" || keyBucket === selectedBucket) &&
+                        (selectedScope === "All" || keyScope === selectedScope) &&
+                        keyCollection === collection) {
+                        indexes.forEach(idx => collectionSet.add(idx));
+                    }
+                });
+                count = collectionSet.size;
+                const option = document.createElement("option");
+                option.value = collection;
+                option.textContent = `${collection} (${count})`;
+                collectionDropdown.appendChild(option);
+            });
+            // Reset collection to "All" if current selection is not available
+            if (!collections.has(selectedCollection) && selectedCollection !== "All") {
+                selectedCollection = "All";
+            }
+            collectionDropdown.value = selectedCollection;
+            
+            // Populate/rebuild index dropdown (cascading from bucket+scope+collection)
+            const indexesToShow = selectedBucket === "All" && selectedScope === "All" && selectedCollection === "All" 
+                ? originalIndexes 
+                : originalIndexes.filter(idx => relevantIndexes.has(idx.name));
+            
+            // Sort indexes alphabetically by name
+            const sortedIndexes = indexesToShow.slice().sort((a, b) => a.name.localeCompare(b.name));
+            
+            indexDropdown.innerHTML = `<option value="All">(All)</option>`;
+            sortedIndexes.forEach(index => {
+                const option = document.createElement("option");
+                option.value = index.name;
+                option.textContent = index.name;
+                indexDropdown.appendChild(option);
+            });
+            // Reset index to "All" if current selection is not available
+            if (selectedIndex !== "All" && !sortedIndexes.find(idx => idx.name === selectedIndex)) {
+                selectedIndex = "All";
+            }
+            indexDropdown.value = selectedIndex;
+            
+            // Set up event listeners (use removeEventListener first to avoid duplicates)
+            const bucketChangeHandler = function() {
+                const newScope = scopeDropdown.value;
+                const newCollection = collectionDropdown.value;
+                renderIndexQueryFlow(originalIndexes, originalQueries, "All", this.value, "All", "All");
+            };
+            const scopeChangeHandler = function() {
+                const newCollection = collectionDropdown.value;
+                renderIndexQueryFlow(originalIndexes, originalQueries, "All", selectedBucket, this.value, "All");
+            };
+            const collectionChangeHandler = function() {
+                renderIndexQueryFlow(originalIndexes, originalQueries, "All", selectedBucket, selectedScope, this.value);
+            };
+            const indexChangeHandler = function() {
+                renderIndexQueryFlow(originalIndexes, originalQueries, this.value, selectedBucket, selectedScope, selectedCollection);
+            };
+            
+            // Remove old listeners and add new ones
+            bucketDropdown.removeEventListener("change", bucketDropdown._changeHandler);
+            scopeDropdown.removeEventListener("change", scopeDropdown._changeHandler);
+            collectionDropdown.removeEventListener("change", collectionDropdown._changeHandler);
+            indexDropdown.removeEventListener("change", indexDropdown._changeHandler);
+            
+            bucketDropdown._changeHandler = bucketChangeHandler;
+            scopeDropdown._changeHandler = scopeChangeHandler;
+            collectionDropdown._changeHandler = collectionChangeHandler;
+            indexDropdown._changeHandler = indexChangeHandler;
+            
+            bucketDropdown.addEventListener("change", bucketChangeHandler);
+            scopeDropdown.addEventListener("change", scopeChangeHandler);
+            collectionDropdown.addEventListener("change", collectionChangeHandler);
+            indexDropdown.addEventListener("change", indexChangeHandler);
+            
+            // Issue #178: Filter indexes and queries based on selection
+            let filteredIndexes = indexes;
+            let filteredQueries = queries;
+            
+            // Filter by bucket/scope/collection
+            if (selectedBucket !== "All" || selectedScope !== "All" || selectedCollection !== "All") {
+                filteredQueries = queries.filter(query => {
+                    let statement = query.statement;
+                    if (!statement) return false;
+                    
+                    let target = null;
+                    let hasBackticks = false;
+                    
+                    // Try to match with backticks first
+                    const backtickMatch = statement.match(/FROM\s+`([^`]+)`/i);
+                    if (backtickMatch) {
+                        target = backtickMatch[1].trim();
+                        hasBackticks = true;
+                    } else {
+                        // Try to match without backticks (must be multi-part)
+                        const multiPartMatch = statement.match(/FROM\s+([a-zA-Z0-9_-]+\.[a-zA-Z0-9_.-]+)(?:\s|$|WHERE|JOIN|USE|LET|NEST)/i);
+                        if (multiPartMatch) {
+                            target = multiPartMatch[1].trim();
+                        }
+                    }
+                    
+                    if (!target) return false;
+                    
+                    const parts = target.split(".").filter(p => p.length > 0);
+                    
+                    const isValid = parts.every(p => /^[a-zA-Z0-9_-]+$/.test(p));
+                    if (!isValid) return false;
+                    
+                    let bucket, scope, collection;
+                    
+                    if (parts.length === 1) {
+                        if (!hasBackticks) return false; // Single word without backticks = alias
+                        
+                        bucket = parts[0];
+                        scope = "_default";
+                        collection = "_default";
+                    } else if (parts.length === 2) {
+                        bucket = parts[0];
+                        scope = parts[1];
+                        collection = "_default";
+                    } else if (parts.length >= 3) {
+                        bucket = parts[0];
+                        scope = parts[1];
+                        collection = parts[2];
+                    } else {
+                        return false;
+                    }
+                    
+                    const bucketMatch = selectedBucket === "All" || bucket === selectedBucket;
+                    const scopeMatch = selectedScope === "All" || scope === selectedScope;
+                    const collectionMatch = selectedCollection === "All" || collection === selectedCollection;
+                    
+                    return bucketMatch && scopeMatch && collectionMatch;
+                });
+                
+                // Filter indexes to only show those connected to filtered queries
+                const connectedIndexNames = new Set();
+                filteredQueries.forEach(query => {
+                    if (indexQueryFlowData.connections) {
+                        indexQueryFlowData.connections.forEach((connection, key) => {
+                            if (connection.queryStatement === query.normalizedStatement) {
+                                connectedIndexNames.add(connection.indexName);
+                            }
+                        });
+                    }
+                });
+                filteredIndexes = indexes.filter(idx => connectedIndexNames.has(idx.name));
+                
+                // Also filter queries to only show those that have connections to indexes
+                filteredQueries = filteredQueries.filter(query => {
+                    if (!indexQueryFlowData.connections) return false;
+                    let hasConnection = false;
+                    indexQueryFlowData.connections.forEach((connection) => {
+                        if (connection.queryStatement === query.normalizedStatement && connectedIndexNames.has(connection.indexName)) {
+                            hasConnection = true;
+                        }
+                    });
+                    return hasConnection;
+                });
+            }
+            
+            // Filter by index name
+            if (selectedIndex !== "All") {
+                // Filter to show only selected index
+                filteredIndexes = filteredIndexes.filter(idx => idx.name === selectedIndex);
+                
+                // Filter queries to show only those connected to this index
+                // Check the connections map to see which queries use this index
+                filteredQueries = filteredQueries.filter(query => {
+                    const connectionKey = `${query.normalizedStatement}::${selectedIndex}`;
+                    return indexQueryFlowData.connections && indexQueryFlowData.connections.has(connectionKey);
+                });
+            }
+            
+            // Set dropdown values
+            if (indexDropdown) indexDropdown.value = selectedIndex;
+            if (bucketDropdown) bucketDropdown.value = selectedBucket;
+            if (scopeDropdown) scopeDropdown.value = selectedScope;
+            if (collectionDropdown) collectionDropdown.value = selectedCollection;
+
             // Update counts in summary
             const indexCountEl = document.getElementById("index-count");
             const queryCountEl = document.getElementById("query-count");
-            if (indexCountEl) indexCountEl.textContent = indexes.length;
-            if (queryCountEl) queryCountEl.textContent = queries.length;
+            if (indexCountEl) indexCountEl.textContent = filteredIndexes.length;
+            if (queryCountEl) queryCountEl.textContent = filteredQueries.length;
 
             // Clear container
             flowElements.innerHTML = "";
 
-            if (indexes.length === 0) {
+            if (filteredIndexes.length === 0) {
                 flowElements.innerHTML =
                     '<div style="padding: 20px; text-align: center; color: #666; font-style: italic;">No index usage found in the queries.<br><br>This could mean:<br>• Queries use sequential scans<br>• Index information not in execution plans<br>• All queries are prepared statements without index details</div>';
                 return;
             }
 
             // Generate colors for indexes
-            const colors = generateColors(indexes.length);
+            const colors = generateColors(filteredIndexes.length);
 
             // Calculate layout - indexes on left, queries on right
             const canvasWidth = flowElements.offsetWidth || 1200;
             const indexItemHeight = 164; // Issue #178: Index spacing (144 + 20px gap)
             const queryItemHeight = 193; // Issue #178: Query spacing (173 + 20px gap)
             const canvasHeight = Math.max(
-                indexes.length * indexItemHeight,
-                queries.length * queryItemHeight,
+                filteredIndexes.length * indexItemHeight,
+                filteredQueries.length * queryItemHeight,
                 400
             );
 
@@ -18305,7 +18765,7 @@ function generateElapsedTimeChart(requests) {
 
             // Position indexes on the left
             const indexPositions = [];
-            indexes.forEach((index, i) => {
+            filteredIndexes.forEach((index, i) => {
                 const x = 50;
                 const y = 20 + i * indexItemHeight; // Issue #178: 20px top padding
                 const indexDiv = createIndexDiv(index, colors[i], x, y);
@@ -18320,7 +18780,7 @@ function generateElapsedTimeChart(requests) {
 
             // Position queries on the right
             const queryPositions = [];
-            queries.forEach((query, queryIndex) => {
+            filteredQueries.forEach((query, queryIndex) => {
                 const x = canvasWidth - 380;
                 const y = 20 + queryIndex * queryItemHeight; // Issue #178: 20px top padding
                 const queryDiv = createQueryDiv(query, queryIndex, x, y);
@@ -18387,8 +18847,10 @@ function generateElapsedTimeChart(requests) {
 
             div.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-weight: bold; font-size: 14px; color: #333;">${index.name
-                } | Scanned: ${index.totalUsage}</div>
+            <div>
+              <div style="font-weight: bold; font-size: 14px; color: #333;">${index.name} | Scanned: ${index.totalUsage}</div>
+              <div style="font-style: italic; font-size: 11px; color: #666; margin-top: 2px;">${index.bucketScopeCollection || ''}</div>
+            </div>
             <button onclick="copyIndexName('${index.name.replace(
                     /'/g,
                     "\\'"
@@ -18605,22 +19067,22 @@ function generateElapsedTimeChart(requests) {
             );
 
             text.setAttribute("x", midX);
-            text.setAttribute("y", midY + 4);
+            text.setAttribute("y", midY + 6);
             text.setAttribute("text-anchor", "middle");
-            text.setAttribute("font-size", "11");
+            text.setAttribute("font-size", "17");
             text.setAttribute("font-weight", "bold");
             text.setAttribute("fill", "#333");
             text.textContent = count;
 
-            // Estimate text dimensions
-            const textWidth = count.toString().length * 7;
-            rect.setAttribute("x", midX - textWidth / 2 - 3);
-            rect.setAttribute("y", midY - 7);
-            rect.setAttribute("width", textWidth + 6);
-            rect.setAttribute("height", 14);
+            // Estimate text dimensions (1.5x larger than original)
+            const textWidth = count.toString().length * 11;
+            rect.setAttribute("x", midX - textWidth / 2 - 5);
+            rect.setAttribute("y", midY - 11);
+            rect.setAttribute("width", textWidth + 10);
+            rect.setAttribute("height", 22);
             rect.setAttribute("fill", "white");
             rect.setAttribute("stroke", "#333");
-            rect.setAttribute("stroke-width", "1");
+            rect.setAttribute("stroke-width", "1.5");
             rect.setAttribute("rx", "3");
 
             svg.appendChild(path);
