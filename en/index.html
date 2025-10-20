@@ -13565,16 +13565,31 @@ function generateElapsedTimeChart(requests) {
                 let target = null;
                 let hasBackticks = false;
                 
-                // Try to match with backticks first (most reliable)
-                const backtickMatch = cleanStatement.match(/FROM\s+`([^`]+)`/i);
-                if (backtickMatch) {
-                    target = backtickMatch[1].trim();
+                // Try to match with individually backticked components: `bucket`.`scope`.`collection`
+                const individualBacktickMatch = cleanStatement.match(/FROM\s+`([^`]+)`\.`([^`]+)`\.`([^`]+)`/i);
+                if (individualBacktickMatch) {
+                    // Matched: `account`.`profile`.`orders`
+                    target = `${individualBacktickMatch[1]}.${individualBacktickMatch[2]}.${individualBacktickMatch[3]}`;
                     hasBackticks = true;
                 } else {
-                    // Try to match without backticks - must have at least one dot
-                    const multiPartMatch = cleanStatement.match(/FROM\s+([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+)(?:\s|$|,|WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT)/i);
-                    if (multiPartMatch) {
-                        target = multiPartMatch[1].trim();
+                    // Try two-part backticked: `bucket`.`scope`
+                    const twoPartBacktickMatch = cleanStatement.match(/FROM\s+`([^`]+)`\.`([^`]+)`/i);
+                    if (twoPartBacktickMatch) {
+                        target = `${twoPartBacktickMatch[1]}.${twoPartBacktickMatch[2]}`;
+                        hasBackticks = true;
+                    } else {
+                        // Try single backticked identifier: `bucket.scope.collection` or `bucket`
+                        const singleBacktickMatch = cleanStatement.match(/FROM\s+`([^`]+)`/i);
+                        if (singleBacktickMatch) {
+                            target = singleBacktickMatch[1].trim();
+                            hasBackticks = true;
+                        } else {
+                            // Try to match without backticks - must have at least one dot
+                            const multiPartMatch = cleanStatement.match(/FROM\s+([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+)(?:\s|$|,|WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT)/i);
+                            if (multiPartMatch) {
+                                target = multiPartMatch[1].trim();
+                            }
+                        }
                     }
                 }
                 
@@ -18362,23 +18377,39 @@ function generateElapsedTimeChart(requests) {
                 if (!statement) return;
                 
                 // Match FROM clause - REQUIRE backticks for single-word buckets to avoid aliases
-                // Pattern 1: FROM `bucket` or FROM `bucket.scope.collection`
-                // Pattern 2: FROM bucket.scope.collection (multi-part, no backticks needed)
+                // Pattern 1: `bucket`.`scope`.`collection` (individually backticked)
+                // Pattern 2: `bucket` or `bucket.scope.collection` (single backtick pair)
+                // Pattern 3: bucket.scope.collection (multi-part, no backticks needed)
                 
                 let target = null;
                 let hasBackticks = false;
                 
-                // Try to match with backticks first (most reliable)
-                const backtickMatch = statement.match(/FROM\s+`([^`]+)`/i);
-                if (backtickMatch) {
-                    target = backtickMatch[1].trim();
+                // Try to match with individually backticked components: `bucket`.`scope`.`collection`
+                const individualBacktickMatch = statement.match(/FROM\s+`([^`]+)`\.`([^`]+)`\.`([^`]+)`/i);
+                if (individualBacktickMatch) {
+                    // Matched: `account`.`profile`.`orders`
+                    target = `${individualBacktickMatch[1]}.${individualBacktickMatch[2]}.${individualBacktickMatch[3]}`;
                     hasBackticks = true;
                 } else {
-                    // Try to match without backticks - must have at least one dot
-                    // Match bucket.scope or bucket.scope.collection, stopping at whitespace/keywords
-                    const multiPartMatch = statement.match(/FROM\s+([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+)(?:\s|$|,|WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT)/i);
-                    if (multiPartMatch) {
-                        target = multiPartMatch[1].trim();
+                    // Try two-part backticked: `bucket`.`scope`
+                    const twoPartBacktickMatch = statement.match(/FROM\s+`([^`]+)`\.`([^`]+)`/i);
+                    if (twoPartBacktickMatch) {
+                        target = `${twoPartBacktickMatch[1]}.${twoPartBacktickMatch[2]}`;
+                        hasBackticks = true;
+                    } else {
+                        // Try single backticked identifier: `bucket.scope.collection` or `bucket`
+                        const singleBacktickMatch = statement.match(/FROM\s+`([^`]+)`/i);
+                        if (singleBacktickMatch) {
+                            target = singleBacktickMatch[1].trim();
+                            hasBackticks = true;
+                        } else {
+                            // Try to match without backticks - must have at least one dot
+                            // Match bucket.scope or bucket.scope.collection, stopping at whitespace/keywords
+                            const multiPartMatch = statement.match(/FROM\s+([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+)(?:\s|$|,|WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT)/i);
+                            if (multiPartMatch) {
+                                target = multiPartMatch[1].trim();
+                            }
+                        }
                     }
                 }
                 
