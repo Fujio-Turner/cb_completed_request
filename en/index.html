@@ -13617,7 +13617,8 @@ function generateElapsedTimeChart(requests) {
                             hasBackticks = true;
                         } else {
                             // Try to match without backticks - can be multi-part OR single word if followed by keyword/end
-                            const multiPartMatch = cleanStatement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+(?:\\.[a-zA-Z0-9_-]+)*)(?:\\s+(?:WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|USING|SET|VALUES)|;|\\s*$)', 'i'));
+                            // Added USING (for MERGE) and SET (for UPDATE) as stop keywords
+                            const multiPartMatch = cleanStatement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+(?:\\.[a-zA-Z0-9_-]+)*)(?:\\s+(?:WHERE|JOIN|USE|USING|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|SET|VALUES|KEY)|;|\\s*$)', 'i'));
                             if (multiPartMatch) {
                                 target = multiPartMatch[1].trim();
                             }
@@ -18586,13 +18587,19 @@ function generateElapsedTimeChart(requests) {
                     
                     // If not subquery or couldn't extract, try normal patterns
                     if (!target) {
-                        // Try to match with individually backticked components: `bucket`.`scope`.`collection`
-                        const individualBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`\\.`([^`]+)`', 'i'));
-                        if (individualBacktickMatch) {
-                            // Matched: `account`.`profile`.`orders`
-                            target = `${individualBacktickMatch[1]}.${individualBacktickMatch[2]}.${individualBacktickMatch[3]}`;
+                        // Try mixed format: bucket.`scope`.`collection`
+                        const mixedBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+)\\.`([^`]+)`\\.`([^`]+)`', 'i'));
+                        if (mixedBacktickMatch) {
+                            target = `${mixedBacktickMatch[1]}.${mixedBacktickMatch[2]}.${mixedBacktickMatch[3]}`;
                             hasBackticks = true;
-                } else {
+                        } else {
+                            // Try fully backticked: `bucket`.`scope`.`collection`
+                            const individualBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`\\.`([^`]+)`', 'i'));
+                            if (individualBacktickMatch) {
+                                // Matched: `account`.`profile`.`orders`
+                                target = `${individualBacktickMatch[1]}.${individualBacktickMatch[2]}.${individualBacktickMatch[3]}`;
+                                hasBackticks = true;
+                            } else {
                     // Try two-part backticked: `bucket`.`scope`
                     const twoPartBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`', 'i'));
                     if (twoPartBacktickMatch) {
@@ -18606,14 +18613,16 @@ function generateElapsedTimeChart(requests) {
                             hasBackticks = true;
                         } else {
                             // Try to match without backticks - can be multi-part OR single word if followed by keyword/end
-                            const multiPartMatch = statement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+(?:\\.[a-zA-Z0-9_-]+)*)(?:\\s+(?:WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|USING|SET|VALUES)|;|\\s*$)', 'i'));
+                            // Added USING (for MERGE) and SET (for UPDATE) as stop keywords
+                            const multiPartMatch = statement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+(?:\\.[a-zA-Z0-9_-]+)*)(?:\\s+(?:WHERE|JOIN|USE|USING|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|SET|VALUES|KEY)|;|\\s*$)', 'i'));
                             if (multiPartMatch) {
                                 target = multiPartMatch[1].trim();
                             }
                         }
                     }
-                    }
-                    }
+                }
+                }
+                }
                     
                     // If we have no valid target, skip
                     if (!target) return;
@@ -18968,7 +18977,8 @@ function generateElapsedTimeChart(requests) {
                                 hasBackticks = true;
                             } else {
                                 // Try to match without backticks - can be multi-part OR single word if followed by keyword/end
-                                const multiPartMatch = statement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+(?:\\.[a-zA-Z0-9_-]+)*)(?:\\s+(?:WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|USING|SET|VALUES)|;|\\s*$)', 'i'));
+                                // Added USING (for MERGE) and SET (for UPDATE) as stop keywords
+                                const multiPartMatch = statement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+(?:\\.[a-zA-Z0-9_-]+)*)(?:\\s+(?:WHERE|JOIN|USE|USING|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|SET|VALUES|KEY)|;|\\s*$)', 'i'));
                                 if (multiPartMatch) {
                                     target = multiPartMatch[1].trim();
                                 }
