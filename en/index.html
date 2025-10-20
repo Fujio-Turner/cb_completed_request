@@ -13591,13 +13591,19 @@ function generateElapsedTimeChart(requests) {
                 
                 // If not subquery or couldn't extract, try normal patterns
                 if (!target) {
-                    // Try to match with individually backticked components: `bucket`.`scope`.`collection`
-                    const individualBacktickMatch = cleanStatement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`\\.`([^`]+)`', 'i'));
-                    if (individualBacktickMatch) {
-                        // Matched: `account`.`profile`.`orders`
-                        target = `${individualBacktickMatch[1]}.${individualBacktickMatch[2]}.${individualBacktickMatch[3]}`;
+                    // Try mixed format first: bucket.`scope`.`collection` (bucket not backticked)
+                    const mixedBacktickMatch = cleanStatement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+)\\.`([^`]+)`\\.`([^`]+)`', 'i'));
+                    if (mixedBacktickMatch) {
+                        target = `${mixedBacktickMatch[1]}.${mixedBacktickMatch[2]}.${mixedBacktickMatch[3]}`;
                         hasBackticks = true;
                     } else {
+                        // Try fully backticked: `bucket`.`scope`.`collection`
+                        const individualBacktickMatch = cleanStatement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`\\.`([^`]+)`', 'i'));
+                        if (individualBacktickMatch) {
+                            // Matched: `account`.`profile`.`orders`
+                            target = `${individualBacktickMatch[1]}.${individualBacktickMatch[2]}.${individualBacktickMatch[3]}`;
+                            hasBackticks = true;
+                        } else {
                     // Try two-part backticked: `bucket`.`scope`
                     const twoPartBacktickMatch = cleanStatement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`', 'i'));
                     if (twoPartBacktickMatch) {
@@ -13617,7 +13623,8 @@ function generateElapsedTimeChart(requests) {
                             }
                         }
                     }
-                    }
+                }
+                }
                 }
                 
                 // If no valid target found, return default
