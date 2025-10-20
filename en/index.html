@@ -18592,70 +18592,105 @@ function generateElapsedTimeChart(requests) {
                 let statement = query.statement;
                 if (!statement) return;
                    
+                    // Remove comments and normalize whitespace
+                    statement = statement
+                        .replace(/--.*$/gm, "") // Remove line comments
+                        .replace(/\/\*[\s\S]*?\*\//g, "") // Remove block comments
+                        .replace(/\s+/g, " ") // Normalize whitespace
+                        .trim();
+
+                    // Handle PREPARE statements:
+                    // Pattern 1: PREPARE name FROM actual_statement
+                    // Pattern 2: PREPARE actual_statement (no name)
+                    if (statement.match(/^PREPARE\s+/i)) {
+                        // Try pattern with name: PREPARE name FROM statement
+                        const namedPrepareMatch = statement.match(/^PREPARE\s+[a-zA-Z0-9_-]+\s+FROM\s+(.+)$/i);
+                        if (namedPrepareMatch) {
+                            statement = namedPrepareMatch[1].trim();
+                        } else {
+                            // Simple pattern: PREPARE statement (just strip PREPARE keyword)
+                            statement = statement.replace(/^PREPARE\s+/i, '').trim();
+                        }
+                    }
+
                     let target = null;
                     let hasBackticks = false;
                     
-                    // Support both SELECT (FROM) and DML statements (INSERT, DELETE, UPDATE, MERGE, UPSERT)
-                    // For INSERT: match "INSERT INTO bucket" or "INSERT bucket" (INTO is optional)
-                    const statementKeyword = '(?:FROM|DELETE|UPDATE|INSERT(?:\\s+INTO)?|MERGE\\s+INTO|UPSERT\\s+INTO)';
+                    // Define all DML/DQL statement keywords that precede the target keyspace
+                    // MERGE INTO, UPSERT INTO, INSERT INTO, UPDATE, DELETE FROM, FROM
+                    const statementKeyword = '(?:MERGE\\s+INTO|UPSERT\\s+INTO|INSERT\\s+INTO|UPDATE|DELETE\\s+FROM|FROM)';
                     
-                    // Check for subqueries: FROM ( SELECT ... ) - extract collection from inside
+                    // Check for subqueries: FROM ( SELECT ... ) or INSERT INTO x (KEY, VALUE) (SELECT ...)
                     const subqueryCheck = statement.match(new RegExp(statementKeyword + '\\s*\\(', 'i'));
                     if (subqueryCheck) {
-                        // Find FROM clauses that aren't followed by (
-                        const allFroms = [];
+                        // Find all keyspace references that are NOT followed by (
+                        const allTargets = [];
                         const regex = new RegExp(statementKeyword + '\\s+([^\\s(][^\\s]*)', 'gi');
                         let match;
                     while ((match = regex.exec(statement)) !== null) {
                         const possibleTarget = match[1].trim();
                         if (!possibleTarget.startsWith('(')) {
-                                allFroms.push(possibleTarget);
+                                allTargets.push(possibleTarget);
                             }
                         }
-                        if (allFroms.length > 0) {
-                            target = allFroms[0].replace(/`/g, '');
-                            hasBackticks = allFroms[0].includes('`');
+                        if (allTargets.length > 0) {
+                            target = allTargets[0].replace(/`/g, '');
+                            hasBackticks = allTargets[0].includes('`');
                         }
                     }
                     
                     // If not subquery or couldn't extract, try normal patterns
                     if (!target) {
-                        // Try mixed format: bucket.`scope`.`collection`
+                        // Pattern 1: Mixed backticks - bucket.`scope`.`collection` (bucket not backticked)
                         const mixedBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+)\\.`([^`]+)`\\.`([^`]+)`', 'i'));
                         if (mixedBacktickMatch) {
                             target = `${mixedBacktickMatch[1]}.${mixedBacktickMatch[2]}.${mixedBacktickMatch[3]}`;
                             hasBackticks = true;
                         } else {
-                            // Try fully backticked: `bucket`.`scope`.`collection`
-                            const individualBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`\\.`([^`]+)`', 'i'));
-                            if (individualBacktickMatch) {
-                                // Matched: `account`.`profile`.`orders`
-                                target = `${individualBacktickMatch[1]}.${individualBacktickMatch[2]}.${individualBacktickMatch[3]}`;
+                            // Pattern 2: Fully backticked - `bucket`.`scope`.`collection`
+                            const fullBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`\\.`([^`]+)`', 'i'));
+                            if (fullBacktickMatch) {
+                                target = `${fullBacktickMatch[1]}.${fullBacktickMatch[2]}.${fullBacktickMatch[3]}`;
                                 hasBackticks = true;
                             } else {
-                    // Try two-part backticked: `bucket`.`scope`
-                    const twoPartBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`', 'i'));
-                    if (twoPartBacktickMatch) {
-                        target = `${twoPartBacktickMatch[1]}.${twoPartBacktickMatch[2]}`;
-                        hasBackticks = true;
-                    } else {
-                        // Try single backticked identifier: `bucket.scope.collection` or `bucket`
-                        const singleBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`', 'i'));
-                        if (singleBacktickMatch) {
-                            target = singleBacktickMatch[1].trim();
-                            hasBackticks = true;
-                        } else {
-                            // Try to match without backticks - can be multi-part OR single word if followed by keyword/end
-                            // Added USING (for MERGE) and SET (for UPDATE) as stop keywords
-                            const multiPartMatch = statement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+(?:\\.[a-zA-Z0-9_-]+)*)(?:\\s+(?:WHERE|JOIN|USE|USING|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|SET|VALUES|KEY)|;|\\s*$)', 'i'));
-                            if (multiPartMatch) {
-                                target = multiPartMatch[1].trim();
+                                // Pattern 3: Two-part backticked - `bucket`.`scope`
+                                const twoPartBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`', 'i'));
+                                if (twoPartBacktickMatch) {
+                                    target = `${twoPartBacktickMatch[1]}.${twoPartBacktickMatch[2]}`;
+                                    hasBackticks = true;
+                                } else {
+                                    // Pattern 4: Single backticked - `bucket.scope.collection` or `bucket`
+                                    const singleBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`', 'i'));
+                                    if (singleBacktickMatch) {
+                                        target = singleBacktickMatch[1].trim();
+                                        hasBackticks = true;
+                                    } else {
+                                        // Pattern 5: No backticks - bucket.scope.collection or bucket
+                                        // Must account for optional aliases: UPDATE hotel h, MERGE INTO airport t
+                                        // Syntax: keyspace-ref ( AS? alias )?
+                                        // Stop keywords cover SELECT, DML, and JOIN/WHERE clauses:
+                                        // - WHERE, JOIN, LET, NEST, UNNEST, GROUP, ORDER, LIMIT (SELECT clauses)
+                                        // - USE KEYS (UPDATE with specific keys)
+                                        // - USING (MERGE source clause)
+                                        // - SET (UPDATE assignments)
+                                        // - VALUES (INSERT/UPSERT values)
+                                        // - KEY (INSERT/UPSERT key specification)
+                                        // - ON (JOIN/MERGE conditions)
+                                        // - AS (aliases)
+                                        // - RETURNING (DML output)
+                                        // - WHEN (MERGE conditions)
+                                        const stopKeywords = '(?:WHERE|JOIN|USE\\s+KEYS|USING|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|SET|VALUES|KEY|RETURNING|WHEN)';
+                                        // Optional alias pattern: (?:\s+(?:AS\s+)?[a-zA-Z0-9_-]+)?
+                                        // This allows: keyspace, keyspace AS alias, or keyspace alias
+                                        const multiPartMatch = statement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+(?:\\.[a-zA-Z0-9_-]+)*)(?:\\s+(?:AS\\s+)?[a-zA-Z0-9_-]+)?(?:\\s+' + stopKeywords + '|;|\\s*$|\\s*\\()', 'i'));
+                                        if (multiPartMatch) {
+                                            target = multiPartMatch[1].trim();
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
-                }
-                }
-                }
                     
                     // If we have no valid target, log for debugging and skip
                     if (!target) {
