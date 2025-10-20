@@ -18122,10 +18122,18 @@ function generateElapsedTimeChart(requests) {
             });
 
             // Convert to sorted arrays and filter out indexes with no real usage data
-            const sortedIndexes = Array.from(allIndexes.values())
+            const allIndexesArray = Array.from(allIndexes.values());
+            console.log(`[BUILD DEBUG] Total indexes before filter: ${allIndexesArray.length}`);
+            
+            const sortedIndexes = allIndexesArray
                 .filter(index => {
                     // Only show indexes that have actual performance data
                     const hasStats = index.scanTimes.length > 0 || index.itemsScanned.length > 0 || index.itemsFetched.length > 0;
+                    
+                    if (!hasStats) {
+                        console.log(`[BUILD DEBUG] Filtered OUT ${hashCompositeKey(index.name + '::' + index.bucketScopeCollection)}: no stats (scanTimes: ${index.scanTimes.length}, itemsScanned: ${index.itemsScanned.length}, itemsFetched: ${index.itemsFetched.length}, totalUsage: ${index.totalUsage})`);
+                    }
+                    
                     return hasStats;
                 })
                 .sort((a, b) => b.totalUsage - a.totalUsage);
