@@ -1903,38 +1903,54 @@ if (window.TEXT_CONSTANTS) {
                 <!-- Summary counts above the flow chart -->
                 <div id="flow-summary"
                     class="position-relative z-index-3 background-white padding-10-20 border-bottom">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <div class="font-bold color-333">
-                            Indexes Used: <span id="index-count">0</span>
+                    <div style="display: flex; justify-content: space-between; gap: 30px;">
+                        <!-- LEFT: Indexes with filters -->
+                        <div style="flex: 1;">
+                            <div class="font-bold color-333" style="margin-bottom: 8px;">
+                                Indexes
+                            </div>
+                            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                                <div>
+                                    <label for="bucket-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Bucket ()*:</label>
+                                    <select id="bucket-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                        <option value="All">All</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="scope-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Scope ()*:</label>
+                                    <select id="scope-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                        <option value="All">All</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="collection-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Collection ()*:</label>
+                                    <select id="collection-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                        <option value="All">All</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="index-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Index Name []*²:</label>
+                                    <select id="index-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                        <option value="All">All</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="font-size: 10px; color: #666; margin-top: 6px;">
+                                *: # of unique indexes per filter | **: # of times index has been scanned
+                            </div>
                         </div>
-                        <div class="font-bold color-333">
-                            Queries Executed: <span id="query-count">0</span>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                        <div>
-                            <label for="bucket-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Bucket:</label>
-                            <select id="bucket-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
-                                <option value="All">All</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="scope-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Scope:</label>
-                            <select id="scope-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
-                                <option value="All">All</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="collection-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Collection:</label>
-                            <select id="collection-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
-                                <option value="All">All</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="index-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Index:</label>
-                            <select id="index-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
-                                <option value="All">All</option>
-                            </select>
+                        
+                        <!-- RIGHT: Queries counter -->
+                        <div style="flex: 0 0 auto; text-align: right; padding-left: 30px; border-left: 1px solid #ddd;">
+                            <div class="font-bold color-333" style="margin-bottom: 8px;">
+                                Queries
+                            </div>
+                            <div style="font-size: 24px; font-weight: bold; color: #2563eb;">
+                                <span id="query-count">0</span>
+                            </div>
+                            <div style="font-size: 11px; color: #666;">
+                                Executed
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -17800,9 +17816,16 @@ function generateElapsedTimeChart(requests) {
             });
 
             // Update counts with correct data
+            // Count unique index NAMES (not composite keys like "indexName::bucket.scope.collection")
+            const uniqueIndexNames = new Set();
+            allIndexes.forEach((value, key) => {
+                // Extract index name from composite key or use key directly
+                const indexName = key.includes("::") ? key.split("::")[0] : key;
+                uniqueIndexNames.add(indexName);
+            });
             const indexCountEl = document.getElementById("index-count");
             const queryCountEl = document.getElementById("query-count");
-            if (indexCountEl) indexCountEl.textContent = allIndexes.size;
+            if (indexCountEl) indexCountEl.textContent = uniqueIndexNames.size;
             if (queryCountEl) queryCountEl.textContent = queryGroups.size;
 
 
@@ -18410,7 +18433,7 @@ function generateElapsedTimeChart(requests) {
             }
             
             queriesData.forEach(data => {
-                // Get indexes for this query
+                // Get indexes for this query (contains composite keys like "indexName::bucket.scope.collection")
                 const queryIndexes = queryIndexMap.get(data.query.normalizedStatement) || new Set();
                 
                 // Always count indexes for all buckets
@@ -18435,11 +18458,27 @@ function generateElapsedTimeChart(requests) {
                         }
                         queryIndexes.forEach(idx => collectionIndexCounts.get(collectionKey).add(idx));
                         
-                        // Add to relevant indexes if all filters match
+                        // Add to relevant indexes based on current filter level
+                        // Extract plain index name from composite key (indexName::bucket.scope.collection -> indexName)
                         if (selectedCollection === "All" || data.collection === selectedCollection) {
-                            queryIndexes.forEach(idx => relevantIndexes.add(idx));
+                            queryIndexes.forEach(idx => {
+                                const indexName = idx.includes("::") ? idx.split("::")[0] : idx;
+                                relevantIndexes.add(indexName);
+                            });
                         }
+                    } else if (selectedScope === "All") {
+                        // If scope is "All" but bucket is selected, add all indexes for this bucket
+                        queryIndexes.forEach(idx => {
+                            const indexName = idx.includes("::") ? idx.split("::")[0] : idx;
+                            relevantIndexes.add(indexName);
+                        });
                     }
+                } else if (selectedBucket === "All") {
+                    // If bucket is "All", add all indexes
+                    queryIndexes.forEach(idx => {
+                        const indexName = idx.includes("::") ? idx.split("::")[0] : idx;
+                        relevantIndexes.add(indexName);
+                    });
                 }
             });
             
@@ -18574,8 +18613,8 @@ function generateElapsedTimeChart(requests) {
             sortedIndexes.forEach(index => {
                 const option = document.createElement("option");
                 option.value = index.name;
-                // Show index name with total usage (scanned count)
-                option.textContent = `${index.name} (${index.totalUsage})`;
+                // Show index name with total usage (scanned count) using [] brackets
+                option.textContent = `${index.name} [${index.totalUsage}]`;
                 indexDropdown.appendChild(option);
             });
             // Reset index to "All" if current selection is not available
