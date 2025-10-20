@@ -45,6 +45,7 @@
     <!-- Include Panzoom, jQuery, and jQuery UI -->
     <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.3/dist/panzoom.min.js" integrity="sha256-EXkj2hNRjkwrQpvsP/7ePHObzow5rTByiCRLFIWCE/Y=" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.11.0/sha256.min.js" integrity="sha512-Ijgp4DBSyLWlGBWSzHSVM0mKCHOMa0JUoaO8VfPGKac+38EaIoJ67Io+d6DxOIPZjP9hriludUTWmoE+aIe4ig==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
     
     <style>
@@ -13625,43 +13626,58 @@ function generateElapsedTimeChart(requests) {
             }
         }
 
-        // Simple hash function for debug logging (redacts real names)
-        function hashName(name) {
-            if (!window._nameHashMap) window._nameHashMap = new Map();
-            if (!window._hashCounter) window._hashCounter = 1;
+        // Global redaction utilities using SHA-256 for consistent hashing
+        window.DebugRedactor = {
+            // SHA-256 hash function for redacting sensitive data
+            hash: function(text) {
+                if (!text) return 'NULL';
+                if (typeof sha256 !== 'undefined') {
+                    // Use js-sha256 library (synchronous)
+                    return sha256(text).substring(0, 8).toUpperCase();
+                } else {
+                    // Fallback if library not loaded
+                    console.warn('SHA-256 library not loaded, using fallback');
+                    return `HASH_${text.length}`;
+                }
+            },
             
-            if (!window._nameHashMap.has(name)) {
-                const hashId = `HASH${window._hashCounter}`;
-                window._nameHashMap.set(name, hashId);
-                window._hashCounter++;
-            }
-            return window._nameHashMap.get(name);
-        }
-        
-        function hashBSC(bsc) {
-            const parts = bsc.split('.');
-            return parts.map(p => hashName(p)).join('.');
-        }
-        
-        function hashCompositeKey(key) {
-            if (!key.includes('::')) return hashName(key);
-            const [indexName, bsc] = key.split('::');
-            return `${hashName(indexName)}::${hashBSC(bsc)}`;
-        }
-        
-        function hashQuery(query) {
-            if (!window._queryHashMap) window._queryHashMap = new Map();
-            if (!window._queryHashCounter) window._queryHashCounter = 1;
+            // Redact bucket.scope.collection
+            redactBSC: function(bsc) {
+                if (!bsc) return 'NULL.NULL.NULL';
+                const parts = bsc.split('.');
+                return parts.map(p => this.hash(p)).join('.');
+            },
             
-            // Use first 50 chars as key for deduplication
-            const queryKey = query.substring(0, 50);
-            if (!window._queryHashMap.has(queryKey)) {
-                const hashId = `QUERY${window._queryHashCounter}`;
-                window._queryHashMap.set(queryKey, hashId);
-                window._queryHashCounter++;
+            // Redact composite key (indexName::bucket.scope.collection)
+            redactCompositeKey: function(key) {
+                if (!key) return 'NULL';
+                if (!key.includes('::')) return this.hash(key);
+                const [indexName, bsc] = key.split('::');
+                return `${this.hash(indexName)}::${this.redactBSC(bsc)}`;
+            },
+            
+            // Redact query text (show structure but hide values)
+            redactQuery: function(query) {
+                if (!query) return 'NULL';
+                return this.hash(query);
+            },
+            
+            // Redact object properties
+            redactObject: function(obj) {
+                if (!obj || typeof obj !== 'object') return obj;
+                const redacted = {};
+                Object.keys(obj).forEach(key => {
+                    redacted[this.hash(key)] = '[REDACTED]';
+                });
+                return redacted;
             }
-            return window._queryHashMap.get(queryKey);
-        }
+        };
+        
+        // Shorthand functions for backward compatibility
+        function hashName(name) { return window.DebugRedactor.hash(name); }
+        function hashBSC(bsc) { return window.DebugRedactor.redactBSC(bsc); }
+        function hashCompositeKey(key) { return window.DebugRedactor.redactCompositeKey(key); }
+        function hashQuery(query) { return window.DebugRedactor.redactQuery(query); }
 
         // Generate Index Count Table
         function generateIndexCountTable(requests) {
@@ -15395,7 +15411,7 @@ function generateElapsedTimeChart(requests) {
             updatePrimaryIndexOverUsageFromAggregatedData(requests);
 
             // Debug: Log the collected index data
-            console.log(`${TEXT_CONSTANTS.COLLECTED_INDEX_DATA}`, indexData);
+            console.log(`${TEXT_CONSTANTS.COLLECTED_INDEX_DATA}`, window.DebugRedactor ? window.DebugRedactor.redactObject(indexData) : '[REDACTED]');
 
             // Analyze timing data for each index
             Object.values(indexData).forEach((index) => {
@@ -15407,10 +15423,10 @@ function generateElapsedTimeChart(requests) {
 
                     if (avgScanTimeSeconds >= 10) {
                         slowIndexes10sPlus++;
-                        console.log(`${index.name} is 10+ seconds`);
+                        console.log(`${window.DebugRedactor ? window.DebugRedactor.hash(index.name) : index.name} is 10+ seconds`);
                     } else if (avgScanTimeSeconds >= 2) {
                         slowIndexes2to10s++;
-                        console.log(`${index.name} is 2-10 seconds`);
+                        console.log(`${window.DebugRedactor ? window.DebugRedactor.hash(index.name) : index.name} is 2-10 seconds`);
                     }
 
                     // Check if it's a primary index with 2+ seconds
@@ -18116,6 +18132,15 @@ function generateElapsedTimeChart(requests) {
             const sortedQueries = Array.from(queryGroups.values()).sort(
                 (a, b) => b.count - a.count
             );
+            
+            // Debug: Show all indexes passed to renderIndexQueryFlow
+            console.log(`[BUILD DEBUG] Total sortedIndexes passed to renderIndexQueryFlow: ${sortedIndexes.length}`);
+            const joinRelatedIndexes = sortedIndexes.filter(idx => 
+                idx.bucketScopeCollection && idx.bucketScopeCollection.split('.')[0] === 'HASH6'
+            );
+            console.log(`[BUILD DEBUG] Indexes for HASH6 bucket:`, joinRelatedIndexes.map(idx => 
+                `${hashCompositeKey(idx.name + '::' + idx.bucketScopeCollection)} (scanned: ${idx.totalUsage})`
+            ));
 
 
 
