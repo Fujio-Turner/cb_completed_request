@@ -13566,16 +13566,38 @@ function generateElapsedTimeChart(requests) {
                 let target = null;
                 let hasBackticks = false;
                 
-                // Support both SELECT (FROM) and DML statements (DELETE, UPDATE, INSERT INTO, MERGE INTO, UPSERT INTO)
-                const statementKeyword = '(?:FROM|DELETE|UPDATE|INSERT\\s+INTO|MERGE\\s+INTO|UPSERT\\s+INTO)';
+                // Support both SELECT (FROM) and DML statements (INSERT, DELETE, UPDATE, MERGE, UPSERT)
+                // For INSERT: match "INSERT INTO bucket" or "INSERT bucket" (INTO is optional in N1QL)
+                const statementKeyword = '(?:FROM|DELETE|UPDATE|INSERT(?:\\s+INTO)?|MERGE\\s+INTO|UPSERT\\s+INTO)';
                 
-                // Try to match with individually backticked components: `bucket`.`scope`.`collection`
-                const individualBacktickMatch = cleanStatement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`\\.`([^`]+)`', 'i'));
-                if (individualBacktickMatch) {
-                    // Matched: `account`.`profile`.`orders`
-                    target = `${individualBacktickMatch[1]}.${individualBacktickMatch[2]}.${individualBacktickMatch[3]}`;
-                    hasBackticks = true;
-                } else {
+                // Check for subqueries: FROM ( SELECT ... ) - extract collection from inside parentheses
+                const subqueryCheck = cleanStatement.match(new RegExp(statementKeyword + '\\s*\\(', 'i'));
+                if (subqueryCheck) {
+                    // Find the innermost FROM clause that's not followed by (
+                    const allFroms = [];
+                    const regex = new RegExp(statementKeyword + '\\s+([^\\s(][^\\s]*)', 'gi');
+                    let match;
+                    while ((match = regex.exec(cleanStatement)) !== null) {
+                        const possibleTarget = match[1].trim();
+                        if (!possibleTarget.startsWith('(')) {
+                            allFroms.push(possibleTarget);
+                        }
+                    }
+                    if (allFroms.length > 0) {
+                        target = allFroms[0].replace(/`/g, '');
+                        hasBackticks = allFroms[0].includes('`');
+                    }
+                }
+                
+                // If not subquery or couldn't extract, try normal patterns
+                if (!target) {
+                    // Try to match with individually backticked components: `bucket`.`scope`.`collection`
+                    const individualBacktickMatch = cleanStatement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`\\.`([^`]+)`', 'i'));
+                    if (individualBacktickMatch) {
+                        // Matched: `account`.`profile`.`orders`
+                        target = `${individualBacktickMatch[1]}.${individualBacktickMatch[2]}.${individualBacktickMatch[3]}`;
+                        hasBackticks = true;
+                    } else {
                     // Try two-part backticked: `bucket`.`scope`
                     const twoPartBacktickMatch = cleanStatement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`', 'i'));
                     if (twoPartBacktickMatch) {
@@ -13594,6 +13616,7 @@ function generateElapsedTimeChart(requests) {
                                 target = multiPartMatch[1].trim();
                             }
                         }
+                    }
                     }
                 }
                 
@@ -18524,27 +18547,44 @@ function generateElapsedTimeChart(requests) {
                 }
                 
                 if (!bscSet || bscSet.size === 0) {
-                    // Fallback: try to parse FROM clause if no connection data
-                    let statement = query.statement;
-                    if (!statement) return;
-                
-                // Match collection target from SELECT (FROM) and DML statements (DELETE, UPDATE, etc.)
-                // Pattern 1: `bucket`.`scope`.`collection` (individually backticked)
-                // Pattern 2: `bucket` or `bucket.scope.collection` (single backtick pair)
-                // Pattern 3: bucket.scope.collection (multi-part, no backticks needed)
-                
-                let target = null;
-                let hasBackticks = false;
-                
-                // Support both SELECT (FROM) and DML statements (DELETE, UPDATE, INSERT INTO, MERGE INTO, UPSERT INTO)
-                const statementKeyword = '(?:FROM|DELETE|UPDATE|INSERT\\s+INTO|MERGE\\s+INTO|UPSERT\\s+INTO)';
-                
-                // Try to match with individually backticked components: `bucket`.`scope`.`collection`
-                const individualBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`\\.`([^`]+)`', 'i'));
-                if (individualBacktickMatch) {
-                    // Matched: `account`.`profile`.`orders`
-                    target = `${individualBacktickMatch[1]}.${individualBacktickMatch[2]}.${individualBacktickMatch[3]}`;
-                    hasBackticks = true;
+                // Fallback: try to parse FROM clause if no connection data
+                let statement = query.statement;
+                if (!statement) return;
+                   
+                    let target = null;
+                    let hasBackticks = false;
+                    
+                    // Support both SELECT (FROM) and DML statements (INSERT, DELETE, UPDATE, MERGE, UPSERT)
+                    // For INSERT: match "INSERT INTO bucket" or "INSERT bucket" (INTO is optional)
+                    const statementKeyword = '(?:FROM|DELETE|UPDATE|INSERT(?:\\s+INTO)?|MERGE\\s+INTO|UPSERT\\s+INTO)';
+                    
+                    // Check for subqueries: FROM ( SELECT ... ) - extract collection from inside
+                    const subqueryCheck = statement.match(new RegExp(statementKeyword + '\\s*\\(', 'i'));
+                    if (subqueryCheck) {
+                        // Find FROM clauses that aren't followed by (
+                        const allFroms = [];
+                        const regex = new RegExp(statementKeyword + '\\s+([^\\s(][^\\s]*)', 'gi');
+                        let match;
+                    while ((match = regex.exec(statement)) !== null) {
+                        const possibleTarget = match[1].trim();
+                        if (!possibleTarget.startsWith('(')) {
+                                allFroms.push(possibleTarget);
+                            }
+                        }
+                        if (allFroms.length > 0) {
+                            target = allFroms[0].replace(/`/g, '');
+                            hasBackticks = allFroms[0].includes('`');
+                        }
+                    }
+                    
+                    // If not subquery or couldn't extract, try normal patterns
+                    if (!target) {
+                        // Try to match with individually backticked components: `bucket`.`scope`.`collection`
+                        const individualBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`\\.`([^`]+)`', 'i'));
+                        if (individualBacktickMatch) {
+                            // Matched: `account`.`profile`.`orders`
+                            target = `${individualBacktickMatch[1]}.${individualBacktickMatch[2]}.${individualBacktickMatch[3]}`;
+                            hasBackticks = true;
                 } else {
                     // Try two-part backticked: `bucket`.`scope`
                     const twoPartBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`', 'i'));
@@ -18565,7 +18605,8 @@ function generateElapsedTimeChart(requests) {
                             }
                         }
                     }
-                }
+                    }
+                    }
                     
                     // If we have no valid target, skip
                     if (!target) return;
