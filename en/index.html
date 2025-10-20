@@ -18657,8 +18657,13 @@ function generateElapsedTimeChart(requests) {
                 }
                 }
                     
-                    // If we have no valid target, skip
-                    if (!target) return;
+                    // If we have no valid target, log for debugging and skip
+                    if (!target) {
+                        console.warn(`[PARSE WARNING] Could not extract B/BSC from query statement. Defaulting to _default._default._default`);
+                        console.warn(`[PARSE WARNING] Statement (SHA-256):`, hashQuery(statement));
+                        console.warn(`[PARSE WARNING] Full statement:`, statement);
+                        return;
+                    }
                     
                     const parts = target.split(".").filter(p => p.length > 0);
                     let bucket, scope, collection;
