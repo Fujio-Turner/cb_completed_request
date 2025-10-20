@@ -13621,6 +13621,8 @@ function generateElapsedTimeChart(requests) {
                                     hasBackticks = true;
                                 } else {
                                     // Pattern 5: No backticks - bucket.scope.collection or bucket
+                                    // Must account for optional aliases: UPDATE hotel h, MERGE INTO airport t
+                                    // Syntax: keyspace-ref ( AS? alias )?
                                     // Stop keywords cover SELECT, DML, and JOIN/WHERE clauses:
                                     // - WHERE, JOIN, LET, NEST, UNNEST, GROUP, ORDER, LIMIT (SELECT clauses)
                                     // - USE KEYS (UPDATE with specific keys)
@@ -13633,7 +13635,9 @@ function generateElapsedTimeChart(requests) {
                                     // - RETURNING (DML output)
                                     // - WHEN (MERGE conditions)
                                     const stopKeywords = '(?:WHERE|JOIN|USE\\s+KEYS|USING|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|SET|VALUES|KEY|RETURNING|WHEN)';
-                                    const multiPartMatch = cleanStatement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+(?:\\.[a-zA-Z0-9_-]+)*)(?:\\s+' + stopKeywords + '|;|\\s*$|\\s*\\()', 'i'));
+                                    // Optional alias pattern: (?:\s+(?:AS\s+)?[a-zA-Z0-9_-]+)?
+                                    // This allows: keyspace, keyspace AS alias, or keyspace alias
+                                    const multiPartMatch = cleanStatement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+(?:\\.[a-zA-Z0-9_-]+)*)(?:\\s+(?:AS\\s+)?[a-zA-Z0-9_-]+)?(?:\\s+' + stopKeywords + '|;|\\s*$|\\s*\\()', 'i'));
                                     if (multiPartMatch) {
                                         target = multiPartMatch[1].trim();
                                     }
