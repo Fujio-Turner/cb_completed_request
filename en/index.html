@@ -13545,44 +13545,43 @@ function generateElapsedTimeChart(requests) {
                     .replace(/\s+/g, " ") // Normalize whitespace
                     .trim();
 
-                // Look for the main FROM clause (not subquery FROM)
-                // Use a more specific regex that avoids matching FROM inside parentheses
-                const fromPattern = /\bFROM\s+([`\w]+(?:\.[`\w]+)*(?:\.[`\w]+)*)/i;
-                const fromMatch = cleanStatement.match(fromPattern);
-
-                if (!fromMatch) {
-                    // Fallback: try to find any table-like reference after FROM
-                    const fallbackPattern = /\bFROM\s+([`\w]+)/i;
-                    const fallbackMatch = cleanStatement.match(fallbackPattern);
-                    if (!fallbackMatch) return "_default._default._default";
-
-                    const tableRef = fallbackMatch[1].replace(/`/g, "").trim();
-                    return `${tableRef}._default._default`;
+                // Use same logic as Index/Query Flow to ensure consistency
+                let target = null;
+                let hasBackticks = false;
+                
+                // Try to match with backticks first (most reliable)
+                const backtickMatch = cleanStatement.match(/FROM\s+`([^`]+)`/i);
+                if (backtickMatch) {
+                    target = backtickMatch[1].trim();
+                    hasBackticks = true;
+                } else {
+                    // Try to match without backticks - must have at least one dot
+                    const multiPartMatch = cleanStatement.match(/FROM\s+([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+)(?:\s|$|,|WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT)/i);
+                    if (multiPartMatch) {
+                        target = multiPartMatch[1].trim();
+                    }
                 }
+                
+                // If no valid target found, return default
+                if (!target) return "_default._default._default";
+                
+                // Split by dots and filter out empty parts
+                const parts = target.split(".").filter(p => p.length > 0);
+                
+                // Validate that parts look like real bucket/scope/collection names
+                const isValid = parts.every(p => /^[a-zA-Z0-9_-]+$/.test(p));
+                if (!isValid) return "_default._default._default";
 
-                const tableRef = fromMatch[1].trim();
-
-                // Handle backticks and clean the reference
-                const cleanRef = tableRef.replace(/`/g, "");
-
-                // Skip if it looks like a SQL keyword or function
-                if (
-                    /^(SELECT|WITH|CASE|WHEN|IF|EXISTS|NOT|AND|OR)$/i.test(cleanRef)
-                ) {
-                    return "_default._default._default";
-                }
-
-                // Split by dots
-                const parts = cleanRef.split(".");
-
+                // Parse based on number of parts
                 if (parts.length === 1) {
-                    // Only bucket specified
+                    // Single word - only accept if it had backticks (otherwise it's likely an alias)
+                    if (!hasBackticks) return "_default._default._default";
                     return `${parts[0]}._default._default`;
                 } else if (parts.length === 2) {
-                    // Bucket and scope specified
+                    // bucket.scope format
                     return `${parts[0]}.${parts[1]}._default`;
                 } else if (parts.length >= 3) {
-                    // Full bucket.scope.collection
+                    // bucket.scope.collection format
                     return `${parts[0]}.${parts[1]}.${parts[2]}`;
                 }
 
@@ -13658,12 +13657,15 @@ function generateElapsedTimeChart(requests) {
             const maxDisplayIndexes = 200; // Cap for performance
             const indexesToShow = sortedIndexes.slice(0, maxDisplayIndexes);
 
-            indexesToShow.forEach(([indexName, data]) => {
+            indexesToShow.forEach(([compositeKey, data]) => {
                 const row = document.createElement("tr");
                 row.style.borderBottom = "1px solid #eee";
 
                 // Apply count thresholding
                 const displayCount = data.count > 99999 ? "99K+" : data.count;
+                
+                // Extract index name from composite key or use indexName property
+                const indexName = data.indexName || compositeKey.split('::')[0];
 
                 row.innerHTML = `
               <td class="padding-8 text-align-center" style="font-weight: bold;">${displayCount}</td>
@@ -13710,7 +13712,7 @@ function generateElapsedTimeChart(requests) {
             }
 
             try {
-                // Helper function to add index to data, resolving #primary conflicts
+                // Helper function to add index to data using composite key
                 function addIndexToData(indexName) {
                     let resolvedName = indexName;
 
@@ -13724,13 +13726,17 @@ function generateElapsedTimeChart(requests) {
                         }
                     }
 
-                    if (!indexData[resolvedName]) {
-                        indexData[resolvedName] = {
+                    // Use composite key: indexName::bucket.scope.collection
+                    const compositeKey = `${resolvedName}::${bucketScopeCollection || "unknown.unknown.unknown"}`;
+                    
+                    if (!indexData[compositeKey]) {
+                        indexData[compositeKey] = {
+                            indexName: resolvedName,
                             count: 0,
                             bucketScopeCollection: bucketScopeCollection || "unknown",
                         };
                     }
-                    indexData[resolvedName].count++;
+                    indexData[compositeKey].count++;
                 }
 
                 // Check for index name in various operator properties
@@ -17948,55 +17954,32 @@ function generateElapsedTimeChart(requests) {
 
                     if (indexesForRequest && indexesForRequest.size > 0) {
                         indexesForRequest.forEach((indexName) => {
-                            // Track index usage
-                            if (!allIndexes.has(indexName)) {
+                            // Extract bucket.scope.collection from current request using parseFromClause
+                            const currentRequest = requestsToUse[requestIndex];
+                            const currentBSC = parseFromClause(currentRequest?.statement);
+                            
+                            // Create unique key: indexName::bucket.scope.collection
+                            const indexKey = `${indexName}::${currentBSC}`;
+                            
+                            // Track index usage per bucket.scope.collection combination
+                            if (!allIndexes.has(indexKey)) {
                                 const isPrimaryCheck = indexName === "#primary" ||
                                     indexName.includes("#primary") ||
                                     indexName.includes("primary") ||
                                     indexName.endsWith("_primary");
 
-                                // Extract bucket.scope.collection from the query statement
-                                const request = requestsToUse[requestIndex];
-                                const statement = request?.statement || request?.preparedText || "";
-                                let bucketScopeCollection = "unknown.unknown.unknown";
-                                
-                                const backtickMatch = statement.match(/FROM\s+`([^`]+)`/i);
-                                if (backtickMatch) {
-                                    const target = backtickMatch[1].trim();
-                                    const parts = target.split(".");
-                                    if (parts.length === 1) {
-                                        bucketScopeCollection = `${parts[0]}._default._default`;
-                                    } else if (parts.length === 2) {
-                                        bucketScopeCollection = `${parts[0]}.${parts[1]}._default`;
-                                    } else if (parts.length >= 3) {
-                                        bucketScopeCollection = `${parts[0]}.${parts[1]}.${parts[2]}`;
-                                    }
-                                } else {
-                                    // Try multi-part without backticks
-                                    const multiPartMatch = statement.match(/FROM\s+([a-zA-Z0-9_-]+\.[a-zA-Z0-9_.-]+)(?:\s|$|WHERE|JOIN|USE|LET|NEST)/i);
-                                    if (multiPartMatch) {
-                                        const target = multiPartMatch[1].trim();
-                                        const parts = target.split(".");
-                                        if (parts.length === 2) {
-                                            bucketScopeCollection = `${parts[0]}.${parts[1]}._default`;
-                                        } else if (parts.length >= 3) {
-                                            bucketScopeCollection = `${parts[0]}.${parts[1]}.${parts[2]}`;
-                                        }
-                                    }
-                                }
-
-                                allIndexes.set(indexName, {
+                                allIndexes.set(indexKey, {
                                     name: indexName,
                                     totalUsage: 0,
                                     isPrimary: isPrimaryCheck,
                                     scanTimes: [],
                                     itemsScanned: [],
                                     itemsFetched: [],
-                                    bucketScopeCollection: bucketScopeCollection,
+                                    bucketScopeCollection: currentBSC,
                                 });
                             }
 
-                            const indexObj = allIndexes.get(indexName);
+                            const indexObj = allIndexes.get(indexKey);
                             indexObj.totalUsage++;
 
                             // Collect statistics from the request
@@ -18015,12 +17998,14 @@ function generateElapsedTimeChart(requests) {
                                 }
                             }
 
-                            // Track connection
-                            const connectionKey = `${queryGroup.normalizedStatement}::${indexName}`;
+                            // Track connection (use composite indexKey for bucket-specific connections)
+                            const connectionKey = `${queryGroup.normalizedStatement}::${indexKey}`;
                             if (!indexQueryFlowData.connections.has(connectionKey)) {
                                 indexQueryFlowData.connections.set(connectionKey, {
                                     queryStatement: queryGroup.normalizedStatement,
+                                    indexKey: indexKey, // Store composite key
                                     indexName: indexName,
+                                    bucketScopeCollection: currentBSC,
                                     count: 0,
                                 });
                             }
@@ -18366,8 +18351,9 @@ function generateElapsedTimeChart(requests) {
                     target = backtickMatch[1].trim();
                     hasBackticks = true;
                 } else {
-                    // Try to match without backticks (must be multi-part like bucket.scope.collection)
-                    const multiPartMatch = statement.match(/FROM\s+([a-zA-Z0-9_-]+\.[a-zA-Z0-9_.-]+)(?:\s|$|WHERE|JOIN|USE|LET|NEST)/i);
+                    // Try to match without backticks - must have at least one dot
+                    // Match bucket.scope or bucket.scope.collection, stopping at whitespace/keywords
+                    const multiPartMatch = statement.match(/FROM\s+([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+)(?:\s|$|,|WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT)/i);
                     if (multiPartMatch) {
                         target = multiPartMatch[1].trim();
                     }
@@ -18413,13 +18399,13 @@ function generateElapsedTimeChart(requests) {
             const relevantIndexes = new Set();
             
             // Build a map of which indexes are used by which queries
-            const queryIndexMap = new Map(); // normalizedStatement -> Set of index names
+            const queryIndexMap = new Map(); // normalizedStatement -> Set of indexKeys
             if (indexQueryFlowData.connections) {
                 indexQueryFlowData.connections.forEach((connection) => {
                     if (!queryIndexMap.has(connection.queryStatement)) {
                         queryIndexMap.set(connection.queryStatement, new Set());
                     }
-                    queryIndexMap.get(connection.queryStatement).add(connection.indexName);
+                    queryIndexMap.get(connection.queryStatement).add(connection.indexKey || connection.indexName);
                 });
             }
             
@@ -18480,10 +18466,13 @@ function generateElapsedTimeChart(requests) {
             bucketDropdown.innerHTML = `<option value="All">(All) (${allIndexesSet.size})</option>`;
             Array.from(buckets).sort().forEach(bucket => {
                 const count = bucketIndexCounts.get(bucket)?.size || 0;
-                const option = document.createElement("option");
-                option.value = bucket;
-                option.textContent = `${bucket} (${count})`;
-                bucketDropdown.appendChild(option);
+                // Only show buckets that have at least one index
+                if (count > 0) {
+                    const option = document.createElement("option");
+                    option.value = bucket;
+                    option.textContent = `${bucket} (${count})`;
+                    bucketDropdown.appendChild(option);
+                }
             });
             bucketDropdown.value = selectedBucket;
             
@@ -18585,7 +18574,8 @@ function generateElapsedTimeChart(requests) {
             sortedIndexes.forEach(index => {
                 const option = document.createElement("option");
                 option.value = index.name;
-                option.textContent = index.name;
+                // Show index name with total usage (scanned count)
+                option.textContent = `${index.name} (${index.totalUsage})`;
                 indexDropdown.appendChild(option);
             });
             // Reset index to "All" if current selection is not available
@@ -18646,8 +18636,8 @@ function generateElapsedTimeChart(requests) {
                         target = backtickMatch[1].trim();
                         hasBackticks = true;
                     } else {
-                        // Try to match without backticks (must be multi-part)
-                        const multiPartMatch = statement.match(/FROM\s+([a-zA-Z0-9_-]+\.[a-zA-Z0-9_.-]+)(?:\s|$|WHERE|JOIN|USE|LET|NEST)/i);
+                        // Try to match without backticks - must have at least one dot
+                        const multiPartMatch = statement.match(/FROM\s+([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+)(?:\s|$|,|WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT)/i);
                         if (multiPartMatch) {
                             target = multiPartMatch[1].trim();
                         }
@@ -18688,24 +18678,28 @@ function generateElapsedTimeChart(requests) {
                 });
                 
                 // Filter indexes to only show those connected to filtered queries
-                const connectedIndexNames = new Set();
+                const connectedIndexKeys = new Set();
                 filteredQueries.forEach(query => {
                     if (indexQueryFlowData.connections) {
-                        indexQueryFlowData.connections.forEach((connection, key) => {
+                        indexQueryFlowData.connections.forEach((connection) => {
                             if (connection.queryStatement === query.normalizedStatement) {
-                                connectedIndexNames.add(connection.indexName);
+                                connectedIndexKeys.add(connection.indexKey || `${connection.indexName}::${connection.bucketScopeCollection}`);
                             }
                         });
                     }
                 });
-                filteredIndexes = indexes.filter(idx => connectedIndexNames.has(idx.name));
+                filteredIndexes = indexes.filter(idx => {
+                    const key = `${idx.name}::${idx.bucketScopeCollection}`;
+                    return connectedIndexKeys.has(key);
+                });
                 
                 // Also filter queries to only show those that have connections to indexes
                 filteredQueries = filteredQueries.filter(query => {
                     if (!indexQueryFlowData.connections) return false;
                     let hasConnection = false;
                     indexQueryFlowData.connections.forEach((connection) => {
-                        if (connection.queryStatement === query.normalizedStatement && connectedIndexNames.has(connection.indexName)) {
+                        const key = connection.indexKey || `${connection.indexName}::${connection.bucketScopeCollection}`;
+                        if (connection.queryStatement === query.normalizedStatement && connectedIndexKeys.has(key)) {
                             hasConnection = true;
                         }
                     });
@@ -18719,10 +18713,15 @@ function generateElapsedTimeChart(requests) {
                 filteredIndexes = filteredIndexes.filter(idx => idx.name === selectedIndex);
                 
                 // Filter queries to show only those connected to this index
-                // Check the connections map to see which queries use this index
                 filteredQueries = filteredQueries.filter(query => {
-                    const connectionKey = `${query.normalizedStatement}::${selectedIndex}`;
-                    return indexQueryFlowData.connections && indexQueryFlowData.connections.has(connectionKey);
+                    if (!indexQueryFlowData.connections) return false;
+                    let hasConnection = false;
+                    indexQueryFlowData.connections.forEach((connection) => {
+                        if (connection.queryStatement === query.normalizedStatement && connection.indexName === selectedIndex) {
+                            hasConnection = true;
+                        }
+                    });
+                    return hasConnection;
                 });
             }
             
@@ -18768,7 +18767,8 @@ function generateElapsedTimeChart(requests) {
             filteredIndexes.forEach((index, i) => {
                 const x = 50;
                 const y = 20 + i * indexItemHeight; // Issue #178: 20px top padding
-                const indexDiv = createIndexDiv(index, colors[i], x, y);
+                // Pass current filter selections to createIndexDiv
+                const indexDiv = createIndexDiv(index, colors[i], x, y, selectedBucket, selectedScope, selectedCollection);
                 flowElements.appendChild(indexDiv);
                 indexPositions.push({
                     element: indexDiv,
@@ -18805,7 +18805,7 @@ function generateElapsedTimeChart(requests) {
             }, 300);
         }
 
-        function createIndexDiv(index, color, x, y) {
+        function createIndexDiv(index, color, x, y, selectedBucket = "All", selectedScope = "All", selectedCollection = "All") {
             const div = document.createElement("div");
             let className = "index-item";
             if (index.isPrimary) className += " primary";
@@ -18827,6 +18827,7 @@ function generateElapsedTimeChart(requests) {
 
             div.draggable = true;
             div.dataset.indexName = index.name;
+            div.dataset.bsc = index.bucketScopeCollection || '';
 
             const stats = calculateIndexStats(index);
 
@@ -18845,11 +18846,14 @@ function generateElapsedTimeChart(requests) {
                 avgScanTimeStyle = "font-weight: bold; color: #ff9800;";
             }
 
+            // Display bucket.scope.collection info (now each index is unique per BSC)
+            const bscDisplay = index.bucketScopeCollection || '';
+            
             div.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
               <div style="font-weight: bold; font-size: 14px; color: #333;">${index.name} | Scanned: ${index.totalUsage}</div>
-              <div style="font-style: italic; font-size: 11px; color: #666; margin-top: 2px;">${index.bucketScopeCollection || ''}</div>
+              <div style="font-style: italic; font-size: 11px; color: #666; margin-top: 2px;">${bscDisplay}</div>
             </div>
             <button onclick="copyIndexName('${index.name.replace(
                     /'/g,
@@ -18993,10 +18997,11 @@ function generateElapsedTimeChart(requests) {
 
             svg.innerHTML = "";
 
-            // Create maps for easy lookup
+            // Create maps for easy lookup using composite keys
             const indexMap = new Map();
             indexPositions.forEach((pos, i) => {
-                indexMap.set(pos.index.name, { ...pos, color: colors[i] });
+                const key = `${pos.index.name}::${pos.index.bucketScopeCollection}`;
+                indexMap.set(key, { ...pos, color: colors[i] });
             });
 
             const queryMap = new Map();
@@ -19007,7 +19012,8 @@ function generateElapsedTimeChart(requests) {
             let connectionsDrawn = 0;
 
             indexQueryFlowData.connections.forEach((connection) => {
-                const indexPos = indexMap.get(connection.indexName);
+                const indexKey = connection.indexKey || `${connection.indexName}::${connection.bucketScopeCollection}`;
+                const indexPos = indexMap.get(indexKey);
                 const queryPos = queryMap.get(connection.queryStatement);
 
                 if (indexPos && queryPos) {
@@ -19160,9 +19166,13 @@ function generateElapsedTimeChart(requests) {
                     .getElementById("flow-elements")
                     .getBoundingClientRect();
                 const indexName = element.dataset.indexName;
+                const bucketScopeCollection = element.dataset.bsc || '';
 
-                // Create a minimal index object with just the name
-                const indexObj = { name: indexName };
+                // Create a minimal index object with name and BSC for composite key
+                const indexObj = { 
+                    name: indexName,
+                    bucketScopeCollection: bucketScopeCollection
+                };
 
                 indexPositions.push({
                     element: element,

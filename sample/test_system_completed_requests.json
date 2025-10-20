@@ -11902,5 +11902,61 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#stats\":{\"execTime\":\"1.0µs\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsOut\":100,\"execTime\":\"45.0ms\"},\"index\":\"idx_status\",\"keyspace\":\"test_bucket\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsOut\":100,\"execTime\":\"234.0ms\"}},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsOut\":100,\"execTime\":\"12.0ms\"}},{\"#operator\":\"Limit\",\"#stats\":{\"#itemsOut\":100,\"execTime\":\"1.0ms\"},\"expr\":\"100\"},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsOut\":100,\"execTime\":\"8.0ms\"}}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "premium-users-analytics-query",
+      "cpuTime": "128.456ms",
+      "elapsedTime": "0.894567s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$minPurchases": 10,
+        "$tier": "premium"
+      },
+      "phaseCounts": {
+        "indexScan": 25,
+        "fetch": 25
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "12.345µs",
+        "instantiate": "5.678µs",
+        "parse": "25.123ms",
+        "plan": "38.456ms",
+        "plan.index.metadata": "18.234µs",
+        "plan.keyspace.metadata": "9.876µs",
+        "indexScan": "245.789ms",
+        "fetch": "456.123ms",
+        "filter": "89.234ms",
+        "project": "45.678ms",
+        "run": "825.456ms",
+        "stream": "34.567ms"
+      },
+      "remoteAddr": "127.0.0.1:55678",
+      "requestId": "premium-users-analytics-query",
+      "requestTime": "2025-08-15T00:45:30.000Z",
+      "resultCount": 25,
+      "resultSize": 12800,
+      "scanConsistency": "request_plus",
+      "serviceTime": "0.867234s",
+      "state": "completed",
+      "statement": "SELECT u.userId, u.name, u.tier, u.totalPurchases FROM `users.premium.members` u WHERE u.tier = $tier AND u.totalPurchases > $minPurchases ORDER BY u.totalPurchases DESC",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 4096,
+      "userAgent": "analytics-service/2.1.0",
+      "users": "local:analytics_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-14T15:30:45.123Z\",\"#stats\":{\"#phaseSwitches\":6,\"execTime\":\"1.234µs\",\"servTime\":\"8.765µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:users.premium.members\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":3,\"execTime\":\"2.345µs\"},\"~children\":[{\"#operator\":\"Order\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"#phaseSwitches\":15,\"execTime\":\"15.234ms\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":40,\"#itemsOut\":40,\"#phaseSwitches\":35,\"execTime\":\"245.789ms\",\"kernTime\":\"220.5ms\",\"servTime\":\"195.2ms\"},\"index\":\"idx_premium_tier\",\"keyspace\":\"members\",\"namespace\":\"default\",\"scope\":\"premium\",\"bucket\":\"users\",\"spans\":[{\"range\":[{\"high\":\"\\\"premium\\\"\",\"inclusion\":3,\"low\":\"\\\"premium\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":40,\"#itemsOut\":40,\"#phaseSwitches\":25,\"execTime\":\"456.123ms\",\"kernTime\":\"430.8ms\",\"servTime\":\"405.6ms\"},\"keyspace\":\"members\",\"namespace\":\"default\",\"scope\":\"premium\",\"bucket\":\"users\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":40,\"#itemsOut\":25,\"#phaseSwitches\":20,\"execTime\":\"89.234ms\",\"kernTime\":\"82.1ms\"},\"condition\":\"(((`u`.`totalPurchases`) > 10))\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"#phaseSwitches\":15,\"execTime\":\"45.678ms\",\"kernTime\":\"41.2ms\"},\"result_terms\":[{\"expr\":\"(`u`.`userId`)\"},{\"expr\":\"(`u`.`name`)\"},{\"expr\":\"(`u`.`tier`)\"},{\"expr\":\"(`u`.`totalPurchases`)\"}]}]}},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"#phaseSwitches\":8,\"execTime\":\"34.567ms\"},\"serializable\":true}]}}"
   }
 ]
