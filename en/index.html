@@ -13625,6 +13625,44 @@ function generateElapsedTimeChart(requests) {
             }
         }
 
+        // Simple hash function for debug logging (redacts real names)
+        function hashName(name) {
+            if (!window._nameHashMap) window._nameHashMap = new Map();
+            if (!window._hashCounter) window._hashCounter = 1;
+            
+            if (!window._nameHashMap.has(name)) {
+                const hashId = `HASH${window._hashCounter}`;
+                window._nameHashMap.set(name, hashId);
+                window._hashCounter++;
+            }
+            return window._nameHashMap.get(name);
+        }
+        
+        function hashBSC(bsc) {
+            const parts = bsc.split('.');
+            return parts.map(p => hashName(p)).join('.');
+        }
+        
+        function hashCompositeKey(key) {
+            if (!key.includes('::')) return hashName(key);
+            const [indexName, bsc] = key.split('::');
+            return `${hashName(indexName)}::${hashBSC(bsc)}`;
+        }
+        
+        function hashQuery(query) {
+            if (!window._queryHashMap) window._queryHashMap = new Map();
+            if (!window._queryHashCounter) window._queryHashCounter = 1;
+            
+            // Use first 50 chars as key for deduplication
+            const queryKey = query.substring(0, 50);
+            if (!window._queryHashMap.has(queryKey)) {
+                const hashId = `QUERY${window._queryHashCounter}`;
+                window._queryHashMap.set(queryKey, hashId);
+                window._queryHashCounter++;
+            }
+            return window._queryHashMap.get(queryKey);
+        }
+
         // Generate Index Count Table
         function generateIndexCountTable(requests) {
             const indexData = {};
@@ -13681,6 +13719,18 @@ function generateElapsedTimeChart(requests) {
             const sortedIndexes = Object.entries(indexData).sort(
                 ([, a], [, b]) => b.count - a.count
             );
+            
+            // Debug: Log Dashboard indexes for JOIN queries
+            console.log(`[DASHBOARD DEBUG] Total indexes found in Dashboard table: ${sortedIndexes.length}`);
+            const joinIndexes = sortedIndexes.filter(([key, data]) => {
+                // Check if any request using this index is a JOIN
+                return requests.some(req => {
+                    const stmt = req.statement || req.preparedText || '';
+                    return stmt.toUpperCase().includes('JOIN');
+                });
+            });
+            console.log(`[DASHBOARD DEBUG] Indexes from JOIN queries (first 10):`, 
+                joinIndexes.slice(0, 10).map(([key, data]) => `${hashCompositeKey(key)} (count: ${data.count})`));
 
             const tbody = document.getElementById("index-count-body");
             tbody.innerHTML = "";
@@ -18204,7 +18254,7 @@ function generateElapsedTimeChart(requests) {
                 
                 // Debug JOINs: only log if operator is a JOIN type
                 if (opType && (opType === "Join" || opType === "Nest" || opType === "HashJoin" || opType === "NLJoin")) {
-                    console.log(`[JOIN DEBUG] Recording index for ${opType}: ${compositeKey}`);
+                    console.log(`[JOIN DEBUG] Recording index for ${opType}: ${hashCompositeKey(compositeKey)}`);
                 }
                 
                 requestIndexMap.get(requestIndex).add(compositeKey);
@@ -18298,7 +18348,7 @@ function generateElapsedTimeChart(requests) {
                 let rightBSC = bucketScopeCollection;
                 if ((opType === "Join" || opType === "Nest" || opType === "HashJoin" || opType === "NLJoin") && operator.keyspace) {
                     console.log(`[JOIN DEBUG] Detected ${opType} operator with keyspace: ${operator.keyspace}`);
-                    console.log(`[JOIN DEBUG] Left BSC: ${bucketScopeCollection}`);
+                    console.log(`[JOIN DEBUG] Left BSC: ${hashBSC(bucketScopeCollection)}`);
                     
                     // Extract BSC from keyspace field: "bucket:scope.collection" or "bucket"
                     const keyspace = operator.keyspace;
@@ -18317,7 +18367,7 @@ function generateElapsedTimeChart(requests) {
                         rightBSC = `${keyspace}._default._default`;
                     }
                     
-                    console.log(`[JOIN DEBUG] Right BSC: ${rightBSC}`);
+                    console.log(`[JOIN DEBUG] Right BSC: ${hashBSC(rightBSC)}`);
                 }
                 extractIndexUsage(
                     operator.right,
@@ -18433,8 +18483,9 @@ function generateElapsedTimeChart(requests) {
                 // Debug JOINs
                 const isJoin = query.statement && query.statement.toUpperCase().includes('JOIN');
                 if (isJoin) {
-                    console.log(`[JOIN DEBUG] Processing query: ${query.statement.substring(0, 100)}...`);
-                    console.log(`[JOIN DEBUG] Found ${bscSet ? bscSet.size : 0} BSCs from connections:`, bscSet ? Array.from(bscSet) : 'none');
+                    const queryHash = hashQuery(query.statement);
+                    console.log(`[JOIN DEBUG] Processing ${queryHash}`);
+                    console.log(`[JOIN DEBUG] ${queryHash} found ${bscSet ? bscSet.size : 0} BSCs from connections:`, bscSet ? Array.from(bscSet).map(b => hashBSC(b)) : 'none');
                 }
                 
                 if (!bscSet || bscSet.size === 0) {
@@ -18513,14 +18564,14 @@ function generateElapsedTimeChart(requests) {
                 } else {
                     // Use BSCs from connection data (covers JOINs, subqueries, etc.)
                     if (isJoin) {
-                        console.log(`[JOIN DEBUG] Using connection data for JOIN query`);
+                        console.log(`[JOIN DEBUG] ${hashQuery(query.statement)} using connection data`);
                     }
                     
                     bscSet.forEach(bscString => {
                         const parts = bscString.split(".");
                         if (parts.length === 3) {
                             if (isJoin) {
-                                console.log(`[JOIN DEBUG] Adding BSC to dropdown data: ${bscString}`);
+                                console.log(`[JOIN DEBUG] ${hashQuery(query.statement)} adding BSC to dropdown: ${hashBSC(bscString)}`);
                             }
                             queriesData.push({
                                 bucket: parts[0],
@@ -18558,8 +18609,9 @@ function generateElapsedTimeChart(requests) {
                 // Debug JOINs
                 const isJoin = data.query.statement && data.query.statement.toUpperCase().includes('JOIN');
                 if (isJoin && queryIndexes.size > 0) {
-                    console.log(`[JOIN DEBUG] Building counts for BSC: ${data.bucket}.${data.scope}.${data.collection}`);
-                    console.log(`[JOIN DEBUG] Query has ${queryIndexes.size} indexes:`, Array.from(queryIndexes));
+                    const currentBSC = `${data.bucket}.${data.scope}.${data.collection}`;
+                    console.log(`[JOIN DEBUG] ${hashQuery(data.query.statement)} building counts for BSC: ${hashBSC(currentBSC)}`);
+                    console.log(`[JOIN DEBUG] ${hashQuery(data.query.statement)} has ${queryIndexes.size} indexes:`, Array.from(queryIndexes).map(idx => hashCompositeKey(idx)));
                 }
                 
                 // Always count indexes for all buckets
@@ -18877,17 +18929,40 @@ function generateElapsedTimeChart(requests) {
                 // Filter indexes to only show those connected to filtered queries
                 const connectedIndexKeys = new Set();
                 filteredQueries.forEach(query => {
+                    const isJoin = query.statement && query.statement.toUpperCase().includes('JOIN');
+                    
                     if (indexQueryFlowData.connections) {
                         indexQueryFlowData.connections.forEach((connection) => {
                             if (connection.queryStatement === query.normalizedStatement) {
-                                connectedIndexKeys.add(connection.indexKey || `${connection.indexName}::${connection.bucketScopeCollection}`);
+                                const indexKey = connection.indexKey || `${connection.indexName}::${connection.bucketScopeCollection}`;
+                                connectedIndexKeys.add(indexKey);
+                                
+                                if (isJoin) {
+                                    console.log(`[JOIN DEBUG] ${hashQuery(query.statement)} adding connected index to LEFT side: ${hashCompositeKey(indexKey)}`);
+                                }
                             }
                         });
                     }
                 });
+                
                 filteredIndexes = indexes.filter(idx => {
                     const key = `${idx.name}::${idx.bucketScopeCollection}`;
-                    return connectedIndexKeys.has(key);
+                    const included = connectedIndexKeys.has(key);
+                    
+                    const isJoinIndex = Array.from(connectedIndexKeys).some(ck => {
+                        const stmt = [...filteredQueries].find(q => {
+                            return indexQueryFlowData.connections && Array.from(indexQueryFlowData.connections.values()).some(conn => 
+                                conn.queryStatement === q.normalizedStatement && (conn.indexKey === ck || `${conn.indexName}::${conn.bucketScopeCollection}` === ck)
+                            );
+                        });
+                        return stmt && stmt.statement && stmt.statement.toUpperCase().includes('JOIN');
+                    });
+                    
+                    if (isJoinIndex && !included) {
+                        console.log(`[JOIN DEBUG] FILTERED OUT index: ${hashCompositeKey(key)} (not in connectedIndexKeys)`);
+                    }
+                    
+                    return included;
                 });
                 
                 // Also filter queries to only show those that have connections to indexes
@@ -18933,6 +19008,24 @@ function generateElapsedTimeChart(requests) {
             const queryCountEl = document.getElementById("query-count");
             if (indexCountEl) indexCountEl.textContent = filteredIndexes.length;
             if (queryCountEl) queryCountEl.textContent = filteredQueries.length;
+            
+            // Debug: Show final filtered indexes for JOINs
+            const joinFilteredIndexes = filteredIndexes.filter(idx => {
+                // Check if this index is used by any JOIN query
+                if (!indexQueryFlowData.connections) return false;
+                return Array.from(indexQueryFlowData.connections.values()).some(conn => {
+                    const indexKey = conn.indexKey || `${conn.indexName}::${conn.bucketScopeCollection}`;
+                    const idxKey = `${idx.name}::${idx.bucketScopeCollection}`;
+                    if (indexKey === idxKey) {
+                        const query = filteredQueries.find(q => q.normalizedStatement === conn.queryStatement);
+                        return query && query.statement && query.statement.toUpperCase().includes('JOIN');
+                    }
+                    return false;
+                });
+            });
+            console.log(`[FLOW DEBUG] Total indexes on LEFT side: ${filteredIndexes.length}`);
+            console.log(`[FLOW DEBUG] JOIN-related indexes on LEFT (first 10):`, 
+                joinFilteredIndexes.slice(0, 10).map(idx => `${hashCompositeKey(idx.name + '::' + idx.bucketScopeCollection)} (scanned: ${idx.totalUsage})`));
 
             // Clear container
             flowElements.innerHTML = "";
