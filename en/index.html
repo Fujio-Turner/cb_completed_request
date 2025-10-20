@@ -13567,6 +13567,12 @@ function generateElapsedTimeChart(requests) {
                     .replace(/\/\*[\s\S]*?\*\//g, "") // Remove block comments
                     .replace(/\s+/g, " ") // Normalize whitespace
                     .trim();
+                
+                // If statement becomes empty after cleaning, return default
+                if (!cleanStatement) {
+                    console.warn("Empty statement after comment removal:", statement?.substring(0, 100));
+                    return "_default._default._default";
+                }
 
                 // Handle PREPARE statements:
                 // Pattern 1: PREPARE name FROM actual_statement
@@ -13648,7 +13654,7 @@ function generateElapsedTimeChart(requests) {
                                     // - AS (aliases)
                                     // - RETURNING (DML output)
                                     // - WHEN (MERGE conditions)
-                                    const stopKeywords = '(?:WHERE|JOIN|USE\\s+KEYS|USING|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|SET|VALUES|KEY|RETURNING|WHEN)';
+                                    const stopKeywords = '(?:WHERE|JOIN|USE\\s+(?:KEYS|INDEX)|USING|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|SET|VALUES|KEY|RETURNING|WHEN)';
                                     // Optional alias pattern: (?:\s+(?:AS\s+)?[a-zA-Z0-9_-]+)?
                                     // This allows: keyspace, keyspace AS alias, or keyspace alias
                                     const multiPartMatch = cleanStatement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+(?:\\.[a-zA-Z0-9_-]+)*)(?:\\s+(?:AS\\s+)?[a-zA-Z0-9_-]+)?(?:\\s+' + stopKeywords + '|;|\\s*$|\\s*\\()', 'i'));
@@ -13662,7 +13668,10 @@ function generateElapsedTimeChart(requests) {
                 }
                 
                 // If no valid target found, return default
-                if (!target) return "_default._default._default";
+                if (!target) {
+                    console.warn("[parseFromClause] No target found in cleaned statement:", cleanStatement.substring(0, 200));
+                    return "_default._default._default";
+                }
                 
                 // Split by dots and filter out empty parts
                 const parts = target.split(".").filter(p => p.length > 0);
@@ -17917,16 +17926,8 @@ function generateElapsedTimeChart(requests) {
             });
 
             // CRITICAL: Populate indexQueryFlowData with processed data for SVG rendering
-            // Sort indexes by totalUsage (descending) and filter out indexes with no real usage data
+            // Sort indexes by totalUsage (descending) - show all indexes, even without stats
             const sortedIndexes = Array.from(allIndexes.values())
-                .filter(index => {
-                    // Only show indexes that have actual performance data
-                    const hasStats = index.scanTimes.length > 0 || index.itemsScanned.length > 0 || index.itemsFetched.length > 0;
-                    if (!hasStats) {
-
-                    }
-                    return hasStats;
-                })
                 .sort((a, b) => b.totalUsage - a.totalUsage);
             const sortedQueries = Array.from(queryGroups.values()).sort((a, b) => b.count - a.count);
 
@@ -17941,12 +17942,17 @@ function generateElapsedTimeChart(requests) {
                 const stmt = request.preparedText || request.statement;
                 if (stmt) {
                     const normalized = normalizeStatement(stmt);
+                    const bucketScopeCollection = parseFromClause(stmt);
+                    
                     indexSet.forEach((indexName) => {
-                        const connectionKey = `${normalized}::${indexName}`;
+                        const compositeKey = `${indexName}::${bucketScopeCollection}`;
+                        const connectionKey = `${normalized}::${compositeKey}`;
                         if (!indexQueryFlowData.connections.has(connectionKey)) {
                             indexQueryFlowData.connections.set(connectionKey, {
                                 queryStatement: normalized,
                                 indexName: indexName,
+                                indexKey: compositeKey,
+                                bucketScopeCollection: bucketScopeCollection,
                                 count: 0,
                             });
                         }
@@ -18051,19 +18057,12 @@ function generateElapsedTimeChart(requests) {
 
                         // Get bucket.scope.collection from the statement for primary index resolution
                         const statement = request.preparedText || request.statement || "";
-                        let bucketScopeCollection = "unknown.unknown.unknown";
-
-                        const fromMatch = statement.match(/FROM\s+([^\s\n\r\t]+)/i);
-                        if (fromMatch) {
-                            const target = fromMatch[1].replace(/`/g, "").replace(/;$/, "");
-                            const parts = target.split(".");
-                            if (parts.length === 1) {
-                                bucketScopeCollection = `${parts[0]}._default._default`;
-                            } else if (parts.length === 2) {
-                                bucketScopeCollection = `${parts[0]}.${parts[1]}._default`;
-                            } else if (parts.length >= 3) {
-                                bucketScopeCollection = `${parts[0]}.${parts[1]}.${parts[2]}`;
-                            }
+                        // Use parseFromClause to properly handle UPDATE, INSERT, DELETE, etc.
+                        let bucketScopeCollection = parseFromClause(statement);
+                        
+                        // Debug: log when BSC is default
+                        if (bucketScopeCollection === "_default._default._default" && statement.includes("conversations")) {
+                            console.warn("[BSC DEBUG] Failed to parse BSC from statement containing 'conversations':", statement.substring(0, 200));
                         }
 
                         extractIndexUsage(
@@ -18672,7 +18671,7 @@ function generateElapsedTimeChart(requests) {
                                         // - AS (aliases)
                                         // - RETURNING (DML output)
                                         // - WHEN (MERGE conditions)
-                                        const stopKeywords = '(?:WHERE|JOIN|USE\\s+KEYS|USING|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|SET|VALUES|KEY|RETURNING|WHEN)';
+                                        const stopKeywords = '(?:WHERE|JOIN|USE\\s+(?:KEYS|INDEX)|USING|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|SET|VALUES|KEY|RETURNING|WHEN)';
                                         // Optional alias pattern: (?:\s+(?:AS\s+)?[a-zA-Z0-9_-]+)?
                                         // This allows: keyspace, keyspace AS alias, or keyspace alias
                                         const multiPartMatch = statement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+(?:\\.[a-zA-Z0-9_-]+)*)(?:\\s+(?:AS\\s+)?[a-zA-Z0-9_-]+)?(?:\\s+' + stopKeywords + '|;|\\s*$|\\s*\\()', 'i'));
@@ -18761,6 +18760,39 @@ function generateElapsedTimeChart(requests) {
             const collectionIndexCounts = new Map(); // "bucket.scope.collection" -> Set of index names
             const relevantIndexes = new Set();
             
+            // Build counts directly from originalIndexes to ensure all visible indexes are counted
+            // Use composite keys to count each unique index+BSC combination
+            originalIndexes.forEach(index => {
+                const bsc = index.bucketScopeCollection || "unknown.unknown.unknown";
+                const parts = bsc.split(".");
+                const bucket = parts[0] || "unknown";
+                const scope = parts[1] || "unknown";
+                const collection = parts[2] || "unknown";
+                
+                // Use composite key to ensure each index+BSC combination is counted separately
+                const compositeKey = `${index.name}::${bsc}`;
+                
+                // Count for bucket
+                if (!bucketIndexCounts.has(bucket)) {
+                    bucketIndexCounts.set(bucket, new Set());
+                }
+                bucketIndexCounts.get(bucket).add(compositeKey);
+                
+                // Count for scope
+                const scopeKey = `${bucket}.${scope}`;
+                if (!scopeIndexCounts.has(scopeKey)) {
+                    scopeIndexCounts.set(scopeKey, new Set());
+                }
+                scopeIndexCounts.get(scopeKey).add(compositeKey);
+                
+                // Count for collection
+                const collectionKey = `${bucket}.${scope}.${collection}`;
+                if (!collectionIndexCounts.has(collectionKey)) {
+                    collectionIndexCounts.set(collectionKey, new Set());
+                }
+                collectionIndexCounts.get(collectionKey).add(compositeKey);
+            });
+            
             // Build a map of which indexes are used by which queries
             const queryIndexMap = new Map(); // normalizedStatement -> Set of indexKeys
             if (indexQueryFlowData.connections) {
@@ -18784,45 +18816,10 @@ function generateElapsedTimeChart(requests) {
                     console.log(`[JOIN DEBUG] ${hashQuery(data.query.statement)} has ${queryIndexes.size} indexes:`, Array.from(queryIndexes).map(idx => hashCompositeKey(idx)));
                 }
                 
-                // Always count indexes for all buckets
-                if (!bucketIndexCounts.has(data.bucket)) {
-                    bucketIndexCounts.set(data.bucket, new Set());
-                }
-                queryIndexes.forEach(idx => bucketIndexCounts.get(data.bucket).add(idx));
-                
-                // Count indexes for scopes (only if bucket matches or "All")
-                if (selectedBucket === "All" || data.bucket === selectedBucket) {
-                    const scopeKey = `${data.bucket}.${data.scope}`;
-                    if (!scopeIndexCounts.has(scopeKey)) {
-                        scopeIndexCounts.set(scopeKey, new Set());
-                    }
-                    queryIndexes.forEach(idx => scopeIndexCounts.get(scopeKey).add(idx));
-                    
-                    // Count indexes for collections (only if bucket and scope match or "All")
-                    if (selectedScope === "All" || data.scope === selectedScope) {
-                        const collectionKey = `${data.bucket}.${data.scope}.${data.collection}`;
-                        if (!collectionIndexCounts.has(collectionKey)) {
-                            collectionIndexCounts.set(collectionKey, new Set());
-                        }
-                        queryIndexes.forEach(idx => collectionIndexCounts.get(collectionKey).add(idx));
-                        
-                        // Add to relevant indexes based on current filter level
-                        // Extract plain index name from composite key (indexName::bucket.scope.collection -> indexName)
-                        if (selectedCollection === "All" || data.collection === selectedCollection) {
-                            queryIndexes.forEach(idx => {
-                                const indexName = idx.includes("::") ? idx.split("::")[0] : idx;
-                                relevantIndexes.add(indexName);
-                            });
-                        }
-                    } else if (selectedScope === "All") {
-                        // If scope is "All" but bucket is selected, add all indexes for this bucket
-                        queryIndexes.forEach(idx => {
-                            const indexName = idx.includes("::") ? idx.split("::")[0] : idx;
-                            relevantIndexes.add(indexName);
-                        });
-                    }
-                } else if (selectedBucket === "All") {
-                    // If bucket is "All", add all indexes
+                // Add to relevant indexes based on current filter level
+                if ((selectedBucket === "All" || data.bucket === selectedBucket) &&
+                    (selectedScope === "All" || data.scope === selectedScope) &&
+                    (selectedCollection === "All" || data.collection === selectedCollection)) {
                     queryIndexes.forEach(idx => {
                         const indexName = idx.includes("::") ? idx.split("::")[0] : idx;
                         relevantIndexes.add(indexName);
@@ -18853,7 +18850,8 @@ function generateElapsedTimeChart(requests) {
             const currentBucketValue = bucketDropdown.value;
             bucketDropdown.innerHTML = `<option value="All">(All) (${totalIndexCount})</option>`;
             Array.from(buckets).sort().forEach(bucket => {
-                const count = bucketIndexCounts.get(bucket)?.size || 0;
+                // Get count from bucketIndexCounts (already contains unique index names)
+                const count = (bucketIndexCounts.get(bucket) || new Set()).size;
                 // Only show buckets that have at least one index
                 if (count > 0) {
                     const option = document.createElement("option");
@@ -19101,17 +19099,22 @@ function generateElapsedTimeChart(requests) {
                 const connectedIndexKeys = new Set();
                 
                 console.log(`[FILTER DEBUG] Number of filtered queries: ${filteredQueries.length}`);
+                console.log(`[FILTER DEBUG] Total connections: ${indexQueryFlowData.connections ? indexQueryFlowData.connections.size : 0}`);
                 
                 filteredQueries.forEach(query => {
                     const isJoin = query.statement && query.statement.toUpperCase().includes('JOIN');
                     
                     if (indexQueryFlowData.connections) {
                         let connectionCount = 0;
+                        let primaryConnectionFound = false;
                         indexQueryFlowData.connections.forEach((connection) => {
                             if (connection.queryStatement === query.normalizedStatement) {
                                 const indexKey = connection.indexKey || `${connection.indexName}::${connection.bucketScopeCollection}`;
                                 connectedIndexKeys.add(indexKey);
                                 connectionCount++;
+                                if (indexKey.includes("#primary")) {
+                                    primaryConnectionFound = true;
+                                }
                                 
                                 if (isJoin) {
                                     console.log(`[JOIN DEBUG] ${hashQuery(query.statement)} adding connected index to LEFT side: ${hashCompositeKey(indexKey)}`);
@@ -19122,6 +19125,9 @@ function generateElapsedTimeChart(requests) {
                         if (isJoin) {
                             console.log(`[JOIN DEBUG] ${hashQuery(query.statement)} added ${connectionCount} indexes to connectedIndexKeys`);
                         }
+                        if (primaryConnectionFound) {
+                            console.log(`[FILTER DEBUG] Found #primary connection for query:`, query.statement.substring(0, 100));
+                        }
                     }
                 });
                 
@@ -19130,6 +19136,10 @@ function generateElapsedTimeChart(requests) {
                 filteredIndexes = indexes.filter(idx => {
                     const key = `${idx.name}::${idx.bucketScopeCollection}`;
                     const included = connectedIndexKeys.has(key);
+                    
+                    if (!included && idx.name === "#primary") {
+                        console.warn(`[FILTER DEBUG] #primary excluded - key: ${key}, has BSC: ${idx.bucketScopeCollection}, connectedKeys:`, Array.from(connectedIndexKeys).filter(k => k.includes("#primary")));
+                    }
                     
                     const isJoinIndex = Array.from(connectedIndexKeys).some(ck => {
                         const stmt = [...filteredQueries].find(q => {
