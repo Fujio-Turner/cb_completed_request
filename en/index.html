@@ -17830,20 +17830,13 @@ function generateElapsedTimeChart(requests) {
                     if (planObj && planObj["#operator"]) {
                         requestsWithOperators++;
                         const statement = request.preparedText || request.statement || "";
-                        let bucketScopeCollection = "unknown.unknown.unknown";
-
-                        const fromMatch = statement.match(/FROM\s+([^\s\n\r\t]+)/i);
-                        if (fromMatch) {
-                            const target = fromMatch[1].replace(/`/g, "").replace(/;$/, "");
-                            const parts = target.split(".");
-                            if (parts.length === 1) {
-                                bucketScopeCollection = `${parts[0]}._default._default`;
-                            } else if (parts.length === 2) {
-                                bucketScopeCollection = `${parts[0]}.${parts[1]}._default`;
-                            } else if (parts.length >= 3) {
-                                bucketScopeCollection = `${parts[0]}.${parts[1]}.${parts[2]}`;
-                            }
-                        }
+                        
+                        // Use parseFromClause() for consistent BSC extraction across all statement types
+                        const bucketScopeCollection = parseFromClause(statement);
+                        
+                        // Log BSC extraction for debugging
+                        console.log(`[BSC EXTRACTION] Query (SHA-256):`, hashQuery(statement));
+                        console.log(`[BSC EXTRACTION] Extracted BSC:`, hashBSC(bucketScopeCollection), `(${bucketScopeCollection})`);
 
                         extractIndexUsage(planObj, requestIndex, requestIndexMap, bucketScopeCollection);
                     }
