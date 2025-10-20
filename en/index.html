@@ -13584,8 +13584,8 @@ function generateElapsedTimeChart(requests) {
                             target = singleBacktickMatch[1].trim();
                             hasBackticks = true;
                         } else {
-                            // Try to match without backticks - must have at least one dot
-                            const multiPartMatch = cleanStatement.match(/FROM\s+([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+)(?:\s|$|,|WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT)/i);
+                            // Try to match without backticks - can be multi-part OR single word if followed by keyword/end
+                            const multiPartMatch = cleanStatement.match(/FROM\s+([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*)(?:\s+(?:WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|USING)|;|\s*$)/i);
                             if (multiPartMatch) {
                                 target = multiPartMatch[1].trim();
                             }
@@ -13605,8 +13605,7 @@ function generateElapsedTimeChart(requests) {
 
                 // Parse based on number of parts
                 if (parts.length === 1) {
-                    // Single word - only accept if it had backticks (otherwise it's likely an alias)
-                    if (!hasBackticks) return "_default._default._default";
+                    // Single word bucket name (with or without backticks)
                     return `${parts[0]}._default._default`;
                 } else if (parts.length === 2) {
                     // bucket.scope format
@@ -18403,9 +18402,8 @@ function generateElapsedTimeChart(requests) {
                             target = singleBacktickMatch[1].trim();
                             hasBackticks = true;
                         } else {
-                            // Try to match without backticks - must have at least one dot
-                            // Match bucket.scope or bucket.scope.collection, stopping at whitespace/keywords
-                            const multiPartMatch = statement.match(/FROM\s+([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+)(?:\s|$|,|WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT)/i);
+                            // Try to match without backticks - can be multi-part OR single word if followed by keyword/end
+                            const multiPartMatch = statement.match(/FROM\s+([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*)(?:\s+(?:WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|USING)|;|\s*$)/i);
                             if (multiPartMatch) {
                                 target = multiPartMatch[1].trim();
                             }
@@ -18423,10 +18421,9 @@ function generateElapsedTimeChart(requests) {
                 const isValid = parts.every(p => /^[a-zA-Z0-9_-]+$/.test(p));
                 if (!isValid) return;
                 
-                // For single-part names, ONLY accept if they had backticks
+                // Parse based on number of parts
                 if (parts.length === 1) {
-                    if (!hasBackticks) return; // Single word without backticks = alias
-                    
+                    // Single word bucket name (with or without backticks)
                     bucket = parts[0];
                     scope = "_default";
                     collection = "_default";
