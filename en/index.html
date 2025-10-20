@@ -18371,12 +18371,36 @@ function generateElapsedTimeChart(requests) {
             const originalIndexes = window.flowOriginalIndexes;
             const originalQueries = window.flowOriginalQueries;
             
-            // Extract all bucket/scope/collection combinations from queries
+            // Extract all bucket/scope/collection combinations from connection data (execution plans)
+            // This ensures we capture ALL collections used, including JOINs and subqueries
             const queriesData = [];
+            
+            // Build map of queries to their BSC combinations based on which indexes they use
+            const queryToBSCs = new Map(); // normalizedStatement -> Set of "bucket.scope.collection"
+            
+            if (indexQueryFlowData.connections) {
+                indexQueryFlowData.connections.forEach((connection) => {
+                    const queryStatement = connection.queryStatement;
+                    const indexKey = connection.indexKey || connection.indexName;
+                    
+                    // Extract BSC from composite key: indexName::bucket.scope.collection
+                    if (indexKey && indexKey.includes("::")) {
+                        const bsc = indexKey.split("::")[1];
+                        if (!queryToBSCs.has(queryStatement)) {
+                            queryToBSCs.set(queryStatement, new Set());
+                        }
+                        queryToBSCs.get(queryStatement).add(bsc);
+                    }
+                });
+            }
+            
+            // Now build queriesData from the connection-derived BSCs
             originalQueries.forEach(query => {
-                // ONLY use statement field, NOT preparedText (preparedText often has incomplete/alias data)
-                let statement = query.statement;
-                if (!statement) return;
+                const bscSet = queryToBSCs.get(query.normalizedStatement);
+                if (!bscSet || bscSet.size === 0) {
+                    // Fallback: try to parse FROM clause if no connection data
+                    let statement = query.statement;
+                    if (!statement) return;
                 
                 // Match collection target from SELECT (FROM) and DML statements (DELETE, UPDATE, etc.)
                 // Pattern 1: `bucket`.`scope`.`collection` (individually backticked)
@@ -18416,35 +18440,49 @@ function generateElapsedTimeChart(requests) {
                         }
                     }
                 }
-                
-                // If we have no valid target, skip
-                if (!target) return;
-                
-                const parts = target.split(".").filter(p => p.length > 0);
-                let bucket, scope, collection;
-                
-                // Validate that parts look like real bucket names (not aliases)
-                const isValid = parts.every(p => /^[a-zA-Z0-9_-]+$/.test(p));
-                if (!isValid) return;
-                
-                // Parse based on number of parts
-                if (parts.length === 1) {
-                    // Single word bucket name (with or without backticks)
-                    bucket = parts[0];
-                    scope = "_default";
-                    collection = "_default";
-                } else if (parts.length === 2) {
-                    bucket = parts[0];
-                    scope = parts[1];
-                    collection = "_default";
-                } else if (parts.length >= 3) {
-                    bucket = parts[0];
-                    scope = parts[1];
-                    collection = parts[2];
-                }
-                
-                if (bucket && bucket.length > 0) {
-                    queriesData.push({ bucket, scope, collection, query });
+                    
+                    // If we have no valid target, skip
+                    if (!target) return;
+                    
+                    const parts = target.split(".").filter(p => p.length > 0);
+                    let bucket, scope, collection;
+                    
+                    // Validate that parts look like real bucket names (not aliases)
+                    const isValid = parts.every(p => /^[a-zA-Z0-9_-]+$/.test(p));
+                    if (!isValid) return;
+                    
+                    // Parse based on number of parts
+                    if (parts.length === 1) {
+                        // Single word bucket name (with or without backticks)
+                        bucket = parts[0];
+                        scope = "_default";
+                        collection = "_default";
+                    } else if (parts.length === 2) {
+                        bucket = parts[0];
+                        scope = parts[1];
+                        collection = "_default";
+                    } else if (parts.length >= 3) {
+                        bucket = parts[0];
+                        scope = parts[1];
+                        collection = parts[2];
+                    }
+                    
+                    if (bucket && bucket.length > 0) {
+                        queriesData.push({ bucket, scope, collection, query });
+                    }
+                } else {
+                    // Use BSCs from connection data (covers JOINs, subqueries, etc.)
+                    bscSet.forEach(bscString => {
+                        const parts = bscString.split(".");
+                        if (parts.length === 3) {
+                            queriesData.push({
+                                bucket: parts[0],
+                                scope: parts[1],
+                                collection: parts[2],
+                                query: query
+                            });
+                        }
+                    });
                 }
             });
             
