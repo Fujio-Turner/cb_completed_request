@@ -17993,13 +17993,12 @@ function generateElapsedTimeChart(requests) {
                     const indexesForRequest = requestIndexMap.get(requestIndex);
 
                     if (indexesForRequest && indexesForRequest.size > 0) {
-                        indexesForRequest.forEach((indexName) => {
-                            // Extract bucket.scope.collection from current request using parseFromClause
-                            const currentRequest = requestsToUse[requestIndex];
-                            const currentBSC = parseFromClause(currentRequest?.statement);
+                        indexesForRequest.forEach((compositeKey) => {
+                            // compositeKey is already "indexName::bucket.scope.collection" from recordIndexUsage
+                            const indexKey = compositeKey;
+                            const [indexName, currentBSC] = compositeKey.split("::");
                             
-                            // Create unique key: indexName::bucket.scope.collection
-                            const indexKey = `${indexName}::${currentBSC}`;
+                            if (!indexName || !currentBSC) return; // Skip malformed keys
                             
                             // Track index usage per bucket.scope.collection combination
                             if (!allIndexes.has(indexKey)) {
@@ -18193,14 +18192,22 @@ function generateElapsedTimeChart(requests) {
                 return;
             }
 
-            // Function to record index usage for this request
+            // Function to record index usage for this request with BSC
             function recordIndexUsage(indexName) {
                 // If this is #primary, try to resolve to actual primary index name
                 if (indexName === "#primary") {
                     const resolved = resolvePrimaryIndexName(bucketScopeCollection);
                     indexName = resolved;
                 }
-                requestIndexMap.get(requestIndex).add(indexName);
+                // Store as composite key: indexName::bucket.scope.collection
+                const compositeKey = `${indexName}::${bucketScopeCollection}`;
+                
+                // Debug JOINs: only log if operator is a JOIN type
+                if (opType && (opType === "Join" || opType === "Nest" || opType === "HashJoin" || opType === "NLJoin")) {
+                    console.log(`[JOIN DEBUG] Recording index for ${opType}: ${compositeKey}`);
+                }
+                
+                requestIndexMap.get(requestIndex).add(compositeKey);
             }
 
             const opType = operator["#operator"];
@@ -18287,11 +18294,36 @@ function generateElapsedTimeChart(requests) {
                 );
             }
             if (operator.right) {
+                // For JOIN/NEST operators, the right side might have its own keyspace
+                let rightBSC = bucketScopeCollection;
+                if ((opType === "Join" || opType === "Nest" || opType === "HashJoin" || opType === "NLJoin") && operator.keyspace) {
+                    console.log(`[JOIN DEBUG] Detected ${opType} operator with keyspace: ${operator.keyspace}`);
+                    console.log(`[JOIN DEBUG] Left BSC: ${bucketScopeCollection}`);
+                    
+                    // Extract BSC from keyspace field: "bucket:scope.collection" or "bucket"
+                    const keyspace = operator.keyspace;
+                    const colonIndex = keyspace.indexOf(':');
+                    if (colonIndex > 0) {
+                        const bucket = keyspace.substring(0, colonIndex);
+                        const scopeCollection = keyspace.substring(colonIndex + 1);
+                        const parts = scopeCollection.split('.');
+                        if (parts.length === 2) {
+                            rightBSC = `${bucket}.${parts[0]}.${parts[1]}`;
+                        } else if (parts.length === 1) {
+                            rightBSC = `${bucket}.${parts[0]}._default`;
+                        }
+                    } else {
+                        // No colon, just bucket name
+                        rightBSC = `${keyspace}._default._default`;
+                    }
+                    
+                    console.log(`[JOIN DEBUG] Right BSC: ${rightBSC}`);
+                }
                 extractIndexUsage(
                     operator.right,
                     requestIndex,
                     requestIndexMap,
-                    bucketScopeCollection
+                    rightBSC
                 );
             }
             // Check for first and second properties (used in set operations like ExceptAll)
@@ -18397,6 +18429,14 @@ function generateElapsedTimeChart(requests) {
             // Now build queriesData from the connection-derived BSCs
             originalQueries.forEach(query => {
                 const bscSet = queryToBSCs.get(query.normalizedStatement);
+                
+                // Debug JOINs
+                const isJoin = query.statement && query.statement.toUpperCase().includes('JOIN');
+                if (isJoin) {
+                    console.log(`[JOIN DEBUG] Processing query: ${query.statement.substring(0, 100)}...`);
+                    console.log(`[JOIN DEBUG] Found ${bscSet ? bscSet.size : 0} BSCs from connections:`, bscSet ? Array.from(bscSet) : 'none');
+                }
+                
                 if (!bscSet || bscSet.size === 0) {
                     // Fallback: try to parse FROM clause if no connection data
                     let statement = query.statement;
@@ -18472,9 +18512,16 @@ function generateElapsedTimeChart(requests) {
                     }
                 } else {
                     // Use BSCs from connection data (covers JOINs, subqueries, etc.)
+                    if (isJoin) {
+                        console.log(`[JOIN DEBUG] Using connection data for JOIN query`);
+                    }
+                    
                     bscSet.forEach(bscString => {
                         const parts = bscString.split(".");
                         if (parts.length === 3) {
+                            if (isJoin) {
+                                console.log(`[JOIN DEBUG] Adding BSC to dropdown data: ${bscString}`);
+                            }
                             queriesData.push({
                                 bucket: parts[0],
                                 scope: parts[1],
@@ -18507,6 +18554,13 @@ function generateElapsedTimeChart(requests) {
             queriesData.forEach(data => {
                 // Get indexes for this query (contains composite keys like "indexName::bucket.scope.collection")
                 const queryIndexes = queryIndexMap.get(data.query.normalizedStatement) || new Set();
+                
+                // Debug JOINs
+                const isJoin = data.query.statement && data.query.statement.toUpperCase().includes('JOIN');
+                if (isJoin && queryIndexes.size > 0) {
+                    console.log(`[JOIN DEBUG] Building counts for BSC: ${data.bucket}.${data.scope}.${data.collection}`);
+                    console.log(`[JOIN DEBUG] Query has ${queryIndexes.size} indexes:`, Array.from(queryIndexes));
+                }
                 
                 // Always count indexes for all buckets
                 if (!bucketIndexCounts.has(data.bucket)) {
