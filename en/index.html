@@ -18928,22 +18928,33 @@ function generateElapsedTimeChart(requests) {
                 
                 // Filter indexes to only show those connected to filtered queries
                 const connectedIndexKeys = new Set();
+                
+                console.log(`[FILTER DEBUG] Number of filtered queries: ${filteredQueries.length}`);
+                
                 filteredQueries.forEach(query => {
                     const isJoin = query.statement && query.statement.toUpperCase().includes('JOIN');
                     
                     if (indexQueryFlowData.connections) {
+                        let connectionCount = 0;
                         indexQueryFlowData.connections.forEach((connection) => {
                             if (connection.queryStatement === query.normalizedStatement) {
                                 const indexKey = connection.indexKey || `${connection.indexName}::${connection.bucketScopeCollection}`;
                                 connectedIndexKeys.add(indexKey);
+                                connectionCount++;
                                 
                                 if (isJoin) {
                                     console.log(`[JOIN DEBUG] ${hashQuery(query.statement)} adding connected index to LEFT side: ${hashCompositeKey(indexKey)}`);
                                 }
                             }
                         });
+                        
+                        if (isJoin) {
+                            console.log(`[JOIN DEBUG] ${hashQuery(query.statement)} added ${connectionCount} indexes to connectedIndexKeys`);
+                        }
                     }
                 });
+                
+                console.log(`[FILTER DEBUG] Total connectedIndexKeys: ${connectedIndexKeys.size}`);
                 
                 filteredIndexes = indexes.filter(idx => {
                     const key = `${idx.name}::${idx.bucketScopeCollection}`;
