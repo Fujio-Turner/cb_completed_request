@@ -18127,14 +18127,16 @@ function generateElapsedTimeChart(requests) {
             
             const sortedIndexes = allIndexesArray
                 .filter(index => {
-                    // Only show indexes that have actual performance data
+                    // Show indexes that have usage count OR performance data
+                    // Removed strict stats requirement to handle JOINs where extractIndexScanDataFromPlan may not find all index details
+                    const hasUsage = index.totalUsage > 0;
                     const hasStats = index.scanTimes.length > 0 || index.itemsScanned.length > 0 || index.itemsFetched.length > 0;
                     
-                    if (!hasStats) {
-                        console.log(`[BUILD DEBUG] Filtered OUT ${hashCompositeKey(index.name + '::' + index.bucketScopeCollection)}: no stats (scanTimes: ${index.scanTimes.length}, itemsScanned: ${index.itemsScanned.length}, itemsFetched: ${index.itemsFetched.length}, totalUsage: ${index.totalUsage})`);
+                    if (!hasUsage && !hasStats) {
+                        console.log(`[BUILD DEBUG] Filtered OUT ${hashCompositeKey(index.name + '::' + index.bucketScopeCollection)}: no usage or stats`);
                     }
                     
-                    return hasStats;
+                    return hasUsage || hasStats;
                 })
                 .sort((a, b) => b.totalUsage - a.totalUsage);
             const sortedQueries = Array.from(queryGroups.values()).sort(
