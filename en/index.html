@@ -18531,12 +18531,13 @@ function generateElapsedTimeChart(requests) {
                 collections.add(parts[2]); // Extract collection name
             });
             
-            // Calculate total indexes for "All" option - use originalIndexes to match top count
-            const allIndexesSet = new Set(originalIndexes.map(idx => idx.name));
+            // Calculate total indexes for "All" option - use un-deduped count (composite keys)
+            // This counts index usage across all BSCs, not unique index names
+            const totalIndexCount = originalIndexes.length;
             
             // Populate/rebuild bucket dropdown
             const currentBucketValue = bucketDropdown.value;
-            bucketDropdown.innerHTML = `<option value="All">(All) (${allIndexesSet.size})</option>`;
+            bucketDropdown.innerHTML = `<option value="All">(All) (${totalIndexCount})</option>`;
             Array.from(buckets).sort().forEach(bucket => {
                 const count = bucketIndexCounts.get(bucket)?.size || 0;
                 // Only show buckets that have at least one index
@@ -18554,7 +18555,7 @@ function generateElapsedTimeChart(requests) {
             let scopeAllCount;
             if (selectedBucket === "All") {
                 // Show total indexes when no bucket filter
-                scopeAllCount = allIndexesSet.size;
+                scopeAllCount = totalIndexCount;
             } else {
                 // Show indexes for selected bucket
                 scopeAllCount = bucketIndexCounts.get(selectedBucket)?.size || 0;
@@ -18703,16 +18704,33 @@ function generateElapsedTimeChart(requests) {
                     let target = null;
                     let hasBackticks = false;
                     
-                    // Try to match with backticks first
-                    const backtickMatch = statement.match(/FROM\s+`([^`]+)`/i);
-                    if (backtickMatch) {
-                        target = backtickMatch[1].trim();
+                    // Support both SELECT (FROM) and DML statements (DELETE, UPDATE, INSERT INTO, MERGE INTO, UPSERT INTO)
+                    const statementKeyword = '(?:FROM|DELETE|UPDATE|INSERT\\s+INTO|MERGE\\s+INTO|UPSERT\\s+INTO)';
+                    
+                    // Try to match with individually backticked components: `bucket`.`scope`.`collection`
+                    const individualBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`\\.`([^`]+)`', 'i'));
+                    if (individualBacktickMatch) {
+                        target = `${individualBacktickMatch[1]}.${individualBacktickMatch[2]}.${individualBacktickMatch[3]}`;
                         hasBackticks = true;
                     } else {
-                        // Try to match without backticks - must have at least one dot
-                        const multiPartMatch = statement.match(/FROM\s+([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+)(?:\s|$|,|WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT)/i);
-                        if (multiPartMatch) {
-                            target = multiPartMatch[1].trim();
+                        // Try two-part backticked: `bucket`.`scope`
+                        const twoPartBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`\\.`([^`]+)`', 'i'));
+                        if (twoPartBacktickMatch) {
+                            target = `${twoPartBacktickMatch[1]}.${twoPartBacktickMatch[2]}`;
+                            hasBackticks = true;
+                        } else {
+                            // Try single backticked identifier: `bucket.scope.collection` or `bucket`
+                            const singleBacktickMatch = statement.match(new RegExp(statementKeyword + '\\s+`([^`]+)`', 'i'));
+                            if (singleBacktickMatch) {
+                                target = singleBacktickMatch[1].trim();
+                                hasBackticks = true;
+                            } else {
+                                // Try to match without backticks - can be multi-part OR single word if followed by keyword/end
+                                const multiPartMatch = statement.match(new RegExp(statementKeyword + '\\s+([a-zA-Z0-9_-]+(?:\\.[a-zA-Z0-9_-]+)*)(?:\\s+(?:WHERE|JOIN|USE|LET|NEST|UNNEST|GROUP|ORDER|LIMIT|ON|AS|USING|SET|VALUES)|;|\\s*$)', 'i'));
+                                if (multiPartMatch) {
+                                    target = multiPartMatch[1].trim();
+                                }
+                            }
                         }
                     }
                     
@@ -18726,8 +18744,7 @@ function generateElapsedTimeChart(requests) {
                     let bucket, scope, collection;
                     
                     if (parts.length === 1) {
-                        if (!hasBackticks) return false; // Single word without backticks = alias
-                        
+                        // Single word bucket name (with or without backticks)
                         bucket = parts[0];
                         scope = "_default";
                         collection = "_default";
