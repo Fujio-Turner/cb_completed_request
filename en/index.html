@@ -18694,9 +18694,9 @@ function generateElapsedTimeChart(requests) {
                     
                     // If we have no valid target, log for debugging and skip
                     if (!target) {
-                        console.warn(`[PARSE WARNING] Could not extract B/BSC from query statement. Defaulting to _default._default._default`);
-                        console.warn(`[PARSE WARNING] Statement (SHA-256):`, hashQuery(statement));
-                        console.warn(`[PARSE WARNING] Full statement:`, statement);
+                        console.warn(`[PARSE FAILED] Could not extract keyspace from query`);
+                        console.warn(`[PARSE FAILED] Statement (SHA-256):`, hashQuery(statement));
+                        console.warn(`[PARSE FAILED] Full statement:`, statement);
                         return;
                     }
                     
@@ -18705,7 +18705,14 @@ function generateElapsedTimeChart(requests) {
                     
                     // Validate that parts look like real bucket names (not aliases)
                     const isValid = parts.every(p => /^[a-zA-Z0-9_-]+$/.test(p));
-                    if (!isValid) return;
+                    if (!isValid) {
+                        console.warn(`[PARSE FAILED] Invalid keyspace parts (possible alias captured)`);
+                        console.warn(`[PARSE FAILED] Extracted target:`, target);
+                        console.warn(`[PARSE FAILED] Parts:`, parts);
+                        console.warn(`[PARSE FAILED] Statement (SHA-256):`, hashQuery(statement));
+                        console.warn(`[PARSE FAILED] Full statement:`, statement);
+                        return;
+                    }
                     
                     // Parse based on number of parts
                     if (parts.length === 1) {
@@ -18722,6 +18729,11 @@ function generateElapsedTimeChart(requests) {
                         scope = parts[1];
                         collection = parts[2];
                     }
+                    
+                    // Log successful parsing
+                    const parsedBSC = `${bucket}.${scope}.${collection}`;
+                    console.log(`[PARSE SUCCESS] Extracted BSC: ${hashBSC(parsedBSC)} (${parsedBSC})`);
+                    console.log(`[PARSE SUCCESS] From statement (SHA-256):`, hashQuery(statement));
                     
                     if (bucket && bucket.length > 0) {
                         queriesData.push({ bucket, scope, collection, query });
