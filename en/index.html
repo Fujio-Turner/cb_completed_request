@@ -13568,6 +13568,20 @@ function generateElapsedTimeChart(requests) {
                     .replace(/\s+/g, " ") // Normalize whitespace
                     .trim();
 
+                // Handle PREPARE statements:
+                // Pattern 1: PREPARE name FROM actual_statement
+                // Pattern 2: PREPARE actual_statement (no name)
+                if (cleanStatement.match(/^PREPARE\s+/i)) {
+                    // Try pattern with name: PREPARE name FROM statement
+                    const namedPrepareMatch = cleanStatement.match(/^PREPARE\s+[a-zA-Z0-9_-]+\s+FROM\s+(.+)$/i);
+                    if (namedPrepareMatch) {
+                        cleanStatement = namedPrepareMatch[1].trim();
+                    } else {
+                        // Simple pattern: PREPARE statement (just strip PREPARE keyword)
+                        cleanStatement = cleanStatement.replace(/^PREPARE\s+/i, '').trim();
+                    }
+                }
+
                 let target = null;
                 let hasBackticks = false;
                 
