@@ -18599,7 +18599,7 @@ function generateElapsedTimeChart(requests) {
             let collectionAllCount;
             if (selectedBucket === "All" && selectedScope === "All") {
                 // Show total indexes when no filters
-                collectionAllCount = allIndexesSet.size;
+                collectionAllCount = totalIndexCount;
             } else if (selectedBucket !== "All" && selectedScope === "All") {
                 // Show indexes for selected bucket
                 collectionAllCount = bucketIndexCounts.get(selectedBucket)?.size || 0;
@@ -18639,7 +18639,22 @@ function generateElapsedTimeChart(requests) {
             // Populate/rebuild index dropdown (cascading from bucket+scope+collection)
             const indexesToShow = selectedBucket === "All" && selectedScope === "All" && selectedCollection === "All" 
                 ? originalIndexes 
-                : originalIndexes.filter(idx => relevantIndexes.has(idx.name));
+                : originalIndexes.filter(idx => {
+                    // Check if index name is in relevant set
+                    if (!relevantIndexes.has(idx.name)) return false;
+                    
+                    // Also check if the index's BSC matches the selected filters
+                    if (!idx.bucketScopeCollection) return false;
+                    const parts = idx.bucketScopeCollection.split(".");
+                    if (parts.length !== 3) return false;
+                    
+                    const [bucket, scope, collection] = parts;
+                    const bucketMatch = selectedBucket === "All" || bucket === selectedBucket;
+                    const scopeMatch = selectedScope === "All" || scope === selectedScope;
+                    const collectionMatch = selectedCollection === "All" || collection === selectedCollection;
+                    
+                    return bucketMatch && scopeMatch && collectionMatch;
+                });
             
             // Sort indexes alphabetically by name
             const sortedIndexes = indexesToShow.slice().sort((a, b) => a.name.localeCompare(b.name));
