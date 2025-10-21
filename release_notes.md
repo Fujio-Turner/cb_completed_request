@@ -1,3 +1,11 @@
+### Version 3.25.0 (October 20, 2025)
+- **Enhancement: Insights** - Remove count by group and assign active insight a number (closes #183)
+- **Enhancement: Index/Query Flow** - Banner HTML cleanup for better presentation (closes #182)
+- **Enhancement: Index/Query Flow** - Process JOIN and Sub-Query Index data/stats (closes #181)
+- **Enhancement: Timeline** - Remove log scale bubbles checkbox from Query's Avg Returned Document Size chart (closes #179)
+- **Enhancement: Index/Query Flow** - Improved spacing and drop down functionality (closes #178)
+- **Enhancement: Group Query & Every Query** - Streamlined search by users with JqueryUI drop down (closes #177)
+
 ### Version 3.24.2 (October 18, 2025)
 - **Fix: Issue #176** - Bug fix for issue #176
 - **Fix: Issue #175** - Bug fix for issue #175
