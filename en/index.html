@@ -1898,40 +1898,48 @@ if (window.TEXT_CONSTANTS) {
                 <!-- Summary counts above the flow chart -->
                 <div id="flow-summary"
                     class="position-relative z-index-3 background-white padding-10-20 border-bottom">
-                    <div style="display: flex; justify-content: space-between; gap: 30px;">
-                        <!-- LEFT: Indexes with filters -->
-                        <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; gap: 30px; align-items: flex-start;">
+                        <!-- LEFT: Indexes count -->
+                        <div style="flex: 0 0 auto; text-align: left;">
                             <div class="font-bold color-333" style="margin-bottom: 8px;">
                                 Indexes
                             </div>
-                            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                                <div>
-                                    <label for="bucket-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Bucket ()*:</label>
-                                    <select id="bucket-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
-                                        <option value="All">All</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="scope-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Scope ()*:</label>
-                                    <select id="scope-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
-                                        <option value="All">All</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="collection-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Collection ()*:</label>
-                                    <select id="collection-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
-                                        <option value="All">All</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="index-filter-dropdown" style="margin-right: 4px; font-size: 12px;">Index Name []*²:</label>
-                                    <select id="index-filter-dropdown" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
-                                        <option value="All">All</option>
-                                    </select>
-                                </div>
+                            <div style="font-size: 24px; font-weight: bold; color: #2563eb;">
+                                <span id="index-count">0</span>
                             </div>
-                            <div style="font-size: 10px; color: #666; margin-top: 6px;">
-                                *: # of unique indexes per filter | **: # of times index has been scanned
+                            <div style="font-size: 11px; color: #666;">
+                                Scanned
+                            </div>
+                        </div>
+                        
+                        <!-- CENTER: Filters -->
+                        <div style="flex: 1; display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-start;">
+                            <div>
+                                <label for="bucket-filter-dropdown" class="margin-bottom-5 font-bold-block">Bucket ()*</label>
+                                <select id="bucket-filter-dropdown" class="width-100 padding-8 border-radius-4" style="border: 1px solid #ccc">
+                                    <option value="All">All</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="scope-filter-dropdown" class="margin-bottom-5 font-bold-block">Scope ()*</label>
+                                <select id="scope-filter-dropdown" class="width-100 padding-8 border-radius-4" style="border: 1px solid #ccc">
+                                    <option value="All">All</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="collection-filter-dropdown" class="margin-bottom-5 font-bold-block">Collection ()*</label>
+                                <select id="collection-filter-dropdown" class="width-100 padding-8 border-radius-4" style="border: 1px solid #ccc">
+                                    <option value="All">All</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="index-filter-dropdown" class="margin-bottom-5 font-bold-block">Index Name []*²</label>
+                                <select id="index-filter-dropdown" class="width-100 padding-8 border-radius-4" style="border: 1px solid #ccc">
+                                    <option value="All">All</option>
+                                </select>
+                            </div>
+                            <div style="font-size: 10px; color: #666; align-self: flex-end; margin-left: 10px;">
+                                *: # of unique indexes per filter<br>**: # of times index has been scanned
                             </div>
                         </div>
                         
