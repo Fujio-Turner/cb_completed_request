@@ -166,18 +166,18 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
             background: #545b62;
         }
 
-        /* Category counter badge (Issue #161, updated #164 for fraction display) */
-        .category-counter {
+        /* Insight indicator badge (Issue #183 - moved from category to insight level) */
+        .insight-indicator {
             background: #dc3545;
             color: white;
-            padding: 5px 13px;
-            border-radius: 19px;
-            font-size: 19px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 14px;
             font-weight: bold;
-            margin-left: 10px;
+            margin-right: 8px;
             display: none;
         }
-        .category-counter.active {
+        .insight-indicator.active {
             display: inline-block;
         }
 
@@ -1003,11 +1003,11 @@ if (window.TEXT_CONSTANTS) {
 
                 <!-- Indexes Category -->
                 <div id="index-issues" class="insight-category">
-                    <h3 class="category-title" onclick="toggleCategory('index-issues')">🔍 Index Performance Issues<span class="category-counter" id="index-issues-counter"></span></h3>
-                    <div class="insight-category-content" id="index-issues-content">
+                    <h3 class="category-title collapsed" onclick="toggleCategory('index-issues')">🔍 Index Performance Issues</h3>
+                    <div class="insight-category-content collapsed" id="index-issues-content">
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('inefficient-index-scans')">Inefficient
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('inefficient-index-scans')"><span class="insight-indicator" id="inefficient-index-scans-indicator"></span>Inefficient
                                 Index Scans<span class="live-badge">Live</span></h4>
                             <div class="insight-content collapsed" id="inefficient-index-scans-content">
                                 <p class="insight-description">
@@ -1048,7 +1048,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('slow-index-scan-times')">Slow Index Scan
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('slow-index-scan-times')"><span class="insight-indicator" id="slow-index-scan-times-indicator"></span>Slow Index Scan
                                 Times<span class="live-badge">Live</span></h4>
                             <div class="insight-content collapsed" id="slow-index-scan-times-content">
                                 <p class="insight-description">
@@ -1087,7 +1087,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('primary-index-over-usage')">Primary Index
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('primary-index-over-usage')"><span class="insight-indicator" id="primary-index-over-usage-indicator"></span>Primary Index
                                 Over-Usage<span class="live-badge">Live</span></h4>
                             <div class="insight-content collapsed" id="primary-index-over-usage-content">
                                 <p class="insight-description">
@@ -1114,7 +1114,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('pagination-index-overfetch')">ORDER BY / LIMIT / OFFSET Index Over-Scan<span class="live-badge">Live</span></h4>
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('pagination-index-overfetch')"><span class="insight-indicator" id="pagination-index-overfetch-indicator"></span>ORDER BY / LIMIT / OFFSET Index Over-Scan<span class="live-badge">Live</span></h4>
                             <div class="insight-content collapsed" id="pagination-index-overfetch-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="pagination-overfetch-count">0 queries</span> (<span class="highlight-number" id="pagination-overfetch-percent">0%</span>) with `ORDER BY` + `LIMIT ` + `OFFSET ` scanned an Avg of <span id="pagination-overfetch-avg-items">0</span> items from the index(es).
@@ -1151,12 +1151,12 @@ if (window.TEXT_CONSTANTS) {
 
                 <!-- Resources Category -->
                 <div id="resource-issues" class="insight-category">
-                    <h3 class="category-title" onclick="toggleCategory('resource-issues')">⚡ Resource Utilization Issues<span class="category-counter" id="resource-issues-counter"></span>
+                    <h3 class="category-title collapsed" onclick="toggleCategory('resource-issues')">⚡ Resource Utilization Issues
                     </h3>
-                    <div class="insight-category-content" id="resource-issues-content">
+                    <div class="insight-category-content collapsed" id="resource-issues-content">
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('high-kernel-time-queries')">High Kernel
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('high-kernel-time-queries')"><span class="insight-indicator" id="high-kernel-time-queries-indicator"></span>High Kernel
                                 Time in Queries<span class="beta-badge">Beta</span></h4>
                             <div class="insight-content collapsed" id="high-kernel-time-queries-content">
                                 <p class="insight-description">
@@ -1199,7 +1199,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('high-memory-usage')">High Memory Usage
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('high-memory-usage')"><span class="insight-indicator" id="high-memory-usage-indicator"></span>High Memory Usage
                                 Detected<span class="live-badge">Live</span></h4>
                             <div class="insight-content collapsed" id="high-memory-usage-content">
                                 <p class="insight-description">
@@ -1237,7 +1237,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('slow-parse-plan-times')">Slow Parse/Plan Times<span class="live-badge">Live</span></h4>
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('slow-parse-plan-times')"><span class="insight-indicator" id="slow-parse-plan-times-indicator"></span>Slow Parse/Plan Times<span class="live-badge">Live</span></h4>
                             <div class="insight-content collapsed" id="slow-parse-plan-times-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="slow-parse-plan-count">0 queries</span> (<span class="highlight-number" id="slow-parse-plan-percent">0%</span>) have parse or plan times greater than 1ms with avg parse: <span class="highlight-number" id="avg-parse-time">0ms</span> and avg plan: <span class="highlight-number" id="avg-plan-time">0ms</span>, which may indicate high CPU utilization or kernel time wait issues.
@@ -1272,7 +1272,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('slow-use-key-queries')">Slow USE KEY
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('slow-use-key-queries')"><span class="insight-indicator" id="slow-use-key-queries-indicator"></span>Slow USE KEY
                                 Queries<span class="live-badge">Live</span></h4>
                             <div class="insight-content collapsed" id="slow-use-key-queries-content">
                                 <p class="insight-description">
@@ -1313,12 +1313,12 @@ if (window.TEXT_CONSTANTS) {
 
                 <!-- Query Patterns Category -->
                 <div id="pattern-analysis" class="insight-category">
-                    <h3 class="category-title" onclick="toggleCategory('pattern-analysis')">🔄 Query Pattern Analysis<span class="category-counter" id="pattern-analysis-counter"></span>
+                    <h3 class="category-title collapsed" onclick="toggleCategory('pattern-analysis')">🔄 Query Pattern Analysis
                     </h3>
-                    <div class="insight-category-content" id="pattern-analysis-content">
+                    <div class="insight-category-content collapsed" id="pattern-analysis-content">
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('missing-where-clauses')">Missing WHERE
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('missing-where-clauses')"><span class="insight-indicator" id="missing-where-clauses-indicator"></span>Missing WHERE
                                 Clauses<span class="live-badge">Live</span></h4>
                             <div class="insight-content collapsed" id="missing-where-clauses-content">
                                 <p class="insight-description">
@@ -1347,7 +1347,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('complex-join-operations')">Complex JOIN
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('complex-join-operations')"><span class="insight-indicator" id="complex-join-operations-indicator"></span>Complex JOIN
                                 Operations<span class="beta-badge">Beta</span></h4>
                             <div class="insight-content collapsed" id="complex-join-operations-content">
                                 <p class="insight-description">
@@ -1408,7 +1408,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('inefficient-like-operations')">Inefficient
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('inefficient-like-operations')"><span class="insight-indicator" id="inefficient-like-operations-indicator"></span>Inefficient
                                 LIKE Operations<span class="live-badge">Live</span></h4>
                             <div class="insight-content collapsed" id="inefficient-like-operations-content">
                                 <p class="insight-description">
@@ -1437,7 +1437,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('select-star-usage')">SELECT * Usage<span class="live-badge">Live</span></h4>
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('select-star-usage')"><span class="insight-indicator" id="select-star-usage-indicator"></span>SELECT * Usage<span class="live-badge">Live</span></h4>
                             <div class="insight-content collapsed" id="select-star-usage-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="select-star-count">0 queries</span> (<span class="highlight-number" id="select-star-percent">0%</span>) use SELECT * which returns entire documents and can increase network I/O and memory. Prefer selecting only needed fields.
@@ -1466,12 +1466,12 @@ if (window.TEXT_CONSTANTS) {
 
                 <!-- Performance Category -->
                 <div id="performance-opportunities" class="insight-category">
-                    <h3 class="category-title" onclick="toggleCategory('performance-opportunities')">🚀 Performance
-                        Optimization Opportunities<span class="category-counter" id="performance-opportunities-counter"></span></h3>
-                    <div class="insight-category-content" id="performance-opportunities-content">
+                    <h3 class="category-title collapsed" onclick="toggleCategory('performance-opportunities')">🚀 Performance
+                        Optimization Opportunities</h3>
+                    <div class="insight-category-content collapsed" id="performance-opportunities-content">
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('large-payload-streaming')">Large Payload
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('large-payload-streaming')"><span class="insight-indicator" id="large-payload-streaming-indicator"></span>Large Payload
                                 Streaming<span class="live-badge">Live</span></h4>
                             <div class="insight-content collapsed" id="large-payload-streaming-content">
                                 <p class="insight-description">
@@ -1509,7 +1509,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('large-result-set-queries')">Large Result
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('large-result-set-queries')"><span class="insight-indicator" id="large-result-set-queries-indicator"></span>Large Result
                                 Set Queries<span class="live-badge">Live</span></h4>
                             <div class="insight-content collapsed" id="large-result-set-queries-content">
                                 <p class="insight-description">
@@ -1547,7 +1547,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('timeout-prone-queries')">Timeout-Prone
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('timeout-prone-queries')"><span class="insight-indicator" id="timeout-prone-queries-indicator"></span>Timeout-Prone
                                 Queries<span class="beta-badge">Beta</span></h4>
                             <div class="insight-content collapsed" id="timeout-prone-queries-content">
 
@@ -1555,7 +1555,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('concurrent-query-conflicts')">Concurrent
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('concurrent-query-conflicts')"><span class="insight-indicator" id="concurrent-query-conflicts-indicator"></span>Concurrent
                                 Query Conflicts<span class="beta-badge">Beta</span></h4>
                             <div class="insight-content collapsed" id="concurrent-query-conflicts-content">
                                 <p class="insight-description">
@@ -15362,7 +15362,7 @@ function generateElapsedTimeChart(requests) {
             return totalInsightsWithIssues;
         }
 
-        // Update category counters with count of active insights (Issue #161)
+        // Update insight indicators (Issue #183 - moved from category to insight level with numbering)
         function updateCategoryCounters() {
             const categories = {
                 'index-issues': ['inefficient-index-scans', 'slow-index-scan-times', 'primary-index-over-usage', 'pagination-index-overfetch'],
@@ -15371,30 +15371,49 @@ function generateElapsedTimeChart(requests) {
                 'performance-opportunities': ['large-payload-streaming', 'large-result-set-queries', 'timeout-prone-queries', 'concurrent-query-conflicts']
             };
 
+            const allInsights = Object.values(categories).flat();
+            let activeInsightNumber = 1;
+
+            // Update insight indicators
+            allInsights.forEach(insightId => {
+                const contentElement = document.getElementById(`${insightId}-content`);
+                const card = contentElement?.closest('.insight-item');
+                const indicatorElement = document.getElementById(`${insightId}-indicator`);
+                
+                if (indicatorElement) {
+                    // Show indicator with sequential number only if insight is active (has issues)
+                    if (card && card.classList.contains('active')) {
+                        indicatorElement.textContent = `#${activeInsightNumber}`;
+                        indicatorElement.classList.add('active');
+                        activeInsightNumber++;
+                    } else {
+                        indicatorElement.textContent = '';
+                        indicatorElement.classList.remove('active');
+                    }
+                }
+            });
+
+            // Auto-expand categories that contain active insights (Issue #183)
             Object.keys(categories).forEach(categoryId => {
                 const insightIds = categories[categoryId];
-                const totalInCategory = insightIds.length;
-                let activeCount = 0;
-
-                insightIds.forEach(insightId => {
+                const hasActiveInsight = insightIds.some(insightId => {
                     const contentElement = document.getElementById(`${insightId}-content`);
                     const card = contentElement?.closest('.insight-item');
-                    
-                    // Check if insight is active (has issues)
-                    if (card && card.classList.contains('active')) {
-                        activeCount++;
-                    }
+                    return card && card.classList.contains('active');
                 });
 
-                const counterElement = document.getElementById(`${categoryId}-counter`);
-                if (counterElement) {
-                    if (activeCount > 0) {
-                        // Show fraction format (Issue #164)
-                        counterElement.textContent = `${activeCount}/${totalInCategory}`;
-                        counterElement.classList.add('active');
+                const categoryTitle = document.querySelector(`#${categoryId} .category-title`);
+                const categoryContent = document.getElementById(`${categoryId}-content`);
+                
+                if (categoryTitle && categoryContent) {
+                    if (hasActiveInsight) {
+                        // Expand category if it has active insights
+                        categoryTitle.classList.remove('collapsed');
+                        categoryContent.classList.remove('collapsed');
                     } else {
-                        counterElement.textContent = '';
-                        counterElement.classList.remove('active');
+                        // Keep category collapsed if no active insights
+                        categoryTitle.classList.add('collapsed');
+                        categoryContent.classList.add('collapsed');
                     }
                 }
             });
