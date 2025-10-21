@@ -18151,10 +18151,11 @@ function generateElapsedTimeChart(requests) {
                                 if (indexData.scanTime > 0) {
                                     indexObj.scanTimes.push(indexData.scanTime);
                                 }
-                                if (indexData.itemsScanned > 0) {
+                                // Push 0 values instead of skipping them - important for indexes that return no documents
+                                if (indexData.itemsScanned !== undefined) {
                                     indexObj.itemsScanned.push(indexData.itemsScanned);
                                 }
-                                if (indexData.itemsFetched > 0) {
+                                if (indexData.itemsFetched !== undefined) {
                                     indexObj.itemsFetched.push(indexData.itemsFetched);
                                 }
                             }
@@ -18254,13 +18255,32 @@ function generateElapsedTimeChart(requests) {
                             if (stats["servTime"]) {
                                 result.scanTime = parseTime(stats["servTime"]);
                             }
-                            if (stats["#itemsOut"]) {
+                            
+                            // Handle itemsOut - use value if present, otherwise keep as 0 (scan returned no docs)
+                            if (stats["#itemsOut"] !== undefined) {
                                 result.itemsScanned = stats["#itemsOut"];
                             }
-                            if (stats["#itemsIn"]) {
+                            // else: keep default 0 value from initialization
+                            
+                            // Handle itemsIn - use value if present, otherwise keep as 0
+                            if (stats["#itemsIn"] !== undefined) {
                                 result.itemsFetched = stats["#itemsIn"];
                             }
+                            // else: keep default 0 value from initialization
                         }
+                    }
+                    
+                    // For UnionScan, IntersectScan, etc., check scans array FIRST before other traversals
+                    // This ensures we find indexes inside UnionScan > DistinctScan > scan structures
+                    if (operator["scans"] && Array.isArray(operator["scans"])) {
+                        for (const scan of operator["scans"]) {
+                            searchOperatorForIndex(scan);
+                        }
+                    }
+                    
+                    // For DistinctScan, check the nested scan property
+                    if (operator["scan"]) {
+                        searchOperatorForIndex(operator["scan"]);
                     }
 
                     // Recursively search child operators
@@ -18272,11 +18292,6 @@ function generateElapsedTimeChart(requests) {
                         for (const child of operator["~children"]) {
                             searchOperatorForIndex(child);
                         }
-                    }
-
-                    // Also search scan property (used in DistinctScan)
-                    if (operator["scan"]) {
-                        searchOperatorForIndex(operator["scan"]);
                     }
 
                     // Search other nested operator properties
@@ -18305,10 +18320,13 @@ function generateElapsedTimeChart(requests) {
                     if (operator["second"]) {
                         searchOperatorForIndex(operator["second"]);
                     }
-
-                    if (operator["scans"] && Array.isArray(operator["scans"])) {
-                        for (const scan of operator["scans"]) {
-                            searchOperatorForIndex(scan);
+                    
+                    // Search subqueries
+                    if (operator["~subqueries"] && Array.isArray(operator["~subqueries"])) {
+                        for (const subquery of operator["~subqueries"]) {
+                            if (subquery.executionTimings) {
+                                searchOperatorForIndex(subquery.executionTimings);
+                            }
                         }
                     }
                 }
@@ -18320,6 +18338,116 @@ function generateElapsedTimeChart(requests) {
                 console.warn("Plan type:", typeof planString);
                 console.warn("Plan is null:", planString === null);
                 return { scanTime: 0, itemsScanned: 0, itemsFetched: 0 };
+            }
+        }
+
+        // Helper function to extract BSC from an operator
+        function extractBSCFromOperator(operator) {
+            if (!operator) return "unknown.unknown.unknown";
+            
+            // Handle both old and new Couchbase formats:
+            // NEW format: has bucket, scope, keyspace fields
+            // OLD format: only has keyspace (which is the bucket name), assumes _default._default
+            if (operator.bucket) {
+                // New format with explicit bucket/scope/keyspace
+                const bucket = operator.bucket;
+                const scope = operator.scope || "_default";
+                const keyspace = operator.keyspace || "_default";
+                return `${bucket}.${scope}.${keyspace}`;
+            } else if (operator.keyspace) {
+                // Old format: keyspace IS the bucket name, default scope/collection
+                return `${operator.keyspace}._default._default`;
+            } else {
+                return "unknown.unknown.unknown";
+            }
+        }
+
+        // Special handling for subqueries - extract BSC from each operator dynamically
+        function extractIndexUsageFromSubquery(
+            operator,
+            requestIndex,
+            requestIndexMap,
+            visited = new WeakSet()
+        ) {
+            if (!operator) return;
+            
+            // Prevent infinite recursion
+            if (visited.has(operator)) return;
+            visited.add(operator);
+            
+            const opType = operator["#operator"];
+            
+            // Extract BSC from this operator if it has index/keyspace info
+            let bucketScopeCollection = extractBSCFromOperator(operator);
+            
+            // Record index usage if this is a scan operator
+            if (opType === "IndexScan" || opType === "IndexScan2" || opType === "IndexScan3") {
+                if (operator.index) {
+                    const compositeKey = `${operator.index}::${bucketScopeCollection}`;
+                    requestIndexMap.get(requestIndex).add(compositeKey);
+                }
+                if (operator.indexName) {
+                    const compositeKey = `${operator.indexName}::${bucketScopeCollection}`;
+                    requestIndexMap.get(requestIndex).add(compositeKey);
+                }
+            }
+            
+            if (opType === "PrimaryScan" || opType === "PrimaryScan2" || opType === "PrimaryScan3") {
+                let indexName = "#primary";
+                const resolvedName = resolvePrimaryIndexName(bucketScopeCollection);
+                if (resolvedName && resolvedName !== "#primary") {
+                    indexName = resolvedName;
+                } else if (operator.index) {
+                    indexName = operator.index;
+                }
+                const compositeKey = `${indexName}::${bucketScopeCollection}`;
+                requestIndexMap.get(requestIndex).add(compositeKey);
+            }
+            
+            // Recursively traverse all child operators
+            if (operator["~child"]) {
+                extractIndexUsageFromSubquery(operator["~child"], requestIndex, requestIndexMap, visited);
+            }
+            if (operator["~children"] && Array.isArray(operator["~children"])) {
+                operator["~children"].forEach((child) =>
+                    extractIndexUsageFromSubquery(child, requestIndex, requestIndexMap, visited)
+                );
+            }
+            if (operator.input) {
+                extractIndexUsageFromSubquery(operator.input, requestIndex, requestIndexMap, visited);
+            }
+            if (operator.inputs && Array.isArray(operator.inputs)) {
+                operator.inputs.forEach((input) =>
+                    extractIndexUsageFromSubquery(input, requestIndex, requestIndexMap, visited)
+                );
+            }
+            if (operator.left) {
+                extractIndexUsageFromSubquery(operator.left, requestIndex, requestIndexMap, visited);
+            }
+            if (operator.right) {
+                extractIndexUsageFromSubquery(operator.right, requestIndex, requestIndexMap, visited);
+            }
+            if (operator.first) {
+                extractIndexUsageFromSubquery(operator.first, requestIndex, requestIndexMap, visited);
+            }
+            if (operator.second) {
+                extractIndexUsageFromSubquery(operator.second, requestIndex, requestIndexMap, visited);
+            }
+            if (operator.scans && Array.isArray(operator.scans)) {
+                operator.scans.forEach((scan) =>
+                    extractIndexUsageFromSubquery(scan, requestIndex, requestIndexMap, visited)
+                );
+            }
+            if (operator.scan) {
+                extractIndexUsageFromSubquery(operator.scan, requestIndex, requestIndexMap, visited);
+            }
+            // Nested subqueries
+            if (operator["~subqueries"] && Array.isArray(operator["~subqueries"])) {
+                operator["~subqueries"].forEach((subquery) => {
+                    if (subquery.executionTimings) {
+                        extractIndexUsageFromSubquery(subquery.executionTimings, requestIndex, requestIndexMap, visited);
+                    }
+                });
             }
         }
 
@@ -18352,6 +18480,28 @@ function generateElapsedTimeChart(requests) {
             }
 
             const opType = operator["#operator"];
+            
+            // Extract BSC from operator if available (overrides parent BSC for accuracy)
+            // This handles both old format (keyspace only) and new format (bucket/scope/keyspace)
+            let operatorBSC = bucketScopeCollection;
+            if (operator.keyspace || operator.bucket) {
+                operatorBSC = extractBSCFromOperator(operator);
+            }
+
+            // Update recordIndexUsage to use operator-specific BSC
+            function recordIndexUsageWithBSC(indexName) {
+                if (indexName === "#primary") {
+                    const resolved = resolvePrimaryIndexName(operatorBSC);
+                    indexName = resolved;
+                }
+                const compositeKey = `${indexName}::${operatorBSC}`;
+                
+                if (opType && (opType === "Join" || opType === "Nest" || opType === "HashJoin" || opType === "NLJoin")) {
+                    console.log(`[JOIN DEBUG] Recording index for ${opType}: ${hashCompositeKey(compositeKey)}`);
+                }
+                
+                requestIndexMap.get(requestIndex).add(compositeKey);
+            }
 
             // Check for IndexScan operators
             if (
@@ -18360,10 +18510,10 @@ function generateElapsedTimeChart(requests) {
                 opType === "IndexScan3"
             ) {
                 if (operator.index) {
-                    recordIndexUsage(operator.index);
+                    recordIndexUsageWithBSC(operator.index);
                 }
                 if (operator.indexName) {
-                    recordIndexUsage(operator.indexName);
+                    recordIndexUsageWithBSC(operator.indexName);
                 }
             }
 
@@ -18374,13 +18524,13 @@ function generateElapsedTimeChart(requests) {
                 opType === "PrimaryScan3"
             ) {
                 // For primary scans, prefer resolved name over operator.index to avoid duplicates
-                let resolvedName = resolvePrimaryIndexName(bucketScopeCollection);
+                let resolvedName = resolvePrimaryIndexName(operatorBSC);
                 if (resolvedName && resolvedName !== "#primary") {
-                    recordIndexUsage(resolvedName);
+                    recordIndexUsageWithBSC(resolvedName);
                 } else if (operator.index) {
-                    recordIndexUsage(operator.index);
+                    recordIndexUsageWithBSC(operator.index);
                 } else {
-                    recordIndexUsage("#primary");
+                    recordIndexUsageWithBSC("#primary");
                 }
             }
 
@@ -18508,11 +18658,12 @@ function generateElapsedTimeChart(requests) {
             if (operator["~subqueries"] && Array.isArray(operator["~subqueries"])) {
                 operator["~subqueries"].forEach((subquery) => {
                     if (subquery.executionTimings) {
-                        extractIndexUsage(
+                        // For subqueries, we need to extract BSC from the subquery operators themselves
+                        // since subqueries often access different keyspaces than the parent query
+                        extractIndexUsageFromSubquery(
                             subquery.executionTimings,
                             requestIndex,
-                            requestIndexMap,
-                            bucketScopeCollection
+                            requestIndexMap
                         );
                     }
                 });
@@ -19372,8 +19523,12 @@ function generateElapsedTimeChart(requests) {
             const avgDuration = query.totalDuration / query.count;
             const avgDurationSeconds = avgDuration / 1000;
 
-            // Check for USE KEYS in the statement
-            const hasUseKeys = query.statement.includes("USE KEYS");
+            // Check for USE KEYS in the statement (excluding SQL comments)
+            // Remove SQL line comments (-- ...) and block comments (/* ... */)
+            const statementWithoutComments = query.statement
+                .replace(/--[^\n]*/g, '') // Remove line comments
+                .replace(/\/\*[\s\S]*?\*\//g, ''); // Remove block comments
+            const hasUseKeys = statementWithoutComments.includes("USE KEYS");
             const useKeysIndicator = hasUseKeys
                 ? ' <span style="color: orange; font-weight: bold;">(USE KEYS)</span>'
                 : "";
