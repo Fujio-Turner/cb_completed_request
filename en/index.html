@@ -1750,12 +1750,6 @@ if (window.TEXT_CONSTANTS) {
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="doc-size-bubble" data-position="timeline-10" style="position: relative;">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <div style="position: absolute; top: 10px; right: 50px; z-index: 10; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 4px; font-size: 12px;">
-                        <label style="cursor: pointer; user-select: none;">
-                            <input type="checkbox" id="bubble-log-scale-toggle" style="cursor: pointer; margin-right: 5px;" checked>
-                            Log Scale Bubbles
-                        </label>
-                    </div>
                     <canvas id="doc-size-bubble-chart"></canvas>
                 </div>
             </div>
@@ -10423,19 +10417,11 @@ size: 12
                 return;
             }
 
-            // Check if log scale is enabled
-            const useLogScale = document.getElementById('bubble-log-scale-toggle')?.checked || false;
-
-            // Function to calculate bubble radius
+            // Function to calculate bubble radius using logarithmic scale
             const calculateBubbleRadius = (count) => {
                 if (count === 0) return 0;
-                if (useLogScale) {
-                    // Logarithmic scale: log10(count + 1) * 8
-                    return Math.log10(count + 1) * 8;
-                } else {
-                    // Linear scale: sqrt(count) * 5
-                    return Math.sqrt(count) * 5;
-                }
+                // Logarithmic scale: log10(count + 1) * 8
+                return Math.log10(count + 1) * 8;
             };
 
             const datasets = sizeRanges.map(range => {
@@ -10539,23 +10525,6 @@ size: 12
 
             // Register chart for crosshair synchronization
             registerTimelineChart(window.docSizeBubbleChart, ctx);
-
-            // Add event listener for log scale toggle
-            const logScaleToggle = document.getElementById('bubble-log-scale-toggle');
-            if (logScaleToggle) {
-                // Remove existing listener if any
-                logScaleToggle.removeEventListener('change', window.bubbleLogScaleHandler);
-                
-                // Create and store handler
-                window.bubbleLogScaleHandler = function() {
-                    if (window.docSizeBubbleChartData) {
-                        const { requests, grouping } = window.docSizeBubbleChartData;
-                        createDocumentSizeBubbleChart(requests, grouping);
-                    }
-                };
-                
-                logScaleToggle.addEventListener('change', window.bubbleLogScaleHandler);
-            }
         }
 
         // Create Execution Analysis Chart (ExecTime vs ServTime/KernTime percentages)
