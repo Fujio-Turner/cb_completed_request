@@ -3165,6 +3165,10 @@ LET bid = CONCAT("", s.bucket_id, ""),
                                 formatTime(timeMs);
                         }
                     }
+                    // Format number fields with commas
+                    else if (typeof value === 'number' && value >= 1000) {
+                        formattedValue = value.toLocaleString('en-US');
+                    }
                     html += `<dt>${key}</dt><dd>${formattedValue}</dd>`;
                 }
                 html += "</dl>";
@@ -3263,17 +3267,336 @@ LET bid = CONCAT("", s.bucket_id, ""),
         }
 
         // Generate flow diagram
+        // =============================================================================
+        // PlanNode Class - Couchbase-inspired execution plan tree structure
+        // =============================================================================
+        class PlanNode {
+            constructor(op, predecessor = null, totalQueryTime = 0) {
+                this.operator = op;               // Raw operator JSON
+                this.predecessor = predecessor;   // Previous node in execution sequence
+                this.subsequence = null;          // Next node in execution sequence
+                this.children = [];               // Child nodes (for joins, unions, etc.)
+                this.id = 'pn_' + Math.random().toString(36).slice(2);
+                this.depthLen = 1;                // Depth of tree from this node
+                this.branchHeight = 1;            // Height needed for branching
+                this.totalQueryTime = totalQueryTime; // Total query elapsed time for % calculations
+            }
+
+            // Get operator type (normalized across different plan formats)
+            type() {
+                return this.operator?.['#operator'] || this.operator?.operator || 'Unknown';
+            }
+
+            // Get display name for operator
+            getName() {
+                const t = this.type();
+                const nameMap = {
+                    'PrimaryScan': 'Primary Scan',
+                    'PrimaryScan3': 'Primary Scan',
+                    'IndexScan': 'Index Scan',
+                    'IndexScan2': 'Index Scan',
+                    'IndexScan3': 'Index Scan',
+                    'Fetch': 'Doc Fetch',
+                    'Filter': 'Filter',
+                    'InitialProject': 'Project',
+                    'FinalProject': 'Project',
+                    'Order': 'Order',
+                    'Stream': 'Stream',
+                    'Authorize': 'Authorize',
+                    'Parallel': 'Parallel',
+                    'NLJoin': 'Nested Loop Join',
+                    'HashJoin': 'Hash Join',
+                    'Join': 'Join',
+                    'IndexJoin': 'Index Join',
+                    'Nest': 'Nest',
+                    'Unnest': 'Unnest',
+                    'UnionAll': 'Union All',
+                    'Union': 'Union',
+                    'IntersectScan': 'Intersect Scan',
+                    'ExceptAll': 'Except All',
+                    'Distinct': 'Distinct',
+                    'DistinctScan': 'Distinct Scan',
+                    'Group': 'Group',
+                    'InitialGroup': 'Group',
+                    'IntermediateGroup': 'Group',
+                    'FinalGroup': 'Group',
+                    'Limit': 'Limit',
+                    'Offset': 'Offset',
+                    'Insert': 'Insert',
+                    'Update': 'Update',
+                    'Delete': 'Delete',
+                    'Merge': 'Merge'
+                };
+                return nameMap[t] || t;
+            }
+
+            // ✅ PRESERVE: Extract timing information (execTime, servTime)
+            getTimeInfo() {
+                const op = this.operator;
+                const stats = op['#stats'] || {};
+                
+                const execTime = stats.execTime || op['#time'] || '0s';
+                const servTime = stats.servTime || '0s';
+                const execMs = parseTime(execTime);
+                const servMs = parseTime(servTime);
+                
+                // Use servTime if available (actual bottleneck), fallback to execTime
+                const timeForPercentage = (!isNaN(servMs) && servMs > 0) ? servMs : execMs;
+                const percentage = (this.totalQueryTime > 0 && !isNaN(timeForPercentage) && timeForPercentage > 0)
+                    ? ((timeForPercentage / this.totalQueryTime) * 100).toFixed(2)
+                    : 'N/A';
+                
+                return {
+                    execTimeMs: execMs,
+                    servTimeMs: servMs,
+                    execTimeFormatted: formatTime(execMs),
+                    servTimeFormatted: formatTime(servMs),
+                    execTimeTooltip: formatTimeTooltip(execTime, execMs),
+                    servTimeTooltip: formatTimeTooltip(servTime, servMs),
+                    percentage: percentage,
+                    hasServTime: servTime !== 'N/A' && !isNaN(servMs) && servMs > 0
+                };
+            }
+
+            // ✅ PRESERVE: Extract items in/out (with comma formatting)
+            getItemsInOut() {
+                const stats = this.operator['#stats'] || {};
+                const itemsIn = stats['#itemsIn'] !== undefined ? stats['#itemsIn'] : '-';
+                const itemsOut = stats['#itemsOut'] !== undefined ? stats['#itemsOut'] : '-';
+                
+                // Format numbers with commas
+                const formatNumber = (num) => {
+                    if (num === '-' || num === undefined || num === null) return '-';
+                    return num.toLocaleString('en-US');
+                };
+                
+                return {
+                    itemsIn: itemsIn,
+                    itemsOut: itemsOut,
+                    formatted: (itemsIn !== '-' && itemsOut !== '-') 
+                        ? `${formatNumber(itemsIn)} in / ${formatNumber(itemsOut)} out` 
+                        : null
+                };
+            }
+
+            // ✅ PRESERVE: Color coding based on percentage
+            getColor() {
+                const timeInfo = this.getTimeInfo();
+                const pct = parseFloat(timeInfo.percentage);
+                
+                if (isNaN(pct)) return { bg: '#E8F5E9', border: '#4CAF50' }; // Default green
+                
+                // Use existing getPercentageColor function
+                return getPercentageColor(pct);
+            }
+        }
+
+        // =============================================================================
+        // Normalized Field Getters - Handle variations across plan versions
+        // =============================================================================
+        function getOpType(op) {
+            return op?.['#operator'] || op?.operator || 'Unknown';
+        }
+
+        function getChildren(op) {
+            return op?.['~children'] || op?.children || [];
+        }
+
+        function getChild(op) {
+            return op?.['~child'] || op?.child;
+        }
+
+        function getOuter(op) {
+            return op?.['~outer'] || op?.outer || op?.left;
+        }
+
+        function getInner(op) {
+            return op?.['~inner'] || op?.inner || op?.right;
+        }
+
+        function getScans(op) {
+            return op?.scans || [];
+        }
+
+        function getFirst(op) {
+            return op?.first;
+        }
+
+        function getSecond(op) {
+            return op?.second;
+        }
+
+        function getScan(op) {
+            return op?.scan;
+        }
+
+        // =============================================================================
+        // convertN1QLPlanToPlanNodes - Main conversion function following Couchbase logic
+        // =============================================================================
+        function convertN1QLPlanToPlanNodes(planRoot, predecessor = null, totalQueryTime = 0) {
+            if (!planRoot) return null;
+
+            // Handle prepared queries or wrapped plans
+            if (planRoot.operator && !planRoot['#operator']) {
+                return convertN1QLPlanToPlanNodes(planRoot.operator, predecessor, totalQueryTime);
+            }
+            if (planRoot.plan && !planRoot['#operator']) {
+                return convertN1QLPlanToPlanNodes(planRoot.plan, predecessor, totalQueryTime);
+            }
+
+            const opType = getOpType(planRoot);
+            
+            // ✅ SEQUENCE: Flatten into linear chain (Couchbase pattern)
+            if (opType === 'Sequence') {
+                const children = getChildren(planRoot);
+                let head = null;
+                let prev = predecessor;
+                
+                for (const child of children) {
+                    const node = convertN1QLPlanToPlanNodes(child, prev, totalQueryTime);
+                    if (!head) head = node;
+                    prev = tail(node);
+                }
+                
+                return head;
+            }
+
+            // ✅ PARALLEL: Keep node with subsequence
+            if (opType === 'Parallel') {
+                const node = new PlanNode(planRoot, predecessor, totalQueryTime);
+                const child = getChild(planRoot);
+                if (child) {
+                    node.subsequence = convertN1QLPlanToPlanNodes(child, node, totalQueryTime);
+                }
+                return node;
+            }
+
+            // ✅ UNION/INTERSECT/EXCEPT: Multiple children
+            if (opType === 'UnionAll' || opType === 'Union' || opType === 'IntersectScan' || opType === 'ExceptAll') {
+                const node = new PlanNode(planRoot, predecessor, totalQueryTime);
+                const children = getChildren(planRoot) || getScans(planRoot);
+                node.children = children.map(c => convertN1QLPlanToPlanNodes(c, null, totalQueryTime)).filter(Boolean);
+                return node;
+            }
+
+            // ✅ JOINS: Outer + Inner children
+            if (opType === 'NLJoin' || opType === 'HashJoin' || opType === 'Join' || 
+                opType === 'IndexJoin' || opType === 'LookupJoin' || 
+                opType === 'Nest' || opType === 'Unnest' || opType === 'HashNest' || opType === 'NestedLoopNest') {
+                const node = new PlanNode(planRoot, predecessor, totalQueryTime);
+                const outer = getOuter(planRoot);
+                const inner = getInner(planRoot) || getChild(planRoot);
+                
+                if (outer) {
+                    node.children.push(convertN1QLPlanToPlanNodes(outer, null, totalQueryTime));
+                }
+                if (inner) {
+                    node.children.push(convertN1QLPlanToPlanNodes(inner, null, totalQueryTime));
+                }
+                
+                node.children = node.children.filter(Boolean);
+                return node;
+            }
+
+            // ✅ EXCEPT/INTERSECT with first/second
+            if (opType === 'ExceptAll' || opType === 'IntersectAll') {
+                const node = new PlanNode(planRoot, predecessor, totalQueryTime);
+                const first = getFirst(planRoot);
+                const second = getSecond(planRoot);
+                
+                if (first) {
+                    node.children.push(convertN1QLPlanToPlanNodes(first, null, totalQueryTime));
+                }
+                if (second) {
+                    node.children.push(convertN1QLPlanToPlanNodes(second, null, totalQueryTime));
+                }
+                
+                node.children = node.children.filter(Boolean);
+                return node;
+            }
+
+            // ✅ AUTHORIZE: Child comes after (Couchbase pattern)
+            if (opType === 'Authorize') {
+                const node = new PlanNode(planRoot, predecessor, totalQueryTime);
+                const child = getChild(planRoot);
+                if (child) {
+                    node.subsequence = convertN1QLPlanToPlanNodes(child, node, totalQueryTime);
+                }
+                return node;
+            }
+
+            // ✅ DISTINCT SCAN: Single child
+            if (opType === 'DistinctScan') {
+                const scan = getScan(planRoot);
+                if (scan) {
+                    return convertN1QLPlanToPlanNodes(scan, predecessor, totalQueryTime);
+                }
+            }
+
+            // ✅ MERGE: Has multiple operation children
+            if (opType === 'Merge') {
+                const node = new PlanNode(planRoot, predecessor, totalQueryTime);
+                
+                if (predecessor) node.children.push(predecessor);
+                
+                const insertOp = planRoot.insert;
+                const deleteOp = planRoot.delete;
+                const updateOp = planRoot.update;
+                
+                if (insertOp) node.children.push(convertN1QLPlanToPlanNodes(insertOp, null, totalQueryTime));
+                if (deleteOp) node.children.push(convertN1QLPlanToPlanNodes(deleteOp, null, totalQueryTime));
+                if (updateOp) node.children.push(convertN1QLPlanToPlanNodes(updateOp, null, totalQueryTime));
+                
+                node.children = node.children.filter(Boolean);
+                return node;
+            }
+
+            // ✅ DEFAULT: Linear node (most operators)
+            const node = new PlanNode(planRoot, predecessor, totalQueryTime);
+            const child = getChild(planRoot);
+            if (child) {
+                node.subsequence = convertN1QLPlanToPlanNodes(child, node, totalQueryTime);
+            }
+            
+            return node;
+        }
+
+        // Helper: Get tail of subsequence chain
+        function tail(node) {
+            if (!node) return null;
+            let current = node;
+            while (current.subsequence) {
+                current = current.subsequence;
+            }
+            return current;
+        }
+
+        // =============================================================================
+        // Enhanced Flow Diagram Renderer - Preserves all existing UI features
+        // =============================================================================
+        
+        // Global panzoom instance for diagram controls
+        let flowDiagramPanzoomInstance = null;
+        
         function generateFlowDiagram(request) {
             const flowDiagram = document.getElementById("flow-diagram");
             flowDiagram.innerHTML = "";
+            
+            // ✅ Remove any existing controls to prevent duplicates
+            const existingControls = document.getElementById('flow-diagram-controls');
+            if (existingControls) {
+                existingControls.remove();
+            }
+            
             if (!request || !request.plan) {
                 flowDiagram.textContent = TEXT_CONSTANTS.NO_EXECUTION_PLAN;
                 return;
             }
 
-            const totalKernTime = calculateTotalKernTime(request.plan);
-            // Use overall query elapsed time instead of summing operator exec times
+            // Calculate total elapsed time for percentages
             const totalElapsedTimeMs = request.elapsedTimeMs || parseTime(request.elapsedTime) || 0;
+            
+            // ✅ Get ALL operators from the plan (using existing getOperators function)
             const allOperators = getOperators(request.plan);
             // Filter out Sequence operators (they're just orchestration, not real work)
             const operators = allOperators.filter(op => op["#operator"] !== "Sequence");
@@ -3283,92 +3606,112 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 return;
             }
 
-            operators.forEach((operator, index) => {
-                const operatorName = operator["#operator"] || "Unknown Operator";
-                const stats = operator["#stats"] || {};
-                const kernTime = stats.kernTime || "N/A";
-                const execTime = stats.execTime || "N/A";
-                const servTime = stats.servTime || "N/A";
-                const itemsIn =
-                    stats["#itemsIn"] !== undefined ? stats["#itemsIn"] : "-";
-                const itemsOut =
-                    stats["#itemsOut"] !== undefined ? stats["#itemsOut"] : "-";
+            // ✅ Add diagram controls (zoom, flip) with unique ID - positioned on right side
+            const controlsDiv = document.createElement('div');
+            controlsDiv.id = 'flow-diagram-controls';
+            controlsDiv.style.cssText = 'margin-bottom: 10px; display: flex; gap: 8px; align-items: center; justify-content: flex-end; position: relative; z-index: 10;';
+            controlsDiv.innerHTML = `
+                <button id="flow-zoom-in" class="btn-standard" style="padding: 6px 12px;" title="Zoom In">🔍+</button>
+                <button id="flow-zoom-out" class="btn-standard" style="padding: 6px 12px;" title="Zoom Out">🔍−</button>
+                <button id="flow-reset-zoom" class="btn-standard" style="padding: 6px 12px;" title="Reset Zoom">⌂ Reset</button>
+                <button id="flow-flip" class="btn-standard" style="padding: 6px 12px;" title="Flip Direction">⇄ Flip</button>
+            `;
+            flowDiagram.parentElement.insertBefore(controlsDiv, flowDiagram);
 
-                const kernTimeMs = parseTime(kernTime);
-                const execTimeMs = parseTime(execTime);
-                const servTimeMs = parseTime(servTime);
+            // ✅ Wrap each operator in a PlanNode for consistent access to methods
+            const nodes = operators.map(op => new PlanNode(op, null, totalElapsedTimeMs));
 
-                // Calculate percentage based on servTime when available (actual bottleneck), fallback to execTime
-                const timeForPercentage = !isNaN(servTimeMs) && servTimeMs > 0 ? servTimeMs : execTimeMs;
-                const percentage =
-                    totalElapsedTimeMs > 0 && !isNaN(timeForPercentage) && timeForPercentage > 0
-                        ? ((timeForPercentage / totalElapsedTimeMs) * 100).toFixed(2)
-                        : "N/A";
-
-                const bubble = document.createElement("div");
-                bubble.className = "step-bubble";
-
-                // Use percentage-based colors to draw attention to performance issues
-                const percentageColors = getPercentageColor(percentage);
-                bubble.style.backgroundColor = percentageColors.bg;
-                bubble.style.borderColor = percentageColors.border;
-                bubble.style.borderWidth = "2px";
-
-                // Still add performance-based class as fallback for other styling
-                const colorClass = getColorClass(parseFloat(percentage));
-                bubble.classList.add(colorClass);
-
-                // Build the HTML content with timing information
-                const execTimeTooltip = formatTimeTooltip(execTime, execTimeMs);
+            // ✅ PRESERVE: Render each node as step-bubble with timing, servTime, items
+            nodes.forEach((node, index) => {
+                const timeInfo = node.getTimeInfo();
+                const itemsInfo = node.getItemsInOut();
+                const colors = node.getColor();
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'step-bubble';
+                bubble.style.backgroundColor = colors.bg;
+                bubble.style.borderColor = colors.border;
+                bubble.style.borderWidth = '2px';
+                
+                // Build bubble content with timing
                 let bubbleContent = `
-                    <h4>${operatorName}</h4>
-                    <p><span title="${execTimeTooltip}">${formatTime(execTimeMs)}</span> (${percentage}%)</p>`;
-
-                // Add servTime if available
-                if (servTime !== "N/A" && !isNaN(servTimeMs) && servTimeMs > 0) {
-                    const servTimeTooltip = formatTimeTooltip(servTime, servTimeMs);
-                    bubbleContent += `<p><span title="${servTimeTooltip}">${formatTime(servTimeMs)}</span> servTime</p>`;
+                    <h4>${node.getName()}</h4>
+                    <p><span title="${timeInfo.execTimeTooltip}">${timeInfo.execTimeFormatted}</span> (${timeInfo.percentage}%)</p>`;
+                
+                // ✅ PRESERVE: Add servTime if available
+                if (timeInfo.hasServTime) {
+                    bubbleContent += `<p><span title="${timeInfo.servTimeTooltip}">${timeInfo.servTimeFormatted}</span> servTime</p>`;
                 }
-
-                // Only show in/out line if both values are present and not "-"
-                if (itemsIn !== "-" && itemsOut !== "-") {
-                    bubbleContent += `<p>${itemsIn} in / ${itemsOut} out</p>`;
+                
+                // ✅ PRESERVE: Add items in/out
+                if (itemsInfo.formatted) {
+                    bubbleContent += `<p>${itemsInfo.formatted}</p>`;
                 }
-
+                
                 bubble.innerHTML = bubbleContent;
-                bubble.addEventListener("click", () => {
-                    const statsHtml = buildOperatorStats(operator);
-                    document.getElementById("operator-modal-body").innerHTML =
-                        statsHtml;
-                    document.getElementById("operator-modal").style.display = "block";
+                
+                // ✅ PRESERVE: Click handler to show operator stats modal
+                bubble.addEventListener('click', () => {
+                    const statsHtml = buildOperatorStats(node.operator);
+                    document.getElementById('operator-modal-body').innerHTML = statsHtml;
+                    document.getElementById('operator-modal').style.display = 'block';
                 });
+                
                 flowDiagram.appendChild(bubble);
-
-                if (index < operators.length - 1) {
-                    const connector = document.createElement("div");
-                    connector.className = "connector";
+                
+                // Add connector between bubbles
+                if (index < nodes.length - 1) {
+                    const connector = document.createElement('div');
+                    connector.className = 'connector';
                     flowDiagram.appendChild(connector);
                 }
             });
 
+            // ✅ PRESERVE: "View Detailed Execution Plan & Indexes/Keys Used" button
             if (request.plan) {
-                const viewPlanButton = document.createElement("button");
+                const viewPlanButton = document.createElement('button');
                 viewPlanButton.textContent = TEXT_CONSTANTS.VIEW_DETAILED_PLAN;
-                viewPlanButton.style.marginTop = "10px";
-                viewPlanButton.addEventListener("click", () => {
+                viewPlanButton.style.marginTop = '10px';
+                viewPlanButton.addEventListener('click', () => {
                     const indexesAndKeys = extractIndexesAndKeys(request);
-                    const planTreeHtml = buildEnhancedPlanModal(
-                        request.plan,
-                        indexesAndKeys,
-                        request
-                    );
-                    document.getElementById("plan-modal-body").innerHTML = planTreeHtml;
-                    document.getElementById("plan-modal").style.display = "block";
+                    const planTreeHtml = buildEnhancedPlanModal(request.plan, indexesAndKeys, request);
+                    document.getElementById('plan-modal-body').innerHTML = planTreeHtml;
+                    document.getElementById('plan-modal').style.display = 'block';
                 });
                 flowDiagram.appendChild(viewPlanButton);
             }
 
-            panzoom(flowDiagram, { smoothScroll: false });
+            // ✅ PRESERVE: Pan/zoom functionality
+            flowDiagramPanzoomInstance = panzoom(flowDiagram, { smoothScroll: false });
+
+            // ✅ Wire up control buttons
+            document.getElementById('flow-zoom-in').addEventListener('click', () => {
+                if (flowDiagramPanzoomInstance) {
+                    const transform = flowDiagramPanzoomInstance.getTransform();
+                    flowDiagramPanzoomInstance.zoomTo(transform.x + flowDiagram.offsetWidth / 2, transform.y + flowDiagram.offsetHeight / 2, 1.2);
+                }
+            });
+
+            document.getElementById('flow-zoom-out').addEventListener('click', () => {
+                if (flowDiagramPanzoomInstance) {
+                    const transform = flowDiagramPanzoomInstance.getTransform();
+                    flowDiagramPanzoomInstance.zoomTo(transform.x + flowDiagram.offsetWidth / 2, transform.y + flowDiagram.offsetHeight / 2, 0.8);
+                }
+            });
+
+            document.getElementById('flow-reset-zoom').addEventListener('click', () => {
+                if (flowDiagramPanzoomInstance) {
+                    // Reset to original position and scale
+                    flowDiagramPanzoomInstance.moveTo(0, 0);
+                    flowDiagramPanzoomInstance.zoomAbs(0, 0, 1);
+                }
+            });
+
+            document.getElementById('flow-flip').addEventListener('click', () => {
+                // Toggle flex direction to flip the diagram
+                const currentDirection = flowDiagram.style.flexDirection;
+                flowDiagram.style.flexDirection = (currentDirection === 'row-reverse') ? 'row' : 'row-reverse';
+            });
         }
 
         // Extract indexes and USE KEYS from request
