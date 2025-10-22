@@ -3944,113 +3944,60 @@ LET bid = CONCAT("", s.bucket_id, ""),
         }
 
         // Get sortable value for a column
-        function getSortableValue(item, column) {
-            let value;
-
-            // Handle special nested data fields first
-            if (column === "scanConsistency") {
-                value = item.request && item.request.scanConsistency ? item.request.scanConsistency : "N/A";
-            } else {
-                value = item[column];
+        function getSortableValue(item, columnId) {
+            // Try to find column config in Every Query columns
+            let colConfig = EVERY_QUERY_COLUMNS.find(col => col.id === columnId);
+            
+            // If not found, check Analysis table columns (for backward compatibility)
+            if (!colConfig) {
+                // Handle Analysis table columns
+                if (
+                    [
+                        "min_duration_in_seconds",
+                        "max_duration_in_seconds",
+                        "avg_duration_in_seconds",
+                        "median_duration_in_seconds",
+                    ].includes(columnId)
+                ) {
+                    return parseTimeForSorting(item[columnId]);
+                }
+                if (
+                    [
+                        "total_count",
+                        "avg_fetch",
+                        "avg_primaryScan",
+                        "avg_indexScan",
+                    ].includes(columnId)
+                ) {
+                    return parseFloat(item[columnId]) || 0;
+                }
+                // Default for unknown columns: string comparison
+                return String(item[columnId] || "").toLowerCase();
             }
 
+            const value = item[columnId];
 
-
-            // Handle columns with newlines in their names
-            const cleanColumn = column.replace(/\n/g, " ");
-
-            // Handle special columns for Every Query table
-            if (column === "#") {
-                // "#" column is calculated dynamically, use a default sort order
-                return parseInt(item.rowIndex) || 0;
-            }
-            if (column === "requestTime" || cleanColumn === "request Time") {
-                return new Date(value).getTime() || 0;
-            }
-            if (
-                ["elapsedTime", "kernTime", "cpuTime", "serviceTime"].includes(
-                    column
-                ) ||
-                ["elapsed Time", "kern Time", "cpu Time", "service Time"].includes(
-                    cleanColumn
-                )
-            ) {
-                return parseTimeForSorting(value);
-            }
-            if (column === "KernTime %" || cleanColumn === "KernTime %") {
-                const numStr = String(value).replace("%", "");
-                return parseFloat(numStr) || 0;
-            }
-            if (column === "memory (MB)" || cleanColumn === "memory (MB)") {
-                return parseFloat(value) || 0;
-            }
-            if (
-                [
-                    "resultCount",
-                    "resultSize",
-                    "Items from Index Scan",
-                    "Doc Fetch Count",
-                ].includes(column) ||
-                [
-                    "result Count",
-                    "result Size",
-                    "Items from Index Scan",
-                    "Doc Fetch Count",
-                ].includes(cleanColumn)
-            ) {
-                return parseInt(value) || 0;
-            }
-            if (
-                column === "Primary Scan Used" ||
-                cleanColumn === "Primary Scan Used"
-            ) {
-                return value === "Yes" ? 1 : 0;
-            }
-            if (column === "statementType" || cleanColumn === "statement Type") {
-                return String(value || "").toLowerCase();
-            }
-            if (column === "state") {
-                // Sort fatal states first, then by alphabetical order
-                if (value === "fatal") return "aaa_fatal";
-                if (value === "completed") return "bbb_completed";
-                return String(value || "zzz_unknown").toLowerCase();
-            }
-            if (column === "scanConsistency" || column === "Scan\nConsistency" || cleanColumn === "Scan Consistency") {
-                // Handle scan consistency values - data is nested under request object
-                const scanValue = item.request && item.request.scanConsistency ? item.request.scanConsistency : (value || "N/A");
-                return String(scanValue).toLowerCase();
-            }
-            if (column === "statement") {
-                return String(value || "").toLowerCase();
-            }
-            if (column === "users") {
-                return String(value || "").toLowerCase();
+            // Use custom sort function if defined
+            if (colConfig.sortFn) {
+                return colConfig.sortFn(value);
             }
 
-            // Handle Analysis table columns
-            if (
-                [
-                    "min_duration_in_seconds",
-                    "max_duration_in_seconds",
-                    "avg_duration_in_seconds",
-                    "median_duration_in_seconds",
-                ].includes(column)
-            ) {
-                return parseTimeForSorting(value);
+            // Use sortType to determine how to sort
+            switch (colConfig.sortType) {
+                case 'numeric':
+                    return parseFloat(value) || 0;
+                case 'time':
+                    return parseTimeForSorting(value);
+                case 'date':
+                    return new Date(value).getTime() || 0;
+                case 'percent':
+                    return parseFloat(String(value).replace('%', '')) || 0;
+                case 'boolean':
+                    return value === 'Yes' ? 1 : 0;
+                case 'string':
+                default:
+                    return String(value || '').toLowerCase();
             }
-            if (
-                [
-                    "total_count",
-                    "avg_fetch",
-                    "avg_primaryScan",
-                    "avg_indexScan",
-                ].includes(column)
-            ) {
-                return parseFloat(value) || 0;
-            }
-
-            // Default: string comparison
-            return String(value || "").toLowerCase();
         }
 
         // Sort data
@@ -4442,6 +4389,295 @@ LET bid = CONCAT("", s.bucket_id, ""),
             });
         }
 
+        // Column Configuration for Every Query Table
+        const EVERY_QUERY_COLUMNS = [
+            {
+                id: 'rowNumber',
+                header: '#',
+                dataField: null,
+                sortable: true,
+                sortType: 'numeric',
+                getValue: (request, index) => index + 1,
+                render: (value) => value
+            },
+            {
+                id: 'requestTime',
+                header: 'request\nTime',
+                dataField: 'requestTime',
+                sortable: true,
+                sortType: 'date',
+                getValue: (request) => request.requestTime || 'N/A',
+                render: (value) => value
+            },
+            {
+                id: 'statementType',
+                header: 'statement\nType',
+                dataField: 'statementType',
+                sortable: true,
+                sortType: 'string',
+                getValue: (request) => request.statementType || 'N/A',
+                render: (value) => value
+            },
+            {
+                id: 'elapsedTime',
+                header: 'elapsed\nTime',
+                dataField: 'elapsedTime',
+                sortable: true,
+                sortType: 'time',
+                getValue: (request) => formatTime(request.elapsedTimeMs || 0),
+                render: (value) => value
+            },
+            {
+                id: 'serviceTime',
+                header: 'service\nTime',
+                dataField: 'serviceTime',
+                sortable: true,
+                sortType: 'time',
+                getValue: (request) => formatTime(request.serviceTimeMs || parseTime(request.serviceTime)),
+                render: (value) => value
+            },
+            {
+                id: 'kernTime',
+                header: 'kern\nTime',
+                dataField: 'kernTime',
+                sortable: true,
+                sortType: 'time',
+                getValue: (request) => {
+                    const ms = request.kernTimeMs || 0;
+                    return ms > 0 ? formatTime(ms) : 'N/A';
+                },
+                render: (value) => value
+            },
+            {
+                id: 'kernTimePercent',
+                header: 'KernTime\n%',
+                dataField: 'KernTime %',
+                sortable: true,
+                sortType: 'percent',
+                getValue: (request) => {
+                    const elapsed = request.elapsedTimeMs || 0;
+                    const kern = request.kernTimeMs || 0;
+                    return elapsed > 0 && kern > 0 
+                        ? ((kern / elapsed) * 100).toFixed(2) + '%' 
+                        : 'N/A';
+                },
+                render: (value) => value
+            },
+            {
+                id: 'cpuTime',
+                header: 'cpu\nTime',
+                dataField: 'cpuTime',
+                sortable: true,
+                sortType: 'time',
+                getValue: (request) => formatTime(parseTime(request.cpuTime)),
+                render: (value) => value
+            },
+            {
+                id: 'memory',
+                header: 'memory\n(MB)',
+                dataField: 'memory (MB)',
+                sortable: true,
+                sortType: 'numeric',
+                getValue: (request) => {
+                    return (request.memoryBytes == null)
+                        ? 'N/A'
+                        : (request.memoryBytes / 1024 / 1024).toFixed(2);
+                },
+                render: (value) => value
+            },
+            {
+                id: 'resultCount',
+                header: 'result\nCount',
+                dataField: 'resultCount',
+                sortable: true,
+                sortType: 'numeric',
+                getValue: (request) => request.resultCount || 'N/A',
+                render: (value) => {
+                    const num = Number(value);
+                    return isNaN(num) ? value : num.toLocaleString();
+                }
+            },
+            {
+                id: 'resultSize',
+                header: 'result\nSize',
+                dataField: 'resultSize',
+                sortable: true,
+                sortType: 'numeric',
+                getValue: (request) => request.resultSize || 'N/A',
+                render: (value) => {
+                    const num = Number(value);
+                    return isNaN(num) ? value : num.toLocaleString();
+                }
+            },
+            {
+                id: 'docFetchCount',
+                header: 'Doc Fetch\nCount',
+                dataField: 'Doc Fetch Count',
+                sortable: true,
+                sortType: 'numeric',
+                getValue: (request) => {
+                    const fetchCount = request.phaseCounts?.fetch || 0;
+                    return fetchCount > 0 ? fetchCount : 'N/A';
+                },
+                render: (value) => {
+                    const num = Number(value);
+                    return isNaN(num) ? value : num.toLocaleString();
+                }
+            },
+            {
+                id: 'itemsFromIndexScan',
+                header: 'Items from\nIndex Scan',
+                dataField: 'Items from Index Scan',
+                sortable: true,
+                sortType: 'numeric',
+                getValue: (request) => {
+                    const indexScanCount = request.phaseCounts?.indexScan ||
+                        request.phaseCounts?.primaryScan || 0;
+                    return indexScanCount > 0 ? indexScanCount : 'N/A';
+                },
+                render: (value) => {
+                    const num = Number(value);
+                    return isNaN(num) ? value : num.toLocaleString();
+                }
+            },
+            {
+                id: 'primaryScanUsed',
+                header: 'Primary Scan\nUsed',
+                dataField: 'Primary Scan Used',
+                sortable: true,
+                sortType: 'boolean',
+                getValue: (request) => request.usesPrimary ? 'Yes' : 'No',
+                render: (value, td) => {
+                    if (value === 'Yes' || value === 'True' || value === true) {
+                        td.classList.add('primary-scan-yes');
+                    }
+                    return value;
+                }
+            },
+            {
+                id: 'state',
+                header: 'state',
+                dataField: 'state',
+                sortable: true,
+                sortType: 'custom',
+                getValue: (request) => request.state || 'N/A',
+                sortFn: (value) => {
+                    if (value === 'fatal') return 'aaa_fatal';
+                    if (value === 'completed') return 'bbb_completed';
+                    return String(value || 'zzz_unknown').toLowerCase();
+                },
+                render: (value, td) => {
+                    if (value === 'fatal') {
+                        td.classList.add('fatal-state');
+                    }
+                    return value;
+                }
+            },
+            {
+                id: 'statement',
+                header: 'statement',
+                dataField: 'statement',
+                width: '300px',
+                maxWidth: '300px',
+                sortable: true,
+                sortType: 'string',
+                getValue: (request) => request.statement || request.preparedText || 'N/A',
+                render: (value, td, rowData, globalIndex) => {
+                    const statementId = `statement-${globalIndex}`;
+                    statementStore[statementId] = value;
+                    
+                    if (value.length > 500) {
+                        const truncated = value.substring(0, 500);
+                        const preparedSample = (rowData.request && isPreparedExecution(rowData.request)) 
+                            ? getPreparedSample(rowData.request) : "";
+                        const preparedSnippet = preparedSample 
+                            ? `<div style="margin-top:6px; color:#555; font-size:12px;"><strong>${TEXT_CONSTANTS.PREPARED_TEXT || 'Prepared:'}</strong> ${escapeHtml(preparedSample.substring(0, 300))}${preparedSample.length > 300 ? '...' : ''}</div>` 
+                            : '';
+                        
+                        return `
+                            <div id="${statementId}-truncated">
+                                <span>${truncated}...</span>
+                                ${preparedSnippet}
+                                <br>
+                                <button onclick="toggleStatement('${statementId}', true)" 
+                                        class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.SHOW_MORE}</button>
+                                <button onclick="copyStatement('${statementId}', event)" 
+                                        class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                            </div>
+                            <div id="${statementId}-full" style="display: none;">
+                                <span>${value}</span>
+                                ${preparedSnippet}
+                                <br>
+                                <button onclick="toggleStatement('${statementId}', false)" 
+                                        class="btn-standard" style="margin-top: 5px; margin-right: 5px;">${TEXT_CONSTANTS.HIDE}</button>
+                                <button onclick="copyStatement('${statementId}', event)" 
+                                        class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                            </div>
+                        `;
+                    } else {
+                        const preparedSample = (rowData.request && isPreparedExecution(rowData.request)) 
+                            ? getPreparedSample(rowData.request) : "";
+                        const preparedSnippet = preparedSample 
+                            ? `<div style="margin-top:6px; color:#555; font-size:12px;"><strong>${TEXT_CONSTANTS.PREPARED_TEXT || 'Prepared:'}</strong> ${escapeHtml(preparedSample.substring(0, 300))}${preparedSample.length > 300 ? '...' : ''}</div>` 
+                            : '';
+                        return `
+                            <div>
+                                <span>${value}</span>
+                                ${preparedSnippet}
+                                <br>
+                                <button onclick="copyStatement('${statementId}', event)" 
+                                        class="btn-standard" style="margin-top: 5px;">${TEXT_CONSTANTS.COPY}</button>
+                            </div>
+                        `;
+                    }
+                }
+            },
+            {
+                id: 'scanConsistency',
+                header: 'Scan\nConsistency',
+                dataField: 'scanConsistency',
+                sortable: true,
+                sortType: 'string',
+                getValue: (request) => {
+                    return request.request && request.request.scanConsistency 
+                        ? request.request.scanConsistency 
+                        : 'N/A';
+                },
+                render: (value) => value
+            },
+            {
+                id: 'users',
+                header: 'users',
+                dataField: 'users',
+                sortable: true,
+                sortType: 'string',
+                getValue: (request) => request.users || 'N/A',
+                render: (value) => value
+            },
+            {
+                id: 'requestId',
+                header: 'requestId',
+                dataField: 'requestId',
+                sortable: true,
+                sortType: 'string',
+                getValue: (request) => {
+                    return (request.request && request.request.requestId) 
+                        || request.requestId 
+                        || '';
+                },
+                render: (value) => {
+                    const safeId = String(value);
+                    return `
+                        <code style="font-size:11px;">${escapeHtml(safeId)}</code>
+                        <button data-id="${escapeHtml(safeId)}" 
+                                onclick="copyRequestId(this.dataset.id, event)" 
+                                class="btn-standard" 
+                                style="margin-left:6px;">${TEXT_CONSTANTS.COPY}</button>
+                    `;
+                }
+            }
+        ];
+
         // Generate main table
         function generateTable(requests) {
             const tableHeader = document.getElementById("table-header");
@@ -4449,32 +4685,10 @@ LET bid = CONCAT("", s.bucket_id, ""),
             tableHeader.innerHTML = "";
             tableBody.innerHTML = "";
 
-            const columns = [
-                "#",
-                "request\nTime",
-                "statement\nType",
-                "elapsed\nTime",
-                "service\nTime",
-                "kern\nTime",
-                "KernTime\n%",
-                "cpu\nTime",
-                "memory\n(MB)",
-                "result\nCount",
-                "result\nSize",
-                "Doc Fetch\nCount",
-                "Items from\nIndex Scan",
-                "Primary Scan\nUsed",
-                "state",
-                "statement",
-                "Scan\nConsistency",
-                "users",
-                "requestId",
-            ];
-
             const headerRow = document.createElement("tr");
-            columns.forEach((col) => {
+            EVERY_QUERY_COLUMNS.forEach((colConfig) => {
                 const th = document.createElement("th");
-                th.innerHTML = col.replace(/\n/g, "<br>");
+                th.innerHTML = colConfig.header.replace(/\n/g, "<br>");
                 th.style.textAlign = "center";
                 th.style.whiteSpace = "nowrap";
                 th.style.cursor = "pointer";
@@ -4485,6 +4699,10 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 th.style.fontWeight = "bold";
                 th.style.position = "relative";
 
+                // Apply column-specific width if defined
+                if (colConfig.width) th.style.width = colConfig.width;
+                if (colConfig.maxWidth) th.style.maxWidth = colConfig.maxWidth;
+
                 // Add hover effect
                 th.addEventListener("mouseenter", () => {
                     th.style.backgroundColor = "#e9ecef";
@@ -4493,95 +4711,40 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     th.style.backgroundColor = "#f8f9fa";
                 });
 
-                if (col === "statement") {
-                    th.style.width = "300px";
-                    th.style.maxWidth = "300px";
-                }
-
                 // Add sorting indicator text
-                const sortHint = document.createElement("div");
-                sortHint.className = "sort-hint";
-                sortHint.style.fontSize = "10px";
-                sortHint.style.color = "#6c757d";
-                sortHint.style.fontWeight = "normal";
-                sortHint.style.marginTop = "2px";
-                sortHint.textContent = "↕ Sort";
-                th.appendChild(sortHint);
+                if (colConfig.sortable) {
+                    const sortHint = document.createElement("div");
+                    sortHint.className = "sort-hint";
+                    sortHint.style.fontSize = "10px";
+                    sortHint.style.color = "#6c757d";
+                    sortHint.style.fontWeight = "normal";
+                    sortHint.style.marginTop = "2px";
+                    sortHint.textContent = "↕ Sort";
+                    th.appendChild(sortHint);
 
-                th.addEventListener("click", () => {
-                    handleColumnSort(col, "every-query");
-                });
+                    th.addEventListener("click", () => {
+                        handleColumnSort(colConfig.id, "every-query");
+                    });
+                }
                 headerRow.appendChild(th);
             });
             tableHeader.appendChild(headerRow);
 
-            // Prepare data with pre-calculated values
+            // Prepare data with pre-calculated values using column config
             const tableData = requests.map((request, index) => {
-                // Use pre-calculated values from processRequestData
-                const totalKernTimeMs = request.kernTimeMs || 0;
-                const totalMemoryBytes = request.memoryBytes || 0;
-                const elapsedTimeMs = request.elapsedTimeMs || 0;
-
-                // Create row data object
                 const rowData = {
                     rowIndex: index + 1,
                     request: request, // Keep original request for click handler
                 };
 
-                // Add all column values (skip "#" as it's calculated dynamically)
-                [
-                    "requestTime",
-                    "statementType",
-                    "elapsedTime",
-                    "serviceTime",
-                    "kernTime",
-                    "KernTime %",
-                    "cpuTime",
-                    "memory (MB)",
-                    "resultCount",
-                    "resultSize",
-                    "Items from Index Scan",
-                    "Doc Fetch Count",
-                    "Primary Scan Used",
-                    "state",
-                    "statement",
-                    "users",
-                ].forEach((col) => {
+                EVERY_QUERY_COLUMNS.forEach((colConfig) => {
                     let value;
-                    if (col === "Primary Scan Used") {
-                        value = request.usesPrimary ? "Yes" : "No";
-                    } else if (col === "Items from Index Scan") {
-                        // Use phaseCounts for actual item counts, not operator counts
-                        const indexScanCount = request.phaseCounts?.indexScan ||
-                            request.phaseCounts?.primaryScan || 0;
-                        value = indexScanCount > 0 ? indexScanCount : "N/A";
-                    } else if (col === "Doc Fetch Count") {
-                        // Use phaseCounts for actual fetch counts
-                        const fetchCount = request.phaseCounts?.fetch || 0;
-                        value = fetchCount > 0 ? fetchCount : "N/A";
-                    } else if (col === "kernTime") {
-                        value = totalKernTimeMs > 0 ? formatTime(totalKernTimeMs) : "N/A";
-                    } else if (col === "KernTime %") {
-                        value =
-                            elapsedTimeMs > 0 && totalKernTimeMs > 0
-                                ? ((totalKernTimeMs / elapsedTimeMs) * 100).toFixed(2) + "%"
-                                : "N/A";
-                    } else if (col === "memory (MB)") {
-                        value = (request.memoryBytes == null)
-                            ? "N/A"
-                            : (request.memoryBytes / 1024 / 1024).toFixed(2);
-                    } else if (col === "elapsedTime") {
-                        value = formatTime(elapsedTimeMs);
-                    } else if (col === "cpuTime") {
-                        value = formatTime(parseTime(request[col]));
-                    } else if (col === "serviceTime") {
-                        value = formatTime(request.serviceTimeMs || parseTime(request[col]));
-                    } else if (col === "statement") {
-                        value = request.statement || request.preparedText || "N/A";
-                    } else {
-                        value = request[col] || "N/A";
+                    if (colConfig.getValue) {
+                        value = colConfig.getValue(request, index);
+                    } else if (colConfig.dataField) {
+                        value = request[colConfig.dataField] || 'N/A';
                     }
-                    rowData[col] = value;
+                    rowData[colConfig.id] = value;
                 });
 
                 return rowData;
@@ -4626,28 +4789,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
             // Clear statement store for new data (only for current page)
             statementStore = {};
 
-            const columns = [
-                "#",
-                "request\nTime",
-                "statement\nType",
-                "elapsed\nTime",
-                "service\nTime",
-                "kern\nTime",
-                "KernTime\n%",
-                "cpu\nTime",
-                "memory\n(MB)",
-                "result\nCount",
-                "result\nSize",
-                "Doc Fetch\nCount",
-                "Items from\nIndex Scan",
-                "Primary Scan\nUsed",
-                "state",
-                "statement",
-                "Scan\nConsistency",
-                "users",
-                "requestId",
-            ];
-
             // Pagination: get only the current page data
             const start = (currentPage - 1) * pageSize;
             const end = Math.min(start + pageSize, data.length);
@@ -4657,131 +4798,41 @@ LET bid = CONCAT("", s.bucket_id, ""),
             const fragment = document.createDocumentFragment();
 
             pageData.forEach((rowData, pageIndex) => {
-                const globalIndex = start + pageIndex; // For "#" column and statement IDs
+                const globalIndex = start + pageIndex;
                 const row = document.createElement("tr");
 
-                columns.forEach((col) => {
+                EVERY_QUERY_COLUMNS.forEach((colConfig) => {
                     const td = document.createElement("td");
-                    // Map display names back to data field names
-                    let dataField;
-                    if (col === "request\nTime") dataField = "requestTime";
-                    else if (col === "statement\nType") dataField = "statementType";
-                    else if (col === "elapsed\nTime") dataField = "elapsedTime";
-                    else if (col === "service\nTime") dataField = "serviceTime";
-                    else if (col === "kern\nTime") dataField = "kernTime";
-                    else if (col === "KernTime\n%") dataField = "KernTime %";
-                    else if (col === "cpu\nTime") dataField = "cpuTime";
-                    else if (col === "memory\n(MB)") dataField = "memory (MB)";
-                    else if (col === "result\nCount") dataField = "resultCount";
-                    else if (col === "result\nSize") dataField = "resultSize";
-                    else if (col === "Items from\nIndex Scan")
-                        dataField = "Items from Index Scan";
-                    else if (col === "Doc Fetch\nCount") dataField = "Doc Fetch Count";
-                    else if (col === "Primary Scan\nUsed")
-                        dataField = "Primary Scan Used";
-                    else if (col === "Scan\nConsistency") dataField = "scanConsistency";
-                    else dataField = col;
+                    const value = rowData[colConfig.id];
 
-                    // Use globalIndex for row number to maintain correct numbering across pages
-                    let value;
-                    if (col === "#") {
-                        value = globalIndex + 1;
-                    } else if (col === "Scan\nConsistency") {
-                        // scanConsistency is nested under request object
-                        value = rowData.request && rowData.request.scanConsistency ? rowData.request.scanConsistency : "N/A";
-                    } else {
-                        value = rowData[dataField];
-                    }
-
-                    if (col === "request\nTime") {
-                        // Use CSS class instead of inline styles (Step 7 optimization)
-                        td.className = "td-request-time";
-                        td.textContent = value || "";
-                    } else if (col === "requestId") {
-                        const reqId = (rowData.request && rowData.request.requestId) || rowData.requestId || value || "";
-                        const safeId = String(reqId);
-                        td.className = "td-request-id";
-                        td.innerHTML = `
-                          <code style="font-size:11px;">${escapeHtml(safeId)}</code>
-                          <button data-id="${escapeHtml(safeId)}" onclick="copyRequestId(this.dataset.id, event)" class="btn-standard" style="margin-left:6px;">${TEXT_CONSTANTS.COPY}</button>
-                        `;
-                    } else if (col === "statement") {
-                        // Use CSS class instead of inline styles (Step 7 optimization)
-                        td.className = "td-statement";
-                        // Handle statement column with truncation and controls
-                        const statement = value || "";
-                        const statementId = `statement-${globalIndex}`;
-
-                        // Store the statement safely
-                        statementStore[statementId] = statement;
-
-                        if (statement.length > 500) {
-                            // Create truncated version
-                            const truncated = statement.substring(0, 500);
-                            const preparedSample = (rowData && rowData.request && isPreparedExecution(rowData.request)) ? getPreparedSample(rowData.request) : "";
-                            const preparedSnippet = preparedSample ? `<div style=\"margin-top:6px; color:#555; font-size:12px;\"><strong>${TEXT_CONSTANTS.PREPARED_TEXT || 'Prepared:'}</strong> ${escapeHtml(preparedSample.substring(0, 300))}${preparedSample.length > 300 ? '...' : ''}</div>` : '';
-
-                            td.innerHTML = `
-                  <div id="${statementId}-truncated">
-                    <span>${truncated}...</span>
-                    ${preparedSnippet}
-                    <br>
-                    <button onclick=\"toggleStatement('${statementId}', true)\" 
-                            class=\"btn-standard\" style=\"margin-top: 5px; margin-right: 5px;\">${TEXT_CONSTANTS.SHOW_MORE}</button>
-                    <button onclick=\"copyStatement('${statementId}', event)\" 
-                            class=\"btn-standard\" style=\"margin-top: 5px;\">${TEXT_CONSTANTS.COPY}</button>
-                  </div>
-                  <div id="${statementId}-full" style="display: none;">
-                    <span>${statement}</span>
-                    ${preparedSnippet}
-                    <br>
-                    <button onclick=\"toggleStatement('${statementId}', false)\" 
-                            class=\"btn-standard\" style=\"margin-top: 5px; margin-right: 5px;\">${TEXT_CONSTANTS.HIDE}</button>
-                    <button onclick=\"copyStatement('${statementId}', event)\" 
-                            class=\"btn-standard\" style=\"margin-top: 5px;\">${TEXT_CONSTANTS.COPY}</button>
-                  </div>
-                `;
+                    // Apply custom rendering if defined
+                    if (colConfig.render) {
+                        const rendered = colConfig.render(value, td, rowData, globalIndex);
+                        if (typeof rendered === 'string') {
+                            td.innerHTML = rendered;
                         } else {
-                            // Short statement - just show it with copy button
-                            const preparedSample = (rowData && rowData.request && isPreparedExecution(rowData.request)) ? getPreparedSample(rowData.request) : "";
-                            const preparedSnippet = preparedSample ? `<div style=\"margin-top:6px; color:#555; font-size:12px;\"><strong>${TEXT_CONSTANTS.PREPARED_TEXT || 'Prepared:'}</strong> ${escapeHtml(preparedSample.substring(0, 300))}${preparedSample.length > 300 ? '...' : ''}</div>` : '';
-                            td.innerHTML = `
-                  <div>
-                    <span>${statement}</span>
-                    ${preparedSnippet}
-                    <br>
-                    <button onclick=\"copyStatement('${statementId}', event)\" 
-                            class=\"btn-standard\" style=\"margin-top: 5px;\">${TEXT_CONSTANTS.COPY}</button>
-                  </div>
-                `;
+                            td.textContent = rendered;
                         }
-                    } else if (
-                        ["result\nCount", "result\nSize", "Doc Fetch\nCount", "Items from\nIndex Scan"].includes(col)
-                    ) {
-                        // Format numeric columns with commas
-                        const numValue = Number(value);
-                        td.textContent = isNaN(numValue) ? value : numValue.toLocaleString();
                     } else {
                         td.textContent = value;
                     }
 
-                    if (
-                        col === "Primary Scan\nUsed" &&
-                        (value === "Yes" || value === "True" || value === true)
-                    ) {
-                        td.classList.add("primary-scan-yes");
+                    // Apply special CSS classes based on column ID
+                    if (colConfig.id === 'requestTime') {
+                        td.className = 'td-request-time';
+                    } else if (colConfig.id === 'requestId') {
+                        td.className = 'td-request-id';
+                    } else if (colConfig.id === 'statement') {
+                        td.className = 'td-statement';
                     }
 
-                    if (col === "state" && value === "fatal") {
-                        td.classList.add("fatal-state");
-                    }
                     row.appendChild(td);
                 });
 
                 row.addEventListener("click", (event) => {
                     // Allow text selection - only handle clicks, not text selection
                     if (window.getSelection().toString().length > 0) {
-                        return; // User is selecting text, don't handle the click
+                        return;
                     }
 
                     document
