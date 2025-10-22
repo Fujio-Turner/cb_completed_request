@@ -3578,11 +3578,129 @@ LET bid = CONCAT("", s.bucket_id, ""),
         // Global panzoom instance for diagram controls
         let flowDiagramPanzoomInstance = null;
         
+        // Helper function to create a bubble element for an operator
+        function createOperatorBubble(node, totalElapsedTimeMs, isNested = false) {
+            const timeInfo = node.getTimeInfo();
+            const itemsInfo = node.getItemsInOut();
+            const colors = node.getColor();
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'step-bubble';
+            if (isNested) bubble.classList.add('nested-operator');
+            bubble.style.backgroundColor = colors.bg;
+            bubble.style.borderColor = colors.border;
+            bubble.style.borderWidth = '2px';
+            
+            let bubbleContent = `
+                <h4>${node.getName()}</h4>
+                <p><span title="${timeInfo.execTimeTooltip}">${timeInfo.execTimeFormatted}</span> (${timeInfo.percentage}%)</p>`;
+            
+            if (timeInfo.hasServTime) {
+                bubbleContent += `<p><span title="${timeInfo.servTimeTooltip}">${timeInfo.servTimeFormatted}</span> servTime</p>`;
+            }
+            
+            if (itemsInfo.formatted) {
+                bubbleContent += `<p>${itemsInfo.formatted}</p>`;
+            }
+            
+            bubble.innerHTML = bubbleContent;
+            bubble.addEventListener('click', () => {
+                const statsHtml = buildOperatorStats(node.operator);
+                document.getElementById('operator-modal-body').innerHTML = statsHtml;
+                document.getElementById('operator-modal').style.display = 'block';
+            });
+            
+            return bubble;
+        }
+
+        // Helper function to render operator tree hierarchically
+        function renderOperatorTree(operator, container, totalElapsedTimeMs, visited = new WeakSet(), skipSequence = true) {
+            if (!operator || visited.has(operator)) return;
+            visited.add(operator);
+
+            const opType = operator['#operator'];
+            
+            // Skip Sequence operators by default
+            if (skipSequence && opType === 'Sequence') {
+                if (operator['~children']) {
+                    operator['~children'].forEach(child => {
+                        renderOperatorTree(child, container, totalElapsedTimeMs, visited, skipSequence);
+                    });
+                } else if (operator['~child']) {
+                    renderOperatorTree(operator['~child'], container, totalElapsedTimeMs, visited, skipSequence);
+                }
+                return;
+            }
+
+            const node = new PlanNode(operator, null, totalElapsedTimeMs);
+            
+            // Special handling for operators with child operators that should be visualized nested
+            if (opType === 'NestedLoopJoin' || opType === 'HashJoin' || opType === 'HashNest') {
+                const joinContainer = document.createElement('div');
+                joinContainer.className = 'join-container';
+                joinContainer.style.cssText = 'display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 15px; border: 2px dashed #666; border-radius: 8px; background: rgba(255,255,255,0.05);';
+                
+                // Add join operator bubble
+                const joinBubble = createOperatorBubble(node, totalElapsedTimeMs);
+                joinContainer.appendChild(joinBubble);
+                
+                // Add label
+                const label = document.createElement('div');
+                label.textContent = '↓ Joins with ↓';
+                label.style.cssText = 'font-size: 12px; color: #999;';
+                joinContainer.appendChild(label);
+                
+                // Render child operator (e.g., ExpressionScan)
+                if (operator['~child']) {
+                    const childContainer = document.createElement('div');
+                    childContainer.style.cssText = 'display: flex; flex-direction: row; align-items: center; gap: 10px;';
+                    renderOperatorTree(operator['~child'], childContainer, totalElapsedTimeMs, visited, skipSequence);
+                    joinContainer.appendChild(childContainer);
+                }
+                
+                container.appendChild(joinContainer);
+            } else if (opType === 'With') {
+                // WITH operator - show info and continue with child (main query)
+                const withBubble = createOperatorBubble(node, totalElapsedTimeMs);
+                container.appendChild(withBubble);
+                
+                // Add connector
+                const connector = document.createElement('div');
+                connector.className = 'connector';
+                container.appendChild(connector);
+                
+                // Continue with the main query portion
+                if (operator['~child']) {
+                    renderOperatorTree(operator['~child'], container, totalElapsedTimeMs, visited, skipSequence);
+                }
+            } else {
+                // Regular operator
+                const bubble = createOperatorBubble(node, totalElapsedTimeMs);
+                container.appendChild(bubble);
+                
+                // Add connector if we'll have more children
+                const hasChildren = operator['~child'] || (operator['~children'] && operator['~children'].length > 0);
+                if (hasChildren) {
+                    const connector = document.createElement('div');
+                    connector.className = 'connector';
+                    container.appendChild(connector);
+                }
+                
+                // Render children
+                if (operator['~children']) {
+                    operator['~children'].forEach(child => {
+                        renderOperatorTree(child, container, totalElapsedTimeMs, visited, skipSequence);
+                    });
+                } else if (operator['~child']) {
+                    renderOperatorTree(operator['~child'], container, totalElapsedTimeMs, visited, skipSequence);
+                }
+            }
+        }
+
         function generateFlowDiagram(request) {
             const flowDiagram = document.getElementById("flow-diagram");
             flowDiagram.innerHTML = "";
             
-            // ✅ Remove any existing controls to prevent duplicates
             const existingControls = document.getElementById('flow-diagram-controls');
             if (existingControls) {
                 existingControls.remove();
@@ -3593,20 +3711,8 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 return;
             }
 
-            // Calculate total elapsed time for percentages
             const totalElapsedTimeMs = request.elapsedTimeMs || parseTime(request.elapsedTime) || 0;
             
-            // ✅ Get ALL operators from the plan (using existing getOperators function)
-            const allOperators = getOperators(request.plan);
-            // Filter out Sequence operators (they're just orchestration, not real work)
-            const operators = allOperators.filter(op => op["#operator"] !== "Sequence");
-
-            if (operators.length === 0) {
-                flowDiagram.textContent = TEXT_CONSTANTS.NO_OPERATORS_FOUND;
-                return;
-            }
-
-            // ✅ Add diagram controls (zoom, flip) with unique ID - positioned on right side
             const controlsDiv = document.createElement('div');
             controlsDiv.id = 'flow-diagram-controls';
             controlsDiv.style.cssText = 'margin-bottom: 10px; display: flex; gap: 8px; align-items: center; justify-content: flex-end; position: relative; z-index: 10;';
@@ -3618,73 +3724,51 @@ LET bid = CONCAT("", s.bucket_id, ""),
             `;
             flowDiagram.parentElement.insertBefore(controlsDiv, flowDiagram);
 
-            // ✅ Wrap each operator in a PlanNode for consistent access to methods
-            const nodes = operators.map(op => new PlanNode(op, null, totalElapsedTimeMs));
-
-            // ✅ PRESERVE: Render each node as step-bubble with timing, servTime, items
-            nodes.forEach((node, index) => {
-                const timeInfo = node.getTimeInfo();
-                const itemsInfo = node.getItemsInOut();
-                const colors = node.getColor();
-                
-                const bubble = document.createElement('div');
-                bubble.className = 'step-bubble';
-                bubble.style.backgroundColor = colors.bg;
-                bubble.style.borderColor = colors.border;
-                bubble.style.borderWidth = '2px';
-                
-                // Build bubble content with timing
-                let bubbleContent = `
-                    <h4>${node.getName()}</h4>
-                    <p><span title="${timeInfo.execTimeTooltip}">${timeInfo.execTimeFormatted}</span> (${timeInfo.percentage}%)</p>`;
-                
-                // ✅ PRESERVE: Add servTime if available
-                if (timeInfo.hasServTime) {
-                    bubbleContent += `<p><span title="${timeInfo.servTimeTooltip}">${timeInfo.servTimeFormatted}</span> servTime</p>`;
-                }
-                
-                // ✅ PRESERVE: Add items in/out
-                if (itemsInfo.formatted) {
-                    bubbleContent += `<p>${itemsInfo.formatted}</p>`;
-                }
-                
-                bubble.innerHTML = bubbleContent;
-                
-                // ✅ PRESERVE: Click handler to show operator stats modal
-                bubble.addEventListener('click', () => {
-                    const statsHtml = buildOperatorStats(node.operator);
-                    document.getElementById('operator-modal-body').innerHTML = statsHtml;
-                    document.getElementById('operator-modal').style.display = 'block';
+            // Check if there are subqueries (WITH clauses) and render them first
+            const subqueries = request.plan['~subqueries'] || [];
+            if (subqueries.length > 0) {
+                subqueries.forEach((subquery, index) => {
+                    const subqueryLabel = document.createElement('div');
+                    subqueryLabel.className = 'subquery-label';
+                    subqueryLabel.textContent = `📦 WITH Subquery ${index + 1} (executed first)`;
+                    subqueryLabel.style.cssText = 'font-weight: bold; margin-bottom: 10px; padding: 8px; background: #2a4a5a; border-radius: 4px; color: #fff;';
+                    flowDiagram.appendChild(subqueryLabel);
+                    
+                    const subqueryContainer = document.createElement('div');
+                    subqueryContainer.className = 'subquery-flow';
+                    subqueryContainer.style.cssText = 'display: flex; flex-direction: row; align-items: center; gap: 10px; padding: 15px; border: 2px solid #4a7a9a; border-radius: 8px; background: rgba(74, 122, 154, 0.1); margin-bottom: 20px;';
+                    
+                    if (subquery.executionTimings) {
+                        renderOperatorTree(subquery.executionTimings, subqueryContainer, totalElapsedTimeMs, new WeakSet(), true);
+                    }
+                    
+                    flowDiagram.appendChild(subqueryContainer);
                 });
                 
-                flowDiagram.appendChild(bubble);
-                
-                // Add connector between bubbles
-                if (index < nodes.length - 1) {
-                    const connector = document.createElement('div');
-                    connector.className = 'connector';
-                    flowDiagram.appendChild(connector);
-                }
-            });
-
-            // ✅ PRESERVE: "View Detailed Execution Plan & Indexes/Keys Used" button
-            if (request.plan) {
-                const viewPlanButton = document.createElement('button');
-                viewPlanButton.textContent = TEXT_CONSTANTS.VIEW_DETAILED_PLAN;
-                viewPlanButton.style.marginTop = '10px';
-                viewPlanButton.addEventListener('click', () => {
-                    const indexesAndKeys = extractIndexesAndKeys(request);
-                    const planTreeHtml = buildEnhancedPlanModal(request.plan, indexesAndKeys, request);
-                    document.getElementById('plan-modal-body').innerHTML = planTreeHtml;
-                    document.getElementById('plan-modal').style.display = 'block';
-                });
-                flowDiagram.appendChild(viewPlanButton);
+                // Add main query separator
+                const separator = document.createElement('div');
+                separator.className = 'main-query-separator';
+                separator.textContent = '↓ Main Query ↓';
+                separator.style.cssText = 'font-weight: bold; margin: 20px 0; padding: 8px; background: #3a5a4a; border-radius: 4px; color: #fff; text-align: center;';
+                flowDiagram.appendChild(separator);
             }
 
-            // ✅ PRESERVE: Pan/zoom functionality
+            // Render the operator tree hierarchically
+            renderOperatorTree(request.plan, flowDiagram, totalElapsedTimeMs);
+
+            const viewPlanButton = document.createElement('button');
+            viewPlanButton.textContent = TEXT_CONSTANTS.VIEW_DETAILED_PLAN;
+            viewPlanButton.style.marginTop = '10px';
+            viewPlanButton.addEventListener('click', () => {
+                const indexesAndKeys = extractIndexesAndKeys(request);
+                const planTreeHtml = buildEnhancedPlanModal(request.plan, indexesAndKeys, request);
+                document.getElementById('plan-modal-body').innerHTML = planTreeHtml;
+                document.getElementById('plan-modal').style.display = 'block';
+            });
+            flowDiagram.appendChild(viewPlanButton);
+
             flowDiagramPanzoomInstance = panzoom(flowDiagram, { smoothScroll: false });
 
-            // ✅ Wire up control buttons
             document.getElementById('flow-zoom-in').addEventListener('click', () => {
                 if (flowDiagramPanzoomInstance) {
                     const transform = flowDiagramPanzoomInstance.getTransform();
@@ -3701,14 +3785,12 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
             document.getElementById('flow-reset-zoom').addEventListener('click', () => {
                 if (flowDiagramPanzoomInstance) {
-                    // Reset to original position and scale
                     flowDiagramPanzoomInstance.moveTo(0, 0);
                     flowDiagramPanzoomInstance.zoomAbs(0, 0, 1);
                 }
             });
 
             document.getElementById('flow-flip').addEventListener('click', () => {
-                // Toggle flex direction to flip the diagram
                 const currentDirection = flowDiagram.style.flexDirection;
                 flowDiagram.style.flexDirection = (currentDirection === 'row-reverse') ? 'row' : 'row-reverse';
             });
