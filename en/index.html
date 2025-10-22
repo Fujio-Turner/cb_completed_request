@@ -16628,8 +16628,8 @@ function generateElapsedTimeChart(requests) {
                 if (!input) return;
                 try {
                     const $input = window.jQuery ? jQuery(input) : null;
-                    if ($input && $input.fadeOut) {
-                        $input.stop(true, true).fadeOut('slow', () => {
+                    if ($input && $input.hide && jQuery.effects && jQuery.effects.effect && jQuery.effects.effect.blind) {
+                        $input.stop(true, true).hide('blind', {}, 600, () => {
                             if (tab) {
                                 tab.setAttribute('aria-expanded', 'false');
                                 const label = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.SHOW_INPUT_PANEL) || 'Show Data & Filters';
@@ -16640,7 +16640,7 @@ function generateElapsedTimeChart(requests) {
                             }
                         });
                     } else {
-                        // Fallback if jQuery missing
+                        // Fallback if jQuery UI effects missing
                         input.style.display = 'none';
                         if (tab) {
                             tab.setAttribute('aria-expanded', 'false');
@@ -16659,8 +16659,8 @@ function generateElapsedTimeChart(requests) {
                 if (!input) return;
                 try {
                     const $input = window.jQuery ? jQuery(input) : null;
-                    if ($input && $input.fadeIn) {
-                        $input.stop(true, true).fadeIn('slow', () => {
+                    if ($input && $input.show && jQuery.effects && jQuery.effects.effect && jQuery.effects.effect.blind) {
+                        $input.stop(true, true).show('blind', {}, 600, () => {
                             if (tab) {
                                 tab.setAttribute('aria-expanded', 'true');
                                 const label = (window.TEXT_CONSTANTS && TEXT_CONSTANTS.HIDE_INPUT_PANEL) || 'Hide Data & Filters';
