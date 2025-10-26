@@ -52,12 +52,21 @@ Note: Only update the English UI (en/index.html) by default. Do not update other
   - Version number in this AGENT.md file header
 
 ## Architecture
+
 - Single-page HTML application for analyzing Couchbase query performance
 - Frontend-only tool with no build process - just open `index.html` in browser
 - Uses jQuery UI for tabs, Chart.js for visualizations, and Panzoom for flow diagrams
 - Six main sections: Dashboard, Timeline, Analysis (query aggregation), Every Query (detailed view), Index/Query Flow, and Indexes (index management)
 
+## Feature Flags
+
+- **Flow Diagram Hierarchy** (`?dev=true` in URL): Enable experimental hierarchical query flow visualization
+  - Default: Linear flow diagram (stable, proven)
+  - With `?dev=true`: Hierarchical tree with subquery separation and nested operator containers
+  - Documentation: See [FLOW_DIAGRAM_FEATURE_FLAG.md](./FLOW_DIAGRAM_FEATURE_FLAG.md)
+
 ## How to Run
+
 - No build commands - static HTML file
 - Open `index.html` directly in web browser
 - Input: JSON from `SELECT *, meta().plan FROM system:completed_requests WHERE node = NODE_NAME();`

@@ -3578,6 +3578,13 @@ LET bid = CONCAT("", s.bucket_id, ""),
         // Global panzoom instance for diagram controls
         let flowDiagramPanzoomInstance = null;
         
+        // Feature flag: Check if ?dev=true in URL for new hierarchical flow diagram
+        function isDevMode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('dev') === 'true';
+        }
+        
+        // ========== NEW HIERARCHICAL VERSION (dev mode only) ==========
         // Helper function to create a bubble element for an operator
         function createOperatorBubble(node, totalElapsedTimeMs, isNested = false) {
             const timeInfo = node.getTimeInfo();
@@ -3697,7 +3704,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
             }
         }
 
-        function generateFlowDiagram(request) {
+        function generateFlowDiagram_New(request) {
             const flowDiagram = document.getElementById("flow-diagram");
             flowDiagram.innerHTML = "";
             
@@ -3794,6 +3801,108 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 const currentDirection = flowDiagram.style.flexDirection;
                 flowDiagram.style.flexDirection = (currentDirection === 'row-reverse') ? 'row' : 'row-reverse';
             });
+        }
+        
+        // ========== ORIGINAL STABLE VERSION ==========
+        function generateFlowDiagram_Original(request) {
+            const flowDiagram = document.getElementById("flow-diagram");
+            flowDiagram.innerHTML = "";
+            if (!request || !request.plan) {
+                flowDiagram.textContent = TEXT_CONSTANTS.NO_EXECUTION_PLAN;
+                return;
+            }
+
+            const totalKernTime = calculateTotalKernTime(request.plan);
+            const totalElapsedTimeMs = request.elapsedTimeMs || parseTime(request.elapsedTime) || 0;
+            const allOperators = getOperators(request.plan);
+            const operators = allOperators.filter(op => op["#operator"] !== "Sequence");
+
+            if (operators.length === 0) {
+                flowDiagram.textContent = TEXT_CONSTANTS.NO_OPERATORS_FOUND;
+                return;
+            }
+
+            operators.forEach((operator, index) => {
+                const operatorName = operator["#operator"] || "Unknown Operator";
+                const stats = operator["#stats"] || {};
+                const kernTime = stats.kernTime || "N/A";
+                const execTime = stats.execTime || "N/A";
+                const servTime = stats.servTime || "N/A";
+                const itemsIn = stats["#itemsIn"] !== undefined ? stats["#itemsIn"] : "-";
+                const itemsOut = stats["#itemsOut"] !== undefined ? stats["#itemsOut"] : "-";
+
+                const kernTimeMs = parseTime(kernTime);
+                const execTimeMs = parseTime(execTime);
+                const servTimeMs = parseTime(servTime);
+
+                const timeForPercentage = !isNaN(servTimeMs) && servTimeMs > 0 ? servTimeMs : execTimeMs;
+                const percentage = totalElapsedTimeMs > 0 && !isNaN(timeForPercentage) && timeForPercentage > 0
+                    ? ((timeForPercentage / totalElapsedTimeMs) * 100).toFixed(2)
+                    : "N/A";
+
+                const bubble = document.createElement("div");
+                bubble.className = "step-bubble";
+
+                const percentageColors = getPercentageColor(percentage);
+                bubble.style.backgroundColor = percentageColors.bg;
+                bubble.style.borderColor = percentageColors.border;
+                bubble.style.borderWidth = "2px";
+
+                const colorClass = getColorClass(parseFloat(percentage));
+                bubble.classList.add(colorClass);
+
+                const execTimeTooltip = formatTimeTooltip(execTime, execTimeMs);
+                let bubbleContent = `
+                    <h4>${operatorName}</h4>
+                    <p><span title="${execTimeTooltip}">${formatTime(execTimeMs)}</span> (${percentage}%)</p>`;
+
+                if (servTime !== "N/A" && !isNaN(servTimeMs) && servTimeMs > 0) {
+                    const servTimeTooltip = formatTimeTooltip(servTime, servTimeMs);
+                    bubbleContent += `<p><span title="${servTimeTooltip}">${formatTime(servTimeMs)}</span> servTime</p>`;
+                }
+
+                if (itemsIn !== "-" && itemsOut !== "-") {
+                    bubbleContent += `<p>${itemsIn} in / ${itemsOut} out</p>`;
+                }
+
+                bubble.innerHTML = bubbleContent;
+                bubble.addEventListener("click", () => {
+                    const statsHtml = buildOperatorStats(operator);
+                    document.getElementById("operator-modal-body").innerHTML = statsHtml;
+                    document.getElementById("operator-modal").style.display = "block";
+                });
+                flowDiagram.appendChild(bubble);
+
+                if (index < operators.length - 1) {
+                    const connector = document.createElement("div");
+                    connector.className = "connector";
+                    flowDiagram.appendChild(connector);
+                }
+            });
+
+            if (request.plan) {
+                const viewPlanButton = document.createElement("button");
+                viewPlanButton.textContent = TEXT_CONSTANTS.VIEW_DETAILED_PLAN;
+                viewPlanButton.style.marginTop = "10px";
+                viewPlanButton.addEventListener("click", () => {
+                    const indexesAndKeys = extractIndexesAndKeys(request);
+                    const planTreeHtml = buildEnhancedPlanModal(request.plan, indexesAndKeys, request);
+                    document.getElementById("plan-modal-body").innerHTML = planTreeHtml;
+                    document.getElementById("plan-modal").style.display = "block";
+                });
+                flowDiagram.appendChild(viewPlanButton);
+            }
+
+            panzoom(flowDiagram, { smoothScroll: false });
+        }
+        
+        // ========== DISPATCHER FUNCTION ==========
+        function generateFlowDiagram(request) {
+            if (isDevMode()) {
+                generateFlowDiagram_New(request);
+            } else {
+                generateFlowDiagram_Original(request);
+            }
         }
 
         // Extract indexes and USE KEYS from request
