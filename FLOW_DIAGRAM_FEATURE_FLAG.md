@@ -1,22 +1,44 @@
-# Flow Diagram Feature Flag Documentation
+# Feature Flags Documentation
 
 ## Overview
-The query flow diagram in the "Every Query" tab now has **two versions**:
+The application now supports **feature flags** via URL parameters for experimental features and debugging.
+
+## Available Feature Flags
+
+### 1. Flow Diagram Hierarchy (`?dev=true`)
+The query flow diagram in the "Every Query" tab has **two versions**:
 - **Original (Stable)** - Default, linear flow diagram 
 - **New (Hierarchical)** - Feature-flagged version with improved visualization
 
+### 2. Debug Logging (`?debug=true`)
+Enable verbose console logging for debugging and development:
+- **Default (Off)** - Only shows important info logs
+- **Debug Mode** - Shows detailed debug and trace logs
+
 ## How to Use
 
-### Default Behavior (Original Version)
+### Default Behavior
 Simply open the application normally:
 ```
 http://localhost:8000/en/index.html
 ```
 
-### Enable New Hierarchical Version
+### Enable New Hierarchical Flow Diagram
 Add `?dev=true` to the URL:
 ```
 http://localhost:8000/en/index.html?dev=true
+```
+
+### Enable Debug Logging
+Add `?debug=true` to the URL:
+```
+http://localhost:8000/en/index.html?debug=true
+```
+
+### Combine Multiple Flags
+You can combine flags with `&`:
+```
+http://localhost:8000/en/index.html?dev=true&debug=true
 ```
 
 ## Feature Comparison
@@ -89,6 +111,60 @@ function generateFlowDiagram(request) {
   - `NestedLoopJoin`, `HashJoin`, `HashNest` - Rendered in dashed container
   - `With` - Triggers subquery separation
 - `generateFlowDiagram_New()` - Main entry point for new version
+
+## Debug Logging Details
+
+### Log Levels
+
+The application uses three console log levels:
+
+1. **`[info]`** - Always visible (default behavior)
+   - Application initialization
+   - Version information
+   - Feature list
+   - Parse performance summary
+   - Chart sampling information
+   - Index extraction results
+
+2. **`[debug]`** - Only visible with `?debug=true`
+   - Chart creation/destruction details
+   - Cache statistics
+   - Timeline chart details
+   - Data filtering results
+   - Internal state changes
+
+3. **`[trace]`** - Only visible with `?debug=true`
+   - Lazy tab loading timing
+   - Detailed execution flow
+
+### Example Output
+
+**Default mode (no flags):**
+```
+[info] 🚀 Initializing Couchbase Query Analyzer...
+[info] 📦 Version: 3.25.0 (Updated: 2025-10-20)
+[info] 🔧 Features: Global system query exclusion, Enhanced accessibility...
+[info] Parse performance: 375ms for 2000 requests
+[info] Chart sampling: Using 1000 of 2000 requests for performance
+[info] ✅ Index extraction complete: 9 unique indexes, 2562 total references
+[info] ✅ Query Analyzer initialized successfully
+```
+
+**Debug mode (`?debug=true`):**
+```
+[info] 🚀 Initializing Couchbase Query Analyzer...
+[info] 📦 Version: 3.25.0 (Updated: 2025-10-20)
+[debug] 🧹 Destroyed 20 chart instances
+[debug] All caches cleared for new JSON parse
+[info] Parse performance: 375ms for 2000 requests
+[debug] Cache stats - parseTime: 5535/10000 (55.4%)...
+[debug] Date filtering: 2000 requests -> 2000 after date range filter
+[trace] Lazy loaded insights tab in 0ms
+[debug] 🔄 Chart queue reset
+[debug] 📊 Chart created [1/4]: Query Types (6.00ms)
+[debug] 📊 Chart created [2/4]: Duration Buckets (7.00ms)
+[debug] ✅ Chart queue complete: 4/4 charts created
+```
 
 ## Testing Checklist
 

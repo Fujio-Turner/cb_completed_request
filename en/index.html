@@ -2509,6 +2509,46 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
 
 
+        // ============================================================
+        // DEBUG LOGGING UTILITY
+        // ============================================================
+        // Check if debug mode is enabled via URL parameter ?debug=true
+        function isDebugMode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('debug') === 'true';
+        }
+
+        // Logging utility with levels
+        const Logger = {
+            // [info] - Always shown (important user-facing information)
+            info: function(...args) {
+                console.log('[info]', ...args);
+            },
+            
+            // [debug] - Only shown when ?debug=true (detailed technical information)
+            debug: function(...args) {
+                if (isDebugMode()) {
+                    console.log('[debug]', ...args);
+                }
+            },
+            
+            // [trace] - Only shown when ?debug=true (verbose execution tracking)
+            trace: function(...args) {
+                if (isDebugMode()) {
+                    console.log('[trace]', ...args);
+                }
+            },
+            
+            // [warn] - Always shown (warnings)
+            warn: function(...args) {
+                console.warn('[warn]', ...args);
+            },
+            
+            // [error] - Always shown (errors)
+            error: function(...args) {
+                console.error('[error]', ...args);
+            }
+        };
 
         // Memory cleanup for charts
         // ============================================================
@@ -2561,7 +2601,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         window[chartName] = null;
                         destroyedCount++;
                     } catch (e) {
-                        console.warn(`Failed to destroy chart: ${chartName}`, e);
+                        Logger.warn(`Failed to destroy chart: ${chartName}`, e);
                     }
                 }
             });
@@ -2569,7 +2609,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
             // Clear timeline charts array
             timelineCharts.length = 0;
             
-            console.log(`🧹 Destroyed ${destroyedCount} chart instances`);
+            Logger.debug(`🧹 Destroyed ${destroyedCount} chart instances`);
         }
 
         // Global system query filtering
@@ -2944,7 +2984,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
             timestampRoundingCache.clear(); // Critical for Timeline tab performance
             
             // WeakMaps (operatorsCache, planStatsCache, timeUnitCache) clean themselves automatically
-            console.log(TEXT_CONSTANTS.ALL_CACHES_CLEARED);
+            Logger.debug(TEXT_CONSTANTS.ALL_CACHES_CLEARED);
         }
 
         // Performance benchmarking helper (Step 9 enhancement)
@@ -2953,7 +2993,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
             const normalizePercent = ((normalizeStatementCache.size / CACHE_LIMITS.normalizeStatement) * 100).toFixed(1);
             const timestampPercent = ((timestampRoundingCache.size / CACHE_LIMITS.timestampRounding) * 100).toFixed(1);
             
-            console.log(`Cache stats - parseTime: ${parseTimeCache.size}/${CACHE_LIMITS.parseTime} (${parsePercent}%), normalizeStatement: ${normalizeStatementCache.size}/${CACHE_LIMITS.normalizeStatement} (${normalizePercent}%), timestampRounding: ${timestampRoundingCache.size}/${CACHE_LIMITS.timestampRounding} (${timestampPercent}%)`);
+            Logger.debug(`Cache stats - parseTime: ${parseTimeCache.size}/${CACHE_LIMITS.parseTime} (${parsePercent}%), normalizeStatement: ${normalizeStatementCache.size}/${CACHE_LIMITS.normalizeStatement} (${normalizePercent}%), timestampRounding: ${timestampRoundingCache.size}/${CACHE_LIMITS.timestampRounding} (${timestampPercent}%)`);
         }
 
         // Recursively extract operators from the plan
@@ -3202,7 +3242,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                             if (useToast) showToast(TEXT_CONSTANTS.COPIED_CLIPBOARD);
                         })
                         .catch((err) => {
-                            console.error("Failed to copy:", err);
+                            Logger.error("Failed to copy:", err);
                             this._fallbackCopy(text, button);
                         });
                 } else {
@@ -3243,7 +3283,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
                     }
                 } catch (err) {
-                    console.error("Fallback: Unable to copy", err);
+                    Logger.error("Fallback: Unable to copy", err);
                     showToast("Failed to copy to clipboard", "error");
                 }
 
@@ -5400,7 +5440,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
         function copyStatement(statementId, event) {
             const statement = statementStore[statementId];
             if (!statement) {
-                console.error("Statement not found in store:", statementId);
+                Logger.error("Statement not found in store:", statementId);
                 alert(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
                 return;
             }
@@ -5429,7 +5469,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
         function copyAnalysisStatement(statementId, event) {
             const statement = analysisStatementStore[statementId];
             if (!statement) {
-                console.error("Statement not found in store:", statementId);
+                Logger.error("Statement not found in store:", statementId);
                 alert(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
                 return;
             }
@@ -6437,7 +6477,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                     }
                 });
             } catch (err) {
-                console.error('Error rendering Query Group Phase Times chart:', err);
+                Logger.error('Error rendering Query Group Phase Times chart:', err);
             }
         }
         
@@ -6699,7 +6739,7 @@ function renderQueryGroupPhaseTimesChart(group) {
         function drainChartQueue() {
             if (chartTasks.length === 0) {
                 drainingCharts = false;
-                console.log(`✅ Chart queue complete: ${completedCharts}/${totalCharts} charts created`);
+                Logger.debug(`✅ Chart queue complete: ${completedCharts}/${totalCharts} charts created`);
                 return;
             }
             
@@ -6712,7 +6752,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 try {
                     fn();
                     const duration = (performance.now() - startTime).toFixed(2);
-                    console.log(`📊 Chart created [${completedCharts}/${totalCharts}]: ${name} (${duration}ms)`);
+                    Logger.debug(`📊 Chart created [${completedCharts}/${totalCharts}]: ${name} (${duration}ms)`);
                 } catch (e) {
                     console.error(`❌ Chart creation failed: ${name}`, e);
                 }
@@ -6844,7 +6884,7 @@ function renderQueryGroupPhaseTimesChart(group) {
             drainingCharts = false;
             totalCharts = 0;
             completedCharts = 0;
-            console.log('🔄 Chart queue reset');
+            Logger.debug('🔄 Chart queue reset');
         }
         // ========== End Progressive Chart Loading System ==========
 
@@ -8943,7 +8983,7 @@ size: 12
             }
 
             if (!requests || requests.length === 0) {
-                console.log(TEXT_CONSTANTS.NO_DATA_AVAILABLE || "No data available");
+                Logger.debug(TEXT_CONSTANTS.NO_DATA_AVAILABLE || "No data available");
                 return;
             }
 
@@ -10431,7 +10471,7 @@ size: 12
             });
 
             if (sortedData.length === 0) {
-                console.log("No index scan throughput data found for chart");
+                Logger.debug("No index scan throughput data found for chart");
                 return;
             }
 
@@ -10763,7 +10803,7 @@ size: 12
             });
 
             if (sortedData.length === 0) {
-                console.log("No doc fetch throughput data found for chart");
+                Logger.debug("No doc fetch throughput data found for chart");
                 return;
             }
 
@@ -11079,7 +11119,7 @@ size: 12
             });
 
             if (sortedTimeGroups.length === 0) {
-                console.log("No document size data for bubble chart");
+                Logger.debug("No document size data for bubble chart");
                 return;
             }
 
@@ -17436,7 +17476,7 @@ function generateElapsedTimeChart(requests) {
             );
             
             // Debug logging for filtering
-            console.log(`Date filtering: ${filteredAllRequests.length} requests -> ${filteredRequests.length} after date range filter`);
+            Logger.debug(`Date filtering: ${filteredAllRequests.length} requests -> ${filteredRequests.length} after date range filter`);
             if (filteredRequests.length === 0 && filteredAllRequests.length > 0) {
                 console.warn("⚠️ All requests filtered out by date range!");
                 console.log("Start date:", startDate);
@@ -21429,13 +21469,13 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 }
             });
 
-            console.log(TEXT_CONSTANTS.INDEX_ANALYSIS_INITIALIZED);
+            Logger.info(TEXT_CONSTANTS.INDEX_ANALYSIS_INITIALIZED);
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            console.log(TEXT_CONSTANTS.INITIALIZING_ANALYZER);
-            console.log(`📦 Version: ${APP_VERSION} (Updated: ${LAST_UPDATED})`);
-            console.log(`${TEXT_CONSTANTS.FEATURES}`, getVersionInfo().features.join(", "));
+            Logger.info(TEXT_CONSTANTS.INITIALIZING_ANALYZER);
+            Logger.info(`📦 Version: ${APP_VERSION} (Updated: ${LAST_UPDATED})`);
+            Logger.info(`${TEXT_CONSTANTS.FEATURES}`, getVersionInfo().features.join(", "));
 
             // Initialize theme from localStorage
 
@@ -21499,7 +21539,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 });
             }
 
-            console.log(TEXT_CONSTANTS.ANALYZER_INITIALIZED);
+            Logger.info(TEXT_CONSTANTS.ANALYZER_INITIALIZED);
 
             // Setup JSON file upload handlers
             (function setupUploadInputs() {
@@ -21660,7 +21700,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 },
             };
 
-            console.log(TEXT_CONSTANTS.TIP_ABOUT);
+            Logger.info(TEXT_CONSTANTS.TIP_ABOUT);
         });
 
         // =====================
