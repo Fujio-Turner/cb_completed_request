@@ -181,6 +181,37 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
             display: inline-block;
         }
 
+        /* Help icon tooltip (Issue #186) */
+        .help-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: #007bff;
+            cursor: help;
+            margin: 0 2px;
+            vertical-align: middle;
+        }
+
+        /* Custom jQuery UI tooltip styling (Issue #186) */
+        .ui-tooltip {
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            max-width: 300px;
+        }
+        .ui-tooltip-content {
+            position: relative;
+            padding: 0;
+        }
+
         /* DOM Optimization (Step 7) - Table cell styles moved from inline */
         .td-request-time {
             width: 120px;
@@ -1161,8 +1192,8 @@ if (window.TEXT_CONSTANTS) {
                             <div class="insight-content collapsed" id="high-kernel-time-queries-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="high-kernel-time-queries-count">0 queries</span> (<span class="highlight-number" id="high-kernel-time-queries-percent">0%</span>)
-                                    whose average percentage of sum of their <b
-                                        title="Sum of all execTime minus Stream's execTime">core execTime</b> / kernTime
+                                    whose average percentage of sum of their <b>core execTime</b> 
+                                    <span class="help-icon" title="Sum of all execTime minus Stream's execTime">ⓘ</span> / kernTime
                                     is <span class="highlight-number" id="avg-core-kernel-ratio">0%</span>.
                                 </p>
 
@@ -18343,6 +18374,22 @@ function generateElapsedTimeChart(requests) {
 
         // Initialize jQuery UI Tabs with lazy loading
         $(function () {
+            // Initialize jQuery UI tooltips (Issue #186)
+            $(".help-icon").tooltip({
+                position: {
+                    my: "center bottom-10",
+                    at: "center top"
+                },
+                show: {
+                    effect: "fadeIn",
+                    duration: 200
+                },
+                hide: {
+                    effect: "fadeOut",
+                    duration: 200
+                }
+            });
+
             $("#tabs").tabs({
                 activate: function (event, ui) {
                     const tabId = ui.newPanel.attr("id");
