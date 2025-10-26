@@ -2551,40 +2551,82 @@ LET bid = CONCAT("", s.bucket_id, ""),
         // DEBUG LOGGING UTILITY
         // ============================================================
         // Check if debug mode is enabled via URL parameter ?debug=true
-        function isDebugMode() {
+        // Log level hierarchy (lower number = higher priority)
+        const LOG_LEVELS = {
+            error: 0,
+            warn: 1,
+            info: 2,
+            debug: 3,
+            trace: 4
+        };
+
+        // Get current log level from URL parameter
+        function getLogLevel() {
             const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('debug') === 'true';
+            
+            // Backward compatibility: ?debug=true sets level to 'debug'
+            if (urlParams.get('debug') === 'true') {
+                return 'debug';
+            }
+            
+            // New parameter: ?logLevel=trace|debug|info|warn|error
+            const logLevel = urlParams.get('logLevel');
+            if (logLevel && LOG_LEVELS.hasOwnProperty(logLevel)) {
+                return logLevel;
+            }
+            
+            // Default: info level (shows error, warn, info)
+            return 'info';
         }
 
-        // Logging utility with levels
+        // Check if a log message should be shown based on current log level
+        function shouldLog(messageLevel) {
+            const currentLevel = getLogLevel();
+            return LOG_LEVELS[messageLevel] <= LOG_LEVELS[currentLevel];
+        }
+
+        // Legacy function for backward compatibility
+        function isDebugMode() {
+            const level = getLogLevel();
+            return level === 'debug' || level === 'trace';
+        }
+
+        // Logging utility with granular levels
+        // Usage: ?logLevel=error|warn|info|debug|trace (or ?debug=true for backward compatibility)
         const Logger = {
-            // [info] - Always shown (important user-facing information)
-            info: function(...args) {
-                console.log('[info]', ...args);
+            // [error] - Critical errors (always shown unless logLevel=none)
+            error: function(...args) {
+                if (shouldLog('error')) {
+                    console.error('[error]', ...args);
+                }
             },
             
-            // [debug] - Only shown when ?debug=true (detailed technical information)
+            // [warn] - Warnings (shown at warn level and above)
+            warn: function(...args) {
+                if (shouldLog('warn')) {
+                    console.warn('[warn]', ...args);
+                }
+            },
+            
+            // [info] - Important user-facing information (shown at info level and above - DEFAULT)
+            info: function(...args) {
+                if (shouldLog('info')) {
+                    console.log('[info]', ...args);
+                }
+            },
+            
+            // [debug] - Detailed technical information (shown at debug level and above)
             debug: function(...args) {
-                if (isDebugMode()) {
+                if (shouldLog('debug')) {
                     console.log('[debug]', ...args);
                 }
             },
             
-            // [trace] - Only shown when ?debug=true (verbose execution tracking)
+            // [trace] - Verbose execution tracking (shown only at trace level)
             trace: function(...args) {
-                if (isDebugMode()) {
+                if (shouldLog('trace')) {
                     console.log('[trace]', ...args);
                 }
-            },
-            
-            // [warn] - Always shown (warnings)
-            warn: function(...args) {
-                console.warn('[warn]', ...args);
-            },
-            
-            // [error] - Always shown (errors)
-            error: function(...args) {
-                console.error('[error]', ...args);
             }
         };
 

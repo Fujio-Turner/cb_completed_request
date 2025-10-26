@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Level Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #333;
+        }
+        .test-section h3 {
+            margin-top: 0;
+        }
+        pre {
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #ddd;
+            overflow-x: auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .current-level {
+            background: #4CAF50;
+            color: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Log Level Testing</h1>
+    
+    <div class="current-level">
+        <strong>Current Log Level:</strong> <span id="currentLevel"></span><br>
+        <strong>URL:</strong> <span id="currentUrl"></span>
+    </div>
+
+    <div class="test-section">
+        <h3>📋 Test Instructions</h3>
+        <p>Open browser console (F12) and click the button below. Check which log levels appear.</p>
+        <button onclick="testAllLogLevels()">🚀 Test All Log Levels</button>
+    </div>
+
+    <div class="test-section">
+        <h3>🔗 Quick Navigation</h3>
+        <button onclick="window.location.href='?logLevel=error'">error</button>
+        <button onclick="window.location.href='?logLevel=warn'">warn</button>
+        <button onclick="window.location.href='?logLevel=info'">info (default)</button>
+        <button onclick="window.location.href='?logLevel=debug'">debug</button>
+        <button onclick="window.location.href='?logLevel=trace'">trace</button>
+        <button onclick="window.location.href='?debug=true'">?debug=true (legacy)</button>
+        <button onclick="window.location.href='test_log_levels.html'">Reset</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Expected Results by Level</h3>
+        <pre>
+?logLevel=error  → Shows: [error]
+?logLevel=warn   → Shows: [error] [warn]
+?logLevel=info   → Shows: [error] [warn] [info] (DEFAULT)
+?logLevel=debug  → Shows: [error] [warn] [info] [debug]
+?logLevel=trace  → Shows: [error] [warn] [info] [debug] [trace]
+?debug=true      → Shows: [error] [warn] [info] [debug] (backward compatible)
+        </pre>
+    </div>
+
+    <script>
+        // Copy Logger implementation from index.html
+        const LOG_LEVELS = {
+            error: 0,
+            warn: 1,
+            info: 2,
+            debug: 3,
+            trace: 4
+        };
+
+        function getLogLevel() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            if (urlParams.get('debug') === 'true') {
+                return 'debug';
+            }
+            
+            const logLevel = urlParams.get('logLevel');
+            if (logLevel && LOG_LEVELS.hasOwnProperty(logLevel)) {
+                return logLevel;
+            }
+            
+            return 'info';
+        }
+
+        function shouldLog(messageLevel) {
+            const currentLevel = getLogLevel();
+            return LOG_LEVELS[messageLevel] <= LOG_LEVELS[currentLevel];
+        }
+
+        function isDebugMode() {
+            const level = getLogLevel();
+            return level === 'debug' || level === 'trace';
+        }
+
+        const Logger = {
+            error: function(...args) {
+                if (shouldLog('error')) {
+                    console.error('[error]', ...args);
+                }
+            },
+            
+            warn: function(...args) {
+                if (shouldLog('warn')) {
+                    console.warn('[warn]', ...args);
+                }
+            },
+            
+            info: function(...args) {
+                if (shouldLog('info')) {
+                    console.log('[info]', ...args);
+                }
+            },
+            
+            debug: function(...args) {
+                if (shouldLog('debug')) {
+                    console.log('[debug]', ...args);
+                }
+            },
+            
+            trace: function(...args) {
+                if (shouldLog('trace')) {
+                    console.log('[trace]', ...args);
+                }
+            }
+        };
+
+        // Display current level
+        document.getElementById('currentLevel').textContent = getLogLevel();
+        document.getElementById('currentUrl').textContent = window.location.href;
+
+        // Test function
+        function testAllLogLevels() {
+            console.clear();
+            console.log('='.repeat(60));
+            console.log(`Testing at log level: ${getLogLevel()}`);
+            console.log('='.repeat(60));
+            
+            Logger.error('This is an ERROR message');
+            Logger.warn('This is a WARN message');
+            Logger.info('This is an INFO message');
+            Logger.debug('This is a DEBUG message');
+            Logger.trace('This is a TRACE message');
+            
+            console.log('='.repeat(60));
+            console.log('Test complete! Check which levels appeared above.');
+            console.log('='.repeat(60));
+        }
+
+        // Auto-run test on page load
+        setTimeout(testAllLogLevels, 500);
+    </script>
+</body>
+</html>
