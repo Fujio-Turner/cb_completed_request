@@ -2195,7 +2195,14 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <button id="whole-record-load-btn" class="btn-standard" onclick="loadWholeRecordFromInput()">Load</button>
                 <span class="color-666 font-size-12 margin-left-10">Tip: To get a requestId, go to the "Every Query" tab and look at the far-right column. Copy the requestId and paste it here. You can also open with #requestId=... in the URL.</span>
             </div>
-            <div class="background-white padding-15 border-1-ddd" style="min-height:200px; overflow-x:auto; overflow-y:auto;">
+            <div class="background-white padding-15 border-1-ddd" style="min-height:200px; overflow-x:auto; overflow-y:auto; position: relative;">
+                <button id="copy-whole-record-btn" 
+                        class="btn-standard" 
+                        onclick="copyWholeRecordJson()"
+                        style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; font-size: 12px; z-index: 10;"
+                        title="Copy entire JSON record to clipboard">
+                    📋 Copy JSON
+                </button>
                 <pre id="whole-record-json" style="white-space: pre-wrap; word-break: break-word; margin:0; overflow-x:auto; overflow-y:auto;"></pre>
             </div>
         </div>
@@ -3304,6 +3311,33 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
         function fallbackCopyTextToClipboard(text, button) {
             ClipboardUtils._fallbackCopy(text, button);
+        }
+
+        // Copy whole record JSON from the pre element
+        function copyWholeRecordJson() {
+            const preElement = document.getElementById('whole-record-json');
+            const button = event.target; // Get the button that was clicked
+            
+            if (!preElement) {
+                Logger.error('whole-record-json element not found');
+                showToast("Failed to copy: JSON element not found", "error");
+                return;
+            }
+            
+            const jsonContent = preElement.textContent.trim();
+            
+            if (!jsonContent) {
+                showToast("No JSON record loaded. Please load a request ID first.", "warning");
+                return;
+            }
+            
+            ClipboardUtils.copyToClipboard(jsonContent, button, {
+                successText: "✅ Copied!",
+                originalText: "📋 Copy JSON",
+                successColor: "#4CAF50",
+                duration: 2000,
+                useToast: true
+            });
         }
 
         // Generate flow diagram
