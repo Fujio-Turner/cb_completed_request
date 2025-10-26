@@ -14409,7 +14409,7 @@ function generateElapsedTimeChart(requests) {
                 
                 // If no valid target found, return default
                 if (!target) {
-                    console.warn("[parseFromClause] No target found in cleaned statement:", cleanStatement.substring(0, 200));
+                    Logger.debug("[parseFromClause] No target found in cleaned statement:", cleanStatement.substring(0, 200));
                     return "_default._default._default";
                 }
                 
@@ -14550,7 +14550,7 @@ function generateElapsedTimeChart(requests) {
             );
             
             // Debug: Log Dashboard indexes for JOIN queries
-            console.log(`[DASHBOARD DEBUG] Total indexes found in Dashboard table: ${sortedIndexes.length}`);
+            Logger.debug(`[DASHBOARD DEBUG] Total indexes found in Dashboard table: ${sortedIndexes.length}`);
             const joinIndexes = sortedIndexes.filter(([key, data]) => {
                 // Check if any request using this index is a JOIN
                 return requests.some(req => {
@@ -14558,7 +14558,7 @@ function generateElapsedTimeChart(requests) {
                     return stmt.toUpperCase().includes('JOIN');
                 });
             });
-            console.log(`[DASHBOARD DEBUG] Indexes from JOIN queries (first 10):`, 
+            Logger.debug(`[DASHBOARD DEBUG] Indexes from JOIN queries (first 10):`, 
                 joinIndexes.slice(0, 10).map(([key, data]) => `${hashCompositeKey(key)} (count: ${data.count})`));
 
             const tbody = document.getElementById("index-count-body");
@@ -16243,7 +16243,7 @@ function generateElapsedTimeChart(requests) {
             updatePrimaryIndexOverUsageFromAggregatedData(requests);
 
             // Debug: Log the collected index data
-            console.log(`${TEXT_CONSTANTS.COLLECTED_INDEX_DATA}`, window.DebugRedactor ? window.DebugRedactor.redactObject(indexData) : '[REDACTED]');
+            Logger.debug(`${TEXT_CONSTANTS.COLLECTED_INDEX_DATA}`, window.DebugRedactor ? window.DebugRedactor.redactObject(indexData) : '[REDACTED]');
 
             // Analyze timing data for each index
             Object.values(indexData).forEach((index) => {
@@ -16255,16 +16255,16 @@ function generateElapsedTimeChart(requests) {
 
                     if (avgScanTimeSeconds >= 10) {
                         slowIndexes10sPlus++;
-                        console.log(`${window.DebugRedactor ? window.DebugRedactor.hash(index.name) : index.name} is 10+ seconds`);
+                        Logger.debug(`${window.DebugRedactor ? window.DebugRedactor.hash(index.name) : index.name} is 10+ seconds`);
                     } else if (avgScanTimeSeconds >= 2) {
                         slowIndexes2to10s++;
-                        console.log(`${window.DebugRedactor ? window.DebugRedactor.hash(index.name) : index.name} is 2-10 seconds`);
+                        Logger.debug(`${window.DebugRedactor ? window.DebugRedactor.hash(index.name) : index.name} is 2-10 seconds`);
                     }
 
                     // Check if it's a primary index with 2+ seconds
                     if ((index.name.includes("primary") || index.name === "#primary" || index.name === "def_primary") && avgScanTimeSeconds >= 2) {
                         slowPrimaryIndexes++;
-                        console.log(`${index.name} is a slow primary index`);
+                        Logger.debug(`${index.name} is a slow primary index`);
                     }
                 }
             });
@@ -16500,7 +16500,7 @@ function generateElapsedTimeChart(requests) {
                     try {
                         plan = JSON.parse(item.plan);
                     } catch (e) {
-                        console.warn(`${TEXT_CONSTANTS.JSON_PARSING_ERROR} plan for request:`, e.message);
+                        Logger.error(`${TEXT_CONSTANTS.JSON_PARSING_ERROR} plan for request:`, e.message);
                         showToast(`${TEXT_CONSTANTS.ERROR_PARSING_JSON} ${e.message}`, "warning");
                         plan = null;
                     }
@@ -17257,7 +17257,7 @@ function generateElapsedTimeChart(requests) {
                         } else {
                             // All batches processed
                             const parseEndTime = performance.now();
-                            console.log(`${TEXT_CONSTANTS.PARSE_PERFORMANCE} ${Math.round(parseEndTime - parseStartTime)}${TEXT_CONSTANTS.MS_FOR} ${processedRequests.length} ${TEXT_CONSTANTS.REQUESTS} (${skippedCount} ${TEXT_CONSTANTS.FILTERED_OUT_EARLY})`);
+                            Logger.info(`${TEXT_CONSTANTS.PARSE_PERFORMANCE} ${Math.round(parseEndTime - parseStartTime)}${TEXT_CONSTANTS.MS_FOR} ${processedRequests.length} ${TEXT_CONSTANTS.REQUESTS} (${skippedCount} ${TEXT_CONSTANTS.FILTERED_OUT_EARLY})`);
                             logCacheStats();
                             finishProcessing(processedRequests);
                         }
@@ -20842,7 +20842,7 @@ const LAST_UPDATED = "2025-10-20";
                     }
                 } else if (processedRequest.plan) {
                 } else {
-                    console.warn(`⚠️ No plan found in request`);
+                    Logger.warn(`⚠️ No plan found in request`);
                     return;
                 }
 
@@ -20876,7 +20876,7 @@ const LAST_UPDATED = "2025-10-20";
                 });
             });
 
-            console.log(
+            Logger.info(
                 `✅ Index extraction complete: ${usedIndexes.size} unique indexes, ${totalIndexReferences} total references`
             );
         }
