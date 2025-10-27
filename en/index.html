@@ -1823,6 +1823,8 @@ if (window.TEXT_CONSTANTS) {
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="exec-vs-kernel-chart"></canvas>
                 </div>
+                <!-- Placeholder when dev mode is off -->
+                <div id="dev-3d-placeholder" class="flex-1-height-400"></div>
                 <!-- 3D Collection Timeline Chart (dev feature only) -->
                 <div id="dev-3d-collection-container" class="flex-1-height-400 chart-container" style="display: none;">
                     <div class="chart-expand-btn" title="Expand chart" onclick="expand3DChart()">⛶</div>
@@ -7994,7 +7996,12 @@ size: 12
 
             // Dev feature: 3D Collection Timeline
             if (isDevMode()) {
+                // Hide placeholder and show 3D chart
+                const placeholder = document.getElementById('dev-3d-placeholder');
                 const container = document.getElementById('dev-3d-collection-container');
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
                 if (container) {
                     container.style.display = 'block';
                     // Clear existing chart before creating new one
@@ -8003,6 +8010,16 @@ size: 12
                         Plotly.purge(chartDiv);
                     }
                     create3DCollectionTimelineChart(requests, grouping);
+                }
+            } else {
+                // Show placeholder and hide 3D chart when not in dev mode
+                const placeholder = document.getElementById('dev-3d-placeholder');
+                const container = document.getElementById('dev-3d-collection-container');
+                if (placeholder) {
+                    placeholder.style.display = 'block';
+                }
+                if (container) {
+                    container.style.display = 'none';
                 }
             }
 
@@ -9475,7 +9492,7 @@ size: 12
                     yaxis: {
                         title: 'Collection',
                         tickvals: allCollections.map((_, idx) => idx),
-                        ticktext: allCollections.map(c => c.length > 20 ? c.substring(0, 20) + '...' : c)
+                        ticktext: allCollections.map(c => abbreviateCollectionName(c, 25))
                     },
                     zaxis: {
                         title: 'Duration Range',
@@ -9504,6 +9521,37 @@ size: 12
             Plotly.newPlot('3d-collection-chart', [trace], layout, config);
             
             Logger.info(`✅ 3D Collection Timeline created: ${x.length} data points`);
+        }
+
+        // Smart abbreviation for collection names (bucket.scope.collection)
+        function abbreviateCollectionName(name, maxLength = 35) {
+            if (name.length <= maxLength) return name;
+            
+            const parts = name.split('.');
+            
+            // Abbreviate each part intelligently
+            const abbreviatePart = (part, targetLength) => {
+                if (part.length <= targetLength) return part;
+                
+                // Keep first few and last few characters, replace middle with ~
+                const keepStart = Math.ceil(targetLength / 2);
+                const keepEnd = Math.floor(targetLength / 2) - 1; // -1 for the ~
+                
+                return part.substring(0, keepStart) + '~' + part.substring(part.length - keepEnd);
+            };
+            
+            if (parts.length === 3) {
+                // bucket.scope.collection format
+                const targetPerPart = Math.floor((maxLength - 2) / 3); // -2 for the two dots
+                return parts.map(part => abbreviatePart(part, targetPerPart)).join('.');
+            } else if (parts.length === 2) {
+                // bucket.collection format
+                const targetPerPart = Math.floor((maxLength - 1) / 2); // -1 for the dot
+                return parts.map(part => abbreviatePart(part, targetPerPart)).join('.');
+            } else {
+                // Single name or other format
+                return abbreviatePart(name, maxLength);
+            }
         }
 
         // Expand 3D Chart to fullscreen
@@ -9553,6 +9601,24 @@ size: 12
             controlButtons.appendChild(showAllBtn);
             controlButtons.appendChild(hideAllBtn);
             legendControls.appendChild(controlButtons);
+
+            // Create Log Scale checkbox
+            const logScaleContainer = document.createElement('div');
+            logScaleContainer.style.cssText = 'margin-bottom: 10px; padding: 8px; background: #f5f5f5; border-radius: 4px;';
+            
+            const logScaleCheckbox = document.createElement('input');
+            logScaleCheckbox.type = 'checkbox';
+            logScaleCheckbox.id = 'log-scale-checkbox';
+            logScaleCheckbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+            
+            const logScaleLabel = document.createElement('label');
+            logScaleLabel.htmlFor = 'log-scale-checkbox';
+            logScaleLabel.textContent = 'Log Scale (Bubble Size)';
+            logScaleLabel.style.cssText = 'cursor: pointer; font-size: 12px;';
+            
+            logScaleContainer.appendChild(logScaleCheckbox);
+            logScaleContainer.appendChild(logScaleLabel);
+            legendControls.appendChild(logScaleContainer);
 
             // Create legend items container
             const legendItems = document.createElement('div');
@@ -9605,23 +9671,50 @@ size: 12
 
             // Group data points by collection for separate traces
             const collectionData = {};
-            const allCollections = originalLayout.scene.yaxis.ticktext;
             
-            allCollections.forEach(collection => {
-                collectionData[collection] = {
-                    x: [],
-                    y: [],
-                    z: [],
-                    text: [],
-                    colors: [],
-                    sizes: []
-                };
+            // Get full collection names by extracting from hover text (which has full names)
+            const allCollections = [];
+            const collectionSet = new Set();
+            for (let i = 0; i < originalData[0].text.length; i++) {
+                // Text format is: "collection<br>Time: ...<br>Duration: ...<br>Queries: ..."
+                const fullText = originalData[0].text[i];
+                const collection = fullText.split('<br>')[0]; // First line is collection name
+                if (!collectionSet.has(collection)) {
+                    collectionSet.add(collection);
+                }
+            }
+            
+            // Build collection array sorted by Y-index to maintain order
+            const yIndexToCollection = {};
+            for (let i = 0; i < originalData[0].y.length; i++) {
+                const yIndex = originalData[0].y[i];
+                const fullText = originalData[0].text[i];
+                const collection = fullText.split('<br>')[0];
+                yIndexToCollection[yIndex] = collection;
+            }
+            
+            // Get unique collections in Y-axis order
+            const uniqueYIndices = [...new Set(originalData[0].y)].sort((a, b) => a - b);
+            uniqueYIndices.forEach(yIndex => {
+                const collection = yIndexToCollection[yIndex];
+                if (collection && !allCollections.includes(collection)) {
+                    allCollections.push(collection);
+                    collectionData[collection] = {
+                        x: [],
+                        y: [],
+                        z: [],
+                        text: [],
+                        colors: [],
+                        sizes: []
+                    };
+                }
             });
 
             // Distribute data points to their respective collections
             for (let i = 0; i < originalData[0].x.length; i++) {
                 const yIndex = originalData[0].y[i];
-                const collection = allCollections[yIndex];
+                const fullText = originalData[0].text[i];
+                const collection = fullText.split('<br>')[0];
                 
                 collectionData[collection].x.push(originalData[0].x[i]);
                 collectionData[collection].y.push(originalData[0].y[i]);
@@ -9631,9 +9724,30 @@ size: 12
                 collectionData[collection].sizes.push(originalData[0].marker.size[i]);
             }
 
+            // Function to calculate bubble sizes (linear or log scale)
+            function calculateBubbleSizes(originalSizes, useLogScale) {
+                if (!useLogScale) {
+                    return {
+                        sizes: originalSizes,
+                        sizeref: Math.max(...originalSizes) / 30
+                    };
+                }
+                
+                // Log scale: use log(size + 1) to handle size=0 or size=1
+                const logSizes = originalSizes.map(s => Math.log10(s + 1) * 10);
+                return {
+                    sizes: logSizes,
+                    sizeref: Math.max(...logSizes) / 30
+                };
+            }
+
             // Create separate traces for each collection with query counts
-            const traces = Object.entries(collectionData).map(([collection, data]) => {
+            // Use allCollections order to match main chart Y-axis ordering
+            const traces = allCollections.map(collection => {
+                const data = collectionData[collection];
                 const totalQueries = data.sizes.reduce((sum, size) => sum + size, 0);
+                const bubbleData = calculateBubbleSizes(data.sizes, false); // Default to linear
+                
                 return {
                     x: data.x,
                     y: data.y,
@@ -9642,12 +9756,13 @@ size: 12
                     type: 'scatter3d',
                     name: collection,
                     queryCount: totalQueries, // Store for legend display
+                    originalSizes: data.sizes, // Store original sizes for toggling
                     text: data.text,
                     hoverinfo: 'text',
                     marker: {
-                        size: data.sizes,
+                        size: bubbleData.sizes,
                         sizemode: 'diameter',
-                        sizeref: Math.max(...data.sizes) / 30,
+                        sizeref: bubbleData.sizeref,
                         color: data.colors,
                         line: {
                             color: 'rgba(255, 255, 255, 0.5)',
@@ -9670,8 +9785,14 @@ size: 12
                 displaylogo: false
             });
 
-            // Create custom legend items
-            traces.forEach((trace, index) => {
+            // Create custom legend items in reverse order of allCollections
+            // (allCollections is already sorted ascending by query count, reverse it for descending display)
+            const reversedTraces = [...traces].reverse().map((trace, originalIndex) => {
+                const index = traces.length - 1 - originalIndex;
+                return { trace, index };
+            });
+            
+            reversedTraces.forEach(({ trace, index }) => {
                 const legendItem = document.createElement('div');
                 legendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px;';
                 legendItem.dataset.traceIndex = index;
@@ -9684,9 +9805,10 @@ size: 12
                 // Collection name with query count
                 const label = document.createElement('span');
                 label.style.cssText = 'font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
-                const displayText = `[${trace.queryCount}] ${trace.name}`;
+                const abbreviatedName = abbreviateCollectionName(trace.name, 30);
+                const displayText = `[${trace.queryCount}] ${abbreviatedName}`;
                 label.textContent = displayText;
-                label.title = displayText; // Full name on hover
+                label.title = `[${trace.queryCount}] ${trace.name}`; // Full name on hover
                 
                 legendItem.appendChild(colorBox);
                 legendItem.appendChild(label);
@@ -9724,14 +9846,14 @@ size: 12
                 allCollections.forEach((collection, idx) => {
                     if (visibleCollections.includes(collection)) {
                         yTickVals.push(idx);
-                        yTickText.push(collection.length > 20 ? collection.substring(0, 20) + '...' : collection);
+                        yTickText.push(abbreviateCollectionName(collection, 25));
                     }
                 });
                 
                 // Update layout with filtered Y-axis
                 Plotly.relayout(fullscreenChartDiv, {
                     'scene.yaxis.tickvals': yTickVals.length > 0 ? yTickVals : allCollections.map((_, idx) => idx),
-                    'scene.yaxis.ticktext': yTickText.length > 0 ? yTickText : allCollections.map(c => c.length > 20 ? c.substring(0, 20) + '...' : c)
+                    'scene.yaxis.ticktext': yTickText.length > 0 ? yTickText : allCollections.map(c => abbreviateCollectionName(c, 25))
                 });
             }
 
@@ -9755,6 +9877,20 @@ size: 12
                 });
                 Plotly.restyle(fullscreenChartDiv, { visible: false }, traces.map((_, i) => i));
                 updateYAxis();
+            });
+
+            // Log Scale checkbox functionality
+            logScaleCheckbox.addEventListener('change', (e) => {
+                const useLogScale = e.target.checked;
+                
+                // Update all traces with new bubble sizes
+                traces.forEach((trace, index) => {
+                    const bubbleData = calculateBubbleSizes(trace.originalSizes, useLogScale);
+                    Plotly.restyle(fullscreenChartDiv, {
+                        'marker.size': [bubbleData.sizes],
+                        'marker.sizeref': bubbleData.sizeref
+                    }, index);
+                });
             });
 
             // Close on ESC key
