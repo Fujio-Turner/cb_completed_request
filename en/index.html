@@ -14932,7 +14932,7 @@ function generateElapsedTimeChart(requests) {
                     detectedPatterns.push('WITH');
                 }
                 if (upperStatement.includes(" LET ")) detectedPatterns.push('LET');
-                if (upperStatement.includes("COUNT(")) detectedPatterns.push('COUNT');
+                if (upperStatement.includes(" COUNT(")) detectedPatterns.push('COUNT');
                 if (upperStatement.includes("SELECT *") || upperStatement.includes("SELECT  *")) {
                     detectedPatterns.push('SELECT *');
                 }

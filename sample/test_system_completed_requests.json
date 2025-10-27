@@ -11958,5 +11958,56 @@
       "~qualifier": "threshold"
     },
     "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-08-14T15:30:45.123Z\",\"#stats\":{\"#phaseSwitches\":6,\"execTime\":\"1.234µs\",\"servTime\":\"8.765µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:users.premium.members\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":3,\"execTime\":\"2.345µs\"},\"~children\":[{\"#operator\":\"Order\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"#phaseSwitches\":15,\"execTime\":\"15.234ms\"},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":40,\"#itemsOut\":40,\"#phaseSwitches\":35,\"execTime\":\"245.789ms\",\"kernTime\":\"220.5ms\",\"servTime\":\"195.2ms\"},\"index\":\"idx_premium_tier\",\"keyspace\":\"members\",\"namespace\":\"default\",\"scope\":\"premium\",\"bucket\":\"users\",\"spans\":[{\"range\":[{\"high\":\"\\\"premium\\\"\",\"inclusion\":3,\"low\":\"\\\"premium\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":40,\"#itemsOut\":40,\"#phaseSwitches\":25,\"execTime\":\"456.123ms\",\"kernTime\":\"430.8ms\",\"servTime\":\"405.6ms\"},\"keyspace\":\"members\",\"namespace\":\"default\",\"scope\":\"premium\",\"bucket\":\"users\"},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":40,\"#itemsOut\":25,\"#phaseSwitches\":20,\"execTime\":\"89.234ms\",\"kernTime\":\"82.1ms\"},\"condition\":\"(((`u`.`totalPurchases`) > 10))\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"#phaseSwitches\":15,\"execTime\":\"45.678ms\",\"kernTime\":\"41.2ms\"},\"result_terms\":[{\"expr\":\"(`u`.`userId`)\"},{\"expr\":\"(`u`.`name`)\"},{\"expr\":\"(`u`.`tier`)\"},{\"expr\":\"(`u`.`totalPurchases`)\"}]}]}},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":25,\"#itemsOut\":25,\"#phaseSwitches\":8,\"execTime\":\"34.567ms\"},\"serializable\":true}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "array-count-test-issue-197",
+      "cpuTime": "45.123ms",
+      "elapsedTime": "0.523456s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 120,
+        "fetch": 120
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "5.234µs",
+        "instantiate": "3.456µs",
+        "parse": "12.345ms",
+        "plan": "8.901ms",
+        "plan.index.metadata": "6.789µs",
+        "plan.keyspace.metadata": "4.567µs",
+        "indexScan": "45.678ms",
+        "fetch": "234.567ms",
+        "project": "123.456ms",
+        "run": "456.789ms",
+        "stream": "23.456ms"
+      },
+      "remoteAddr": "127.0.0.1:12345",
+      "requestId": "array-count-test-issue-197",
+      "requestTime": "2025-10-27T10:30:00.000Z",
+      "resultCount": 120,
+      "resultSize": 15360,
+      "scanConsistency": "unbounded",
+      "serviceTime": "0.512345s",
+      "state": "completed",
+      "statement": "SELECT c.country, c.customerId, ARRAY_COUNT(c.orderHistory) as totalOrders, COUNT(*) as recordCount FROM `customers` c WHERE c.country IN ['USA', 'Canada', 'Mexico'] GROUP BY c.country, c.customerId HAVING ARRAY_COUNT(c.orderHistory) > 10",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 2048,
+      "userAgent": "test-agent/1.0.0",
+      "users": "local:test_user",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-10-27T10:30:00.000Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"1.234µs\",\"servTime\":\"5.678µs\"},\"privileges\":{\"List\":[{\"Target\":\"default:customers\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"2.345µs\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":120,\"#itemsOut\":120,\"#phaseSwitches\":240,\"execTime\":\"45.678ms\",\"kernTime\":\"42.3ms\",\"servTime\":\"38.9ms\"},\"index\":\"idx_customers_country\",\"keyspace\":\"customers\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"Mexico\\\"\",\"inclusion\":3,\"low\":\"\\\"USA\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":120,\"#itemsOut\":120,\"#phaseSwitches\":240,\"execTime\":\"234.567ms\",\"kernTime\":\"220.1ms\",\"servTime\":\"210.5ms\"},\"keyspace\":\"customers\",\"namespace\":\"default\"},{\"#operator\":\"InitialGroup\",\"#stats\":{\"#itemsIn\":120,\"#itemsOut\":120,\"#phaseSwitches\":240,\"execTime\":\"89.234ms\",\"kernTime\":\"82.1ms\"},\"aggregates\":[\"array_count((`c`.`orderHistory`))\",\"count(*)\"],\"group_keys\":[\"(`c`.`country`)\",\"(`c`.`customerId`)\"]},{\"#operator\":\"Filter\",\"#stats\":{\"#itemsIn\":120,\"#itemsOut\":120,\"#phaseSwitches\":240,\"execTime\":\"12.345ms\",\"kernTime\":\"11.2ms\"},\"condition\":\"((array_count((`c`.`orderHistory`))) > 10)\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":120,\"#itemsOut\":120,\"#phaseSwitches\":240,\"execTime\":\"23.456ms\",\"kernTime\":\"21.3ms\"},\"result_terms\":[{\"expr\":\"(`c`.`country`)\"},{\"expr\":\"(`c`.`customerId`)\"},{\"as\":\"totalOrders\",\"expr\":\"array_count((`c`.`orderHistory`))\"},{\"as\":\"recordCount\",\"expr\":\"count(*)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":120,\"#itemsOut\":120,\"#phaseSwitches\":121,\"execTime\":\"5.678ms\"},\"serializable\":true}]}}"
   }
 ]
