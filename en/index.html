@@ -945,7 +945,7 @@ if (window.TEXT_CONSTANTS) {
             <!-- 3D Pattern-Collection Surface (Dev Feature) -->
             <div id="dev-pattern-collection-surface-container" class="pattern-analysis-grid with-margin-top-20" style="display: none;">
                 <div class="chart-container">
-                    <h3 class="chart-title fixed-height">Query Patterns by Collection (3D Surface) - (Dev)</h3>
+                    <h3 class="chart-title fixed-height">Query Patterns by Collection (3D Bar) - (Dev)</h3>
                     <div style="height: 600px; position: relative;">
                         <div class="chart-expand-btn" title="Expand chart" onclick="expand3DSurfaceChart()" style="position: absolute; top: 10px; right: 10px; z-index: 100;">⛶</div>
                         <div id="pattern-collection-surface-chart"></div>
@@ -14975,9 +14975,12 @@ function generateElapsedTimeChart(requests) {
                 return;
             }
 
-            // Build Z-matrix (patterns x collections) with LOG SCALE by default
-            const zDataRaw = patterns.map(pattern => 
-                collections.map(collection => collectionPatternCounts[collection][pattern] || 0)
+            // Keep collection order as-is (least queries in front, most in back)
+            // collections is already sorted ascending by query count
+
+            // Build Z-matrix (collections x patterns)
+            const zDataRaw = collections.map(collection => 
+                patterns.map(pattern => collectionPatternCounts[collection][pattern] || 0)
             );
             
             // Apply log scale to Z-data: log10(count + 1)
@@ -14990,56 +14993,73 @@ function generateElapsedTimeChart(requests) {
             window.surfaceCollections = collections;
             window.surfacePatterns = patterns;
 
-            // Create surface plot
-            const trace = {
-                type: 'surface',
-                x: collections.map((_, idx) => idx), // Collection indices
-                y: patterns.map((_, idx) => idx), // Pattern indices  
-                z: zData,
-                colorscale: [
-                    [0, 'rgb(5,10,172)'],      // Dark blue (low)
-                    [0.25, 'rgb(106,137,247)'], // Light blue
-                    [0.5, 'rgb(190,190,190)'],  // Gray
-                    [0.75, 'rgb(255,185,0)'],   // Orange
-                    [1, 'rgb(220,20,60)']       // Red (high)
-                ],
-                hovertemplate: '<b>%{text}</b><br>Log Count: %{z:.2f}<br>Actual Count: %{customdata}<extra></extra>',
-                text: patterns.map((pattern, pIdx) =>
-                    collections.map((collection, cIdx) => 
-                        `${pattern}<br>${abbreviateCollectionName(collection, 30)}`
-                    )
-                ),
-                customdata: zDataRaw, // Store raw counts for hover
-                contours: {
-                    z: {
-                        show: true,
-                        usecolormap: true,
-                        highlightcolor: "limegreen",
-                        project: { z: true }
+            // Create 3D bars using mesh3d (cuboids)
+            const traces = [];
+            const barWidth = 0.4;
+            const barDepth = 0.4;
+
+            collections.forEach((collection, cIdx) => {
+                patterns.forEach((pattern, pIdx) => {
+                    const count = zDataRaw[cIdx][pIdx];
+                    const logCount = zData[cIdx][pIdx];
+                    
+                    if (count > 0) {
+                        // Color based on count intensity
+                        const maxCount = Math.max(...zDataRaw.flat());
+                        const intensity = count / maxCount;
+                        let color;
+                        if (intensity < 0.2) color = 'rgb(5,10,172)';
+                        else if (intensity < 0.4) color = 'rgb(106,137,247)';
+                        else if (intensity < 0.6) color = 'rgb(190,190,190)';
+                        else if (intensity < 0.8) color = 'rgb(255,185,0)';
+                        else color = 'rgb(220,20,60)';
+                        
+                        // Create cuboid vertices for a bar at (pIdx, cIdx) with height logCount
+                        const x0 = pIdx - barWidth/2;
+                        const x1 = pIdx + barWidth/2;
+                        const y0 = cIdx - barDepth/2;
+                        const y1 = cIdx + barDepth/2;
+                        const z0 = 0;
+                        const z1 = logCount;
+                        
+                        traces.push({
+                            type: 'mesh3d',
+                            x: [x0, x0, x1, x1, x0, x0, x1, x1],
+                            y: [y0, y1, y1, y0, y0, y1, y1, y0],
+                            z: [z0, z0, z0, z0, z1, z1, z1, z1],
+                            i: [7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
+                            j: [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
+                            k: [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
+                            color: color,
+                            opacity: 0.9,
+                            showlegend: false,
+                            hoverinfo: 'text',
+                            text: `${pattern}<br>${abbreviateCollectionName(collection, 30)}<br>Log Count: ${logCount.toFixed(2)}<br>Actual Count: ${count}`
+                        });
                     }
-                }
-            };
+                });
+            });
 
             const layout = {
-                title: 'Query Patterns by Collection (3D Surface - Log Scale) - (Dev)',
+                title: 'Query Patterns by Collection (3D Bar - Log Scale) - (Dev)',
                 autosize: true,
                 height: 600,
                 scene: {
                     xaxis: {
-                        title: 'Collection',
-                        tickvals: collections.map((_, idx) => idx).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0),
-                        ticktext: collections.map(c => abbreviateCollectionName(c, 15)).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0)
-                    },
-                    yaxis: {
                         title: 'Query Pattern',
                         tickvals: patterns.map((_, idx) => idx),
                         ticktext: patterns
+                    },
+                    yaxis: {
+                        title: 'Collection',
+                        tickvals: collections.map((_, idx) => idx).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0),
+                        ticktext: collections.map(c => abbreviateCollectionName(c, 15)).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0)
                     },
                     zaxis: {
                         title: 'Usage Count (log₁₀)'
                     },
                     camera: {
-                        eye: { x: -1.8, y: -1.8, z: 1.2 }
+                        eye: { x: 1.5, y: -2.2, z: 0.9 }
                     }
                 },
                 margin: {
@@ -15056,12 +15076,26 @@ function generateElapsedTimeChart(requests) {
                 displaylogo: false
             };
 
-            Plotly.newPlot('pattern-collection-surface-chart', [trace], layout, config);
-            
-            Logger.info(`✅ 3D Pattern-Collection Surface created: ${collections.length} collections x ${patterns.length} patterns`);
+            try {
+                Plotly.newPlot('pattern-collection-surface-chart', traces, layout, config);
+                
+                // Verify totals match the bar chart
+                const patternTotals = {};
+                patterns.forEach(p => patternTotals[p] = 0);
+                collections.forEach((collection, cIdx) => {
+                    patterns.forEach((pattern, pIdx) => {
+                        patternTotals[pattern] += zDataRaw[cIdx][pIdx];
+                    });
+                });
+                Logger.info(`✅ 3D Pattern-Collection Bar created: ${collections.length} collections x ${patterns.length} patterns (${traces.length} bars)`);
+                Logger.debug('Pattern totals for verification:', patternTotals);
+            } catch (error) {
+                Logger.error('Failed to create 3D Pattern-Collection chart:', error);
+                chartDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">Too many data points for 3D rendering. Try filtering to fewer collections.</div>';
             }
+        }
 
-            // Expand 3D Surface Chart to fullscreen
+        // Expand 3D Surface Chart to fullscreen
         function expand3DSurfaceChart() {
             const chartDiv = document.getElementById('pattern-collection-surface-chart');
             if (!chartDiv) return;
@@ -15099,6 +15133,41 @@ function generateElapsedTimeChart(requests) {
             const legendControls = document.createElement('div');
             legendControls.style.cssText = 'position: absolute; top: 50px; right: 20px; width: 400px; background: white; border: 1px solid #444; border-radius: 4px; padding: 10px; max-height: calc(100% - 60px); overflow-y: auto;';
             
+            // Create Show All / Hide All buttons
+            const controlButtons = document.createElement('div');
+            controlButtons.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px;';
+            
+            const showAllBtn = document.createElement('button');
+            showAllBtn.innerHTML = 'Show All';
+            showAllBtn.style.cssText = 'flex: 1; padding: 8px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;';
+            
+            const hideAllBtn = document.createElement('button');
+            hideAllBtn.innerHTML = 'Hide All';
+            hideAllBtn.style.cssText = 'flex: 1; padding: 8px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;';
+            
+            controlButtons.appendChild(showAllBtn);
+            controlButtons.appendChild(hideAllBtn);
+            legendControls.appendChild(controlButtons);
+
+            // Create view mode toggle
+            const viewModeContainer = document.createElement('div');
+            viewModeContainer.style.cssText = 'margin-bottom: 10px; padding: 8px; background: #e3f2fd; border-radius: 4px; border: 1px solid #2196F3;';
+            
+            const viewModeCheckbox = document.createElement('input');
+            viewModeCheckbox.type = 'checkbox';
+            viewModeCheckbox.id = 'view-mode-checkbox';
+            viewModeCheckbox.checked = false; // Default to by-collection view
+            viewModeCheckbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+            
+            const viewModeLabel = document.createElement('label');
+            viewModeLabel.htmlFor = 'view-mode-checkbox';
+            viewModeLabel.textContent = 'Total Aggregate View';
+            viewModeLabel.style.cssText = 'cursor: pointer; font-size: 12px; font-weight: bold;';
+            
+            viewModeContainer.appendChild(viewModeCheckbox);
+            viewModeContainer.appendChild(viewModeLabel);
+            legendControls.appendChild(viewModeContainer);
+
             // Create log scale toggle
             const logScaleContainer = document.createElement('div');
             logScaleContainer.style.cssText = 'margin-bottom: 10px; padding: 8px; background: #f5f5f5; border-radius: 4px;';
@@ -15120,7 +15189,7 @@ function generateElapsedTimeChart(requests) {
 
             // Create collection legend title
             const legendTitle = document.createElement('div');
-            legendTitle.textContent = 'Collections';
+            legendTitle.textContent = 'Collections (Click to Filter)';
             legendTitle.style.cssText = 'font-weight: bold; margin-bottom: 10px; font-size: 14px; border-bottom: 2px solid #444; padding-bottom: 5px;';
             legendControls.appendChild(legendTitle);
 
@@ -15137,50 +15206,212 @@ function generateElapsedTimeChart(requests) {
             document.body.style.overflow = 'hidden';
 
             // Calculate total pattern usage per collection
+            // Note: zDataRaw is now [collections][patterns], not [patterns][collections]
             const collectionTotals = collections.map((collection, idx) => {
                 let total = 0;
                 patterns.forEach((pattern, pIdx) => {
-                    total += zDataRaw[pIdx][idx];
+                    total += zDataRaw[idx][pIdx]; // Row = collection, Col = pattern
                 });
                 return { collection, total, index: idx };
-            }).sort((a, b) => b.total - a.total); // Sort descending for legend
+            })
+            .filter(({ total }) => total > 0) // Remove collections with zero counts
+            .sort((a, b) => b.total - a.total); // Sort descending for legend
 
-            // Build collection legend
+            // Track visible collections (all visible by default)
+            const visibleCollections = new Set(collectionTotals.map(({ index }) => index));
+
+            // Build collection legend with clickable items
             collectionTotals.forEach(({ collection, total, index }) => {
                 const legendItem = document.createElement('div');
-                legendItem.style.cssText = 'padding: 5px; margin-bottom: 2px; font-size: 12px; border-radius: 3px; background: #f9f9f9;';
+                legendItem.style.cssText = 'padding: 5px; margin-bottom: 2px; font-size: 12px; border-radius: 3px; background: #f9f9f9; cursor: pointer;';
+                legendItem.dataset.collectionIndex = index;
+                legendItem.dataset.visible = 'true';
                 
                 const abbreviatedName = abbreviateCollectionName(collection, 30);
                 legendItem.textContent = `[${total}] ${abbreviatedName}`;
                 legendItem.title = `[${total}] ${collection}`;
                 
+                // Click to toggle visibility
+                legendItem.addEventListener('click', () => {
+                    const isVisible = legendItem.dataset.visible === 'true';
+                    legendItem.dataset.visible = isVisible ? 'false' : 'true';
+                    legendItem.style.opacity = isVisible ? '0.3' : '1';
+                    
+                    if (isVisible) {
+                        visibleCollections.delete(index);
+                    } else {
+                        visibleCollections.add(index);
+                    }
+                    
+                    updateSurfaceData();
+                });
+                
                 legendItems.appendChild(legendItem);
             });
+
+            // Function to update bar chart data based on visible collections and view mode
+            function updateSurfaceData() {
+                const useLogScale = logScaleCheckbox.checked;
+                const isAggregateView = viewModeCheckbox.checked;
+                
+                const updatedTraces = [];
+                
+                if (isAggregateView) {
+                    // Total Aggregate View: One bar per pattern (sum across all collections)
+                    patterns.forEach((pattern, pIdx) => {
+                        let totalCount = 0;
+                        collections.forEach((collection, cIdx) => {
+                            if (visibleCollections.has(cIdx)) {
+                                totalCount += zDataRaw[cIdx][pIdx];
+                            }
+                        });
+                        
+                        if (totalCount > 0) {
+                            const logCount = useLogScale ? Math.log10(totalCount + 1) : totalCount;
+                            
+                            const maxCount = Math.max(...zDataRaw.flat());
+                            const intensity = totalCount / maxCount;
+                            let color;
+                            if (intensity < 0.2) color = 'rgb(5,10,172)';
+                            else if (intensity < 0.4) color = 'rgb(106,137,247)';
+                            else if (intensity < 0.6) color = 'rgb(190,190,190)';
+                            else if (intensity < 0.8) color = 'rgb(255,185,0)';
+                            else color = 'rgb(220,20,60)';
+                            
+                            // Create single bar at (pIdx, 0) - no Y variation
+                            const x0 = pIdx - barWidth/2;
+                            const x1 = pIdx + barWidth/2;
+                            const y0 = -barDepth/2;
+                            const y1 = barDepth/2;
+                            const z0 = 0;
+                            const z1 = logCount;
+                            
+                            updatedTraces.push({
+                                type: 'mesh3d',
+                                x: [x0, x0, x1, x1, x0, x0, x1, x1],
+                                y: [y0, y1, y1, y0, y0, y1, y1, y0],
+                                z: [z0, z0, z0, z0, z1, z1, z1, z1],
+                                i: [7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
+                                j: [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
+                                k: [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
+                                color: color,
+                                opacity: 0.9,
+                                showlegend: false,
+                                hoverinfo: 'text',
+                                text: `${pattern}<br>Total Count: ${totalCount}<br>` +
+                                    (useLogScale ? `Log Count: ${logCount.toFixed(2)}` : '')
+                            });
+                        }
+                    });
+                } else {
+                    // By Collection View: Bars for each pattern-collection combination
+                    const filteredCollections = collections.filter((_, idx) => visibleCollections.has(idx));
+                    const collectionMapping = new Map();
+                    let newIdx = 0;
+                    collections.forEach((col, oldIdx) => {
+                        if (visibleCollections.has(oldIdx)) {
+                            collectionMapping.set(oldIdx, newIdx++);
+                        }
+                    });
+
+                    collections.forEach((collection, cIdx) => {
+                        if (!visibleCollections.has(cIdx)) return;
+                        
+                        patterns.forEach((pattern, pIdx) => {
+                            const count = zDataRaw[cIdx][pIdx];
+                            if (count > 0) {
+                                const logCount = useLogScale ? Math.log10(count + 1) : count;
+                                
+                                const maxCount = Math.max(...zDataRaw.flat());
+                                const intensity = count / maxCount;
+                                let color;
+                                if (intensity < 0.2) color = 'rgb(5,10,172)';
+                                else if (intensity < 0.4) color = 'rgb(106,137,247)';
+                                else if (intensity < 0.6) color = 'rgb(190,190,190)';
+                                else if (intensity < 0.8) color = 'rgb(255,185,0)';
+                                else color = 'rgb(220,20,60)';
+                                
+                                // Create cuboid for bar (remapped Y index)
+                                const mappedY = collectionMapping.get(cIdx);
+                                const x0 = pIdx - barWidth/2;
+                                const x1 = pIdx + barWidth/2;
+                                const y0 = mappedY - barDepth/2;
+                                const y1 = mappedY + barDepth/2;
+                                const z0 = 0;
+                                const z1 = logCount;
+                                
+                                updatedTraces.push({
+                                    type: 'mesh3d',
+                                    x: [x0, x0, x1, x1, x0, x0, x1, x1],
+                                    y: [y0, y1, y1, y0, y0, y1, y1, y0],
+                                    z: [z0, z0, z0, z0, z1, z1, z1, z1],
+                                    i: [7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
+                                    j: [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
+                                    k: [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
+                                    color: color,
+                                    opacity: 0.9,
+                                    showlegend: false,
+                                    hoverinfo: 'text',
+                                    text: `${pattern}<br>${abbreviateCollectionName(collection, 30)}<br>` +
+                                        (useLogScale ? `Log Count: ${logCount.toFixed(2)}<br>` : '') +
+                                        `Actual Count: ${count}`
+                                });
+                            }
+                        });
+                    });
+                }
+                
+                // Update the chart
+                const updatedLayout = {
+                    ...fullscreenLayout,
+                    title: isAggregateView 
+                        ? (useLogScale ? 'Query Patterns - Total Aggregate (3D Bar - Log Scale) - (Dev)' : 'Query Patterns - Total Aggregate (3D Bar - Linear) - (Dev)')
+                        : (useLogScale ? 'Query Patterns by Collection (3D Bar - Log Scale) - (Dev)' : 'Query Patterns by Collection (3D Bar - Linear) - (Dev)'),
+                    scene: {
+                        ...fullscreenLayout.scene,
+                        yaxis: isAggregateView ? {
+                            title: '',
+                            showticklabels: false,
+                            showgrid: false,
+                            zeroline: false
+                        } : {
+                            title: 'Collection',
+                            tickvals: collections.filter((_, idx) => visibleCollections.has(idx)).map((_, idx) => idx),
+                            ticktext: collections.filter((_, idx) => visibleCollections.has(idx)).map(c => abbreviateCollectionName(c, 15))
+                        },
+                        zaxis: {
+                            title: useLogScale ? 'Usage Count (log₁₀)' : 'Usage Count'
+                        }
+                    }
+                };
+                
+                Plotly.react(fullscreenChartDiv, updatedTraces, updatedLayout);
+            }
 
             // Apply log scale by default
             let currentZData = zDataRaw.map(row => row.map(count => Math.log10(count + 1)));
 
-            // Clone layout for fullscreen
+            //aud layout for fullscreen
             const fullscreenLayout = {
-                title: 'Query Patterns by Collection (3D Surface - Log Scale) - (Dev)',
+                title: 'Query Patterns by Collection (3D Bar - Log Scale) - (Dev)',
                 autosize: true,
                 height: window.innerHeight * 0.85,
                 scene: {
                     xaxis: {
-                        title: 'Collection',
-                        tickvals: collections.map((_, idx) => idx).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0),
-                        ticktext: collections.map(c => abbreviateCollectionName(c, 15)).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0)
-                    },
-                    yaxis: {
                         title: 'Query Pattern',
                         tickvals: patterns.map((_, idx) => idx),
                         ticktext: patterns
+                    },
+                    yaxis: {
+                        title: 'Collection',
+                        tickvals: collections.map((_, idx) => idx).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0),
+                        ticktext: collections.map(c => abbreviateCollectionName(c, 15)).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0)
                     },
                     zaxis: {
                         title: 'Usage Count (log₁₀)'
                     },
                     camera: {
-                        eye: { x: -1.8, y: -1.8, z: 1.2 }
+                        eye: { x: 1.5, y: -2.2, z: 0.9 }
                     }
                 },
                 margin: {
@@ -15191,62 +15422,87 @@ function generateElapsedTimeChart(requests) {
                 }
             };
 
-            const fullscreenTrace = {
-                type: 'surface',
-                x: collections.map((_, idx) => idx),
-                y: patterns.map((_, idx) => idx),
-                z: currentZData,
-                colorscale: [
-                    [0, 'rgb(5,10,172)'],
-                    [0.25, 'rgb(106,137,247)'],
-                    [0.5, 'rgb(190,190,190)'],
-                    [0.75, 'rgb(255,185,0)'],
-                    [1, 'rgb(220,20,60)']
-                ],
-                hovertemplate: '<b>%{text}</b><br>Log Count: %{z:.2f}<br>Actual Count: %{customdata}<extra></extra>',
-                text: patterns.map((pattern, pIdx) =>
-                    collections.map((collection, cIdx) => 
-                        `${pattern}<br>${abbreviateCollectionName(collection, 30)}`
-                    )
-                ),
-                customdata: zDataRaw,
-                contours: {
-                    z: {
-                        show: true,
-                        usecolormap: true,
-                        highlightcolor: "limegreen",
-                        project: { z: true }
-                    }
-                }
-            };
+            // Build initial 3D bars using mesh3d for fullscreen
+            const fullscreenTraces = [];
+            const barWidth = 0.4;
+            const barDepth = 0.4;
 
-            Plotly.newPlot(fullscreenChartDiv, [fullscreenTrace], fullscreenLayout, {
+            collections.forEach((collection, cIdx) => {
+                patterns.forEach((pattern, pIdx) => {
+                    const count = zDataRaw[cIdx][pIdx];
+                    const logCount = currentZData[cIdx][pIdx];
+                    
+                    if (count > 0) {
+                        const maxCount = Math.max(...zDataRaw.flat());
+                        const intensity = count / maxCount;
+                        let color;
+                        if (intensity < 0.2) color = 'rgb(5,10,172)';
+                        else if (intensity < 0.4) color = 'rgb(106,137,247)';
+                        else if (intensity < 0.6) color = 'rgb(190,190,190)';
+                        else if (intensity < 0.8) color = 'rgb(255,185,0)';
+                        else color = 'rgb(220,20,60)';
+                        
+                        // Create cuboid for bar
+                        const x0 = pIdx - barWidth/2;
+                        const x1 = pIdx + barWidth/2;
+                        const y0 = cIdx - barDepth/2;
+                        const y1 = cIdx + barDepth/2;
+                        const z0 = 0;
+                        const z1 = logCount;
+                        
+                        fullscreenTraces.push({
+                            type: 'mesh3d',
+                            x: [x0, x0, x1, x1, x0, x0, x1, x1],
+                            y: [y0, y1, y1, y0, y0, y1, y1, y0],
+                            z: [z0, z0, z0, z0, z1, z1, z1, z1],
+                            i: [7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
+                            j: [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
+                            k: [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
+                            color: color,
+                            opacity: 0.9,
+                            showlegend: false,
+                            hoverinfo: 'text',
+                            text: `${pattern}<br>${abbreviateCollectionName(collection, 30)}<br>Log Count: ${logCount.toFixed(2)}<br>Actual Count: ${count}`,
+                            collectionIndex: cIdx // Store for filtering
+                        });
+                    }
+                });
+            });
+
+            Plotly.newPlot(fullscreenChartDiv, fullscreenTraces, fullscreenLayout, {
                 responsive: true,
                 displayModeBar: true,
                 displaylogo: false
             });
 
+            // Show All button functionality
+            showAllBtn.addEventListener('click', () => {
+                legendItems.querySelectorAll('div[data-collection-index]').forEach(item => {
+                    item.dataset.visible = 'true';
+                    item.style.opacity = '1';
+                    visibleCollections.add(parseInt(item.dataset.collectionIndex));
+                });
+                updateSurfaceData();
+            });
+
+            // Hide All button functionality
+            hideAllBtn.addEventListener('click', () => {
+                legendItems.querySelectorAll('div[data-collection-index]').forEach(item => {
+                    item.dataset.visible = 'false';
+                    item.style.opacity = '0.3';
+                });
+                visibleCollections.clear();
+                updateSurfaceData();
+            });
+
+            // View mode toggle functionality
+            viewModeCheckbox.addEventListener('change', (e) => {
+                updateSurfaceData();
+            });
+
             // Log scale toggle functionality
             logScaleCheckbox.addEventListener('change', (e) => {
-                const useLogScale = e.target.checked;
-                
-                if (useLogScale) {
-                    currentZData = zDataRaw.map(row => row.map(count => Math.log10(count + 1)));
-                    fullscreenLayout.scene.zaxis.title = 'Usage Count (log₁₀)';
-                    fullscreenLayout.title = 'Query Patterns by Collection (3D Surface - Log Scale) - (Dev)';
-                } else {
-                    currentZData = zDataRaw;
-                    fullscreenLayout.scene.zaxis.title = 'Usage Count';
-                    fullscreenLayout.title = 'Query Patterns by Collection (3D Surface - Linear) - (Dev)';
-                }
-                
-                Plotly.react(fullscreenChartDiv, [{
-                    ...fullscreenTrace,
-                    z: currentZData,
-                    hovertemplate: useLogScale 
-                        ? '<b>%{text}</b><br>Log Count: %{z:.2f}<br>Actual Count: %{customdata}<extra></extra>'
-                        : '<b>%{text}</b><br>Count: %{z}<extra></extra>'
-                }], fullscreenLayout);
+                updateSurfaceData();
             });
 
             // Close on ESC key
