@@ -15004,15 +15004,20 @@ function generateElapsedTimeChart(requests) {
                     const logCount = zData[cIdx][pIdx];
                     
                     if (count > 0) {
-                        // Color based on count intensity
+                        // Color based on count intensity with gradient (purple→blue→cyan→green→yellow→orange→red)
                         const maxCount = Math.max(...zDataRaw.flat());
                         const intensity = count / maxCount;
                         let color;
-                        if (intensity < 0.2) color = 'rgb(5,10,172)';
-                        else if (intensity < 0.4) color = 'rgb(106,137,247)';
-                        else if (intensity < 0.6) color = 'rgb(190,190,190)';
-                        else if (intensity < 0.8) color = 'rgb(255,185,0)';
-                        else color = 'rgb(220,20,60)';
+                        if (intensity < 0.15) color = 'rgb(68,1,84)';       // Dark purple (viridis)
+                        else if (intensity < 0.25) color = 'rgb(59,82,139)';  // Blue-purple
+                        else if (intensity < 0.35) color = 'rgb(33,145,140)'; // Teal
+                        else if (intensity < 0.45) color = 'rgb(53,183,121)'; // Green-cyan
+                        else if (intensity < 0.55) color = 'rgb(109,205,89)'; // Green
+                        else if (intensity < 0.65) color = 'rgb(180,222,44)'; // Yellow-green
+                        else if (intensity < 0.75) color = 'rgb(253,231,37)'; // Yellow
+                        else if (intensity < 0.85) color = 'rgb(252,173,29)'; // Orange
+                        else if (intensity < 0.95) color = 'rgb(239,85,19)';  // Red-orange
+                        else color = 'rgb(190,30,45)'; // Dark red (highest)
                         
                         // Create cuboid vertices for a bar at (pIdx, cIdx) with height logCount
                         const x0 = pIdx - barWidth/2;
@@ -15031,7 +15036,15 @@ function generateElapsedTimeChart(requests) {
                             j: [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
                             k: [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
                             color: color,
-                            opacity: 0.9,
+                            opacity: 0.95,
+                            flatshading: false,
+                            lighting: {
+                                ambient: 0.5,
+                                diffuse: 0.8,
+                                specular: 0.2,
+                                roughness: 0.5,
+                                fresnel: 0.2
+                            },
                             showlegend: false,
                             hoverinfo: 'text',
                             text: `${pattern}<br>${abbreviateCollectionName(collection, 30)}<br>Log Count: ${logCount.toFixed(2)}<br>Actual Count: ${count}`
@@ -15048,15 +15061,27 @@ function generateElapsedTimeChart(requests) {
                     xaxis: {
                         title: 'Query Pattern',
                         tickvals: patterns.map((_, idx) => idx),
-                        ticktext: patterns
+                        ticktext: patterns,
+                        backgroundcolor: 'rgba(240, 240, 255, 0.8)',
+                        gridcolor: 'rgb(180, 180, 180)',
+                        showbackground: true,
+                        zerolinecolor: 'rgb(100, 100, 100)'
                     },
                     yaxis: {
                         title: 'Collection',
                         tickvals: collections.map((_, idx) => idx).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0),
-                        ticktext: collections.map(c => abbreviateCollectionName(c, 15)).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0)
+                        ticktext: collections.map(c => abbreviateCollectionName(c, 15)).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0),
+                        backgroundcolor: 'rgba(240, 255, 240, 0.8)',
+                        gridcolor: 'rgb(180, 180, 180)',
+                        showbackground: true,
+                        zerolinecolor: 'rgb(100, 100, 100)'
                     },
                     zaxis: {
-                        title: 'Usage Count (log₁₀)'
+                        title: 'Usage Count (log₁₀)',
+                        backgroundcolor: 'rgba(255, 240, 240, 0.8)',
+                        gridcolor: 'rgb(180, 180, 180)',
+                        showbackground: true,
+                        zerolinecolor: 'rgb(100, 100, 100)'
                     },
                     camera: {
                         eye: { x: 1.5, y: -2.2, z: 0.9 }
@@ -15272,11 +15297,16 @@ function generateElapsedTimeChart(requests) {
                             const maxCount = Math.max(...zDataRaw.flat());
                             const intensity = totalCount / maxCount;
                             let color;
-                            if (intensity < 0.2) color = 'rgb(5,10,172)';
-                            else if (intensity < 0.4) color = 'rgb(106,137,247)';
-                            else if (intensity < 0.6) color = 'rgb(190,190,190)';
-                            else if (intensity < 0.8) color = 'rgb(255,185,0)';
-                            else color = 'rgb(220,20,60)';
+                            if (intensity < 0.15) color = 'rgb(68,1,84)';
+                            else if (intensity < 0.25) color = 'rgb(59,82,139)';
+                            else if (intensity < 0.35) color = 'rgb(33,145,140)';
+                            else if (intensity < 0.45) color = 'rgb(53,183,121)';
+                            else if (intensity < 0.55) color = 'rgb(109,205,89)';
+                            else if (intensity < 0.65) color = 'rgb(180,222,44)';
+                            else if (intensity < 0.75) color = 'rgb(253,231,37)';
+                            else if (intensity < 0.85) color = 'rgb(252,173,29)';
+                            else if (intensity < 0.95) color = 'rgb(239,85,19)';
+                            else color = 'rgb(190,30,45)';
                             
                             // Create single bar at (pIdx, 0) - no Y variation
                             const x0 = pIdx - barWidth/2;
@@ -15325,11 +15355,16 @@ function generateElapsedTimeChart(requests) {
                                 const maxCount = Math.max(...zDataRaw.flat());
                                 const intensity = count / maxCount;
                                 let color;
-                                if (intensity < 0.2) color = 'rgb(5,10,172)';
-                                else if (intensity < 0.4) color = 'rgb(106,137,247)';
-                                else if (intensity < 0.6) color = 'rgb(190,190,190)';
-                                else if (intensity < 0.8) color = 'rgb(255,185,0)';
-                                else color = 'rgb(220,20,60)';
+                                if (intensity < 0.15) color = 'rgb(68,1,84)';
+                                else if (intensity < 0.25) color = 'rgb(59,82,139)';
+                                else if (intensity < 0.35) color = 'rgb(33,145,140)';
+                                else if (intensity < 0.45) color = 'rgb(53,183,121)';
+                                else if (intensity < 0.55) color = 'rgb(109,205,89)';
+                                else if (intensity < 0.65) color = 'rgb(180,222,44)';
+                                else if (intensity < 0.75) color = 'rgb(253,231,37)';
+                                else if (intensity < 0.85) color = 'rgb(252,173,29)';
+                                else if (intensity < 0.95) color = 'rgb(239,85,19)';
+                                else color = 'rgb(190,30,45)';
                                 
                                 // Create cuboid for bar (remapped Y index)
                                 const mappedY = collectionMapping.get(cIdx);
@@ -15400,15 +15435,27 @@ function generateElapsedTimeChart(requests) {
                     xaxis: {
                         title: 'Query Pattern',
                         tickvals: patterns.map((_, idx) => idx),
-                        ticktext: patterns
+                        ticktext: patterns,
+                        backgroundcolor: 'rgba(240, 240, 255, 0.8)',
+                        gridcolor: 'rgb(180, 180, 180)',
+                        showbackground: true,
+                        zerolinecolor: 'rgb(100, 100, 100)'
                     },
                     yaxis: {
                         title: 'Collection',
                         tickvals: collections.map((_, idx) => idx).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0),
-                        ticktext: collections.map(c => abbreviateCollectionName(c, 15)).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0)
+                        ticktext: collections.map(c => abbreviateCollectionName(c, 15)).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0),
+                        backgroundcolor: 'rgba(240, 255, 240, 0.8)',
+                        gridcolor: 'rgb(180, 180, 180)',
+                        showbackground: true,
+                        zerolinecolor: 'rgb(100, 100, 100)'
                     },
                     zaxis: {
-                        title: 'Usage Count (log₁₀)'
+                        title: 'Usage Count (log₁₀)',
+                        backgroundcolor: 'rgba(255, 240, 240, 0.8)',
+                        gridcolor: 'rgb(180, 180, 180)',
+                        showbackground: true,
+                        zerolinecolor: 'rgb(100, 100, 100)'
                     },
                     camera: {
                         eye: { x: 1.5, y: -2.2, z: 0.9 }
@@ -15436,11 +15483,16 @@ function generateElapsedTimeChart(requests) {
                         const maxCount = Math.max(...zDataRaw.flat());
                         const intensity = count / maxCount;
                         let color;
-                        if (intensity < 0.2) color = 'rgb(5,10,172)';
-                        else if (intensity < 0.4) color = 'rgb(106,137,247)';
-                        else if (intensity < 0.6) color = 'rgb(190,190,190)';
-                        else if (intensity < 0.8) color = 'rgb(255,185,0)';
-                        else color = 'rgb(220,20,60)';
+                        if (intensity < 0.15) color = 'rgb(68,1,84)';
+                        else if (intensity < 0.25) color = 'rgb(59,82,139)';
+                        else if (intensity < 0.35) color = 'rgb(33,145,140)';
+                        else if (intensity < 0.45) color = 'rgb(53,183,121)';
+                        else if (intensity < 0.55) color = 'rgb(109,205,89)';
+                        else if (intensity < 0.65) color = 'rgb(180,222,44)';
+                        else if (intensity < 0.75) color = 'rgb(253,231,37)';
+                        else if (intensity < 0.85) color = 'rgb(252,173,29)';
+                        else if (intensity < 0.95) color = 'rgb(239,85,19)';
+                        else color = 'rgb(190,30,45)';
                         
                         // Create cuboid for bar
                         const x0 = pIdx - barWidth/2;
