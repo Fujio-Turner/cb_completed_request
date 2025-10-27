@@ -42,6 +42,9 @@
     <!-- Include DOMPurify for security -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js" integrity="sha512-YlctBG9PGZIhh9keoqI3eZkQM9T8QUbiBi7qNYAO/TUEo8jqWX5pLp5+x1cKRQDRzJ/lyGyJ9WUVNIRduxIIFw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
+    <!-- Include Plotly.js for 3D charts -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+
     <!-- Include Panzoom, jQuery, and jQuery UI -->
     <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.3/dist/panzoom.min.js" integrity="sha256-EXkj2hNRjkwrQpvsP/7ePHObzow5rTByiCRLFIWCE/Y=" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -1813,14 +1816,18 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
 
-            <!-- Row 8: ExecTime vs Kernel & Blank Placeholder -->
+            <!-- Row 8: ExecTime vs Kernel & 3D Collection Timeline (dev only) -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-kernel" data-position="timeline-15">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="exec-vs-kernel-chart"></canvas>
                 </div>
-                <div class="flex-1-height-400"></div>
+                <!-- 3D Collection Timeline Chart (dev feature only) -->
+                <div id="dev-3d-collection-container" class="flex-1-height-400 chart-container" style="display: none;">
+                    <div class="chart-expand-btn" title="Expand chart" onclick="expand3DChart()">⛶</div>
+                    <div id="3d-collection-chart"></div>
+                </div>
             </div>
 
             <!-- Row 9: Parse Duration & Plan Duration -->
@@ -7985,6 +7992,15 @@ size: 12
             lazyCreateChart('exec-vs-elapsed-chart', 'Exec vs Elapsed', () => createExecVsElapsedChart(requests, grouping));
             lazyCreateChart('enhanced-operations-chart', 'Enhanced Operations', () => generateEnhancedOperationsChart(requests));
 
+            // Dev feature: 3D Collection Timeline
+            if (isDevMode()) {
+                const container = document.getElementById('dev-3d-collection-container');
+                if (container) {
+                    container.style.display = 'block';
+                    create3DCollectionTimelineChart(requests, grouping);
+                }
+            }
+
             // Initialize drag and drop after a brief delay to let first charts render
             setTimeout(() => setupChartDragAndDrop(), 100);
         }
@@ -9266,6 +9282,491 @@ size: 12
             
             // Generate custom HTML legend with sort dropdown
             renderCollectionLegend('queries');
+        }
+
+        // Create 3D Collection Timeline Chart (dev feature)
+        function create3DCollectionTimelineChart(requests, grouping) {
+            const container = document.getElementById("3d-collection-chart");
+            if (!container) return;
+
+            if (!requests || requests.length === 0) {
+                Logger.debug(TEXT_CONSTANTS.NO_DATA_AVAILABLE || "No data available");
+                return;
+            }
+
+            // Duration buckets and their numeric values for Z-axis (in seconds)
+            const durationBucketDefinitions = [
+                { label: "0-1s", min: 0, max: 1, value: 0 },
+                { label: "1-2s", min: 1, max: 2, value: 1 },
+                { label: "2-3s", min: 2, max: 3, value: 2 },
+                { label: "3-4s", min: 3, max: 4, value: 3 },
+                { label: "4-5s", min: 4, max: 5, value: 4 },
+                { label: "5-10s", min: 5, max: 10, value: 5 },
+                { label: "10-30s", min: 10, max: 30, value: 6 },
+                { label: "30-60s", min: 30, max: 60, value: 7 },
+                { label: "60-120s", min: 60, max: 120, value: 8 },
+                { label: "120-240s", min: 120, max: 240, value: 9 },
+                { label: "240-500s", min: 240, max: 500, value: 10 },
+                { label: "500-900s", min: 500, max: 900, value: 11 },
+                { label: "900s+", min: 900, max: Infinity, value: 12 }
+            ];
+
+            // Color palette for duration buckets (matching timeline charts)
+            const durationColors = [
+                'rgba(76, 175, 80, 0.7)',    // 0-1s: Green
+                'rgba(33, 150, 243, 0.7)',   // 1-2s: Blue
+                'rgba(255, 193, 7, 0.7)',    // 2-3s: Amber/Yellow
+                'rgba(255, 152, 0, 0.7)',    // 3-4s: Orange
+                'rgba(244, 67, 54, 0.7)',    // 4-5s: Red
+                'rgba(156, 39, 176, 0.7)',   // 5-10s: Purple
+                'rgba(96, 125, 139, 0.7)',   // 10-30s: Blue Grey
+                'rgba(0, 0, 0, 0.7)',        // 30-60s: Black
+                'rgba(121, 85, 72, 0.7)',    // 60-120s: Brown
+                'rgba(139, 0, 0, 0.7)',      // 120-240s: Dark Red
+                'rgba(75, 0, 130, 0.7)',     // 240-500s: Indigo
+                'rgba(0, 0, 0, 0.8)',        // 500-900s: Black
+                'rgba(0, 0, 0, 0.9)'         // 900s+: Black
+            ];
+
+            // Get duration bucket index from elapsed time in seconds
+            function getDurationBucketIndex(durationSeconds) {
+                if (durationSeconds < 1) return 0;
+                else if (durationSeconds < 2) return 1;
+                else if (durationSeconds < 3) return 2;
+                else if (durationSeconds < 4) return 3;
+                else if (durationSeconds < 5) return 4;
+                else if (durationSeconds < 10) return 5;
+                else if (durationSeconds < 30) return 6;
+                else if (durationSeconds < 60) return 7;
+                else if (durationSeconds < 120) return 8;
+                else if (durationSeconds < 240) return 9;
+                else if (durationSeconds < 500) return 10;
+                else if (durationSeconds < 900) return 11;
+                else return 12; // 900s+
+            }
+
+            // Get all timeline buckets
+            const timeBuckets = getTimelineBucketsFromRequests(requests, grouping);
+            const timeGroups = {};
+
+            // Initialize time buckets with collection -> duration bucket -> count
+            timeBuckets.forEach(ts => {
+                timeGroups[ts.toISOString()] = {};
+            });
+
+            // Group queries by collection, time bucket, and duration bucket
+            requests.forEach((request) => {
+                const sql = request.statement || request.preparedText || "";
+                const collections = extractCollectionsFromSQL(sql);
+                
+                const requestDate = getChartDate(request.requestTime);
+                const timeKey = roundTimestamp(requestDate, grouping, requests);
+                const key = timeKey.toISOString();
+
+                const elapsedMs = request.elapsedTime ? parseTime(request.elapsedTime) : 0;
+                const durationSeconds = elapsedMs / 1000;  // Convert ms to seconds
+                const durationBucketIdx = getDurationBucketIndex(durationSeconds);
+
+                collections.forEach(collection => {
+                    if (!timeGroups[key][collection]) {
+                        timeGroups[key][collection] = {};
+                    }
+                    if (!timeGroups[key][collection][durationBucketIdx]) {
+                        timeGroups[key][collection][durationBucketIdx] = 0;
+                    }
+                    timeGroups[key][collection][durationBucketIdx]++;
+                });
+            });
+
+            // Get all unique collections and count total queries per collection
+            const collectionQueryCounts = {};
+            Object.values(timeGroups).forEach(group => {
+                Object.entries(group).forEach(([collection, durationBuckets]) => {
+                    if (!collectionQueryCounts[collection]) {
+                        collectionQueryCounts[collection] = 0;
+                    }
+                    Object.values(durationBuckets).forEach(count => {
+                        collectionQueryCounts[collection] += count;
+                    });
+                });
+            });
+
+            // Sort collections by query count (ascending) - fewest queries in front, most in back
+            const allCollections = Object.keys(collectionQueryCounts).sort((a, b) => {
+                return collectionQueryCounts[a] - collectionQueryCounts[b];
+            });
+
+            // Prepare data for 3D scatter plot
+            const x = []; // Time bucket index (left to right)
+            const y = []; // Collection name (depth, on right side)
+            const z = []; // Duration bucket index (vertical up)
+            const text = []; // Hover text
+            const colors = [];
+            const sizes = []; // Query count
+
+            // Create a mapping of collection to index for y-axis (sorted by query count)
+            const collectionToIndex = {};
+            allCollections.forEach((collection, idx) => {
+                collectionToIndex[collection] = idx;
+            });
+
+            // Build data points
+            timeBuckets.forEach((ts, timeIndex) => {
+                const key = ts.toISOString();
+                Object.entries(timeGroups[key]).forEach(([collection, durationBuckets]) => {
+                    Object.entries(durationBuckets).forEach(([bucketIdx, count]) => {
+                        if (count > 0) {
+                            x.push(timeIndex);
+                            y.push(collectionToIndex[collection]);  // Collection on Y (depth/right)
+                            z.push(parseInt(bucketIdx));  // Duration on Z (vertical)
+                            
+                            const formattedTime = ts.toLocaleString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            });
+                            const bucketLabel = durationBucketDefinitions[parseInt(bucketIdx)].label;
+                            text.push(`${collection}<br>Time: ${formattedTime}<br>Duration: ${bucketLabel}<br>Queries: ${count}`);
+                            
+                            colors.push(durationColors[parseInt(bucketIdx)]);
+                            sizes.push(count);
+                        }
+                    });
+                });
+            });
+
+            // Create 3D scatter trace
+            const trace = {
+                x: x,
+                y: y,
+                z: z,
+                mode: 'markers',
+                marker: {
+                    size: sizes,
+                    sizemode: 'diameter',
+                    sizeref: Math.max(...sizes) / 30, // Scale bubbles appropriately
+                    color: colors,
+                    line: {
+                        color: 'rgba(255, 255, 255, 0.5)',
+                        width: 1
+                    }
+                },
+                text: text,
+                hoverinfo: 'text',
+                type: 'scatter3d'
+            };
+
+            const layout = {
+                title: '3D Collection Timeline (Query Distribution) - (Dev)',
+                autosize: true,
+                height: 400,
+                scene: {
+                    xaxis: {
+                        title: 'Request Time',
+                        tickvals: timeBuckets.map((_, idx) => idx).filter((_, idx) => idx % Math.ceil(timeBuckets.length / 10) === 0),
+                        ticktext: timeBuckets.map(ts => ts.toLocaleString('en-US', { month: 'short', day: 'numeric' })).filter((_, idx) => idx % Math.ceil(timeBuckets.length / 10) === 0)
+                    },
+                    yaxis: {
+                        title: 'Collection',
+                        tickvals: allCollections.map((_, idx) => idx),
+                        ticktext: allCollections.map(c => c.length > 20 ? c.substring(0, 20) + '...' : c)
+                    },
+                    zaxis: {
+                        title: 'Duration Range',
+                        tickvals: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                        ticktext: durationBucketDefinitions.map(b => b.label)
+                    },
+                    camera: {
+                        eye: { x: 1.5, y: -2.2, z: 1.2 },
+                        center: { x: 0, y: 0, z: 0 }
+                    }
+                },
+                margin: {
+                    l: 0,
+                    r: 0,
+                    b: 0,
+                    t: 40
+                }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false
+            };
+
+            Plotly.newPlot('3d-collection-chart', [trace], layout, config);
+            
+            Logger.info(`✅ 3D Collection Timeline created: ${x.length} data points`);
+        }
+
+        // Expand 3D Chart to fullscreen
+        function expand3DChart() {
+            const chartDiv = document.getElementById('3d-collection-chart');
+            if (!chartDiv) return;
+
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'chart-fullscreen-overlay active';
+            overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = 'width: 95%; height: 95%; background: white; border-radius: 8px; padding: 20px; position: relative;';
+
+            // Create close button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '✕';
+            closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; z-index: 10001;';
+            closeBtn.onclick = () => {
+                document.body.removeChild(overlay);
+                document.body.style.overflow = '';
+            };
+
+            // Create fullscreen chart container
+            const fullscreenChartDiv = document.createElement('div');
+            fullscreenChartDiv.id = '3d-collection-chart-fullscreen';
+            fullscreenChartDiv.style.cssText = 'width: calc(100% - 420px); height: 100%;';
+
+            // Create legend controls container
+            const legendControls = document.createElement('div');
+            legendControls.style.cssText = 'position: absolute; top: 50px; right: 20px; width: 400px; background: white; border: 1px solid #444; border-radius: 4px; padding: 10px; max-height: calc(100% - 60px); overflow-y: auto;';
+            
+            // Create Show All / Hide All buttons
+            const controlButtons = document.createElement('div');
+            controlButtons.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px;';
+            
+            const showAllBtn = document.createElement('button');
+            showAllBtn.innerHTML = 'Show All';
+            showAllBtn.style.cssText = 'flex: 1; padding: 8px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;';
+            
+            const hideAllBtn = document.createElement('button');
+            hideAllBtn.innerHTML = 'Hide All';
+            hideAllBtn.style.cssText = 'flex: 1; padding: 8px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;';
+            
+            controlButtons.appendChild(showAllBtn);
+            controlButtons.appendChild(hideAllBtn);
+            legendControls.appendChild(controlButtons);
+
+            // Create legend items container
+            const legendItems = document.createElement('div');
+            legendItems.id = 'legend-items-container';
+            legendControls.appendChild(legendItems);
+
+            modalContent.appendChild(closeBtn);
+            modalContent.appendChild(fullscreenChartDiv);
+            modalContent.appendChild(legendControls);
+            overlay.appendChild(modalContent);
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+
+            // Get original chart data and reorganize by collection for legend
+            const originalData = chartDiv.data;
+            const originalLayout = chartDiv.layout;
+
+            // Duration bucket definitions and colors (must match the main chart)
+            const durationBucketDefinitions = [
+                { label: "0-1s", min: 0, max: 1, value: 0 },
+                { label: "1-2s", min: 1, max: 2, value: 1 },
+                { label: "2-3s", min: 2, max: 3, value: 2 },
+                { label: "3-4s", min: 3, max: 4, value: 3 },
+                { label: "4-5s", min: 4, max: 5, value: 4 },
+                { label: "5-10s", min: 5, max: 10, value: 5 },
+                { label: "10-30s", min: 10, max: 30, value: 6 },
+                { label: "30-60s", min: 30, max: 60, value: 7 },
+                { label: "60-120s", min: 60, max: 120, value: 8 },
+                { label: "120-240s", min: 120, max: 240, value: 9 },
+                { label: "240-500s", min: 240, max: 500, value: 10 },
+                { label: "500-900s", min: 500, max: 900, value: 11 },
+                { label: "900s+", min: 900, max: Infinity, value: 12 }
+            ];
+
+            const durationColors = [
+                'rgba(76, 175, 80, 0.7)',
+                'rgba(33, 150, 243, 0.7)',
+                'rgba(255, 193, 7, 0.7)',
+                'rgba(255, 152, 0, 0.7)',
+                'rgba(244, 67, 54, 0.7)',
+                'rgba(156, 39, 176, 0.7)',
+                'rgba(96, 125, 139, 0.7)',
+                'rgba(0, 0, 0, 0.7)',
+                'rgba(121, 85, 72, 0.7)',
+                'rgba(139, 0, 0, 0.7)',
+                'rgba(75, 0, 130, 0.7)',
+                'rgba(0, 0, 0, 0.8)',
+                'rgba(0, 0, 0, 0.9)'
+            ];
+
+            // Group data points by collection for separate traces
+            const collectionData = {};
+            const allCollections = originalLayout.scene.yaxis.ticktext;
+            
+            allCollections.forEach(collection => {
+                collectionData[collection] = {
+                    x: [],
+                    y: [],
+                    z: [],
+                    text: [],
+                    colors: [],
+                    sizes: []
+                };
+            });
+
+            // Distribute data points to their respective collections
+            for (let i = 0; i < originalData[0].x.length; i++) {
+                const yIndex = originalData[0].y[i];
+                const collection = allCollections[yIndex];
+                
+                collectionData[collection].x.push(originalData[0].x[i]);
+                collectionData[collection].y.push(originalData[0].y[i]);
+                collectionData[collection].z.push(originalData[0].z[i]);
+                collectionData[collection].text.push(originalData[0].text[i]);
+                collectionData[collection].colors.push(originalData[0].marker.color[i]);
+                collectionData[collection].sizes.push(originalData[0].marker.size[i]);
+            }
+
+            // Create separate traces for each collection with query counts
+            const traces = Object.entries(collectionData).map(([collection, data]) => {
+                const totalQueries = data.sizes.reduce((sum, size) => sum + size, 0);
+                return {
+                    x: data.x,
+                    y: data.y,
+                    z: data.z,
+                    mode: 'markers',
+                    type: 'scatter3d',
+                    name: collection,
+                    queryCount: totalQueries, // Store for legend display
+                    text: data.text,
+                    hoverinfo: 'text',
+                    marker: {
+                        size: data.sizes,
+                        sizemode: 'diameter',
+                        sizeref: Math.max(...data.sizes) / 30,
+                        color: data.colors,
+                        line: {
+                            color: 'rgba(255, 255, 255, 0.5)',
+                            width: 1
+                        }
+                    }
+                };
+            });
+
+            // Clone and update layout for fullscreen without built-in legend
+            const fullscreenLayout = JSON.parse(JSON.stringify(originalLayout));
+            fullscreenLayout.height = window.innerHeight * 0.85;
+            fullscreenLayout.autosize = true;
+            fullscreenLayout.showlegend = false; // Use custom legend instead
+
+            // Recreate chart in fullscreen with separate traces
+            Plotly.newPlot(fullscreenChartDiv, traces, fullscreenLayout, {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false
+            });
+
+            // Create custom legend items
+            traces.forEach((trace, index) => {
+                const legendItem = document.createElement('div');
+                legendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px;';
+                legendItem.dataset.traceIndex = index;
+                legendItem.dataset.visible = 'true';
+                
+                // Color indicator
+                const colorBox = document.createElement('div');
+                colorBox.style.cssText = `width: 20px; height: 20px; background: ${trace.marker.color[0] || '#666'}; border: 1px solid #333; margin-right: 8px; border-radius: 3px; flex-shrink: 0;`;
+                
+                // Collection name with query count
+                const label = document.createElement('span');
+                label.style.cssText = 'font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+                const displayText = `[${trace.queryCount}] ${trace.name}`;
+                label.textContent = displayText;
+                label.title = displayText; // Full name on hover
+                
+                legendItem.appendChild(colorBox);
+                legendItem.appendChild(label);
+                legendItems.appendChild(legendItem);
+                
+                // Click to toggle visibility
+                legendItem.addEventListener('click', () => {
+                    const isVisible = legendItem.dataset.visible === 'true';
+                    legendItem.dataset.visible = isVisible ? 'false' : 'true';
+                    legendItem.style.opacity = isVisible ? '0.3' : '1';
+                    
+                    Plotly.restyle(fullscreenChartDiv, { visible: !isVisible }, index);
+                    
+                    // Update Y-axis to show only visible collections
+                    updateYAxis();
+                });
+            });
+
+            // Function to update Y-axis based on visible collections
+            function updateYAxis() {
+                const visibleIndices = [];
+                const visibleCollections = [];
+                
+                legendItems.querySelectorAll('div[data-trace-index]').forEach((item) => {
+                    const idx = parseInt(item.dataset.traceIndex);
+                    if (item.dataset.visible === 'true') {
+                        visibleIndices.push(idx);
+                        visibleCollections.push(traces[idx].name);
+                    }
+                });
+                
+                // Get Y-axis indices for visible collections
+                const yTickVals = [];
+                const yTickText = [];
+                allCollections.forEach((collection, idx) => {
+                    if (visibleCollections.includes(collection)) {
+                        yTickVals.push(idx);
+                        yTickText.push(collection.length > 20 ? collection.substring(0, 20) + '...' : collection);
+                    }
+                });
+                
+                // Update layout with filtered Y-axis
+                Plotly.relayout(fullscreenChartDiv, {
+                    'scene.yaxis.tickvals': yTickVals.length > 0 ? yTickVals : allCollections.map((_, idx) => idx),
+                    'scene.yaxis.ticktext': yTickText.length > 0 ? yTickText : allCollections.map(c => c.length > 20 ? c.substring(0, 20) + '...' : c)
+                });
+            }
+
+            // Show All button functionality
+            showAllBtn.addEventListener('click', () => {
+                const legendItemsList = legendItems.querySelectorAll('div[data-trace-index]');
+                legendItemsList.forEach((item, index) => {
+                    item.dataset.visible = 'true';
+                    item.style.opacity = '1';
+                });
+                Plotly.restyle(fullscreenChartDiv, { visible: true }, traces.map((_, i) => i));
+                updateYAxis();
+            });
+
+            // Hide All button functionality
+            hideAllBtn.addEventListener('click', () => {
+                const legendItemsList = legendItems.querySelectorAll('div[data-trace-index]');
+                legendItemsList.forEach((item, index) => {
+                    item.dataset.visible = 'false';
+                    item.style.opacity = '0.3';
+                });
+                Plotly.restyle(fullscreenChartDiv, { visible: false }, traces.map((_, i) => i));
+                updateYAxis();
+            });
+
+            // Close on ESC key
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    closeBtn.click();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    closeBtn.click();
+                }
+            });
         }
 
         // Render collection legend with specified sort order
