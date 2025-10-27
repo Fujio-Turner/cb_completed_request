@@ -942,6 +942,17 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
 
+            <!-- 3D Pattern-Collection Surface (Dev Feature) -->
+            <div id="dev-pattern-collection-surface-container" class="pattern-analysis-grid with-margin-top-20" style="display: none;">
+                <div class="chart-container">
+                    <h3 class="chart-title fixed-height">Query Patterns by Collection (3D Surface) - (Dev)</h3>
+                    <div style="height: 600px; position: relative;">
+                        <div class="chart-expand-btn" title="Expand chart" onclick="expand3DSurfaceChart()" style="position: absolute; top: 10px; right: 10px; z-index: 100;">⛶</div>
+                        <div id="pattern-collection-surface-chart"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Pie Charts Row -->
             <div class="grid-3-col gap-20 with-margin-top-20">
                 <!-- Statement Type Pie Chart -->
@@ -13733,6 +13744,25 @@ size: 12
             generateUserCountTable(requests);
             generateIndexCountTable(requests);
             updateInsights(requests);
+
+            // Dev feature: 3D Pattern-Collection Surface
+            if (isDevMode()) {
+                const container = document.getElementById('dev-pattern-collection-surface-container');
+                if (container) {
+                    container.style.display = 'block';
+                    // Clear existing chart before creating new one
+                    const chartDiv = document.getElementById('pattern-collection-surface-chart');
+                    if (chartDiv) {
+                        Plotly.purge(chartDiv);
+                    }
+                    generate3DPatternCollectionSurface(requests);
+                }
+            } else {
+                const container = document.getElementById('dev-pattern-collection-surface-container');
+                if (container) {
+                    container.style.display = 'none';
+                }
+            }
         }
 
         // Check if a query uses primary index by analyzing the plan (optimized with cache)
@@ -14847,7 +14877,395 @@ function generateElapsedTimeChart(requests) {
                 ],
             });
         }
- 
+
+        // Generate 3D Pattern-Collection Surface Chart (Dev Feature)
+        function generate3DPatternCollectionSurface(requests) {
+            const chartDiv = document.getElementById('pattern-collection-surface-chart');
+            if (!chartDiv) return;
+
+            if (!requests || requests.length === 0) {
+                Logger.debug(TEXT_CONSTANTS.NO_DATA_AVAILABLE || "No data available");
+                return;
+            }
+
+            // Define patterns to analyze (same as bar chart)
+            const patterns = [
+                'WITH', 'EXECUTE', 'SELECT *', 'COUNT', 'DISTINCT',
+                'USE INDEX', 'USE KEYS', 'LET',
+                'No WHERE',
+                'JOIN', 'NEST', 'UNNEST', 'SEARCH', 'ARRAY QUERY', 'LIKE', 'REGEX',
+                'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET', 'UNION'
+            ];
+
+            // Build pattern-collection matrix
+            const collectionPatternCounts = {}; // { collection: { pattern: count } }
+
+            requests.forEach((request) => {
+                const statement = request.statement || request.preparedText || "";
+                const upperStatement = statement.toUpperCase();
+                
+                // Extract collections from SQL
+                const collections = extractCollectionsFromSQL(statement);
+                
+                // Detect patterns
+                const detectedPatterns = [];
+                
+                // No WHERE
+                const stmtForFilter = (upperStatement.startsWith("EXECUTE") && request.preparedText)
+                    ? request.preparedText
+                    : statement;
+                if (!hasFilteringMechanism(stmtForFilter)) {
+                    detectedPatterns.push('No WHERE');
+                }
+                
+                // Check all patterns
+                if (upperStatement.includes(" GROUP BY ")) detectedPatterns.push('GROUP BY');
+                if (upperStatement.includes(" ORDER BY ")) detectedPatterns.push('ORDER BY');
+                if (upperStatement.includes("USE INDEX")) detectedPatterns.push('USE INDEX');
+                if (upperStatement.includes("USE KEYS")) detectedPatterns.push('USE KEYS');
+                if (upperStatement.includes(" JOIN ")) detectedPatterns.push('JOIN');
+                if (upperStatement.includes(" NEST ")) detectedPatterns.push('NEST');
+                if (upperStatement.includes(" UNNEST ")) detectedPatterns.push('UNNEST');
+                if (upperStatement.includes(" OFFSET ")) detectedPatterns.push('OFFSET');
+                if (upperStatement.includes(" SEARCH(")) detectedPatterns.push('SEARCH');
+                if ((upperStatement.startsWith("WITH ") || upperStatement.includes(" WITH ")) && !upperStatement.includes("`WITH`")) {
+                    detectedPatterns.push('WITH');
+                }
+                if (upperStatement.includes(" LET ")) detectedPatterns.push('LET');
+                if (upperStatement.includes("COUNT(")) detectedPatterns.push('COUNT');
+                if (upperStatement.includes("SELECT *") || upperStatement.includes("SELECT  *")) {
+                    detectedPatterns.push('SELECT *');
+                }
+                if (upperStatement.includes(" LIKE ")) detectedPatterns.push('LIKE');
+                if (/ANY\s+[a-zA-Z_]+\s+IN\s+/i.test(statement) || /EVERY\s+[a-zA-Z_]+\s+IN\s+/i.test(statement)) {
+                    detectedPatterns.push('ARRAY QUERY');
+                }
+                if (upperStatement.includes(" DISTINCT ")) detectedPatterns.push('DISTINCT');
+                if (upperStatement.includes("REGEXP_") || /REGEX\s*\(/i.test(statement)) {
+                    detectedPatterns.push('REGEX');
+                }
+                if (upperStatement.startsWith("EXECUTE")) detectedPatterns.push('EXECUTE');
+                if (upperStatement.includes(" LIMIT ")) detectedPatterns.push('LIMIT');
+                if (upperStatement.includes(" UNION ")) detectedPatterns.push('UNION');
+
+                // Count patterns per collection
+                collections.forEach(collection => {
+                    if (!collectionPatternCounts[collection]) {
+                        collectionPatternCounts[collection] = {};
+                        patterns.forEach(p => collectionPatternCounts[collection][p] = 0);
+                    }
+                    
+                    detectedPatterns.forEach(pattern => {
+                        if (patterns.includes(pattern)) {
+                            collectionPatternCounts[collection][pattern]++;
+                        }
+                    });
+                });
+            });
+
+            // Get all unique collections sorted by total pattern count
+            const collections = Object.keys(collectionPatternCounts).sort((a, b) => {
+                const aTotal = Object.values(collectionPatternCounts[a]).reduce((sum, v) => sum + v, 0);
+                const bTotal = Object.values(collectionPatternCounts[b]).reduce((sum, v) => sum + v, 0);
+                return aTotal - bTotal; // Ascending
+            });
+
+            if (collections.length === 0) {
+                Logger.info('No collection data available for 3D surface plot');
+                return;
+            }
+
+            // Build Z-matrix (patterns x collections) with LOG SCALE by default
+            const zDataRaw = patterns.map(pattern => 
+                collections.map(collection => collectionPatternCounts[collection][pattern] || 0)
+            );
+            
+            // Apply log scale to Z-data: log10(count + 1)
+            const zData = zDataRaw.map(row => 
+                row.map(count => Math.log10(count + 1))
+            );
+
+            // Store raw data for potential toggling
+            window.surfaceZDataRaw = zDataRaw;
+            window.surfaceCollections = collections;
+            window.surfacePatterns = patterns;
+
+            // Create surface plot
+            const trace = {
+                type: 'surface',
+                x: collections.map((_, idx) => idx), // Collection indices
+                y: patterns.map((_, idx) => idx), // Pattern indices  
+                z: zData,
+                colorscale: [
+                    [0, 'rgb(5,10,172)'],      // Dark blue (low)
+                    [0.25, 'rgb(106,137,247)'], // Light blue
+                    [0.5, 'rgb(190,190,190)'],  // Gray
+                    [0.75, 'rgb(255,185,0)'],   // Orange
+                    [1, 'rgb(220,20,60)']       // Red (high)
+                ],
+                hovertemplate: '<b>%{text}</b><br>Log Count: %{z:.2f}<br>Actual Count: %{customdata}<extra></extra>',
+                text: patterns.map((pattern, pIdx) =>
+                    collections.map((collection, cIdx) => 
+                        `${pattern}<br>${abbreviateCollectionName(collection, 30)}`
+                    )
+                ),
+                customdata: zDataRaw, // Store raw counts for hover
+                contours: {
+                    z: {
+                        show: true,
+                        usecolormap: true,
+                        highlightcolor: "limegreen",
+                        project: { z: true }
+                    }
+                }
+            };
+
+            const layout = {
+                title: 'Query Patterns by Collection (3D Surface - Log Scale) - (Dev)',
+                autosize: true,
+                height: 600,
+                scene: {
+                    xaxis: {
+                        title: 'Collection',
+                        tickvals: collections.map((_, idx) => idx).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0),
+                        ticktext: collections.map(c => abbreviateCollectionName(c, 15)).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0)
+                    },
+                    yaxis: {
+                        title: 'Query Pattern',
+                        tickvals: patterns.map((_, idx) => idx),
+                        ticktext: patterns
+                    },
+                    zaxis: {
+                        title: 'Usage Count (log₁₀)'
+                    },
+                    camera: {
+                        eye: { x: -1.8, y: -1.8, z: 1.2 }
+                    }
+                },
+                margin: {
+                    l: 0,
+                    r: 0,
+                    b: 40,
+                    t: 40
+                }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false
+            };
+
+            Plotly.newPlot('pattern-collection-surface-chart', [trace], layout, config);
+            
+            Logger.info(`✅ 3D Pattern-Collection Surface created: ${collections.length} collections x ${patterns.length} patterns`);
+            }
+
+            // Expand 3D Surface Chart to fullscreen
+        function expand3DSurfaceChart() {
+            const chartDiv = document.getElementById('pattern-collection-surface-chart');
+            if (!chartDiv) return;
+
+            const collections = window.surfaceCollections;
+            const patterns = window.surfacePatterns;
+            const zDataRaw = window.surfaceZDataRaw;
+
+            if (!collections || !patterns || !zDataRaw) return;
+
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'chart-fullscreen-overlay active';
+            overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = 'width: 95%; height: 95%; background: white; border-radius: 8px; padding: 20px; position: relative;';
+
+            // Create close button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '✕';
+            closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; z-index: 10001;';
+            closeBtn.onclick = () => {
+                document.body.removeChild(overlay);
+                document.body.style.overflow = '';
+            };
+
+            // Create fullscreen chart container
+            const fullscreenChartDiv = document.createElement('div');
+            fullscreenChartDiv.id = 'pattern-collection-surface-fullscreen';
+            fullscreenChartDiv.style.cssText = 'width: calc(100% - 420px); height: 100%;';
+
+            // Create legend controls container
+            const legendControls = document.createElement('div');
+            legendControls.style.cssText = 'position: absolute; top: 50px; right: 20px; width: 400px; background: white; border: 1px solid #444; border-radius: 4px; padding: 10px; max-height: calc(100% - 60px); overflow-y: auto;';
+            
+            // Create log scale toggle
+            const logScaleContainer = document.createElement('div');
+            logScaleContainer.style.cssText = 'margin-bottom: 10px; padding: 8px; background: #f5f5f5; border-radius: 4px;';
+            
+            const logScaleCheckbox = document.createElement('input');
+            logScaleCheckbox.type = 'checkbox';
+            logScaleCheckbox.id = 'surface-log-scale-checkbox';
+            logScaleCheckbox.checked = true; // Default to log scale
+            logScaleCheckbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+            
+            const logScaleLabel = document.createElement('label');
+            logScaleLabel.htmlFor = 'surface-log-scale-checkbox';
+            logScaleLabel.textContent = 'Log Scale (Z-axis)';
+            logScaleLabel.style.cssText = 'cursor: pointer; font-size: 12px; font-weight: bold;';
+            
+            logScaleContainer.appendChild(logScaleCheckbox);
+            logScaleContainer.appendChild(logScaleLabel);
+            legendControls.appendChild(logScaleContainer);
+
+            // Create collection legend title
+            const legendTitle = document.createElement('div');
+            legendTitle.textContent = 'Collections';
+            legendTitle.style.cssText = 'font-weight: bold; margin-bottom: 10px; font-size: 14px; border-bottom: 2px solid #444; padding-bottom: 5px;';
+            legendControls.appendChild(legendTitle);
+
+            // Create legend items container
+            const legendItems = document.createElement('div');
+            legendItems.id = 'surface-legend-items-container';
+            legendControls.appendChild(legendItems);
+
+            modalContent.appendChild(closeBtn);
+            modalContent.appendChild(fullscreenChartDiv);
+            modalContent.appendChild(legendControls);
+            overlay.appendChild(modalContent);
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+
+            // Calculate total pattern usage per collection
+            const collectionTotals = collections.map((collection, idx) => {
+                let total = 0;
+                patterns.forEach((pattern, pIdx) => {
+                    total += zDataRaw[pIdx][idx];
+                });
+                return { collection, total, index: idx };
+            }).sort((a, b) => b.total - a.total); // Sort descending for legend
+
+            // Build collection legend
+            collectionTotals.forEach(({ collection, total, index }) => {
+                const legendItem = document.createElement('div');
+                legendItem.style.cssText = 'padding: 5px; margin-bottom: 2px; font-size: 12px; border-radius: 3px; background: #f9f9f9;';
+                
+                const abbreviatedName = abbreviateCollectionName(collection, 30);
+                legendItem.textContent = `[${total}] ${abbreviatedName}`;
+                legendItem.title = `[${total}] ${collection}`;
+                
+                legendItems.appendChild(legendItem);
+            });
+
+            // Apply log scale by default
+            let currentZData = zDataRaw.map(row => row.map(count => Math.log10(count + 1)));
+
+            // Clone layout for fullscreen
+            const fullscreenLayout = {
+                title: 'Query Patterns by Collection (3D Surface - Log Scale) - (Dev)',
+                autosize: true,
+                height: window.innerHeight * 0.85,
+                scene: {
+                    xaxis: {
+                        title: 'Collection',
+                        tickvals: collections.map((_, idx) => idx).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0),
+                        ticktext: collections.map(c => abbreviateCollectionName(c, 15)).filter((_, idx) => idx % Math.max(1, Math.ceil(collections.length / 10)) === 0)
+                    },
+                    yaxis: {
+                        title: 'Query Pattern',
+                        tickvals: patterns.map((_, idx) => idx),
+                        ticktext: patterns
+                    },
+                    zaxis: {
+                        title: 'Usage Count (log₁₀)'
+                    },
+                    camera: {
+                        eye: { x: -1.8, y: -1.8, z: 1.2 }
+                    }
+                },
+                margin: {
+                    l: 0,
+                    r: 0,
+                    b: 40,
+                    t: 40
+                }
+            };
+
+            const fullscreenTrace = {
+                type: 'surface',
+                x: collections.map((_, idx) => idx),
+                y: patterns.map((_, idx) => idx),
+                z: currentZData,
+                colorscale: [
+                    [0, 'rgb(5,10,172)'],
+                    [0.25, 'rgb(106,137,247)'],
+                    [0.5, 'rgb(190,190,190)'],
+                    [0.75, 'rgb(255,185,0)'],
+                    [1, 'rgb(220,20,60)']
+                ],
+                hovertemplate: '<b>%{text}</b><br>Log Count: %{z:.2f}<br>Actual Count: %{customdata}<extra></extra>',
+                text: patterns.map((pattern, pIdx) =>
+                    collections.map((collection, cIdx) => 
+                        `${pattern}<br>${abbreviateCollectionName(collection, 30)}`
+                    )
+                ),
+                customdata: zDataRaw,
+                contours: {
+                    z: {
+                        show: true,
+                        usecolormap: true,
+                        highlightcolor: "limegreen",
+                        project: { z: true }
+                    }
+                }
+            };
+
+            Plotly.newPlot(fullscreenChartDiv, [fullscreenTrace], fullscreenLayout, {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false
+            });
+
+            // Log scale toggle functionality
+            logScaleCheckbox.addEventListener('change', (e) => {
+                const useLogScale = e.target.checked;
+                
+                if (useLogScale) {
+                    currentZData = zDataRaw.map(row => row.map(count => Math.log10(count + 1)));
+                    fullscreenLayout.scene.zaxis.title = 'Usage Count (log₁₀)';
+                    fullscreenLayout.title = 'Query Patterns by Collection (3D Surface - Log Scale) - (Dev)';
+                } else {
+                    currentZData = zDataRaw;
+                    fullscreenLayout.scene.zaxis.title = 'Usage Count';
+                    fullscreenLayout.title = 'Query Patterns by Collection (3D Surface - Linear) - (Dev)';
+                }
+                
+                Plotly.react(fullscreenChartDiv, [{
+                    ...fullscreenTrace,
+                    z: currentZData,
+                    hovertemplate: useLogScale 
+                        ? '<b>%{text}</b><br>Log Count: %{z:.2f}<br>Actual Count: %{customdata}<extra></extra>'
+                        : '<b>%{text}</b><br>Count: %{z}<extra></extra>'
+                }], fullscreenLayout);
+            });
+
+            // Close on ESC key
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    closeBtn.click();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    closeBtn.click();
+                }
+            });
+        }
+  
         // Generate User Count Table
         // Helper function to get user list with counts (sorted by count descending)
         function getUserListWithCounts(requests) {
