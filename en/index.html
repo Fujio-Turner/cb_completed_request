@@ -943,7 +943,7 @@ if (window.TEXT_CONSTANTS) {
             </div>
 
             <!-- 3D Pattern-Collection Surface (Dev Feature) -->
-            <div id="dev-pattern-collection-surface-container" class="pattern-analysis-grid with-margin-top-20" style="display: none;">
+            <div id="dev-pattern-collection-surface-container" style="display: none;">
                 <div class="chart-container">
                     <h3 class="chart-title fixed-height">Query Patterns by Collection (3D Bar) - (Dev)</h3>
                     <div style="height: 600px; position: relative;">
@@ -13749,6 +13749,7 @@ size: 12
             if (isDevMode()) {
                 const container = document.getElementById('dev-pattern-collection-surface-container');
                 if (container) {
+                    container.className = 'pattern-analysis-grid with-margin-top-20';
                     container.style.display = 'block';
                     // Clear existing chart before creating new one
                     const chartDiv = document.getElementById('pattern-collection-surface-chart');
@@ -13760,6 +13761,7 @@ size: 12
             } else {
                 const container = document.getElementById('dev-pattern-collection-surface-container');
                 if (container) {
+                    container.className = '';
                     container.style.display = 'none';
                 }
             }
@@ -23817,6 +23819,20 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
 
         // Initialize essential UI on page load (Step 8)
         document.addEventListener('DOMContentLoaded', () => {
+            // Hide dev-only charts if not in dev mode
+            if (!isDevMode()) {
+                const devContainers = [
+                    'dev-3d-collection-container',
+                    'dev-pattern-collection-surface-container'
+                ];
+                devContainers.forEach(id => {
+                    const container = document.getElementById(id);
+                    if (container) {
+                        container.style.display = 'none';
+                    }
+                });
+            }
+            
             // Setup lazy Report Maker initialization
             $('#tabs').on('tabsactivate', function(event, ui) {
                 const tabId = ui.newPanel.attr('id');
