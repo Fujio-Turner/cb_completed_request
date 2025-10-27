@@ -7997,6 +7997,11 @@ size: 12
                 const container = document.getElementById('dev-3d-collection-container');
                 if (container) {
                     container.style.display = 'block';
+                    // Clear existing chart before creating new one
+                    const chartDiv = document.getElementById('3d-collection-chart');
+                    if (chartDiv) {
+                        Plotly.purge(chartDiv);
+                    }
                     create3DCollectionTimelineChart(requests, grouping);
                 }
             }
