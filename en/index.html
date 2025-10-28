@@ -941,6 +941,7 @@ if (window.TEXT_CONSTANTS) {
                 <div class="chart-container draggable-chart" data-chart-id="query-pattern" data-position="dashboard-3">
                     <h3 class="chart-title fixed-height">Query Pattern Features</h3>
                     <div class="height-350-relative">
+                        <button id="open-3d-pattern-chart-btn" style="position: absolute; top: -40px; left: 0px; width: 32px; height: 32px; background: #ff8c00; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; z-index: 100; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Open 3D Pattern-Collection Chart">3D</button>
                         <canvas id="query-pattern-chart"></canvas>
                     </div>
                 </div>
@@ -14904,6 +14905,27 @@ function generateElapsedTimeChart(requests) {
                     },
                 ],
             });
+
+            // Setup 3D button click handler
+            const btn3D = document.getElementById('open-3d-pattern-chart-btn');
+            if (btn3D) {
+                // Show button only if we have data
+                btn3D.style.display = requests && requests.length > 0 ? 'block' : 'none';
+                
+                // Remove old event listeners
+                const newBtn = btn3D.cloneNode(true);
+                btn3D.parentNode.replaceChild(newBtn, btn3D);
+                
+                // Add click handler
+                newBtn.addEventListener('click', function() {
+                    // Generate ECharts data if not already available
+                    if (!window.echartsData) {
+                        generateECharts3DBar(requests);
+                    }
+                    // Open fullscreen
+                    expandEChartsChart();
+                });
+            }
         }
 
         // Generate 3D Pattern-Collection Surface Chart (Dev Feature)
@@ -15744,6 +15766,15 @@ function generateElapsedTimeChart(requests) {
             myChart = echarts.init(chartDiv);
 
             const option = {
+                title: {
+                    text: 'Query Pattern By Collection',
+                    left: 'center',
+                    top: 10,
+                    textStyle: {
+                        fontSize: 16,
+                        fontWeight: 'bold'
+                    }
+                },
                 tooltip: {
                     formatter: function(params) {
                         const pIdx = params.value[0];
@@ -15793,9 +15824,9 @@ function generateElapsedTimeChart(requests) {
                     boxDepth: Math.min(200, collections.length * 5),
                     boxHeight: 100,
                     viewControl: {
-                        alpha: 25,
-                        beta: 30,
-                        distance: 250,
+                        alpha: 19.3,
+                        beta: 41.1,
+                        distance: 362.6,
                         minDistance: 100,
                         maxDistance: 500
                     },
@@ -15981,6 +16012,15 @@ function generateElapsedTimeChart(requests) {
                 }
 
                 const option = {
+                    title: {
+                        text: 'Query Pattern By Collection',
+                        left: 'center',
+                        top: 10,
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'bold'
+                        }
+                    },
                     tooltip: {
                         formatter: function(params) {
                             if (useAggregation) {
@@ -16021,9 +16061,9 @@ function generateElapsedTimeChart(requests) {
                         boxDepth: useAggregation ? 50 : Math.min(200, collections.length * 5),
                         boxHeight: 120,
                         viewControl: {
-                            alpha: 25,
-                            beta: 30,
-                            distance: 250,
+                            alpha: 19.3,
+                            beta: 41.1,
+                            distance: 362.6,
                             minDistance: 100,
                             maxDistance: 500
                         },
@@ -16057,7 +16097,8 @@ function generateElapsedTimeChart(requests) {
                     collection,
                     cIdx,
                     totalCount: Object.values(collectionPatternCounts[collection]).reduce((sum, v) => sum + v, 0)
-                }));
+                }))
+                .filter(item => item.totalCount > 0); // Only show collections with data
                 
                 // Sort by count descending (highest to lowest)
                 collectionsWithCounts.sort((a, b) => b.totalCount - a.totalCount);
@@ -16075,7 +16116,7 @@ function generateElapsedTimeChart(requests) {
                     checkbox.style.marginRight = '8px';
                     
                     const label = document.createElement('span');
-                    label.textContent = `${collection} (${totalCount})`;
+                    label.textContent = `(${totalCount}) ${collection}`;
                     label.style.flex = '1';
                     
                     item.appendChild(checkbox);
