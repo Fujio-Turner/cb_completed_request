@@ -1748,7 +1748,8 @@ if (window.TEXT_CONSTANTS) {
             <!-- Row 2: Duration Buckets & Query Types -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="duration-buckets" data-position="timeline-1">
-                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-expand-btn" title="Expand chart" style="left: 5px;">⛶</div>
+                    <button id="open-3d-timeline-chart-btn" style="position: absolute; top: 5px; left: 35px; width: 32px; height: 32px; background: #ff8c00; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; z-index: 100; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Open ECharts 3D Timeline">3D</button>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="duration-buckets-chart"></canvas>
                 </div>
@@ -1856,6 +1857,14 @@ if (window.TEXT_CONSTANTS) {
                 <div id="dev-3d-collection-container" class="flex-1-height-400 chart-container" style="display: none;">
                     <div class="chart-expand-btn" title="Expand chart" onclick="expand3DChart()">⛶</div>
                     <div id="3d-collection-chart"></div>
+                </div>
+            </div>
+
+            <!-- Row 8b: ECharts 3D Collection Timeline (dev feature only) -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div id="dev-echarts-3d-collection-container" class="flex-1-height-400 chart-container" style="display: none;">
+                    <div class="chart-expand-btn" title="Expand chart" onclick="expandECharts3DTimeline()">⛶</div>
+                    <div id="echarts-3d-collection-chart" style="width: 100%; height: 100%;"></div>
                 </div>
             </div>
 
@@ -8038,6 +8047,13 @@ size: 12
                     }
                     create3DCollectionTimelineChart(requests, grouping);
                 }
+                
+                // ECharts version
+                const echartsContainer = document.getElementById('dev-echarts-3d-collection-container');
+                if (echartsContainer) {
+                    echartsContainer.style.display = 'block';
+                    createECharts3DCollectionTimeline(requests, grouping);
+                }
             } else {
                 // Show placeholder and hide 3D chart when not in dev mode
                 const placeholder = document.getElementById('dev-3d-placeholder');
@@ -8814,6 +8830,27 @@ size: 12
 
             // Register chart for crosshair synchronization
             registerTimelineChart(window.durationBucketsChart, ctx);
+
+            // Setup 3D button click handler
+            const btn3D = document.getElementById('open-3d-timeline-chart-btn');
+            if (btn3D) {
+                // Show button only if we have data
+                btn3D.style.display = (requests && requests.length > 0) ? 'block' : 'none';
+                
+                // Remove old event listeners
+                const newBtn = btn3D.cloneNode(true);
+                btn3D.parentNode.replaceChild(newBtn, btn3D);
+                
+                // Add click handler
+                newBtn.addEventListener('click', function() {
+                    // Generate ECharts data if not already available
+                    if (!window.echartsTimelineData) {
+                        createECharts3DCollectionTimeline(requests, grouping);
+                    }
+                    // Open fullscreen
+                    expandECharts3DTimeline();
+                });
+            }
         }
 
         // Create Memory Usage Chart
@@ -9919,6 +9956,576 @@ size: 12
                     }, index);
                 });
             });
+
+            // Close on ESC key
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    closeBtn.click();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    closeBtn.click();
+                }
+            });
+        }
+
+        // Create ECharts 3D Collection Timeline Chart (dev feature)
+        function createECharts3DCollectionTimeline(requests, grouping) {
+            const chartDiv = document.getElementById("echarts-3d-collection-chart");
+            if (!chartDiv) return;
+
+            if (!requests || requests.length === 0) {
+                Logger.debug(TEXT_CONSTANTS.NO_DATA_AVAILABLE || "No data available");
+                return;
+            }
+
+            // Duration buckets and their numeric values for Z-axis (in seconds)
+            const durationBucketDefinitions = [
+                { label: "0-1s", min: 0, max: 1, value: 0 },
+                { label: "1-2s", min: 1, max: 2, value: 1 },
+                { label: "2-3s", min: 2, max: 3, value: 2 },
+                { label: "3-4s", min: 3, max: 4, value: 3 },
+                { label: "4-5s", min: 4, max: 5, value: 4 },
+                { label: "5-10s", min: 5, max: 10, value: 5 },
+                { label: "10-30s", min: 10, max: 30, value: 6 },
+                { label: "30-60s", min: 30, max: 60, value: 7 },
+                { label: "60-120s", min: 60, max: 120, value: 8 },
+                { label: "120-240s", min: 120, max: 240, value: 9 },
+                { label: "240-500s", min: 240, max: 500, value: 10 },
+                { label: "500-900s", min: 500, max: 900, value: 11 },
+                { label: "900s+", min: 900, max: Infinity, value: 12 }
+            ];
+
+            // Color palette for duration buckets (matching timeline charts)
+            const durationColors = [
+                'rgba(76, 175, 80, 0.7)',    // 0-1s: Green
+                'rgba(33, 150, 243, 0.7)',   // 1-2s: Blue
+                'rgba(255, 193, 7, 0.7)',    // 2-3s: Amber/Yellow
+                'rgba(255, 152, 0, 0.7)',    // 3-4s: Orange
+                'rgba(244, 67, 54, 0.7)',    // 4-5s: Red
+                'rgba(156, 39, 176, 0.7)',   // 5-10s: Purple
+                'rgba(96, 125, 139, 0.7)',   // 10-30s: Blue Grey
+                'rgba(0, 0, 0, 0.7)',        // 30-60s: Black
+                'rgba(121, 85, 72, 0.7)',    // 60-120s: Brown
+                'rgba(139, 0, 0, 0.7)',      // 120-240s: Dark Red
+                'rgba(75, 0, 130, 0.7)',     // 240-500s: Indigo
+                'rgba(0, 0, 0, 0.8)',        // 500-900s: Black
+                'rgba(0, 0, 0, 0.9)'         // 900s+: Black
+            ];
+
+            // Get duration bucket index from elapsed time in seconds
+            function getDurationBucketIndex(durationSeconds) {
+                if (durationSeconds < 1) return 0;
+                else if (durationSeconds < 2) return 1;
+                else if (durationSeconds < 3) return 2;
+                else if (durationSeconds < 4) return 3;
+                else if (durationSeconds < 5) return 4;
+                else if (durationSeconds < 10) return 5;
+                else if (durationSeconds < 30) return 6;
+                else if (durationSeconds < 60) return 7;
+                else if (durationSeconds < 120) return 8;
+                else if (durationSeconds < 240) return 9;
+                else if (durationSeconds < 500) return 10;
+                else if (durationSeconds < 900) return 11;
+                else return 12; // 900s+
+            }
+
+            // Get all timeline buckets
+            const timeBuckets = getTimelineBucketsFromRequests(requests, grouping);
+            const timeGroups = {};
+
+            // Initialize time buckets with collection -> duration bucket -> count
+            timeBuckets.forEach(ts => {
+                timeGroups[ts.toISOString()] = {};
+            });
+
+            // Group queries by collection, time bucket, and duration bucket
+            requests.forEach((request) => {
+                const sql = request.statement || request.preparedText || "";
+                const collections = extractCollectionsFromSQL(sql);
+                
+                const requestDate = getChartDate(request.requestTime);
+                const timeKey = roundTimestamp(requestDate, grouping, requests);
+                const key = timeKey.toISOString();
+
+                const elapsedMs = request.elapsedTime ? parseTime(request.elapsedTime) : 0;
+                const durationSeconds = elapsedMs / 1000;  // Convert ms to seconds
+                const durationBucketIdx = getDurationBucketIndex(durationSeconds);
+
+                collections.forEach(collection => {
+                    if (!timeGroups[key][collection]) {
+                        timeGroups[key][collection] = {};
+                    }
+                    if (!timeGroups[key][collection][durationBucketIdx]) {
+                        timeGroups[key][collection][durationBucketIdx] = 0;
+                    }
+                    timeGroups[key][collection][durationBucketIdx]++;
+                });
+            });
+
+            // Get all unique collections and count total queries per collection
+            const collectionQueryCounts = {};
+            Object.values(timeGroups).forEach(group => {
+                Object.entries(group).forEach(([collection, durationBuckets]) => {
+                    if (!collectionQueryCounts[collection]) {
+                        collectionQueryCounts[collection] = 0;
+                    }
+                    Object.values(durationBuckets).forEach(count => {
+                        collectionQueryCounts[collection] += count;
+                    });
+                });
+            });
+
+            // Sort collections by query count (ascending) - fewest queries in front, most in back
+            const allCollections = Object.keys(collectionQueryCounts).sort((a, b) => {
+                return collectionQueryCounts[a] - collectionQueryCounts[b];
+            });
+
+            // Create a mapping of collection to index for y-axis (sorted by query count)
+            const collectionToIndex = {};
+            allCollections.forEach((collection, idx) => {
+                collectionToIndex[collection] = idx;
+            });
+
+            // Build data points for ECharts scatter3D
+            const data = [];
+            timeBuckets.forEach((ts, timeIndex) => {
+                const key = ts.toISOString();
+                Object.entries(timeGroups[key]).forEach(([collection, durationBuckets]) => {
+                    Object.entries(durationBuckets).forEach(([bucketIdx, count]) => {
+                        if (count > 0) {
+                            const formattedTime = ts.toLocaleString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            });
+                            const bucketLabel = durationBucketDefinitions[parseInt(bucketIdx)].label;
+                            
+                            data.push({
+                                value: [timeIndex, collectionToIndex[collection], parseInt(bucketIdx)],
+                                itemStyle: { color: durationColors[parseInt(bucketIdx)] },
+                                actualCount: count,
+                                collection: collection,
+                                time: formattedTime,
+                                duration: bucketLabel
+                            });
+                        }
+                    });
+                });
+            });
+
+            // Store data globally for fullscreen
+            window.echartsTimelineData = {
+                data,
+                timeBuckets,
+                allCollections,
+                durationBucketDefinitions,
+                durationColors,
+                collectionQueryCounts
+            };
+
+            // Initialize or dispose existing chart
+            let myChart = echarts.getInstanceByDom(chartDiv);
+            if (myChart) {
+                myChart.dispose();
+            }
+            myChart = echarts.init(chartDiv);
+
+            // Calculate bubble sizes
+            const allCounts = data.map(d => d.actualCount);
+            const maxCount = Math.max(...allCounts);
+            const minCount = Math.min(...allCounts);
+
+            const option = {
+                title: {
+                    text: '3D Collection Timeline (ECharts) - (Dev)',
+                    left: 'center',
+                    top: 10,
+                    textStyle: {
+                        fontSize: 16,
+                        fontWeight: 'bold'
+                    }
+                },
+                tooltip: {
+                    formatter: function(params) {
+                        const d = params.data;
+                        return `${d.collection}<br/>Time: ${d.time}<br/>Duration: ${d.duration}<br/>Queries: ${d.actualCount}`;
+                    }
+                },
+                xAxis3D: {
+                    type: 'category',
+                    data: timeBuckets.map((ts, idx) => idx),
+                    name: 'Request Time',
+                    nameTextStyle: {
+                        fontSize: 14,
+                        fontWeight: 'bold'
+                    },
+                    axisLabel: {
+                        interval: Math.max(0, Math.ceil(timeBuckets.length / 10) - 1),
+                        formatter: function(value) {
+                            return timeBuckets[value].toLocaleString('en-US', { month: 'short', day: 'numeric' });
+                        },
+                        fontSize: 10
+                    }
+                },
+                yAxis3D: {
+                    type: 'category',
+                    data: allCollections,
+                    name: 'Collection',
+                    nameTextStyle: {
+                        fontSize: 14,
+                        fontWeight: 'bold'
+                    },
+                    axisLabel: {
+                        interval: Math.max(0, Math.ceil(allCollections.length / 10) - 1),
+                        fontSize: 10
+                    }
+                },
+                zAxis3D: {
+                    type: 'category',
+                    data: durationBucketDefinitions.map(b => b.label),
+                    name: 'Duration Range',
+                    nameTextStyle: {
+                        fontSize: 14,
+                        fontWeight: 'bold'
+                    }
+                },
+                grid3D: {
+                    boxWidth: 200,
+                    boxDepth: Math.min(200, allCollections.length * 5),
+                    boxHeight: 100,
+                    viewControl: {
+                        alpha: 22.9,
+                        beta: 44.6,
+                        distance: 453.0,
+                        minDistance: 100,
+                        maxDistance: 500
+                    },
+                    light: {
+                        main: {
+                            intensity: 1.2,
+                            shadow: true
+                        },
+                        ambient: {
+                            intensity: 0.5
+                        }
+                    }
+                },
+                series: [{
+                    type: 'scatter3D',
+                    data: data.map(d => ({
+                        value: d.value,
+                        itemStyle: d.itemStyle,
+                        actualCount: d.actualCount,
+                        collection: d.collection,
+                        time: d.time,
+                        duration: d.duration,
+                        symbolSize: Math.max(5, Math.min(30, (d.actualCount / maxCount) * 30))
+                    })),
+                    symbolSize: function(dataItem) {
+                        return dataItem.symbolSize;
+                    },
+                    itemStyle: {
+                        opacity: 0.85
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            opacity: 1
+                        }
+                    }
+                }]
+            };
+
+            myChart.setOption(option);
+
+            // Add click handler for fullscreen
+            chartDiv.style.cursor = 'pointer';
+            chartDiv.title = 'Click to expand';
+            chartDiv.onclick = expandECharts3DTimeline;
+
+            Logger.info(`✅ ECharts 3D Collection Timeline created: ${data.length} data points`);
+        }
+
+        // Expand ECharts 3D Timeline to fullscreen
+        function expandECharts3DTimeline() {
+            const { data, timeBuckets, allCollections, durationBucketDefinitions, durationColors, collectionQueryCounts } = window.echartsTimelineData;
+            if (!data || !allCollections) return;
+
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'chart-fullscreen-overlay active';
+            overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = 'width: 95%; height: 95%; background: white; border-radius: 8px; padding: 20px; position: relative;';
+
+            // Create close button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '✕';
+            closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; z-index: 10001;';
+            closeBtn.onclick = () => {
+                document.body.removeChild(overlay);
+                document.body.style.overflow = '';
+            };
+
+            // Create fullscreen chart container
+            const fullscreenChartDiv = document.createElement('div');
+            fullscreenChartDiv.id = 'echarts-3d-timeline-fullscreen';
+            fullscreenChartDiv.style.cssText = 'width: calc(100% - 420px); height: 100%;';
+
+            // Create controls and legend container
+            const controlsContainer = document.createElement('div');
+            controlsContainer.style.cssText = 'position: absolute; top: 50px; right: 20px; width: 400px; background: white; border: 1px solid #444; border-radius: 4px; padding: 10px; max-height: calc(100% - 60px); overflow-y: auto;';
+
+            // Add toggle controls
+            const togglesDiv = document.createElement('div');
+            togglesDiv.style.cssText = 'margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ddd;';
+            togglesDiv.innerHTML = `
+                <div style="margin-bottom: 8px;">
+                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold;">
+                        <input type="checkbox" id="echarts-timeline-log-scale-toggle" style="margin-right: 8px;">
+                        Log Scale Bubble Size
+                    </label>
+                </div>
+            `;
+            controlsContainer.appendChild(togglesDiv);
+
+            // Add legend header
+            const legendHeader = document.createElement('div');
+            legendHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
+            legendHeader.innerHTML = `
+                <strong style="font-size: 14px;">Collections:</strong>
+                <div>
+                    <button id="echarts-timeline-fs-show-all" style="padding: 4px 12px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; font-size: 11px;">Show All</button>
+                    <button id="echarts-timeline-fs-hide-all" style="padding: 4px 12px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">Hide All</button>
+                </div>
+            `;
+            controlsContainer.appendChild(legendHeader);
+
+            // Create legend items grid
+            const itemsGrid = document.createElement('div');
+            itemsGrid.style.cssText = 'display: grid; grid-template-columns: 1fr; gap: 6px;';
+            
+            // Sort collections by count (descending) for legend display
+            const sortedCollections = [...allCollections].sort((a, b) => {
+                return collectionQueryCounts[b] - collectionQueryCounts[a];
+            });
+
+            const visibilityState = {};
+            sortedCollections.forEach(collection => {
+                visibilityState[collection] = true;
+            });
+
+            sortedCollections.forEach(collection => {
+                const count = collectionQueryCounts[collection];
+                const legendItem = document.createElement('div');
+                legendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; border: 1px solid #e0e0e0;';
+                legendItem.dataset.collection = collection;
+                
+                // Checkbox
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = true;
+                checkbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+                
+                // Collection name with count
+                const label = document.createElement('span');
+                label.style.cssText = 'font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+                label.textContent = `[${count}] ${collection}`;
+                
+                legendItem.appendChild(checkbox);
+                legendItem.appendChild(label);
+                
+                // Toggle visibility on click
+                legendItem.onclick = (e) => {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    visibilityState[collection] = checkbox.checked;
+                    legendItem.style.opacity = checkbox.checked ? '1' : '0.3';
+                    updateChart();
+                };
+                
+                itemsGrid.appendChild(legendItem);
+            });
+
+            controlsContainer.appendChild(itemsGrid);
+
+            // Assemble modal
+            modalContent.appendChild(closeBtn);
+            modalContent.appendChild(fullscreenChartDiv);
+            modalContent.appendChild(controlsContainer);
+            overlay.appendChild(modalContent);
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+
+            // Calculate initial bubble sizes
+            const allCounts = data.map(d => d.actualCount);
+            const maxCount = Math.max(...allCounts);
+
+            function calculateBubbleSizes(useLogScale) {
+                return data.map(d => {
+                    if (!visibilityState[d.collection]) return null;
+                    
+                    let size;
+                    if (useLogScale) {
+                        size = Math.max(5, Math.log10(d.actualCount + 1) * 10);
+                    } else {
+                        size = Math.max(5, Math.min(30, (d.actualCount / maxCount) * 30));
+                    }
+                    
+                    return {
+                        value: d.value,
+                        itemStyle: d.itemStyle,
+                        actualCount: d.actualCount,
+                        collection: d.collection,
+                        time: d.time,
+                        duration: d.duration,
+                        symbolSize: size
+                    };
+                }).filter(d => d !== null);
+            }
+
+            // Initialize fullscreen chart
+            const myChart = echarts.init(fullscreenChartDiv);
+            
+            function updateChart() {
+                const useLogScale = document.getElementById('echarts-timeline-log-scale-toggle')?.checked || false;
+                const chartData = calculateBubbleSizes(useLogScale);
+                
+                const option = {
+                    title: {
+                        text: 'Query Duration Groups by Collection',
+                        left: 'center',
+                        top: 10,
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    tooltip: {
+                        formatter: function(params) {
+                            const d = params.data;
+                            return `${d.collection}<br/>Time: ${d.time}<br/>Duration: ${d.duration}<br/>Queries: ${d.actualCount}`;
+                        }
+                    },
+                    xAxis3D: {
+                        type: 'category',
+                        data: timeBuckets.map((ts, idx) => idx),
+                        name: 'Request Time',
+                        nameTextStyle: {
+                            fontSize: 14,
+                            fontWeight: 'bold'
+                        },
+                        axisLabel: {
+                            interval: Math.max(0, Math.ceil(timeBuckets.length / 10) - 1),
+                            formatter: function(value) {
+                                return timeBuckets[value].toLocaleString('en-US', { month: 'short', day: 'numeric' });
+                            },
+                            fontSize: 10
+                        }
+                    },
+                    yAxis3D: {
+                        type: 'category',
+                        data: allCollections,
+                        name: 'Collection',
+                        nameTextStyle: {
+                            fontSize: 14,
+                            fontWeight: 'bold'
+                        },
+                        axisLabel: {
+                            interval: Math.max(0, Math.ceil(allCollections.length / 10) - 1),
+                            fontSize: 10
+                        }
+                    },
+                    zAxis3D: {
+                        type: 'category',
+                        data: durationBucketDefinitions.map(b => b.label),
+                        name: 'Duration Range',
+                        nameTextStyle: {
+                            fontSize: 14,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    grid3D: {
+                        boxWidth: 250,
+                        boxDepth: Math.min(250, allCollections.length * 7),
+                        boxHeight: 150,
+                        viewControl: {
+                            alpha: 22.9,
+                            beta: 44.6,
+                            distance: 453.0,
+                            minDistance: 100,
+                            maxDistance: 600
+                        },
+                        light: {
+                            main: {
+                                intensity: 1.2,
+                                shadow: true
+                            },
+                            ambient: {
+                                intensity: 0.5
+                            }
+                        }
+                    },
+                    series: [{
+                        type: 'scatter3D',
+                        data: chartData,
+                        symbolSize: function(dataItem) {
+                            return dataItem.symbolSize;
+                        },
+                        itemStyle: {
+                            opacity: 0.85
+                        },
+                        emphasis: {
+                            itemStyle: {
+                                opacity: 1
+                            }
+                        }
+                    }]
+                };
+
+                myChart.setOption(option);
+            }
+
+            // Initial render
+            updateChart();
+
+            // Show All button functionality
+            document.getElementById('echarts-timeline-fs-show-all').addEventListener('click', () => {
+                sortedCollections.forEach(collection => {
+                    visibilityState[collection] = true;
+                    const item = itemsGrid.querySelector(`[data-collection="${collection}"]`);
+                    if (item) {
+                        item.querySelector('input').checked = true;
+                        item.style.opacity = '1';
+                    }
+                });
+                updateChart();
+            });
+
+            // Hide All button functionality
+            document.getElementById('echarts-timeline-fs-hide-all').addEventListener('click', () => {
+                sortedCollections.forEach(collection => {
+                    visibilityState[collection] = false;
+                    const item = itemsGrid.querySelector(`[data-collection="${collection}"]`);
+                    if (item) {
+                        item.querySelector('input').checked = false;
+                        item.style.opacity = '0.3';
+                    }
+                });
+                updateChart();
+            });
+
+            // Log Scale checkbox functionality
+            document.getElementById('echarts-timeline-log-scale-toggle').addEventListener('change', updateChart);
 
             // Close on ESC key
             const escHandler = (e) => {
@@ -24428,7 +25035,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 const devContainers = [
                     'dev-3d-collection-container',
                     'dev-pattern-collection-surface-container',
-                    'dev-echarts-3d-bar-container'
+                    'dev-echarts-3d-bar-container',
+                    'dev-echarts-3d-collection-container'
                 ];
                 devContainers.forEach(id => {
                     const container = document.getElementById(id);
