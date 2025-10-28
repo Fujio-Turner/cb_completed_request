@@ -45,6 +45,10 @@
     <!-- Include Plotly.js for 3D charts -->
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
 
+    <!-- Include ECharts for alternative 3D visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
+
     <!-- Include Panzoom, jQuery, and jQuery UI -->
     <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.3/dist/panzoom.min.js" integrity="sha256-EXkj2hNRjkwrQpvsP/7ePHObzow5rTByiCRLFIWCE/Y=" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -949,6 +953,17 @@ if (window.TEXT_CONSTANTS) {
                     <div style="height: 600px; position: relative;">
                         <div class="chart-expand-btn" title="Expand chart" onclick="expand3DSurfaceChart()" style="position: absolute; top: 10px; right: 10px; z-index: 100;">⛶</div>
                         <div id="pattern-collection-surface-chart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ECharts 3D Bar Chart (Dev Feature) -->
+            <div id="dev-echarts-3d-bar-container" class="with-margin-top-20" style="display: none;">
+                <div class="chart-container">
+                    <h3 class="chart-title fixed-height">Query Patterns by Collection (ECharts 3D Bar) - (Dev)</h3>
+                    <div style="height: 600px; position: relative;">
+                        <div class="chart-expand-btn" title="Expand chart" onclick="expandEChartsChart()" style="position: absolute; top: 10px; right: 10px; z-index: 100;">⛶</div>
+                        <div id="echarts-3d-bar-chart" style="width: 100%; height: 100%;"></div>
                     </div>
                 </div>
             </div>
@@ -13758,11 +13773,22 @@ size: 12
                     }
                     generate3DPatternCollectionSurface(requests);
                 }
+
+                // Dev feature: ECharts 3D Bar
+                const echartsContainer = document.getElementById('dev-echarts-3d-bar-container');
+                if (echartsContainer) {
+                    echartsContainer.style.display = 'block';
+                    generateECharts3DBar(requests);
+                }
             } else {
                 const container = document.getElementById('dev-pattern-collection-surface-container');
                 if (container) {
                     container.className = '';
                     container.style.display = 'none';
+                }
+                const echartsContainer = document.getElementById('dev-echarts-3d-bar-container');
+                if (echartsContainer) {
+                    echartsContainer.style.display = 'none';
                 }
             }
         }
@@ -15574,6 +15600,543 @@ function generateElapsedTimeChart(requests) {
                     closeBtn.click();
                 }
             });
+        }
+
+        // Generate ECharts 3D Bar Chart (Dev Feature)
+        function generateECharts3DBar(requests) {
+            const chartDiv = document.getElementById('echarts-3d-bar-chart');
+            if (!chartDiv) return;
+
+            if (!requests || requests.length === 0) {
+                Logger.debug(TEXT_CONSTANTS.NO_DATA_AVAILABLE || "No data available");
+                return;
+            }
+
+            // Reuse pattern detection logic from Plotly chart
+            const patterns = [
+                'WITH', 'EXECUTE', 'SELECT *', 'COUNT', 'DISTINCT',
+                'USE INDEX', 'USE KEYS', 'LET',
+                'No WHERE',
+                'JOIN', 'NEST', 'UNNEST', 'SEARCH', 'ARRAY QUERY', 'LIKE', 'REGEX',
+                'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET', 'UNION'
+            ];
+
+            // Build pattern-collection matrix
+            const collectionPatternCounts = {}; // { collection: { pattern: count } }
+
+            requests.forEach((request) => {
+                const statement = request.statement || request.preparedText || "";
+                const upperStatement = statement.toUpperCase();
+                
+                // Extract collections from SQL
+                const collections = extractCollectionsFromSQL(statement);
+                
+                // Detect patterns
+                const detectedPatterns = [];
+                
+                // No WHERE
+                const stmtForFilter = (upperStatement.startsWith("EXECUTE") && request.preparedText)
+                    ? request.preparedText
+                    : statement;
+                if (!hasFilteringMechanism(stmtForFilter)) {
+                    detectedPatterns.push('No WHERE');
+                }
+                
+                // Check all patterns
+                if (upperStatement.includes(" GROUP BY ")) detectedPatterns.push('GROUP BY');
+                if (upperStatement.includes(" ORDER BY ")) detectedPatterns.push('ORDER BY');
+                if (upperStatement.includes("USE INDEX")) detectedPatterns.push('USE INDEX');
+                if (upperStatement.includes("USE KEYS")) detectedPatterns.push('USE KEYS');
+                if (upperStatement.includes(" JOIN ")) detectedPatterns.push('JOIN');
+                if (upperStatement.includes(" NEST ")) detectedPatterns.push('NEST');
+                if (upperStatement.includes(" UNNEST ")) detectedPatterns.push('UNNEST');
+                if (upperStatement.includes(" OFFSET ")) detectedPatterns.push('OFFSET');
+                if (upperStatement.includes(" SEARCH(")) detectedPatterns.push('SEARCH');
+                if ((upperStatement.startsWith("WITH ") || upperStatement.includes(" WITH ")) && !upperStatement.includes("`WITH`")) {
+                    detectedPatterns.push('WITH');
+                }
+                if (upperStatement.includes(" LET ")) detectedPatterns.push('LET');
+                if (upperStatement.includes(" COUNT(")) detectedPatterns.push('COUNT');
+                if (upperStatement.includes("SELECT *") || upperStatement.includes("SELECT  *")) {
+                    detectedPatterns.push('SELECT *');
+                }
+                if (upperStatement.includes(" LIKE ")) detectedPatterns.push('LIKE');
+                if (/ANY\s+[a-zA-Z_]+\s+IN\s+/i.test(statement) || /EVERY\s+[a-zA-Z_]+\s+IN\s+/i.test(statement)) {
+                    detectedPatterns.push('ARRAY QUERY');
+                }
+                if (upperStatement.includes(" DISTINCT ")) detectedPatterns.push('DISTINCT');
+                if (upperStatement.includes("REGEXP_") || /REGEX\s*\(/i.test(statement)) {
+                    detectedPatterns.push('REGEX');
+                }
+                if (upperStatement.startsWith("EXECUTE")) detectedPatterns.push('EXECUTE');
+                if (upperStatement.includes(" LIMIT ")) detectedPatterns.push('LIMIT');
+                if (upperStatement.includes(" UNION ")) detectedPatterns.push('UNION');
+
+                // Count patterns per collection
+                collections.forEach(collection => {
+                    if (!collectionPatternCounts[collection]) {
+                        collectionPatternCounts[collection] = {};
+                        patterns.forEach(p => collectionPatternCounts[collection][p] = 0);
+                    }
+                    
+                    detectedPatterns.forEach(pattern => {
+                        if (patterns.includes(pattern)) {
+                            collectionPatternCounts[collection][pattern]++;
+                        }
+                    });
+                });
+            });
+
+            // Get all unique collections sorted by total pattern count
+            const collections = Object.keys(collectionPatternCounts).sort((a, b) => {
+                const aTotal = Object.values(collectionPatternCounts[a]).reduce((sum, v) => sum + v, 0);
+                const bTotal = Object.values(collectionPatternCounts[b]).reduce((sum, v) => sum + v, 0);
+                return aTotal - bTotal; // Ascending
+            });
+
+            if (collections.length === 0) {
+                Logger.info('No collection data available for ECharts 3D bar chart');
+                return;
+            }
+
+            // Build data array for ECharts: [[patternIdx, collectionIdx, count, actualCount, color], ...]
+            const data = [];
+            const maxCount = Math.max(...Object.values(collectionPatternCounts).flatMap(obj => Object.values(obj)));
+
+            // Helper function to get color based on count (Red=highest, Blue=lowest)
+            function getColorForCount(count, max) {
+                const intensity = count / max;
+                // Red → Orange → Yellow → Green → Cyan → Blue
+                if (intensity > 0.83) return '#dc143c'; // Crimson red (highest)
+                if (intensity > 0.67) return '#ff4500'; // Orange-red
+                if (intensity > 0.50) return '#ffa500'; // Orange
+                if (intensity > 0.33) return '#ffd700'; // Gold
+                if (intensity > 0.17) return '#32cd32'; // Lime green
+                return '#1e90ff'; // Dodger blue (lowest)
+            }
+
+            collections.forEach((collection, cIdx) => {
+                patterns.forEach((pattern, pIdx) => {
+                    const count = collectionPatternCounts[collection][pattern] || 0;
+                    if (count > 0) {
+                        // Use log scale: log10(count + 1)
+                        const logCount = Math.log10(count + 1);
+                        const color = getColorForCount(count, maxCount);
+                        data.push([pIdx, cIdx, logCount, count, color]); // Store log, raw count, and color
+                    }
+                });
+            });
+
+            // Store data globally for fullscreen mode
+            window.echartsData = {
+                collections,
+                patterns,
+                collectionPatternCounts,
+                data,
+                maxCount
+            };
+
+            // Initialize or dispose existing chart
+            let myChart = echarts.getInstanceByDom(chartDiv);
+            if (myChart) {
+                myChart.dispose();
+            }
+            myChart = echarts.init(chartDiv);
+
+            const option = {
+                tooltip: {
+                    formatter: function(params) {
+                        const pIdx = params.value[0];
+                        const cIdx = params.value[1];
+                        const logCount = params.value[2];
+                        const actualCount = params.data.actualCount;
+                        return `${patterns[pIdx]}<br/>${collections[cIdx]}<br/>Log Count: ${logCount.toFixed(2)}<br/>Actual Count: ${actualCount}`;
+                    }
+                },
+                xAxis3D: {
+                    type: 'category',
+                    data: patterns,
+                    name: 'Query Pattern',
+                    nameTextStyle: {
+                        fontSize: 14,
+                        fontWeight: 'bold'
+                    },
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 45,
+                        fontSize: 10
+                    }
+                },
+                yAxis3D: {
+                    type: 'category',
+                    data: collections,
+                    name: 'Collection',
+                    nameTextStyle: {
+                        fontSize: 14,
+                        fontWeight: 'bold'
+                    },
+                    axisLabel: {
+                        interval: Math.max(0, Math.ceil(collections.length / 10) - 1),
+                        fontSize: 10
+                    }
+                },
+                zAxis3D: {
+                    type: 'value',
+                    name: 'Usage Count (log₁₀)',
+                    nameTextStyle: {
+                        fontSize: 14,
+                        fontWeight: 'bold'
+                    }
+                },
+                grid3D: {
+                    boxWidth: 200,
+                    boxDepth: Math.min(200, collections.length * 5),
+                    boxHeight: 100,
+                    viewControl: {
+                        alpha: 25,
+                        beta: 30,
+                        distance: 250,
+                        minDistance: 100,
+                        maxDistance: 500
+                    },
+                    light: {
+                        main: {
+                            intensity: 1.2,
+                            shadow: true
+                        },
+                        ambient: {
+                            intensity: 0.5
+                        }
+                    }
+                },
+                series: [{
+                    type: 'bar3D',
+                    data: data.map(d => ({
+                        value: [d[0], d[1], d[2]],
+                        itemStyle: { color: d[4] },
+                        actualCount: d[3]
+                    })),
+                    shading: 'color',
+                    label: {
+                        show: false
+                    },
+                    itemStyle: {
+                        opacity: 0.95
+                    },
+                    emphasis: {
+                        label: {
+                            show: false
+                        },
+                        itemStyle: {
+                            opacity: 1
+                        }
+                    }
+                }]
+            };
+
+            myChart.setOption(option);
+
+            Logger.info(`✅ ECharts 3D Bar created: ${collections.length} collections x ${patterns.length} patterns (${data.length} bars)`);
+        }
+
+        // Expand ECharts 3D Bar Chart to fullscreen
+        function expandEChartsChart() {
+            const { collections, patterns, collectionPatternCounts, data, maxCount } = window.echartsData;
+            if (!collections || !patterns) return;
+
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'chart-fullscreen-overlay active';
+            overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = 'width: 95%; height: 95%; background: white; border-radius: 8px; padding: 20px; position: relative;';
+
+            // Create close button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '✕';
+            closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; z-index: 10001;';
+            closeBtn.onclick = () => {
+                document.body.removeChild(overlay);
+                document.body.style.overflow = '';
+            };
+
+            // Create fullscreen chart container
+            const fullscreenChartDiv = document.createElement('div');
+            fullscreenChartDiv.id = 'echarts-fullscreen';
+            fullscreenChartDiv.style.cssText = 'width: calc(100% - 420px); height: 100%;';
+
+            // Create controls and legend container
+            const controlsContainer = document.createElement('div');
+            controlsContainer.style.cssText = 'position: absolute; top: 50px; right: 20px; width: 400px; background: white; border: 1px solid #444; border-radius: 4px; padding: 10px; max-height: calc(100% - 60px); overflow-y: auto;';
+
+            // Add toggle controls
+            const togglesDiv = document.createElement('div');
+            togglesDiv.style.cssText = 'margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ddd;';
+            togglesDiv.innerHTML = `
+                <div style="margin-bottom: 8px;">
+                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold;">
+                        <input type="checkbox" id="echarts-log-scale-toggle" checked style="margin-right: 8px;">
+                        Log Scale (log₁₀)
+                    </label>
+                </div>
+                <div>
+                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold;">
+                        <input type="checkbox" id="echarts-aggregation-toggle" style="margin-right: 8px;">
+                        Aggregation Mode
+                    </label>
+                    <div style="font-size: 10px; color: #666; margin-left: 24px; margin-top: 2px;">Sum all collections per pattern</div>
+                </div>
+            `;
+            controlsContainer.appendChild(togglesDiv);
+
+            // Add legend header
+            const legendHeader = document.createElement('div');
+            legendHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
+            legendHeader.innerHTML = `
+                <strong style="font-size: 14px;">Collections:</strong>
+                <div>
+                    <button id="echarts-fs-show-all" style="padding: 4px 12px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; font-size: 11px;">Show All</button>
+                    <button id="echarts-fs-hide-all" style="padding: 4px 12px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">Hide All</button>
+                </div>
+            `;
+            controlsContainer.appendChild(legendHeader);
+
+            // Create legend items grid
+            const itemsGrid = document.createElement('div');
+            itemsGrid.style.cssText = 'display: grid; grid-template-columns: 1fr; gap: 6px;';
+            controlsContainer.appendChild(itemsGrid);
+
+            // Assemble modal
+            modalContent.appendChild(closeBtn);
+            modalContent.appendChild(fullscreenChartDiv);
+            modalContent.appendChild(controlsContainer);
+            overlay.appendChild(modalContent);
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+
+            // State management
+            let useLogScale = true;
+            let useAggregation = false;
+            let visibleCollections = new Set(collections.map((_, idx) => idx));
+
+            // Initialize chart
+            const fullscreenChart = echarts.init(fullscreenChartDiv);
+
+            // Helper function to get color
+            function getColorForCount(count, max) {
+                const intensity = count / max;
+                if (intensity > 0.83) return '#dc143c';
+                if (intensity > 0.67) return '#ff4500';
+                if (intensity > 0.50) return '#ffa500';
+                if (intensity > 0.33) return '#ffd700';
+                if (intensity > 0.17) return '#32cd32';
+                return '#1e90ff';
+            }
+
+            // Render chart
+            function renderChart() {
+                let chartData;
+                let zAxisTitle;
+
+                if (useAggregation) {
+                    // Aggregate: sum all collections per pattern
+                    chartData = [];
+                    patterns.forEach((pattern, pIdx) => {
+                        let totalCount = 0;
+                        
+                        // Sum across all visible collections for this pattern
+                        collections.forEach((collection, cIdx) => {
+                            if (!visibleCollections.has(cIdx)) return;
+                            totalCount += collectionPatternCounts[collection][pattern] || 0;
+                        });
+                        
+                        if (totalCount > 0) {
+                            const value = useLogScale ? Math.log10(totalCount + 1) : totalCount;
+                            const color = getColorForCount(totalCount, maxCount);
+                            
+                            chartData.push({
+                                value: [pIdx, 0, value],
+                                itemStyle: { color },
+                                actualCount: totalCount,
+                                patternName: pattern
+                            });
+                        }
+                    });
+                    zAxisTitle = useLogScale ? 'Total Count (log₁₀)' : 'Total Count';
+                } else {
+                    // Individual bars
+                    chartData = data
+                        .filter(d => visibleCollections.has(d[1]))
+                        .map(d => {
+                            const value = useLogScale ? d[2] : d[3];
+                            return {
+                                value: [d[0], d[1], value],
+                                itemStyle: { color: d[4] },
+                                actualCount: d[3]
+                            };
+                        });
+                    zAxisTitle = useLogScale ? 'Usage Count (log₁₀)' : 'Usage Count';
+                }
+
+                const option = {
+                    tooltip: {
+                        formatter: function(params) {
+                            if (useAggregation) {
+                                const patternName = params.data.patternName;
+                                const actualCount = params.data.actualCount;
+                                const displayValue = useLogScale ? Math.log10(actualCount + 1).toFixed(2) : actualCount;
+                                return `${patternName}<br/>${useLogScale ? 'Log Count: ' + displayValue : 'Count: ' + actualCount}`;
+                            } else {
+                                const pIdx = params.value[0];
+                                const cIdx = params.value[1];
+                                const actualCount = params.data.actualCount;
+                                const displayValue = useLogScale ? Math.log10(actualCount + 1).toFixed(2) : actualCount;
+                                return `${patterns[pIdx]}<br/>${collections[cIdx]}<br/>${useLogScale ? 'Log Count: ' + displayValue : 'Count: ' + actualCount}`;
+                            }
+                        }
+                    },
+                    xAxis3D: {
+                        type: 'category',
+                        data: patterns,
+                        name: 'Query Pattern',
+                        nameTextStyle: { fontSize: 14, fontWeight: 'bold' },
+                        axisLabel: { interval: 0, rotate: 45, fontSize: 10 }
+                    },
+                    yAxis3D: {
+                        type: 'category',
+                        data: useAggregation ? ['Total'] : collections,
+                        name: useAggregation ? '' : 'Collection',
+                        nameTextStyle: { fontSize: 14, fontWeight: 'bold' },
+                        axisLabel: { interval: Math.max(0, Math.ceil(collections.length / 10) - 1), fontSize: 10 }
+                    },
+                    zAxis3D: {
+                        type: 'value',
+                        name: zAxisTitle,
+                        nameTextStyle: { fontSize: 14, fontWeight: 'bold' }
+                    },
+                    grid3D: {
+                        boxWidth: 200,
+                        boxDepth: useAggregation ? 50 : Math.min(200, collections.length * 5),
+                        boxHeight: 120,
+                        viewControl: {
+                            alpha: 25,
+                            beta: 30,
+                            distance: 250,
+                            minDistance: 100,
+                            maxDistance: 500
+                        },
+                        light: {
+                            main: { intensity: 1.2, shadow: true },
+                            ambient: { intensity: 0.5 }
+                        }
+                    },
+                    series: [{
+                        type: 'bar3D',
+                        data: chartData,
+                        shading: 'color',
+                        label: { show: false },
+                        itemStyle: { opacity: 0.95 },
+                        emphasis: {
+                            label: { show: false },
+                            itemStyle: { opacity: 1 }
+                        }
+                    }]
+                };
+
+                fullscreenChart.setOption(option, true);
+            }
+
+            // Populate legend
+            function updateLegend() {
+                itemsGrid.innerHTML = '';
+                
+                // Create array of collections with their counts and original index
+                const collectionsWithCounts = collections.map((collection, cIdx) => ({
+                    collection,
+                    cIdx,
+                    totalCount: Object.values(collectionPatternCounts[collection]).reduce((sum, v) => sum + v, 0)
+                }));
+                
+                // Sort by count descending (highest to lowest)
+                collectionsWithCounts.sort((a, b) => b.totalCount - a.totalCount);
+                
+                // Create legend items in sorted order
+                collectionsWithCounts.forEach(({ collection, cIdx, totalCount }) => {
+                    const item = document.createElement('div');
+                    item.dataset.collectionIndex = cIdx;
+                    item.style.cssText = 'display: flex; align-items: center; padding: 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 11px;';
+                    if (!visibleCollections.has(cIdx)) item.style.opacity = '0.5';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = visibleCollections.has(cIdx);
+                    checkbox.style.marginRight = '8px';
+                    
+                    const label = document.createElement('span');
+                    label.textContent = `${collection} (${totalCount})`;
+                    label.style.flex = '1';
+                    
+                    item.appendChild(checkbox);
+                    item.appendChild(label);
+                    
+                    const toggleVis = () => {
+                        if (visibleCollections.has(cIdx)) {
+                            visibleCollections.delete(cIdx);
+                            checkbox.checked = false;
+                            item.style.opacity = '0.5';
+                        } else {
+                            visibleCollections.add(cIdx);
+                            checkbox.checked = true;
+                            item.style.opacity = '1';
+                        }
+                        renderChart();
+                    };
+                    
+                    item.addEventListener('click', (e) => {
+                        if (e.target !== checkbox) toggleVis();
+                    });
+                    checkbox.addEventListener('change', toggleVis);
+                    
+                    itemsGrid.appendChild(item);
+                });
+            }
+
+            // Event listeners
+            document.getElementById('echarts-log-scale-toggle').addEventListener('change', (e) => {
+                useLogScale = e.target.checked;
+                renderChart();
+            });
+
+            document.getElementById('echarts-aggregation-toggle').addEventListener('change', (e) => {
+                useAggregation = e.target.checked;
+                renderChart();
+            });
+
+            document.getElementById('echarts-fs-show-all').addEventListener('click', () => {
+                visibleCollections = new Set(collections.map((_, idx) => idx));
+                updateLegend();
+                renderChart();
+            });
+
+            document.getElementById('echarts-fs-hide-all').addEventListener('click', () => {
+                visibleCollections.clear();
+                updateLegend();
+                renderChart();
+            });
+
+            // ESC key to close
+            document.addEventListener('keydown', function escHandler(e) {
+                if (e.key === 'Escape') {
+                    closeBtn.click();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            });
+
+            // Initial render
+            updateLegend();
+            renderChart();
         }
   
         // Generate User Count Table
@@ -23823,7 +24386,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (!isDevMode()) {
                 const devContainers = [
                     'dev-3d-collection-container',
-                    'dev-pattern-collection-surface-container'
+                    'dev-pattern-collection-surface-container',
+                    'dev-echarts-3d-bar-container'
                 ];
                 devContainers.forEach(id => {
                     const container = document.getElementById(id);
