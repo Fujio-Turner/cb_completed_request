@@ -1822,27 +1822,12 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
 
-            <!-- Row 8: ExecTime vs Kernel & 3D Collection Timeline (dev only) -->
+            <!-- Row 8: ExecTime vs Kernel -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-kernel" data-position="timeline-15">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="exec-vs-kernel-chart"></canvas>
-                </div>
-                <!-- Placeholder when dev mode is off -->
-                <div id="dev-3d-placeholder" class="flex-1-height-400"></div>
-                <!-- 3D Collection Timeline Chart (dev feature only) -->
-                <div id="dev-3d-collection-container" class="flex-1-height-400 chart-container" style="display: none;">
-                    <div class="chart-expand-btn" title="Expand chart" onclick="expand3DChart()">⛶</div>
-                    <div id="3d-collection-chart"></div>
-                </div>
-            </div>
-
-            <!-- Row 8b: ECharts 3D Collection Timeline (dev feature only) -->
-            <div class="display-flex gap-20 margin-bottom-20">
-                <div id="dev-echarts-3d-collection-container" class="flex-1-height-400 chart-container" style="display: none;">
-                    <div class="chart-expand-btn" title="Expand chart" onclick="expandECharts3DTimeline()">⛶</div>
-                    <div id="echarts-3d-collection-chart" style="width: 100%; height: 100%;"></div>
                 </div>
             </div>
 
@@ -8008,42 +7993,6 @@ size: 12
             lazyCreateChart('exec-vs-elapsed-chart', 'Exec vs Elapsed', () => createExecVsElapsedChart(requests, grouping));
             lazyCreateChart('enhanced-operations-chart', 'Enhanced Operations', () => generateEnhancedOperationsChart(requests));
 
-            // Dev feature: 3D Collection Timeline
-            if (isDevMode()) {
-                // Hide placeholder and show 3D chart
-                const placeholder = document.getElementById('dev-3d-placeholder');
-                const container = document.getElementById('dev-3d-collection-container');
-                if (placeholder) {
-                    placeholder.style.display = 'none';
-                }
-                if (container) {
-                    container.style.display = 'block';
-                    // Clear existing chart before creating new one
-                    const chartDiv = document.getElementById('3d-collection-chart');
-                    if (chartDiv) {
-                        Plotly.purge(chartDiv);
-                    }
-                    create3DCollectionTimelineChart(requests, grouping);
-                }
-                
-                // ECharts version
-                const echartsContainer = document.getElementById('dev-echarts-3d-collection-container');
-                if (echartsContainer) {
-                    echartsContainer.style.display = 'block';
-                    createECharts3DCollectionTimeline(requests, grouping);
-                }
-            } else {
-                // Show placeholder and hide 3D chart when not in dev mode
-                const placeholder = document.getElementById('dev-3d-placeholder');
-                const container = document.getElementById('dev-3d-collection-container');
-                if (placeholder) {
-                    placeholder.style.display = 'block';
-                }
-                if (container) {
-                    container.style.display = 'none';
-                }
-            }
-
             // Initialize drag and drop after a brief delay to let first charts render
             setTimeout(() => setupChartDragAndDrop(), 100);
         }
@@ -9954,9 +9903,6 @@ size: 12
 
         // Create ECharts 3D Collection Timeline Chart (dev feature)
         function createECharts3DCollectionTimeline(requests, grouping) {
-            const chartDiv = document.getElementById("echarts-3d-collection-chart");
-            if (!chartDiv) return;
-
             if (!requests || requests.length === 0) {
                 Logger.debug(TEXT_CONSTANTS.NO_DATA_AVAILABLE || "No data available");
                 return;
@@ -10108,126 +10054,7 @@ size: 12
                 collectionQueryCounts
             };
 
-            // Initialize or dispose existing chart
-            let myChart = echarts.getInstanceByDom(chartDiv);
-            if (myChart) {
-                myChart.dispose();
-            }
-            myChart = echarts.init(chartDiv);
-
-            // Calculate bubble sizes
-            const allCounts = data.map(d => d.actualCount);
-            const maxCount = Math.max(...allCounts);
-            const minCount = Math.min(...allCounts);
-
-            const option = {
-                title: {
-                    text: '3D Collection Timeline (ECharts) - (Dev)',
-                    left: 'center',
-                    top: 10,
-                    textStyle: {
-                        fontSize: 16,
-                        fontWeight: 'bold'
-                    }
-                },
-                tooltip: {
-                    formatter: function(params) {
-                        const d = params.data;
-                        return `${d.collection}<br/>Time: ${d.time}<br/>Duration: ${d.duration}<br/>Queries: ${d.actualCount}`;
-                    }
-                },
-                xAxis3D: {
-                    type: 'category',
-                    data: timeBuckets.map((ts, idx) => idx),
-                    name: 'Request Time',
-                    nameTextStyle: {
-                        fontSize: 14,
-                        fontWeight: 'bold'
-                    },
-                    axisLabel: {
-                        interval: Math.max(0, Math.ceil(timeBuckets.length / 10) - 1),
-                        formatter: function(value) {
-                            return timeBuckets[value].toLocaleString('en-US', { month: 'short', day: 'numeric' });
-                        },
-                        fontSize: 10
-                    }
-                },
-                yAxis3D: {
-                    type: 'category',
-                    data: allCollections,
-                    name: 'Collection',
-                    nameTextStyle: {
-                        fontSize: 14,
-                        fontWeight: 'bold'
-                    },
-                    axisLabel: {
-                        interval: Math.max(0, Math.ceil(allCollections.length / 10) - 1),
-                        fontSize: 10
-                    }
-                },
-                zAxis3D: {
-                    type: 'category',
-                    data: durationBucketDefinitions.map(b => b.label),
-                    name: 'Duration Range',
-                    nameTextStyle: {
-                        fontSize: 14,
-                        fontWeight: 'bold'
-                    }
-                },
-                grid3D: {
-                    boxWidth: 200,
-                    boxDepth: Math.min(200, allCollections.length * 5),
-                    boxHeight: 100,
-                    viewControl: {
-                        alpha: 22.9,
-                        beta: 44.6,
-                        distance: 453.0,
-                        minDistance: 100,
-                        maxDistance: 500
-                    },
-                    light: {
-                        main: {
-                            intensity: 1.2,
-                            shadow: true
-                        },
-                        ambient: {
-                            intensity: 0.5
-                        }
-                    }
-                },
-                series: [{
-                    type: 'scatter3D',
-                    data: data.map(d => ({
-                        value: d.value,
-                        itemStyle: d.itemStyle,
-                        actualCount: d.actualCount,
-                        collection: d.collection,
-                        time: d.time,
-                        duration: d.duration,
-                        symbolSize: Math.max(5, Math.min(30, (d.actualCount / maxCount) * 30))
-                    })),
-                    symbolSize: function(dataItem) {
-                        return dataItem.symbolSize;
-                    },
-                    itemStyle: {
-                        opacity: 0.85
-                    },
-                    emphasis: {
-                        itemStyle: {
-                            opacity: 1
-                        }
-                    }
-                }]
-            };
-
-            myChart.setOption(option);
-
-            // Add click handler for fullscreen
-            chartDiv.style.cursor = 'pointer';
-            chartDiv.title = 'Click to expand';
-            chartDiv.onclick = expandECharts3DTimeline;
-
-            Logger.info(`✅ ECharts 3D Collection Timeline created: ${data.length} data points`);
+            Logger.info(`✅ ECharts 3D Timeline data prepared: ${data.length} data points, ${allCollections.length} collections`);
         }
 
         // Expand ECharts 3D Timeline to fullscreen
@@ -25013,19 +24840,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
 
         // Initialize essential UI on page load (Step 8)
         document.addEventListener('DOMContentLoaded', () => {
-            // Hide dev-only charts if not in dev mode
-            if (!isDevMode()) {
-                const devContainers = [
-                    'dev-3d-collection-container',
-                    'dev-echarts-3d-collection-container'
-                ];
-                devContainers.forEach(id => {
-                    const container = document.getElementById(id);
-                    if (container) {
-                        container.style.display = 'none';
-                    }
-                });
-            }
+            // No dev-only charts to hide (all removed)
             
             // Setup lazy Report Maker initialization
             $('#tabs').on('tabsactivate', function(event, ui) {
