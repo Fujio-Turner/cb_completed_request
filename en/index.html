@@ -16443,7 +16443,7 @@ function generateElapsedTimeChart(requests) {
                             shadow: true
                         },
                         ambient: {
-                            intensity: 0.5
+                            intensity: 0.3
                         }
                     }
                 },
@@ -16454,7 +16454,7 @@ function generateElapsedTimeChart(requests) {
                         itemStyle: { color: d[4] },
                         actualCount: d[3]
                     })),
-                    shading: 'color',
+                    shading: 'lambert',
                     label: {
                         show: false
                     },
@@ -16466,7 +16466,8 @@ function generateElapsedTimeChart(requests) {
                             show: false
                         },
                         itemStyle: {
-                            opacity: 1
+                            opacity: 1,
+                            color: '#900'
                         }
                     }
                 }]
@@ -16633,14 +16634,22 @@ function generateElapsedTimeChart(requests) {
                             if (useAggregation) {
                                 const patternName = params.data.patternName;
                                 const actualCount = params.data.actualCount;
-                                const displayValue = useLogScale ? Math.log10(actualCount + 1).toFixed(2) : actualCount;
-                                return `${patternName}<br/>${useLogScale ? 'Log Count: ' + displayValue : 'Count: ' + actualCount}`;
+                                if (useLogScale) {
+                                    const displayValue = Math.log10(actualCount + 1).toFixed(2);
+                                    return `${patternName}<br/>Log Count: ${displayValue}<br/>Actual: ${actualCount}`;
+                                } else {
+                                    return `${patternName}<br/>Count: ${actualCount}`;
+                                }
                             } else {
                                 const pIdx = params.value[0];
                                 const cIdx = params.value[1];
                                 const actualCount = params.data.actualCount;
-                                const displayValue = useLogScale ? Math.log10(actualCount + 1).toFixed(2) : actualCount;
-                                return `${patterns[pIdx]}<br/>${collections[cIdx]}<br/>${useLogScale ? 'Log Count: ' + displayValue : 'Count: ' + actualCount}`;
+                                if (useLogScale) {
+                                    const displayValue = Math.log10(actualCount + 1).toFixed(2);
+                                    return `${patterns[pIdx]}<br/>${collections[cIdx]}<br/>Log Count: ${displayValue}<br/>Actual: ${actualCount}`;
+                                } else {
+                                    return `${patterns[pIdx]}<br/>${collections[cIdx]}<br/>Count: ${actualCount}`;
+                                }
                             }
                         }
                     },
@@ -16676,18 +16685,21 @@ function generateElapsedTimeChart(requests) {
                         },
                         light: {
                             main: { intensity: 1.2, shadow: true },
-                            ambient: { intensity: 0.5 }
+                            ambient: { intensity: 0.3 }
                         }
                     },
                     series: [{
                         type: 'bar3D',
                         data: chartData,
-                        shading: 'color',
+                        shading: 'lambert',
                         label: { show: false },
                         itemStyle: { opacity: 0.95 },
                         emphasis: {
                             label: { show: false },
-                            itemStyle: { opacity: 1 }
+                            itemStyle: { 
+                                opacity: 1,
+                                color: '#900'
+                            }
                         }
                     }]
                 };
