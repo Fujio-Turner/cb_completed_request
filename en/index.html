@@ -22775,15 +22775,15 @@ function generateElapsedTimeChart(requests) {
                 avgItemsScanned: itemsScanned.length
                     ? Math.round(
                         itemsScanned.reduce((a, b) => a + b, 0) / itemsScanned.length
-                    )
+                    ).toLocaleString()
                     : "N/A",
                 avgItemsFetched: itemsFetched.length
                     ? Math.round(
                         itemsFetched.reduce((a, b) => a + b, 0) / itemsFetched.length
-                    )
+                    ).toLocaleString()
                     : "N/A",
-                minItems: itemsScanned.length ? Math.min(...itemsScanned) : "N/A",
-                maxItems: itemsScanned.length ? Math.max(...itemsScanned) : "N/A",
+                minItems: itemsScanned.length ? Math.min(...itemsScanned).toLocaleString() : "N/A",
+                maxItems: itemsScanned.length ? Math.max(...itemsScanned).toLocaleString() : "N/A",
             };
         }
 
