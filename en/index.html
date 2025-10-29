@@ -16487,9 +16487,18 @@ function generateElapsedTimeChart(requests) {
             `;
             controlsContainer.appendChild(legendHeader);
 
+            // Add search input
+            const searchContainer = document.createElement('div');
+            searchContainer.style.cssText = 'margin-bottom: 10px;';
+            searchContainer.innerHTML = `
+                <input type="text" id="echarts-legend-search" placeholder="Search collections..." style="width: 100%; font-size: 11px; padding: 6px 8px; border: 1px solid #dee2e6; border-radius: 3px; box-sizing: border-box;">
+            `;
+            controlsContainer.appendChild(searchContainer);
+
             // Create legend items grid
             const itemsGrid = document.createElement('div');
             itemsGrid.style.cssText = 'display: grid; grid-template-columns: 1fr; gap: 6px;';
+            itemsGrid.id = 'echarts-legend-items-grid';
             controlsContainer.appendChild(itemsGrid);
 
             // Assemble modal
@@ -16729,6 +16738,23 @@ function generateElapsedTimeChart(requests) {
                 visibleCollections.clear();
                 updateLegend();
                 renderChart();
+            });
+
+            // Search input filtering
+            document.getElementById('echarts-legend-search').addEventListener('input', (e) => {
+                const searchText = e.target.value.toLowerCase().trim();
+                const legendItems = itemsGrid.querySelectorAll('div[data-collection-index]');
+                
+                legendItems.forEach(item => {
+                    const label = item.querySelector('span');
+                    const collectionText = label.textContent.toLowerCase();
+                    
+                    if (searchText === '' || collectionText.includes(searchText)) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
             });
 
             // ESC key to close
