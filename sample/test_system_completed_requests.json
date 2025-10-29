@@ -2108,7 +2108,7 @@
       "users": "local:test_user",
       "requestId": "exec-prepared-1",
       "statement": "<ud>EXECUTE myPrepared()</ud>",
-      "preparedText": "SELECT u.name FROM fujioturner u WHERE u.userId = "
+      "preparedText": "SELECT u.name FROM `users` u WHERE u.userId = $userId"
     },
     "plan": "{#operator:Authorize,#stats:{execTime:2\u00b5s,servTime:5\u00b5s},~child:{#operator:Sequence,~children:[{#operator:Stream,#stats:{execTime:1ms}}]}}"
   },
@@ -2125,7 +2125,7 @@
       "users": "local:test_user2",
       "requestId": "exec-prepared-2",
       "statement": "<UD>EXECUTE myPrepared2</UD>",
-      "preparedText": "SELECT o.orderId, o.total FROM  o WHERE o.customerId = "
+      "preparedText": "SELECT o.orderId, o.total FROM `orders` o WHERE o.customerId = $custId"
     },
     "plan": "{#operator:Authorize,#stats:{execTime:2\u00b5s,servTime:5\u00b5s},~child:{#operator:Sequence,~children:[{#operator:Stream,#stats:{execTime:1ms}}]}}"
   },

@@ -15062,6 +15062,145 @@ function generateElapsedTimeChart(requests) {
             });
         }
  
+        // Helper: Detect query patterns for a single request (Issue #202 - single source of truth)
+        function detectQueryPatterns(request) {
+            const statement = request.statement || request.preparedText || "";
+            const upperStatement = statement.toUpperCase();
+            const detectedPatterns = [];
+
+            // No WHERE: if this is an EXECUTE, check the preparedText (actual statement) for WHERE/filters
+            const stmtForFilter = (upperStatement.startsWith("EXECUTE") && request.preparedText)
+                ? request.preparedText
+                : statement;
+            if (!hasFilteringMechanism(stmtForFilter)) {
+                detectedPatterns.push("No WHERE");
+            }
+
+            // GROUP BY
+            if (upperStatement.includes(" GROUP BY ")) {
+                detectedPatterns.push("GROUP BY");
+            }
+
+            // ORDER BY
+            if (upperStatement.includes(" ORDER BY ")) {
+                detectedPatterns.push("ORDER BY");
+            }
+
+            // USE INDEX
+            if (upperStatement.includes("USE INDEX")) {
+                detectedPatterns.push("USE INDEX");
+            }
+
+            // USE KEYS
+            if (upperStatement.includes("USE KEYS")) {
+                detectedPatterns.push("USE KEYS");
+            }
+
+            // JOIN
+            if (upperStatement.includes(" JOIN ")) {
+                detectedPatterns.push("JOIN");
+            }
+
+            // NEST
+            if (upperStatement.includes(" NEST ")) {
+                detectedPatterns.push("NEST");
+            }
+
+            // UNNEST
+            if (upperStatement.includes(" UNNEST ")) {
+                detectedPatterns.push("UNNEST");
+            }
+
+            // OFFSET
+            if (upperStatement.includes(" OFFSET ")) {
+                detectedPatterns.push("OFFSET");
+            }
+
+            // SEARCH
+            if (upperStatement.includes(" SEARCH(")) {
+                detectedPatterns.push("SEARCH");
+            }
+
+            // WITH (ensure it's a SQL clause, not a backticked field name)
+            if ((upperStatement.startsWith("WITH ") || upperStatement.includes(" WITH ")) && !upperStatement.includes("`WITH`")) {
+                detectedPatterns.push("WITH");
+            }
+
+            // LET
+            if (upperStatement.includes(" LET ")) {
+                detectedPatterns.push("LET");
+            }
+
+            // ARRAY QUERY - detects array query patterns with ANY/EVERY operators per Couchbase docs:
+            // 1. ANY + IN/WITHIN + SATISFIES + END pattern
+            // 2. EVERY + IN/WITHIN + SATISFIES + END pattern
+            // 3. ANY AND EVERY + IN/WITHIN + SATISFIES + END pattern
+            // Note: UNNEST is counted separately above
+            const hasAnySatisfies = (
+                upperStatement.includes(" ANY ") &&
+                upperStatement.includes(" SATISFIES ") &&
+                (upperStatement.includes(" END ") || upperStatement.endsWith(" END"))
+            );
+            const hasEverySatisfies = (
+                upperStatement.includes(" EVERY ") &&
+                !upperStatement.includes("ANY AND EVERY") &&
+                upperStatement.includes(" SATISFIES ") &&
+                (upperStatement.includes(" END ") || upperStatement.endsWith(" END"))
+            );
+            const hasAnyAndEvery = (
+                upperStatement.includes("ANY AND EVERY") &&
+                upperStatement.includes(" SATISFIES ") &&
+                (upperStatement.includes(" END ") || upperStatement.endsWith(" END"))
+            );
+            
+            if (hasAnySatisfies || hasEverySatisfies || hasAnyAndEvery) {
+                detectedPatterns.push("ARRAY QUERY");
+            }
+
+            // SELECT * (matches SELECT * FROM or SELECT *, field FROM, but not qualified wildcards like c.*)
+            const selectStarMatch = upperStatement.match(/SELECT\s+\*[\s,]/);
+            if (selectStarMatch) {
+                detectedPatterns.push("SELECT *");
+            }
+
+            // LIKE (ensure it's an operator, not a backticked field name)
+            if (upperStatement.includes(" LIKE ") && !upperStatement.includes("`LIKE`")) {
+                detectedPatterns.push("LIKE");
+            }
+
+            // COUNT
+            if (upperStatement.includes(" COUNT(")) {
+                detectedPatterns.push("COUNT");
+            }
+
+            // DISTINCT
+            if (upperStatement.includes(" DISTINCT ")) {
+                detectedPatterns.push("DISTINCT");
+            }
+
+            // REGEX
+            if (upperStatement.includes("REGEXP_") || /REGEX\s*\(/i.test(statement)) {
+                detectedPatterns.push("REGEX");
+            }
+
+            // EXECUTE
+            if (upperStatement.startsWith("EXECUTE")) {
+                detectedPatterns.push("EXECUTE");
+            }
+
+            // LIMIT
+            if (upperStatement.includes(" LIMIT ")) {
+                detectedPatterns.push("LIMIT");
+            }
+
+            // UNION
+            if (upperStatement.includes(" UNION ")) {
+                detectedPatterns.push("UNION");
+            }
+
+            return detectedPatterns;
+        }
+ 
         // Generate Query Pattern Chart
         function generateQueryPatternChart(requests) {
             const patternCounts = {
@@ -15094,138 +15233,12 @@ function generateElapsedTimeChart(requests) {
             };
 
             requests.forEach((request) => {
-                const statement = request.statement || request.preparedText || "";
-                const upperStatement = statement.toUpperCase();
-
-                // No WHERE: if this is an EXECUTE, check the preparedText (actual statement) for WHERE/filters
-                const stmtForFilter = (upperStatement.startsWith("EXECUTE") && request.preparedText)
-                    ? request.preparedText
-                    : statement;
-                if (!hasFilteringMechanism(stmtForFilter)) {
-                    patternCounts["No WHERE"]++;
-                }
-
-                // GROUP BY
-                if (upperStatement.includes(" GROUP BY ")) {
-                    patternCounts["GROUP BY"]++;
-                }
-
-                // ORDER BY
-                if (upperStatement.includes(" ORDER BY ")) {
-                    patternCounts["ORDER BY"]++;
-                }
-
-                // USE INDEX
-                if (upperStatement.includes("USE INDEX")) {
-                    patternCounts["USE INDEX"]++;
-                }
-
-                // USE KEYS
-                if (upperStatement.includes("USE KEYS")) {
-                    patternCounts["USE KEYS"]++;
-                }
-
-                // JOIN
-                if (upperStatement.includes(" JOIN ")) {
-                    patternCounts["JOIN"]++;
-                }
-
-                // NEST
-                if (upperStatement.includes(" NEST ")) {
-                    patternCounts["NEST"]++;
-                }
-
-                // UNNEST
-                if (upperStatement.includes(" UNNEST ")) {
-                    patternCounts["UNNEST"]++;
-                }
-
-                // OFFSET
-                if (upperStatement.includes(" OFFSET ")) {
-                    patternCounts["OFFSET"]++;
-                }
-
-                // SEARCH
-                if (upperStatement.includes(" SEARCH(")) {
-                    patternCounts["SEARCH"]++;
-                }
-
-                // WITH (ensure it's a SQL clause, not a backticked field name)
-                if ((upperStatement.startsWith("WITH ") || upperStatement.includes(" WITH ")) && !upperStatement.includes("`WITH`")) {
-                    patternCounts["WITH"]++;
-                }
-
-                // LET
-                if (upperStatement.includes(" LET ")) {
-                    patternCounts["LET"]++;
-                }
-
-                // ARRAY QUERY - detects array query patterns with ANY/EVERY operators per Couchbase docs:
-                // 1. ANY + IN/WITHIN + SATISFIES + END pattern
-                // 2. EVERY + IN/WITHIN + SATISFIES + END pattern
-                // 3. ANY AND EVERY + IN/WITHIN + SATISFIES + END pattern
-                // Note: UNNEST is counted separately above (line 13007-13010)
-                const hasAnySatisfies = (
-                    upperStatement.includes(" ANY ") &&
-                    upperStatement.includes(" SATISFIES ") &&
-                    (upperStatement.includes(" END ") || upperStatement.endsWith(" END"))
-                );
-                const hasEverySatisfies = (
-                    upperStatement.includes(" EVERY ") &&
-                    !upperStatement.includes("ANY AND EVERY") &&
-                    upperStatement.includes(" SATISFIES ") &&
-                    (upperStatement.includes(" END ") || upperStatement.endsWith(" END"))
-                );
-                const hasAnyAndEvery = (
-                    upperStatement.includes("ANY AND EVERY") &&
-                    upperStatement.includes(" SATISFIES ") &&
-                    (upperStatement.includes(" END ") || upperStatement.endsWith(" END"))
-                );
-                
-                if (hasAnySatisfies || hasEverySatisfies || hasAnyAndEvery) {
-                    patternCounts["ARRAY QUERY"]++;
-                }
-
-                // SELECT * (matches SELECT * FROM or SELECT *, field FROM, but not qualified wildcards like c.*)
-                const selectStarMatch = upperStatement.match(/SELECT\s+\*[\s,]/);
-                if (selectStarMatch) {
-                    patternCounts["SELECT *"]++;
-                }
-
-                // LIKE (ensure it's an operator, not a backticked field name)
-                if (upperStatement.includes(" LIKE ") && !upperStatement.includes("`LIKE`")) {
-                    patternCounts["LIKE"]++;
-                }
-
-                // COUNT
-                if (upperStatement.includes(" COUNT(")) {
-                    patternCounts["COUNT"]++;
-                }
-
-                // DISTINCT
-                if (upperStatement.includes(" DISTINCT ")) {
-                    patternCounts["DISTINCT"]++;
-                }
-
-                // REGEX
-                if (upperStatement.includes("REGEXP_") || /REGEX\s*\(/i.test(statement)) {
-                    patternCounts["REGEX"]++;
-                }
-
-                // EXECUTE
-                if (upperStatement.startsWith("EXECUTE")) {
-                    patternCounts["EXECUTE"]++;
-                }
-
-                // LIMIT
-                if (upperStatement.includes(" LIMIT ")) {
-                    patternCounts["LIMIT"]++;
-                }
-
-                // UNION
-                if (upperStatement.includes(" UNION ")) {
-                    patternCounts["UNION"]++;
-                }
+                const patterns = detectQueryPatterns(request);
+                patterns.forEach(pattern => {
+                    if (patternCounts.hasOwnProperty(pattern)) {
+                        patternCounts[pattern]++;
+                    }
+                });
             });
 
             const ctx = document
@@ -15361,52 +15374,14 @@ function generateElapsedTimeChart(requests) {
             const collectionPatternCounts = {}; // { collection: { pattern: count } }
 
             requests.forEach((request) => {
-                const statement = request.statement || request.preparedText || "";
-                const upperStatement = statement.toUpperCase();
+                // For EXECUTE statements, use preparedText (contains actual SQL), otherwise use statement
+                const sql = request.statement || request.preparedText || "";
                 
                 // Extract collections from SQL
-                const collections = extractCollectionsFromSQL(statement);
+                const collections = extractCollectionsFromSQL(sql);
                 
-                // Detect patterns
-                const detectedPatterns = [];
-                
-                // No WHERE
-                const stmtForFilter = (upperStatement.startsWith("EXECUTE") && request.preparedText)
-                    ? request.preparedText
-                    : statement;
-                if (!hasFilteringMechanism(stmtForFilter)) {
-                    detectedPatterns.push('No WHERE');
-                }
-                
-                // Check all patterns
-                if (upperStatement.includes(" GROUP BY ")) detectedPatterns.push('GROUP BY');
-                if (upperStatement.includes(" ORDER BY ")) detectedPatterns.push('ORDER BY');
-                if (upperStatement.includes("USE INDEX")) detectedPatterns.push('USE INDEX');
-                if (upperStatement.includes("USE KEYS")) detectedPatterns.push('USE KEYS');
-                if (upperStatement.includes(" JOIN ")) detectedPatterns.push('JOIN');
-                if (upperStatement.includes(" NEST ")) detectedPatterns.push('NEST');
-                if (upperStatement.includes(" UNNEST ")) detectedPatterns.push('UNNEST');
-                if (upperStatement.includes(" OFFSET ")) detectedPatterns.push('OFFSET');
-                if (upperStatement.includes(" SEARCH(")) detectedPatterns.push('SEARCH');
-                if ((upperStatement.startsWith("WITH ") || upperStatement.includes(" WITH ")) && !upperStatement.includes("`WITH`")) {
-                    detectedPatterns.push('WITH');
-                }
-                if (upperStatement.includes(" LET ")) detectedPatterns.push('LET');
-                if (upperStatement.includes(" COUNT(")) detectedPatterns.push('COUNT');
-                if (upperStatement.includes("SELECT *") || upperStatement.includes("SELECT  *")) {
-                    detectedPatterns.push('SELECT *');
-                }
-                if (upperStatement.includes(" LIKE ")) detectedPatterns.push('LIKE');
-                if (/ANY\s+[a-zA-Z_]+\s+IN\s+/i.test(statement) || /EVERY\s+[a-zA-Z_]+\s+IN\s+/i.test(statement)) {
-                    detectedPatterns.push('ARRAY QUERY');
-                }
-                if (upperStatement.includes(" DISTINCT ")) detectedPatterns.push('DISTINCT');
-                if (upperStatement.includes("REGEXP_") || /REGEX\s*\(/i.test(statement)) {
-                    detectedPatterns.push('REGEX');
-                }
-                if (upperStatement.startsWith("EXECUTE")) detectedPatterns.push('EXECUTE');
-                if (upperStatement.includes(" LIMIT ")) detectedPatterns.push('LIMIT');
-                if (upperStatement.includes(" UNION ")) detectedPatterns.push('UNION');
+                // Detect patterns using shared helper function (Issue #202)
+                const detectedPatterns = detectQueryPatterns(request);
 
                 // Count patterns per collection
                 collections.forEach(collection => {
@@ -16054,52 +16029,14 @@ function generateElapsedTimeChart(requests) {
             const collectionPatternCounts = {}; // { collection: { pattern: count } }
 
             requests.forEach((request) => {
-                const statement = request.statement || request.preparedText || "";
-                const upperStatement = statement.toUpperCase();
+                // For EXECUTE statements, use preparedText (contains actual SQL), otherwise use statement
+                const sql = request.statement || request.preparedText || "";
                 
                 // Extract collections from SQL
-                const collections = extractCollectionsFromSQL(statement);
+                const collections = extractCollectionsFromSQL(sql);
                 
-                // Detect patterns
-                const detectedPatterns = [];
-                
-                // No WHERE
-                const stmtForFilter = (upperStatement.startsWith("EXECUTE") && request.preparedText)
-                    ? request.preparedText
-                    : statement;
-                if (!hasFilteringMechanism(stmtForFilter)) {
-                    detectedPatterns.push('No WHERE');
-                }
-                
-                // Check all patterns
-                if (upperStatement.includes(" GROUP BY ")) detectedPatterns.push('GROUP BY');
-                if (upperStatement.includes(" ORDER BY ")) detectedPatterns.push('ORDER BY');
-                if (upperStatement.includes("USE INDEX")) detectedPatterns.push('USE INDEX');
-                if (upperStatement.includes("USE KEYS")) detectedPatterns.push('USE KEYS');
-                if (upperStatement.includes(" JOIN ")) detectedPatterns.push('JOIN');
-                if (upperStatement.includes(" NEST ")) detectedPatterns.push('NEST');
-                if (upperStatement.includes(" UNNEST ")) detectedPatterns.push('UNNEST');
-                if (upperStatement.includes(" OFFSET ")) detectedPatterns.push('OFFSET');
-                if (upperStatement.includes(" SEARCH(")) detectedPatterns.push('SEARCH');
-                if ((upperStatement.startsWith("WITH ") || upperStatement.includes(" WITH ")) && !upperStatement.includes("`WITH`")) {
-                    detectedPatterns.push('WITH');
-                }
-                if (upperStatement.includes(" LET ")) detectedPatterns.push('LET');
-                if (upperStatement.includes(" COUNT(")) detectedPatterns.push('COUNT');
-                if (upperStatement.includes("SELECT *") || upperStatement.includes("SELECT  *")) {
-                    detectedPatterns.push('SELECT *');
-                }
-                if (upperStatement.includes(" LIKE ")) detectedPatterns.push('LIKE');
-                if (/ANY\s+[a-zA-Z_]+\s+IN\s+/i.test(statement) || /EVERY\s+[a-zA-Z_]+\s+IN\s+/i.test(statement)) {
-                    detectedPatterns.push('ARRAY QUERY');
-                }
-                if (upperStatement.includes(" DISTINCT ")) detectedPatterns.push('DISTINCT');
-                if (upperStatement.includes("REGEXP_") || /REGEX\s*\(/i.test(statement)) {
-                    detectedPatterns.push('REGEX');
-                }
-                if (upperStatement.startsWith("EXECUTE")) detectedPatterns.push('EXECUTE');
-                if (upperStatement.includes(" LIMIT ")) detectedPatterns.push('LIMIT');
-                if (upperStatement.includes(" UNION ")) detectedPatterns.push('UNION');
+                // Detect patterns using shared helper function (Issue #202)
+                const detectedPatterns = detectQueryPatterns(request);
 
                 // Count patterns per collection
                 collections.forEach(collection => {
