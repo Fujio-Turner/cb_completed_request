@@ -25043,7 +25043,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 const config = {
                     type: originalChart.config.type,
                     data: JSON.parse(JSON.stringify(originalChart.config.data)),
-                    options: JSON.parse(JSON.stringify(originalChart.config.options))
+                    options: JSON.parse(JSON.stringify(originalChart.config.options)),
+                    plugins: originalChart.config.plugins || []
                 };
 
                 // Create fullscreen chart
