@@ -13095,30 +13095,30 @@ size: 12
                                 }
                                 
                                     // Get the corresponding service time for this operator
-                                     let servTime = 0;
-                                     if (operatorName === 'Authorize') {
-                                         servTime = data.avgAuthorizeServTime;
-                                     } else if (operatorName === 'IndexScan') {
-                                         servTime = data.avgIndexScanServTime;
-                                     } else if (operatorName === 'Fetch') {
-                                         servTime = data.avgFetchServTime;
-                                     }
-                                     
-                                     return `  ${operatorName}: ${value.toFixed(2)}% | ${servTime.toFixed(1)}ms`;
-                                 },
-                                afterBody: function(tooltipItems) {
-                                const dataIndex = tooltipItems[0].dataIndex;
-                                const data = sortedData[dataIndex];
-                                const avgKernTime = data.kernTimeData.length > 0 ? 
+                                    let servTime = 0;
+                                    if (operatorName === 'Authorize') {
+                                    servTime = data.avgAuthorizeServTime;
+                                    } else if (operatorName === 'IndexScan') {
+                                    servTime = data.avgIndexScanServTime;
+                                    } else if (operatorName === 'Fetch') {
+                                    servTime = data.avgFetchServTime;
+                                    }
+                                    
+                                    return `  ${operatorName}: ${Math.round(value)}% | ${Math.round(servTime)}ms`;
+                                    },
+                                    afterBody: function(tooltipItems) {
+                                    const dataIndex = tooltipItems[0].dataIndex;
+                                    const data = sortedData[dataIndex];
+                                    const avgKernTime = data.kernTimeData.length > 0 ? 
                                     data.kernTimeData.reduce((sum, d) => sum + d, 0) / data.kernTimeData.length : 0;
-                                const avgElapsedTime = data.elapsedTimeData.length > 0 ? 
+                                    const avgElapsedTime = data.elapsedTimeData.length > 0 ? 
                                     data.elapsedTimeData.reduce((sum, d) => sum + d, 0) / data.elapsedTimeData.length : 0;
-                                const kernElapsedRatio = avgElapsedTime > 0 ? (avgKernTime / avgElapsedTime) * 100 : 0;
-                                return [
-                                   '',
-                                   `Kernel vs Elapsed: ${kernElapsedRatio.toFixed(1)}%`,
-                                   `Queries: ${data.queryCount}`
-                                   ];
+                                    const kernElapsedRatio = avgElapsedTime > 0 ? (avgKernTime / avgElapsedTime) * 100 : 0;
+                                    return [
+                                    '',
+                                    `Kernel vs Elapsed: ${Math.round(kernElapsedRatio)}%`,
+                                    `Queries: ${data.queryCount}`
+                                    ];
                                 }
                             }
                         },
@@ -13375,8 +13375,8 @@ size: 12
                                     else if (label.includes("IndexScan")) label = "Index (ms)";
                                     else if (label.includes("Fetch")) label = "Fetch (ms)";
                                     
-                                    // Format with thousand separators
-                                    const formattedValue = value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                                    // Format with thousand separators (whole numbers only)
+                                    const formattedValue = Math.round(value).toLocaleString('en-US');
                                     return `  ${label}: ${formattedValue}`;
                                 }
                             }
@@ -25360,6 +25360,13 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     options: JSON.parse(JSON.stringify(originalChart.config.options)),
                     plugins: originalChart.config.plugins || []
                 };
+                
+                // Preserve tooltip callbacks (they don't survive JSON serialization)
+                if (originalChart.config.options?.plugins?.tooltip?.callbacks) {
+                    if (!config.options.plugins) config.options.plugins = {};
+                    if (!config.options.plugins.tooltip) config.options.plugins.tooltip = {};
+                    config.options.plugins.tooltip.callbacks = originalChart.config.options.plugins.tooltip.callbacks;
+                }
 
                 // Create fullscreen chart
                 setTimeout(() => {
