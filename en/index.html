@@ -14211,16 +14211,50 @@ size: 12
             });
         }
 
+        // Calculate timespan string from requests
+        function calculateTimespan(requests) {
+            if (!requests || requests.length === 0) return "";
+            
+            const times = requests
+                .map(r => new Date(r.requestTime))
+                .filter(d => !isNaN(d.getTime()));
+            
+            if (times.length === 0) return "";
+            
+            const minTime = Math.min(...times.map(d => d.getTime()));
+            const maxTime = Math.max(...times.map(d => d.getTime()));
+            const spanMs = maxTime - minTime;
+            
+            if (spanMs === 0) return "over 0 seconds";
+            
+            const seconds = Math.floor(spanMs / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            const weeks = Math.floor(days / 7);
+            const months = Math.floor(days / 30);
+            
+            if (months > 0) return `over ${months} ${months === 1 ? 'month' : 'months'}`;
+            if (weeks > 0) return `over ${weeks} ${weeks === 1 ? 'week' : 'weeks'}`;
+            if (days > 0) return `over ${days} ${days === 1 ? 'day' : 'days'}`;
+            if (hours > 0) return `over ${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+            if (minutes > 0) return `over ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
+            return `over ${seconds} ${seconds === 1 ? 'second' : 'seconds'}`;
+        }
+
         // Update filter info display
-        function updateFilterInfo(originalCount, filteredCount) {
+        function updateFilterInfo(originalCount, filteredCount, requests = null) {
             const filterInfo = document.getElementById("filter-info");
             const queriesBadge = document.getElementById("queries-fixed-badge");
+            const timespan = requests ? calculateTimespan(requests) : "";
+            const timespanText = timespan ? `, ${timespan}` : "";
+            
             if (originalCount === filteredCount) {
-                const html = `Showing all <strong>${originalCount}</strong> queries`;
+                const html = `Showing all <strong>${originalCount}</strong> queries${timespanText}`;
                 if (filterInfo) filterInfo.innerHTML = html;
                 if (queriesBadge) queriesBadge.innerHTML = html;
             } else {
-                const html = `Showing <strong>${filteredCount}</strong> of <strong>${originalCount}</strong> queries`;
+                const html = `Showing <strong>${filteredCount}</strong> of <strong>${originalCount}</strong> queries${timespanText}`;
                 if (filterInfo) filterInfo.innerHTML = html;
                 if (queriesBadge) queriesBadge.innerHTML = html;
             }
@@ -20015,7 +20049,7 @@ function generateElapsedTimeChart(requests) {
             window.currentFilteredRequests = filteredRequests;
 
             // Update UI with filtered data
-            updateFilterInfo(filteredAllRequests.length, filteredRequests.length);
+            updateFilterInfo(filteredAllRequests.length, filteredRequests.length, filteredRequests);
             try {
                 // Only generate essential tables immediately - defer charts until tab activation
                 generateTable(filteredRequests);
