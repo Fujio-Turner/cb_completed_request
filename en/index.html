@@ -1810,31 +1810,31 @@ if (window.TEXT_CONSTANTS) {
                 </div>
             </div>
 
-            <!-- Row 8: ExecTime vs Elapsed & ExecTime vs ServiceTime -->
+            <!-- Row 8: ExecTime vs Elapsed & Service Time Analysis -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-elapsed" data-position="timeline-13">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="exec-vs-elapsed-chart"></canvas>
                 </div>
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-serv" data-position="timeline-14">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="service-time-analysis" data-position="timeline-14" style="position: relative;">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <canvas id="exec-vs-serv-chart"></canvas>
+                    <canvas id="service-time-analysis-chart"></canvas>
                 </div>
             </div>
 
-            <!-- Row 8: ExecTime vs Kernel -->
+            <!-- Row 9: ExecTime vs Kernel & ExecTime vs ServiceTime -->
             <div class="display-flex gap-20 margin-bottom-20">
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-kernel" data-position="timeline-15">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="exec-vs-kernel-chart"></canvas>
                 </div>
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="service-time-analysis" data-position="timeline-15b" style="position: relative;">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-serv" data-position="timeline-15b">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <canvas id="service-time-analysis-chart"></canvas>
+                    <canvas id="exec-vs-serv-chart"></canvas>
                 </div>
             </div>
 
@@ -2393,6 +2393,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 window.execVsKernelChart,
                 window.execVsServChart,
                 window.execVsElapsedChart,
+                window.serviceTimeAnalysisLineChart,
                 window.enhancedOperationsChart,
                 window.collectionQueriesChart,
                 window.parseDurationChart,
@@ -2453,6 +2454,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 window.execVsKernelChart,
                 window.execVsServChart,
                 window.execVsElapsedChart,
+                window.serviceTimeAnalysisLineChart,
                 window.enhancedOperationsChart,
                 window.collectionQueriesChart,
                 window.parseDurationChart,
@@ -2508,6 +2510,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     'exec-vs-kernel-chart': window.execVsKernelChart,
                     'exec-vs-serv-chart': window.execVsServChart,
                     'exec-vs-elapsed-chart': window.execVsElapsedChart,
+                    'service-time-analysis-chart': window.serviceTimeAnalysisLineChart,
                     'enhanced-operations-chart': window.enhancedOperationsChart,
                     'collection-queries-chart': window.collectionQueriesChart,
                     'parse-duration-chart': window.parseDurationChart,
@@ -6965,6 +6968,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 'exec-vs-kernel-chart': window.execVsKernelChart,
                 'exec-vs-serv-chart': window.execVsServChart,
                 'exec-vs-elapsed-chart': window.execVsElapsedChart,
+                'service-time-analysis-chart': window.serviceTimeAnalysisLineChart,
                 'enhanced-operations-chart': window.enhancedOperationsChart,
                 'collection-queries-chart': window.collectionQueriesChart,
                 'parse-duration-chart': window.parseDurationChart,
@@ -8030,6 +8034,7 @@ size: 12
                 window.execVsKernelChart,
                 window.execVsServChart,
                 window.execVsElapsedChart,
+                window.serviceTimeAnalysisLineChart,
                 window.enhancedOperationsChart,
                 window.collectionQueriesChart,
                 window.parseDurationChart,
@@ -12975,7 +12980,8 @@ size: 12
                     fill: false,
                     spanGaps: false,
                     tension: 0.3,
-                        yAxisID: 'y'
+                        yAxisID: 'y',
+                        hidden: true
                     },
                     {
                     label: "IndexScan: ExecTime vs ServTime (%)",
@@ -12986,7 +12992,8 @@ size: 12
                     fill: false,
                     spanGaps: false,
                         tension: 0.3,
-                        yAxisID: 'y'
+                        yAxisID: 'y',
+                        hidden: true
                     },
                     {
                     label: "Fetch: ExecTime vs ServTime (%)",
@@ -12997,7 +13004,8 @@ size: 12
                         fill: false,
                         spanGaps: false,
                             tension: 0.3,
-                            yAxisID: 'y'
+                            yAxisID: 'y',
+                            hidden: true
                         },
                         {
                             label: "Authorize: Avg ServTime (ms)",
