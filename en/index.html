@@ -17631,10 +17631,14 @@ function generateElapsedTimeChart(requests) {
                 // Count missing WHERE clauses
                 // Use consolidated function to check for filtering mechanisms (WHERE or USE KEYS)
                 // If this is EXECUTE, evaluate WHERE on preparedText (actual statement) when present
-                const stmtForWhere = (((request.statement || '').toUpperCase().startsWith('EXECUTE')) && request.preparedText)
+                // Skip EXECUTE statements without preparedText (they reference prepared statements we can't analyze)
+                const isExecuteStmt = (request.statement || '').toUpperCase().startsWith('EXECUTE');
+                const stmtForWhere = (isExecuteStmt && request.preparedText)
                     ? request.preparedText
                     : (request.statement || request.preparedText);
-                if (!hasFilteringMechanism(stmtForWhere)) {
+                
+                // Only check for missing WHERE if not an EXECUTE without preparedText
+                if (!(isExecuteStmt && !request.preparedText) && !hasFilteringMechanism(stmtForWhere)) {
                     noWhereCount++;
                     if (missingWhereClausesSamples.length < 5 && 
                         !missingWhereClausesSamples.some(s => s.statement === (request.preparedText || request.statement))) {
