@@ -108,6 +108,41 @@ When creating new Python scripts, place them in `/python/` folder
 - Modular functions for parsing, analysis, and UI generation
 - Comments explain complex logic (especially time parsing and SQL++ filtering)
 
+### Timezone Conversion (Issue #203)
+
+**IMPORTANT**: Whenever JavaScript code needs to display `requestTime` or any timestamp from data:
+
+1. **ALWAYS use `getChartDate()` for timezone conversion**
+2. **NEVER display raw `request.requestTime` directly**
+3. **Apply to ALL tables, charts, and UI elements showing timestamps**
+
+**Correct pattern**:
+```javascript
+// ✅ CORRECT - Apply timezone conversion
+const originalTime = request.requestTime;
+const convertedDate = getChartDate(originalTime);
+const displayTime = convertedDate ? convertedDate.toISOString().replace('T', ' ').substring(0, 23) + 'Z' : originalTime;
+```
+
+**Incorrect pattern**:
+```javascript
+// ❌ WRONG - Raw timestamp ignores user's timezone selection
+const displayTime = request.requestTime;
+```
+
+**Locations that apply timezone conversion**:
+- Timeline charts x-axis: Uses `getChartDate()` via `getCurrentTimeConfig()`
+- Insights tab sample queries: `updateInsightSampleQueries()` and `updateSampleQueriesTable()`
+- Every Query tab: `EVERY_QUERY_COLUMNS` requestTime column `getValue()` function
+- Indexes tab: `createIndexHTML()` for Last Scan timestamps
+- Analysis/Query Groups: Does not show requestTime (aggregated data only)
+
+**How it works**:
+- User selects timezone from dropdown (stored in `currentTimezone` global variable)
+- `getChartDate(requestTime)` converts UTC timestamp to selected timezone
+- `convertToTimezone(date, timezone)` handles the actual conversion using `Intl.DateTimeFormat`
+- Timezone changes trigger filter reminder (user must click "Parse JSON" to regenerate data)
+
 ## Logging and Debugging Strategy
 
 ### Debug Mode URL Parameter

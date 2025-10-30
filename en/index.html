@@ -65,7 +65,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         
         /* Align stacked date pickers: equal label width and input width */
         .date-range-stack > div > label { display: inline-block; width: 48px; text-align: right; }
-        #start-date, #end-date { width: 280px; box-sizing: border-box; }
+        #start-date, #end-date { width: 250px; box-sizing: border-box; }
         /* Preset select vertical layout */
         .preset-stack { display: flex; flex-direction: column; gap: 2px; }
         .preset-label { font-weight: bold; color: #495057; font-size: 12px; }
@@ -736,14 +736,16 @@ if (window.TEXT_CONSTANTS) {
 
                 <div class="date-range-stack" style="display: flex; flex-direction: column; gap: 4px;">
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <label for="start-date" style="font-size: 12px; color: #6c757d;">From:</label>
+                        <label for="start-date" style="font-size: 12px; color: #6c757d; flex-shrink: 0;">From:</label>
                         <input type="datetime-local" id="start-date" step="1" title="Start date/time for filtering"
-                            style="font-size: 11px; padding: 2px 4px;" />
+                            style="font-size: 11px; padding: 2px 4px; flex: 1; min-width: 0; max-width: 83%;" />
+                        <span id="date-picker-timezone-label" style="font-size: 10px; color: #999; font-style: italic; white-space: nowrap; flex-shrink: 0; min-width: 50px;"></span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <label for="end-date" style="font-size: 12px; color: #6c757d;">To:</label>
+                        <label for="end-date" style="font-size: 12px; color: #6c757d; flex-shrink: 0;">To:</label>
                         <input type="datetime-local" id="end-date" step="1" title="End date/time for filtering"
-                            style="font-size: 11px; padding: 2px 4px;" />
+                            style="font-size: 11px; padding: 2px 4px; flex: 1; min-width: 0; max-width: 83%;" />
+                        <span style="font-size: 10px; white-space: nowrap; flex-shrink: 0; min-width: 50px;">&nbsp;</span>
                     </div>
                 </div>
 
@@ -752,7 +754,7 @@ if (window.TEXT_CONSTANTS) {
                         <label for="sql-statement-filter" class="filter-label">SQL++ Statement Filter</label>
                         <input type="text" id="sql-statement-filter" placeholder="e.g., FROM bucket WHERE type = 'order'"
                             title="Enter part of a SQL++ statement to filter results (contains match)"
-                            style="width: 100%; max-width: 100%; font-size: 11px; padding: 4px 6px;" />
+                            style="width: 85%; max-width: 85%; font-size: 11px; padding: 4px 6px;" />
                     </div>
 
                     <div style="display: flex; flex-direction: column; padding: 6px 8px;">
@@ -5078,7 +5080,14 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 dataField: 'requestTime',
                 sortable: true,
                 sortType: 'date',
-                getValue: (request) => request.requestTime || 'N/A',
+                getValue: (request) => {
+                    const originalTime = request.requestTime || 'N/A';
+                    if (originalTime === 'N/A') return originalTime;
+                    
+                    // Apply timezone conversion
+                    const convertedDate = getChartDate(originalTime);
+                    return convertedDate ? convertedDate.toISOString().replace('T', ' ').substring(0, 23) + 'Z' : originalTime;
+                },
                 render: (value) => value
             },
             {
@@ -14067,13 +14076,18 @@ size: 12
             const date = parseCouchbaseDateTime(requestTime);
             if (!date || isNaN(date.getTime())) return null;
             
+            Logger.trace(`[getChartDate] Input: ${requestTime}, Parsed: ${date.toISOString()}, currentTimezone=${currentTimezone}`);
+            
             // If no timezone selected or UTC, return as-is
             if (!currentTimezone || currentTimezone === "UTC") {
+                Logger.trace(`[getChartDate] Returning UTC: ${date.toISOString()}`);
                 return date;
             }
             
             // Convert to selected timezone for display
-            return convertToTimezone(date, currentTimezone);
+            const converted = convertToTimezone(date, currentTimezone);
+            Logger.trace(`[getChartDate] Converted to ${currentTimezone}: ${converted ? converted.toISOString() : 'null'}`);
+            return converted;
         }
 
         // Convert Date to specified timezone and return Date object
@@ -14118,6 +14132,27 @@ size: 12
         }
 
         // Convert Date to datetime-local input format in selected timezone
+        // Update the timezone label next to date pickers
+        function updateDatePickerTimezoneLabel() {
+            const label = document.getElementById("date-picker-timezone-label");
+            if (label) {
+                const tz = currentTimezone || "UTC";
+                // Get abbreviated timezone name (e.g., "PST", "EDT", "UTC")
+                try {
+                    const formatter = new Intl.DateTimeFormat('en-US', {
+                        timeZone: tz,
+                        timeZoneName: 'short'
+                    });
+                    const parts = formatter.formatToParts(new Date());
+                    const tzAbbr = parts.find(part => part.type === 'timeZoneName')?.value || tz;
+                    label.textContent = `(${tzAbbr})`;
+                } catch (e) {
+                    // Fallback to full timezone name if abbreviation fails
+                    label.textContent = `(${tz})`;
+                }
+            }
+        }
+        
         function toDateTimeLocal(date, timezone) {
             if (!date || isNaN(date.getTime())) return "";
             
@@ -14189,6 +14224,8 @@ size: 12
 
         // Generate Dashboard Charts
         function generateDashboardCharts(requests) {
+            Logger.debug(`[generateDashboardCharts] Called with ${requests.length} requests, currentTimezone=${currentTimezone}`);
+            
             generatePrimaryScanChart(requests);
             generateStateChart(requests);
             generateStatementTypeChart(requests);
@@ -14197,7 +14234,10 @@ size: 12
             generateQueryPatternChart(requests);
             generateUserCountTable(requests);
             generateIndexCountTable(requests);
+            
+            Logger.debug(`[generateDashboardCharts] About to call updateInsights`);
             updateInsights(requests);
+            Logger.debug(`[generateDashboardCharts] Completed updateInsights`);
         }
 
         // Check if a query uses primary index by analyzing the plan (optimized with cache)
@@ -17141,6 +17181,8 @@ function generateElapsedTimeChart(requests) {
 
         // Update Insights tab with live data
         function updateInsights(requests) {
+            Logger.debug(`[updateInsights] Called with ${requests.length} requests, currentTimezone=${currentTimezone}`);
+            
             // Reset metrics tracking
             window.inefficientScanMetrics = [];
 
@@ -18253,6 +18295,8 @@ function generateElapsedTimeChart(requests) {
             }
 
             // Update sample queries for each insight
+            Logger.debug(`[updateInsights] About to update insight sample queries, sampleQueries.length=${sampleQueries.length}`);
+            
             updateInsightSampleQueries('missing-where-clauses', missingWhereClausesSamples);
             updateInsightSampleQueries('slow-use-key-queries', slowUseKeyQueriesSamples);
             updateInsightSampleQueries('large-result-set-queries', largeResultSetQueriesSamples);
@@ -19509,6 +19553,8 @@ function generateElapsedTimeChart(requests) {
                 detectedTimezone = detectTimezoneFromData(processData);
                 const timezoneSelector = document.getElementById("timezone-selector");
                 
+                Logger.debug(`[parseJSON] Detected timezone: ${detectedTimezone}, User picked: ${timeZoneUserPicked}`);
+                
                 // Only auto-set timezone if user hasn't manually picked one
                 if (timezoneSelector && !timeZoneUserPicked) {
                     // Set the dropdown to detected timezone if available in options
@@ -19519,10 +19565,15 @@ function generateElapsedTimeChart(requests) {
                         timezoneSelector.value = "UTC";
                     }
                     currentTimezone = timezoneSelector.value;
+                    Logger.debug(`[parseJSON] Auto-set timezone to: ${currentTimezone}`);
                 } else if (timezoneSelector) {
                     // Preserve user's timezone selection
                     currentTimezone = timezoneSelector.value;
+                    Logger.debug(`[parseJSON] Preserving user's timezone: ${currentTimezone}`);
                 }
+                
+                // Update the date picker timezone label to match current selection
+                updateDatePickerTimezoneLabel();
                 
                 // Update timezone info display
                 const timezoneInfo = document.getElementById("timezone-info");
@@ -19911,9 +19962,15 @@ function generateElapsedTimeChart(requests) {
 
                     originalStartDate = minDate;
                     originalEndDate = maxDate;
-                    // Use UTC for datepicker to avoid timezone conversion issues
-                    startDateInput.value = toDateTimeLocal(startWithBuffer, "UTC");
-                    endDateInput.value = toDateTimeLocal(endWithBuffer, "UTC");
+                    
+                    // Apply timezone conversion to date pickers (Issue #203)
+                    // Use selected timezone so user sees dates in their chosen timezone
+                    const timezoneForPicker = currentTimezone || "UTC";
+                    startDateInput.value = toDateTimeLocal(startWithBuffer, timezoneForPicker);
+                    endDateInput.value = toDateTimeLocal(endWithBuffer, timezoneForPicker);
+                    updateDatePickerTimezoneLabel(); // Show timezone info next to date pickers
+                    
+                    Logger.debug(`[parseJSON] Set date pickers to ${timezoneForPicker}: ${startDateInput.value} to ${endDateInput.value}`);
                 }
             } else {
                 // Use existing originalRequests if available, otherwise use current data
@@ -20028,9 +20085,11 @@ function generateElapsedTimeChart(requests) {
 
             if (type === "original") {
                 if (originalStartDate && originalEndDate) {
-                    // Use UTC for datepickers to avoid timezone filtering issues
-                    startDateInput.value = toDateTimeLocal(originalStartDate, "UTC");
-                    endDateInput.value = toDateTimeLocal(originalEndDate, "UTC");
+                    // Use selected timezone for datepickers (Issue #203)
+                    const timezoneForPicker = currentTimezone || "UTC";
+                    startDateInput.value = toDateTimeLocal(originalStartDate, timezoneForPicker);
+                    endDateInput.value = toDateTimeLocal(originalEndDate, timezoneForPicker);
+                    updateDatePickerTimezoneLabel(); // Update timezone label
                 }
             } else if (type === "1day" || type === "1hour" || type === "1week") {
                 const endDate = endDateInput.value
@@ -20046,8 +20105,10 @@ function generateElapsedTimeChart(requests) {
                     startDate.setDate(startDate.getDate() - 7);
                 }
 
-                // Use UTC for datepickers to avoid timezone filtering issues
-                startDateInput.value = toDateTimeLocal(startDate, "UTC");
+                // Use selected timezone for datepickers (Issue #203)
+                const timezoneForPicker = currentTimezone || "UTC";
+                startDateInput.value = toDateTimeLocal(startDate, timezoneForPicker);
+                updateDatePickerTimezoneLabel(); // Update timezone label
             }
 
             // Show reminder to click Parse JSON
@@ -20127,8 +20188,15 @@ function generateElapsedTimeChart(requests) {
             
             tbody.innerHTML = '';
             
+            Logger.debug(`[updateSampleQueriesTable] Updating inefficient-index-scans with ${sampleQueries.length} queries, currentTimezone=${currentTimezone}`);
+            
             sampleQueries.forEach((query, index) => {
-                const formattedDate = query.requestTime || "";
+                // Apply timezone conversion to requestTime
+                const originalTime = query.requestTime || "";
+                const convertedDate = getChartDate(originalTime);
+                const formattedDate = convertedDate ? convertedDate.toISOString().replace('T', ' ').substring(0, 23) + 'Z' : originalTime;
+                
+                Logger.trace(`[updateSampleQueriesTable] Query ${index}: Original=${originalTime}, Converted=${formattedDate}`);
                 
                 const statementId = `sample-statement-${index}`;
                 const isLongStatement = query.statement.length > 500;
@@ -20256,8 +20324,15 @@ function generateElapsedTimeChart(requests) {
             tbody.innerHTML = '';
             insightSampleQueries[insightId] = queries;
             
+            Logger.debug(`[Insights] Updating ${insightId} with ${queries.length} queries, currentTimezone=${currentTimezone}`);
+            
             queries.forEach((query, index) => {
-                const formattedDate = query.requestTime || "";
+                // Apply timezone conversion to requestTime
+                const originalTime = query.requestTime || "";
+                const convertedDate = getChartDate(originalTime);
+                const formattedDate = convertedDate ? convertedDate.toISOString().replace('T', ' ').substring(0, 23) + 'Z' : originalTime;
+                
+                Logger.trace(`[Insights] Query ${index}: Original=${originalTime}, Converted=${formattedDate}`);
                 
                 const statementId = `${insightId}-statement-${index}`;
                 const isLongStatement = query.statement.length > 500;
@@ -20320,8 +20395,15 @@ function generateElapsedTimeChart(requests) {
             tbody.innerHTML = '';
             insightSampleQueries['complex-join-operations'] = queries;
             
+            Logger.debug(`[Insights] Updating JOIN queries with ${queries.length} queries, currentTimezone=${currentTimezone}`);
+            
             queries.forEach((query, index) => {
-                const formattedDate = query.requestTime || "";
+                // Apply timezone conversion to requestTime
+                const originalTime = query.requestTime || "";
+                const convertedDate = getChartDate(originalTime);
+                const formattedDate = convertedDate ? convertedDate.toISOString().replace('T', ' ').substring(0, 23) + 'Z' : originalTime;
+                
+                Logger.trace(`[Insights] JOIN Query ${index}: Original=${originalTime}, Converted=${formattedDate}`);
                 const flags = query.flags || [];
                 const flagDetails = query.flagDetails || {};
                 const joinTime = query.joinTime || 0;
@@ -23131,11 +23213,19 @@ const LAST_UPDATED = "2025-10-26";
             const timezoneSelector = document.getElementById("timezone-selector");
             if (!timezoneSelector) return;
             
+            const oldTimezone = currentTimezone;
             currentTimezone = timezoneSelector.value;
             timeZoneUserPicked = true; // User manually picked a timezone
             
-            // Show message that user needs to re-parse
-            showToast(TEXT_CONSTANTS.FILTERS_CHANGED_REMINDER, "warning");
+            Logger.info(`[handleTimezoneChange] Timezone changed from ${oldTimezone} to ${currentTimezone}`);
+            
+            // Clear timestamp rounding cache since timezone affects all date calculations
+            timestampRoundingCache.clear();
+            
+            // Show reminder to re-parse data (timezone is a filter setting)
+            if (originalRequests && originalRequests.length > 0) {
+                showToast(TEXT_CONSTANTS.FILTERS_CHANGED_REMINDER, "warning");
+            }
         }
 
         function getVersionInfo() {
@@ -23763,9 +23853,15 @@ LET bid = CONCAT("", s.bucket_id, ""),
             const lastScan = index.metadata?.last_scan_time || "Never";
             const rawReplica = index.metadata?.num_replica;
             const state = index.state || "unknown";
+            
+            // Apply timezone conversion to lastScan
+            let lastScanFormatted = "Never";
+            if (lastScan !== "Never") {
+                const convertedDate = getChartDate(lastScan);
+                lastScanFormatted = convertedDate ? convertedDate.toLocaleString() : new Date(lastScan).toLocaleString();
+            }
+            
             const timeSince = getTimeSince(lastScan);
-            const lastScanFormatted =
-                lastScan === "Never" ? "Never" : new Date(lastScan).toLocaleString();
             const idxType = ((index.indexType || index.metadata?.using || '').toString().toLowerCase()) || 'gsi';
             const isFtsIndex = idxType === 'fts';
             const idxTypeLabel = isFtsIndex ? 'FTS' : 'GSI';
