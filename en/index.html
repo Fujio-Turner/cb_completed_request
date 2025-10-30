@@ -1831,9 +1831,10 @@ if (window.TEXT_CONSTANTS) {
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="exec-vs-kernel-chart"></canvas>
                 </div>
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="placeholder-1" data-position="timeline-15b" style="background: #f8f9fa; border: 2px dashed #dee2e6; display: flex; align-items: center; justify-content: center; color: #6c757d; position: relative;">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="service-time-analysis" data-position="timeline-15b" style="position: relative;">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
-                    <span style="font-size: 14px; font-weight: 500;">Reserved for future chart</span>
+                    <canvas id="service-time-analysis-chart"></canvas>
                 </div>
             </div>
 
@@ -2676,7 +2677,8 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 "indexScanThroughputChart",
                 "docFetchThroughputChart",
                 "docSizeBubbleChart",
-                "queryGroupPhaseTimesChart"
+                "queryGroupPhaseTimesChart",
+                "serviceTimeAnalysisLineChart"
             ];
 
             let destroyedCount = 0;
@@ -8004,6 +8006,7 @@ size: 12
             lazyCreateChart('exec-vs-kernel-chart', 'Exec vs Kernel', () => createExecVsKernelChart(requests, grouping));
             lazyCreateChart('exec-vs-serv-chart', 'Exec vs Serv', () => createExecVsServChart(requests, grouping));
             lazyCreateChart('exec-vs-elapsed-chart', 'Exec vs Elapsed', () => createExecVsElapsedChart(requests, grouping));
+            lazyCreateChart('service-time-analysis-chart', 'Service Time Analysis', () => createServiceTimeAnalysisLineChart(requests, grouping));
             lazyCreateChart('enhanced-operations-chart', 'Enhanced Operations', () => generateEnhancedOperationsChart(requests));
 
             // Initialize drag and drop after a brief delay to let first charts render
@@ -13177,6 +13180,254 @@ size: 12
             registerTimelineChart(window.execVsServChart, ctx);
         }
 
+        // Create Service Time Analysis Line Chart (5 lines: ElapsedTime, KernTime, Auth, Index, Fetch service times)
+        function createServiceTimeAnalysisLineChart(requests, grouping) {
+            const canvas = document.getElementById("service-time-analysis-chart");
+            if (!canvas) return;
+
+            const ctx = canvas.getContext("2d");
+
+            // Destroy existing chart if it exists
+            if (window.serviceTimeAnalysisLineChart) {
+                window.serviceTimeAnalysisLineChart.destroy();
+            }
+
+            // Group requests by time
+            const timeGroups = {};
+
+            requests.forEach((request) => {
+                const requestDate = getChartDate(request.requestTime);
+                const timeKey = roundTimestamp(requestDate, grouping, requests);
+                const key = timeKey.toISOString();
+
+                if (!timeGroups[key]) {
+                    timeGroups[key] = {
+                        timestamp: timeKey,
+                        elapsedTimeSum: 0,
+                        kernTimeSum: 0,
+                        authServTimeSum: 0,
+                        authServTimeCount: 0,
+                        indexServTimeSum: 0,
+                        indexServTimeCount: 0,
+                        fetchServTimeSum: 0,
+                        fetchServTimeCount: 0,
+                        queryCount: 0,
+                    };
+                }
+
+                timeGroups[key].queryCount++;
+
+                // Extract elapsed and kernel time
+                const elapsedTimeMs = parseTime(request.elapsedTime) || 0;
+                const kernTimeMs = calculateTotalKernTime(request.plan) || 0;
+                timeGroups[key].elapsedTimeSum += elapsedTimeMs;
+                timeGroups[key].kernTimeSum += kernTimeMs;
+
+                // Extract service times from operators
+                if (request.plan) {
+                    try {
+                        const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
+                        const operators = getOperators(planObj);
+
+                        operators.forEach((operator) => {
+                            const operatorType = operator["#operator"];
+                            const stats = operator["#stats"] || {};
+                            const servTime = parseTime(stats.servTime) || 0;
+
+                            if (servTime > 0) {
+                                switch (operatorType) {
+                                    case "Authorize":
+                                        timeGroups[key].authServTimeSum += servTime;
+                                        timeGroups[key].authServTimeCount++;
+                                        break;
+                                    case "IndexScan3":
+                                        timeGroups[key].indexServTimeSum += servTime;
+                                        timeGroups[key].indexServTimeCount++;
+                                        break;
+                                    case "Fetch":
+                                        timeGroups[key].fetchServTimeSum += servTime;
+                                        timeGroups[key].fetchServTimeCount++;
+                                        break;
+                                }
+                            }
+                        });
+                    } catch (e) {
+                        console.warn("Error parsing plan for service time analysis:", e);
+                    }
+                }
+            });
+
+            // Convert to sorted array and calculate averages per query
+            const sortedData = Object.values(timeGroups)
+                .sort((a, b) => a.timestamp - b.timestamp)
+                .map(item => ({
+                    timestamp: item.timestamp,
+                    avgElapsedTime: item.queryCount > 0 ? item.elapsedTimeSum / item.queryCount : null,
+                    avgKernTime: item.queryCount > 0 ? item.kernTimeSum / item.queryCount : null,
+                    avgAuthServTime: item.queryCount > 0 ? item.authServTimeSum / item.queryCount : null,
+                    avgIndexServTime: item.queryCount > 0 ? item.indexServTimeSum / item.queryCount : null,
+                    avgFetchServTime: item.queryCount > 0 ? item.fetchServTimeSum / item.queryCount : null,
+                }));
+
+            const labels = sortedData.map((item) => item.timestamp);
+            const elapsedTimeData = sortedData.map((item) => item.avgElapsedTime);
+            const kernTimeData = sortedData.map((item) => item.avgKernTime);
+            const authServTimeData = sortedData.map((item) => item.avgAuthServTime);
+            const indexServTimeData = sortedData.map((item) => item.avgIndexServTime);
+            const fetchServTimeData = sortedData.map((item) => item.avgFetchServTime);
+
+            window.serviceTimeAnalysisLineChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Avg Elapsed Time (ms)",
+                            data: elapsedTimeData,
+                            backgroundColor: "rgba(75, 192, 192, 0.2)", // Teal with low opacity for fill
+                            borderColor: "rgba(75, 192, 192, 1)",
+                            borderWidth: 2,
+                            fill: true,
+                            spanGaps: false,
+                            tension: 0.3,
+                        },
+                        {
+                            label: "Avg Kernel Time (ms)",
+                            data: kernTimeData,
+                            backgroundColor: "rgba(255, 0, 0, 0.8)", // Bright Red
+                            borderColor: "rgba(255, 0, 0, 1)",
+                            borderWidth: 3,
+                            borderDash: [20, 3, 3, 3, 3, 3, 3, 3], // Same dotted pattern
+                            fill: false,
+                            spanGaps: false,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                        },
+                        {
+                            label: "Authorize: Avg ServTime (ms)",
+                            data: authServTimeData,
+                            backgroundColor: "rgba(54, 162, 235, 0.8)", // Blue
+                            borderColor: "rgba(54, 162, 235, 1)",
+                            borderWidth: 2,
+                            fill: false,
+                            spanGaps: false,
+                            tension: 0.3,
+                        },
+                        {
+                            label: "IndexScan: Avg ServTime (ms)",
+                            data: indexServTimeData,
+                            backgroundColor: "rgba(255, 206, 86, 0.8)", // Yellow/Orange
+                            borderColor: "rgba(255, 206, 86, 1)",
+                            borderWidth: 2,
+                            fill: false,
+                            spanGaps: false,
+                            tension: 0.3,
+                        },
+                        {
+                            label: "Fetch: Avg ServTime (ms)",
+                            data: fetchServTimeData,
+                            backgroundColor: "rgba(153, 102, 255, 0.8)", // Purple
+                            borderColor: "rgba(153, 102, 255, 1)",
+                            borderWidth: 2,
+                            fill: false,
+                            spanGaps: false,
+                            tension: 0.3,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "Service Time Analysis: ElapsedTime, KernTime & Service Times",
+                            font: {
+                                size: 12
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: "top",
+                        },
+                        tooltip: {
+                            mode: "index",
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    if (value === null || value === undefined) return null;
+                                    
+                                    // Shorten labels
+                                    let label = context.dataset.label;
+                                    if (label.includes("Elapsed")) label = "Elapsed (ms)";
+                                    else if (label.includes("Kernel")) label = "Kernel (ms)";
+                                    else if (label.includes("Authorize")) label = "Authorize (ms)";
+                                    else if (label.includes("IndexScan")) label = "Index (ms)";
+                                    else if (label.includes("Fetch")) label = "Fetch (ms)";
+                                    
+                                    // Format with thousand separators
+                                    const formattedValue = value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                                    return `  ${label}: ${formattedValue}`;
+                                }
+                            }
+                        },
+                        zoom: {
+                            limits: {
+                                x: { min: "original", max: "original" },
+                                y: { min: "original", max: "original" },
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: "xy",
+                                onPan: function ({ chart }) {
+                                    currentTimeRange.min = new Date(chart.scales.x.min);
+                                    currentTimeRange.max = new Date(chart.scales.x.max);
+                                    updateTimeRangeDisplay();
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
+                                },
+                            },
+                            zoom: {
+                                wheel: { enabled: false },
+                                pinch: { enabled: true },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: "rgba(100,100,100,0.4)",
+                                    borderColor: "rgba(50,50,50,0.8)",
+                                    borderWidth: 2,
+                                },
+                                mode: "xy",
+                                onZoom: function ({ chart }) {
+                                    currentTimeRange.min = new Date(chart.scales.x.min);
+                                    currentTimeRange.max = new Date(chart.scales.x.max);
+                                    updateTimeRangeDisplay();
+                                    syncChartZoomThrottled(chart, chart.scales.x.min, chart.scales.x.max);
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            type: "time",
+                            time: getCurrentTimeConfig(requests),
+                            title: { display: true, text: "Request Time" },
+                        },
+                        y: {
+                            type: "linear",
+                            position: "left",
+                            title: { display: true, text: "Time (ms)" },
+                            beginAtZero: true,
+                        },
+                    },
+                    interaction: { mode: "index", intersect: false },
+                },
+                plugins: [verticalLinePlugin]
+            });
+
+            registerTimelineChart(window.serviceTimeAnalysisLineChart, ctx);
+        }
+
         // Setup chart drag and drop functionality
         function setupChartDragAndDrop() {
             // Chart mapping for swapping - all charts
@@ -13196,6 +13447,7 @@ size: 12
                 'exec-vs-serv': () => window.execVsServChart,
                 'cpu-time': () => window.cpuTimeChart,
                 'exec-vs-elapsed': () => window.execVsElapsedChart,
+                'service-time-analysis': () => window.serviceTimeAnalysisLineChart,
                 'enhanced-operations': () => window.enhancedOperationsChart
             };
 
@@ -13690,6 +13942,9 @@ size: 12
         if (window.planDurationChart) {
           window.planDurationChart.resetZoom();
         }
+        if (window.serviceTimeAnalysisLineChart) {
+          window.serviceTimeAnalysisLineChart.resetZoom();
+        }
 
             // Reset to original time range
             currentTimeRange = { ...originalTimeRange };
@@ -13990,6 +14245,19 @@ size: 12
                     delete window.collectionQueriesChart.options.scales.y.min;
                 }
                 window.collectionQueriesChart.update();
+            }
+
+            // Update service time analysis line chart Y-axis scale
+            if (window.serviceTimeAnalysisLineChart) {
+                window.serviceTimeAnalysisLineChart.options.scales.y.type = scaleType;
+                if (scaleType === "logarithmic") {
+                    window.serviceTimeAnalysisLineChart.options.scales.y.beginAtZero = false;
+                    window.serviceTimeAnalysisLineChart.options.scales.y.min = 0.001; // Avoid log(0) for small times
+                } else {
+                    window.serviceTimeAnalysisLineChart.options.scales.y.beginAtZero = true;
+                    delete window.serviceTimeAnalysisLineChart.options.scales.y.min;
+                }
+                window.serviceTimeAnalysisLineChart.update();
             }
 
             // Note: parseDurationChart and planDurationChart use fixed y-axis positions
