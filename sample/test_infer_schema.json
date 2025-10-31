@@ -1,0 +1,323 @@
+[
+  {
+    "_sequence_num": 1,
+    "_sequence_query": "INFER `travel-sample`._default._default with {\"num_sample_values\":0};",
+    "_sequence_query_status": "success",
+    "_sequence_result": [
+      [
+        {
+          "#docs": 711,
+          "$schema": "http://json-schema.org/draft-06/schema",
+          "Flavor": "",
+          "properties": {
+            "airline": {
+              "#docs": 711,
+              "%docs": 100,
+              "type": "string"
+            },
+            "airlineid": {
+              "#docs": 711,
+              "%docs": 100,
+              "type": "string"
+            },
+            "destinationairport": {
+              "#docs": 711,
+              "%docs": 100,
+              "type": "string"
+            },
+            "distance": {
+              "#docs": 711,
+              "%docs": 100,
+              "type": "number"
+            },
+            "equipment": {
+              "#docs": [
+                1,
+                710
+              ],
+              "%docs": [
+                0.14,
+                99.85
+              ],
+              "samples": [
+                [
+                  null
+                ],
+                []
+              ],
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "id": {
+              "#docs": 711,
+              "%docs": 100,
+              "type": "number"
+            },
+            "schedule": {
+              "#docs": 711,
+              "%docs": 100,
+              "items": {
+                "#docs": 14950,
+                "$schema": "http://json-schema.org/draft-06/schema",
+                "properties": {
+                  "day": {
+                    "type": "number"
+                  },
+                  "flight": {
+                    "type": "string"
+                  },
+                  "utc": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "maxItems": 31,
+              "minItems": 10,
+              "type": "array"
+            },
+            "sourceairport": {
+              "#docs": 711,
+              "%docs": 100,
+              "type": "string"
+            },
+            "stops": {
+              "#docs": 711,
+              "%docs": 100,
+              "type": "number"
+            },
+            "type": {
+              "#docs": 711,
+              "%docs": 100,
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      ]
+    ]
+  },
+  {
+    "_sequence_num": 2,
+    "_sequence_query": "\nINFER yama.users.profiles with {\"num_sample_values\":0};",
+    "_sequence_query_status": "success",
+    "_sequence_result": [
+      [
+        {
+          "#docs": 4,
+          "$schema": "http://json-schema.org/draft-06/schema",
+          "Flavor": "",
+          "properties": {
+            "address": {
+              "#docs": 4,
+              "%docs": 100,
+              "properties": {
+                "city": {
+                  "#docs": 4,
+                  "%docs": 100,
+                  "type": "string"
+                },
+                "country": {
+                  "#docs": 4,
+                  "%docs": 100,
+                  "type": "string"
+                },
+                "postalCode": {
+                  "#docs": 4,
+                  "%docs": 100,
+                  "type": "string"
+                },
+                "state": {
+                  "#docs": 2,
+                  "%docs": 50,
+                  "type": "string"
+                },
+                "street": {
+                  "#docs": 4,
+                  "%docs": 100,
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "audit": {
+              "#docs": 4,
+              "%docs": 100,
+              "properties": {
+                "cr": {
+                  "#docs": 4,
+                  "%docs": 100,
+                  "properties": {
+                    "by": {
+                      "#docs": 4,
+                      "%docs": 100,
+                      "type": "string"
+                    },
+                    "dt": {
+                      "#docs": 4,
+                      "%docs": 100,
+                      "type": "number"
+                    },
+                    "ver": {
+                      "#docs": 4,
+                      "%docs": 100,
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "up": {
+                  "#docs": 4,
+                  "%docs": 100,
+                  "properties": {
+                    "by": {
+                      "#docs": 4,
+                      "%docs": 100,
+                      "type": "string"
+                    },
+                    "dt": {
+                      "#docs": 4,
+                      "%docs": 100,
+                      "type": "number"
+                    },
+                    "ver": {
+                      "#docs": 4,
+                      "%docs": 100,
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
+            "createdAt": {
+              "#docs": 4,
+              "%docs": 100,
+              "type": "string"
+            },
+            "email": {
+              "#docs": 4,
+              "%docs": 100,
+              "type": "string"
+            },
+            "firstName": {
+              "#docs": 4,
+              "%docs": 100,
+              "type": "string"
+            },
+            "lastLogin": {
+              "#docs": 4,
+              "%docs": 100,
+              "type": "null"
+            },
+            "lastName": {
+              "#docs": 4,
+              "%docs": 100,
+              "type": "string"
+            },
+            "myFeeds": {
+              "#docs": 1,
+              "%docs": 25,
+              "items": {
+                "#docs": 6,
+                "$schema": "http://json-schema.org/draft-06/schema",
+                "properties": {
+                  "color": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "maxItems": 6,
+              "minItems": 6,
+              "samples": [
+                [
+                  {
+                    "color": "rgb(194, 127, 65)",
+                    "name": "Fourtheye Tool News",
+                    "source": "Fourtheye",
+                    "url": "http://fourtheye.net/feed/"
+                  }
+                ]
+              ],
+              "type": "array"
+            },
+            "myFeedsEnabled": {
+              "#docs": 1,
+              "%docs": 25,
+              "samples": [
+                true
+              ],
+              "type": "boolean"
+            },
+            "password": {
+              "#docs": 4,
+              "%docs": 100,
+              "type": "string"
+            },
+            "passwordHistory": {
+              "#docs": 4,
+              "%docs": 100,
+              "items": {
+                "#docs": 5,
+                "$schema": "http://json-schema.org/draft-06/schema",
+                "properties": {
+                  "changedAt": {
+                    "type": "number"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "maxItems": 2,
+              "minItems": 1,
+              "type": "array"
+            },
+            "phoneNumber": {
+              "#docs": 4,
+              "%docs": 100,
+              "type": "string"
+            },
+            "preferred": {
+              "#docs": 4,
+              "%docs": 100,
+              "properties": {
+                "lang": {
+                  "#docs": 4,
+                  "%docs": 100,
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "status": {
+              "#docs": 4,
+              "%docs": 100,
+              "type": "boolean"
+            },
+            "userName": {
+              "#docs": 4,
+              "%docs": 100,
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      ]
+    ]
+  }
+]
