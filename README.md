@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.26.0-post-post
+# Couchbase Slow Query Analysis Tool v3.27.0
 
 
 
