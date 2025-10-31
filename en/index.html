@@ -85,6 +85,10 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         /* Remove inflated min-height on draggable tiles in dashboard */
         #dashboard .draggable-chart { min-height: 0 !important; }
 
+        /* Badges */
+        .badge-pro{display:inline-block;padding:2px 8px;background:#f59e0b;color:#fff;border-radius:999px;font-size:12px;font-weight:700;margin-left:8px;box-shadow:0 2px 6px rgba(0,0,0,0.12)}
+        .badge-warning{display:inline-block;padding:2px 8px;background:#dc2626;color:#fff;border-radius:999px;font-size:12px;font-weight:700;margin-left:8px;box-shadow:0 2px 6px rgba(0,0,0,0.12)}
+
         /* Chart Expand/Fullscreen Feature (Issue #139) */
         .chart-expand-btn {
             position: absolute;
@@ -2293,8 +2297,11 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <label style="margin-right:16px;"><input type="checkbox" id="opt-charts-as-images" checked> <span id="rm-opt-charts-as-images"></span></label>
             </div>
             <div class="report-tip" style="margin-top:8px; margin-bottom:12px;">
-                <div class="tip-text" style="font-size:16px; font-weight:700; color:#343a40;">Pro Tip: Use SQL++ query segment filter ,above, to show case a spacifc query and/or date range first, then preview and print.</div>
-                <img src="https://cb.fuj.io/img/sql_string_filter_and_exclude_system_example.png" alt="Report Maker filters and exclude system example" style="margin-top:8px; max-width:100%; height:auto; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.06);" loading="lazy">
+                <div class="tip-text" style="font-size:16px; font-weight:700; color:#343a40;"><span class="badge-pro">PRO</span> Use SQL++ filter and/or Elapsed Time filter in Data & Filters above to narrow stats and analysis to specific queries or time ranges before generating your report.</div>
+                <div style="margin-top:16px; padding:12px; background:#f8f9fa; border-radius:8px; border:2px dashed #007acc; max-width:450px;">
+                    <div style="font-size:12px; font-weight:600; color:#007acc; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Example</div>
+                    <img src="https://cb.fuj.io/img/sql_string_filter_and_exclude_system_example.png" alt="Report Maker filters and exclude system example" style="max-width:75%; height:75px; border:2px solid #007acc; border-radius:6px; box-shadow:0 4px 12px rgba(0,122,204,0.15); display:block;" loading="lazy">
+                </div>
             </div>
         </div>
     </div>
@@ -9582,9 +9589,10 @@ size: 12
             modalContent.style.cssText = 'width: 95%; height: 95%; background: white; border-radius: 8px; padding: 20px; position: relative;';
 
             // Create close button
-            const closeBtn = document.createElement('button');
+            const closeBtn = document.createElement('div');
+            closeBtn.className = 'chart-collapse-btn';
+            closeBtn.title = 'Collapse chart';
             closeBtn.innerHTML = '✕';
-            closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; z-index: 10001;';
             closeBtn.onclick = () => {
                 document.body.removeChild(overlay);
                 document.body.style.overflow = '';
@@ -10094,9 +10102,10 @@ size: 12
             modalContent.style.cssText = 'width: 95%; height: 95%; background: white; border-radius: 8px; padding: 20px; position: relative;';
 
             // Create close button
-            const closeBtn = document.createElement('button');
+            const closeBtn = document.createElement('div');
+            closeBtn.className = 'chart-collapse-btn';
+            closeBtn.title = 'Collapse chart';
             closeBtn.innerHTML = '✕';
-            closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; z-index: 10001;';
             closeBtn.onclick = () => {
                 document.body.removeChild(overlay);
                 document.body.style.overflow = '';
@@ -15931,9 +15940,10 @@ function generateElapsedTimeChart(requests) {
             modalContent.style.cssText = 'width: 95%; height: 95%; background: white; border-radius: 8px; padding: 20px; position: relative;';
 
             // Create close button
-            const closeBtn = document.createElement('button');
+            const closeBtn = document.createElement('div');
+            closeBtn.className = 'chart-collapse-btn';
+            closeBtn.title = 'Collapse chart';
             closeBtn.innerHTML = '✕';
-            closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; z-index: 10001;';
             closeBtn.onclick = () => {
                 document.body.removeChild(overlay);
                 document.body.style.overflow = '';
@@ -16583,9 +16593,10 @@ function generateElapsedTimeChart(requests) {
             modalContent.style.cssText = 'width: 95%; height: 95%; background: white; border-radius: 8px; padding: 20px; position: relative;';
 
             // Create close button
-            const closeBtn = document.createElement('button');
+            const closeBtn = document.createElement('div');
+            closeBtn.className = 'chart-collapse-btn';
+            closeBtn.title = 'Collapse chart';
             closeBtn.innerHTML = '✕';
-            closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; z-index: 10001;';
             closeBtn.onclick = () => {
                 document.body.removeChild(overlay);
                 document.body.style.overflow = '';
