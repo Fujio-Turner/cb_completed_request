@@ -759,7 +759,7 @@ if (window.TEXT_CONSTANTS) {
                         </div>
                     </div>
                 </div>
-                <div class="source-section" aria-labelledby="schema-section-title">
+                <div class="source-section" aria-labelledby="schema-section-title" id="schema-input-section" style="display: none;">
                     <div id="schema-section-title" class="section-title">Schema Inference JSON (INFER output)</div>
                     <div class="input-source-row">
                         <div class="upload-box">
@@ -965,7 +965,7 @@ if (window.TEXT_CONSTANTS) {
             <li role="tab">
                 <a href="#indexes" aria-controls="indexes" tabindex="0">Indexes</a>
             </li>
-            <li role="tab">
+            <li role="tab" id="schema-inference-tab" style="display: none;">
                 <a href="#schema-inference" aria-controls="schema-inference" tabindex="0">Schema Inference</a>
             </li>
             <li role="tab">
@@ -24483,6 +24483,15 @@ LET bid = CONCAT("", s.bucket_id, ""),
             Logger.info(`${TEXT_CONSTANTS.FEATURES}`, getVersionInfo().features.join(", "));
 
             // Initialize theme from localStorage
+            
+            // Show Schema Inference feature if dev mode is enabled
+            if (isDevMode()) {
+                const schemaTab = document.getElementById('schema-inference-tab');
+                const schemaInput = document.getElementById('schema-input-section');
+                if (schemaTab) schemaTab.style.display = '';
+                if (schemaInput) schemaInput.style.display = '';
+                Logger.info('🔬 Schema Inference feature enabled (dev mode)');
+            }
 
             // Defer keyboard navigation enhancement (Step 8 - not critical for initial load)
             setTimeout(() => enhanceKeyboardNavigation(), 1000);
@@ -26045,12 +26054,18 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             // Generate and display sample document
             const sampleDoc = generateSampleDocument(properties);
-            html += '<h4 style="margin-top: 20px; margin-bottom: 10px; color: #495057;">Sample Document</h4>';
-            html += '<div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; margin-bottom: 20px; position: relative;">';
-            html += '<button onclick="copySampleDocument(this)" style="position: absolute; top: 10px; right: 10px; background: #007bff; color: white; border: none; border-radius: 4px; padding: 6px 12px; font-size: 11px; cursor: pointer;">📋 Copy JSON</button>';
+            const sampleDocId = `sample-doc-${escapedId}`;
+            html += '<h4 style="margin-top: 20px; margin-bottom: 10px; color: #495057;">Mock Data from Schema</h4>';
+            html += '<div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; padding-top: 45px; margin-bottom: 20px; position: relative;">';
+            html += '<div style="position: absolute; top: 10px; right: 10px; display: flex; gap: 5px;">';
+            html += '<button onclick="copySampleDocument(this)" style="background: #007bff; color: white; border: none; border-radius: 4px; padding: 6px 12px; font-size: 11px; cursor: pointer;">📋 Copy JSON</button>';
+            html += `<button onclick="toggleSampleDocument('${sampleDocId}', this)" style="background: #6c757d; color: white; border: none; border-radius: 4px; padding: 6px 12px; font-size: 11px; cursor: pointer;">▼ Show Less</button>`;
+            html += '</div>';
+            html += `<div id="${sampleDocId}" style="max-height: 200px; overflow-y: auto; transition: max-height 0.3s ease;">`;
             html += '<pre style="margin: 0; font-family: monospace; font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-word;">';
             html += DOMPurify.sanitize(JSON.stringify(sampleDoc, null, 2));
             html += '</pre>';
+            html += '</div>';
             html += '</div>';
             
             if (Object.keys(properties).length > 0) {
@@ -26412,7 +26427,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         }
         
         function copySampleDocument(button) {
-            const pre = button.nextElementSibling;
+            // Find the pre element - it's in the parent's parent's child div
+            const container = button.closest('div[style*="background"]');
+            const pre = container ? container.querySelector('pre') : null;
             if (pre) {
                 const text = pre.textContent;
                 navigator.clipboard.writeText(text).then(() => {
@@ -26427,6 +26444,21 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     Logger.error('Failed to copy:', err);
                     showToast('Failed to copy to clipboard', 'error');
                 });
+            }
+        }
+        
+        function toggleSampleDocument(divId, button) {
+            const div = document.getElementById(divId);
+            if (div) {
+                if (div.style.maxHeight === 'none' || div.style.maxHeight === '') {
+                    // Collapse
+                    div.style.maxHeight = '200px';
+                    button.textContent = '▼ Show Less';
+                } else {
+                    // Expand
+                    div.style.maxHeight = 'none';
+                    button.textContent = '▲ Show More';
+                }
             }
         }
     </script>
