@@ -10932,16 +10932,16 @@ size: 12
         function expandECharts3DQueryTypes() {
             const { bubbleData, fatalData, timeBuckets, sortedStatementTypes, sortedCollections, colorMap, statementTypeCounts, collectionCounts } = window.echartsQueryTypesData;
             if (!bubbleData || !sortedCollections) return;
-        
+
             // Create modal overlay
             const overlay = document.createElement('div');
             overlay.className = 'chart-fullscreen-overlay active';
             overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center;';
-        
+
             // Create modal content
             const modalContent = document.createElement('div');
             modalContent.style.cssText = 'width: 95%; height: 95%; background: white; border-radius: 8px; padding: 20px; position: relative;';
-        
+
             // Create close button
             const closeBtn = document.createElement('div');
             closeBtn.className = 'chart-collapse-btn';
@@ -10951,16 +10951,16 @@ size: 12
                 document.body.removeChild(overlay);
                 document.body.style.overflow = '';
             };
-        
+
             // Create fullscreen chart container
             const fullscreenChartDiv = document.createElement('div');
             fullscreenChartDiv.id = 'echarts-3d-query-types-fullscreen';
             fullscreenChartDiv.style.cssText = 'width: calc(100% - 420px); height: 100%;';
-        
+
             // Create controls and legend container
             const controlsContainer = document.createElement('div');
             controlsContainer.style.cssText = 'position: absolute; top: 50px; right: 20px; width: 400px; background: white; border: 1px solid #444; border-radius: 4px; padding: 10px; max-height: calc(100% - 60px); overflow-y: auto;';
-        
+
             // Add Log Scale toggle
             const togglesDiv = document.createElement('div');
             togglesDiv.style.cssText = 'margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ddd;';
@@ -10968,111 +10968,84 @@ size: 12
                 <div style="margin-bottom: 8px;">
                     <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold;">
                         <input type="checkbox" id="echarts-query-types-log-scale-toggle" style="margin-right: 8px;">
-                        Log Scale Z-Axis (Avg Duration)
+                        Log Scale Bubble Size
                     </label>
                 </div>
             `;
             controlsContainer.appendChild(togglesDiv);
-        
+
             // Add legend header with Show/Hide All buttons
             const legendHeader = document.createElement('div');
             legendHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
             legendHeader.innerHTML = `
-                <strong style="font-size: 14px;">Collections:</strong>
+                <strong style="font-size: 14px;">Statement Types:</strong>
                 <div>
                     <button id="echarts-query-types-fs-show-all" style="padding: 4px 12px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; font-size: 11px;">Show All</button>
                     <button id="echarts-query-types-fs-hide-all" style="padding: 4px 12px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">Hide All</button>
                 </div>
             `;
             controlsContainer.appendChild(legendHeader);
-        
+
             // Add search input
             const searchContainer = document.createElement('div');
             searchContainer.style.cssText = 'margin-bottom: 10px;';
             searchContainer.innerHTML = `
-                <input type="text" id="echarts-query-types-legend-search" placeholder="Search collections..." style="width: 100%; font-size: 11px; padding: 6px 8px; border: 1px solid #dee2e6; border-radius: 3px; box-sizing: border-box;">
+                <input type="text" id="echarts-query-types-fs-search" placeholder="Search statement types..." 
+                       style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
             `;
             controlsContainer.appendChild(searchContainer);
-        
-            // Create legend items grid
-            const itemsGrid = document.createElement('div');
-            itemsGrid.style.cssText = 'display: grid; grid-template-columns: 1fr; gap: 6px;';
-            itemsGrid.id = 'echarts-query-types-legend-items-grid';
-        
-            const visibilityState = {};
-        
-            // Add Fatal Queries first (if any)
-            const totalFatalCount = fatalData.reduce((sum, d) => sum + d.actualCount, 0);
-            if (totalFatalCount > 0) {
-                const fatalLegendItem = document.createElement('div');
-                fatalLegendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; border: 2px solid #FF0000; background: #ffebee;';
-                fatalLegendItem.dataset.collection = 'FATAL_QUERIES';
-                
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = true;
-                checkbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
-                
-                const label = document.createElement('span');
-                label.style.cssText = 'font-size: 12px; flex: 1; font-weight: bold; color: #FF0000;';
-                label.textContent = `[${totalFatalCount}] ◆ Fatal Queries`;
-                
-                fatalLegendItem.appendChild(checkbox);
-                fatalLegendItem.appendChild(label);
-                
-                visibilityState['FATAL_QUERIES'] = true;
-                
-                fatalLegendItem.onclick = (e) => {
-                    if (e.target !== checkbox) {
-                        checkbox.checked = !checkbox.checked;
-                    }
-                    visibilityState['FATAL_QUERIES'] = checkbox.checked;
-                    fatalLegendItem.style.opacity = checkbox.checked ? '1' : '0.3';
-                    updateChart();
-                };
-                
-                itemsGrid.appendChild(fatalLegendItem);
-            }
-        
-            // Sort collections by count (descending) for legend display
-            const displayCollections = [...sortedCollections].sort((a, b) => {
-                return (collectionCounts[b] || 0) - (collectionCounts[a] || 0);
-            });
-        
-            displayCollections.forEach(collection => {
-                visibilityState[collection] = true;
-                
-                const count = collectionCounts[collection];
+
+            // Create legend items container
+            const legendItemsContainer = document.createElement('div');
+            legendItemsContainer.id = 'echarts-query-types-fs-legend-items';
+            legendItemsContainer.style.cssText = 'max-height: calc(100% - 150px); overflow-y: auto;';
+
+            // Add legend items for statement types
+            sortedStatementTypes.forEach(statementType => {
                 const legendItem = document.createElement('div');
-                legendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; border: 1px solid #e0e0e0;';
-                legendItem.dataset.collection = collection;
+                legendItem.className = 'echarts-fs-legend-item';
+                legendItem.dataset.statementType = statementType;
+                legendItem.style.cssText = 'display: flex; align-items: center; padding: 6px; cursor: pointer; border-radius: 3px; margin-bottom: 3px;';
+                legendItem.innerHTML = `
+                    <span style="width: 16px; height: 16px; border-radius: 50%; background: ${colorMap[statementType] || '#868e96'}; margin-right: 8px; flex-shrink: 0;"></span>
+                    <span style="font-size: 12px; flex-grow: 1;">${statementType} (${statementTypeCounts[statementType] || 0})</span>
+                `;
                 
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = true;
-                checkbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+                legendItem.addEventListener('mouseenter', function() {
+                    this.style.background = '#f0f0f0';
+                });
+                legendItem.addEventListener('mouseleave', function() {
+                    this.style.background = 'transparent';
+                });
                 
-                const label = document.createElement('span');
-                label.style.cssText = 'font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
-                label.textContent = `[${count}] ${collection}`;
-                
-                legendItem.appendChild(checkbox);
-                legendItem.appendChild(label);
-                
-                legendItem.onclick = (e) => {
-                    if (e.target !== checkbox) {
-                        checkbox.checked = !checkbox.checked;
-                    }
-                    visibilityState[collection] = checkbox.checked;
-                    legendItem.style.opacity = checkbox.checked ? '1' : '0.3';
-                    updateChart();
-                };
-                
-                itemsGrid.appendChild(legendItem);
+                legendItemsContainer.appendChild(legendItem);
             });
-        
-            controlsContainer.appendChild(itemsGrid);
-        
+
+            // Add fatal queries legend item
+            if (fatalData.length > 0) {
+                const fatalLegendItem = document.createElement('div');
+                fatalLegendItem.className = 'echarts-fs-legend-item';
+                fatalLegendItem.dataset.statementType = 'Fatal Query';
+                fatalLegendItem.style.cssText = 'display: flex; align-items: center; padding: 6px; cursor: pointer; border-radius: 3px; margin-bottom: 3px; border-top: 2px solid #ddd; margin-top: 5px; padding-top: 10px;';
+                
+                const totalFatalCount = fatalData.reduce((sum, d) => sum + d.actualCount, 0);
+                fatalLegendItem.innerHTML = `
+                    <span style="width: 16px; height: 16px; margin-right: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #FF0000; font-size: 16px; font-weight: bold;">✕</span>
+                    <span style="font-size: 12px; flex-grow: 1; font-weight: bold; color: #FF0000;">Fatal Queries (${totalFatalCount})</span>
+                `;
+                
+                fatalLegendItem.addEventListener('mouseenter', function() {
+                    this.style.background = '#ffebee';
+                });
+                fatalLegendItem.addEventListener('mouseleave', function() {
+                    this.style.background = 'transparent';
+                });
+                
+                legendItemsContainer.appendChild(fatalLegendItem);
+            }
+
+            controlsContainer.appendChild(legendItemsContainer);
+
             // Assemble modal
             modalContent.appendChild(closeBtn);
             modalContent.appendChild(fullscreenChartDiv);
@@ -11080,65 +11053,55 @@ size: 12
             overlay.appendChild(modalContent);
             document.body.appendChild(overlay);
             document.body.style.overflow = 'hidden';
-        
+
             // Initialize ECharts
             const myChart = echarts.init(fullscreenChartDiv);
-        
-            // Calculate bubble sizes (fixed size based on count, not affected by Z-axis scale)
-            function calculateBubbleSizes() {
-                const allCounts = bubbleData.filter(d => visibilityState[d.collection]).map(d => d.actualCount);
-                const maxCount = Math.max(...allCounts, 1);
-                
-                return bubbleData
-                    .filter(d => visibilityState[d.collection])
-                    .map(d => {
-                        // Fixed bubble size based on count
-                        const size = Math.max(5, Math.min(30, (d.actualCount / maxCount) * 30));
-                        return {
-                            value: d.value,
-                            itemStyle: d.itemStyle,
-                            actualCount: d.actualCount,
-                            statementType: d.statementType,
-                            collection: d.collection,
-                            time: d.time,
-                            avgDuration: d.avgDuration,
-                            maxDuration: d.maxDuration,
-                            minDuration: d.minDuration,
-                            symbolSize: size
-                        };
-                    });
+
+            // Calculate bubble sizes
+            function calculateBubbleSizes(data, useLogScale) {
+                const maxCount = Math.max(...data.map(d => d.actualCount));
+                return data.map(d => {
+                    let size;
+                    if (useLogScale) {
+                        size = Math.max(5, Math.log10(d.actualCount + 1) * 10);
+                    } else {
+                        size = Math.max(5, Math.min(30, (d.actualCount / maxCount) * 50));
+                    }
+                    return [d.value[0], d.value[1], d.value[2], size];
+                });
             }
-        
-            function updateChart() {
-                const useLogScale = document.getElementById('echarts-query-types-log-scale-toggle')?.checked || false; // Default to false
-                const chartData = calculateBubbleSizes();
-        
-                // Build series array
+
+            // Render chart function
+            function renderChart(visibleTypes = new Set(sortedStatementTypes.concat(['Fatal Query'])), useLogScale = false) {
+                // Filter bubbles by visible types
+                const visibleBubbles = bubbleData.filter(d => visibleTypes.has(d.statementType));
+                const visibleFatal = fatalData.filter(d => visibleTypes.has('Fatal Query'));
+
+                // Calculate bubble sizes
+                const bubbleSizes = calculateBubbleSizes(visibleBubbles, useLogScale);
+
+                // Build series
                 const series = [];
-        
-                // Regular bubbles (grouped by statement type for coloring)
-                const bubbleSeriesData = chartData.map(d => ({
-                    value: d.value,
-                    itemStyle: d.itemStyle,
-                    actualCount: d.actualCount,
-                    statementType: d.statementType,
-                    collection: d.collection,
-                    time: d.time,
-                    avgDuration: d.avgDuration,
-                    maxDuration: d.maxDuration,
-                    minDuration: d.minDuration,
-                    symbolSize: d.symbolSize
-                }));
-        
-                if (bubbleSeriesData.length > 0) {
+
+                // Add bubble series (statement types)
+                if (visibleBubbles.length > 0) {
                     series.push({
                         type: 'scatter3D',
-                        data: bubbleSeriesData,
-                        symbolSize: function(dataItem) {
-                            return dataItem.symbolSize;
+                        data: bubbleSizes.map((size, idx) => ({
+                            value: size,
+                            itemStyle: visibleBubbles[idx].itemStyle,
+                            actualCount: visibleBubbles[idx].actualCount,
+                            statementType: visibleBubbles[idx].statementType,
+                            time: visibleBubbles[idx].time,
+                            avgDuration: visibleBubbles[idx].value[2],
+                            maxDuration: visibleBubbles[idx].maxDuration,
+                            minDuration: visibleBubbles[idx].minDuration
+                        })),
+                        symbolSize: function(data) {
+                            return data[3]; // Size from calculated bubble size
                         },
                         itemStyle: {
-                            opacity: 0.85
+                            opacity: 0.8
                         },
                         emphasis: {
                             itemStyle: {
@@ -11147,60 +11110,44 @@ size: 12
                         }
                     });
                 }
-        
-                // Fatal queries (diamonds)
-                if (visibilityState['FATAL_QUERIES'] && fatalData && fatalData.length > 0) {
-                    const fatalSeriesData = fatalData
-                        .filter(d => visibilityState[d.collection])
-                        .map(d => {
-                            // Fixed fatal marker size based on count
-                            const size = Math.max(15, Math.min(40, d.actualCount * 8));
-                            return {
-                                value: d.value,
-                                itemStyle: { color: '#FF0000' },
-                                actualCount: d.actualCount,
-                                statementType: d.statementType,
-                                collection: d.collection,
-                                time: d.time,
-                                avgDuration: d.avgDuration,
-                                maxDuration: d.maxDuration,
-                                minDuration: d.minDuration,
-                                symbolSize: size
-                            };
-                        });
-        
-                    if (fatalSeriesData.length > 0) {
-                        series.push({
-                            type: 'scatter3D',
-                            data: fatalSeriesData,
-                            symbol: 'diamond',
-                            symbolSize: function(dataItem) {
-                                return dataItem.symbolSize;
-                            },
+
+                // Add fatal query series (bright red diamond markers)
+                if (visibleFatal.length > 0) {
+                    series.push({
+                        type: 'scatter3D',
+                        data: visibleFatal.map(d => ({
+                            value: d.value,
+                            itemStyle: { color: '#FF0000' }, // Bright red
+                            actualCount: d.actualCount,
+                            statementType: d.statementType,
+                            collection: d.collection,
+                            time: d.time,
+                            avgDuration: d.avgDuration,
+                            maxDuration: d.maxDuration,
+                            minDuration: d.minDuration
+                        })),
+                        symbol: 'diamond',
+                        symbolSize: function(data) {
+                            // Make fatal markers larger and more visible
+                            return Math.min(40, Math.max(20, data.actualCount * 8));
+                        },
+                        itemStyle: {
+                            opacity: 1,
+                            color: '#FF0000',
+                            borderWidth: 3,
+                            borderColor: '#CC0000'
+                        },
+                        emphasis: {
                             itemStyle: {
                                 opacity: 1,
-                                color: '#FF0000'
-                            },
-                            emphasis: {
-                                itemStyle: {
-                                    opacity: 1,
-                                    color: '#FF3333'
-                                }
+                                borderWidth: 4,
+                                color: '#FF3333'
                             }
-                        });
-                    }
-                }
-        
-                const option = {
-                    title: {
-                        text: 'Query Duration By Statement Type By Collection',
-                        left: 'center',
-                        top: 10,
-                        textStyle: {
-                            fontSize: 18,
-                            fontWeight: 'bold'
                         }
-                    },
+                    });
+                }
+
+                const option = {
                     tooltip: {
                         formatter: function(params) {
                             const d = params.data;
@@ -11212,19 +11159,17 @@ size: 12
                         boxHeight: Math.min(300, sortedCollections.length * 20),
                         boxDepth: 200,
                         viewControl: {
-                            alpha: 9,
-                            beta: 44.4,
-                            distance: 589.1,
+                            alpha: 25,
+                            beta: 45,
+                            distance: 350,
                             minDistance: 100,
                             maxDistance: 600
                         },
-                        light: {
-                            main: {
-                                intensity: 1.2,
-                                shadow: true
-                            },
-                            ambient: {
-                                intensity: 0.5
+                        axisPointer: {
+                            show: true,
+                            lineStyle: {
+                                color: '#999',
+                                width: 2
                             }
                         }
                     },
@@ -11233,20 +11178,14 @@ size: 12
                         name: 'Time',
                         min: 0,
                         max: timeBuckets.length - 1,
-                        nameTextStyle: {
-                            fontSize: 14,
-                            fontWeight: 'bold'
-                        },
                         axisLabel: {
-                            interval: Math.max(0, Math.ceil(timeBuckets.length / 10) - 1),
                             formatter: function(value) {
                                 const idx = Math.round(value);
                                 if (idx >= 0 && idx < timeBuckets.length) {
                                     return timeBuckets[idx].toLocaleString('en-US', { month: 'short', day: 'numeric' });
                                 }
                                 return '';
-                            },
-                            fontSize: 10
+                            }
                         }
                     },
                     yAxis3D: {
@@ -11254,12 +11193,7 @@ size: 12
                         name: 'Collection',
                         min: 0,
                         max: sortedCollections.length - 1,
-                        nameTextStyle: {
-                            fontSize: 14,
-                            fontWeight: 'bold'
-                        },
                         axisLabel: {
-                            interval: Math.max(0, Math.ceil(sortedCollections.length / 10) - 1),
                             formatter: function(value) {
                                 const idx = Math.round(value);
                                 if (idx >= 0 && idx < sortedCollections.length) {
@@ -11267,18 +11201,13 @@ size: 12
                                     return collection.length > 15 ? collection.substring(0, 15) + '...' : collection;
                                 }
                                 return '';
-                            },
-                            fontSize: 10
+                            }
                         }
                     },
                     zAxis3D: {
-                        type: useLogScale ? 'log' : 'value',
+                        type: 'log',
                         name: 'Avg Duration (s)',
-                        min: useLogScale ? 0.001 : 0,
-                        nameTextStyle: {
-                            fontSize: 14,
-                            fontWeight: 'bold'
-                        },
+                        min: 0.001,
                         axisLabel: {
                             formatter: function(value) {
                                 return value.toFixed(3) + 's';
@@ -11287,86 +11216,65 @@ size: 12
                     },
                     series: series
                 };
-        
+
                 myChart.setOption(option, true);
             }
-        
-            // Initial render
-            updateChart();
 
-            // Add camera position debug display (when ?debug=true or ?logLevel=debug)
-            const urlParams = new URLSearchParams(window.location.search);
-            const debugMode = urlParams.get('debug') === 'true' || urlParams.get('logLevel') === 'debug';
-            
-            if (debugMode) {
-                // Create debug DIV
-                const debugDiv = document.createElement('div');
-                debugDiv.id = 'camera-debug-query-types';
-                debugDiv.style.cssText = 'position: absolute; top: 60px; left: 10px; background: rgba(0,0,0,0.9); color: #00ff00; padding: 12px; font-family: monospace; font-size: 13px; z-index: 10002; border-radius: 4px; border: 2px solid #00ff00; box-shadow: 0 0 10px rgba(0,255,0,0.5);';
-                debugDiv.innerHTML = '<strong style="color: #ffff00;">Camera Position:</strong><br/>Alpha: 25.0<br/>Beta: 45.0<br/>Distance: 350.0';
-                fullscreenChartDiv.appendChild(debugDiv);
-                
-                // Continuously poll camera position (updates every 100ms)
-                const cameraUpdateInterval = setInterval(function() {
-                    try {
-                        const option = myChart.getOption();
-                        if (option && option.grid3D && option.grid3D[0] && option.grid3D[0].viewControl) {
-                            const vc = option.grid3D[0].viewControl;
-                            debugDiv.innerHTML = `
-                                <strong style="color: #ffff00;">Camera Position:</strong><br/>
-                                Alpha: ${vc.alpha.toFixed(1)}<br/>
-                                Beta: ${vc.beta.toFixed(1)}<br/>
-                                Distance: ${vc.distance.toFixed(1)}
-                            `;
-                        }
-                    } catch (e) {
-                        // Silently fail
-                    }
-                }, 100);
-                
-                // Clean up interval when modal closes
-                closeBtn.addEventListener('click', function() {
-                    clearInterval(cameraUpdateInterval);
-                });
-            }
-        
+            // Initial render
+            renderChart();
+
             // Log scale toggle handler
-            document.getElementById('echarts-query-types-log-scale-toggle').addEventListener('change', updateChart);
-        
+            const logScaleToggle = document.getElementById('echarts-query-types-log-scale-toggle');
+            logScaleToggle.addEventListener('change', function() {
+                const visibleTypes = new Set(
+                    Array.from(legendItemsContainer.querySelectorAll('.echarts-fs-legend-item'))
+                        .filter(item => item.style.opacity !== '0.3')
+                        .map(item => item.dataset.statementType)
+                );
+                renderChart(visibleTypes, this.checked);
+            });
+
+            // Legend item click handler
+            legendItemsContainer.addEventListener('click', function(e) {
+                const legendItem = e.target.closest('.echarts-fs-legend-item');
+                if (!legendItem) return;
+
+                const isHidden = legendItem.style.opacity === '0.3';
+                legendItem.style.opacity = isHidden ? '1' : '0.3';
+
+                const visibleTypes = new Set(
+                    Array.from(this.querySelectorAll('.echarts-fs-legend-item'))
+                        .filter(item => item.style.opacity !== '0.3')
+                        .map(item => item.dataset.statementType)
+                );
+
+                renderChart(visibleTypes, logScaleToggle.checked);
+            });
+
             // Show/Hide All handlers
-            document.getElementById('echarts-query-types-fs-show-all').addEventListener('click', () => {
-                Object.keys(visibilityState).forEach(key => {
-                    visibilityState[key] = true;
-                    const item = itemsGrid.querySelector(`[data-collection="${key}"]`);
-                    if (item) {
-                        item.querySelector('input').checked = true;
-                        item.style.opacity = '1';
-                    }
+            document.getElementById('echarts-query-types-fs-show-all').addEventListener('click', function() {
+                legendItemsContainer.querySelectorAll('.echarts-fs-legend-item').forEach(item => {
+                    item.style.opacity = '1';
                 });
-                updateChart();
+                renderChart(new Set(sortedStatementTypes.concat(['Fatal Query'])), logScaleToggle.checked);
             });
-        
-            document.getElementById('echarts-query-types-fs-hide-all').addEventListener('click', () => {
-                Object.keys(visibilityState).forEach(key => {
-                    visibilityState[key] = false;
-                    const item = itemsGrid.querySelector(`[data-collection="${key}"]`);
-                    if (item) {
-                        item.querySelector('input').checked = false;
-                        item.style.opacity = '0.3';
-                    }
+
+            document.getElementById('echarts-query-types-fs-hide-all').addEventListener('click', function() {
+                legendItemsContainer.querySelectorAll('.echarts-fs-legend-item').forEach(item => {
+                    item.style.opacity = '0.3';
                 });
-                updateChart();
+                renderChart(new Set(), logScaleToggle.checked);
             });
-        
+
             // Search handler
-            const searchInput = document.getElementById('echarts-query-types-legend-search');
+            const searchInput = document.getElementById('echarts-query-types-fs-search');
             searchInput.addEventListener('input', function() {
                 const searchLower = this.value.toLowerCase();
-                itemsGrid.querySelectorAll('[data-collection]').forEach(item => {
-                    const collection = item.dataset.collection;
-                    if (!collection) return;
+                legendItemsContainer.querySelectorAll('.echarts-fs-legend-item').forEach(item => {
+                    const statementType = item.dataset.statementType;
+                    if (!statementType) return;
                     
-                    if (searchLower === '' || collection.toLowerCase().includes(searchLower)) {
+                    if (searchLower === '' || statementType.toLowerCase().includes(searchLower)) {
                         item.style.display = 'flex';
                     } else {
                         item.style.display = 'none';
@@ -11374,6 +11282,7 @@ size: 12
                 });
             });
         }
+
         // Create Parse Duration Distribution Chart
         function createParseDurationChart(requests, grouping) {
             const canvas = document.getElementById("parse-duration-chart");

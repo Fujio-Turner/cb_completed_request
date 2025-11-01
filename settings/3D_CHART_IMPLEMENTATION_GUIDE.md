@@ -1,32 +1,189 @@
 # 3D Chart Implementation Guide
 
-This guide documents the complete step-by-step process for creating 3D charts using **ECharts GL**, based on the implementation in issues #195 and #196.
+This guide documents the complete step-by-step process for creating 3D charts using **ECharts GL**, based on the implementation in issues #195, #196, and #214.
 
 ## Table of Contents
 1. [Overview](#overview) - Chart types and features
-2. [Camera Position Tuning](#camera-position-tuning) - Debug display for fine-tuning
-3. [Implementation Steps](#implementation-steps) - Complete walkthrough
-4. [Pattern 3D Chart](#pattern-3d-chart-implementation-dashboard) - Bar3D example
-5. [Tooltip Design](#tooltip-design-guidelines) - Match 2D tooltips
-6. [Color Palette](#color-palette-inheritance) - Inherit 2D chart colors
-7. [Line3D Charts](#line3d-charts-future-enhancement) - Future line chart support
-8. [Testing](#testing-checklist) - Verification steps
-9. [Troubleshooting](#common-issues--solutions) - Common problems
+2. [Standard 3D Chart Pattern](#standard-3d-chart-pattern) - **IMPORTANT: Follow this pattern**
+3. [Camera Position Tuning](#camera-position-tuning) - Debug display for fine-tuning
+4. [Implementation Steps](#implementation-steps) - Complete walkthrough
+5. [Pattern 3D Chart](#pattern-3d-chart-implementation-dashboard) - Bar3D example
+6. [Tooltip Design](#tooltip-design-guidelines) - Match 2D tooltips
+7. [Color Palette](#color-palette-inheritance) - Inherit 2D chart colors
+8. [Line3D Charts](#line3d-charts-future-enhancement) - Future line chart support
+9. [Testing](#testing-checklist) - Verification steps
+10. [Troubleshooting](#common-issues--solutions) - Common problems
 
 ## Overview
 
-The final implementation adds a **"3D" button** to 2D Chart.js charts that opens a fullscreen ECharts GL 3D visualization. This guide covers two types of 3D charts:
+The final implementation adds a **"3D" button** to 2D Chart.js charts that opens a fullscreen ECharts GL 3D visualization. This guide covers three types of 3D charts:
 
 1. **Timeline 3D Chart** (scatter3D with bubbles) - Duration Buckets → Collections × Time × Duration
 2. **Pattern 3D Chart** (bar3D with bars) - Query Patterns → Collections × Patterns × Count
+3. **Query Types 3D Chart** (scatter3D with bubbles + diamonds) - Statement Types → Time × Collections × Avg Duration
 
 ### Universal 3D Chart Features:
 - **Interactive Legend**: Show/hide items, search filtering
-- **Log Scale Toggle**: Switch between linear and logarithmic sizing
+- **Log Scale Toggle**: Switch between linear and logarithmic Z-axis scaling
 - **Color Matching**: Uses same color palette as 2D chart
 - **Tooltip Mirroring**: Based on 2D chart tooltip content
 - **Camera Position Tuning**: Fine-tuned alpha, beta, distance values
-- **Aggregation Modes**: Some charts support data aggregation
+- **Debug Mode**: Camera position display with `?debug=true`
+- **Collection-Based Filtering**: Toggle collections on/off
+
+---
+
+## Standard 3D Chart Pattern
+
+**IMPORTANT**: When creating a new 3D chart from a 2D chart, follow this standard pattern established in issue #214.
+
+### Axis Mapping Rules
+
+Map 2D chart axes to 3D chart axes as follows:
+
+```
+2D Chart               →  3D Chart
+─────────────────────     ─────────────────────
+X-Axis: Request Time   →  X-Axis: Request Time
+Y-Axis: [Metric]       →  Z-Axis: [Metric]
+[No Y-axis in 2D]      →  Y-Axis: Collection
+```
+
+**Example Mappings:**
+
+| 2D Chart | 2D X-Axis | 2D Y-Axis | 3D X-Axis | 3D Y-Axis | 3D Z-Axis |
+|----------|-----------|-----------|-----------|-----------|-----------|
+| Query Duration by Statement Type | Request Time | Avg Duration | Request Time | Collection | Avg Duration |
+| Duration Buckets | Request Time | Query Count | Request Time | Collection | Duration Range |
+| Query Patterns | Request Time | Pattern Count | Request Time | Collection | Pattern Count |
+
+### Title Format
+
+Create a title that extends the 2D chart title with collection dimension:
+
+```
+2D Title: "Query Duration by Statement Type (Bubble Size = Query Count)"
+3D Title: "Query Duration By Statement Type By Collection"
+
+Pattern: [Shortened 2D Title] + " By Collection"
+```
+
+### Legend Configuration
+
+**Legend shows Collections** (not statement types or other categories):
+
+```javascript
+// Sort collections by count (descending) for legend display
+const displayCollections = [...sortedCollections].sort((a, b) => {
+    return (collectionCounts[b] || 0) - (collectionCounts[a] || 0);
+});
+
+// Legend items show: [count] collection_name
+label.textContent = `[${count}] ${collection}`;
+```
+
+**Legend Features:**
+- Checkbox for each collection
+- Search/filter input
+- Show All / Hide All buttons
+- Count displayed in brackets
+- Sorted by count (highest first)
+
+### Log Scale Toggle
+
+**Controls Z-Axis Scale** (not bubble size):
+
+```javascript
+// Checkbox HTML (unchecked by default)
+<input type="checkbox" id="echarts-[chartname]-log-scale-toggle" style="margin-right: 8px;">
+Log Scale Z-Axis ([Metric Name])
+
+// Usage in chart options
+zAxis3D: {
+    type: useLogScale ? 'log' : 'value',
+    name: '[Metric Name]',
+    min: useLogScale ? 0.001 : 0,
+    // ...
+}
+```
+
+**Default State:** Unchecked (linear scale)
+
+### Debug Mode Camera Display
+
+When `?debug=true` is in URL, show live camera position:
+
+```javascript
+// Add camera position debug display
+const urlParams = new URLSearchParams(window.location.search);
+const debugMode = urlParams.get('debug') === 'true' || urlParams.get('logLevel') === 'debug';
+
+if (debugMode) {
+    const debugDiv = document.createElement('div');
+    debugDiv.id = 'camera-debug-[chartname]';
+    debugDiv.style.cssText = 'position: absolute; top: 60px; left: 10px; background: rgba(0,0,0,0.9); color: #00ff00; padding: 12px; font-family: monospace; font-size: 13px; z-index: 10002; border-radius: 4px; border: 2px solid #00ff00; box-shadow: 0 0 10px rgba(0,255,0,0.5);';
+    debugDiv.innerHTML = '<strong style="color: #ffff00;">Camera Position:</strong><br/>Alpha: 25.0<br/>Beta: 45.0<br/>Distance: 350.0';
+    fullscreenChartDiv.appendChild(debugDiv);
+    
+    // Continuously poll camera position (updates every 100ms)
+    const cameraUpdateInterval = setInterval(function() {
+        try {
+            const option = myChart.getOption();
+            if (option && option.grid3D && option.grid3D[0] && option.grid3D[0].viewControl) {
+                const vc = option.grid3D[0].viewControl;
+                debugDiv.innerHTML = `
+                    <strong style="color: #ffff00;">Camera Position:</strong><br/>
+                    Alpha: ${vc.alpha.toFixed(1)}<br/>
+                    Beta: ${vc.beta.toFixed(1)}<br/>
+                    Distance: ${vc.distance.toFixed(1)}
+                `;
+            }
+        } catch (e) {
+            // Silently fail
+        }
+    }, 100);
+    
+    // Clean up interval when modal closes
+    closeBtn.addEventListener('click', function() {
+        clearInterval(cameraUpdateInterval);
+    });
+}
+```
+
+**Why polling instead of events?**
+- ECharts `viewControlchanged` event doesn't always fire reliably
+- Polling every 100ms provides smooth real-time updates
+- Low performance impact (simple read operation)
+
+### Tooltip Style
+
+Match the 2D chart tooltip format, adapted for 3D context:
+
+```javascript
+tooltip: {
+    formatter: function(params) {
+        const d = params.data;
+        // Include: Statement Type, Collection, Time, Metrics
+        return `<strong>${d.statementType}</strong><br/>Collection: ${d.collection}<br/>Time: ${d.time}<br/>Avg Duration: ${d.avgDuration.toFixed(3)}s<br/>Count: ${d.actualCount}<br/>Min: ${d.minDuration.toFixed(3)}s<br/>Max: ${d.maxDuration.toFixed(3)}s`;
+    }
+}
+```
+
+**Tooltip Content Guidelines:**
+1. **First line**: Primary category (bold) - e.g., Statement Type
+2. **Second line**: Collection name
+3. **Third line**: Time bucket
+4. **Remaining lines**: Metrics from 2D chart (Avg, Count, Min, Max)
+5. **Formatting**: Use `.toFixed(3)` for durations, `.toLocaleString()` for large counts
+
+### Complete Example: Query Types 3D Chart
+
+See implementation in issue #214 for a complete reference example that follows all these patterns.
+
+**Key Files:**
+- Data preparation: `createECharts3DQueryTypes()`
+- Modal/rendering: `expandECharts3DQueryTypes()`
+- Button handler: Added to `createQueryTypesChart()`
 
 ---
 
