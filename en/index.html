@@ -42,12 +42,9 @@
     <!-- Include DOMPurify for security -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js" integrity="sha512-YlctBG9PGZIhh9keoqI3eZkQM9T8QUbiBi7qNYAO/TUEo8jqWX5pLp5+x1cKRQDRzJ/lyGyJ9WUVNIRduxIIFw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-    <!-- Include Plotly.js for 3D charts -->
-    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
-
-    <!-- Include ECharts for alternative 3D visualization -->
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
+    <!-- Include ECharts for 3D visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" integrity="sha512-k37wQcV4v2h6jgYf5IUz1MoSKPpDs630XGSmCaCCOXxy2awgAWKHGZWr9nMyGgk3IOxA1NxdkN8r1JHgkUtMoQ==" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js" integrity="sha512-w7QeZDN4R5e4Pfa3imhez0cxzcw9CLa7rJzeNXeQGDq3ADXiEzOk3bAVVHxWn3IbXZTUtFE3ZkzG+ZQpYZw/4Q==" crossorigin="anonymous"></script>
 
     <!-- Include Panzoom, jQuery, and jQuery UI -->
     <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.3/dist/panzoom.min.js" integrity="sha256-EXkj2hNRjkwrQpvsP/7ePHObzow5rTByiCRLFIWCE/Y=" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -1868,7 +1865,16 @@ if (window.TEXT_CONSTANTS) {
                     <canvas id="timeline-chart"></canvas>
                 </div>
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="doc-size-bubble" data-position="timeline-10" style="position: relative;">
-                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-expand-btn" title="Expand chart" style="left: 5px;">⛶</div>
+                    
+                    <!-- 3D Button -->
+                    <button id="open-3d-avg-doc-size-chart-btn" 
+                            style="position: absolute; top: 5px; left: 35px; width: 32px; height: 32px; 
+                                   background: #ff8c00; color: white; border: none; border-radius: 4px; 
+                                   cursor: pointer; font-weight: bold; font-size: 12px; z-index: 100; 
+                                   display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" 
+                            title="Open ECharts 3D Avg Doc Size">3D</button>
+                    
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="doc-size-bubble-chart"></canvas>
                 </div>
@@ -10211,6 +10217,46 @@ size: 12
             Logger.info(`✅ ECharts 3D Timeline data prepared: ${data.length} data points, ${allCollections.length} collections`);
         }
 
+        // Helper function: Add camera position debug display to 3D charts
+        function addCameraDebugDisplay(myChart, fullscreenChartDiv, closeBtn, chartName) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const debugMode = urlParams.get('debug') === 'true' || urlParams.get('logLevel') === 'debug';
+            
+            if (!debugMode) return;
+            
+            // Create debug DIV
+            const debugDiv = document.createElement('div');
+            debugDiv.id = `camera-debug-${chartName}`;
+            debugDiv.style.cssText = 'position: absolute; top: 60px; left: 10px; background: rgba(0,0,0,0.9); color: #00ff00; padding: 12px; font-family: monospace; font-size: 13px; z-index: 10002; border-radius: 4px; border: 2px solid #00ff00; box-shadow: 0 0 10px rgba(0,255,0,0.5);';
+            debugDiv.innerHTML = '<strong style="color: #ffff00;">Camera Position:</strong><br/>Alpha: 0.0<br/>Beta: 0.0<br/>Distance: 0.0';
+            fullscreenChartDiv.appendChild(debugDiv);
+            
+            // Continuously poll camera position (updates every 100ms)
+            const cameraUpdateInterval = setInterval(function() {
+                try {
+                    const option = myChart.getOption();
+                    if (option && option.grid3D && option.grid3D[0] && option.grid3D[0].viewControl) {
+                        const vc = option.grid3D[0].viewControl;
+                        debugDiv.innerHTML = `
+                            <strong style="color: #ffff00;">Camera Position:</strong><br/>
+                            Alpha: ${vc.alpha.toFixed(1)}<br/>
+                            Beta: ${vc.beta.toFixed(1)}<br/>
+                            Distance: ${vc.distance.toFixed(1)}
+                        `;
+                    }
+                } catch (e) {
+                    // Silently fail
+                }
+            }, 100);
+            
+            // Clean up interval when modal closes
+            const originalCloseHandler = closeBtn.onclick;
+            closeBtn.onclick = function() {
+                clearInterval(cameraUpdateInterval);
+                if (originalCloseHandler) originalCloseHandler.call(this);
+            };
+        }
+
         // Expand ECharts 3D Timeline to fullscreen
         function expandECharts3DTimeline() {
             const { data, timeBuckets, allCollections, durationBucketDefinitions, durationColors, collectionQueryCounts } = window.echartsTimelineData;
@@ -10466,6 +10512,9 @@ size: 12
 
             // Initial render
             updateChart();
+
+            // Add camera debug display
+            addCameraDebugDisplay(myChart, fullscreenChartDiv, closeBtn, 'timeline');
 
             // Show All button functionality
             document.getElementById('echarts-timeline-fs-show-all').addEventListener('click', () => {
@@ -11294,41 +11343,8 @@ size: 12
             // Initial render
             updateChart();
 
-            // Add camera position debug display (when ?debug=true or ?logLevel=debug)
-            const urlParams = new URLSearchParams(window.location.search);
-            const debugMode = urlParams.get('debug') === 'true' || urlParams.get('logLevel') === 'debug';
-            
-            if (debugMode) {
-                // Create debug DIV
-                const debugDiv = document.createElement('div');
-                debugDiv.id = 'camera-debug-query-types';
-                debugDiv.style.cssText = 'position: absolute; top: 60px; left: 10px; background: rgba(0,0,0,0.9); color: #00ff00; padding: 12px; font-family: monospace; font-size: 13px; z-index: 10002; border-radius: 4px; border: 2px solid #00ff00; box-shadow: 0 0 10px rgba(0,255,0,0.5);';
-                debugDiv.innerHTML = '<strong style="color: #ffff00;">Camera Position:</strong><br/>Alpha: 25.0<br/>Beta: 45.0<br/>Distance: 350.0';
-                fullscreenChartDiv.appendChild(debugDiv);
-                
-                // Continuously poll camera position (updates every 100ms)
-                const cameraUpdateInterval = setInterval(function() {
-                    try {
-                        const option = myChart.getOption();
-                        if (option && option.grid3D && option.grid3D[0] && option.grid3D[0].viewControl) {
-                            const vc = option.grid3D[0].viewControl;
-                            debugDiv.innerHTML = `
-                                <strong style="color: #ffff00;">Camera Position:</strong><br/>
-                                Alpha: ${vc.alpha.toFixed(1)}<br/>
-                                Beta: ${vc.beta.toFixed(1)}<br/>
-                                Distance: ${vc.distance.toFixed(1)}
-                            `;
-                        }
-                    } catch (e) {
-                        // Silently fail
-                    }
-                }, 100);
-                
-                // Clean up interval when modal closes
-                closeBtn.addEventListener('click', function() {
-                    clearInterval(cameraUpdateInterval);
-                });
-            }
+            // Add camera debug display
+            addCameraDebugDisplay(myChart, fullscreenChartDiv, closeBtn, 'query-types');
         
             // Log scale toggle handler
             document.getElementById('echarts-query-types-log-scale-toggle').addEventListener('change', updateChart);
@@ -12146,6 +12162,471 @@ size: 12
 
             // Register chart for crosshair synchronization
             registerTimelineChart(window.resultSizeChart, ctx);
+        }
+
+        // Create ECharts 3D Avg Doc Size Data
+        function createECharts3DAvgDocSize(requests, grouping) {
+            if (!requests || requests.length === 0) {
+                Logger.debug(TEXT_CONSTANTS.NO_DATA_AVAILABLE || "No data available");
+                return;
+            }
+
+            // Define result size buckets (in bytes) - MUST match 2D chart exactly
+            const resultSizeBucketDefinitions = [
+                { label: "0 bytes", min: 0, max: 0, value: 0, color: "rgba(128, 128, 128, 0.7)" },                   // Gray
+                { label: "1-10 bytes", min: 1, max: 10, value: 1, color: "rgba(255, 0, 255, 0.7)" },                 // Magenta
+                { label: "10-100 bytes", min: 10, max: 100, value: 2, color: "rgba(128, 0, 255, 0.7)" },             // Purple
+                { label: "100-1K bytes", min: 100, max: 1000, value: 3, color: "rgba(0, 0, 200, 0.7)" },             // Dark Blue
+                { label: "1K-10K bytes", min: 1000, max: 10000, value: 4, color: "rgba(0, 200, 255, 0.7)" },         // Cyan
+                { label: "10K-100K bytes", min: 10000, max: 100000, value: 5, color: "rgba(0, 180, 0, 0.7)" },       // Green
+                { label: "100K-1MB", min: 100000, max: 1000000, value: 6, color: "rgba(150, 200, 0, 0.7)" },         // Yellow-Green
+                { label: "1MB-5MB", min: 1000000, max: 5000000, value: 7, color: "rgba(255, 220, 0, 0.7)" },         // Bright Yellow
+                { label: "5MB-10MB", min: 5000000, max: 10000000, value: 8, color: "rgba(255, 150, 0, 0.7)" },       // Orange
+                { label: "10MB-15MB", min: 10000000, max: 15000000, value: 9, color: "rgba(255, 80, 0, 0.7)" },      // Red-Orange
+                { label: "15MB-20MB", min: 15000000, max: 20000000, value: 10, color: "rgba(220, 0, 0, 0.7)" }       // Red
+            ];
+
+            // Extract colors array
+            const resultSizeColors = resultSizeBucketDefinitions.map(b => b.color);
+
+            // Get result size bucket index from avg doc size in bytes
+            function getResultSizeBucketIndex(avgDocSizeBytes) {
+                if (avgDocSizeBytes === 0) return 0;
+                else if (avgDocSizeBytes < 10) return 1;
+                else if (avgDocSizeBytes < 100) return 2;
+                else if (avgDocSizeBytes < 1000) return 3;
+                else if (avgDocSizeBytes < 10000) return 4;
+                else if (avgDocSizeBytes < 100000) return 5;
+                else if (avgDocSizeBytes < 1000000) return 6;
+                else if (avgDocSizeBytes < 5000000) return 7;
+                else if (avgDocSizeBytes < 10000000) return 8;
+                else if (avgDocSizeBytes < 15000000) return 9;
+                else return 10; // 15MB-20MB
+            }
+
+            // Get all timeline buckets
+            const timeBuckets = getTimelineBucketsFromRequests(requests, grouping);
+            const timeGroups = {};
+
+            // Initialize time buckets with collection -> size bucket -> count
+            timeBuckets.forEach(ts => {
+                timeGroups[ts.toISOString()] = {};
+            });
+
+            // Group queries by collection, time bucket, and result size bucket
+            requests.forEach((request) => {
+                const sql = request.statement || request.preparedText || "";
+                const collections = extractCollectionsFromSQL(sql);
+                
+                const requestDate = getChartDate(request.requestTime);
+                const timeKey = roundTimestamp(requestDate, grouping, requests);
+                const key = timeKey.toISOString();
+
+                // Calculate average document size in bytes (same as 2D chart)
+                const resultCount = request.resultCount || 0;
+                const resultSize = request.resultSize || 0;
+                
+                if (resultCount === 0 || resultSize === 0) return;
+                
+                const avgDocSize = resultSize / resultCount;
+                const sizeBucketIdx = getResultSizeBucketIndex(avgDocSize);
+
+                collections.forEach(collection => {
+                    if (!timeGroups[key][collection]) {
+                        timeGroups[key][collection] = {};
+                    }
+                    if (!timeGroups[key][collection][sizeBucketIdx]) {
+                        timeGroups[key][collection][sizeBucketIdx] = 0;
+                    }
+                    timeGroups[key][collection][sizeBucketIdx]++;
+                });
+            });
+
+            // Get all unique collections and count total queries per collection
+            const collectionQueryCounts = {};
+            Object.values(timeGroups).forEach(group => {
+                Object.entries(group).forEach(([collection, sizeBuckets]) => {
+                    if (!collectionQueryCounts[collection]) {
+                        collectionQueryCounts[collection] = 0;
+                    }
+                    Object.values(sizeBuckets).forEach(count => {
+                        collectionQueryCounts[collection] += count;
+                    });
+                });
+            });
+
+            // Sort collections by query count (ascending) - fewest queries in front, most in back
+            const allCollections = Object.keys(collectionQueryCounts).sort((a, b) => {
+                return collectionQueryCounts[a] - collectionQueryCounts[b];
+            });
+
+            // Create a mapping of collection to index for y-axis (sorted by query count)
+            const collectionToIndex = {};
+            allCollections.forEach((collection, idx) => {
+                collectionToIndex[collection] = idx;
+            });
+
+            // Build data points for ECharts scatter3D
+            const data = [];
+            timeBuckets.forEach((ts, timeIndex) => {
+                const key = ts.toISOString();
+                Object.entries(timeGroups[key]).forEach(([collection, sizeBuckets]) => {
+                    Object.entries(sizeBuckets).forEach(([bucketIdx, count]) => {
+                        if (count > 0) {
+                            const formattedTime = ts.toLocaleString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            });
+                            const bucketLabel = resultSizeBucketDefinitions[parseInt(bucketIdx)].label;
+                            
+                            data.push({
+                                value: [timeIndex, collectionToIndex[collection], parseInt(bucketIdx)],
+                                itemStyle: { color: resultSizeColors[parseInt(bucketIdx)] },
+                                actualCount: count,
+                                collection: collection,
+                                time: formattedTime,
+                                sizeRange: bucketLabel
+                            });
+                        }
+                    });
+                });
+            });
+
+            // Store data globally for fullscreen
+            window.echartsAvgDocSizeData = {
+                data,
+                timeBuckets,
+                allCollections,
+                resultSizeBucketDefinitions,
+                resultSizeColors,
+                collectionQueryCounts
+            };
+
+            Logger.info(`✅ ECharts 3D Avg Doc Size data prepared: ${data.length} data points, ${allCollections.length} collections`);
+        }
+
+        // Expand ECharts 3D Avg Doc Size to fullscreen
+        function expandECharts3DAvgDocSize() {
+            const { data, timeBuckets, allCollections, resultSizeBucketDefinitions, resultSizeColors, collectionQueryCounts } = window.echartsAvgDocSizeData;
+            if (!data || !allCollections) return;
+
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'chart-fullscreen-overlay active';
+            overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = 'width: 95%; height: 95%; background: white; border-radius: 8px; padding: 20px; position: relative;';
+
+            // Create close button
+            const closeBtn = document.createElement('div');
+            closeBtn.className = 'chart-collapse-btn';
+            closeBtn.title = 'Collapse chart';
+            closeBtn.innerHTML = '✕';
+            closeBtn.onclick = () => {
+                document.body.removeChild(overlay);
+                document.body.style.overflow = '';
+            };
+
+            // Create fullscreen chart container
+            const fullscreenChartDiv = document.createElement('div');
+            fullscreenChartDiv.id = 'echarts-3d-avg-doc-size-fullscreen';
+            fullscreenChartDiv.style.cssText = 'width: calc(100% - 420px); height: 100%;';
+
+            // Create controls and legend container
+            const controlsContainer = document.createElement('div');
+            controlsContainer.style.cssText = 'position: absolute; top: 50px; right: 20px; width: 400px; background: white; border: 1px solid #444; border-radius: 4px; padding: 10px; max-height: calc(100% - 60px); overflow-y: auto;';
+
+            // Add toggle controls
+            const togglesDiv = document.createElement('div');
+            togglesDiv.style.cssText = 'margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ddd;';
+            togglesDiv.innerHTML = `
+                <div style="margin-bottom: 8px;">
+                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold;">
+                        <input type="checkbox" id="echarts-avg-doc-size-log-scale-toggle" style="margin-right: 8px;">
+                        Log Scale Z-Axis (Avg Doc Size)
+                    </label>
+                </div>
+            `;
+            controlsContainer.appendChild(togglesDiv);
+
+            // Add legend header
+            const legendHeader = document.createElement('div');
+            legendHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
+            legendHeader.innerHTML = `
+                <strong style="font-size: 14px;">Collections:</strong>
+                <div>
+                    <button id="echarts-avg-doc-size-fs-show-all" style="padding: 4px 12px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; font-size: 11px;">Show All</button>
+                    <button id="echarts-avg-doc-size-fs-hide-all" style="padding: 4px 12px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">Hide All</button>
+                </div>
+            `;
+            controlsContainer.appendChild(legendHeader);
+
+            // Add search input
+            const searchContainer = document.createElement('div');
+            searchContainer.style.cssText = 'margin-bottom: 10px;';
+            searchContainer.innerHTML = `
+                <input type="text" id="echarts-avg-doc-size-legend-search" placeholder="Search collections..." style="width: 100%; font-size: 11px; padding: 6px 8px; border: 1px solid #dee2e6; border-radius: 3px; box-sizing: border-box;">
+            `;
+            controlsContainer.appendChild(searchContainer);
+
+            // Create legend items grid
+            const itemsGrid = document.createElement('div');
+            itemsGrid.style.cssText = 'display: grid; grid-template-columns: 1fr; gap: 6px;';
+            itemsGrid.id = 'echarts-avg-doc-size-legend-items-grid';
+            
+            // Sort collections by count (descending) for legend display
+            const sortedCollections = [...allCollections].sort((a, b) => {
+                return collectionQueryCounts[b] - collectionQueryCounts[a];
+            });
+
+            const visibilityState = {};
+            sortedCollections.forEach(collection => {
+                visibilityState[collection] = true;
+            });
+
+            sortedCollections.forEach(collection => {
+                const count = collectionQueryCounts[collection];
+                const legendItem = document.createElement('div');
+                legendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; border: 1px solid #e0e0e0;';
+                legendItem.dataset.collection = collection;
+                
+                // Checkbox
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = true;
+                checkbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+                
+                // Collection name with count
+                const label = document.createElement('span');
+                label.style.cssText = 'font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+                label.textContent = `[${count}] ${collection}`;
+                
+                legendItem.appendChild(checkbox);
+                legendItem.appendChild(label);
+                
+                // Toggle visibility on click
+                legendItem.onclick = (e) => {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    visibilityState[collection] = checkbox.checked;
+                    legendItem.style.opacity = checkbox.checked ? '1' : '0.3';
+                    updateChart();
+                };
+                
+                itemsGrid.appendChild(legendItem);
+            });
+
+            controlsContainer.appendChild(itemsGrid);
+
+            // Assemble modal
+            modalContent.appendChild(closeBtn);
+            modalContent.appendChild(fullscreenChartDiv);
+            modalContent.appendChild(controlsContainer);
+            overlay.appendChild(modalContent);
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+
+            // Calculate bubble sizes using same method as 2D chart
+            function calculateBubbleSize(count) {
+                if (count === 0) return 0;
+                // Logarithmic scale: log10(count + 1) * 8 (same as 2D chart)
+                return Math.log10(count + 1) * 8;
+            }
+
+            function prepareChartData(useLogScale) {
+                return data.map(d => {
+                    if (!visibilityState[d.collection]) return null;
+                    
+                    // Use same bubble sizing as 2D chart
+                    const bubbleSize = calculateBubbleSize(d.actualCount);
+                    
+                    // For log scale, map bucket index to log10 scale
+                    let zValue = d.value[2]; // Original bucket index
+                    if (useLogScale) {
+                        // Convert bucket index to actual bytes value for log scale
+                        const bucketDef = resultSizeBucketDefinitions[d.value[2]];
+                        const avgBytes = bucketDef.max === 0 ? 0 : (bucketDef.min + Math.min(bucketDef.max, 20000000)) / 2; // Use midpoint
+                        zValue = avgBytes === 0 ? 0 : Math.log10(avgBytes);
+                    }
+                    
+                    return {
+                        value: [d.value[0], d.value[1], zValue],
+                        itemStyle: d.itemStyle,
+                        actualCount: d.actualCount,
+                        collection: d.collection,
+                        time: d.time,
+                        sizeRange: d.sizeRange,
+                        symbolSize: bubbleSize
+                    };
+                }).filter(d => d !== null);
+            }
+
+            // Initialize fullscreen chart
+            const myChart = echarts.init(fullscreenChartDiv);
+            
+            function updateChart() {
+                const useLogScale = document.getElementById('echarts-avg-doc-size-log-scale-toggle')?.checked || false;
+                const chartData = prepareChartData(useLogScale);
+                
+                const option = {
+                    title: {
+                        text: "Query's Avg Returned Document Size By Collection",
+                        left: 'center',
+                        top: 10,
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    tooltip: {
+                        formatter: function(params) {
+                            const d = params.data;
+                            return `${d.collection}<br/>Time: ${d.time}<br/>Size Range: ${d.sizeRange}<br/>Queries: ${d.actualCount}`;
+                        }
+                    },
+                    xAxis3D: {
+                        type: 'category',
+                        data: timeBuckets.map((ts, idx) => idx),
+                        name: 'Request Time',
+                        nameTextStyle: {
+                            fontSize: 14,
+                            fontWeight: 'bold'
+                        },
+                        axisLabel: {
+                            interval: Math.max(0, Math.ceil(timeBuckets.length / 10) - 1),
+                            formatter: function(value) {
+                                return timeBuckets[value].toLocaleString('en-US', { month: 'short', day: 'numeric' });
+                            },
+                            fontSize: 10
+                        }
+                    },
+                    yAxis3D: {
+                        type: 'category',
+                        data: allCollections,
+                        name: 'Collection',
+                        nameTextStyle: {
+                            fontSize: 14,
+                            fontWeight: 'bold'
+                        },
+                        axisLabel: {
+                            interval: Math.max(0, Math.ceil(allCollections.length / 10) - 1),
+                            fontSize: 10
+                        }
+                    },
+                    zAxis3D: {
+                        type: useLogScale ? 'value' : 'category',
+                        data: useLogScale ? null : resultSizeBucketDefinitions.map(b => b.label),
+                        name: useLogScale ? 'Avg Doc Size (bytes) - Log Scale' : 'Avg Doc Size Range',
+                        nameTextStyle: {
+                            fontSize: 14,
+                            fontWeight: 'bold'
+                        },
+                        min: useLogScale ? 0 : undefined,
+                        axisLabel: {
+                            formatter: useLogScale ? function(value) {
+                                // Convert log value back to bytes for display
+                                const bytes = Math.pow(10, value);
+                                if (bytes < 1000) return bytes.toFixed(0);
+                                else if (bytes < 1000000) return (bytes/1000).toFixed(0) + 'K';
+                                else return (bytes/1000000).toFixed(0) + 'M';
+                            } : undefined
+                        }
+                    },
+                    grid3D: {
+                        boxWidth: 250,
+                        boxDepth: Math.min(250, allCollections.length * 7),
+                        boxHeight: 150,
+                        viewControl: {
+                            alpha: 22.9,
+                            beta: 44.6,
+                            distance: 453.0,
+                            minDistance: 100,
+                            maxDistance: 600
+                        },
+                        light: {
+                            main: {
+                                intensity: 1.2,
+                                shadow: true
+                            },
+                            ambient: {
+                                intensity: 0.5
+                            }
+                        }
+                    },
+                    series: [{
+                        type: 'scatter3D',
+                        data: chartData,
+                        symbolSize: function(dataItem) {
+                            return dataItem.symbolSize;
+                        },
+                        itemStyle: {
+                            opacity: 0.85
+                        },
+                        emphasis: {
+                            itemStyle: {
+                                opacity: 1
+                            }
+                        }
+                    }]
+                };
+
+                myChart.setOption(option);
+            }
+
+            // Initial render
+            updateChart();
+
+            // Add camera debug display
+            addCameraDebugDisplay(myChart, fullscreenChartDiv, closeBtn, 'avg-doc-size');
+
+            // Show All button functionality
+            document.getElementById('echarts-avg-doc-size-fs-show-all').addEventListener('click', () => {
+                sortedCollections.forEach(collection => {
+                    visibilityState[collection] = true;
+                    const item = itemsGrid.querySelector(`[data-collection="${CSS.escape(collection)}"]`);
+                    if (item) {
+                        item.querySelector('input').checked = true;
+                        item.style.opacity = '1';
+                    }
+                });
+                updateChart();
+            });
+
+            // Hide All button functionality
+            document.getElementById('echarts-avg-doc-size-fs-hide-all').addEventListener('click', () => {
+                sortedCollections.forEach(collection => {
+                    visibilityState[collection] = false;
+                    const item = itemsGrid.querySelector(`[data-collection="${CSS.escape(collection)}"]`);
+                    if (item) {
+                        item.querySelector('input').checked = false;
+                        item.style.opacity = '0.3';
+                    }
+                });
+                updateChart();
+            });
+
+            // Log Scale checkbox functionality
+            document.getElementById('echarts-avg-doc-size-log-scale-toggle').addEventListener('change', updateChart);
+
+            // Search input filtering
+            document.getElementById('echarts-avg-doc-size-legend-search').addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                sortedCollections.forEach(collection => {
+                    const item = itemsGrid.querySelector(`[data-collection="${CSS.escape(collection)}"]`);
+                    if (item) {
+                        const matches = collection.toLowerCase().includes(searchTerm);
+                        item.style.display = matches ? 'flex' : 'none';
+                    }
+                });
+            });
+
+            // Window resize handler
+            window.addEventListener('resize', () => myChart.resize());
         }
 
         // Create CPU/Kernel/Elapsed Time Analysis Chart
@@ -13269,6 +13750,27 @@ size: 12
 
             // Register chart for crosshair synchronization
             registerTimelineChart(window.docSizeBubbleChart, ctx);
+
+            // Setup 3D button click handler
+            const btn3D = document.getElementById('open-3d-avg-doc-size-chart-btn');
+            if (btn3D) {
+                // Show button only if we have data
+                btn3D.style.display = (requests && requests.length > 0) ? 'block' : 'none';
+                
+                // Remove old event listeners (prevents duplicate handlers)
+                const newBtn = btn3D.cloneNode(true);
+                btn3D.parentNode.replaceChild(newBtn, btn3D);
+                
+                // Add click handler
+                newBtn.addEventListener('click', function() {
+                    // Generate ECharts data if not already available
+                    if (!window.echartsAvgDocSizeData) {
+                        createECharts3DAvgDocSize(requests, grouping);
+                    }
+                    // Open fullscreen modal
+                    expandECharts3DAvgDocSize();
+                });
+            }
         }
 
         // Create Execution Analysis Chart (ExecTime vs ServTime/KernTime percentages)
@@ -17717,6 +18219,9 @@ function generateElapsedTimeChart(requests) {
             // Initial render
             updateLegend();
             renderChart();
+
+            // Add camera debug display
+            addCameraDebugDisplay(fullscreenChart, fullscreenChartDiv, closeBtn, 'pattern-collection');
         }
   
         // Generate User Count Table
