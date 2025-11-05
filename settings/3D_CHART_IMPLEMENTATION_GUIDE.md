@@ -5,14 +5,15 @@ This guide documents the complete step-by-step process for creating 3D charts us
 ## Table of Contents
 1. [Overview](#overview) - Chart types and features
 2. [Standard 3D Chart Pattern](#standard-3d-chart-pattern) - **IMPORTANT: Follow this pattern**
-3. [Camera Position Tuning](#camera-position-tuning) - Debug display for fine-tuning
-4. [Implementation Steps](#implementation-steps) - Complete walkthrough
-5. [Pattern 3D Chart](#pattern-3d-chart-implementation-dashboard) - Bar3D example
-6. [Tooltip Design](#tooltip-design-guidelines) - Match 2D tooltips
-7. [Color Palette](#color-palette-inheritance) - Inherit 2D chart colors
-8. [Line3D Charts](#line3d-charts-future-enhancement) - Future line chart support
-9. [Testing](#testing-checklist) - Verification steps
-10. [Troubleshooting](#common-issues--solutions) - Common problems
+3. [Adding 2D Chart Legends to 3D Modals](#adding-2d-chart-legends-to-3d-modals-issue-221) - Dual legend system
+4. [Camera Position Tuning](#camera-position-tuning) - Debug display for fine-tuning
+5. [Implementation Steps](#implementation-steps) - Complete walkthrough
+6. [Pattern 3D Chart](#pattern-3d-chart-implementation-dashboard) - Bar3D example
+7. [Tooltip Design](#tooltip-design-guidelines) - Match 2D tooltips
+8. [Color Palette](#color-palette-inheritance) - Inherit 2D chart colors
+9. [Line3D Charts](#line3d-charts-future-enhancement) - Future line chart support
+10. [Testing](#testing-checklist) - Verification steps
+11. [Troubleshooting](#common-issues--solutions) - Common problems
 
 ## Overview
 
@@ -70,7 +71,129 @@ Pattern: [Shortened 2D Title] + " By Collection"
 
 ### Legend Configuration
 
-**Legend shows Collections** (not statement types or other categories):
+**3D charts should include BOTH the 2D chart's original legend AND the Z-axis (Collection) legend** (Issue #221):
+
+#### Pattern: Dual Legend System
+
+```
+┌─────────────────────────────┐
+│ Log Scale Toggle            │
+├─────────────────────────────┤
+│ 2D Chart Legend (Original)  │ ← Duration Ranges / Statement Types / Size Ranges
+│ - Show All / Hide All       │
+│ - Checkbox items with color │
+│ - Count per item            │
+├─────────────────────────────┤
+│ Collections (Z-Axis)        │ ← Always present
+│ - Show All / Hide All       │
+│ - Search input              │
+│ - Checkbox items            │
+└─────────────────────────────┘
+```
+
+#### Static 2D Legends (Fixed Ranges)
+
+For charts with predefined buckets (Duration, Document Size):
+
+```javascript
+// Duration Range bins (from 2D chart)
+const durationRangeBins = [
+    { range: "0-1s", min: 0, max: 1, color: "#28a745", label: "0-1s" },
+    { range: "1-2s", min: 1, max: 2, color: "#6cb2eb", label: "1-2s" },
+    // ... all buckets from 2D chart
+];
+
+// Calculate counts for each range
+const durationRangeCounts = {};
+durationRangeBins.forEach((bin, idx) => {
+    durationRangeCounts[bin.label] = data.filter(d => d.value[2] === idx).reduce((sum, d) => sum + d.actualCount, 0);
+});
+
+const durationVisibilityState = {};
+
+// Create legend items with color boxes
+durationRangeBins.forEach((bin, idx) => {
+    durationVisibilityState[idx] = true;
+    
+    const legendItem = document.createElement('div');
+    legendItem.dataset.durationIndex = idx;
+    
+    // Checkbox
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = true;
+    
+    // Color box matching 2D chart
+    const colorBox = document.createElement('span');
+    colorBox.style.cssText = `display: inline-block; width: 16px; height: 16px; background: ${bin.color}; margin-right: 8px; border: 1px solid #333; border-radius: 2px;`;
+    
+    // Label with count
+    const label = document.createElement('span');
+    label.textContent = `${bin.label} (${durationRangeCounts[bin.label]} total)`;
+    
+    // Click handler
+    legendItem.onclick = (e) => {
+        durationVisibilityState[idx] = checkbox.checked;
+        updateChart();
+    };
+});
+
+// Filter data by both collection AND range
+function calculateBubbleSizes() {
+    return data
+        .filter(d => visibilityState[d.collection] && durationVisibilityState[d.value[2]])
+        .map(d => { /* ... */ });
+}
+```
+
+**Examples:**
+- Duration Buckets 3D: Uses duration range legend (0-1s, 1-2s, etc.)
+- Avg Doc Size 3D: Uses document size legend (0 bytes, 1-10 bytes, etc.)
+
+#### Dynamic 2D Legends (Data-Driven)
+
+For charts with variable categories (Statement Types, Query Patterns):
+
+```javascript
+// Statement types come from actual data (not hardcoded)
+const displayStatementTypes = [...sortedStatementTypes].sort((a, b) => {
+    return (statementTypeCounts[b] || 0) - (statementTypeCounts[a] || 0);
+});
+
+const statementTypeVisibilityState = {};
+
+// Add Fatal Queries if present
+const totalFatalCount = fatalData.reduce((sum, d) => sum + d.actualCount, 0);
+if (totalFatalCount > 0) {
+    statementTypeVisibilityState['FATAL_QUERIES'] = true;
+    // Create legend item for Fatal Queries
+}
+
+// Create legend items for each statement type in the data
+displayStatementTypes.forEach(statementType => {
+    statementTypeVisibilityState[statementType] = true;
+    
+    const count = statementTypeCounts[statementType];
+    const colorBox = document.createElement('span');
+    colorBox.style.cssText = `background: ${colorMap[statementType] || '#868e96'}; /* ... */`;
+    
+    const label = document.createElement('span');
+    label.textContent = `${statementType} (${count} total)`; // Dynamic name and count
+});
+
+// Filter by statement type
+function calculateBubbleSizes() {
+    return bubbleData
+        .filter(d => visibilityState[d.collection] && statementTypeVisibilityState[d.statementType])
+        .map(d => { /* ... */ });
+}
+```
+
+**Examples:**
+- Query Types 3D: Uses statement type legend (SELECT, UPDATE, EXECUTE, etc.) - fully dynamic
+- Pattern 3D: Uses query pattern legend (WITH, LIMIT, JOIN, etc.) - depends on queries
+
+#### Collections Legend (Always Present)
 
 ```javascript
 // Sort collections by count (descending) for legend display
@@ -206,6 +329,166 @@ Used for: Trend analysis over time
 - Connect data points in sequence
 - Show progression along time axis
 - Multiple lines for different categories
+
+---
+
+## Adding 2D Chart Legends to 3D Modals (Issue #221)
+
+### Overview
+
+Each 3D modal should display **two legends**:
+1. **Original 2D Legend** - The legend from the corresponding 2D chart (duration ranges, statement types, etc.)
+2. **Collections Legend** - The Z-axis dimension added in 3D view
+
+This provides users with familiar filtering from the 2D chart plus the new collection dimension.
+
+### Complete Implementation Pattern
+
+#### Step 1: Identify 2D Legend Type
+
+Determine if your 2D chart uses:
+- **Static Legend**: Fixed buckets (duration ranges: 0-1s, 1-2s, etc.)
+- **Dynamic Legend**: Data-driven categories (statement types: SELECT, UPDATE, etc.)
+
+#### Step 2: Add Legend Section Before Collections
+
+Insert the 2D legend **above** the Collections legend and **below** the Log Scale toggle:
+
+```javascript
+controlsContainer.appendChild(togglesDiv); // Log scale toggle
+
+// ✅ ADD 2D LEGEND HERE (Duration/Statement/Size)
+const originalLegendHeader = document.createElement('div');
+originalLegendHeader.innerHTML = `
+    <strong style="font-size: 14px;">[Legend Name]:</strong>
+    <div>
+        <button id="[chart-id]-show-all-[type]">Show All</button>
+        <button id="[chart-id]-hide-all-[type]">Hide All</button>
+    </div>
+`;
+controlsContainer.appendChild(originalLegendHeader);
+
+// Create legend items grid
+// ... (see examples below)
+
+// ✅ Collections legend comes after
+const collectionsHeader = document.createElement('div');
+// ...
+```
+
+#### Step 3A: Static Legend Implementation Example
+
+**Duration Buckets 3D Chart:**
+
+```javascript
+// Calculate counts per duration range
+const durationRangeCounts = {};
+durationBucketDefinitions.forEach((bin, idx) => {
+    durationRangeCounts[bin.label] = data.filter(d => d.value[2] === idx)
+        .reduce((sum, d) => sum + d.actualCount, 0);
+});
+
+const durationVisibilityState = {};
+
+durationBucketDefinitions.forEach((bin, idx) => {
+    durationVisibilityState[idx] = true;
+    
+    const legendItem = document.createElement('div');
+    legendItem.dataset.durationIndex = idx; // Use index for Z-axis filtering
+    
+    const colorBox = document.createElement('span');
+    colorBox.style.cssText = `background: ${durationColors[idx]}; /* ... */`;
+    
+    const label = document.createElement('span');
+    label.textContent = `${bin.label} (${durationRangeCounts[bin.label]} total)`;
+    
+    legendItem.onclick = (e) => {
+        durationVisibilityState[idx] = checkbox.checked;
+        updateChart(); // Triggers chart re-render
+    };
+});
+
+// Filtering: Check Z-axis index matches visible range
+function calculateBubbleSizes() {
+    const durationIdx = d.value[2]; // Z-axis is bucket index
+    if (!visibilityState[d.collection] || !durationVisibilityState[durationIdx]) return null;
+    // ...
+}
+```
+
+#### Step 3B: Dynamic Legend Implementation Example
+
+**Query Types 3D Chart:**
+
+```javascript
+const statementTypeVisibilityState = {};
+
+// Add Fatal Queries if present (special category)
+const totalFatalCount = fatalData.reduce((sum, d) => sum + d.actualCount, 0);
+if (totalFatalCount > 0) {
+    statementTypeVisibilityState['FATAL_QUERIES'] = true;
+    // Create Fatal Queries legend item with red styling
+}
+
+// Loop through actual statement types from data
+const displayStatementTypes = [...sortedStatementTypes].sort((a, b) => {
+    return (statementTypeCounts[b] || 0) - (statementTypeCounts[a] || 0);
+});
+
+displayStatementTypes.forEach(statementType => {
+    statementTypeVisibilityState[statementType] = true;
+    
+    const count = statementTypeCounts[statementType]; // Count from data
+    const color = colorMap[statementType] || '#868e96'; // Color from map
+    
+    const colorBox = document.createElement('span');
+    colorBox.style.cssText = `background: ${color}; /* ... */`;
+    
+    const label = document.createElement('span');
+    label.textContent = `${statementType} (${count} total)`; // Name from data
+});
+
+// Filtering: Check statement type matches data property
+function calculateBubbleSizes() {
+    if (!statementTypeVisibilityState[d.statementType]) return null; // d.statementType is from data
+    // ...
+}
+```
+
+#### Step 4: Add Show/Hide All Handlers
+
+```javascript
+// Duration/Statement/Size Range handlers
+document.getElementById('[chart-id]-show-all-[type]').addEventListener('click', () => {
+    Object.keys([type]VisibilityState).forEach(key => {
+        [type]VisibilityState[key] = true;
+        const item = [type]ItemsGrid.querySelector(`[data-[type]-index="${key}"]`);
+        if (item) {
+            item.querySelector('input').checked = true;
+            item.style.opacity = '1';
+        }
+    });
+    updateChart();
+});
+
+document.getElementById('[chart-id]-hide-all-[type]').addEventListener('click', () => {
+    // Same pattern but set to false
+});
+
+// Collection handlers (same pattern)
+document.getElementById('[chart-id]-show-all').addEventListener('click', () => {
+    // ...
+});
+```
+
+### Current Implementation Status
+
+| 3D Chart | 2D Legend Type | Legend Content | Status |
+|----------|---------------|----------------|--------|
+| Duration Buckets 3D | Static | Duration Ranges (0-1s, 1-2s, ..., 900s+) | ✅ Implemented |
+| Query Types 3D | Dynamic | Statement Types (SELECT, UPDATE, EXECUTE, Fatal) | ✅ Implemented |
+| Avg Doc Size 3D | Static | Document Sizes (0 bytes, 1-10 bytes, ..., 15MB-20MB) | ✅ Implemented |
+| Pattern 3D | Dynamic | Query Patterns (WITH, LIMIT, JOIN, etc.) | ⏳ Not yet implemented |
 
 ---
 
@@ -1444,6 +1727,7 @@ viewControl: {
 
 ---
 
-**Last Updated**: 2025-11-01  
+**Last Updated**: 2025-11-04  
 **Version**: 3.27.0-post  
-**Author**: Fujio Turner
+**Author**: Fujio Turner  
+**Issue #221**: Added dual legend system (2D + Collections) to all 3D charts

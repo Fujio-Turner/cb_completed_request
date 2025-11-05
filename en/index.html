@@ -9725,6 +9725,69 @@ size: 12
             `;
             controlsContainer.appendChild(togglesDiv);
 
+            // Add Duration Range Legend Section
+            const durationLegendHeader = document.createElement('div');
+            durationLegendHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
+            durationLegendHeader.innerHTML = `
+                <strong style="font-size: 14px;">Duration Ranges:</strong>
+                <div>
+                    <button id="echarts-timeline-fs-show-all-durations" style="padding: 4px 12px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; font-size: 11px;">Show All</button>
+                    <button id="echarts-timeline-fs-hide-all-durations" style="padding: 4px 12px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">Hide All</button>
+                </div>
+            `;
+            controlsContainer.appendChild(durationLegendHeader);
+
+            // Calculate counts for each duration range
+            const durationRangeCounts = {};
+            durationBucketDefinitions.forEach((bin, idx) => {
+                durationRangeCounts[bin.label] = data.filter(d => d.value[2] === idx).reduce((sum, d) => sum + d.actualCount, 0);
+            });
+
+            const durationVisibilityState = {};
+
+            // Create duration range legend items grid
+            const durationItemsGrid = document.createElement('div');
+            durationItemsGrid.style.cssText = 'display: grid; grid-template-columns: 1fr; gap: 6px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ddd;';
+            durationItemsGrid.id = 'echarts-timeline-duration-legend-items-grid';
+
+            durationBucketDefinitions.forEach((bin, idx) => {
+                const count = durationRangeCounts[bin.label];
+                durationVisibilityState[idx] = true;
+                
+                const legendItem = document.createElement('div');
+                legendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; border: 1px solid #e0e0e0;';
+                legendItem.dataset.durationIndex = idx;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = true;
+                checkbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+                
+                const colorBox = document.createElement('span');
+                colorBox.style.cssText = `display: inline-block; width: 16px; height: 16px; background: ${durationColors[idx]}; margin-right: 8px; border: 1px solid #333; border-radius: 2px;`;
+                
+                const label = document.createElement('span');
+                label.style.cssText = 'font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+                label.textContent = `${bin.label} (${count} total)`;
+                
+                legendItem.appendChild(checkbox);
+                legendItem.appendChild(colorBox);
+                legendItem.appendChild(label);
+                
+                legendItem.onclick = (e) => {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    durationVisibilityState[idx] = checkbox.checked;
+                    legendItem.style.opacity = checkbox.checked ? '1' : '0.3';
+                    updateChart();
+                };
+                
+                durationItemsGrid.appendChild(legendItem);
+            });
+
+            controlsContainer.appendChild(durationItemsGrid);
+
             // Add legend header
             const legendHeader = document.createElement('div');
             legendHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
@@ -9809,7 +9872,8 @@ size: 12
 
             function calculateBubbleSizes(useLogScale) {
                 return data.map(d => {
-                    if (!visibilityState[d.collection]) return null;
+                    const durationIdx = d.value[2];
+                    if (!visibilityState[d.collection] || !durationVisibilityState[durationIdx]) return null;
                     
                     let size;
                     if (useLogScale) {
@@ -9938,7 +10002,32 @@ size: 12
             // Add camera debug display
             addCameraDebugDisplay(myChart, fullscreenChartDiv, closeBtn, 'timeline');
 
-            // Show All button functionality
+            // Duration Range Show/Hide All handlers
+            document.getElementById('echarts-timeline-fs-show-all-durations').addEventListener('click', () => {
+                Object.keys(durationVisibilityState).forEach(key => {
+                    durationVisibilityState[key] = true;
+                    const item = durationItemsGrid.querySelector(`[data-duration-index="${key}"]`);
+                    if (item) {
+                        item.querySelector('input').checked = true;
+                        item.style.opacity = '1';
+                    }
+                });
+                updateChart();
+            });
+
+            document.getElementById('echarts-timeline-fs-hide-all-durations').addEventListener('click', () => {
+                Object.keys(durationVisibilityState).forEach(key => {
+                    durationVisibilityState[key] = false;
+                    const item = durationItemsGrid.querySelector(`[data-duration-index="${key}"]`);
+                    if (item) {
+                        item.querySelector('input').checked = false;
+                        item.style.opacity = '0.3';
+                    }
+                });
+                updateChart();
+            });
+
+            // Collection Show All button functionality
             document.getElementById('echarts-timeline-fs-show-all').addEventListener('click', () => {
                 sortedCollections.forEach(collection => {
                     visibilityState[collection] = true;
@@ -10445,6 +10534,105 @@ size: 12
             `;
             controlsContainer.appendChild(togglesDiv);
         
+            // Add Statement Type Legend Section (from 2D chart)
+            const statementTypeLegendHeader = document.createElement('div');
+            statementTypeLegendHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
+            statementTypeLegendHeader.innerHTML = `
+                <strong style="font-size: 14px;">Statement Types:</strong>
+                <div>
+                    <button id="echarts-query-types-fs-show-all-statements" style="padding: 4px 12px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; font-size: 11px;">Show All</button>
+                    <button id="echarts-query-types-fs-hide-all-statements" style="padding: 4px 12px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">Hide All</button>
+                </div>
+            `;
+            controlsContainer.appendChild(statementTypeLegendHeader);
+        
+            const statementTypeVisibilityState = {};
+        
+            // Create statement type legend items grid
+            const statementTypeItemsGrid = document.createElement('div');
+            statementTypeItemsGrid.style.cssText = 'display: grid; grid-template-columns: 1fr; gap: 6px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ddd;';
+            statementTypeItemsGrid.id = 'echarts-query-types-statement-legend-items-grid';
+        
+            // Add Fatal Queries first (if any)
+            const totalFatalCount = fatalData.reduce((sum, d) => sum + d.actualCount, 0);
+            if (totalFatalCount > 0) {
+                statementTypeVisibilityState['FATAL_QUERIES'] = true;
+                
+                const fatalLegendItem = document.createElement('div');
+                fatalLegendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; border: 2px solid #FF0000; background: #ffebee;';
+                fatalLegendItem.dataset.statementType = 'FATAL_QUERIES';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = true;
+                checkbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+                
+                const colorBox = document.createElement('span');
+                colorBox.style.cssText = `display: inline-block; width: 16px; height: 16px; background: #FF0000; margin-right: 8px; border: 1px solid #333; border-radius: 2px;`;
+                
+                const label = document.createElement('span');
+                label.style.cssText = 'font-size: 12px; flex: 1; font-weight: bold; color: #FF0000;';
+                label.textContent = `Fatal Queries (${totalFatalCount} total)`;
+                
+                fatalLegendItem.appendChild(checkbox);
+                fatalLegendItem.appendChild(colorBox);
+                fatalLegendItem.appendChild(label);
+                
+                fatalLegendItem.onclick = (e) => {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    statementTypeVisibilityState['FATAL_QUERIES'] = checkbox.checked;
+                    fatalLegendItem.style.opacity = checkbox.checked ? '1' : '0.3';
+                    updateChart();
+                };
+                
+                statementTypeItemsGrid.appendChild(fatalLegendItem);
+            }
+        
+            // Sort statement types by count (descending) for legend display
+            const displayStatementTypes = [...sortedStatementTypes].sort((a, b) => {
+                return (statementTypeCounts[b] || 0) - (statementTypeCounts[a] || 0);
+            });
+        
+            displayStatementTypes.forEach(statementType => {
+                statementTypeVisibilityState[statementType] = true;
+                
+                const count = statementTypeCounts[statementType];
+                const legendItem = document.createElement('div');
+                legendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; border: 1px solid #e0e0e0;';
+                legendItem.dataset.statementType = statementType;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = true;
+                checkbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+                
+                const colorBox = document.createElement('span');
+                colorBox.style.cssText = `display: inline-block; width: 16px; height: 16px; background: ${colorMap[statementType] || '#868e96'}; margin-right: 8px; border: 1px solid #333; border-radius: 2px;`;
+                
+                const label = document.createElement('span');
+                label.style.cssText = 'font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+                label.textContent = `${statementType} (${count} total)`;
+                
+                legendItem.appendChild(checkbox);
+                legendItem.appendChild(colorBox);
+                legendItem.appendChild(label);
+                
+                legendItem.onclick = (e) => {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    statementTypeVisibilityState[statementType] = checkbox.checked;
+                    legendItem.style.opacity = checkbox.checked ? '1' : '0.3';
+                    updateChart();
+                };
+                
+                statementTypeItemsGrid.appendChild(legendItem);
+            });
+        
+            controlsContainer.appendChild(statementTypeItemsGrid);
+        
             // Add legend header with Show/Hide All buttons
             const legendHeader = document.createElement('div');
             legendHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
@@ -10471,39 +10659,6 @@ size: 12
             itemsGrid.id = 'echarts-query-types-legend-items-grid';
         
             const visibilityState = {};
-        
-            // Add Fatal Queries first (if any)
-            const totalFatalCount = fatalData.reduce((sum, d) => sum + d.actualCount, 0);
-            if (totalFatalCount > 0) {
-                const fatalLegendItem = document.createElement('div');
-                fatalLegendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; border: 2px solid #FF0000; background: #ffebee;';
-                fatalLegendItem.dataset.collection = 'FATAL_QUERIES';
-                
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = true;
-                checkbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
-                
-                const label = document.createElement('span');
-                label.style.cssText = 'font-size: 12px; flex: 1; font-weight: bold; color: #FF0000;';
-                label.textContent = `[${totalFatalCount}] ◆ Fatal Queries`;
-                
-                fatalLegendItem.appendChild(checkbox);
-                fatalLegendItem.appendChild(label);
-                
-                visibilityState['FATAL_QUERIES'] = true;
-                
-                fatalLegendItem.onclick = (e) => {
-                    if (e.target !== checkbox) {
-                        checkbox.checked = !checkbox.checked;
-                    }
-                    visibilityState['FATAL_QUERIES'] = checkbox.checked;
-                    fatalLegendItem.style.opacity = checkbox.checked ? '1' : '0.3';
-                    updateChart();
-                };
-                
-                itemsGrid.appendChild(fatalLegendItem);
-            }
         
             // Sort collections by count (descending) for legend display
             const displayCollections = [...sortedCollections].sort((a, b) => {
@@ -10557,11 +10712,13 @@ size: 12
         
             // Calculate bubble sizes (fixed size based on count, not affected by Z-axis scale)
             function calculateBubbleSizes() {
-                const allCounts = bubbleData.filter(d => visibilityState[d.collection]).map(d => d.actualCount);
+                const allCounts = bubbleData
+                    .filter(d => visibilityState[d.collection] && statementTypeVisibilityState[d.statementType])
+                    .map(d => d.actualCount);
                 const maxCount = Math.max(...allCounts, 1);
                 
                 return bubbleData
-                    .filter(d => visibilityState[d.collection])
+                    .filter(d => visibilityState[d.collection] && statementTypeVisibilityState[d.statementType])
                     .map(d => {
                         // Fixed bubble size based on count
                         const size = Math.max(5, Math.min(30, (d.actualCount / maxCount) * 30));
@@ -10620,10 +10777,10 @@ size: 12
                 }
         
                 // Fatal queries (diamonds)
-                if (visibilityState['FATAL_QUERIES'] && fatalData && fatalData.length > 0) {
-                    const fatalSeriesData = fatalData
-                        .filter(d => visibilityState[d.collection])
-                        .map(d => {
+                if (statementTypeVisibilityState['FATAL_QUERIES'] && fatalData && fatalData.length > 0) {
+                const fatalSeriesData = fatalData
+                .filter(d => visibilityState[d.collection])
+                .map(d => {
                             // Fixed fatal marker size based on count
                             const size = Math.max(15, Math.min(40, d.actualCount * 8));
                             return {
@@ -10771,7 +10928,32 @@ size: 12
             // Log scale toggle handler
             document.getElementById('echarts-query-types-log-scale-toggle').addEventListener('change', updateChart);
         
-            // Show/Hide All handlers
+            // Statement Type Show/Hide All handlers
+            document.getElementById('echarts-query-types-fs-show-all-statements').addEventListener('click', () => {
+                Object.keys(statementTypeVisibilityState).forEach(key => {
+                    statementTypeVisibilityState[key] = true;
+                    const item = statementTypeItemsGrid.querySelector(`[data-statement-type="${key}"]`);
+                    if (item) {
+                        item.querySelector('input').checked = true;
+                        item.style.opacity = '1';
+                    }
+                });
+                updateChart();
+            });
+        
+            document.getElementById('echarts-query-types-fs-hide-all-statements').addEventListener('click', () => {
+                Object.keys(statementTypeVisibilityState).forEach(key => {
+                    statementTypeVisibilityState[key] = false;
+                    const item = statementTypeItemsGrid.querySelector(`[data-statement-type="${key}"]`);
+                    if (item) {
+                        item.querySelector('input').checked = false;
+                        item.style.opacity = '0.3';
+                    }
+                });
+                updateChart();
+            });
+        
+            // Collection Show/Hide All handlers
             document.getElementById('echarts-query-types-fs-show-all').addEventListener('click', () => {
                 Object.keys(visibilityState).forEach(key => {
                     visibilityState[key] = true;
@@ -11775,6 +11957,69 @@ size: 12
             `;
             controlsContainer.appendChild(togglesDiv);
 
+            // Add Document Size Range Legend Section
+            const sizeLegendHeader = document.createElement('div');
+            sizeLegendHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
+            sizeLegendHeader.innerHTML = `
+                <strong style="font-size: 14px;">Document Sizes:</strong>
+                <div>
+                    <button id="echarts-avg-doc-size-fs-show-all-sizes" style="padding: 4px 12px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; font-size: 11px;">Show All</button>
+                    <button id="echarts-avg-doc-size-fs-hide-all-sizes" style="padding: 4px 12px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">Hide All</button>
+                </div>
+            `;
+            controlsContainer.appendChild(sizeLegendHeader);
+
+            // Calculate counts for each size range
+            const sizeRangeCounts = {};
+            resultSizeBucketDefinitions.forEach((bin, idx) => {
+                sizeRangeCounts[bin.label] = data.filter(d => d.value[2] === idx).reduce((sum, d) => sum + d.actualCount, 0);
+            });
+
+            const sizeVisibilityState = {};
+
+            // Create size range legend items grid
+            const sizeItemsGrid = document.createElement('div');
+            sizeItemsGrid.style.cssText = 'display: grid; grid-template-columns: 1fr; gap: 6px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ddd;';
+            sizeItemsGrid.id = 'echarts-avg-doc-size-size-legend-items-grid';
+
+            resultSizeBucketDefinitions.forEach((bin, idx) => {
+                const count = sizeRangeCounts[bin.label];
+                sizeVisibilityState[idx] = true;
+                
+                const legendItem = document.createElement('div');
+                legendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; border: 1px solid #e0e0e0;';
+                legendItem.dataset.sizeIndex = idx;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = true;
+                checkbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+                
+                const colorBox = document.createElement('span');
+                colorBox.style.cssText = `display: inline-block; width: 16px; height: 16px; background: ${resultSizeColors[idx]}; margin-right: 8px; border: 1px solid #333; border-radius: 2px;`;
+                
+                const label = document.createElement('span');
+                label.style.cssText = 'font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+                label.textContent = `${bin.label} (${count} total)`;
+                
+                legendItem.appendChild(checkbox);
+                legendItem.appendChild(colorBox);
+                legendItem.appendChild(label);
+                
+                legendItem.onclick = (e) => {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    sizeVisibilityState[idx] = checkbox.checked;
+                    legendItem.style.opacity = checkbox.checked ? '1' : '0.3';
+                    updateChart();
+                };
+                
+                sizeItemsGrid.appendChild(legendItem);
+            });
+
+            controlsContainer.appendChild(sizeItemsGrid);
+
             // Add legend header
             const legendHeader = document.createElement('div');
             legendHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
@@ -11862,7 +12107,8 @@ size: 12
 
             function prepareChartData(useLogScale) {
                 return data.map(d => {
-                    if (!visibilityState[d.collection]) return null;
+                    const sizeIdx = d.value[2];
+                    if (!visibilityState[d.collection] || !sizeVisibilityState[sizeIdx]) return null;
                     
                     // Use same bubble sizing as 2D chart
                     const bubbleSize = calculateBubbleSize(d.actualCount);
@@ -12006,7 +12252,32 @@ size: 12
             // Add camera debug display
             addCameraDebugDisplay(myChart, fullscreenChartDiv, closeBtn, 'avg-doc-size');
 
-            // Show All button functionality
+            // Document Size Range Show/Hide All handlers
+            document.getElementById('echarts-avg-doc-size-fs-show-all-sizes').addEventListener('click', () => {
+                Object.keys(sizeVisibilityState).forEach(key => {
+                    sizeVisibilityState[key] = true;
+                    const item = sizeItemsGrid.querySelector(`[data-size-index="${key}"]`);
+                    if (item) {
+                        item.querySelector('input').checked = true;
+                        item.style.opacity = '1';
+                    }
+                });
+                updateChart();
+            });
+
+            document.getElementById('echarts-avg-doc-size-fs-hide-all-sizes').addEventListener('click', () => {
+                Object.keys(sizeVisibilityState).forEach(key => {
+                    sizeVisibilityState[key] = false;
+                    const item = sizeItemsGrid.querySelector(`[data-size-index="${key}"]`);
+                    if (item) {
+                        item.querySelector('input').checked = false;
+                        item.style.opacity = '0.3';
+                    }
+                });
+                updateChart();
+            });
+
+            // Collection Show All button functionality
             document.getElementById('echarts-avg-doc-size-fs-show-all').addEventListener('click', () => {
                 sortedCollections.forEach(collection => {
                     visibilityState[collection] = true;
