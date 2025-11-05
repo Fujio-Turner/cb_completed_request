@@ -1,3 +1,12 @@
+### Version 3.28.0 (November 4, 2025)
+- **New: 3D Visualization in Timeline** - Added 3D bar charts for Timeline tab visualizations (closes #214, #215)
+- **New: SQL++ Collection Filter** - Added dropdown filter for SQL++ collections in Query Groups tab (closes #220)
+- **Enhancement: 3D Chart Legend Parity** - Synchronized 3D chart legends with 2D chart functionality (closes #221)
+- **Enhancement: 3D Chart Settings Sync** - Synchronized log/linear scale settings between 2D and 3D charts (closes #222)
+- **Fix: 3D Chart Data Filtering** - Fixed 3D charts to honor filtered dataset (closes #219)
+- **Documentation: 3D Charting Guide** - Added comprehensive 3D charting implementation guide (closes #213)
+- **Code Cleanup: Removed Plotly** - Removed dead Plotly.js code and dependencies (closes #216)
+
 ### Version 3.27.0 (October 31, 2025)
 - **Enhancement: Timezone Conversion Consistency** - Applied timezone conversion to all timestamp displays (closes #207)
 - **Enhancement: Collection Chart Legend** - Improved legend display for collection charts (closes #206)

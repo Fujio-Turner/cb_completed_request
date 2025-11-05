@@ -1,4 +1,4 @@
-# Couchbase Slow Query Analysis Tool v3.27.0-post-post
+# Couchbase Slow Query Analysis Tool v3.28.0
 
 ## Setup and Installation
 
@@ -33,7 +33,7 @@ npm test
 See [PLAYWRIGHT_TESTING.md](./PLAYWRIGHT_TESTING.md) and [settings/TESTING_WORKFLOW.md](./settings/TESTING_WORKFLOW.md) for details.
 
 ## Version Management
-- **Current Version**: 3.27.0-post (Last Updated: 2025-10-31)
+- **Current Version**: 3.28.0 (Last Updated: 2025-11-04)
 
 ### Workflow Order for Updates
 When making changes, follow this order:

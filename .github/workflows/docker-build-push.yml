@@ -37,8 +37,8 @@ jobs:
             type=ref,event=pr
             type=sha,prefix=dev-,enable={{is_not_default_branch}}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=3.27.0,enable={{is_default_branch}}
-            type=raw,value=v3.27.0,enable={{is_default_branch}}
+            type=raw,value=3.28.0,enable={{is_default_branch}}
+            type=raw,value=v3.28.0,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6

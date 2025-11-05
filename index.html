@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="3.27.0-post" />
-    <meta name="last-updated" content="2025-10-31" />
-    <title>Couchbase Slow Query Analyzer & N1QL Query Optimizer v3.27.0-post (Execution Plan Analyzer & Index Advisor)</title>
+    <meta name="version" content="3.28.0" />
+    <meta name="last-updated" content="2025-11-04" />
+    <title>Couchbase Slow Query Analyzer & N1QL Query Optimizer v3.28.0 (Execution Plan Analyzer & Index Advisor)</title>
     <meta name="description" content="Open-source Couchbase slow query analyzer and N1QL query optimizer. Execution plan analyzer, index advisor, profiler, timeline charts, and tuning guide.">
     <meta name="keywords" content="Couchbase query optimizer tool, How to debug Couchbase N1QL queries, Couchbase slow query analyzer, N1QL query performance tuning guide, Couchbase execution plan analyzer, Optimize Couchbase SQL++ queries, Couchbase index advisor tool, Debugging slow Couchbase queries, Couchbase query monitoring dashboard, Tune Couchbase query performance, Couchbase N1QL profiler, Analyze Couchbase completed requests, Couchbase query optimization tips, How to fix slow N1QL queries, Couchbase cost-based optimizer guide, N1QL query execution timeline, Couchbase performance insights tool, Debug Couchbase query errors, Couchbase query tuning best practices, Offline Couchbase query analyzer">
     <link rel="canonical" href="https://cb.fuj.io/en/">
-    <meta property="og:title" content="Couchbase Slow Query Analyzer & N1QL Query Optimizer v3.27.0-post">
+    <meta property="og:title" content="Couchbase Slow Query Analyzer & N1QL Query Optimizer v3.28.0">
     <meta property="og:description" content="Open-source Couchbase slow query analyzer and N1QL query optimizer. Execution plan analyzer, index advisor, profiler, timeline charts, and tuning guide.">
     <meta property="og:url" content="https://cb.fuj.io/en/">
     <meta property="og:type" content="website">
@@ -184,6 +184,15 @@
         .version-info{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.1);color:#333;padding:4px 8px;border-radius:4px;font-size:0.75em;font-family:monospace;z-index:999;opacity:0.7;transition:opacity 0.3s ease}
         .version-info:hover{opacity:1;background:rgba(0,0,0,0.2)}
 
+        /* NEW 3D feature badge */
+        .badge-new-3d{display:inline-block;padding:3px 10px;background:linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);color:#fff;border-radius:999px;font-size:0.85em;font-weight:700;margin-right:6px;box-shadow:0 3px 10px rgba(255,107,107,0.4);text-transform:uppercase;letter-spacing:0.5px;animation:pulse-glow 2s ease-in-out infinite}
+        @keyframes pulse-glow{0%,100%{box-shadow:0 3px 10px rgba(255,107,107,0.4)}50%{box-shadow:0 3px 20px rgba(255,107,107,0.7)}}
+
+        /* 3D button demo (replica of actual app button) */
+        .demo-3d-btn{display:inline-block;width:32px;height:32px;background:#ff8c00;color:white;border:none;border-radius:4px;font-weight:bold;font-size:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);vertical-align:middle;margin:0 6px;cursor:pointer;transition:transform 0.2s ease}
+        .demo-3d-btn:hover{transform:scale(1.1)}
+        .demo-3d-instruction{display:inline-block;vertical-align:middle;font-size:0.9em;color:#555;font-style:italic}
+
         footer {
             text-align: center;
             padding: 20px;
@@ -245,6 +254,12 @@
                 <li>Identify bottlenecks with detailed query analysis.</li>
                 <li><b>Insights</b> provides a quick overview and suggestions.</li>
                 <li>Visualize query performance with timelines and metrics.</li>
+                <li><span class="badge-new-3d">NEW 3D Charts</span> Interactive 3D visualizations help identify performance patterns across scopes and collections with depth, making multi-dimensional query analysis intuitive. 
+                    <div style="margin-top: 8px; padding-left: 20px;">
+                        <button class="demo-3d-btn">3D</button>
+                        <span class="demo-3d-instruction">← Click the orange 3D button in the Timeline tab to activate 3D visualizations for scopes & collections</span>
+                    </div>
+                </li>
             </ul>
         </section>
 
@@ -379,7 +394,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
         </section>
     </main>
 
-    <div class="version-info">Couchbase Slow Query Analysis Tool v3.27.0-post</div>
+    <div class="version-info">Couchbase Slow Query Analysis Tool v3.28.0</div>
 
     <footer>
         <p>&copy; 2025 <a href="https://fuj.io" target="_blank" rel="noopener noreferrer">fuj.io</a>.</p>
@@ -410,10 +425,5 @@ LET bid = CONCAT("", s.bucket_id, ""),
         });
     </script>
 
-<!-- DEV BUILD BANNER - Remove before release -->
-<div id="dev-build-banner" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(255, 0, 0, 0.75); color: #ffffff; padding: 8px 20px; border-radius: 6px; font-size: 16px; font-weight: bold; z-index: 99999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); text-align: center; font-family: Arial, sans-serif; letter-spacing: 1px;">
-    ⚠️ DEV BUILD: 3.27.0-post ⚠️
-</div>
-<!-- END DEV BUILD BANNER -->
 </body>
 </html>
