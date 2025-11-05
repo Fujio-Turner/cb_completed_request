@@ -1903,6 +1903,15 @@ if (window.TEXT_CONSTANTS) {
                 </div>
                 <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="service-time-analysis" data-position="timeline-14" style="position: relative;">
                     <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    
+                    <!-- 3D Button -->
+                    <button id="open-3d-service-time-btn" 
+                            style="position: absolute; top: 5px; left: 35px; width: 32px; height: 32px; 
+                                   background: #ff8c00; color: white; border: none; border-radius: 4px; 
+                                   cursor: pointer; font-weight: bold; font-size: 12px; z-index: 100; 
+                                   display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" 
+                            title="Open ECharts 3D Service Time">3D</button>
+                    
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="service-time-analysis-chart"></canvas>
                 </div>
@@ -12949,6 +12958,527 @@ size: 12
             registerTimelineChart(window.docFetchThroughputChart, ctx);
         }
 
+        // ===== 3D Service Time Analysis Chart (Issue #217) =====
+        // Create 3D ribbon chart showing Service Time metrics by collection over time
+        function createECharts3DServiceTime(requests, grouping) {
+            if (!requests || requests.length === 0) {
+                Logger.debug(TEXT_CONSTANTS.NO_DATA_AVAILABLE || "No data available");
+                return;
+            }
+
+            Logger.info("Creating 3D Service Time data...");
+
+            // Get all timeline buckets for consistent x-axis
+            const timeBuckets = getTimelineBucketsFromRequests(requests, grouping);
+            
+            // Initialize data structures
+            const collectionData = {}; // collection -> timeKey -> metrics
+
+            // Process each request
+            requests.forEach((request) => {
+                const sql = request.statement || request.preparedText || "";
+                const collections = extractCollectionsFromSQL(sql);
+                
+                const requestDate = getChartDate(request.requestTime);
+                const timeKey = roundTimestamp(requestDate, grouping, requests);
+                const key = timeKey.toISOString();
+
+                // Extract elapsed and kernel time
+                const elapsedTimeMs = parseTime(request.elapsedTime) || 0;
+                const kernTimeMs = calculateTotalKernTime(request.plan) || 0;
+                
+                // Initialize auth/index/fetch service times
+                let authServTimeMs = 0;
+                let indexServTimeMs = 0;
+                let fetchServTimeMs = 0;
+
+                // Extract service times from operators
+                if (request.plan) {
+                    try {
+                        const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
+                        const operators = getOperators(planObj);
+
+                        operators.forEach((operator) => {
+                            const operatorType = operator["#operator"];
+                            const stats = operator["#stats"] || {};
+                            const servTime = parseTime(stats.servTime) || 0;
+
+                            if (servTime > 0) {
+                                switch (operatorType) {
+                                    case "Authorize":
+                                        authServTimeMs += servTime;
+                                        break;
+                                    case "IndexScan3":
+                                        indexServTimeMs += servTime;
+                                        break;
+                                    case "Fetch":
+                                        fetchServTimeMs += servTime;
+                                        break;
+                                }
+                            }
+                        });
+                    } catch (e) {
+                        Logger.debug("Error parsing plan for service time 3D:", e);
+                    }
+                }
+
+                collections.forEach(collection => {
+                    if (!collectionData[collection]) {
+                        collectionData[collection] = {};
+                    }
+                    if (!collectionData[collection][key]) {
+                        collectionData[collection][key] = {
+                            elapsedSum: 0,
+                            kernSum: 0,
+                            authSum: 0,
+                            indexSum: 0,
+                            fetchSum: 0,
+                            count: 0
+                        };
+                    }
+                    
+                    collectionData[collection][key].elapsedSum += elapsedTimeMs;
+                    collectionData[collection][key].kernSum += kernTimeMs;
+                    collectionData[collection][key].authSum += authServTimeMs;
+                    collectionData[collection][key].indexSum += indexServTimeMs;
+                    collectionData[collection][key].fetchSum += fetchServTimeMs;
+                    collectionData[collection][key].count++;
+                });
+            });
+
+            // Sort collections by total query count
+            const collectionCounts = {};
+            Object.keys(collectionData).forEach(collection => {
+                collectionCounts[collection] = Object.values(collectionData[collection])
+                    .reduce((sum, bucket) => sum + bucket.count, 0);
+            });
+
+            const sortedCollections = Object.keys(collectionData).sort((a, b) => {
+                return collectionCounts[b] - collectionCounts[a];
+            });
+
+            // Prepare series data for each metric (5 ribbons)
+            const metricsConfig = [
+                { name: "Avg Elapsed Time", key: "elapsedSum", color: "rgba(75, 192, 192, 0.8)" },
+                { name: "Avg Kernel Time", key: "kernSum", color: "rgba(255, 0, 0, 0.8)" },
+                { name: "Authorize ServTime", key: "authSum", color: "rgba(54, 162, 235, 0.8)" },
+                { name: "IndexScan ServTime", key: "indexSum", color: "rgba(255, 206, 86, 0.8)" },
+                { name: "Fetch ServTime", key: "fetchSum", color: "rgba(153, 102, 255, 0.8)" }
+            ];
+
+            const seriesData = metricsConfig.map(metric => {
+                const lineData = [];
+                
+                sortedCollections.forEach((collection, collIdx) => {
+                    timeBuckets.forEach((timestamp) => {
+                        const key = timestamp.toISOString();
+                        const bucket = collectionData[collection][key];
+                        
+                        if (bucket && bucket.count > 0) {
+                            const avgValue = bucket[metric.key] / bucket.count;
+                            lineData.push({
+                                value: [timestamp.getTime(), collIdx, avgValue],
+                                collection: collection,
+                                time: timestamp.toISOString().substring(0, 19).replace('T', ' '),
+                                actualValue: avgValue,
+                                count: bucket.count
+                            });
+                        }
+                    });
+                });
+
+                return {
+                    name: metric.name,
+                    data: lineData,
+                    color: metric.color
+                };
+            });
+
+            // Store data globally
+            window.echartsServiceTimeData = {
+                collections: sortedCollections,
+                timeBuckets: timeBuckets,
+                seriesData: seriesData,
+                collectionCounts: collectionCounts
+            };
+
+            Logger.info(`✅ 3D Service Time data created: ${sortedCollections.length} collections, ${timeBuckets.length} time buckets`);
+        }
+
+        // Expand 3D Service Time modal
+        function expandECharts3DServiceTime() {
+            const data = window.echartsServiceTimeData;
+            if (!data) {
+                Logger.warn("No 3D Service Time data available");
+                return;
+            }
+
+            Logger.info("Opening 3D Service Time modal...");
+
+            // Create fullscreen modal
+            const fullscreenChartDiv = document.createElement('div');
+            fullscreenChartDiv.id = 'echarts-3d-service-time-fullscreen';
+            fullscreenChartDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 20000; display: flex; align-items: center; justify-content: center;';
+            
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = 'width: 95%; height: 90%; background: white; border-radius: 8px; padding: 20px; position: relative;';
+            
+            // Close button
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = '✕';
+            closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 18px; font-weight: bold; z-index: 20001;';
+            closeBtn.addEventListener('click', function() {
+                document.body.removeChild(fullscreenChartDiv);
+            });
+
+            // Title
+            const title = document.createElement('h2');
+            title.textContent = 'Service Time Analysis By Collection (3D Ribbons)';
+            title.style.cssText = 'margin: 0 0 10px 0; font-size: 18px;';
+
+            // Controls container
+            const controlsDiv = document.createElement('div');
+            controlsDiv.style.cssText = 'display: flex; gap: 20px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;';
+
+            // Log scale toggle
+            const logScaleDiv = document.createElement('div');
+            logScaleDiv.innerHTML = `
+                <input type="checkbox" id="echarts-service-time-log-scale-toggle" style="margin-right: 8px;">
+                <label for="echarts-service-time-log-scale-toggle" style="font-size: 14px; cursor: pointer;">Log Scale Z-Axis (Time ms)</label>
+            `;
+            controlsDiv.appendChild(logScaleDiv);
+
+            // Main content layout (chart + legend side by side)
+            const contentLayout = document.createElement('div');
+            contentLayout.style.cssText = 'display: flex; gap: 15px; height: calc(100% - 80px);';
+
+            // Chart container (left side)
+            const chartDiv = document.createElement('div');
+            chartDiv.id = 'echarts-3d-service-time-chart';
+            chartDiv.style.cssText = 'flex: 1; min-width: 0;';
+
+            // Legend container (right side)
+            const legendDiv = document.createElement('div');
+            legendDiv.style.cssText = 'width: 280px; padding: 10px; background: #f8f9fa; border-radius: 4px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;';
+            
+            // Metrics legend section (top)
+            const metricsLegendDiv = document.createElement('div');
+            metricsLegendDiv.innerHTML = `
+                <div style="margin-bottom: 8px;">
+                    <strong style="font-size: 14px;">Metrics (5 Planes)</strong>
+                </div>
+                <div id="service-time-metrics-items" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            `;
+            
+            // Collections legend section (bottom)
+            const collectionsLegendDiv = document.createElement('div');
+            collectionsLegendDiv.innerHTML = `
+                <div style="margin-bottom: 8px;">
+                    <strong style="font-size: 14px;">Collections (${data.collections.length})</strong>
+                </div>
+                <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                    <input type="text" id="service-time-legend-search" placeholder="Search..." style="flex: 1; padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 11px;">
+                    <button id="service-time-show-all" style="padding: 4px 8px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">All</button>
+                    <button id="service-time-hide-all" style="padding: 4px 8px; background: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">None</button>
+                </div>
+                <div id="service-time-legend-items" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 300px; overflow-y: auto;"></div>
+            `;
+            
+            legendDiv.appendChild(metricsLegendDiv);
+            legendDiv.appendChild(collectionsLegendDiv);
+
+            // Assemble layout
+            contentLayout.appendChild(chartDiv);
+            contentLayout.appendChild(legendDiv);
+
+            // Assemble modal
+            modalContent.appendChild(closeBtn);
+            modalContent.appendChild(title);
+            modalContent.appendChild(controlsDiv);
+            modalContent.appendChild(contentLayout);
+            fullscreenChartDiv.appendChild(modalContent);
+            document.body.appendChild(fullscreenChartDiv);
+
+            // Populate metrics legend (top section)
+            const metricsItemsDiv = document.getElementById('service-time-metrics-items');
+            const metricsConfig = [
+                { name: "Avg Elapsed Time", color: "rgba(75, 192, 192, 0.8)" },
+                { name: "Avg Kernel Time", color: "rgba(255, 0, 0, 0.8)" },
+                { name: "Authorize ServTime", color: "rgba(54, 162, 235, 0.8)" },
+                { name: "IndexScan ServTime", color: "rgba(255, 206, 86, 0.8)" },
+                { name: "Fetch ServTime", color: "rgba(153, 102, 255, 0.8)" }
+            ];
+            
+            metricsConfig.forEach(metric => {
+                const metricItem = document.createElement('label');
+                metricItem.style.cssText = 'display: flex; align-items: center; padding: 4px 8px; background: white; border: 1px solid #dee2e6; border-radius: 3px; cursor: pointer; font-size: 12px;';
+                metricItem.dataset.metric = metric.name;
+                metricItem.innerHTML = `
+                    <input type="checkbox" checked data-metric="${metric.name}" style="margin-right: 8px;">
+                    <span style="width: 12px; height: 12px; background: ${metric.color}; display: inline-block; margin-right: 6px; border-radius: 2px;"></span>
+                    <span>${metric.name}</span>
+                `;
+                metricsItemsDiv.appendChild(metricItem);
+            });
+
+            // Populate collections legend (bottom section)
+            const legendItemsDiv = document.getElementById('service-time-legend-items');
+            const displayCollections = [...data.collections].sort((a, b) => {
+                return (data.collectionCounts[b] || 0) - (data.collectionCounts[a] || 0);
+            });
+
+            displayCollections.forEach(collection => {
+                const count = data.collectionCounts[collection] || 0;
+                const legendItem = document.createElement('label');
+                legendItem.style.cssText = 'display: flex; align-items: center; padding: 4px 8px; background: white; border: 1px solid #dee2e6; border-radius: 3px; cursor: pointer; font-size: 12px;';
+                legendItem.dataset.collection = collection;
+                legendItem.innerHTML = `
+                    <input type="checkbox" checked data-collection="${collection}" style="margin-right: 6px;">
+                    <span>[${count}] ${collection}</span>
+                `;
+                legendItemsDiv.appendChild(legendItem);
+            });
+
+            // Initialize ECharts
+            const myChart = echarts.init(chartDiv);
+            
+            // Render function
+            function renderChart() {
+                const useLogScale = document.getElementById('echarts-service-time-log-scale-toggle').checked;
+                
+                // Get visible metrics
+                const visibleMetrics = new Set();
+                document.querySelectorAll('#service-time-metrics-items input[type="checkbox"]:checked').forEach(cb => {
+                    visibleMetrics.add(cb.dataset.metric);
+                });
+                
+                // Get visible collections
+                const visibleCollections = new Set();
+                document.querySelectorAll('#service-time-legend-items input[type="checkbox"]:checked').forEach(cb => {
+                    visibleCollections.add(cb.dataset.collection);
+                });
+
+                // Create stacked 3D bars showing component time breakdown
+                const filteredSeries = [];
+                
+                // Component order (bottom to top): Auth, IndexScan, Fetch, Kernel
+                // Each creates a separate bar3D series with stack offsets
+                const componentLayers = [
+                    { name: 'Authorize ServTime', dataKey: 'authSum', color: 'rgba(54, 162, 235, 0.85)', base: 0 },
+                    { name: 'IndexScan ServTime', dataKey: 'indexSum', color: 'rgba(255, 206, 86, 0.85)', base: 1 },
+                    { name: 'Fetch ServTime', dataKey: 'fetchSum', color: 'rgba(153, 102, 255, 0.85)', base: 2 },
+                    { name: 'Avg Kernel Time', dataKey: 'kernSum', color: 'rgba(255, 0, 0, 0.85)', base: 3 }
+                ];
+                
+                // Build stacked bar data: need to track cumulative height for each bar
+                const barDataByLayer = componentLayers.map(() => []);
+                const heightTracker = {}; // Track cumulative height per [time, collection]
+                
+                // Collect all data points with all component values
+                const allPoints = [];
+                data.timeBuckets.forEach((timestamp) => {
+                    data.collections.forEach((collection, collIdx) => {
+                        if (!visibleCollections.has(collection)) return;
+                        
+                        const timeKey = timestamp.toISOString();
+                        const timeMs = timestamp.getTime();
+                        
+                        // Aggregate all metrics for this time+collection
+                        const point = {
+                            time: timeMs,
+                            collIdx: collIdx,
+                            authSum: 0,
+                            indexSum: 0,
+                            fetchSum: 0,
+                            kernSum: 0,
+                            elapsedSum: 0,
+                            count: 0
+                        };
+                        
+                        // Gather data from each metric's data
+                        data.seriesData.forEach(metric => {
+                            const metricPoint = metric.data.find(p => 
+                                p.value[0] === timeMs && p.collection === collection
+                            );
+                            if (metricPoint) {
+                                if (metric.name === 'Avg Elapsed Time') point.elapsedSum += metricPoint.actualValue;
+                                if (metric.name === 'Avg Kernel Time') point.kernSum += metricPoint.actualValue;
+                                if (metric.name === 'Authorize ServTime') point.authSum += metricPoint.actualValue;
+                                if (metric.name === 'IndexScan ServTime') point.indexSum += metricPoint.actualValue;
+                                if (metric.name === 'Fetch ServTime') point.fetchSum += metricPoint.actualValue;
+                                point.count = Math.max(point.count, metricPoint.count);
+                            }
+                        });
+                        
+                        if (point.count > 0) {
+                            allPoints.push(point);
+                        }
+                    });
+                });
+                
+                // Create stacked layers
+                componentLayers.forEach((layer, layerIdx) => {
+                    // Skip if metric is not visible
+                    if (!visibleMetrics.has(layer.name)) return;
+                    
+                    const layerData = allPoints.map(point => {
+                        const key = `${point.time}_${point.collIdx}`;
+                        
+                        // Calculate cumulative base height (sum of all previous layers)
+                        let baseHeight = 0;
+                        for (let i = 0; i < layerIdx; i++) {
+                            const prevLayer = componentLayers[i];
+                            if (visibleMetrics.has(prevLayer.name)) {
+                                baseHeight += point[prevLayer.dataKey] || 0;
+                            }
+                        }
+                        
+                        const segmentHeight = point[layer.dataKey] || 0;
+                        
+                        // Store in heightTracker
+                        if (!heightTracker[key]) heightTracker[key] = 0;
+                        heightTracker[key] += segmentHeight;
+                        
+                        // Return [x, y, z, value] where z is the segment height, and we'll use stack
+                        return {
+                            value: [point.time, point.collIdx, baseHeight + segmentHeight],
+                            baseHeight: baseHeight,
+                            segmentHeight: segmentHeight,
+                            itemStyle: {
+                                color: layer.color
+                            }
+                        };
+                    }).filter(d => d.segmentHeight > 0);
+                    
+                    if (layerData.length === 0) return;
+                    
+                    filteredSeries.push({
+                        type: 'bar3D',
+                        name: layer.name,
+                        data: layerData,
+                        shading: 'color',
+                        stack: 'total',
+                        itemStyle: {
+                            opacity: 0.85
+                        },
+                        emphasis: {
+                            itemStyle: {
+                                opacity: 1.0
+                            }
+                        }
+                    });
+                });
+
+                const option = {
+                    tooltip: {
+                        formatter: function(params) {
+                            const d = params.data;
+                            if (!d.value) return '';
+                            const timestamp = new Date(d.value[0]);
+                            const timeStr = timestamp.toISOString().substring(0, 19).replace('T', ' ');
+                            const collectionIdx = d.value[1];
+                            const collection = data.collections[collectionIdx];
+                            const timeValue = d.value[2];
+                            return `<strong>${params.seriesName}</strong><br/>Collection: ${collection}<br/>Time: ${timeStr}<br/>Value: ${timeValue.toFixed(2)} ms`;
+                        }
+                    },
+                    grid3D: {
+                        boxWidth: 200,
+                        boxHeight: Math.min(200, data.collections.length * 15),
+                        boxDepth: 200,
+                        axisPointer: {
+                            show: true,
+                            lineStyle: { color: '#ffaa00', width: 2 }
+                        },
+                        viewControl: {
+                            alpha: 25,
+                            beta: 45,
+                            distance: 280,
+                            minDistance: 100,
+                            maxDistance: 500
+                        }
+                    },
+                    // Bar sizing for stacked bars
+                    barSize: [15, 15],
+                    xAxis3D: {
+                        type: 'time',
+                        name: 'Request Time'
+                    },
+                    yAxis3D: {
+                        type: 'category',
+                        name: 'Collection',
+                        data: data.collections
+                    },
+                    zAxis3D: {
+                        type: useLogScale ? 'log' : 'value',
+                        name: 'Time (ms)',
+                        min: useLogScale ? 0.001 : 0
+                    },
+                    series: filteredSeries
+                };
+
+                myChart.setOption(option, true);
+            }
+
+            // Event listeners
+            document.getElementById('echarts-service-time-log-scale-toggle').addEventListener('change', renderChart);
+            document.getElementById('service-time-show-all').addEventListener('click', function() {
+                document.querySelectorAll('#service-time-legend-items input[type="checkbox"]').forEach(cb => cb.checked = true);
+                renderChart();
+            });
+            document.getElementById('service-time-hide-all').addEventListener('click', function() {
+                document.querySelectorAll('#service-time-legend-items input[type="checkbox"]').forEach(cb => cb.checked = false);
+                renderChart();
+            });
+            document.getElementById('service-time-legend-search').addEventListener('input', function(e) {
+                const query = e.target.value.toLowerCase();
+                document.querySelectorAll('#service-time-legend-items label').forEach(label => {
+                    const collection = label.dataset.collection.toLowerCase();
+                    label.style.display = collection.includes(query) ? 'flex' : 'none';
+                });
+            });
+            legendItemsDiv.addEventListener('change', renderChart);
+            metricsItemsDiv.addEventListener('change', renderChart);
+
+            // Debug mode camera display
+            const urlParams = new URLSearchParams(window.location.search);
+            const debugMode = urlParams.get('debug') === 'true' || urlParams.get('logLevel') === 'debug';
+            
+            if (debugMode) {
+                const debugDiv = document.createElement('div');
+                debugDiv.id = 'camera-debug-service-time';
+                debugDiv.style.cssText = 'position: absolute; top: 60px; left: 10px; background: rgba(0,0,0,0.9); color: #00ff00; padding: 12px; font-family: monospace; font-size: 13px; z-index: 10002; border-radius: 4px; border: 2px solid #00ff00; box-shadow: 0 0 10px rgba(0,255,0,0.5);';
+                debugDiv.innerHTML = '<strong style="color: #ffff00;">Camera Position:</strong><br/>Alpha: 25.0<br/>Beta: 45.0<br/>Distance: 280.0';
+                modalContent.appendChild(debugDiv);
+                
+                const cameraUpdateInterval = setInterval(function() {
+                    try {
+                        const option = myChart.getOption();
+                        if (option && option.grid3D && option.grid3D[0] && option.grid3D[0].viewControl) {
+                            const vc = option.grid3D[0].viewControl;
+                            debugDiv.innerHTML = `
+                                <strong style="color: #ffff00;">Camera Position:</strong><br/>
+                                Alpha: ${vc.alpha.toFixed(1)}<br/>
+                                Beta: ${vc.beta.toFixed(1)}<br/>
+                                Distance: ${vc.distance.toFixed(1)}
+                            `;
+                        }
+                    } catch (e) {
+                        // Silently fail
+                    }
+                }, 100);
+                
+                closeBtn.addEventListener('click', function() {
+                    clearInterval(cameraUpdateInterval);
+                }, { once: true });
+            }
+
+            // Initial render
+            renderChart();
+            
+            Logger.info("✅ 3D Service Time modal opened");
+        }
+
         function createDocumentSizeBubbleChart(requests, grouping) {
             const canvas = document.getElementById("doc-size-bubble-chart");
             if (!canvas) return;
@@ -14135,6 +14665,27 @@ size: 12
             });
 
             registerTimelineChart(window.serviceTimeAnalysisLineChart, ctx);
+
+            // Setup 3D button click handler (Issue #217)
+            const btn3D = document.getElementById('open-3d-service-time-btn');
+            if (btn3D) {
+                // Show button only if we have data
+                btn3D.style.display = (requests && requests.length > 0) ? 'block' : 'none';
+                
+                // Remove old event listeners (prevents duplicate handlers)
+                const newBtn = btn3D.cloneNode(true);
+                btn3D.parentNode.replaceChild(newBtn, btn3D);
+                
+                // Add click handler
+                newBtn.addEventListener('click', function() {
+                    // Generate ECharts data if not already available
+                    if (!window.echartsServiceTimeData) {
+                        createECharts3DServiceTime(requests, grouping);
+                    }
+                    // Open fullscreen modal
+                    expandECharts3DServiceTime();
+                });
+            }
         }
 
         // Setup chart drag and drop functionality
