@@ -14666,25 +14666,30 @@ size: 12
 
             registerTimelineChart(window.serviceTimeAnalysisLineChart, ctx);
 
-            // Setup 3D button click handler (Issue #217)
-            const btn3D = document.getElementById('open-3d-service-time-btn');
-            if (btn3D) {
-                // Show button only if we have data
-                btn3D.style.display = (requests && requests.length > 0) ? 'block' : 'none';
-                
-                // Remove old event listeners (prevents duplicate handlers)
-                const newBtn = btn3D.cloneNode(true);
-                btn3D.parentNode.replaceChild(newBtn, btn3D);
-                
-                // Add click handler
-                newBtn.addEventListener('click', function() {
-                    // Generate ECharts data if not already available
-                    if (!window.echartsServiceTimeData) {
-                        createECharts3DServiceTime(requests, grouping);
-                    }
-                    // Open fullscreen modal
-                    expandECharts3DServiceTime();
-                });
+            // Setup 3D button click handler (Issue #217) - Only show with ?dev=true
+            const urlParams = new URLSearchParams(window.location.search);
+            const devMode = urlParams.get('dev') === 'true';
+            
+            if (devMode) {
+                const btn3D = document.getElementById('open-3d-service-time-btn');
+                if (btn3D) {
+                    // Show button only if we have data
+                    btn3D.style.display = (requests && requests.length > 0) ? 'block' : 'none';
+                    
+                    // Remove old event listeners (prevents duplicate handlers)
+                    const newBtn = btn3D.cloneNode(true);
+                    btn3D.parentNode.replaceChild(newBtn, btn3D);
+                    
+                    // Add click handler
+                    newBtn.addEventListener('click', function() {
+                        // Generate ECharts data if not already available
+                        if (!window.echartsServiceTimeData) {
+                            createECharts3DServiceTime(requests, grouping);
+                        }
+                        // Open fullscreen modal
+                        expandECharts3DServiceTime();
+                    });
+                }
             }
         }
 
