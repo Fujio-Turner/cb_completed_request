@@ -9861,6 +9861,16 @@ size: 12
             overlay.appendChild(modalContent);
             document.body.appendChild(overlay);
             document.body.style.overflow = 'hidden';
+            
+            // Sync Y-axis scale from radio buttons to 3D chart checkbox (after DOM insertion)
+            const selectedScale = document.querySelector('input[name="yScale"]:checked');
+            const logScaleCheckbox = document.getElementById('echarts-timeline-log-scale-toggle');
+            Logger.debug('3D Timeline - selectedScale.value:', selectedScale?.value);
+            Logger.debug('3D Timeline - logScaleCheckbox:', logScaleCheckbox);
+            if (selectedScale && logScaleCheckbox) {
+                logScaleCheckbox.checked = selectedScale.value === 'logarithmic';
+                Logger.debug('3D Timeline - Set checkbox to:', selectedScale.value === 'logarithmic');
+            }
 
             // Calculate initial bubble sizes
             const allCounts = data.map(d => d.actualCount);
@@ -10529,7 +10539,7 @@ size: 12
                 </div>
             `;
             controlsContainer.appendChild(togglesDiv);
-        
+            
             // Add Statement Type Legend Section (from 2D chart)
             const statementTypeLegendHeader = document.createElement('div');
             statementTypeLegendHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
@@ -10702,6 +10712,14 @@ size: 12
             overlay.appendChild(modalContent);
             document.body.appendChild(overlay);
             document.body.style.overflow = 'hidden';
+            
+            // Sync Y-axis scale from radio buttons to 3D chart checkbox (after DOM insertion)
+            const selectedScale = document.querySelector('input[name="yScale"]:checked');
+            const logScaleCheckbox = document.getElementById('echarts-query-types-log-scale-toggle');
+            if (selectedScale && logScaleCheckbox) {
+                logScaleCheckbox.checked = selectedScale.value === 'logarithmic';
+                Logger.debug('3D Query Types - Set checkbox to:', selectedScale.value === 'logarithmic');
+            }
         
             // Initialize ECharts
             const myChart = echarts.init(fullscreenChartDiv);
@@ -12093,6 +12111,14 @@ size: 12
             overlay.appendChild(modalContent);
             document.body.appendChild(overlay);
             document.body.style.overflow = 'hidden';
+            
+            // Sync Y-axis scale from radio buttons to 3D chart checkbox (after DOM insertion)
+            const selectedScale = document.querySelector('input[name="yScale"]:checked');
+            const logScaleCheckbox = document.getElementById('echarts-avg-doc-size-log-scale-toggle');
+            if (selectedScale && logScaleCheckbox) {
+                logScaleCheckbox.checked = selectedScale.value === 'logarithmic';
+                Logger.debug('3D Avg Doc Size - Set checkbox to:', selectedScale.value === 'logarithmic');
+            }
 
             // Calculate bubble sizes using same method as 2D chart
             function calculateBubbleSize(count) {
