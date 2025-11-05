@@ -820,12 +820,13 @@ if (window.TEXT_CONSTANTS) {
                     </div>
                 </div>
 
-                <div class="filter-stack" style="margin-left: 15px; display: grid; grid-template-columns: 300px 200px auto; align-items: start; column-gap: 12px; row-gap: 0;">
+                <div class="filter-stack" style="margin-left: 15px; display: grid; grid-template-columns: 200px 200px auto; align-items: start; column-gap: 12px; row-gap: 6px;">
+                    <!-- Row 1: SQL++ Filter, Elapsed Time Filter, Timezone -->
                     <div style="display: flex; flex-direction: column; padding: 6px 8px;">
                         <label for="sql-statement-filter" class="filter-label">SQL++ Statement Filter</label>
                         <input type="text" id="sql-statement-filter" placeholder="e.g., FROM bucket WHERE type = 'order'"
                             title="Enter part of a SQL++ statement to filter results (contains match)"
-                            style="width: 85%; max-width: 85%; font-size: 11px; padding: 4px 6px;" />
+                            style="width: 100%; font-size: 11px; padding: 4px 6px;" />
                     </div>
 
                     <div style="display: flex; flex-direction: column; padding: 6px 8px;">
@@ -914,8 +915,24 @@ if (window.TEXT_CONSTANTS) {
                             </optgroup>
                         </select>
                         <span id="timezone-info" class="filter-help"></span>
-                        
-                        <label class="label-flex" style="margin: 4px 0 0 0; display: flex; align-items: center; gap: 6px;">
+                    </div>
+
+                    <!-- Row 2: Collection Filter (positioned under SQL++ Statement Filter) -->
+                    <div style="display: flex; flex-direction: column; padding: 6px 8px;">
+                        <label for="collection-filter" class="filter-label">Collection Filter</label>
+                        <select id="collection-filter"
+                            title="Filter by collection (bucket.scope.collection)"
+                            style="width: 100%; font-size: 11px; padding: 4px 6px;">
+                            <option value="">(All)</option>
+                        </select>
+                    </div>
+
+                    <!-- Empty cell for grid alignment -->
+                    <div></div>
+
+                    <!-- Exclude System checkbox (row 2, aligned with Collection Filter) -->
+                    <div style="display: flex; align-items: flex-end; padding: 6px 8px;">
+                        <label class="label-flex" style="margin: 0; display: flex; align-items: center; gap: 6px;">
                             <input type="checkbox" id="exclude-system-queries" checked
                                 title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
                                 aria-label="Exclude system queries from analysis" />
@@ -20518,6 +20535,8 @@ function generateElapsedTimeChart(requests) {
                     const isExcluding = excludeCheckbox && excludeCheckbox.checked;
                     const sqlFilter = document.getElementById("sql-statement-filter");
                     const sqlFilterText = sqlFilter ? sqlFilter.value.trim().toLowerCase() : "";
+                    const collectionFilter = document.getElementById("collection-filter");
+                    const collectionFilterValue = collectionFilter ? collectionFilter.value.trim() : "";
 
                     // Get date filter settings
                     const startDateInput = document.getElementById("start-date");
@@ -20548,6 +20567,15 @@ function generateElapsedTimeChart(requests) {
                                 .trim();
                             const filterText = sqlFilterText.replace(/\s+/g, ' ').trim();
                             if (!statement.includes(filterText)) {
+                                return false;
+                            }
+                        }
+
+                        // Collection filtering (AND condition)
+                        if (collectionFilterValue && collectionFilterValue.length > 0) {
+                            const sql = request.statement || request.preparedText || "";
+                            const collections = extractCollectionsFromSQL(sql);
+                            if (!collections.includes(collectionFilterValue)) {
                                 return false;
                             }
                         }
@@ -20973,8 +21001,47 @@ function generateElapsedTimeChart(requests) {
                 flowDiagram.innerHTML = TEXT_CONSTANTS.SELECT_QUERY_FLOW;
             }
 
+            // Populate collection filter dropdown
+            populateCollectionFilter(filteredRequests);
+
             // Schedule auto-hide of input panel after successful processing
             scheduleInputAutoHide(3000);
+        }
+
+        // Populate collection filter dropdown with all unique collections
+        function populateCollectionFilter(requests) {
+            const collectionFilter = document.getElementById("collection-filter");
+            if (!collectionFilter) return;
+
+            // Collect all unique collections from requests
+            const collectionsSet = new Set();
+            requests.forEach(request => {
+                const sql = request.statement || request.preparedText || "";
+                const collections = extractCollectionsFromSQL(sql);
+                collections.forEach(collection => collectionsSet.add(collection));
+            });
+
+            // Sort collections alphabetically
+            const sortedCollections = Array.from(collectionsSet).sort();
+
+            // Preserve current selection if it exists
+            const currentSelection = collectionFilter.value;
+
+            // Clear and repopulate dropdown
+            collectionFilter.innerHTML = '<option value="">(All)</option>';
+            sortedCollections.forEach(collection => {
+                const option = document.createElement('option');
+                option.value = collection;
+                option.textContent = collection;
+                collectionFilter.appendChild(option);
+            });
+
+            // Restore selection if still valid
+            if (currentSelection && sortedCollections.includes(currentSelection)) {
+                collectionFilter.value = currentSelection;
+            }
+
+            Logger.info(`Collection filter populated with ${sortedCollections.length} unique collections`);
         }
 
         // Modal event listeners
@@ -25036,6 +25103,14 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 });
             }
 
+            const collectionFilterInput = document.getElementById("collection-filter");
+            if (collectionFilterInput) {
+                collectionFilterInput.addEventListener("change", function () {
+                    console.log(`Collection filter changed to: ${this.value}`);
+                    showFilterReminder();
+                });
+            }
+
             if (elapsedFilterInput) {
                 elapsedFilterInput.addEventListener("input", function () {
                     console.log(`Elapsed filter changed to: ${this.value}`);
@@ -25655,6 +25730,11 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             const sqlFilter = document.getElementById('sql-statement-filter');
             if (sqlFilter?.value) {
                 info.push(`${TEXT_CONSTANTS.REPORT_FILTERS_APPLIED || 'Filter'}: ${sqlFilter.value}`);
+            }
+            // Collection filter
+            const collectionFilter = document.getElementById('collection-filter');
+            if (collectionFilter?.value) {
+                info.push(`${TEXT_CONSTANTS.REPORT_FILTERS_APPLIED || 'Filter'}: collection ${collectionFilter.value}`);
             }
             // Elapsed time filter
             const elapsedFilter = document.getElementById('elapsed-time-filter');
