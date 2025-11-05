@@ -8575,10 +8575,8 @@ size: 12
                 
                 // Add click handler
                 newBtn.addEventListener('click', function() {
-                    // Generate ECharts data if not already available
-                    if (!window.echartsQueryTypesData) {
-                        createECharts3DQueryTypes(requests, grouping);
-                    }
+                    // Always regenerate 3D data to respect current filters
+                    createECharts3DQueryTypes(requests, grouping);
                     // Open fullscreen modal
                     expandECharts3DQueryTypes();
                 });
@@ -8955,12 +8953,10 @@ size: 12
                 
                 // Add click handler
                 newBtn.addEventListener('click', function() {
-                    // Generate ECharts data if not already available
-                    if (!window.echartsTimelineData) {
-                        createECharts3DCollectionTimeline(requests, grouping);
-                    }
-                    // Open fullscreen
-                    expandECharts3DTimeline();
+                // Always regenerate 3D data to respect current filters
+                createECharts3DCollectionTimeline(requests, grouping);
+                // Open fullscreen
+                expandECharts3DTimeline();
                 });
             }
         }
@@ -13977,10 +13973,8 @@ size: 12
                 
                 // Add click handler
                 newBtn.addEventListener('click', function() {
-                    // Generate ECharts data if not already available
-                    if (!window.echartsAvgDocSizeData) {
-                        createECharts3DAvgDocSize(requests, grouping);
-                    }
+                    // Always regenerate 3D data to respect current filters
+                    createECharts3DAvgDocSize(requests, grouping);
                     // Open fullscreen modal
                     expandECharts3DAvgDocSize();
                 });
@@ -14970,10 +14964,8 @@ size: 12
                     
                     // Add click handler
                     newBtn.addEventListener('click', function() {
-                        // Generate ECharts data if not already available
-                        if (!window.echartsServiceTimeData) {
-                            createECharts3DServiceTime(requests, grouping);
-                        }
+                        // Always regenerate 3D data to respect current filters
+                        createECharts3DServiceTime(requests, grouping);
                         // Open fullscreen modal
                         expandECharts3DServiceTime();
                     });
