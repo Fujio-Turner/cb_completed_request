@@ -8590,6 +8590,8 @@ size: 12
 
             const ctx = canvas.getContext("2d");
 
+            Logger.debug(`createDurationBucketsChart called with ${requests.length} requests, grouping: ${grouping}`);
+
             // Destroy existing chart if it exists
             if (window.durationBucketsChart) {
                 window.durationBucketsChart.destroy();
@@ -15541,13 +15543,16 @@ size: 12
 
         // Use current time range in the date pickers
         function useCurrentTimeRange() {
-            // Get current x-axis range directly from the chart
-            if (
-                window.timelineChart &&
-                window.timelineChart.scales &&
-                window.timelineChart.scales.x
-            ) {
-                const xScale = window.timelineChart.scales.x;
+            // Get current x-axis range from 2D timeline charts
+            // Priority: durationBucketsChart (first 2D chart) > queryTypesChart > timelineChart (fallback)
+            const chart = 
+                (window.durationBucketsChart && window.durationBucketsChart.scales?.x && window.durationBucketsChart) ||
+                (window.queryTypesChart && window.queryTypesChart.scales?.x && window.queryTypesChart) ||
+                (window.timelineChart && window.timelineChart.scales?.x && window.timelineChart) ||
+                null;
+
+            if (chart) {
+                const xScale = chart.scales.x;
                 const currentMin = new Date(xScale.min);
                 const currentMax = new Date(xScale.max);
 
@@ -15838,10 +15843,15 @@ size: 12
 
         // Change time grouping for all charts
         function changeTimeGrouping() {
-            // Use the filtered data if available, otherwise fall back to parsing JSON
+            // Use the currently filtered data from the last parse
             let requests = [];
-            if (originalRequests.length > 0) {
-                // Apply current date filtering to original data
+            
+            // First try to use window.currentFilteredRequests (already filtered)
+            if (window.currentFilteredRequests && window.currentFilteredRequests.length > 0) {
+                requests = window.currentFilteredRequests;
+                Logger.debug(`Time grouping change: Using current filtered data: ${requests.length} requests`);
+            } else if (originalRequests.length > 0) {
+                // Fallback: re-apply filters to original data
                 const startDateInput = document.getElementById("start-date");
                 const endDateInput = document.getElementById("end-date");
                 const startDate = startDateInput.value
@@ -15850,14 +15860,21 @@ size: 12
                 const endDate = endDateInput.value
                     ? new Date(endDateInput.value)
                     : null;
+                
+                Logger.debug(`Time grouping change: Original requests: ${originalRequests.length}, Date range: ${startDate} to ${endDate}`);
+                
                 requests = filterRequestsByDateRange(
                     originalRequests,
                     startDate,
                     endDate
                 );
+                
+                Logger.debug(`After date filtering: ${requests.length} requests`);
 
                 // Apply SQL filter and system query exclusion
                 requests = filterSystemQueries(requests);
+                
+                Logger.debug(`After SQL/system filtering: ${requests.length} requests`);
             } else {
                 // Fallback to parsing JSON if no original data
                 const jsonInput = document.getElementById("json-input").value;
@@ -15887,6 +15904,12 @@ size: 12
             try {
                 // Update the optimizer label to show current optimization
                 updateOptimizerLabel(requests);
+
+                // Clear any pending chart tasks from previous lazy loading
+                resetChartLoadingCounters();
+
+                // Destroy all existing timeline charts before regenerating
+                destroyAllCharts();
 
                 // Regenerate all charts with new time grouping
                 generateFilterChart(requests);
