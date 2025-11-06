@@ -8269,8 +8269,10 @@ size: 12
             const colorMap = {
                 SELECT: "#007bff", // Blue
                 INSERT: "#28a745", // Green
+                UPDATE: "#17c671", // Light green
                 DELETE: "#dc3545", // Red
                 UPSERT: "#6f42c1", // Purple
+                MERGE: "#9c27b0", // Deep purple
                 CREATE: "#fd7e14", // Orange
                 DROP: "#e83e8c", // Pink
                 EXPLAIN: "#20c997", // Teal
@@ -10294,8 +10296,10 @@ size: 12
             const colorMap = {
                 SELECT: "#007bff", // Blue
                 INSERT: "#28a745", // Green
+                UPDATE: "#17c671", // Light green
                 DELETE: "#dc3545", // Red
                 UPSERT: "#6f42c1", // Purple
+                MERGE: "#9c27b0", // Deep purple
                 CREATE: "#fd7e14", // Orange
                 DROP: "#e83e8c", // Pink
                 EXPLAIN: "#20c997", // Teal
@@ -10336,7 +10340,10 @@ size: 12
                 const durationSeconds = elapsedMs / 1000;
                 const isFatal = request.state && request.state.toLowerCase() === 'fatal';
 
-                collections.forEach(collection => {
+                // If no collections found, use "UNKNOWN_COLLECTION" to ensure all queries are counted
+                const collectionsToProcess = collections.length > 0 ? collections : ["UNKNOWN_COLLECTION"];
+
+                collectionsToProcess.forEach(collection => {
                     // Track fatal queries separately
                     if (isFatal) {
                         if (!fatalQueriesData[key][collection]) {
@@ -10565,26 +10572,26 @@ size: 12
             statementTypeItemsGrid.style.cssText = 'display: grid; grid-template-columns: 1fr; gap: 6px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ddd;';
             statementTypeItemsGrid.id = 'echarts-query-types-statement-legend-items-grid';
         
-            // Add Fatal Queries first (if any)
+            // Add Fatal Queries first (if any) - Special styling to stand out
             const totalFatalCount = fatalData.reduce((sum, d) => sum + d.actualCount, 0);
             if (totalFatalCount > 0) {
                 statementTypeVisibilityState['FATAL_QUERIES'] = true;
                 
                 const fatalLegendItem = document.createElement('div');
-                fatalLegendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; border: 2px solid #FF0000; background: #ffebee;';
+                fatalLegendItem.style.cssText = 'display: flex; align-items: center; padding: 8px; cursor: pointer; border-radius: 4px; margin-bottom: 8px; border: 3px solid #FF0000; background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);';
                 fatalLegendItem.dataset.statementType = 'FATAL_QUERIES';
                 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.checked = true;
-                checkbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+                checkbox.style.cssText = 'margin-right: 8px; cursor: pointer; width: 16px; height: 16px;';
                 
                 const colorBox = document.createElement('span');
-                colorBox.style.cssText = `display: inline-block; width: 16px; height: 16px; background: #FF0000; margin-right: 8px; border: 1px solid #333; border-radius: 2px;`;
+                colorBox.style.cssText = `display: inline-block; width: 18px; height: 18px; background: #FF0000; margin-right: 8px; border: 2px solid #8B0000; border-radius: 2px; box-shadow: 0 0 4px rgba(255, 0, 0, 0.5);`;
                 
                 const label = document.createElement('span');
-                label.style.cssText = 'font-size: 12px; flex: 1; font-weight: bold; color: #FF0000;';
-                label.textContent = `Fatal Queries (${totalFatalCount} total)`;
+                label.style.cssText = 'font-size: 13px; flex: 1; font-weight: bold; color: #C62828; text-shadow: 0 1px 2px rgba(0,0,0,0.1);';
+                label.innerHTML = `⚠️ Fatal Queries (${totalFatalCount} total)`;
                 
                 fatalLegendItem.appendChild(checkbox);
                 fatalLegendItem.appendChild(colorBox);
