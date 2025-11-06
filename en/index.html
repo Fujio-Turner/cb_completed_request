@@ -2797,6 +2797,9 @@ LET bid = CONCAT("", s.bucket_id, ""),
         // Properly cleanup Chart.js instances and event listeners
         // ============================================================
         function destroyAllCharts() {
+            // Trace logging to see who called this function
+            Logger.trace(`🔍 destroyAllCharts() called from:`, new Error().stack);
+            
             const chartNames = [
                 "operationsChart",
                 "filterChart",
@@ -2852,6 +2855,57 @@ LET bid = CONCAT("", s.bucket_id, ""),
             timelineCharts.length = 0;
             
             Logger.debug(`🧹 Destroyed ${destroyedCount} chart instances`);
+        }
+
+        function destroyTimelineCharts() {
+            // Trace logging to see who called this function
+            Logger.trace(`🔍 destroyTimelineCharts() called from:`, new Error().stack);
+            
+            const timelineChartNames = [
+                "filterChart",
+                "timelineChart",
+                "memoryChart",
+                "resultCountChart",
+                "resultSizeChart",
+                "cpuTimeChart",
+                "serviceTimeAnalysisChart",
+                "execVsKernelChart",
+                "execVsServChart",
+                "execVsElapsedChart",
+                "enhancedOperationsChart",
+                "parseDurationChart",
+                "planDurationChart",
+                "indexScanThroughputChart",
+                "docFetchThroughputChart",
+                "docSizeBubbleChart",
+                "serviceTimeAnalysisLineChart"
+            ];
+
+            let destroyedCount = 0;
+            timelineChartNames.forEach((chartName) => {
+                if (window[chartName]) {
+                    try {
+                        // Remove event listeners if they exist
+                        if (window[chartName]._crosshairHandlers && window[chartName].canvas) {
+                            const canvas = window[chartName].canvas;
+                            const handlers = window[chartName]._crosshairHandlers;
+                            canvas.removeEventListener('mousemove', handlers.mousemove);
+                            canvas.removeEventListener('mouseleave', handlers.mouseleave);
+                        }
+
+                        window[chartName].destroy();
+                        window[chartName] = null;
+                        destroyedCount++;
+                    } catch (e) {
+                        Logger.warn(`Failed to destroy chart: ${chartName}`, e);
+                    }
+                }
+            });
+
+            // Clear timeline charts array
+            timelineCharts.length = 0;
+            
+            Logger.debug(`🧹 Destroyed ${destroyedCount} timeline chart instances`);
         }
 
         // Global system query filtering
@@ -7025,6 +7079,12 @@ function renderQueryGroupPhaseTimesChart(group) {
             
             drainingCharts = true;
             requestAnimationFrame(() => {
+                // Double-check array isn't empty (race condition protection)
+                if (chartTasks.length === 0) {
+                    drainingCharts = false;
+                    return;
+                }
+                
                 const { name, fn } = chartTasks.shift();
                 completedCharts++;
                 
@@ -15852,8 +15912,16 @@ size: 12
 
         }
 
+        // Flag to prevent lazy tab loading during time grouping changes
+        let isChangingTimeGrouping = false;
+        
         // Change time grouping for all charts
         function changeTimeGrouping() {
+            Logger.trace(`🔍 changeTimeGrouping() called`);
+            
+            // Set flag to prevent lazy tab loading
+            isChangingTimeGrouping = true;
+            
             // Use the currently filtered data from the last parse
             let requests = [];
             
@@ -15919,14 +15987,21 @@ size: 12
                 // Clear any pending chart tasks from previous lazy loading
                 resetChartLoadingCounters();
 
-                // Destroy all existing timeline charts before regenerating
-                destroyAllCharts();
+                // Destroy only Timeline tab charts before regenerating
+                destroyTimelineCharts();
 
                 // Regenerate all charts with new time grouping
                 generateFilterChart(requests);
                 generateTimelineChart(requests);
+                
+                // Clear flag after async chart creation completes
+                setTimeout(() => {
+                    isChangingTimeGrouping = false;
+                    Logger.trace(`🔍 Time grouping change complete - flag cleared`);
+                }, 500);
             } catch (e) {
                 console.error("Error regenerating charts:", e);
+                isChangingTimeGrouping = false;
             }
         }
 
@@ -16135,6 +16210,7 @@ size: 12
 
         // Generate Dashboard Charts
         function generateDashboardCharts(requests) {
+            Logger.trace(`🔍 generateDashboardCharts() called from:`, new Error().stack);
             Logger.debug(`[generateDashboardCharts] Called with ${requests.length} requests, currentTimezone=${currentTimezone}`);
             
             generatePrimaryScanChart(requests);
@@ -22183,6 +22259,12 @@ function generateElapsedTimeChart(requests) {
             $("#tabs").tabs({
                 activate: function (event, ui) {
                     const tabId = ui.newPanel.attr("id");
+
+                    // Skip lazy loading if we're just changing time grouping
+                    if (isChangingTimeGrouping) {
+                        Logger.trace(`Skipping lazy load for ${tabId} - time grouping change in progress`);
+                        return;
+                    }
 
                     // Lazy load charts when tabs are first activated
                     if (!loadedTabs.has(tabId)) {
