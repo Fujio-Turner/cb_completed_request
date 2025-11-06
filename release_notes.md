@@ -1,3 +1,7 @@
+### Version 3.28.1 (November 6, 2025)
+- **Fix: Collection Chart Copy Data** - Fixed copy data functionality for collection charts (closes #224)
+- **Fix: Query Pattern Chart Copy Data** - Fixed copy data functionality for query pattern charts (closes #225)
+
 ### Version 3.28.0 (November 4, 2025)
 - **New: 3D Visualization in Timeline** - Added 3D bar charts for Timeline tab visualizations (closes #214, #215)
 - **New: SQL++ Collection Filter** - Added dropdown filter for SQL++ collections in Query Groups tab (closes #220)
