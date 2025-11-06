@@ -6302,6 +6302,10 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 // Append batch to DOM
                 if (endIndex >= data.length) {
                     analysisTableBody.appendChild(fragment);
+                    // Auto-populate chart with first row after final batch (Issue #225)
+                    if (data.length > 0 && data[0].groupRef) {
+                        renderQueryGroupPhaseTimesChart(data[0].groupRef);
+                    }
                 } else {
                     // Process next batch asynchronously
                     analysisTableBody.appendChild(fragment);
