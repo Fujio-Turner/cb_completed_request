@@ -28,6 +28,8 @@ import {
     parseCouchbaseDateTime,
     detectTimezoneFromData,
     getOperators,
+    deriveStatementType,
+    makeElapsedFilterPredicate,
     dataBus,
     notifyDataReady
 } from './data-layer.js';
@@ -67,6 +69,8 @@ window.formatDuration = formatDuration;
 // Data Layer Helpers
 window.detectTimezoneFromData = detectTimezoneFromData;
 window.getOperators = getOperators;
+window.deriveStatementType = deriveStatementType;
+window.makeElapsedFilterPredicate = makeElapsedFilterPredicate;
 
 // ============================================================
 // INITIALIZATION LOG

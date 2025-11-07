@@ -282,3 +282,102 @@ export function getOperators(
 
     return operators;
 }
+
+// ============================================================
+// HELPER: deriveStatementType
+// ============================================================
+
+export function deriveStatementType(statement) {
+    if (!statement || typeof statement !== "string") {
+        return "UNKNOWN";
+    }
+
+    // Decode any HTML entities and strip tags
+    try {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = statement;
+        statement = (tmp.textContent || tmp.innerText || "");
+    } catch (e) { /* no-op */ }
+    
+    const cleaned = statement.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
+    const trimmed = cleaned.trim().toUpperCase();
+    
+    if (!trimmed) return "UNKNOWN";
+
+    // Handle multi-word statement types
+    if (trimmed.startsWith("CREATE INDEX")) return "CREATE_INDEX";
+    if (trimmed.startsWith("DROP INDEX")) return "DROP_INDEX";
+    if (trimmed.startsWith("ALTER INDEX")) return "ALTER_INDEX";
+    if (trimmed.startsWith("BUILD INDEX")) return "BUILD_INDEX";
+
+    // Get first word
+    const firstWord = trimmed.split(/\s+/)[0];
+    return firstWord;
+}
+
+// ============================================================
+// HELPER: makeElapsedFilterPredicate
+// ============================================================
+
+export function makeElapsedFilterPredicate(input) {
+    try {
+        if (!input || !(input = String(input).trim())) return null;
+        const s = input.toLowerCase();
+
+        const toMs = (num, unit) => {
+            const v = parseFloat(num);
+            const u = (unit || 'ms').toLowerCase();
+            if (u === 'ms') return v;
+            if (u === 's') return v * 1000;
+            if (u === 'µs' || u === 'us') return v / 1000;
+            const ms = parseTime(`${v}${u}`);
+            return isNaN(ms) ? NaN : ms;
+        };
+
+        // Range: "100ms-500ms" or "0.5s - 2s"
+        const range = s.match(/^(\d*\.?\d+)\s*(µs|us|ms|s)?\s*-\s*(\d*\.?\d+)\s*(µs|us|ms|s)?$/);
+        if (range) {
+            const inferredUnit = range[2] || range[4] || 'ms';
+            const leftMs = toMs(range[1], range[2] || inferredUnit);
+            const rightMs = toMs(range[3], range[4] || inferredUnit);
+            if (isNaN(leftMs) || isNaN(rightMs)) return null;
+            const min = Math.min(leftMs, rightMs);
+            const max = Math.max(leftMs, rightMs);
+            return (x) => typeof x === 'number' && !isNaN(x) && x >= min && x <= max;
+        }
+
+        // Comparison: ">=500ms", "<2s", "=150ms"
+        const comp = s.match(/^(<=|>=|<|>|=)\s*(\d*\.?\d+)\s*(µs|us|ms|s)?$/);
+        if (comp) {
+            const op = comp[1];
+            const valMs = toMs(comp[2], comp[3] || 'ms');
+            if (isNaN(valMs)) return null;
+            return (x) => {
+                if (typeof x !== 'number' || isNaN(x)) return false;
+                if (op === '<') return x < valMs;
+                if (op === '<=') return x <= valMs;
+                if (op === '>') return x > valMs;
+                if (op === '>=') return x >= valMs;
+                return x === valMs;
+            };
+        }
+
+        // Plus: "500ms+"
+        const plus = s.match(/^(\d*\.?\d+)\s*(µs|us|ms|s)\s*\+$/);
+        if (plus) {
+            const valMs = toMs(plus[1], plus[2]);
+            if (isNaN(valMs)) return null;
+            return (x) => typeof x === 'number' && !isNaN(x) && x >= valMs;
+        }
+
+        // Bare number: assume ms
+        const bare = s.match(/^(\d*\.?\d+)$/);
+        if (bare) {
+            const valMs = toMs(bare[1], 'ms');
+            if (isNaN(valMs)) return null;
+            return (x) => typeof x === 'number' && !isNaN(x) && x >= valMs;
+        }
+
+        return null;
+    } catch (e) { return null; }
+}
