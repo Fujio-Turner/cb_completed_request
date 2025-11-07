@@ -3049,7 +3049,7 @@ if (window.TEXT_CONSTANTS) {
                     
                     // Apply timezone conversion
                     const convertedDate = getChartDate(originalTime);
-                    return convertedDate ? convertedDate.toISOString().replace('T', ' ').substring(0, 23) + 'Z' : originalTime;
+                    return convertedDate ? formatTimestamp(convertedDate, "YYYY-MM-DD HH:MM:SS.sssZ") : originalTime;
                 },
                 render: (value) => value
             },

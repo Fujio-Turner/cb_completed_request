@@ -5,7 +5,7 @@
 // printable/PDF reports from analysis data.
 // ============================================================
 
-import { Logger, TEXT_CONSTANTS } from './base.js';
+import { Logger, TEXT_CONSTANTS, formatTimestamp } from './base.js';
 import { originalRequests } from './data-layer.js';
 import { formatNumber, formatDuration } from './ui-helpers.js';
 
@@ -91,7 +91,7 @@ import { formatNumber, formatDuration } from './ui-helpers.js';
             // preserve existing exit button
             const existingBtn = header.querySelector('#report-exit-btn');
             const ver = (typeof getVersionInfo === 'function' ? getVersionInfo().version : '');
-            const now = new Date().toLocaleString();
+            const now = formatTimestamp(new Date(), "locale");
             header.innerHTML = `
               <h1>Couchbase Query Analyzer ${ver ? 'v' + ver : ''}</h1>
               <div class=\"meta\">${TEXT_CONSTANTS.REPORT_GENERATED_AT || 'Generated at'}: ${now}${summaryText ? ' • ' + summaryText : ''}</div>
@@ -107,7 +107,7 @@ import { formatNumber, formatDuration } from './ui-helpers.js';
 
         function buildReportCoverHTML(selections) {
             const t = (k, d) => (window.TEXT_CONSTANTS && TEXT_CONSTANTS[k]) ? TEXT_CONSTANTS[k] : d;
-            const now = new Date().toLocaleString();
+            const now = formatTimestamp(new Date(), "locale");
             const startDateInput = document.getElementById('start-date');
             const endDateInput = document.getElementById('end-date');
             const sqlFilter = document.getElementById('sql-statement-filter');

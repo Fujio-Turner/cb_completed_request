@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test formatTimestamp() with Real Data</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .test-case { margin: 10px 0; padding: 10px; background: #f5f5f5; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .input { color: blue; }
+        .output { color: purple; }
+    </style>
+</head>
+<body>
+    <h1>Testing formatTimestamp() with Real Couchbase Data</h1>
+    <div id="results"></div>
+
+    <script type="module">
+        import { formatTimestamp } from './liquid_snake/assets/js/base.js';
+
+        // Real timestamp formats from sample/docs_system_completd_requests.json and test_system_completed_requests.json
+        const testCases = [
+            // Format 1: ISO with timezone offset
+            { input: "2025-08-26T14:06:02.129-05:00", desc: "ISO with timezone offset (-05:00)" },
+            
+            // Format 2: ISO with Z (UTC)
+            { input: "2025-08-15T00:01:00.000Z", desc: "ISO with Z (UTC)" },
+            { input: "2025-07-13T10:15:22.124Z", desc: "ISO with Z (UTC) - from plan" },
+            
+            // Format 3: Microseconds (µs) - NOT a timestamp, just duration
+            // These are in phaseTimes and should NOT be converted
+            // { input: "15.110ms", desc: "Duration string (NOT a timestamp)" },
+            // { input: "8.901µs", desc: "Microseconds (NOT a timestamp)" },
+            
+            // Edge cases
+            { input: "2025-01-01T00:00:00.000Z", desc: "Midnight UTC" },
+            { input: "2025-12-31T23:59:59.999Z", desc: "End of year" },
+        ];
+
+        const formats = [
+            "YYYY-MM-DD HH:MM:SS.sssZ",
+            "YYYY-MM-DD HH:MM:SS",
+            "HH:MM:SS.sss",
+            "HH:MM:SS",
+            "locale",
+            "iso"
+        ];
+
+        const resultsDiv = document.getElementById('results');
+        let passCount = 0;
+        let failCount = 0;
+
+        testCases.forEach((test, idx) => {
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test-case';
+            
+            let html = `<strong>Test ${idx + 1}:</strong> ${test.desc}<br>`;
+            html += `<span class="input">Input: ${test.input}</span><br>`;
+            
+            let allPassed = true;
+            formats.forEach(format => {
+                try {
+                    const result = formatTimestamp(test.input, format);
+                    const passed = result && result !== test.input && result !== '';
+                    
+                    if (passed) passCount++;
+                    else { failCount++; allPassed = false; }
+                    
+                    html += `<span class="${passed ? 'pass' : 'fail'}">`;
+                    html += `  ${format.padEnd(30)} → ${result}`;
+                    html += `</span><br>`;
+                } catch (error) {
+                    failCount++;
+                    allPassed = false;
+                    html += `<span class="fail">  ${format.padEnd(30)} → ERROR: ${error.message}</span><br>`;
+                }
+            });
+            
+            testDiv.innerHTML = html;
+            resultsDiv.appendChild(testDiv);
+        });
+
+        // Summary
+        const summary = document.createElement('div');
+        summary.style.marginTop = '20px';
+        summary.style.padding = '20px';
+        summary.style.background = '#e0e0e0';
+        summary.innerHTML = `
+            <h2>Summary</h2>
+            <p class="pass">✅ Passed: ${passCount}</p>
+            <p class="fail">❌ Failed: ${failCount}</p>
+        `;
+        resultsDiv.appendChild(summary);
+
+        console.log('Test complete:', { passCount, failCount });
+    </script>
+</body>
+</html>

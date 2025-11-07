@@ -387,6 +387,78 @@ export function hashCompositeKey(key) { return DebugRedactor.redactCompositeKey(
 export function hashQuery(query) { return DebugRedactor.redactQuery(query); }
 
 // ============================================================
+// TIMESTAMP FORMATTING UTILITIES
+// ============================================================
+
+/**
+ * Format a date/timestamp string into the specified format
+ * @param {string|Date} dateInput - Date string (e.g., "2024-11-07 12:30:45.123Z") or Date object
+ * @param {string} format - Output format:
+ *   - "HH:MM:SS.sss" → "12:30:45.123"
+ *   - "YYYY-MM-DD HH:MM:SS.sssZ" → "2024-11-07 12:30:45.123Z"
+ *   - "YYYY-MM-DD HH:MM:SS" → "2024-11-07 12:30:45"
+ *   - "locale" → Uses browser's toLocaleString()
+ *   - "iso" → ISO 8601 format with T separator
+ * @returns {string} Formatted timestamp string or original input if parsing fails
+ */
+export function formatTimestamp(dateInput, format = "YYYY-MM-DD HH:MM:SS.sssZ") {
+    if (!dateInput) return '';
+    
+    try {
+        // Convert input to Date object
+        let date;
+        if (dateInput instanceof Date) {
+            date = dateInput;
+        } else if (typeof dateInput === 'string') {
+            // Handle Couchbase datetime format (space-separated)
+            const isoString = dateInput.replace(" ", "T");
+            date = new Date(isoString);
+        } else {
+            return String(dateInput);
+        }
+        
+        // Validate date
+        if (isNaN(date.getTime())) {
+            Logger.warn(`Invalid date format: ${dateInput}`);
+            return String(dateInput);
+        }
+        
+        // Format based on requested format
+        switch (format) {
+            case "locale":
+                return date.toLocaleString();
+            
+            case "iso":
+                return date.toISOString();
+            
+            case "YYYY-MM-DD HH:MM:SS.sssZ":
+                // "2024-11-07 12:30:45.123Z"
+                return date.toISOString().replace('T', ' ').substring(0, 23) + 'Z';
+            
+            case "YYYY-MM-DD HH:MM:SS":
+                // "2024-11-07 12:30:45"
+                return date.toISOString().replace('T', ' ').substring(0, 19);
+            
+            case "HH:MM:SS.sss":
+                // "12:30:45.123"
+                return date.toISOString().substring(11, 23);
+            
+            case "HH:MM:SS":
+                // "12:30:45"
+                return date.toISOString().substring(11, 19);
+            
+            default:
+                // Custom format or fallback
+                Logger.warn(`Unsupported format: ${format}, using default`);
+                return date.toISOString().replace('T', ' ').substring(0, 23) + 'Z';
+        }
+    } catch (error) {
+        Logger.error(`Error formatting timestamp: ${dateInput}`, error);
+        return String(dateInput);
+    }
+}
+
+// ============================================================
 // INITIALIZATION
 // ============================================================
 
@@ -406,8 +478,9 @@ const flagsStatus = {
 
 Logger.info(`⚙️ URL Flags: dev=${flagsStatus.dev}, debug=${flagsStatus.debug}, logLevel=${flagsStatus.logLevel}, redact=${flagsStatus.redact}`);
 
-// Expose DebugRedactor globally for backward compatibility
+// Expose utilities globally for backward compatibility
 window.DebugRedactor = DebugRedactor;
+window.formatTimestamp = formatTimestamp;
 
 Logger.info(TEXT_CONSTANTS.ANALYZER_INITIALIZED);
 Logger.info(TEXT_CONSTANTS.TIP_ABOUT);
