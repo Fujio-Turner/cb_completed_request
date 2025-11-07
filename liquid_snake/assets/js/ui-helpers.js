@@ -338,3 +338,33 @@ export function setupModalClose(modalId) {
         });
     }
 }
+
+// ============================================================
+// PERFORMANCE UTILITIES (from main-legacy.js)
+// ============================================================
+// Note: This is a duplicate - already have debounce/throttle above
+// Keeping PerformanceUtils for backward compatibility
+
+export const PerformanceUtils = {
+    throttle(func, wait) {
+        let inThrottle;
+        return function(...args) {
+            if (!inThrottle) {
+                func.apply(this, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, wait);
+            }
+        };
+    },
+    
+    debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+};
+
+// Expose globally
+window.PerformanceUtils = PerformanceUtils;
