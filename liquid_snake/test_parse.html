@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parse JSON Test Suite</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.11.0/sha256.min.js" integrity="sha512-Ijgp4DBSyLWlGBWSzHSVM0mKCHOMa0JUoaO8VfPGKac+38EaIoJ67Io+d6DxOIPZjP9hriludUTWmoE+aIe4ig==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            margin: 5px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button:hover { background: #2980b9; }
+        button.success { background: #28a745; }
+        button.danger { background: #dc3545; }
+        .status {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 12px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .pass { background: #d4edda; border-left: 4px solid #28a745; color: #155724; }
+        .fail { background: #f8d7da; border-left: 4px solid #dc3545; color: #721c24; }
+        .info { background: #e7f3ff; border-left: 4px solid #2196F3; color: #1976D2; }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        #testResults { min-height: 100px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 ParseJSON Test Suite</h1>
+    
+    <div class="status">
+        <strong>Test Data Sources:</strong><br>
+        📁 Local: ../sample/test_system_completed_requests.json<br>
+        🌐 Remote: https://cb.fuj.io/sample/test_system_completed_requests.json<br>
+        <span id="dataStatus">⏳ Not loaded</span>
+    </div>
+
+    <div class="test-section">
+        <h3>🎯 Load Test Data</h3>
+        <button onclick="loadLocalSample()">📁 Load Local Sample</button>
+        <button onclick="loadRemoteSample()">🌐 Load Remote Sample</button>
+        <button onclick="clearData()" class="danger">🗑️ Clear Data</button>
+    </div>
+
+    <div class="test-section">
+        <h3>🔬 Run Tests</h3>
+        <button onclick="runAllParseTests()" class="success">🚀 Run All Parse Tests</button>
+        <button onclick="testDataParsing()">📊 Test Data Parsing</button>
+        <button onclick="testCachePopulation()">💾 Test Caches</button>
+        <button onclick="testFiltering()">🔍 Test Filtering</button>
+        <button onclick="testHelperFunctions()">⚙️ Test Helpers</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Test Results</h3>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📈 Data Summary</h3>
+        <pre id="dataSummary">No data loaded</pre>
+    </div>
+
+    <script type="module">
+        import { Logger } from './assets/js/base.js';
+        import { 
+            originalRequests,
+            parseTimeCache,
+            normalizeStatementCache,
+            parseTime,
+            normalizeStatement,
+            deriveStatementType,
+            detectTimezoneFromData
+        } from './assets/js/data-layer.js';
+
+        let testData = null;
+
+        // Test utilities
+        function assert(condition, message) {
+            const result = { pass: condition, message };
+            const div = document.createElement('div');
+            div.className = `test-result ${condition ? 'pass' : 'fail'}`;
+            div.textContent = `${condition ? '✅' : '❌'} ${message}`;
+            document.getElementById('testResults').appendChild(div);
+            console.log(`[${condition ? 'PASS' : 'FAIL'}] ${message}`);
+            return result;
+        }
+
+        function logInfo(message) {
+            const div = document.createElement('div');
+            div.className = 'test-result info';
+            div.textContent = `ℹ️ ${message}`;
+            document.getElementById('testResults').appendChild(div);
+            console.log(`[INFO] ${message}`);
+        }
+
+        // Load local sample
+        window.loadLocalSample = async function() {
+            try {
+                logInfo('Loading local sample data...');
+                const response = await fetch('../sample/test_system_completed_requests.json');
+                testData = await response.json();
+                document.getElementById('dataStatus').textContent = `✅ Loaded ${testData.length || testData.results?.length || 0} records (local)`;
+                updateDataSummary();
+                logInfo(`Loaded ${testData.length || testData.results?.length || 0} records from local file`);
+            } catch (error) {
+                Logger.error('Failed to load local sample:', error);
+                document.getElementById('dataStatus').textContent = `❌ Failed to load local: ${error.message}`;
+            }
+        };
+
+        // Load remote sample
+        window.loadRemoteSample = async function() {
+            try {
+                logInfo('Loading remote sample data...');
+                const response = await fetch('https://cb.fuj.io/sample/test_system_completed_requests.json');
+                testData = await response.json();
+                document.getElementById('dataStatus').textContent = `✅ Loaded ${testData.length || testData.results?.length || 0} records (remote)`;
+                updateDataSummary();
+                logInfo(`Loaded ${testData.length || testData.results?.length || 0} records from remote URL`);
+            } catch (error) {
+                Logger.error('Failed to load remote sample:', error);
+                document.getElementById('dataStatus').textContent = `❌ Failed to load remote: ${error.message}`;
+            }
+        };
+
+        // Clear data
+        window.clearData = function() {
+            testData = null;
+            document.getElementById('dataStatus').textContent = '⏳ Not loaded';
+            document.getElementById('dataSummary').textContent = 'No data loaded';
+            document.getElementById('testResults').innerHTML = '';
+            logInfo('Data cleared');
+        };
+
+        // Update data summary
+        function updateDataSummary() {
+            if (!testData) {
+                document.getElementById('dataSummary').textContent = 'No data loaded';
+                return;
+            }
+
+            const data = Array.isArray(testData) ? testData : testData.results || [];
+            const sample = data[0] || {};
+            
+            const summary = `
+Records: ${data.length}
+First Record Keys: ${Object.keys(sample).slice(0, 10).join(', ')}
+Has requestTime: ${!!sample.requestTime}
+Has statement: ${!!sample.statement}
+Has plan: ${!!sample.plan}
+Has elapsedTime: ${!!sample.elapsedTime}
+            `.trim();
+            
+            document.getElementById('dataSummary').textContent = summary;
+        }
+
+        // Test data parsing
+        window.testDataParsing = function() {
+            if (!testData) {
+                assert(false, 'No data loaded - click "Load Local Sample" or "Load Remote Sample" first');
+                return;
+            }
+
+            const data = Array.isArray(testData) ? testData : testData.results || [];
+            
+            assert(data.length > 0, `Data loaded: ${data.length} records`);
+            assert(data[0].requestTime !== undefined, 'First record has requestTime');
+            assert(data[0].statement !== undefined || data[0].preparedText !== undefined, 'First record has statement or preparedText');
+            
+            // Test parseTime
+            const firstElapsed = data[0].elapsedTime;
+            if (firstElapsed) {
+                const parsed = parseTime(firstElapsed);
+                assert(typeof parsed === 'number' && parsed >= 0, `parseTime('${firstElapsed}') = ${parsed}ms`);
+            }
+            
+            // Test normalizeStatement
+            const firstStmt = data[0].statement || data[0].preparedText;
+            if (firstStmt) {
+                const normalized = normalizeStatement(firstStmt);
+                assert(typeof normalized === 'string', `normalizeStatement returned string`);
+                logInfo(`Original: ${firstStmt.substring(0, 50)}...`);
+                logInfo(`Normalized: ${normalized.substring(0, 50)}...`);
+            }
+            
+            // Test deriveStatementType
+            const stmtType = deriveStatementType(firstStmt);
+            assert(['SELECT', 'UPDATE', 'INSERT', 'DELETE', 'UPSERT', 'MERGE', 'UNKNOWN'].includes(stmtType), 
+                `deriveStatementType = ${stmtType}`);
+            
+            // Test detectTimezoneFromData
+            const tz = detectTimezoneFromData(data);
+            assert(typeof tz === 'string', `detectTimezoneFromData = ${tz}`);
+        };
+
+        // Test cache population
+        window.testCachePopulation = function() {
+            if (!testData) {
+                assert(false, 'No data loaded');
+                return;
+            }
+
+            const data = Array.isArray(testData) ? testData : testData.results || [];
+            
+            // Parse some times to populate cache
+            const times = data.slice(0, 10).map(r => r.elapsedTime).filter(Boolean);
+            times.forEach(t => parseTime(t));
+            
+            assert(parseTimeCache.size > 0, `parseTimeCache populated: ${parseTimeCache.size} entries`);
+            
+            // Normalize some statements
+            const statements = data.slice(0, 5).map(r => r.statement || r.preparedText).filter(Boolean);
+            statements.forEach(s => normalizeStatement(s));
+            
+            assert(normalizeStatementCache.size > 0, `normalizeStatementCache populated: ${normalizeStatementCache.size} entries`);
+            
+            logInfo(`Caches working correctly!`);
+        };
+
+        // Test filtering
+        window.testFiltering = function() {
+            if (!testData) {
+                assert(false, 'No data loaded');
+                return;
+            }
+
+            const data = Array.isArray(testData) ? testData : testData.results || [];
+            
+            // Test that we have different statement types
+            const types = new Set(data.slice(0, 20).map(r => deriveStatementType(r.statement || r.preparedText)));
+            assert(types.size > 0, `Found ${types.size} unique statement types: ${[...types].join(', ')}`);
+            
+            logInfo('Filtering logic ready for testing');
+        };
+
+        // Test helper functions
+        window.testHelperFunctions = function() {
+            logInfo('Testing helper functions...');
+            
+            // Test parseTime edge cases
+            assert(parseTime('1.5s') === 1500, 'parseTime("1.5s") = 1500ms');
+            assert(parseTime('500ms') === 500, 'parseTime("500ms") = 500ms');
+            assert(parseTime('100µs') === 0.1, 'parseTime("100µs") = 0.1ms');
+            assert(parseTime('invalid') === 0, 'parseTime("invalid") = 0');
+            
+            // Test normalizeStatement
+            const norm1 = normalizeStatement("SELECT * FROM bucket WHERE id = 123");
+            assert(norm1.includes('?'), `normalizeStatement replaces numbers with ?`);
+            
+            const norm2 = normalizeStatement("SELECT * FROM bucket WHERE name = 'test'");
+            assert(norm2.includes('?'), `normalizeStatement replaces strings with ?`);
+            
+            logInfo('All helper functions working correctly');
+        };
+
+        // Run all tests
+        window.runAllParseTests = async function() {
+            document.getElementById('testResults').innerHTML = '';
+            console.clear();
+            console.log('🚀 Running Parse JSON Test Suite...\n');
+            
+            // Auto-load if not loaded
+            if (!testData) {
+                logInfo('No data loaded, loading remote sample...');
+                await loadRemoteSample();
+                await new Promise(resolve => setTimeout(resolve, 500)); // Wait for load
+            }
+            
+            if (!testData) {
+                assert(false, 'Failed to load test data');
+                return;
+            }
+            
+            testDataParsing();
+            testCachePopulation();
+            testFiltering();
+            testHelperFunctions();
+            
+            console.log('\n✅ All tests complete!');
+        };
+
+        // Auto-run on page load
+        setTimeout(() => {
+            logInfo('Page loaded. Click "Load Local Sample" or "Load Remote Sample" to begin testing.');
+        }, 500);
+    </script>
+</body>
+</html>

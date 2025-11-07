@@ -381,3 +381,37 @@ export function makeElapsedFilterPredicate(input) {
         return null;
     } catch (e) { return null; }
 }
+
+// ============================================================
+// HELPER: stripEmTags
+// ============================================================
+
+export function stripEmTags(text) {
+    if (text == null) return "";
+    return String(text)
+        .replace(/<\/?em>/gi, "")
+        .replace(/<\/?ud>/gi, "");
+}
+
+// ============================================================
+// HELPER: isPreparedExecution
+// ============================================================
+
+export function isPreparedExecution(request) {
+    if (!request) return false;
+    const hasPrepared = typeof request.preparedText === 'string' && request.preparedText.trim().length > 0;
+    const type = (request.statementType || '').toUpperCase();
+    const stmt = (request.statement || '').toUpperCase().trim();
+    const hasExecute = type === 'EXECUTE' || stmt.startsWith('EXECUTE ');
+    return hasPrepared && hasExecute;
+}
+
+// ============================================================
+// HELPER: getPreparedSample
+// ============================================================
+
+export function getPreparedSample(request) {
+    if (!isPreparedExecution(request)) return "";
+    const txt = stripEmTags(request.preparedText || "");
+    return txt.trim();
+}

@@ -30,6 +30,9 @@ import {
     getOperators,
     deriveStatementType,
     makeElapsedFilterPredicate,
+    stripEmTags,
+    isPreparedExecution,
+    getPreparedSample,
     dataBus,
     notifyDataReady
 } from './data-layer.js';
@@ -71,6 +74,9 @@ window.detectTimezoneFromData = detectTimezoneFromData;
 window.getOperators = getOperators;
 window.deriveStatementType = deriveStatementType;
 window.makeElapsedFilterPredicate = makeElapsedFilterPredicate;
+window.stripEmTags = stripEmTags;
+window.isPreparedExecution = isPreparedExecution;
+window.getPreparedSample = getPreparedSample;
 
 // ============================================================
 // INITIALIZATION LOG
