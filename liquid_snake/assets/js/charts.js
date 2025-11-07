@@ -2209,7 +2209,8 @@ function generateElapsedTimeChart(requests) {
             );
             const percentageData = sortedData.map((item) => {
                 const total = item.filtersEqual + item.filtersNotEqual;
-                return total > 0 ? (item.filtersNotEqual / total) * 100 : 0;
+                // Efficiency = (IN=OUT / Total) * 100 (higher = more efficient, less waste)
+                return total > 0 ? (item.filtersEqual / total) * 100 : 0;
             });
 
             // Create new mixed chart with bars and line

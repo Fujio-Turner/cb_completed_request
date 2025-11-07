@@ -7588,13 +7588,10 @@ function renderQueryGroupPhaseTimesChart(group) {
                 
                 timeGroups[key].queryCount++;
 
-                // Find all Filter operators AND index scan operators (Issue #232: PrimaryScan counts as filtering)
+                // Find all Filter operators in the plan (Issue #232: Track filter efficiency)
                 const operators = getOperators(request.plan);
                 operators.forEach((operator) => {
-                    const opType = operator["#operator"];
-                    
-                    // Check for Filter operators OR index scan operators (PrimaryScan3, IndexScan3, IndexScan2)
-                    if (opType === "Filter" || opType === "PrimaryScan3" || opType === "IndexScan3" || opType === "IndexScan2") {
+                    if (operator["#operator"] === "Filter") {
                         const stats = operator["#stats"] || {};
                         const itemsIn = stats["#itemsIn"];
                         const itemsOut = stats["#itemsOut"];
@@ -7648,7 +7645,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                     labels: labels,
                     datasets: [
                         {
-                            label: "Filters & Index Scans: IN = OUT",
+                            label: "Filters: IN = OUT",
                             data: filtersEqualData,
                             backgroundColor: "#007bff", // Blue
                             borderColor: "#0056b3",
@@ -7658,7 +7655,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                             order: 2,
                         },
                         {
-                            label: "Filters & Index Scans: IN ≠ OUT",
+                            label: "Filters: IN ≠ OUT",
                             data: filtersNotEqualData,
                             backgroundColor: "#dc3545", // Red
                             borderColor: "#b02a37",
@@ -7693,7 +7690,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                         },
                         title: {
                             display: true,
-                            text: "Filter Operations: Efficiency Analysis (IN vs OUT) - Includes Index Scans",
+                            text: "Filter Operations: Efficiency Analysis (IN vs OUT)",
                             font: {
                                 size: 12
                             }
