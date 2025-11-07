@@ -298,11 +298,13 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 'cas': result.cas
             })
         except DocumentNotFoundException:
-            print(f"ℹ️  Document {user_id} not found (first time user)")
+            print(f"ℹ️  Document {user_id} not found (first time user) - returning defaults")
             self.send_json_response({
-                'success': False,
-                'error': 'Document not found'
-            }, 404)
+                'success': True,
+                'data': {},  # Empty preferences = use defaults
+                'cas': None,
+                'firstTime': True
+            }, 200)
         except Exception as e:
             print(f"❌ Error loading preferences: {e}")
             self.send_json_response({
