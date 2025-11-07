@@ -473,7 +473,8 @@ import {
             tableBody.innerHTML = "";
 
             // Clear statement store for new data (only for current page)
-            statementStore = {};
+            // Use window.statementStore since imported binding is read-only
+            Object.keys(window.statementStore).forEach(key => delete window.statementStore[key]);
 
             // Pagination: get only the current page data
             const start = (currentPage - 1) * pageSize;

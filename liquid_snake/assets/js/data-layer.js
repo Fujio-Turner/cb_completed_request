@@ -31,11 +31,37 @@ export const timestampRoundingCache = new Map();
 // GLOBAL DATA STORES
 // ============================================================
 
+// Data stores - exported as mutable objects
 export let originalRequests = [];
 export let originalStartDate = null;
 export let originalEndDate = null;
 export let statementStore = {};
 export let analysisStatementStore = {};
+
+// Backward compatibility - expose via window as getters/setters
+Object.defineProperty(window, 'originalRequests', {
+    get: () => originalRequests,
+    set: (value) => { 
+        originalRequests.length = 0;
+        originalRequests.push(...value);
+    }
+});
+Object.defineProperty(window, 'originalStartDate', {
+    get: () => originalStartDate,
+    set: (value) => { originalStartDate = value; }
+});
+Object.defineProperty(window, 'originalEndDate', {
+    get: () => originalEndDate,
+    set: (value) => { originalEndDate = value; }
+});
+Object.defineProperty(window, 'statementStore', {
+    get: () => statementStore,
+    set: (value) => { statementStore = value; }
+});
+Object.defineProperty(window, 'analysisStatementStore', {
+    get: () => analysisStatementStore,
+    set: (value) => { analysisStatementStore = value; }
+});
 
 // ============================================================
 // CACHE MANAGEMENT

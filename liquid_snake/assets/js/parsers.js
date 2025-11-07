@@ -242,7 +242,8 @@ const updateInsights = window.updateInsights;
                 !endDateInput.value &&
                 filteredAllRequests.length > 0
             ) {
-                originalRequests = filteredAllRequests;
+                originalRequests.length = 0;
+                originalRequests.push(...filteredAllRequests);
                 const dates = filteredAllRequests
                     .map((r) => parseCouchbaseDateTime(r.requestTime))
                     .filter((d) => d && !isNaN(d.getTime()))
@@ -271,7 +272,8 @@ const updateInsights = window.updateInsights;
             } else {
                 // Use existing originalRequests if available, otherwise use current data
                 if (originalRequests.length === 0) {
-                    originalRequests = filteredAllRequests;
+                    originalRequests.length = 0;
+                originalRequests.push(...filteredAllRequests);
                 }
             }
 

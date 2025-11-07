@@ -262,13 +262,11 @@ import {
 // ============================================================
 
 export {
-    buildIndexQueryFlow,
-    updateFlowDiagram
+    buildIndexQueryFlow
 };
 
 // Expose globally for backward compatibility
 window.buildIndexQueryFlow = buildIndexQueryFlow;
-window.updateFlowDiagram = updateFlowDiagram;
 
 console.log('✅ flow-diagram.js module loaded');
 

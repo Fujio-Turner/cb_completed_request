@@ -13763,14 +13763,8 @@ size: 12
             }
         }
 
-        // Global variable to store original unfiltered data
-        let originalRequests = [];
-        let originalStartDate = null;
-        let originalEndDate = null;
-
-        // Store statements for safe access without HTML escaping issues
-        let statementStore = {};
-        let analysisStatementStore = {};
+        // Global data stores now imported from data-layer.js via window
+        // Access via: window.originalRequests, window.statementStore, window.analysisStatementStore
 
         // Parse Couchbase datetime to JavaScript Date
         function parseCouchbaseDateTime(dateTimeStr) {

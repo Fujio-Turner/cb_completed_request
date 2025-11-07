@@ -843,11 +843,35 @@ export function updateOptimizerLabel(requests) {
 /**
  * Convert requestTime to Date object with timezone support
  */
+// Helper: Convert Date to timezone
+function convertToTimezone(date, timezone) {
+    if (!date || isNaN(date.getTime())) return null;
+    if (!timezone || timezone === "UTC") return date;
+    
+    try {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: timezone,
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit',
+            hour12: false
+        });
+        const parts = formatter.formatToParts(date);
+        const getValue = (type) => parts.find(p => p.type === type)?.value;
+        return new Date(`${getValue('year')}-${getValue('month')}-${getValue('day')}T${getValue('hour')}:${getValue('minute')}:${getValue('second')}`);
+    } catch (e) {
+        return date;
+    }
+}
+
 export function getChartDate(requestTime) {
-    // This function is used for timezone conversion (Issue #203)
-    // Implementation is in main-legacy.js line ~13784
-    // We'll call the window version for now
-    return window.getChartDate ? window.getChartDate(requestTime) : new Date(requestTime);
+    if (!requestTime) return null;
+    const date = new Date(requestTime.replace(" ", "T"));
+    if (!date || isNaN(date.getTime())) return null;
+    
+    const currentTimezone = window.currentTimezone || "UTC";
+    if (!currentTimezone || currentTimezone === "UTC") return date;
+    
+    return convertToTimezone(date, currentTimezone);
 }
 
 
