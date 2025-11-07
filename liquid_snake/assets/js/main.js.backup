@@ -23202,15 +23202,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
             Logger.info(`📦 Version: ${APP_VERSION} (Updated: ${LAST_UPDATED})`);
             Logger.info(`${TEXT_CONSTANTS.FEATURES}`, getVersionInfo().features.join(", "));
 
-            // Log URL flags status
-            const urlParams = new URLSearchParams(window.location.search);
-            const flagsStatus = {
-                dev: urlParams.get('dev') === 'true',
-                debug: urlParams.get('debug') === 'true',
-                logLevel: getLogLevel()
-            };
-            Logger.info(`⚙️ URL Flags: dev=${flagsStatus.dev}, debug=${flagsStatus.debug}, logLevel=${flagsStatus.logLevel}`);
-
             // Initialize theme from localStorage
             
             // Show Schema Inference feature if dev mode is enabled
