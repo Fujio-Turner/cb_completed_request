@@ -230,6 +230,11 @@ async function saveCurrentPreferences() {
     if (result.success) {
         Logger.info('Preferences saved successfully to user_config');
         showToast('Settings saved to Couchbase!', 'success');
+        
+        // Update connection status to show connected
+        if (preferences.cluster) {
+            updateConnectionStatus('connected', preferences.cluster.name);
+        }
     } else {
         Logger.error('Failed to save preferences:', result.error);
         showToast(`Failed to save: ${result.error}`, 'error');
@@ -256,14 +261,13 @@ async function loadUserPreferences() {
         
         // Restore cluster configuration
         if (preferences.cluster) {
-            Logger.info('Restoring cluster config from user_config');
-            const config = await loadConfig();
-            config.cluster = preferences.cluster;
-            await saveConfig(config);
-            
-            // Update connection status
-            const connectedDate = new Date(preferences.connected);
-            updateConnectionStatus('connected', `Last saved: ${connectedDate.toLocaleString()}`);
+        Logger.info('Restoring cluster config from user_config');
+        const config = await loadConfig();
+        config.cluster = preferences.cluster;
+        await saveConfig(config);
+
+        // Update connection status to show cluster name
+        updateConnectionStatus('connected', preferences.cluster.name);
         }
         
         // Apply timezone if available

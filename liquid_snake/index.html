@@ -85,9 +85,9 @@
 
     <!-- Settings button (top-right) - Issue #231 -->
     <button id="settings-btn" class="settings-btn" onclick="openSettingsModal()" title="Cluster Connection Settings">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
             <circle cx="12" cy="12" r="3"></circle>
-            <path d="M12 1v6m0 6v6m-6-6h6m6 0h-6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"></path>
         </svg>
     </button>
 
@@ -1844,10 +1844,14 @@ LET bid = CONCAT("", s.bucket_id, ""),
     <div id="settings-modal" class="modal">
         <div class="modal-content settings-modal-content">
             <span class="close">×</span>
-            <h2>Couchbase Cluster Settings</h2>
+            <h2>Query Analyzer Settings Storage</h2>
+            <p style="color: #666; font-size: 0.9em; margin: -10px 0 15px 0; padding: 10px; background: #f0f9ff; border-left: 3px solid #3b82f6; border-radius: 4px;">
+                <strong>Note:</strong> This cluster is used to <em>store</em> your Query Analyzer preferences and settings. 
+                It is <strong>not</strong> the cluster you're analyzing queries from (paste query data in the main input boxes).
+            </p>
             <div id="settings-modal-body">
                 <div class="settings-section">
-                    <h3>Cluster Connection</h3>
+                    <h3>Storage Cluster Connection</h3>
                     <div id="cluster-list"></div>
                 </div>
                 

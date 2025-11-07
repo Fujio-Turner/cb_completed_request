@@ -301,7 +301,9 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             print(f"ℹ️  Document {user_id} not found (first time user) - returning defaults")
             self.send_json_response({
                 'success': True,
-                'data': {},  # Empty preferences = use defaults
+                'data': {
+                    'docType': 'config'
+                },
                 'cas': None,
                 'firstTime': True
             }, 200)
