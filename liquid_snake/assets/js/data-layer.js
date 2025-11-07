@@ -159,3 +159,126 @@ export const dataBus = new EventTarget();
 export function notifyDataReady(details) {
     dataBus.dispatchEvent(new CustomEvent('dataReady', { detail: details }));
 }
+
+// ============================================================
+// HELPER: detectTimezoneFromData
+// ============================================================
+
+export function detectTimezoneFromData(processData) {
+    if (!processData || processData.length === 0) return "UTC";
+    
+    // Get first requestTime that exists
+    for (let i = 0; i < Math.min(processData.length, 10); i++) {
+        const item = processData[i];
+        const request = item.completed_requests || item;
+        if (request.requestTime) {
+            const requestTime = request.requestTime;
+            // Check for timezone offset (e.g., "2025-01-15T10:30:00-05:00")
+            const offsetMatch = requestTime.match(/([+-]\d{2}:\d{2})$/);
+            if (offsetMatch) {
+                const offset = offsetMatch[1];
+                if (offset === "+00:00" || offset === "-00:00") {
+                    return "UTC";
+                }
+                // Map common offsets to timezone names
+                const offsetToTimezone = {
+                    "-10:00": "America/Honolulu",
+                    "-09:00": "America/Anchorage",
+                    "-08:00": "America/Los_Angeles",
+                    "-07:00": "America/Denver",
+                    "-06:00": "America/Chicago",
+                    "-05:00": "America/New_York",
+                    "-03:00": "America/Sao_Paulo",
+                    "+00:00": "UTC",
+                    "+01:00": "Europe/Paris",
+                    "+02:00": "Europe/Athens",
+                    "+03:00": "Europe/Moscow",
+                    "+04:00": "Asia/Dubai",
+                    "+05:30": "Asia/Kolkata",
+                    "+06:00": "Asia/Dhaka",
+                    "+07:00": "Asia/Bangkok",
+                    "+08:00": "Asia/Shanghai",
+                    "+09:00": "Asia/Tokyo",
+                    "+09:30": "Australia/Adelaide",
+                    "+10:00": "Australia/Sydney",
+                    "+11:00": "Pacific/Guam",
+                    "+12:00": "Pacific/Auckland"
+                };
+                return offsetToTimezone[offset] || "UTC";
+            }
+            return "UTC";
+        }
+    }
+    return "UTC";
+}
+
+// ============================================================
+// HELPER: getOperators (with cache)
+// ============================================================
+
+export function getOperators(
+    operator,
+    operators = [],
+    visited = new WeakSet(),
+    depth = 0
+) {
+    if (!operator) return operators;
+
+    // Check cache first for the root operator
+    if (depth === 0 && operatorsCache.has(operator)) {
+        return operatorsCache.get(operator);
+    }
+
+    // Prevent infinite recursion
+    if (visited.has(operator)) return operators;
+    visited.add(operator);
+
+    // Depth limit
+    if (depth > 50) return operators;
+
+    if (operator["#operator"]) {
+        operators.push(operator);
+    }
+    if (operator["~child"]) {
+        getOperators(operator["~child"], operators, visited, depth + 1);
+    } else if (operator["~children"]) {
+        operator["~children"].forEach((child) => {
+            getOperators(child, operators, visited, depth + 1);
+        });
+    }
+    if (operator.input) {
+        getOperators(operator.input, operators, visited, depth + 1);
+    }
+    if (operator.inputs && Array.isArray(operator.inputs)) {
+        operator.inputs.forEach((input) => {
+            getOperators(input, operators, visited, depth + 1);
+        });
+    }
+    if (operator.left) {
+        getOperators(operator.left, operators, visited, depth + 1);
+    }
+    if (operator.right) {
+        getOperators(operator.right, operators, visited, depth + 1);
+    }
+    if (operator.first) {
+        getOperators(operator.first, operators, visited, depth + 1);
+    }
+    if (operator.second) {
+        getOperators(operator.second, operators, visited, depth + 1);
+    }
+    if (operator.scans && Array.isArray(operator.scans)) {
+        operator.scans.forEach((scan) => {
+            getOperators(scan, operators, visited, depth + 1);
+        });
+    }
+    if (operator.scan) {
+        getOperators(operator.scan, operators, visited, depth + 1);
+    }
+
+    // Cache the result at root level
+    if (depth === 0) {
+        operatorsCache.set(operator, operators);
+    }
+
+    return operators;
+}

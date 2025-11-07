@@ -26,6 +26,8 @@ import {
     parseTime,
     normalizeStatement,
     parseCouchbaseDateTime,
+    detectTimezoneFromData,
+    getOperators,
     dataBus,
     notifyDataReady
 } from './data-layer.js';
@@ -61,6 +63,10 @@ window.throttle = throttle;
 window.formatNumber = formatNumber;
 window.formatBytes = formatBytes;
 window.formatDuration = formatDuration;
+
+// Data Layer Helpers
+window.detectTimezoneFromData = detectTimezoneFromData;
+window.getOperators = getOperators;
 
 // ============================================================
 // INITIALIZATION LOG
