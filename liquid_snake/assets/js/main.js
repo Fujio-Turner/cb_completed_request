@@ -4,8 +4,9 @@
 // This is the main entry point that:
 // - Imports base utilities (Logger, TEXT_CONSTANTS, URL flags)
 // - Imports data layer (caches, stores, parsing helpers)
-// - Contains all UI/chart/table/flow logic
-// - Wires up event handlers and orchestrates the app
+// - Imports UI helpers (DOM utils, toast, clipboard, formatters)
+// - Exposes everything globally for backward compatibility
+// - Future: Will orchestrate app initialization
 // ============================================================
 
 import { TEXT_CONSTANTS, Logger, isDevMode, getLogLevel, isDebugMode } from './base.js';
@@ -28,20 +29,42 @@ import {
     dataBus,
     notifyDataReady
 } from './data-layer.js';
+import {
+    $,
+    $$,
+    on,
+    off,
+    showToast,
+    ClipboardUtils,
+    copyToClipboard,
+    debounce,
+    throttle,
+    formatNumber,
+    formatBytes,
+    formatDuration,
+    escapeHtml,
+    openModal,
+    closeModal,
+    setupModalClose
+} from './ui-helpers.js';
 
 // ============================================================
-// IMPORT ALL LEGACY CODE FROM main-legacy.js
-// ============================================================
-// For now, we'll import the entire legacy code as a module
-// In future iterations, we'll split this into:
-// - charts.js
-// - tables.js
-// - flow-diagram.js
-// - ui-helpers.js
+// EXPOSE GLOBALS FOR BACKWARD COMPATIBILITY
 // ============================================================
 
-// TODO: This is temporary - need to refactor main-legacy.js to export its functions
-// For now, let's just load it as a script tag until we can properly modularize it
+// UI Helpers
+window.showToast = showToast;
+window.ClipboardUtils = ClipboardUtils;
+window.copyToClipboard = copyToClipboard;
+window.debounce = debounce;
+window.throttle = throttle;
+window.formatNumber = formatNumber;
+window.formatBytes = formatBytes;
+window.formatDuration = formatDuration;
+
+// ============================================================
+// INITIALIZATION LOG
+// ============================================================
 
 console.log('✅ Main.js loaded with modular architecture');
 console.log('📦 Imported from base.js:', { TEXT_CONSTANTS: !!TEXT_CONSTANTS, Logger: !!Logger });
@@ -49,4 +72,10 @@ console.log('📦 Imported from data-layer.js:', {
     caches: !!parseTimeCache,
     stores: !!originalRequests,
     helpers: !!parseTime 
+});
+console.log('📦 Imported from ui-helpers.js:', {
+    dom: !!$,
+    toast: !!showToast,
+    clipboard: !!ClipboardUtils,
+    formatters: !!formatNumber
 });
