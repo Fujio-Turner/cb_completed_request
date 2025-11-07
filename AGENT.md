@@ -65,11 +65,21 @@ Note: Only update the English UI (en/index.html) by default. Do not update other
   - With `?dev=true`: Hierarchical tree with subquery separation and nested operator containers
   - Documentation: See [FLOW_DIAGRAM_FEATURE_FLAG.md](./FLOW_DIAGRAM_FEATURE_FLAG.md)
 
-- **Debug Logging** (`?debug=true` in URL): Enable verbose console logging for debugging
+- **Debug Logging** (`?debug=true` or `?logLevel=debug|trace` in URL): Enable verbose console logging for debugging
   - Default: Only `[info]`, `[warn]`, `[error]` logs shown
   - With `?debug=true`: Additional `[debug]` and `[trace]` logs shown
-  - Combine flags: `?dev=true&debug=true`
+  - With `?logLevel=trace|debug|info|warn|error`: Granular control over log levels
+  - Combine flags: `?dev=true&debug=true&logLevel=trace`
   - Documentation: See [DEBUG_LOGGING_IMPLEMENTATION.md](./DEBUG_LOGGING_IMPLEMENTATION.md)
+
+- **Data Redaction** (`?redact=true|false` in URL): Control redaction of sensitive data in logs and debug output
+  - Default: `true` (sensitive data is hashed using SHA-256)
+  - With `?redact=false`: Show original bucket names, index names, collection names, and query text
+  - With `?redact=true`: Hash sensitive data (e.g., `idx_users` becomes `3E417C7C`)
+  - Use case: Disable redaction when debugging locally with non-sensitive data
+  - Security: **Never share logs with `?redact=false` if they contain production data**
+  - Example: `?debug=true&redact=false` for local debugging with full visibility
+  - Implementation: See `DebugRedactor` in `liquid_snake/assets/js/base.js`
 
 ## How to Run
 
@@ -244,20 +254,41 @@ Logger.trace(`Lazy loaded ${tabName} tab in ${ms}ms`);
 - Detailed step-by-step execution flow
 - Performance-critical sections (to measure each step)
 
-### Future Enhancement: Redact Flag
+### Data Redaction Flag (✅ IMPLEMENTED)
 
-**Planned feature** (not yet implemented):
+**Control sensitive data visibility in logs:**
 ```
 ?debug=true&redact=false   # Show full data in trace logs
 ?debug=true&redact=true    # Hide sensitive data (default)
 ```
 
-When implemented:
+**Implementation:**
 ```javascript
-// Future implementation
-Logger.trace(`Processing request:`, isRedacted() ? '[REDACTED]' : fullRequestData);
-Logger.trace(`Matched pattern:`, isRedacted() ? `${matches?.length} matches` : matches);
+import { isRedactMode, DebugRedactor } from './base.js';
+
+// Check if redaction is enabled
+if (isRedactMode()) {
+    Logger.debug('Index:', DebugRedactor.hash(indexName));  // Shows: "3E417C7C"
+} else {
+    Logger.debug('Index:', indexName);  // Shows: "idx_users"
+}
+
+// Redact composite keys (indexName::bucket.scope.collection)
+Logger.debug('Key:', DebugRedactor.redactCompositeKey(key));
+// With redact=true: "3E417C7C::7DFB4CF6.3BF30573.3BF30573"
+// With redact=false: "idx_users::travel-sample._default._default"
+
+// Redact objects
+Logger.debug('Index data:', DebugRedactor.redactObject(indexData));
+// With redact=true: { "3E417C7C": "[REDACTED]", "7DFB4CF6": "[REDACTED]" }
+// With redact=false: { "idx_users": {...}, "idx_orders": {...} }
 ```
+
+**Usage Notes:**
+- Default is `true` (redacts by default for security)
+- Use `?redact=false` only when debugging locally with non-production data
+- Never share screenshots/logs with `?redact=false` if they contain production data
+- Hashing uses SHA-256 (first 8 characters uppercase)
 
 ### Best Practices for Adding Logging
 

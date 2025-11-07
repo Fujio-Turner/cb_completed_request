@@ -297,11 +297,94 @@ export function isDevMode() {
     return urlParams.get('dev') === 'true';
 }
 
+// Check if redaction mode is enabled (?redact=true|false)
+// Default is true (redact sensitive data in logs/debug output)
+export function isRedactMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const redactParam = urlParams.get('redact');
+    
+    // Default to true if not specified
+    if (redactParam === null) return true;
+    
+    // Explicit false disables redaction
+    return redactParam !== 'false';
+}
+
 // Get URL parameter value
 export function getUrlParam(paramName) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(paramName);
 }
+
+// ============================================================
+// HASH UTILITIES (SHA-256 based redaction)
+// ============================================================
+
+// Global redaction utilities using SHA-256 for consistent hashing
+export const DebugRedactor = {
+    // SHA-256 hash function for redacting sensitive data
+    // Respects ?redact=false URL flag to disable redaction
+    hash: function(text) {
+        if (!text) return 'NULL';
+        
+        // Check if redaction is disabled via URL flag
+        if (!isRedactMode()) {
+            return text; // Return original text unredacted
+        }
+        
+        if (typeof sha256 !== 'undefined') {
+            // Use js-sha256 library (synchronous)
+            return sha256(text).substring(0, 8).toUpperCase();
+        } else {
+            // Fallback if library not loaded
+            console.warn('SHA-256 library not loaded, using fallback');
+            return `HASH_${text.length}`;
+        }
+    },
+    
+    // Redact bucket.scope.collection
+    redactBSC: function(bsc) {
+        if (!bsc) return 'NULL.NULL.NULL';
+        const parts = bsc.split('.');
+        return parts.map(p => this.hash(p)).join('.');
+    },
+    
+    // Redact composite key (indexName::bucket.scope.collection)
+    redactCompositeKey: function(key) {
+        if (!key) return 'NULL';
+        if (!key.includes('::')) return this.hash(key);
+        const [indexName, bsc] = key.split('::');
+        return `${this.hash(indexName)}::${this.redactBSC(bsc)}`;
+    },
+    
+    // Redact query text (show structure but hide values)
+    redactQuery: function(query) {
+        if (!query) return 'NULL';
+        return this.hash(query);
+    },
+    
+    // Redact object properties
+    redactObject: function(obj) {
+        if (!obj || typeof obj !== 'object') return obj;
+        
+        // If redaction is disabled, return original object
+        if (!isRedactMode()) {
+            return obj;
+        }
+        
+        const redacted = {};
+        Object.keys(obj).forEach(key => {
+            redacted[this.hash(key)] = '[REDACTED]';
+        });
+        return redacted;
+    }
+};
+
+// Shorthand functions for convenience
+export function hashName(name) { return DebugRedactor.hash(name); }
+export function hashBSC(bsc) { return DebugRedactor.redactBSC(bsc); }
+export function hashCompositeKey(key) { return DebugRedactor.redactCompositeKey(key); }
+export function hashQuery(query) { return DebugRedactor.redactQuery(query); }
 
 // ============================================================
 // INITIALIZATION
@@ -317,10 +400,14 @@ const urlParams = new URLSearchParams(window.location.search);
 const flagsStatus = {
     dev: urlParams.get('dev') === 'true',
     debug: urlParams.get('debug') === 'true',
-    logLevel: getLogLevel()
+    logLevel: getLogLevel(),
+    redact: isRedactMode()
 };
 
-Logger.info(`⚙️ URL Flags: dev=${flagsStatus.dev}, debug=${flagsStatus.debug}, logLevel=${flagsStatus.logLevel}`);
+Logger.info(`⚙️ URL Flags: dev=${flagsStatus.dev}, debug=${flagsStatus.debug}, logLevel=${flagsStatus.logLevel}, redact=${flagsStatus.redact}`);
+
+// Expose DebugRedactor globally for backward compatibility
+window.DebugRedactor = DebugRedactor;
 
 Logger.info(TEXT_CONSTANTS.ANALYZER_INITIALIZED);
 Logger.info(TEXT_CONSTANTS.TIP_ABOUT);
