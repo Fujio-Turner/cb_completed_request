@@ -1,3 +1,7 @@
+### Version 3.28.2 (November 6, 2025)
+- **Fix: Time Grouping Preserves Dashboard Charts** - Fixed duplicate chart creation when changing time grouping in Dashboard tab (closes #226)
+- **Fix: Time Grouping Preserves Analysis Charts** - Fixed duplicate chart creation when changing time grouping in Analysis tab (closes #227)
+
 ### Version 3.28.1 (November 6, 2025)
 - **Fix: Collection Chart Copy Data** - Fixed copy data functionality for collection charts (closes #224)
 - **Fix: Query Pattern Chart Copy Data** - Fixed copy data functionality for query pattern charts (closes #225)
