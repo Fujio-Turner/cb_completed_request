@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI Helpers Test Suite</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <style>
+        body { font-family: Arial; max-width: 1200px; margin: 20px auto; padding: 20px; background: #f5f7fa; }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        .test-section { background: white; padding: 20px; margin: 15px 0; border-left: 4px solid #3498db; border-radius: 4px; }
+        button { background: #3498db; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2980b9; }
+        .test-result { margin: 10px 0; padding: 12px; border-radius: 4px; font-family: monospace; }
+        .pass { background: #d4edda; border-left: 4px solid #28a745; color: #155724; }
+        .fail { background: #f8d7da; border-left: 4px solid #dc3545; color: #721c24; }
+        #testResults { min-height: 100px; }
+        #testTarget { border: 1px solid #ccc; padding: 20px; margin: 10px 0; min-height: 100px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 UI Helpers Test Suite</h1>
+    
+    <div class="test-section">
+        <h3>🎯 Run Tests</h3>
+        <button onclick="runAllTests()">🚀 Run All Tests</button>
+        <button onclick="testDomUtils()">📝 Test DOM Utils</button>
+        <button onclick="testToast()">🍞 Test Toast</button>
+        <button onclick="testClipboard()">📋 Test Clipboard</button>
+        <button onclick="testFormatters()">📊 Test Formatters</button>
+        <button onclick="testPerformance()">⚡ Test Performance Utils</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Test Results</h3>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>🎯 Test Target Area</h3>
+        <div id="testTarget">
+            <p id="test-p">Test paragraph</p>
+            <button id="test-btn">Test Button</button>
+            <input id="test-input" placeholder="Test input">
+        </div>
+    </div>
+
+    <script type="module">
+        import { 
+            $, $$, on, off,
+            showToast,
+            ClipboardUtils, copyToClipboard,
+            debounce, throttle,
+            formatNumber, formatBytes, formatDuration, escapeHtml,
+            openModal, closeModal
+        } from '../assets/js/ui-helpers.js';
+
+        function assert(condition, message) {
+            const div = document.createElement('div');
+            div.className = `test-result ${condition ? 'pass' : 'fail'}`;
+            div.textContent = `${condition ? '✅' : '❌'} ${message}`;
+            document.getElementById('testResults').appendChild(div);
+            console.log(`[${condition ? 'PASS' : 'FAIL'}] ${message}`);
+        }
+
+        window.testDomUtils = function() {
+            console.log('Testing DOM utilities...');
+            
+            const p = $('#test-p');
+            assert(p !== null, '$() finds element by ID');
+            assert(p.tagName === 'P', '$() returns correct element');
+            
+            const all = $$('button');
+            assert(Array.isArray(all), '$$() returns array');
+            assert(all.length > 0, '$$() finds multiple elements');
+            
+            let clicked = false;
+            const handler = () => { clicked = true; };
+            on('#test-btn', 'click', handler);
+            $('#test-btn').click();
+            assert(clicked, 'on() attaches event listener');
+            
+            console.log('✅ DOM utils working');
+        };
+
+        window.testToast = function() {
+            console.log('Testing toast notifications...');
+            
+            showToast('Test info message', 'info', 2000);
+            assert(document.querySelector('.sliding-toast') !== null, 'showToast() creates toast element');
+            
+            setTimeout(() => {
+                showToast('Test success', 'success', 2000);
+                showToast('Test warning', 'warning', 2000);
+                showToast('Test error', 'error', 2000);
+            }, 500);
+            
+            console.log('✅ Toast notifications working');
+        };
+
+        window.testClipboard = function() {
+            console.log('Testing clipboard utilities...');
+            
+            const testText = 'Hello, clipboard!';
+            const btn = $('#test-btn');
+            
+            ClipboardUtils.copyToClipboard(testText, btn);
+            
+            assert(typeof ClipboardUtils.copyToClipboard === 'function', 'ClipboardUtils.copyToClipboard exists');
+            assert(typeof copyToClipboard === 'function', 'copyToClipboard shorthand exists');
+            
+            console.log('✅ Clipboard utils working (check button feedback)');
+        };
+
+        window.testFormatters = function() {
+            console.log('Testing formatters...');
+            
+            assert(formatNumber(1234567) === '1,234,567', 'formatNumber adds commas');
+            assert(formatNumber(null) === 'N/A', 'formatNumber handles null');
+            
+            assert(formatBytes(1024) === '1 KB', 'formatBytes converts KB');
+            assert(formatBytes(1048576) === '1 MB', 'formatBytes converts MB');
+            assert(formatBytes(0) === '0 Bytes', 'formatBytes handles zero');
+            
+            assert(formatDuration(500) === '500ms', 'formatDuration handles ms');
+            assert(formatDuration(1500) === '1.50s', 'formatDuration handles seconds');
+            assert(formatDuration(65000).includes('m'), 'formatDuration handles minutes');
+            
+            const escaped = escapeHtml('<scr' + 'ipt>alert("xss")</scr' + 'ipt>');
+            assert(!escaped.includes('<scr' + 'ipt>'), 'escapeHtml prevents XSS');
+            assert(escaped.includes('&lt;'), 'escapeHtml encodes < correctly');
+            
+            console.log('✅ Formatters working');
+        };
+
+        window.testPerformance = function() {
+            console.log('Testing performance utilities...');
+            
+            let debounceCount = 0;
+            const debouncedFn = debounce(() => debounceCount++, 100);
+            
+            debouncedFn();
+            debouncedFn();
+            debouncedFn();
+            
+            setTimeout(() => {
+                assert(debounceCount === 1, 'debounce() only calls once after delay');
+            }, 150);
+            
+            let throttleCount = 0;
+            const throttledFn = throttle(() => throttleCount++, 100);
+            
+            throttledFn();
+            throttledFn();
+            throttledFn();
+            
+            setTimeout(() => {
+                assert(throttleCount === 1, 'throttle() limits calls');
+            }, 50);
+            
+            console.log('✅ Performance utils working');
+        };
+
+        window.runAllTests = function() {
+            document.getElementById('testResults').innerHTML = '';
+            console.clear();
+            console.log('🚀 Running UI Helpers Test Suite...\n');
+            
+            testDomUtils();
+            testToast();
+            testClipboard();
+            testFormatters();
+            testPerformance();
+            
+            console.log('\n✅ All tests complete!');
+        };
+
+        setTimeout(runAllTests, 500);
+    </script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Layer Test Suite</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.11.0/sha256.min.js"></script>
+    <style>
+        body { font-family: Arial; max-width: 1400px; margin: 20px auto; padding: 20px; background: #f5f7fa; }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        .test-section { background: white; padding: 20px; margin: 15px 0; border-left: 4px solid #3498db; border-radius: 4px; }
+        button { background: #3498db; color: white; border: none; padding: 12px 24px; margin: 5px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2980b9; }
+        .test-result { margin: 10px 0; padding: 12px; border-radius: 4px; font-family: monospace; }
+        .pass { background: #d4edda; border-left: 4px solid #28a745; color: #155724; }
+        .fail { background: #f8d7da; border-left: 4px solid #dc3545; color: #721c24; }
+        pre { background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Data Layer Test Suite</h1>
+    
+    <div class="test-section">
+        <h3>🎯 Run Tests</h3>
+        <button onclick="runAllTests()">🚀 Run All Tests</button>
+        <button onclick="testCaches()">💾 Test Caches</button>
+        <button onclick="testStores()">📦 Test Stores</button>
+        <button onclick="testHelpers()">⚙️ Test Helpers</button>
+        <button onclick="testParsers()">🔬 Test Parsers</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Test Results</h3>
+        <div id="testResults"></div>
+    </div>
+
+    <script type="module">
+        import { Logger } from '../assets/js/base.js';
+        import { 
+            CACHE_LIMITS,
+            parseTimeCache,
+            normalizeStatementCache,
+            timestampRoundingCache,
+            operatorsCache,
+            clearCaches,
+            logCacheStats,
+            originalRequests,
+            statementStore,
+            analysisStatementStore,
+            parseTime,
+            normalizeStatement,
+            parseCouchbaseDateTime,
+            detectTimezoneFromData,
+            getOperators,
+            deriveStatementType,
+            makeElapsedFilterPredicate,
+            stripEmTags,
+            isPreparedExecution,
+            getPreparedSample
+        } from '../assets/js/data-layer.js';
+
+        function assert(condition, message) {
+            const div = document.createElement('div');
+            div.className = `test-result ${condition ? 'pass' : 'fail'}`;
+            div.textContent = `${condition ? '✅' : '❌'} ${message}`;
+            document.getElementById('testResults').appendChild(div);
+            console.log(`[${condition ? 'PASS' : 'FAIL'}] ${message}`);
+        }
+
+        window.testCaches = function() {
+            console.log('Testing caches...');
+            
+            assert(CACHE_LIMITS.parseTime === 10000, 'CACHE_LIMITS.parseTime = 10000');
+            assert(CACHE_LIMITS.normalizeStatement === 5000, 'CACHE_LIMITS.normalizeStatement = 5000');
+            
+            assert(parseTimeCache instanceof Map, 'parseTimeCache is a Map');
+            assert(normalizeStatementCache instanceof Map, 'normalizeStatementCache is a Map');
+            assert(operatorsCache instanceof WeakMap, 'operatorsCache is a WeakMap');
+            
+            // Test cache population
+            parseTime('1.5s');
+            assert(parseTimeCache.size > 0, 'parseTimeCache populates');
+            
+            normalizeStatement('SELECT * FROM bucket WHERE id = 123');
+            assert(normalizeStatementCache.size > 0, 'normalizeStatementCache populates');
+            
+            // Test cache clearing
+            clearCaches();
+            assert(parseTimeCache.size === 0, 'clearCaches() clears parseTimeCache');
+            assert(normalizeStatementCache.size === 0, 'clearCaches() clears normalizeStatementCache');
+            
+            console.log('✅ Cache tests complete');
+        };
+
+        window.testStores = function() {
+            console.log('Testing data stores...');
+            
+            assert(Array.isArray(originalRequests), 'originalRequests is an array');
+            assert(typeof statementStore === 'object', 'statementStore is an object');
+            assert(typeof analysisStatementStore === 'object', 'analysisStatementStore is an object');
+            
+            // Test window access
+            assert(window.originalRequests === originalRequests, 'originalRequests accessible via window');
+            assert(window.statementStore === statementStore, 'statementStore accessible via window');
+            
+            console.log('✅ Store tests complete');
+        };
+
+        window.testHelpers = function() {
+            console.log('Testing helper functions...');
+            
+            // parseTime tests
+            assert(parseTime('1s') === 1000, 'parseTime("1s") = 1000ms');
+            assert(parseTime('500ms') === 500, 'parseTime("500ms") = 500ms');
+            assert(parseTime('100µs') === 0.1, 'parseTime("100µs") = 0.1ms');
+            assert(parseTime('1.5s') === 1500, 'parseTime("1.5s") = 1500ms');
+            assert(parseTime('invalid') === 0, 'parseTime("invalid") = 0');
+            assert(parseTime('') === 0, 'parseTime("") = 0');
+            assert(parseTime(null) === 0, 'parseTime(null) = 0');
+            
+            // normalizeStatement tests
+            const norm1 = normalizeStatement('SELECT * FROM bucket WHERE id = 123');
+            assert(norm1.includes('?'), 'normalizeStatement replaces numbers with ?');
+            
+            const norm2 = normalizeStatement("SELECT * FROM bucket WHERE name = 'test'");
+            assert(norm2.includes('?'), 'normalizeStatement replaces strings with ?');
+            
+            const norm3 = normalizeStatement('SELECT * FROM bucket WHERE id IN (1,2,3)');
+            assert(norm3.includes('IN (?)'), 'normalizeStatement replaces IN clause');
+            
+            // parseCouchbaseDateTime tests
+            const date1 = parseCouchbaseDateTime('2025-01-15 10:30:00');
+            assert(date1 instanceof Date, 'parseCouchbaseDateTime returns Date');
+            assert(!isNaN(date1.getTime()), 'parseCouchbaseDateTime creates valid date');
+            
+            const date2 = parseCouchbaseDateTime('2025-01-15T10:30:00');
+            assert(date2 instanceof Date, 'parseCouchbaseDateTime handles T separator');
+            
+            // deriveStatementType tests
+            assert(deriveStatementType('SELECT * FROM bucket') === 'SELECT', 'deriveStatementType("SELECT...") = SELECT');
+            assert(deriveStatementType('UPDATE bucket SET x=1') === 'UPDATE', 'deriveStatementType("UPDATE...") = UPDATE');
+            assert(deriveStatementType('CREATE INDEX idx ON bucket(x)') === 'CREATE_INDEX', 'deriveStatementType handles CREATE INDEX');
+            assert(deriveStatementType('') === 'UNKNOWN', 'deriveStatementType("") = UNKNOWN');
+            assert(deriveStatementType(null) === 'UNKNOWN', 'deriveStatementType(null) = UNKNOWN');
+            
+            // stripEmTags tests
+            assert(stripEmTags('<em>test</em>') === 'test', 'stripEmTags removes <em>');
+            assert(stripEmTags('<ud>test</ud>') === 'test', 'stripEmTags removes <ud>');
+            assert(stripEmTags('plain text') === 'plain text', 'stripEmTags preserves plain text');
+            assert(stripEmTags(null) === '', 'stripEmTags(null) returns empty string');
+            
+            // makeElapsedFilterPredicate tests
+            const filter1 = makeElapsedFilterPredicate('>=500ms');
+            assert(typeof filter1 === 'function', 'makeElapsedFilterPredicate returns function');
+            assert(filter1(600) === true, 'Filter >=500ms allows 600ms');
+            assert(filter1(400) === false, 'Filter >=500ms blocks 400ms');
+            
+            const filter2 = makeElapsedFilterPredicate('100ms-500ms');
+            assert(filter2(300) === true, 'Range filter allows middle value');
+            assert(filter2(50) === false, 'Range filter blocks too low');
+            assert(filter2(600) === false, 'Range filter blocks too high');
+            
+            console.log('✅ Helper function tests complete');
+        };
+
+        window.testParsers = function() {
+            console.log('Testing parser functions...');
+            
+            const testData = [
+                { requestTime: '2025-01-15 10:30:00-05:00', statement: 'SELECT 1' },
+                { requestTime: '2025-01-15 10:31:00-05:00', statement: 'SELECT 2' }
+            ];
+            
+            const tz = detectTimezoneFromData(testData);
+            assert(tz === 'America/New_York', `detectTimezoneFromData detects EST (-05:00) as ${tz}`);
+            
+            const tzUTC = detectTimezoneFromData([{ requestTime: '2025-01-15T10:30:00+00:00' }]);
+            assert(tzUTC === 'UTC', 'detectTimezoneFromData detects UTC');
+            
+            const tzEmpty = detectTimezoneFromData([]);
+            assert(tzEmpty === 'UTC', 'detectTimezoneFromData defaults to UTC for empty data');
+            
+            // getOperators test (basic)
+            const mockPlan = {
+                '#operator': 'Scan',
+                '~child': {
+                    '#operator': 'Filter',
+                    '~child': { '#operator': 'Project' }
+                }
+            };
+            const ops = getOperators(mockPlan);
+            assert(Array.isArray(ops), 'getOperators returns array');
+            assert(ops.length === 3, `getOperators extracts all operators (found ${ops.length})`);
+            
+            console.log('✅ Parser tests complete');
+        };
+
+        window.runAllTests = function() {
+            document.getElementById('testResults').innerHTML = '';
+            console.clear();
+            console.log('🚀 Running Data Layer Test Suite...\n');
+            
+            testCaches();
+            testStores();
+            testHelpers();
+            testParsers();
+            
+            console.log('\n✅ All tests complete!');
+        };
+    </script>
+</body>
+</html>
