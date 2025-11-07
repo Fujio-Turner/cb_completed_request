@@ -56,7 +56,7 @@ Edit `config.json` to add your Couchbase cluster details:
 ### 5. Start the Server
 
 ```bash
-python3 server.py
+python3 app.py
 ```
 
 You should see:
@@ -169,7 +169,7 @@ lsof -ti:5555
 # Kill the process
 kill -9 $(lsof -ti:5555)
 
-# Or change PORT in server.py
+# Or change PORT in app.py
 ```
 
 ## Development Workflow
@@ -184,7 +184,7 @@ cd liquid_snake
 source venv/bin/activate
 
 # 3. Start server
-python3 server.py
+python3 app.py
 
 # 4. Work on the analyzer...
 
@@ -247,7 +247,7 @@ EOF
 echo "liquid_snake/.env" >> ../.gitignore
 ```
 
-Then update `server.py` to load from `.env`:
+Then update `app.py` to load from `.env`:
 ```python
 from dotenv import load_dotenv
 import os
@@ -264,7 +264,7 @@ CB_PASS = os.getenv('CB_PASS', '')
 ```
 liquid_snake/
 ├── venv/                    # Virtual environment (git ignored)
-├── server.py               # Python server with Couchbase API
+├── app.py               # Python server with Couchbase API
 ├── requirements.txt        # Python dependencies
 ├── setup_venv.sh          # Setup script
 ├── config.json            # Cluster configuration (git ignored)

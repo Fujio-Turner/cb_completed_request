@@ -83,7 +83,7 @@ Successfully implemented Couchbase cluster connection settings with a sprocket i
      - `updateConnectionStatus()` - Updates UI status indicator
 
 ### Python Server
-8. **`liquid_snake/server.py`** (MODIFIED)
+8. **`liquid_snake/app.py`** (MODIFIED)
    - Added Couchbase Python SDK integration
    - New REST API endpoints:
      - `POST /api/couchbase/test` - Test connection
@@ -207,7 +207,7 @@ Browser (JavaScript)
       ↓
    HTTP API Request
       ↓
-Python Server (server.py)
+Python Server (app.py)
       ↓
 Couchbase Python SDK
       ↓
@@ -296,7 +296,7 @@ cp config.json.template config.json
 # See setup_couchbase.sql
 
 # 5. Start server
-python3 server.py
+python3 app.py
 
 # 6. Open browser
 # http://localhost:5555/index.html
@@ -469,7 +469,7 @@ No new external dependencies (uses existing modules)
 ## Code Statistics
 
 ### Lines of Code Added
-- **Python**: ~250 lines (server.py modifications)
+- **Python**: ~250 lines (app.py modifications)
 - **JavaScript**: ~650 lines (couchbase-connector.js + settings.js)
 - **CSS**: ~150 lines (settings modal + button styles)
 - **HTML**: ~60 lines (settings button + modal)
@@ -527,7 +527,7 @@ If issues arise, rollback by:
 2. **Remove modal** from HTML
 3. **Remove script imports** for new modules
 4. **Restore CSS** to previous version
-5. **Restore server.py** to previous version
+5. **Restore app.py** to previous version
 6. **Delete new files** (or git revert)
 
 ```bash
@@ -537,7 +537,7 @@ git revert <commit-hash>
 # Or manual rollback
 git checkout HEAD~1 liquid_snake/index.html
 git checkout HEAD~1 liquid_snake/assets/css/main.css
-git checkout HEAD~1 liquid_snake/server.py
+git checkout HEAD~1 liquid_snake/app.py
 ```
 
 ---

@@ -141,7 +141,7 @@ Refactor the Couchbase Query Analyzer from a monolithic single-file application 
 **Status:** ✅ Working
 
 #### 2. Created Python web server
-**File:** `liquid_snake/server.py`
+**File:** `liquid_snake/app.py`
 
 **Features:**
 - Runs on http://localhost:5555
@@ -152,7 +152,7 @@ Refactor the Couchbase Query Analyzer from a monolithic single-file application 
 **Usage:**
 ```bash
 cd liquid_snake
-python3 server.py
+python3 app.py
 ```
 **Status:** ✅ Working
 
@@ -375,7 +375,7 @@ liquid_snake/
 │   ├── data-buffet-api-guide.md ✅
 │   └── MODULARIZATION_TICKET.md (this file) ✅
 ├── index.html ✅ Uses ES6 modules + legacy script
-├── server.py ✅ Development server
+├── app.py ✅ Development server
 └── test_base.html ✅ Test suite for base.js
 ```
 
@@ -525,7 +525,7 @@ index.html
 - All existing functionality works
 
 ### Development Server
-- Start: `cd liquid_snake && python3 server.py`
+- Start: `cd liquid_snake && python3 app.py`
 - URL: http://localhost:5555/index.html
 - Test Suite: http://localhost:5555/test_base.html
 

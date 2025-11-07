@@ -29,7 +29,7 @@
 
 ### 2. Infrastructure Created
 
-✅ **Python Web Server** (`server.py`)
+✅ **Python Web Server** (`app.py`)
 - Runs on http://localhost:5555
 - Proper MIME types for ES6 modules
 - CORS headers for development
