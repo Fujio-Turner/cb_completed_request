@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base.js Test Suite</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.11.0/sha256.min.js" integrity="sha512-Ijgp4DBSyLWlGBWSzHSVM0mKCHOMa0JUoaO8VfPGKac+38EaIoJ67Io+d6DxOIPZjP9hriludUTWmoE+aIe4ig==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .current-level {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .pass {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        .fail {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .info-box strong {
+            color: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Base.js Test Suite - Liquid Snake Edition</h1>
+    
+    <div class="current-level">
+        <strong>Current Configuration:</strong><br>
+        <span id="currentConfig"></span>
+    </div>
+
+    <div class="info-box">
+        <strong>ℹ️ Test Instructions:</strong><br>
+        1. Open browser console (F12) to see detailed logs<br>
+        2. Click test buttons below to run tests<br>
+        3. Use navigation buttons to test different URL flags<br>
+        4. Check console for [pass] ✅ and [fail] ❌ markers
+    </div>
+
+    <div class="test-section">
+        <h3>🎯 Run Tests</h3>
+        <button onclick="runAllTests()">🚀 Run All Tests</button>
+        <button onclick="testLogger()">📝 Test Logger</button>
+        <button onclick="testUrlFlags()">🔗 Test URL Flags</button>
+        <button onclick="testDebugRedactor()">🔐 Test DebugRedactor</button>
+        <button onclick="testTextConstants()">📋 Test TEXT_CONSTANTS</button>
+    </div>
+
+    <div class="test-section">
+        <h3>🔗 Quick Navigation - Test Different URL Flags</h3>
+        <button onclick="window.location.href='?logLevel=error'">logLevel=error</button>
+        <button onclick="window.location.href='?logLevel=warn'">logLevel=warn</button>
+        <button onclick="window.location.href='?logLevel=info'">logLevel=info (default)</button>
+        <button onclick="window.location.href='?logLevel=debug'">logLevel=debug</button>
+        <button onclick="window.location.href='?logLevel=trace'">logLevel=trace</button>
+        <br>
+        <button onclick="window.location.href='?debug=true'">debug=true (legacy)</button>
+        <button onclick="window.location.href='?dev=true'">dev=true</button>
+        <button onclick="window.location.href='?redact=false'">redact=false</button>
+        <button onclick="window.location.href='?redact=true'">redact=true (default)</button>
+        <br>
+        <button onclick="window.location.href='?dev=true&debug=true&logLevel=trace&redact=false'">🔥 All Flags ON</button>
+        <button onclick="window.location.href='test_base.html'">🔄 Reset</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Test Results</h3>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📖 Expected Behavior</h3>
+        <pre>
+Logger Levels:
+  ?logLevel=error  → Shows: [error]
+  ?logLevel=warn   → Shows: [error] [warn]
+  ?logLevel=info   → Shows: [error] [warn] [info] (DEFAULT)
+  ?logLevel=debug  → Shows: [error] [warn] [info] [debug]
+  ?logLevel=trace  → Shows: [error] [warn] [info] [debug] [trace]
+  ?debug=true      → Same as ?logLevel=debug (backward compatible)
+
+URL Flags:
+  ?dev=true        → isDevMode() returns true
+  ?redact=false    → isRedactMode() returns false, DebugRedactor shows original values
+  ?redact=true     → isRedactMode() returns true, DebugRedactor hashes values (DEFAULT)
+
+DebugRedactor:
+  hash('idx_users')                        → '3E417C7C' (with redact=true)
+  hash('idx_users')                        → 'idx_users' (with redact=false)
+  redactBSC('bucket.scope.collection')     → 'ABC123.DEF456.GHI789'
+  redactCompositeKey('idx::bucket.s.c')    → 'ABC123::DEF456.GHI789.JKL012'
+  redactObject({idx_users: {...}})         → {'3E417C7C': '[REDACTED]'}
+        </pre>
+    </div>
+
+    <script type="module">
+        // Import base.js
+        import { 
+            TEXT_CONSTANTS, 
+            Logger, 
+            isDevMode, 
+            isRedactMode, 
+            getLogLevel,
+            isDebugMode,
+            DebugRedactor,
+            hashName,
+            hashBSC,
+            hashCompositeKey,
+            getUrlParam
+        } from './assets/js/base.js';
+
+        // Make available globally for onclick handlers
+        window.Logger = Logger;
+        window.DebugRedactor = DebugRedactor;
+        window.isDevMode = isDevMode;
+        window.isRedactMode = isRedactMode;
+        window.getLogLevel = getLogLevel;
+        window.TEXT_CONSTANTS = TEXT_CONSTANTS;
+
+        // Display current config
+        const config = `
+            🔧 logLevel: ${getLogLevel()}
+            🧪 dev: ${isDevMode()}
+            🔐 redact: ${isRedactMode()}
+            📍 URL: ${window.location.search || '(none)'}
+        `;
+        document.getElementById('currentConfig').innerHTML = config.replace(/\n/g, '<br>');
+
+        // Test utilities
+        function assert(condition, message) {
+            if (condition) {
+                console.log(`[pass] ✅ ${message}`);
+                return { pass: true, message };
+            } else {
+                console.error(`[fail] ❌ ${message}`);
+                return { pass: false, message };
+            }
+        }
+
+        function displayResult(result) {
+            const div = document.createElement('div');
+            div.className = `test-result ${result.pass ? 'pass' : 'fail'}`;
+            div.textContent = `${result.pass ? '✅' : '❌'} ${result.message}`;
+            document.getElementById('testResults').appendChild(div);
+        }
+
+        // Test functions
+        window.testLogger = function() {
+            console.clear();
+            console.log('='.repeat(80));
+            console.log('📝 Testing Logger at level:', getLogLevel());
+            console.log('='.repeat(80));
+            
+            Logger.error('Test ERROR message');
+            Logger.warn('Test WARN message');
+            Logger.info('Test INFO message');
+            Logger.debug('Test DEBUG message');
+            Logger.trace('Test TRACE message');
+            
+            console.log('='.repeat(80));
+            
+            displayResult(assert(typeof Logger === 'object', 'Logger exists'));
+            displayResult(assert(typeof Logger.error === 'function', 'Logger.error is a function'));
+            displayResult(assert(typeof Logger.info === 'function', 'Logger.info is a function'));
+            displayResult(assert(typeof Logger.debug === 'function', 'Logger.debug is a function'));
+            displayResult(assert(typeof Logger.trace === 'function', 'Logger.trace is a function'));
+        };
+
+        window.testUrlFlags = function() {
+            console.clear();
+            console.log('='.repeat(80));
+            console.log('🔗 Testing URL Flags');
+            console.log('='.repeat(80));
+            
+            const level = getLogLevel();
+            const dev = isDevMode();
+            const redact = isRedactMode();
+            const debugMode = isDebugMode();
+            
+            console.log('getLogLevel():', level);
+            console.log('isDevMode():', dev);
+            console.log('isRedactMode():', redact);
+            console.log('isDebugMode():', debugMode);
+            
+            displayResult(assert(typeof level === 'string', 'getLogLevel() returns string'));
+            displayResult(assert(['error', 'warn', 'info', 'debug', 'trace'].includes(level), 
+                `getLogLevel() returns valid level: ${level}`));
+            displayResult(assert(typeof dev === 'boolean', 'isDevMode() returns boolean'));
+            displayResult(assert(typeof redact === 'boolean', 'isRedactMode() returns boolean'));
+            displayResult(assert(typeof debugMode === 'boolean', 'isDebugMode() returns boolean'));
+        };
+
+        window.testDebugRedactor = function() {
+            console.clear();
+            console.log('='.repeat(80));
+            console.log('🔐 Testing DebugRedactor (redact=' + isRedactMode() + ')');
+            console.log('='.repeat(80));
+            
+            const testIndex = 'idx_users';
+            const testBSC = 'travel-sample._default._default';
+            const testKey = 'idx_users::travel-sample._default._default';
+            const testObj = { idx_users: { count: 100 }, idx_orders: { count: 50 } };
+            
+            const hashed = DebugRedactor.hash(testIndex);
+            const hashedBSC = DebugRedactor.redactBSC(testBSC);
+            const hashedKey = DebugRedactor.redactCompositeKey(testKey);
+            const hashedObj = DebugRedactor.redactObject(testObj);
+            
+            console.log('hash("idx_users"):', hashed);
+            console.log('redactBSC("travel-sample._default._default"):', hashedBSC);
+            console.log('redactCompositeKey("idx_users::travel-sample._default._default"):', hashedKey);
+            console.log('redactObject({...}):', hashedObj);
+            
+            displayResult(assert(typeof hashed === 'string', 'hash() returns string'));
+            
+            if (isRedactMode()) {
+                displayResult(assert(hashed !== testIndex && hashed.length === 8, 
+                    'hash() redacts and produces 8-char hash when redact=true'));
+                displayResult(assert(hashedKey.includes('::'), 
+                    'redactCompositeKey() preserves :: separator'));
+            } else {
+                displayResult(assert(hashed === testIndex, 
+                    'hash() returns original value when redact=false'));
+                displayResult(assert(hashedObj === testObj, 
+                    'redactObject() returns original object when redact=false'));
+            }
+        };
+
+        window.testTextConstants = function() {
+            console.clear();
+            console.log('='.repeat(80));
+            console.log('📋 Testing TEXT_CONSTANTS');
+            console.log('='.repeat(80));
+            
+            console.log('Sample constants:', {
+                PARSE_PERFORMANCE: TEXT_CONSTANTS.PARSE_PERFORMANCE,
+                ANALYZER_INITIALIZED: TEXT_CONSTANTS.ANALYZER_INITIALIZED,
+                COPY: TEXT_CONSTANTS.COPY
+            });
+            
+            displayResult(assert(typeof TEXT_CONSTANTS === 'object', 'TEXT_CONSTANTS exists'));
+            displayResult(assert(TEXT_CONSTANTS.PARSE_PERFORMANCE === 'Parse performance:', 
+                'TEXT_CONSTANTS.PARSE_PERFORMANCE is correct'));
+            displayResult(assert(TEXT_CONSTANTS.COPY === 'Copy', 
+                'TEXT_CONSTANTS.COPY is correct'));
+            displayResult(assert(Object.keys(TEXT_CONSTANTS).length > 100, 
+                `TEXT_CONSTANTS has many keys: ${Object.keys(TEXT_CONSTANTS).length}`));
+        };
+
+        window.runAllTests = function() {
+            document.getElementById('testResults').innerHTML = '';
+            console.clear();
+            console.log('🚀 Running all tests...\n');
+            
+            testLogger();
+            console.log('\n');
+            testUrlFlags();
+            console.log('\n');
+            testDebugRedactor();
+            console.log('\n');
+            testTextConstants();
+            
+            console.log('\n✅ All tests complete! Check results above and in the UI.');
+        };
+
+        // Auto-run tests on page load
+        setTimeout(runAllTests, 500);
+    </script>
+</body>
+</html>
