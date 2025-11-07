@@ -55,3 +55,9 @@ build/
 *.tmp
 *.bak
 *.log
+# Python virtual environment (Issue #231)
+liquid_snake/venv/
+liquid_snake/.env
+
+# Couchbase config with credentials (Issue #231)
+liquid_snake/config.json

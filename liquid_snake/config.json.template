@@ -1,0 +1,21 @@
+{
+  "cluster": {
+    "name": "My Couchbase Cluster",
+    "url": "http://localhost:8091",
+    "username": "Administrator",
+    "password": "",
+    "type": "Localhost"
+  },
+  "clusterTypes": [
+    "Localhost",
+    "Self-Hosted",
+    "Capella (DBaaS)"
+  ],
+  "bucketConfig": {
+    "bucket": "cb_tools",
+    "analyzerScope": "query",
+    "analyzerCollection": "analyzer",
+    "preferencesScope": "_default",
+    "preferencesCollection": "_default"
+  }
+}

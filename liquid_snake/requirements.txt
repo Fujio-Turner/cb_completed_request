@@ -1,0 +1,8 @@
+# Couchbase Query Analyzer - Python Server Dependencies
+# Install with: pip install -r requirements.txt
+
+# Couchbase Python SDK (Issue #231)
+couchbase>=4.1.0
+
+# Optional: For enhanced error handling and logging
+python-dotenv>=1.0.0

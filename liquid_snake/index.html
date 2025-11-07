@@ -55,7 +55,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/jquery-ui.min.js" integrity="sha512-MSOo1aY+3pXCOCdGAYoBZ6YGI0aragoQsg1mKKBHXCYPIWxamwOE7Drh+N5CPgGI5SA9IEKJiPjdfqWFWmZtRA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <!-- External CSS -->
-    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/main.css?v=231.1">
 
     <!-- External JavaScript - ES6 Modules -->
     <script type="module" src="assets/js/main.js"></script>
@@ -68,6 +68,10 @@
     <script type="module" src="assets/js/report.js"></script>
     <script type="module" src="assets/js/utils.js"></script>
     
+    <!-- Couchbase Integration (Issue #231) -->
+    <script type="module" src="assets/js/couchbase-connector.js"></script>
+    <script type="module" src="assets/js/settings.js"></script>
+    
     <!-- Legacy app code (temporary - will be modularized) -->
     <script src="assets/js/main-legacy.js" defer></script>
 
@@ -77,6 +81,20 @@
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
         v3.28.2
+    </div>
+
+    <!-- Settings button (top-right) - Issue #231 -->
+    <button id="settings-btn" class="settings-btn" onclick="openSettingsModal()" title="Cluster Connection Settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6m0 6v6m-6-6h6m6 0h-6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"></path>
+        </svg>
+    </button>
+
+    <!-- Connection status indicator (next to settings) - Issue #231 -->
+    <div id="connection-status" class="connection-status" title="Couchbase Connection Status">
+        <span class="status-dot status-disconnected"></span>
+        <span class="status-text">Disconnected</span>
     </div>
 
     <!-- Bug report link (bottom-right) -->
@@ -1822,6 +1840,57 @@ LET bid = CONCAT("", s.bucket_id, ""),
         </div>
     </div>
 
+    <!-- Settings Modal (Issue #231) -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content settings-modal-content">
+            <span class="close">×</span>
+            <h2>Couchbase Cluster Settings</h2>
+            <div id="settings-modal-body">
+                <div class="settings-section">
+                    <h3>Cluster Connection</h3>
+                    <div id="cluster-list"></div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>Bucket Configuration</h3>
+                    <div class="settings-row">
+                        <label>Bucket Name:</label>
+                        <input type="text" id="bucket-name" value="cb_tools" />
+                    </div>
+                    <div class="settings-row">
+                        <label>Analyzer Keyspace:</label>
+                        <code id="analyzer-keyspace">cb_tools.query.analyzer</code>
+                    </div>
+                    <div class="settings-row">
+                        <label>Preferences Keyspace:</label>
+                        <code id="preferences-keyspace">cb_tools._default._default</code>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>User Preferences</h3>
+                    <div class="settings-row">
+                        <label>
+                            <input type="checkbox" id="save-timezone" checked />
+                            Save timezone preference to Couchbase
+                        </label>
+                    </div>
+                    <div class="settings-row">
+                        <label>
+                            <input type="checkbox" id="save-report-settings" checked />
+                            Save report checkbox settings to Couchbase
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-actions">
+                    <button class="btn-standard" onclick="testConnection()">Test Connection</button>
+                    <button class="btn-standard" onclick="saveSettings()">Save Settings</button>
+                    <button class="btn-standard" onclick="closeSettingsModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Fullscreen Chart Overlay (Issue #139) -->
     <div id="chart-fullscreen-overlay" class="chart-fullscreen-overlay">

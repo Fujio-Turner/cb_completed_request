@@ -24177,6 +24177,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     help = document.createElement('div');
                     help.id = 'help-fixed-badge';
                     help.className = 'help-fixed-badge';
+                    help.style.right = '280px';
                     const helpText = t('HELP_DEBUG_TIPS', 'NEED HELP? Debugging + Tool Tips — Click Here');
                     help.innerHTML = `<a href="https://cb.fuj.io/analysis_hub#introduction" target="_blank" rel="noopener">${helpText}</a>`;
                     document.body.appendChild(help);
