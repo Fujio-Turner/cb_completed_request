@@ -1844,46 +1844,71 @@ LET bid = CONCAT("", s.bucket_id, ""),
     <div id="settings-modal" class="modal">
         <div class="modal-content settings-modal-content">
             <span class="close">×</span>
-            <h2>Query Analyzer Settings Storage</h2>
-            <p style="color: #666; font-size: 0.9em; margin: -10px 0 15px 0; padding: 10px; background: #f0f9ff; border-left: 3px solid #3b82f6; border-radius: 4px;">
-                <strong>Note:</strong> This cluster is used to <em>store</em> your Query Analyzer preferences and settings. 
-                It is <strong>not</strong> the cluster you're analyzing queries from (paste query data in the main input boxes).
-            </p>
+            <h2>Settings</h2>
             <div id="settings-modal-body">
-                <div class="settings-section">
-                    <h3>Storage Cluster Connection</h3>
-                    <div id="cluster-list"></div>
-                </div>
-                
-                <div class="settings-section">
-                    <h3>Bucket Configuration</h3>
-                    <div class="settings-row">
-                        <label>Bucket Name:</label>
-                        <input type="text" id="bucket-name" value="cb_tools" />
+                <!-- Settings Tabs -->
+                <div id="settings-tabs">
+                    <ul class="settings-tab-list">
+                        <li><a href="#settings-tab-storage">Save Data To CB</a></li>
+                        <li><a href="#settings-tab-ai-api">Users' AI API</a></li>
+                    </ul>
+                    
+                    <!-- Tab 1: Save Data To CB -->
+                    <div id="settings-tab-storage">
+                        <p style="color: #666; font-size: 0.9em; margin: 0 0 20px 0; padding: 10px; background: #f0f9ff; border-left: 3px solid #3b82f6; border-radius: 4px;">
+                            <strong>Note:</strong> This cluster is used to <em>store</em> your Query Analyzer preferences and settings. 
+                            It is <strong>not</strong> the cluster you're analyzing queries from (paste query data in the main input boxes).
+                        </p>
+                        
+                        <div class="settings-section">
+                            <h3>Storage Cluster Connection</h3>
+                            <div id="cluster-list"></div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h3>Bucket Configuration</h3>
+                            <div class="settings-row">
+                                <label>Bucket Name:</label>
+                                <input type="text" id="bucket-name" value="cb_tools" />
+                            </div>
+                            <div class="settings-row">
+                                <label>Analyzer Keyspace:</label>
+                                <code id="analyzer-keyspace">cb_tools.query.analyzer</code>
+                            </div>
+                            <div class="settings-row">
+                                <label>Preferences Keyspace:</label>
+                                <code id="preferences-keyspace">cb_tools._default._default</code>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h3>User Preferences</h3>
+                            <div class="settings-row">
+                                <label>
+                                    <input type="checkbox" id="save-timezone" checked />
+                                    Save timezone preference to Couchbase
+                                </label>
+                            </div>
+                            <div class="settings-row">
+                                <label>
+                                    <input type="checkbox" id="save-report-settings" checked />
+                                    Save report checkbox settings to Couchbase
+                                </label>
+                            </div>
+                        </div>
                     </div>
-                    <div class="settings-row">
-                        <label>Analyzer Keyspace:</label>
-                        <code id="analyzer-keyspace">cb_tools.query.analyzer</code>
-                    </div>
-                    <div class="settings-row">
-                        <label>Preferences Keyspace:</label>
-                        <code id="preferences-keyspace">cb_tools._default._default</code>
-                    </div>
-                </div>
-                
-                <div class="settings-section">
-                    <h3>User Preferences</h3>
-                    <div class="settings-row">
-                        <label>
-                            <input type="checkbox" id="save-timezone" checked />
-                            Save timezone preference to Couchbase
-                        </label>
-                    </div>
-                    <div class="settings-row">
-                        <label>
-                            <input type="checkbox" id="save-report-settings" checked />
-                            Save report checkbox settings to Couchbase
-                        </label>
+                    
+                    <!-- Tab 2: Users' AI API -->
+                    <div id="settings-tab-ai-api">
+                        <div class="settings-section">
+                            <h3>AI API Configuration</h3>
+                            <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                                Configure your AI API keys for future AI-powered features. The <strong>first provider in the list is the default</strong>.
+                            </p>
+                            
+                            <!-- AI providers will be dynamically rendered here -->
+                            <div id="ai-providers-container"></div>
+                        </div>
                     </div>
                 </div>
                 

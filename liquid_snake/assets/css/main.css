@@ -575,6 +575,151 @@ body { display: block !important; height: auto !important; overflow: visible !im
   margin-bottom: 15px;
 }
 
+/* Settings Tabs (jQuery UI tabs) */
+#settings-tabs {
+  margin-top: 15px;
+}
+
+#settings-tabs .ui-tabs-nav {
+  background: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  border-radius: 0;
+  padding: 0;
+}
+
+#settings-tabs .ui-tabs-tab {
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  margin: 0 5px;
+}
+
+#settings-tabs .ui-tabs-tab.ui-state-active {
+  border-bottom-color: #007bff;
+  background: transparent;
+}
+
+#settings-tabs .ui-tabs-tab a {
+  color: #495057;
+  font-weight: 500;
+  padding: 10px 15px;
+}
+
+#settings-tabs .ui-tabs-tab.ui-state-active a {
+  color: #007bff;
+}
+
+#settings-tabs .ui-tabs-panel {
+  padding: 20px 10px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+/* AI Provider Section Styling */
+.ai-provider-section {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 15px;
+  transition: all 0.2s ease;
+}
+
+.ai-provider-section.ai-provider-default {
+  background: #e7f3ff;
+  border: 2px solid #007bff;
+  border-left: 5px solid #007bff;
+}
+
+/* AI Provider Logo */
+.ai-provider-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 4px;
+  background: white;
+  padding: 2px;
+  border: 1px solid #dee2e6;
+}
+
+.ai-provider-section h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #495057;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.ai-provider-section .settings-row label {
+  min-width: 120px;
+  font-size: 13px;
+}
+
+.ai-provider-section input[type="text"],
+.ai-provider-section input[type="password"],
+.ai-provider-section select.ai-model-select {
+  padding: 6px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.ai-provider-section input[type="text"],
+.ai-provider-section input[type="password"] {
+  font-family: monospace;
+}
+
+.ai-provider-section input[type="password"] {
+  letter-spacing: 2px;
+}
+
+.ai-provider-section select.ai-model-select {
+  background: white;
+  cursor: pointer;
+  font-weight: 500;
+  color: #495057;
+}
+
+.ai-provider-section select.ai-model-select:hover {
+  border-color: #007bff;
+}
+
+.ai-provider-section select.ai-model-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+/* Default badge */
+.default-badge {
+  background: #007bff;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Make Default button */
+.btn-make-default {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-make-default:hover {
+  background: #5a6268;
+}
+
 /* Help and Queries Fixed Badges */
 .help-fixed-badge { 
   position: fixed; 
