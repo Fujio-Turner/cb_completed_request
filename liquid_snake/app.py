@@ -15,6 +15,7 @@ Includes Couchbase REST API endpoints for Issue #231:
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
+from icecream import ic
 from couchbase.cluster import Cluster
 from couchbase.options import ClusterOptions
 from couchbase.auth import PasswordAuthenticator
@@ -24,6 +25,9 @@ from couchbase.exceptions import (
     TimeoutException, 
     CouchbaseException
 )
+
+# Configure icecream
+ic.configureOutput(includeContext=True)
 
 PORT = 5555
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
@@ -55,7 +59,7 @@ def get_couchbase_connection(config):
             _config = config
             return _cluster
         except Exception as e:
-            print(f"❌ Failed to connect to Couchbase: {e}")
+            ic("❌ Failed to connect to Couchbase", e)
             return None
     
     return _cluster
@@ -75,6 +79,7 @@ def test_connection():
     """Test Couchbase connection"""
     try:
         data = request.json
+        ic(data)  # Log input
         cluster_config = data.get('config', {})
         cluster = get_couchbase_connection(cluster_config)
         
@@ -84,10 +89,12 @@ def test_connection():
             bucket = cluster.bucket(bucket_name)
             bucket.ping()
             
-            return jsonify({
+            response = {
                 'success': True,
                 'message': f'Connected to Couchbase cluster at {cluster_config["url"]}'
-            })
+            }
+            ic(response)  # Log output
+            return jsonify(response)
         else:
             return jsonify({
                 'success': False,
@@ -104,6 +111,7 @@ def execute_query():
     """Execute N1QL query"""
     try:
         data = request.json
+        ic(data)  # Log input
         cluster_config = data.get('config', {})
         query = data.get('query', '')
         params = data.get('params', {})
@@ -116,10 +124,12 @@ def execute_query():
         result = cluster.query(query, **params)
         rows = [row for row in result]
         
-        return jsonify({
+        response = {
             'success': True,
             'results': rows
-        })
+        }
+        ic(response)  # Log output
+        return jsonify(response)
     except Exception as e:
         return jsonify({
             'success': False,
@@ -189,6 +199,7 @@ def save_user_preferences():
     """Save user preferences using K/V upsert"""
     try:
         data = request.json
+        ic(data)  # Log input
         cluster_config = data.get('config', {})
         bucket_config = data.get('bucketConfig', {})
         user_id = data.get('userId')  # Should be 'user_config'
@@ -204,14 +215,14 @@ def save_user_preferences():
         # K/V UPSERT operation (no query needed!)
         result = collection.upsert(user_id, preferences)
         
-        print(f"✅ Saved preferences to {user_id} with CAS: {result.cas}")
-        
-        return jsonify({
+        response = {
             'success': True,
             'cas': result.cas
-        })
+        }
+        ic(user_id, result.cas, response)  # Log output
+        return jsonify(response)
     except Exception as e:
-        print(f"❌ Error saving preferences: {e}")
+        ic("❌ Error saving preferences", e)
         return jsonify({
             'success': False,
             'error': str(e)
@@ -222,6 +233,7 @@ def load_user_preferences(user_id):
     """Load user preferences using K/V get"""
     try:
         data = request.json
+        ic(user_id, data)  # Log input
         cluster_config = data.get('config', {})
         bucket_config = data.get('bucketConfig', {})
         
@@ -236,35 +248,36 @@ def load_user_preferences(user_id):
         result = collection.get(user_id)
         content = result.content_as[dict]
         
-        print(f"✅ Loaded preferences from {user_id} with CAS: {result.cas}")
-        
-        return jsonify({
+        response = {
             'success': True,
             'data': content,
             'cas': result.cas
-        })
+        }
+        ic(user_id, result.cas, response)  # Log output
+        return jsonify(response)
     except DocumentNotFoundException:
-        print(f"ℹ️  Document {user_id} not found (first time user) - returning defaults")
-        return jsonify({
+        response = {
             'success': True,
             'data': {
                 'docType': 'config'
             },
             'cas': None,
             'firstTime': True
-        })
+        }
+        ic(user_id, "NOT_FOUND", response)  # Log output (first time user)
+        return jsonify(response)
     except Exception as e:
-        print(f"❌ Error loading preferences: {e}")
+        ic("❌ Error loading preferences", e)
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
 
 if __name__ == '__main__':
-    print(f"🚀 Liquid Snake Server (Flask)")
-    print(f"📡 Serving at http://localhost:{PORT}")
-    print(f"📂 Directory: {DIRECTORY}")
-    print(f"🌐 Open: http://localhost:{PORT}/index.html")
-    print(f"🛑 Press Ctrl+C to stop\n")
+    ic("🚀 Liquid Snake Server (Flask)")
+    ic(f"📡 Serving at http://localhost:{PORT}")
+    ic(f"📂 Directory: {DIRECTORY}")
+    ic(f"🌐 Open: http://localhost:{PORT}/index.html")
+    ic("🛑 Press Ctrl+C to stop")
     
     app.run(host='0.0.0.0', port=PORT, debug=True)
