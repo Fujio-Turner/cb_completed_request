@@ -15,6 +15,10 @@ Includes Couchbase REST API endpoints for Issue #231:
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
+import time
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from icecream import ic
 from couchbase.cluster import Cluster
 from couchbase.options import ClusterOptions
@@ -63,6 +67,217 @@ def get_couchbase_connection(config):
             return None
     
     return _cluster
+
+# ============================================================================
+# Robust HTTP Client for AI API Calls
+# ============================================================================
+
+class AIHttpClient:
+    """
+    Robust HTTP client with retry logic, timeout handling, and detailed logging
+    """
+    
+    def __init__(self, 
+                 max_retries=3, 
+                 backoff_factor=0.5, 
+                 timeout=30,
+                 retry_on_status=[429, 500, 502, 503, 504]):
+        """
+        Initialize HTTP client with retry configuration
+        
+        Args:
+            max_retries (int): Maximum number of retry attempts
+            backoff_factor (float): Exponential backoff multiplier (delay = {backoff_factor} * (2 ** retry_count))
+            timeout (int): Request timeout in seconds
+            retry_on_status (list): HTTP status codes to retry on
+        """
+        self.max_retries = max_retries
+        self.backoff_factor = backoff_factor
+        self.timeout = timeout
+        self.retry_on_status = retry_on_status
+        
+        ic("🔧 AIHttpClient initialized", max_retries, backoff_factor, timeout, retry_on_status)
+    
+    def _create_session(self):
+        """Create requests session with retry strategy"""
+        session = requests.Session()
+        
+        # Configure retry strategy
+        retry_strategy = Retry(
+            total=self.max_retries,
+            backoff_factor=self.backoff_factor,
+            status_forcelist=self.retry_on_status,
+            allowed_methods=["POST", "PUT", "GET"],
+            raise_on_status=False
+        )
+        
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        
+        return session
+    
+    def call_api(self, method, url, headers=None, json_data=None, **kwargs):
+        """
+        Make HTTP request with retry logic and comprehensive logging
+        
+        Args:
+            method (str): HTTP method ('POST', 'PUT', 'GET')
+            url (str): API endpoint URL
+            headers (dict): Custom headers
+            json_data (dict): JSON payload
+            **kwargs: Additional requests parameters
+            
+        Returns:
+            dict: Response with success status and data/error
+        """
+        start_time = time.time()
+        attempt = 0
+        
+        ic("🚀 API Call Starting", method, url)
+        ic("📤 Headers", headers)
+        ic("📤 Payload", json_data)
+        
+        session = self._create_session()
+        
+        # Merge custom headers with defaults
+        default_headers = {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Couchbase-Query-Analyzer/3.28.2'
+        }
+        
+        if headers:
+            default_headers.update(headers)
+        
+        while attempt < self.max_retries:
+            attempt += 1
+            
+            try:
+                ic(f"🔄 Attempt {attempt}/{self.max_retries}")
+                
+                # Make the request
+                response = session.request(
+                    method=method.upper(),
+                    url=url,
+                    headers=default_headers,
+                    json=json_data,
+                    timeout=self.timeout,
+                    **kwargs
+                )
+                
+                elapsed_ms = int((time.time() - start_time) * 1000)
+                
+                ic("📥 Response Status", response.status_code, f"{elapsed_ms}ms")
+                
+                # Success case
+                if 200 <= response.status_code < 300:
+                    try:
+                        response_data = response.json()
+                        ic("✅ Success", response_data)
+                        
+                        return {
+                            'success': True,
+                            'status_code': response.status_code,
+                            'data': response_data,
+                            'elapsed_ms': elapsed_ms,
+                            'attempts': attempt
+                        }
+                    except ValueError:
+                        # Response is not JSON
+                        ic("✅ Success (non-JSON response)", response.text[:200])
+                        
+                        return {
+                            'success': True,
+                            'status_code': response.status_code,
+                            'data': response.text,
+                            'elapsed_ms': elapsed_ms,
+                            'attempts': attempt
+                        }
+                
+                # Retry on specific status codes
+                if response.status_code in self.retry_on_status:
+                    ic(f"⚠️ Retryable error {response.status_code}, will retry...")
+                    
+                    # Exponential backoff
+                    if attempt < self.max_retries:
+                        delay = self.backoff_factor * (2 ** (attempt - 1))
+                        ic(f"⏳ Waiting {delay}s before retry")
+                        time.sleep(delay)
+                        continue
+                
+                # Non-retryable error
+                ic("❌ API Error (non-retryable)", response.status_code, response.text[:500])
+                
+                return {
+                    'success': False,
+                    'status_code': response.status_code,
+                    'error': f"HTTP {response.status_code}: {response.text[:500]}",
+                    'elapsed_ms': elapsed_ms,
+                    'attempts': attempt
+                }
+                
+            except requests.exceptions.Timeout:
+                ic(f"⏰ Timeout on attempt {attempt}")
+                
+                if attempt >= self.max_retries:
+                    elapsed_ms = int((time.time() - start_time) * 1000)
+                    return {
+                        'success': False,
+                        'error': f'Request timeout after {self.timeout}s',
+                        'elapsed_ms': elapsed_ms,
+                        'attempts': attempt
+                    }
+                
+                # Wait before retry
+                delay = self.backoff_factor * (2 ** (attempt - 1))
+                ic(f"⏳ Waiting {delay}s before retry")
+                time.sleep(delay)
+                
+            except requests.exceptions.ConnectionError as e:
+                ic(f"🔌 Connection error on attempt {attempt}", str(e))
+                
+                if attempt >= self.max_retries:
+                    elapsed_ms = int((time.time() - start_time) * 1000)
+                    return {
+                        'success': False,
+                        'error': f'Connection error: {str(e)}',
+                        'elapsed_ms': elapsed_ms,
+                        'attempts': attempt
+                    }
+                
+                # Wait before retry
+                delay = self.backoff_factor * (2 ** (attempt - 1))
+                ic(f"⏳ Waiting {delay}s before retry")
+                time.sleep(delay)
+                
+            except Exception as e:
+                ic("💥 Unexpected error", type(e).__name__, str(e))
+                elapsed_ms = int((time.time() - start_time) * 1000)
+                
+                return {
+                    'success': False,
+                    'error': f'Unexpected error: {str(e)}',
+                    'elapsed_ms': elapsed_ms,
+                    'attempts': attempt
+                }
+        
+        # Max retries exceeded
+        elapsed_ms = int((time.time() - start_time) * 1000)
+        ic("❌ Max retries exceeded", attempt)
+        
+        return {
+            'success': False,
+            'error': f'Max retries ({self.max_retries}) exceeded',
+            'elapsed_ms': elapsed_ms,
+            'attempts': attempt
+        }
+
+# Global HTTP client instance
+http_client = AIHttpClient(
+    max_retries=3,
+    backoff_factor=0.5,
+    timeout=30
+)
 
 # Static file serving
 @app.route('/')
@@ -268,6 +483,106 @@ def load_user_preferences(user_id):
         return jsonify(response)
     except Exception as e:
         ic("❌ Error loading preferences", e)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/call', methods=['POST'])
+def ai_api_call():
+    """
+    Proxy endpoint for AI API calls
+    Accepts configuration and forwards request to AI provider
+    
+    Request body:
+    {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "apiKey": "sk-...",
+        "apiUrl": "https://api.openai.com/v1",
+        "endpoint": "/chat/completions",  // optional, appended to apiUrl
+        "method": "POST",  // optional, defaults to POST
+        "headers": {},  // optional custom headers
+        "payload": {},  // request payload
+        "timeout": 30,  // optional timeout in seconds
+        "maxRetries": 3  // optional max retry attempts
+    }
+    """
+    try:
+        data = request.json
+        ic("🎯 AI API Call Request", data.get('provider'), data.get('model'))
+        
+        # Extract parameters
+        provider = data.get('provider', 'unknown')
+        model = data.get('model')
+        api_key = data.get('apiKey')
+        api_url = data.get('apiUrl', '')
+        endpoint = data.get('endpoint', '')
+        method = data.get('method', 'POST')
+        custom_headers = data.get('headers', {})
+        payload = data.get('payload', {})
+        timeout = data.get('timeout', 30)
+        max_retries = data.get('maxRetries', 3)
+        
+        # Validation
+        if not api_key:
+            return jsonify({
+                'success': False,
+                'error': 'API key is required'
+            }), 400
+        
+        if not api_url:
+            return jsonify({
+                'success': False,
+                'error': 'API URL is required'
+            }), 400
+        
+        # Build full URL
+        full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
+        ic("🌐 Full URL", full_url)
+        
+        # Prepare headers
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            **custom_headers
+        }
+        
+        # Some providers use different auth header formats
+        if provider == 'anthropic':
+            headers['x-api-key'] = api_key
+            headers['anthropic-version'] = '2023-06-01'
+            del headers['Authorization']  # Claude doesn't use Bearer
+        elif provider == 'cohere':
+            headers['Authorization'] = f'Bearer {api_key}'  # Cohere uses Bearer
+        
+        # Add model to payload if not already present
+        if model and 'model' not in payload:
+            payload['model'] = model
+        
+        ic("📋 Final Headers", {k: v[:20] + '...' if len(str(v)) > 20 else v for k, v in headers.items()})
+        ic("📋 Final Payload", payload)
+        
+        # Create custom HTTP client with request-specific settings
+        custom_client = AIHttpClient(
+            max_retries=max_retries,
+            backoff_factor=0.5,
+            timeout=timeout
+        )
+        
+        # Make the API call
+        result = custom_client.call_api(
+            method=method,
+            url=full_url,
+            headers=headers,
+            json_data=payload
+        )
+        
+        ic("📨 API Call Result", result.get('success'), result.get('elapsed_ms'))
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        ic("💥 Error in AI API call endpoint", str(e))
         return jsonify({
             'success': False,
             'error': str(e)

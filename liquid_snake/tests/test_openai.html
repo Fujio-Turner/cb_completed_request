@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenAI API Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #10a37f 0%, #1a7f64 100%);
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #10a37f;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo {
+            font-size: 32px;
+        }
+        .section {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #10a37f;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #10a37f;
+        }
+        textarea {
+            font-family: inherit;
+            resize: vertical;
+        }
+        button {
+            background: linear-gradient(135deg, #10a37f 0%, #1a7f64 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 163, 127, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        .success {
+            background: #d1f4e7;
+            border-left: 4px solid #10a37f;
+            color: #0d5a45;
+        }
+        .error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        .info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #dee2e6;
+        }
+        .model-info {
+            background: #e6f7f1;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+        .usage-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .stat {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #10a37f;
+        }
+        .cost-badge {
+            display: inline-block;
+            background: #10a37f;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="logo">🟢</span> OpenAI API Test</h1>
+        <p>Test OpenAI's GPT models including GPT-4o, GPT-4, and GPT-3.5 Turbo.</p>
+        
+        <div class="section">
+            <label for="apiKey">🔑 OpenAI API Key:</label>
+            <input type="password" id="apiKey" placeholder="sk-..." />
+            <small style="color: #666;">Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></small>
+        </div>
+        
+        <div class="section">
+            <label for="model">🎯 Model:</label>
+            <select id="model" onchange="showModelInfo()">
+                <option value="gpt-4o">GPT-4o - Latest & Most Capable</option>
+                <option value="gpt-4o-mini">GPT-4o Mini - Fast & Affordable</option>
+                <option value="gpt-4-turbo">GPT-4 Turbo - Previous Generation</option>
+                <option value="gpt-4">GPT-4 - Original</option>
+                <option value="gpt-3.5-turbo">GPT-3.5 Turbo - Fast & Cheap</option>
+                <option value="o1-preview">O1 Preview - Advanced Reasoning</option>
+                <option value="o1-mini">O1 Mini - Fast Reasoning</option>
+            </select>
+            <div id="modelInfo" class="model-info"></div>
+        </div>
+        
+        <div class="section">
+            <label for="testType">📋 Test Type:</label>
+            <select id="testType" onchange="updatePrompt()">
+                <option value="simple">Simple Chat</option>
+                <option value="system">Chat with System Prompt</option>
+                <option value="json">JSON Response</option>
+                <option value="query">N1QL Query Analysis</option>
+                <option value="custom">Custom Messages</option>
+            </select>
+        </div>
+        
+        <div class="section" id="promptSection">
+            <label for="prompt">💬 Your Prompt:</label>
+            <textarea id="prompt" rows="5" placeholder="Enter your message...">Explain the key features of GPT-4o in 3 bullet points.</textarea>
+        </div>
+        
+        <div class="section">
+            <label>⚙️ Parameters:</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label for="temperature" style="font-size: 13px;">Temperature: <span id="tempValue">1.0</span></label>
+                    <input type="range" id="temperature" min="0" max="2" step="0.1" value="1" 
+                           oninput="document.getElementById('tempValue').textContent = this.value" 
+                           style="margin-bottom: 0;">
+                </div>
+                <div>
+                    <label for="maxTokens" style="font-size: 13px;">Max Tokens:</label>
+                    <input type="number" id="maxTokens" value="4096" min="1" max="16384" style="margin-bottom: 0;">
+                </div>
+            </div>
+        </div>
+        
+        <div class="btn-group">
+            <button id="sendBtn" onclick="testOpenAI()">🚀 Send to OpenAI</button>
+            <button onclick="clearResponse()">🗑️ Clear</button>
+        </div>
+        
+        <div id="response" style="display: none;"></div>
+    </div>
+
+    <script type="module">
+        import { 
+            callOpenAI, 
+            chatWithOpenAI, 
+            chatWithOpenAISystem,
+            getJSONResponse,
+            analyzeQueryWithOpenAI,
+            extractOpenAIResponse, 
+            getOpenAIUsage,
+            calculateCost,
+            getModelInfo,
+            checkContextWindow,
+            getFinishReason
+        } from './assets/js/ai-providers/openai.js';
+        
+        import { Logger } from './assets/js/base.js';
+        
+        // Show model info
+        window.showModelInfo = function() {
+            const model = document.getElementById('model').value;
+            const info = getModelInfo(model);
+            const infoEl = document.getElementById('modelInfo');
+            
+            if (info) {
+                infoEl.innerHTML = `
+                    <strong>${info.name}</strong><br>
+                    ${info.description}<br>
+                    <small>
+                        Context: ${info.contextWindow.toLocaleString()} tokens | 
+                        Max Output: ${info.maxTokens.toLocaleString()} tokens<br>
+                        Pricing: $${info.inputPricePerMillion}/M input | $${info.outputPricePerMillion}/M output
+                    </small>
+                `;
+            }
+        };
+        
+        // Update prompt based on test type
+        window.updatePrompt = function() {
+            const type = document.getElementById('testType').value;
+            const promptEl = document.getElementById('prompt');
+            
+            switch(type) {
+                case 'simple':
+                    promptEl.value = 'Explain the key features of GPT-4o in 3 bullet points.';
+                    break;
+                case 'system':
+                    promptEl.value = 'System: You are a helpful coding assistant.\n\nUser: Write a Python function to calculate factorial.';
+                    break;
+                case 'json':
+                    promptEl.value = 'Extract the following information in JSON format: Name: John Doe, Age: 30, City: New York';
+                    break;
+                case 'query':
+                    promptEl.value = 'SELECT * FROM `travel-sample` WHERE type = "hotel" AND city = "Paris" LIMIT 10';
+                    break;
+                case 'custom':
+                    promptEl.value = '[\n  {"role": "user", "content": "Hello GPT!"}\n]';
+                    break;
+            }
+        };
+        
+        // Clear response
+        window.clearResponse = function() {
+            document.getElementById('response').style.display = 'none';
+        };
+        
+        // Test OpenAI
+        window.testOpenAI = async function() {
+            const apiKeyEl = document.getElementById('apiKey');
+            const modelEl = document.getElementById('model');
+            const testTypeEl = document.getElementById('testType');
+            const promptEl = document.getElementById('prompt');
+            const temperatureEl = document.getElementById('temperature');
+            const maxTokensEl = document.getElementById('maxTokens');
+            const responseEl = document.getElementById('response');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            const apiKey = apiKeyEl.value.trim();
+            const model = modelEl.value;
+            const testType = testTypeEl.value;
+            const prompt = promptEl.value.trim();
+            const temperature = parseFloat(temperatureEl.value);
+            const maxTokens = parseInt(maxTokensEl.value);
+            
+            if (!apiKey) {
+                alert('Please enter your OpenAI API key');
+                return;
+            }
+            
+            if (!prompt) {
+                alert('Please enter a prompt');
+                return;
+            }
+            
+            // Disable button
+            sendBtn.disabled = true;
+            sendBtn.textContent = '⏳ Waiting for OpenAI...';
+            
+            // Show loading
+            responseEl.style.display = 'block';
+            responseEl.className = 'response';
+            responseEl.textContent = '⏳ Calling OpenAI API...';
+            
+            try {
+                let result;
+                
+                // Different test types
+                if (testType === 'simple') {
+                    result = await chatWithOpenAI(apiKey, prompt, { model, temperature, max_tokens: maxTokens });
+                } else if (testType === 'system') {
+                    const lines = prompt.split('\n');
+                    const systemPrompt = lines.find(l => l.startsWith('System:'))?.replace('System:', '').trim() || 'You are a helpful assistant.';
+                    const userMessage = lines.find(l => l.startsWith('User:'))?.replace('User:', '').trim() || prompt;
+                    
+                    result = await chatWithOpenAISystem(apiKey, systemPrompt, userMessage, { model, temperature, max_tokens: maxTokens });
+                } else if (testType === 'json') {
+                    result = await getJSONResponse(apiKey, prompt, { model, temperature, max_tokens: maxTokens });
+                } else if (testType === 'query') {
+                    result = await analyzeQueryWithOpenAI(apiKey, prompt, null, { model, max_tokens: maxTokens });
+                } else {
+                    // Custom - try to parse as JSON
+                    try {
+                        const messages = JSON.parse(prompt);
+                        result = await callOpenAI({ apiKey, model, messages, temperature, max_tokens: maxTokens });
+                    } catch (e) {
+                        result = await chatWithOpenAI(apiKey, prompt, { model, temperature, max_tokens: maxTokens });
+                    }
+                }
+                
+                Logger.info('OpenAI result:', result);
+                
+                if (result.success) {
+                    const text = extractOpenAIResponse(result);
+                    const usage = getOpenAIUsage(result);
+                    const cost = calculateCost(usage, model);
+                    const finishReason = getFinishReason(result);
+                    
+                    responseEl.className = 'response success';
+                    responseEl.innerHTML = `
+                        <strong>✅ Success</strong>
+                        ${finishReason === 'length' ? '<span class="cost-badge" style="background: #ffc107; color: #000;">⚠️ Truncated</span>' : ''}
+                        <br><br>
+                        ${text || '<em>No text content</em>'}
+                        <div class="info">
+                            <strong>Request Info:</strong> ${result.elapsed_ms}ms | ${result.attempts} attempt(s) | Finish: ${finishReason}
+                            ${usage ? `
+                            <div class="usage-stats">
+                                <div class="stat">
+                                    <div class="stat-label">Prompt Tokens</div>
+                                    <div class="stat-value">${usage.prompt_tokens.toLocaleString()}</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-label">Completion</div>
+                                    <div class="stat-value">${usage.completion_tokens.toLocaleString()}</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-label">Total Tokens</div>
+                                    <div class="stat-value">${usage.total_tokens.toLocaleString()}</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-label">Cost</div>
+                                    <div class="stat-value" style="font-size: 16px;">${cost.formatted}</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    responseEl.className = 'response error';
+                    responseEl.innerHTML = `
+                        <strong>❌ Error</strong><br><br>
+                        ${result.error}
+                        <div class="info">
+                            ${result.elapsed_ms ? `Time: ${result.elapsed_ms}ms | ` : ''}
+                            ${result.attempts ? `Attempts: ${result.attempts}` : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                Logger.error('Test error:', error);
+                responseEl.className = 'response error';
+                responseEl.textContent = `❌ Error: ${error.message}`;
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '🚀 Send to OpenAI';
+            }
+        };
+        
+        // Initialize
+        showModelInfo();
+    </script>
+</body>
+</html>

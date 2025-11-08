@@ -51,154 +51,22 @@ const AI_PROVIDERS = [
         ]
     },
     { 
-        id: 'gemini', 
-        name: 'Google Gemini', 
-        logo: 'img/ai-logos/gemini.png', 
-        keyPlaceholder: 'AIza...', 
-        defaultUrl: 'https://generativelanguage.googleapis.com',
-        models: [
-            { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash (Experimental)' },
-            { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
-            { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
-            { id: 'gemini-1.0-pro', name: 'Gemini 1.0 Pro' }
-        ]
-    },
-    { 
         id: 'grok', 
         name: 'xAI Grok', 
         logo: 'img/ai-logos/grok.png', 
         keyPlaceholder: 'xai-...', 
-        defaultUrl: 'https://api.x.ai',
+        defaultUrl: 'https://api.x.ai/v1',
         models: [
-            { id: 'grok-2-1212', name: 'Grok 2 (Latest)' },
-            { id: 'grok-2-vision-1212', name: 'Grok 2 Vision' },
-            { id: 'grok-beta', name: 'Grok Beta' }
-        ]
-    },
-    { 
-        id: 'mistral', 
-        name: 'Mistral AI', 
-        logo: 'img/ai-logos/mistral.png', 
-        keyPlaceholder: 'api-key-...', 
-        defaultUrl: 'https://api.mistral.ai',
-        models: [
-            { id: 'mistral-large-latest', name: 'Mistral Large (Latest)' },
-            { id: 'mistral-medium-latest', name: 'Mistral Medium' },
-            { id: 'mistral-small-latest', name: 'Mistral Small' },
-            { id: 'open-mistral-nemo', name: 'Mistral Nemo (Open)' },
-            { id: 'codestral-latest', name: 'Codestral (Code)' }
-        ]
-    },
-    { 
-        id: 'cohere', 
-        name: 'Cohere', 
-        logo: 'img/ai-logos/cohere.png', 
-        keyPlaceholder: 'co-...', 
-        defaultUrl: 'https://api.cohere.ai',
-        models: [
-            { id: 'command-r-plus', name: 'Command R+ (Latest)' },
-            { id: 'command-r', name: 'Command R' },
-            { id: 'command', name: 'Command' },
-            { id: 'command-light', name: 'Command Light' }
-        ]
-    },
-    { 
-        id: 'perplexity', 
-        name: 'Perplexity AI', 
-        logo: 'img/ai-logos/perplexity.png', 
-        keyPlaceholder: 'pplx-...', 
-        defaultUrl: 'https://api.perplexity.ai',
-        models: [
-            { id: 'llama-3.1-sonar-large-128k-online', name: 'Sonar Large (Online)' },
-            { id: 'llama-3.1-sonar-small-128k-online', name: 'Sonar Small (Online)' },
-            { id: 'llama-3.1-sonar-large-128k-chat', name: 'Sonar Large (Chat)' },
-            { id: 'llama-3.1-sonar-small-128k-chat', name: 'Sonar Small (Chat)' }
-        ]
-    },
-    { 
-        id: 'groq', 
-        name: 'Groq', 
-        logo: 'img/ai-logos/groq.png', 
-        keyPlaceholder: 'gsk_...', 
-        defaultUrl: 'https://api.groq.com/openai/v1',
-        models: [
-            { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B (Latest)' },
-            { id: 'llama-3.1-70b-versatile', name: 'Llama 3.1 70B' },
-            { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B' },
-            { id: 'gemma2-9b-it', name: 'Gemma 2 9B' }
-        ]
-    },
-    { 
-        id: 'deepseek', 
-        name: 'DeepSeek', 
-        logo: 'img/ai-logos/deepseek.png', 
-        keyPlaceholder: 'sk-...', 
-        defaultUrl: 'https://api.deepseek.com',
-        models: [
-            { id: 'deepseek-chat', name: 'DeepSeek Chat (Latest)' },
-            { id: 'deepseek-coder', name: 'DeepSeek Coder' }
-        ]
-    },
-    { 
-        id: 'openrouter', 
-        name: 'OpenRouter', 
-        logo: 'img/ai-logos/openrouter.png', 
-        keyPlaceholder: 'sk-or-...', 
-        defaultUrl: 'https://openrouter.ai/api/v1',
-        models: [
-            { id: 'auto', name: 'Auto (Router Picks Best)' },
-            { id: 'openai/gpt-4o', name: 'GPT-4o' },
-            { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet' },
-            { id: 'google/gemini-pro-1.5', name: 'Gemini 1.5 Pro' },
-            { id: 'meta-llama/llama-3.1-405b', name: 'Llama 3.1 405B' }
-        ]
-    },
-    { 
-        id: 'together', 
-        name: 'Together AI', 
-        logo: 'img/ai-logos/together.png', 
-        keyPlaceholder: 'api-key-...', 
-        defaultUrl: 'https://api.together.xyz',
-        models: [
-            { id: 'meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo', name: 'Llama 3.1 405B' },
-            { id: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo', name: 'Llama 3.1 70B' },
-            { id: 'Qwen/Qwen2.5-72B-Instruct-Turbo', name: 'Qwen 2.5 72B' },
-            { id: 'mistralai/Mixtral-8x22B-Instruct-v0.1', name: 'Mixtral 8x22B' }
-        ]
-    },
-    { 
-        id: 'replicate', 
-        name: 'Replicate', 
-        logo: 'img/ai-logos/replicate.png', 
-        keyPlaceholder: 'r8_...', 
-        defaultUrl: 'https://api.replicate.com',
-        models: [
-            { id: 'meta/meta-llama-3.1-405b-instruct', name: 'Llama 3.1 405B' },
-            { id: 'meta/meta-llama-3-70b-instruct', name: 'Llama 3 70B' },
-            { id: 'mistralai/mixtral-8x7b-instruct-v0.1', name: 'Mixtral 8x7B' }
-        ]
-    },
-    { 
-        id: 'huggingface', 
-        name: 'Hugging Face', 
-        logo: 'img/ai-logos/huggingface.png', 
-        keyPlaceholder: 'hf_...', 
-        defaultUrl: 'https://api-inference.huggingface.co',
-        models: [
-            { id: 'meta-llama/Meta-Llama-3.1-70B-Instruct', name: 'Llama 3.1 70B' },
-            { id: 'mistralai/Mixtral-8x7B-Instruct-v0.1', name: 'Mixtral 8x7B' },
-            { id: 'google/gemma-2-9b-it', name: 'Gemma 2 9B' },
-            { id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B' }
-        ]
-    },
-    { 
-        id: 'custom', 
-        name: 'Custom API', 
-        logo: 'img/ai-logos/custom.png', 
-        keyPlaceholder: 'Custom API key', 
-        defaultUrl: '',
-        models: [
-            { id: 'custom-model', name: 'Custom Model (Specify in URL)' }
+            { id: 'grok-4-fast', name: 'Grok 4 Fast (Latest, Cost-Effective)' },
+            { id: 'grok-4', name: 'Grok 4 (Most Capable)' },
+            { id: 'grok-3', name: 'Grok 3 (Advanced Reasoning)' },
+            { id: 'grok-3-mini', name: 'Grok 3 Mini (Fast)' },
+            { id: 'grok-2-latest', name: 'Grok 2 Latest' },
+            { id: 'grok-2-vision-latest', name: 'Grok 2 Vision (Multimodal)' },
+            { id: 'grok-2-1212', name: 'Grok 2 (Dec 2024)' },
+            { id: 'grok-2-vision-1212', name: 'Grok 2 Vision (Dec 2024)' },
+            { id: 'grok-beta', name: 'Grok Beta (Experimental)' },
+            { id: 'grok-vision-beta', name: 'Grok Vision Beta' }
         ]
     }
 ];

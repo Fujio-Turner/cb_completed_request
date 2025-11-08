@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude API Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #cc785c 0%, #a0522d 100%);
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #cc785c;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo {
+            font-size: 32px;
+        }
+        .section {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #cc785c;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #cc785c;
+        }
+        textarea {
+            font-family: inherit;
+            resize: vertical;
+        }
+        button {
+            background: linear-gradient(135deg, #cc785c 0%, #a0522d 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(204, 120, 92, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        .success {
+            background: #f4e4dc;
+            border-left: 4px solid #cc785c;
+            color: #5c3a29;
+        }
+        .error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        .info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #dee2e6;
+        }
+        .model-info {
+            background: #fef5f1;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+        .usage-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .stat {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #cc785c;
+        }
+        .cost-badge {
+            display: inline-block;
+            background: #cc785c;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="logo">🧠</span> Claude API Test</h1>
+        <p>Test Anthropic's Claude models - known for their thoughtful, detailed responses.</p>
+        
+        <div class="warning">
+            ⚠️ <strong>Note:</strong> Claude requires <code>max_tokens</code> parameter and messages must alternate between user/assistant roles.
+        </div>
+        
+        <div class="section">
+            <label for="apiKey">🔑 Anthropic API Key:</label>
+            <input type="password" id="apiKey" placeholder="sk-ant-..." />
+            <small style="color: #666;">Get your API key from <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a></small>
+        </div>
+        
+        <div class="section">
+            <label for="model">🎯 Model:</label>
+            <select id="model" onchange="showModelInfo()">
+                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Latest) - Best Overall</option>
+                <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku - Fast & Affordable</option>
+                <option value="claude-3-opus-20240229">Claude 3 Opus - Most Capable</option>
+                <option value="claude-3-sonnet-20240229">Claude 3 Sonnet - Balanced</option>
+                <option value="claude-3-haiku-20240307">Claude 3 Haiku - Fastest</option>
+            </select>
+            <div id="modelInfo" class="model-info"></div>
+        </div>
+        
+        <div class="section">
+            <label for="testType">📋 Test Type:</label>
+            <select id="testType" onchange="updatePrompt()">
+                <option value="simple">Simple Chat</option>
+                <option value="system">Chat with System Prompt</option>
+                <option value="query">N1QL Query Analysis</option>
+                <option value="custom">Custom Messages</option>
+            </select>
+        </div>
+        
+        <div class="section" id="promptSection">
+            <label for="prompt">💬 Your Prompt:</label>
+            <textarea id="prompt" rows="5" placeholder="Enter your message...">Explain Claude's unique approach to AI safety and helpfulness.</textarea>
+        </div>
+        
+        <div class="section">
+            <label>⚙️ Parameters:</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label for="temperature" style="font-size: 13px;">Temperature: <span id="tempValue">1.0</span></label>
+                    <input type="range" id="temperature" min="0" max="1" step="0.1" value="1" 
+                           oninput="document.getElementById('tempValue').textContent = this.value" 
+                           style="margin-bottom: 0;">
+                    <small style="color: #666;">Claude uses 0-1 range</small>
+                </div>
+                <div>
+                    <label for="maxTokens" style="font-size: 13px;">Max Tokens (Required):</label>
+                    <input type="number" id="maxTokens" value="4096" min="1" max="8192" style="margin-bottom: 0;">
+                </div>
+            </div>
+        </div>
+        
+        <div class="btn-group">
+            <button id="sendBtn" onclick="testClaude()">🚀 Send to Claude</button>
+            <button onclick="clearResponse()">🗑️ Clear</button>
+        </div>
+        
+        <div id="response" style="display: none;"></div>
+    </div>
+
+    <script type="module">
+        import { 
+            callClaude, 
+            chatWithClaude, 
+            chatWithClaudeSystem,
+            analyzeQueryWithClaude,
+            extractClaudeResponse, 
+            getClaudeUsage,
+            calculateCost,
+            getModelInfo,
+            checkContextWindow,
+            getStopReason,
+            validateMessages
+        } from './assets/js/ai-providers/claude.js';
+        
+        import { Logger } from './assets/js/base.js';
+        
+        // Show model info
+        window.showModelInfo = function() {
+            const model = document.getElementById('model').value;
+            const info = getModelInfo(model);
+            const infoEl = document.getElementById('modelInfo');
+            
+            if (info) {
+                infoEl.innerHTML = `
+                    <strong>${info.name}</strong><br>
+                    ${info.description}<br>
+                    <small>
+                        Context: ${info.contextWindow.toLocaleString()} tokens | 
+                        Max Output: ${info.maxTokens.toLocaleString()} tokens<br>
+                        Pricing: $${info.inputPricePerMillion}/M input | $${info.outputPricePerMillion}/M output
+                    </small>
+                `;
+            }
+        };
+        
+        // Update prompt based on test type
+        window.updatePrompt = function() {
+            const type = document.getElementById('testType').value;
+            const promptEl = document.getElementById('prompt');
+            
+            switch(type) {
+                case 'simple':
+                    promptEl.value = "Explain Claude's unique approach to AI safety and helpfulness.";
+                    break;
+                case 'system':
+                    promptEl.value = 'System: You are a Python expert who writes clean, well-documented code.\n\nUser: Write a function to validate email addresses using regex.';
+                    break;
+                case 'query':
+                    promptEl.value = 'SELECT * FROM `travel-sample` WHERE type = "hotel" AND city = "Paris" LIMIT 10';
+                    break;
+                case 'custom':
+                    promptEl.value = '[\n  {"role": "user", "content": "Hello Claude!"}\n]';
+                    break;
+            }
+        };
+        
+        // Clear response
+        window.clearResponse = function() {
+            document.getElementById('response').style.display = 'none';
+        };
+        
+        // Test Claude
+        window.testClaude = async function() {
+            const apiKeyEl = document.getElementById('apiKey');
+            const modelEl = document.getElementById('model');
+            const testTypeEl = document.getElementById('testType');
+            const promptEl = document.getElementById('prompt');
+            const temperatureEl = document.getElementById('temperature');
+            const maxTokensEl = document.getElementById('maxTokens');
+            const responseEl = document.getElementById('response');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            const apiKey = apiKeyEl.value.trim();
+            const model = modelEl.value;
+            const testType = testTypeEl.value;
+            const prompt = promptEl.value.trim();
+            const temperature = parseFloat(temperatureEl.value);
+            const maxTokens = parseInt(maxTokensEl.value);
+            
+            if (!apiKey) {
+                alert('Please enter your Anthropic API key');
+                return;
+            }
+            
+            if (!prompt) {
+                alert('Please enter a prompt');
+                return;
+            }
+            
+            if (!maxTokens || maxTokens < 1) {
+                alert('max_tokens is required for Claude and must be > 0');
+                return;
+            }
+            
+            // Disable button
+            sendBtn.disabled = true;
+            sendBtn.textContent = '⏳ Waiting for Claude...';
+            
+            // Show loading
+            responseEl.style.display = 'block';
+            responseEl.className = 'response';
+            responseEl.textContent = '⏳ Calling Claude API...';
+            
+            try {
+                let result;
+                
+                // Different test types
+                if (testType === 'simple') {
+                    result = await chatWithClaude(apiKey, prompt, { model, temperature, max_tokens: maxTokens });
+                } else if (testType === 'system') {
+                    const lines = prompt.split('\n');
+                    const systemPrompt = lines.find(l => l.startsWith('System:'))?.replace('System:', '').trim() || 'You are a helpful assistant.';
+                    const userMessage = lines.find(l => l.startsWith('User:'))?.replace('User:', '').trim() || prompt;
+                    
+                    result = await chatWithClaudeSystem(apiKey, systemPrompt, userMessage, { model, temperature, max_tokens: maxTokens });
+                } else if (testType === 'query') {
+                    result = await analyzeQueryWithClaude(apiKey, prompt, null, { model, max_tokens: maxTokens });
+                } else {
+                    // Custom - try to parse as JSON
+                    try {
+                        const messages = JSON.parse(prompt);
+                        
+                        // Validate Claude message format
+                        const validation = validateMessages(messages);
+                        if (!validation.valid) {
+                            throw new Error(validation.error);
+                        }
+                        
+                        result = await callClaude({ apiKey, model, messages, temperature, max_tokens: maxTokens });
+                    } catch (e) {
+                        result = await chatWithClaude(apiKey, prompt, { model, temperature, max_tokens: maxTokens });
+                    }
+                }
+                
+                Logger.info('Claude result:', result);
+                
+                if (result.success) {
+                    const text = extractClaudeResponse(result);
+                    const usage = getClaudeUsage(result);
+                    const cost = calculateCost(usage, model);
+                    const stopReason = getStopReason(result);
+                    
+                    responseEl.className = 'response success';
+                    responseEl.innerHTML = `
+                        <strong>✅ Success</strong>
+                        ${stopReason === 'max_tokens' ? '<span class="cost-badge" style="background: #ffc107; color: #000;">⚠️ Truncated</span>' : ''}
+                        <br><br>
+                        ${text || '<em>No text content</em>'}
+                        <div class="info">
+                            <strong>Request Info:</strong> ${result.elapsed_ms}ms | ${result.attempts} attempt(s) | Stop: ${stopReason}
+                            ${usage ? `
+                            <div class="usage-stats">
+                                <div class="stat">
+                                    <div class="stat-label">Input Tokens</div>
+                                    <div class="stat-value">${usage.input_tokens.toLocaleString()}</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-label">Output Tokens</div>
+                                    <div class="stat-value">${usage.output_tokens.toLocaleString()}</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-label">Total Tokens</div>
+                                    <div class="stat-value">${usage.total_tokens.toLocaleString()}</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-label">Cost</div>
+                                    <div class="stat-value" style="font-size: 16px;">${cost.formatted}</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    responseEl.className = 'response error';
+                    responseEl.innerHTML = `
+                        <strong>❌ Error</strong><br><br>
+                        ${result.error}
+                        <div class="info">
+                            ${result.elapsed_ms ? `Time: ${result.elapsed_ms}ms | ` : ''}
+                            ${result.attempts ? `Attempts: ${result.attempts}` : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                Logger.error('Test error:', error);
+                responseEl.className = 'response error';
+                responseEl.textContent = `❌ Error: ${error.message}`;
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '🚀 Send to Claude';
+            }
+        };
+        
+        // Initialize
+        showModelInfo();
+    </script>
+</body>
+</html>

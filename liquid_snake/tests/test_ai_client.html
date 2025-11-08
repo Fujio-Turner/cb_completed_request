@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Client Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+            color: #155724;
+        }
+        .info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Client Test</h1>
+        <p>Test the AI API client with your configured provider.</p>
+        
+        <label for="prompt"><strong>Enter your prompt:</strong></label>
+        <textarea id="prompt" rows="5" placeholder="What is the capital of France?">Explain what Couchbase N1QL is in one sentence.</textarea>
+        
+        <button id="sendBtn" onclick="testAI()">Send to AI</button>
+        
+        <div id="response" style="display: none;"></div>
+    </div>
+
+    <script type="module">
+        import { callDefaultAI, extractAIResponse } from './assets/js/ai-client.js';
+        import { Logger } from './assets/js/base.js';
+        
+        window.testAI = async function() {
+            const promptEl = document.getElementById('prompt');
+            const responseEl = document.getElementById('response');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            const userMessage = promptEl.value.trim();
+            
+            if (!userMessage) {
+                alert('Please enter a prompt');
+                return;
+            }
+            
+            // Disable button
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending...';
+            
+            // Show loading state
+            responseEl.style.display = 'block';
+            responseEl.className = 'response';
+            responseEl.textContent = '⏳ Waiting for AI response...';
+            
+            try {
+                // Call AI
+                const result = await callDefaultAI(userMessage);
+                
+                Logger.info('AI Result:', result);
+                
+                if (result.success) {
+                    // Extract response text
+                    const provider = result.data?.model || 'unknown';
+                    const text = extractAIResponse(result, provider);
+                    
+                    if (text) {
+                        responseEl.className = 'response success';
+                        responseEl.innerHTML = `
+                            <strong>✅ Success</strong><br>
+                            ${text}
+                            <div class="info">
+                                ${result.elapsed_ms}ms | ${result.attempts} attempt(s)
+                            </div>
+                        `;
+                    } else {
+                        responseEl.className = 'response error';
+                        responseEl.textContent = '❌ Could not extract text from response';
+                    }
+                } else {
+                    responseEl.className = 'response error';
+                    responseEl.innerHTML = `
+                        <strong>❌ Error</strong><br>
+                        ${result.error}
+                    `;
+                }
+            } catch (error) {
+                Logger.error('Test error:', error);
+                responseEl.className = 'response error';
+                responseEl.textContent = `❌ Error: ${error.message}`;
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send to AI';
+            }
+        };
+    </script>
+</body>
+</html>
