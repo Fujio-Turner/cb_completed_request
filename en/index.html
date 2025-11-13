@@ -5908,7 +5908,8 @@ LET bid = CONCAT("", s.bucket_id, ""),
             const s_index = phaseStats(['indexScan','primaryScan','primaryScan.GSI']);
             const s_fetch = phaseStats('fetch');
             const s_join = phaseStats(['hashJoin','nestedLoopJoin']);
-            const s_nest = phaseStats(['nest','unnest']);
+            const s_nest = phaseStats('nest');
+            const s_unnest = phaseStats('unnest');
             const s_filter = phaseStats('filter');
             const s_group = phaseStats(['group','aggregate']);
             const s_sort = phaseStats('sort');
@@ -5926,7 +5927,8 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 { id: 'indexScan', label: TEXT_CONSTANTS.PHASE_INDEX_SCAN || 'index scan', avgMs: s_index.avg, minMs: s_index.min, maxMs: s_index.max },
                 { id: 'fetch', label: TEXT_CONSTANTS.PHASE_FETCH || 'fetch data', avgMs: s_fetch.avg, minMs: s_fetch.min, maxMs: s_fetch.max },
                 { id: 'join', label: TEXT_CONSTANTS.PHASE_JOIN || 'JOIN', avgMs: s_join.avg, minMs: s_join.min, maxMs: s_join.max },
-                { id: 'nest', label: TEXT_CONSTANTS.PHASE_NEST || 'Nest/Unnest', avgMs: s_nest.avg, minMs: s_nest.min, maxMs: s_nest.max },
+                { id: 'nest', label: 'Nest', avgMs: s_nest.avg, minMs: s_nest.min, maxMs: s_nest.max },
+                { id: 'unnest', label: 'Unnest', avgMs: s_unnest.avg, minMs: s_unnest.min, maxMs: s_unnest.max },
                 { id: 'filter', label: TEXT_CONSTANTS.PHASE_FILTER, avgMs: s_filter.avg, minMs: s_filter.min, maxMs: s_filter.max },
                 { id: 'groupAgg', label: TEXT_CONSTANTS.PHASE_GROUP_AGG, avgMs: s_group.avg, minMs: s_group.min, maxMs: s_group.max },
                 { id: 'sort', label: TEXT_CONSTANTS.PHASE_SORT, avgMs: s_sort.avg, minMs: s_sort.min, maxMs: s_sort.max },
@@ -6566,6 +6568,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 const joinStats    = findStats('join');
                 const filterStats  = findStats('filter');
                 const nestStats    = findStats('nest');
+                const unnestStats  = findStats('unnest');
                 const groupStats   = findStats('groupAgg');
                 const sortStats    = findStats('sort');
                 const limitStats   = findStats('limit');
@@ -6581,7 +6584,8 @@ function renderQueryGroupPhaseTimesChart(group) {
                     { key: 'parsePlan',    label: `Parse & Plan`,                                       include: !!parseStats.avgMs || !!planStats.avgMs },
                     { key: 'scanFetch',    label: `Index Scan / Doc Fetch`,                             include: !!indexStats.avgMs || !!fetchStats.avgMs },
                     { key: 'join',         label: TEXT_CONSTANTS.PHASE_JOIN || 'JOIN',                  include: !!joinStats.avgMs },
-                    { key: 'nest',         label: TEXT_CONSTANTS.PHASE_NEST || 'Nest/Unnest',           include: !!nestStats.avgMs },
+                    { key: 'nest',         label: 'Nest',                                               include: !!nestStats.avgMs },
+                    { key: 'unnest',       label: 'Unnest',                                             include: !!unnestStats.avgMs },
                     { key: 'filter',       label: TEXT_CONSTANTS.PHASE_FILTER,                          include: !!filterStats.avgMs },
                     { key: 'groupAgg',     label: TEXT_CONSTANTS.PHASE_GROUP_AGG,                       include: !!groupStats.avgMs },
                     { key: 'sort',         label: TEXT_CONSTANTS.PHASE_SORT,                            include: !!sortStats.avgMs },
@@ -6630,7 +6634,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 t = Math.max(scanBar ? scanBar[1] : row3Start, fetchBar ? fetchBar[1] : row3Start);
 
                 const joinBar    = joinStats.avgMs   > 0 ? [t, (t += joinStats.avgMs)]      : null;
-                // Nest/Unnest bar placement: same policy as Filter
+                // Nest bar placement: same policy as Filter
                 // - Preserve the average duration as the bar width.
                 // - Align END to later of scan/fetch end or its own intrinsic end.
                 // - START = end - avg.
@@ -6644,6 +6648,22 @@ function renderQueryGroupPhaseTimesChart(group) {
                     const end = Math.max(concurrentEnd, intrinsicEnd);
                     const start = Math.max(0, end - nestStats.avgMs);
                     nestBar = [start, end];
+                }
+
+                // Unnest bar placement: same policy as Filter
+                // - Preserve the average duration as the bar width.
+                // - Align END to later of scan/fetch end or its own intrinsic end.
+                // - START = end - avg.
+                let unnestBar = null;
+                if (unnestStats.avgMs > 0) {
+                    const concurrentStart = row3Start;
+                    const scanEnd = scanBar ? scanBar[1] : concurrentStart;
+                    const fetchEnd = fetchBar ? fetchBar[1] : concurrentStart;
+                    const concurrentEnd = Math.max(scanEnd, fetchEnd);
+                    const intrinsicEnd = concurrentStart + unnestStats.avgMs;
+                    const end = Math.max(concurrentEnd, intrinsicEnd);
+                    const start = Math.max(0, end - unnestStats.avgMs);
+                    unnestBar = [start, end];
                 }
 
                 // Filter bar placement:
@@ -6664,14 +6684,15 @@ function renderQueryGroupPhaseTimesChart(group) {
                 const groupBar   = groupStats.avgMs  > 0 ? [t, (t += groupStats.avgMs)]     : null;
                 const sortBar    = sortStats.avgMs   > 0 ? [t, (t += sortStats.avgMs)]      : null;
                 const limitBar   = limitStats.avgMs  > 0 ? [t, (t += limitStats.avgMs)]     : null;
-                // Project must occur after Nest/Unnest and Filter (and sequential phases like Group/Sort/Limit).
-                // Start Project at the later of: sequential time 't', Filter end, and Nest/Unnest end.
+                // Project must occur after Nest, Unnest and Filter (and sequential phases like Group/Sort/Limit).
+                // Start Project at the later of: sequential time 't', Filter end, Nest end, and Unnest end.
                 let projectBar = null;
                 if (projectStats.avgMs > 0) {
                     const prevEnd = Math.max(
                         t,
                         filterBar ? filterBar[1] : 0,
-                        nestBar ? nestBar[1] : 0
+                        nestBar ? nestBar[1] : 0,
+                        unnestBar ? unnestBar[1] : 0
                     );
                     const projectStart = prevEnd;
                     const projectEnd = projectStart + projectStats.avgMs;
@@ -6683,7 +6704,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 // Stream should be the final step: start at the latest end among all other phases
                 let streamBar = null;
                 if (streamStats.avgMs > 0) {
-                const otherEnds = [authBar, parseBar, planBar, scanBar, fetchBar, joinBar, nestBar, filterBar, groupBar, sortBar, limitBar, projectBar, deleteBar, updateBar, insertBar]
+                const otherEnds = [authBar, parseBar, planBar, scanBar, fetchBar, joinBar, nestBar, unnestBar, filterBar, groupBar, sortBar, limitBar, projectBar, deleteBar, updateBar, insertBar]
                 .filter(Boolean)
                 .map(b => b[1]);
                 const streamStart = otherEnds.length ? Math.max(...otherEnds) : t;
@@ -6711,7 +6732,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                 if (joinBar && rowIndex.join !== undefined)
                     datasets.push({ label: TEXT_CONSTANTS.PHASE_JOIN || 'JOIN', phaseId: 'join',  data: mkDataForRow(joinBar, rowIndex.join), backgroundColor: 'rgba(255, 159, 64, 0.35)', borderColor: 'rgba(255, 159, 64, 0.9)', borderWidth: 1, borderRadius: 4, grouped: false });
                 if (nestBar && rowIndex.nest !== undefined)
-                    datasets.push({ label: TEXT_CONSTANTS.PHASE_NEST || 'Nest/Unnest', phaseId: 'nest', data: mkDataForRow(nestBar,rowIndex.nest), backgroundColor: 'rgba(121, 85, 72, 0.35)',   borderColor: 'rgba(121, 85, 72, 0.9)',   borderWidth: 1, borderRadius: 4, grouped: false });
+                    datasets.push({ label: 'Nest', phaseId: 'nest', data: mkDataForRow(nestBar,rowIndex.nest), backgroundColor: 'rgba(121, 85, 72, 0.35)',   borderColor: 'rgba(121, 85, 72, 0.9)',   borderWidth: 1, borderRadius: 4, grouped: false });
+                if (unnestBar && rowIndex.unnest !== undefined)
+                    datasets.push({ label: 'Unnest', phaseId: 'unnest', data: mkDataForRow(unnestBar,rowIndex.unnest), backgroundColor: 'rgba(141, 105, 92, 0.35)',   borderColor: 'rgba(141, 105, 92, 0.9)',   borderWidth: 1, borderRadius: 4, grouped: false });
                 if (filterBar && rowIndex.filter !== undefined)
                     datasets.push({ label: TEXT_CONSTANTS.PHASE_FILTER,    phaseId: 'filter',    data: mkDataForRow(filterBar,rowIndex.filter), backgroundColor: 'rgba(255, 193, 7, 0.30)',   borderColor: 'rgba(255, 193, 7, 0.9)',   borderWidth: 1, borderRadius: 4, grouped: false });
                 if (groupBar && rowIndex.groupAgg !== undefined)
