@@ -11150,6 +11150,8 @@ size: 12
                                         authServTimeMs += servTime;
                                         break;
                                     case "IndexScan3":
+                                    case "PrimaryScan":
+                                    case "PrimaryScan3":
                                         indexServTimeMs += servTime;
                                         break;
                                     case "Fetch":
@@ -11908,6 +11910,8 @@ size: 12
                                     timeGroups[key].authorizeData.push({ execTime });
                                     break;
                                 case "IndexScan3":
+                                case "PrimaryScan":
+                                case "PrimaryScan3":
                                     timeGroups[key].indexScanData.push({ execTime });
                                     break;
                                 case "Fetch":
@@ -12272,6 +12276,8 @@ size: 12
                                     timeGroups[key].authorizeData.push({ execTime, servTime });
                                     break;
                                 case "IndexScan3":
+                                case "PrimaryScan":
+                                case "PrimaryScan3":
                                     timeGroups[key].indexScanData.push({ execTime, servTime });
                                     break;
                                 case "Fetch":
@@ -12619,6 +12625,8 @@ size: 12
                                         timeGroups[key].authServTimeCount++;
                                         break;
                                     case "IndexScan3":
+                                    case "PrimaryScan":
+                                    case "PrimaryScan3":
                                         timeGroups[key].indexServTimeSum += servTime;
                                         timeGroups[key].indexServTimeCount++;
                                         break;
@@ -12995,6 +13003,8 @@ size: 12
                                     timeGroups[key].authorizeData.push({ execTime });
                                     break;
                                 case "IndexScan3":
+                                case "PrimaryScan":
+                                case "PrimaryScan3":
                                     timeGroups[key].indexScanData.push({ execTime });
                                     break;
                                 case "Fetch":
