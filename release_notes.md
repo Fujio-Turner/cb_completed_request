@@ -1,3 +1,10 @@
+### Version 3.29.0 (November 12, 2025)
+- **Enhancement: Index Flow Query Aggregation** - Improved index flow tab query aggregation for better performance analysis (closes #236)
+- **Enhancement: Advanced Date Range Filters** - Added relative date range filters (last 1h, 24h, 7d, 30d) and custom date range picker (closes #235)
+- **Fix: Timeline Chart Performance** - Optimized timeline chart rendering for large datasets (closes #234)
+- **Fix: Copy Stats Button** - Fixed copy stats button functionality in dashboard (closes #232)
+- **Enhancement: Query Pattern Grouping** - Improved query pattern grouping algorithm (closes #229)
+
 ### Version 3.28.2 (November 6, 2025)
 - **Fix: Time Grouping Preserves Dashboard Charts** - Fixed duplicate chart creation when changing time grouping in Dashboard tab (closes #226)
 - **Fix: Time Grouping Preserves Analysis Charts** - Fixed duplicate chart creation when changing time grouping in Analysis tab (closes #227)
