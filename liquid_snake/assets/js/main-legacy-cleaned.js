@@ -2672,9 +2672,31 @@ if (window.TEXT_CONSTANTS) {
                 sortable: true,
                 sortType: 'numeric',
                 getValue: (request) => request.resultCount || 'N/A',
-                render: (value) => {
+                render: (value, td, rowData) => {
                     const num = Number(value);
-                    return isNaN(num) ? value : num.toLocaleString();
+                    const formattedValue = isNaN(num) ? value : num.toLocaleString();
+                    
+                    // Issue #236: Highlight discrepancies between resultCount and itemsFromIndexScan
+                    const indexScanValue = rowData.itemsFromIndexScan;
+                    const resultCountValue = value;
+                    
+                    // Check if we should apply highlighting
+                    const shouldHighlight = (
+                        // Both values must be numeric (not N/A)
+                        indexScanValue !== 'N/A' && 
+                        resultCountValue !== 'N/A' &&
+                        !isNaN(Number(indexScanValue)) &&
+                        !isNaN(Number(resultCountValue)) &&
+                        // Values must be different
+                        Number(indexScanValue) !== Number(resultCountValue)
+                    );
+                    
+                    if (shouldHighlight) {
+                        td.style.fontWeight = 'bold';
+                        td.style.color = '#FF8C00'; // Burnt orange (distinct from red)
+                    }
+                    
+                    return formattedValue;
                 }
             },
             {
