@@ -2725,15 +2725,15 @@ LET bid = CONCAT("", s.bucket_id, ""),
         function getLogLevel() {
             const urlParams = new URLSearchParams(window.location.search);
             
-            // Backward compatibility: ?debug=true sets level to 'debug'
-            if (urlParams.get('debug') === 'true') {
-                return 'debug';
-            }
-            
-            // New parameter: ?logLevel=trace|debug|info|warn|error
+            // Priority 1: Explicit logLevel parameter
             const logLevel = urlParams.get('logLevel');
             if (logLevel && LOG_LEVELS.hasOwnProperty(logLevel)) {
                 return logLevel;
+            }
+            
+            // Priority 2: Backward compatibility: ?debug=true sets level to 'debug'
+            if (urlParams.get('debug') === 'true') {
+                return 'debug';
             }
             
             // Default: info level (shows error, warn, info)
@@ -6877,14 +6877,49 @@ function renderQueryGroupPhaseTimesChart(group) {
             afterEvent(chart, args) {
                 const { inChartArea, event } = args;
                 if (chart.verticalLine) {
-                    chart.verticalLine.draw = inChartArea;
-                    chart.verticalLine.x = event ? event.x : args.x;
+                    const prevDraw = chart.verticalLine.draw;
+                    const prevX = chart.verticalLine.x;
+                    
+                    // Issue #234: Only update draw state if this chart is the source of the event
+                    // Don't override synced state from other charts
+                    if (event && event.type && event.native) {
+                        // Only update if mouse is actually over THIS chart
+                        const rect = chart.canvas.getBoundingClientRect();
+                        const isMouseOverThisChart = event.native.clientX >= rect.left && 
+                                                      event.native.clientX <= rect.right &&
+                                                      event.native.clientY >= rect.top && 
+                                                      event.native.clientY <= rect.bottom;
+                        
+                        if (isMouseOverThisChart) {
+                            chart.verticalLine.draw = inChartArea;
+                            chart.verticalLine.x = event ? event.x : args.x;
+                        }
+                    }
                     // Let Chart.js handle the redraw naturally, don't force it
                 }
             },
             afterDatasetsDraw(chart) {
-                if (!chart.verticalLine || !chart.verticalLine.draw || !chart.verticalLine.x) return;
-
+                if (!chart.verticalLine || !chart.verticalLine.draw || !chart.verticalLine.x) {
+                    return;
+                }
+                
+                const { ctx, chartArea: { top, bottom } } = chart;
+                ctx.save();
+                ctx.beginPath();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#007bff';
+                ctx.setLineDash([5, 5]);
+                ctx.moveTo(chart.verticalLine.x, top);
+                ctx.lineTo(chart.verticalLine.x, bottom);
+                ctx.stroke();
+                ctx.restore();
+            },
+            // Issue #234: Also draw on top layer to ensure visibility on all charts
+            afterDraw(chart) {
+                if (!chart.verticalLine || !chart.verticalLine.draw || !chart.verticalLine.x) {
+                    return;
+                }
+                
                 const { ctx, chartArea: { top, bottom } } = chart;
                 ctx.save();
                 ctx.beginPath();
@@ -6900,7 +6935,10 @@ function renderQueryGroupPhaseTimesChart(group) {
 
         // Function to sync crosshairs across all timeline charts
         function syncTimelineCharts(sourceEvent, activeChart) {
-            if (!activeChart || !activeChart.chartArea) return;
+            if (!activeChart || !activeChart.chartArea) {
+                Logger.debug(`🎯 syncTimelineCharts: No active chart or chartArea`);
+                return;
+            }
 
             const chartArea = activeChart.chartArea;
             const inChartArea = sourceEvent.x >= chartArea.left && sourceEvent.x <= chartArea.right &&
@@ -6918,6 +6956,8 @@ function renderQueryGroupPhaseTimesChart(group) {
                     !chart.isDestroyed;
             });
 
+
+
             // Update active chart's crosshair state without redrawing
             if (activeChart.verticalLine) {
                 activeChart.verticalLine.draw = inChartArea;
@@ -6931,7 +6971,6 @@ function renderQueryGroupPhaseTimesChart(group) {
                 if (!inChartArea) {
                     if (chart.verticalLine && chart.verticalLine.draw) {
                         chart.verticalLine.draw = false;
-                        requestAnimationFrame(() => chart.draw());
                     }
                     return;
                 }
@@ -6946,14 +6985,21 @@ function renderQueryGroupPhaseTimesChart(group) {
 
                         chart.verticalLine.draw = true;
                         chart.verticalLine.x = targetX;
-
-                        // Only redraw if position changed significantly or wasn't drawn before
-                        if (!wasDrawn || Math.abs(oldX - targetX) > 2) {
-                            requestAnimationFrame(() => chart.draw());
+                        
+                        // Issue #234: Trigger redraw only if not already pending
+                        if (!chart._stakeDrawPending) {
+                            chart._stakeDrawPending = true;
+                            requestAnimationFrame(() => {
+                                if (chart && !chart.isDestroyed) {
+                                    chart.draw();
+                                }
+                                chart._stakeDrawPending = false;
+                            });
                         }
                     }
                 } catch (error) {
                     // Silently handle errors
+                    Logger.debug(`🎯 syncTimelineCharts: Error syncing ${chart.canvas?.id}:`, error);
                     if (chart.verticalLine) {
                         chart.verticalLine.draw = false;
                     }
@@ -7004,7 +7050,10 @@ function renderQueryGroupPhaseTimesChart(group) {
 
         // Helper function to register a chart for crosshair synchronization
         function registerTimelineChart(chart, ctx) {
-            if (!chart || !ctx || !ctx.canvas) return;
+            if (!chart || !ctx || !ctx.canvas) {
+                Logger.debug(`🎯 registerTimelineChart: Invalid chart or context`);
+                return;
+            }
 
             // Add to timeline charts array for synchronization
             timelineCharts.push(chart);
@@ -25445,6 +25494,17 @@ LET bid = CONCAT("", s.bucket_id, ""),
             Logger.info(TEXT_CONSTANTS.INITIALIZING_ANALYZER);
             Logger.info(`📦 Version: ${APP_VERSION} (Updated: ${LAST_UPDATED})`);
             Logger.info(`${TEXT_CONSTANTS.FEATURES}`, getVersionInfo().features.join(", "));
+            
+            // Log active URL flags for debugging
+            const urlParams = new URLSearchParams(window.location.search);
+            const activeFlags = [];
+            if (urlParams.get('debug') === 'true') activeFlags.push('debug=true');
+            if (urlParams.get('logLevel')) activeFlags.push(`logLevel=${urlParams.get('logLevel')}`);
+            if (urlParams.get('dev') === 'true') activeFlags.push('dev=true');
+            if (urlParams.get('redact') !== null) activeFlags.push(`redact=${urlParams.get('redact')}`);
+            if (activeFlags.length > 0) {
+                Logger.info(`🔧 URL Flags: ${activeFlags.join(', ')} | Effective log level: ${getLogLevel()}`);
+            }
 
             // Initialize theme from localStorage
             

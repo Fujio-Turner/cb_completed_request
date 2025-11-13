@@ -6407,6 +6407,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                 // Destroy only Timeline tab charts before regenerating
                 destroyTimelineCharts();
 
+                // Clear vertical line state from all destroyed charts to prevent stake misalignment (Issue #234)
+                timelineCharts.length = 0;
+
                 // Regenerate all charts with new time grouping
                 generateFilterChart(requests);
                 generateTimelineChart(requests);

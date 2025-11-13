@@ -441,18 +441,27 @@ export const verticalLinePlugin = {
     id: 'verticalLine',
     afterInit(chart) {
         chart.verticalLine = { draw: false, x: 0 };
+        Logger.trace(`🎯 verticalLinePlugin.afterInit: Initialized for chart ${chart.canvas?.id || 'unknown'}`);
     },
     afterEvent(chart, args) {
         const { inChartArea, event } = args;
         if (chart.verticalLine) {
+            const prevDraw = chart.verticalLine.draw;
+            const prevX = chart.verticalLine.x;
             chart.verticalLine.draw = inChartArea;
             chart.verticalLine.x = event ? event.x : args.x;
+            
+            if (prevDraw !== inChartArea || Math.abs(prevX - chart.verticalLine.x) > 2) {
+                Logger.trace(`🎯 verticalLinePlugin.afterEvent: Chart ${chart.canvas?.id || 'unknown'} - draw=${inChartArea}, x=${chart.verticalLine.x}`);
+            }
             // Let Chart.js handle the redraw naturally, don't force it
         }
     },
     afterDatasetsDraw(chart) {
         if (!chart.verticalLine || !chart.verticalLine.draw || !chart.verticalLine.x) return;
 
+        Logger.trace(`🎯 verticalLinePlugin.afterDatasetsDraw: Drawing stake on ${chart.canvas?.id || 'unknown'} at x=${chart.verticalLine.x}`);
+        
         const { ctx, chartArea: { top, bottom } } = chart;
         ctx.save();
         ctx.beginPath();
