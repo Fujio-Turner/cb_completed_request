@@ -5884,6 +5884,11 @@ size: 12
 size: 12
                             }
                         },
+                        subtitle: {
+                            display: true,
+                            text: "Red line: 50/ms threshold",
+                            font: { size: 10 }
+                        },
                         legend: {
                             display: true,
                             position: 'top',
@@ -5969,6 +5974,7 @@ size: 12
                                 text: "Throughput (records/ms)",
                             },
                             beginAtZero: true,
+                            suggestedMax: 50, // Ensure threshold line at 50 is always visible (Issue #238)
                         },
                         y1: {
                             type: "linear",
@@ -5993,25 +5999,23 @@ size: 12
                     {
                         id: 'indexScanThresholdLine',
                         afterDatasetsDraw(chart) {
-                            const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+                            const { ctx, chartArea: { left, right, top, bottom }, scales: { y } } = chart;
                             
                             if (!y) return;
                             
                             // Draw threshold line at 50 records/ms
                             const yPosition = y.getPixelForValue(50);
                             
-                            // Only draw if the line is within the chart area
-                            if (yPosition < chart.chartArea.top || yPosition > chart.chartArea.bottom) {
-                                return;
-                            }
+                            // Clamp to chart area (Issue #238: always show threshold)
+                            const clampedY = Math.max(top, Math.min(bottom, yPosition));
                             
                             ctx.save();
                             ctx.beginPath();
                             ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
                             ctx.lineWidth = 2;
                             ctx.setLineDash([5, 5]);
-                            ctx.moveTo(left, yPosition);
-                            ctx.lineTo(right, yPosition);
+                            ctx.moveTo(left, clampedY);
+                            ctx.lineTo(right, clampedY);
                             ctx.stroke();
                             ctx.setLineDash([]);
                             
@@ -6019,7 +6023,7 @@ size: 12
                             ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
                             ctx.font = 'bold 11px Arial';
                             ctx.textAlign = 'right';
-                            ctx.fillText('50/ms threshold', right - 5, yPosition - 5);
+                            ctx.fillText('50/ms threshold', right - 5, clampedY - 5);
                             
                             ctx.restore();
                         }
@@ -6224,6 +6228,11 @@ size: 12
 size: 12
                             }
                         },
+                        subtitle: {
+                            display: true,
+                            text: "Red line: 5/ms threshold",
+                            font: { size: 10 }
+                        },
                         legend: {
                             display: true,
                             position: 'top',
@@ -6309,6 +6318,7 @@ size: 12
                                 text: "Throughput (records/ms)",
                             },
                             beginAtZero: true,
+                            suggestedMax: 5, // Ensure threshold line at 5 is always visible (Issue #238)
                         },
                         y1: {
                             type: "linear",
@@ -6333,25 +6343,23 @@ size: 12
                     {
                         id: 'docFetchThresholdLine',
                         afterDatasetsDraw(chart) {
-                            const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+                            const { ctx, chartArea: { left, right, top, bottom }, scales: { y } } = chart;
                             
                             if (!y) return;
                             
                             // Draw threshold line at 5 records/ms
                             const yPosition = y.getPixelForValue(5);
                             
-                            // Only draw if the line is within the chart area
-                            if (yPosition < chart.chartArea.top || yPosition > chart.chartArea.bottom) {
-                                return;
-                            }
+                            // Clamp to chart area (Issue #238: always show threshold)
+                            const clampedY = Math.max(top, Math.min(bottom, yPosition));
                             
                             ctx.save();
                             ctx.beginPath();
                             ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
                             ctx.lineWidth = 2;
                             ctx.setLineDash([5, 5]);
-                            ctx.moveTo(left, yPosition);
-                            ctx.lineTo(right, yPosition);
+                            ctx.moveTo(left, clampedY);
+                            ctx.lineTo(right, clampedY);
                             ctx.stroke();
                             ctx.setLineDash([]);
                             
@@ -6359,7 +6367,7 @@ size: 12
                             ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
                             ctx.font = 'bold 11px Arial';
                             ctx.textAlign = 'right';
-                            ctx.fillText('5/ms threshold', right - 5, yPosition - 5);
+                            ctx.fillText('5/ms threshold', right - 5, clampedY - 5);
                             
                             ctx.restore();
                         }
