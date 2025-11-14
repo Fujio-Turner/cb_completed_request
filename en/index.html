@@ -12830,6 +12830,10 @@ size: 12
                             if (node['~children']) {
                                 node['~children'].forEach(child => extractOperatorThroughput(child));
                             }
+                            // Handle IntersectScan's scans array (Issue #237)
+                            if (node.scans && Array.isArray(node.scans)) {
+                                node.scans.forEach(scan => extractOperatorThroughput(scan));
+                            }
                         };
                         
                         extractOperatorThroughput(plan);
