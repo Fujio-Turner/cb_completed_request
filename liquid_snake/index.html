@@ -501,19 +501,6 @@
 
         <!-- Insights Tab Content -->
         <div id="insights" data-report-section="insights">
-            <div
-                style="padding: 20px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; margin-bottom: 20px;">
-                <h2 style="color: #856404; margin-top: 0; font-size: 24px; font-weight: bold; text-align: center;">
-                    🚧 INSIGHTS IN DEVELOPMENT 🚧
-                </h2>
-                <p style="color: #856404; text-align: center; margin: 0;">
-                    Some insights show <span
-                        style="background: #28a745; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold;">LIVE</span>
-                    data, <span
-                        style="background: #007bff; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold;">BETA</span>
-                    insights are work in progress (might have false positives), others display placeholder content.
-                </p>
-            </div>
 
             <div style="background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
 
@@ -526,7 +513,7 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title collapsed" onclick="toggleInsight('inefficient-index-scans')"><span class="insight-indicator" id="inefficient-index-scans-indicator"></span>Inefficient
-                                Index Scans<span class="live-badge">Live</span></h4>
+                                Index Scans</h4>
                             <div class="insight-content collapsed" id="inefficient-index-scans-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="inefficient-index-scans-count">0 queries</span> (<span class="highlight-number" id="inefficient-index-scans-percent">0%</span>)
@@ -567,7 +554,7 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title collapsed" onclick="toggleInsight('slow-index-scan-times')"><span class="insight-indicator" id="slow-index-scan-times-indicator"></span>Slow Index Scan
-                                Times<span class="live-badge">Live</span></h4>
+                                Times</h4>
                             <div class="insight-content collapsed" id="slow-index-scan-times-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="total-indexes-count">0</span> total indexes:
@@ -606,7 +593,7 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title collapsed" onclick="toggleInsight('primary-index-over-usage')"><span class="insight-indicator" id="primary-index-over-usage-indicator"></span>Primary Index
-                                Over-Usage<span class="live-badge">Live</span></h4>
+                                Over-Usage</h4>
                             <div class="insight-content collapsed" id="primary-index-over-usage-content">
                                 <p class="insight-description">
                                     Primary indexes on avg are scanning <span class="highlight-number"
@@ -632,7 +619,7 @@
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('pagination-index-overfetch')"><span class="insight-indicator" id="pagination-index-overfetch-indicator"></span>ORDER BY / LIMIT / OFFSET Index Over-Scan<span class="live-badge">Live</span></h4>
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('pagination-index-overfetch')"><span class="insight-indicator" id="pagination-index-overfetch-indicator"></span>ORDER BY / LIMIT / OFFSET Index Over-Scan</h4>
                             <div class="insight-content collapsed" id="pagination-index-overfetch-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="pagination-overfetch-count">0 queries</span> (<span class="highlight-number" id="pagination-overfetch-percent">0%</span>) with `ORDER BY` + `LIMIT ` + `OFFSET ` scanned an Avg of <span id="pagination-overfetch-avg-items">0</span> items from the index(es).
@@ -675,7 +662,7 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title collapsed" onclick="toggleInsight('high-kernel-time-queries')"><span class="insight-indicator" id="high-kernel-time-queries-indicator"></span>High Kernel
-                                Time in Queries<span class="beta-badge">Beta</span></h4>
+                                Time in Queries</h4>
                             <div class="insight-content collapsed" id="high-kernel-time-queries-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="high-kernel-time-queries-count">0 queries</span> (<span class="highlight-number" id="high-kernel-time-queries-percent">0%</span>)
@@ -718,7 +705,7 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title collapsed" onclick="toggleInsight('high-memory-usage')"><span class="insight-indicator" id="high-memory-usage-indicator"></span>High Memory Usage
-                                Detected<span class="live-badge">Live</span></h4>
+                                Detected</h4>
                             <div class="insight-content collapsed" id="high-memory-usage-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="high-memory-count">0 queries</span> (<span class="highlight-number" id="high-memory-percent">0%</span>) are using avg
@@ -755,7 +742,7 @@
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('slow-parse-plan-times')"><span class="insight-indicator" id="slow-parse-plan-times-indicator"></span>Slow Parse/Plan Times<span class="live-badge">Live</span></h4>
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('slow-parse-plan-times')"><span class="insight-indicator" id="slow-parse-plan-times-indicator"></span>Slow Parse/Plan Times</h4>
                             <div class="insight-content collapsed" id="slow-parse-plan-times-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="slow-parse-plan-count">0 queries</span> (<span class="highlight-number" id="slow-parse-plan-percent">0%</span>) have parse or plan times greater than 1ms with avg parse: <span class="highlight-number" id="avg-parse-time">0ms</span> and avg plan: <span class="highlight-number" id="avg-plan-time">0ms</span>, which may indicate high CPU utilization or kernel time wait issues.
@@ -791,7 +778,7 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title collapsed" onclick="toggleInsight('slow-use-key-queries')"><span class="insight-indicator" id="slow-use-key-queries-indicator"></span>Slow USE KEY
-                                Queries<span class="live-badge">Live</span></h4>
+                                Queries</h4>
                             <div class="insight-content collapsed" id="slow-use-key-queries-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="slow-use-keys-count">0 USE KEY queries</span> (<span class="highlight-number" id="slow-use-keys-percent">0%</span>)
@@ -837,7 +824,7 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title collapsed" onclick="toggleInsight('missing-where-clauses')"><span class="insight-indicator" id="missing-where-clauses-indicator"></span>Missing WHERE
-                                Clauses<span class="live-badge">Live</span></h4>
+                                Clauses</h4>
                             <div class="insight-content collapsed" id="missing-where-clauses-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="missing-where-count">0 queries</span> (<span
@@ -866,7 +853,7 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title collapsed" onclick="toggleInsight('complex-join-operations')"><span class="insight-indicator" id="complex-join-operations-indicator"></span>Complex JOIN
-                                Operations<span class="beta-badge">Beta</span></h4>
+                                Operations</h4>
                             <div class="insight-content collapsed" id="complex-join-operations-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="complex-join-count">0 queries</span> (<span class="highlight-number" id="complex-join-percent">0%</span>) with JOIN operations detected, with <span class="highlight-number" id="complex-join-flagged-count">0</span> (<span class="highlight-number" id="complex-join-flagged-percent">0%</span>) flagged as complex. Average JOIN phase time: <span class="highlight-number" id="complex-join-avg-time">0s</span>.
@@ -927,7 +914,7 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title collapsed" onclick="toggleInsight('inefficient-like-operations')"><span class="insight-indicator" id="inefficient-like-operations-indicator"></span>Inefficient
-                                LIKE Operations<span class="live-badge">Live</span></h4>
+                                LIKE Operations</h4>
                             <div class="insight-content collapsed" id="inefficient-like-operations-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="inefficient-like-count">0 queries</span> (<span class="highlight-number" id="inefficient-like-percent">0%</span>) use LIKE
@@ -955,7 +942,7 @@
                         </div>
 
                         <div class="insight-item">
-                            <h4 class="insight-title collapsed" onclick="toggleInsight('select-star-usage')"><span class="insight-indicator" id="select-star-usage-indicator"></span>SELECT * Usage<span class="live-badge">Live</span></h4>
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('select-star-usage')"><span class="insight-indicator" id="select-star-usage-indicator"></span>SELECT * Usage</h4>
                             <div class="insight-content collapsed" id="select-star-usage-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="select-star-count">0 queries</span> (<span class="highlight-number" id="select-star-percent">0%</span>) use SELECT * which returns entire documents and can increase network I/O and memory. Prefer selecting only needed fields.
@@ -990,7 +977,7 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title collapsed" onclick="toggleInsight('large-payload-streaming')"><span class="insight-indicator" id="large-payload-streaming-indicator"></span>Large Payload
-                                Streaming<span class="live-badge">Live</span></h4>
+                                Streaming</h4>
                             <div class="insight-content collapsed" id="large-payload-streaming-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="large-payload-count">0 queries</span> (<span class="highlight-number" id="large-payload-percent">0%</span>) with avg
@@ -1028,7 +1015,7 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title collapsed" onclick="toggleInsight('large-result-set-queries')"><span class="insight-indicator" id="large-result-set-queries-indicator"></span>Large Result
-                                Set Queries<span class="live-badge">Live</span></h4>
+                                Set Queries</h4>
                             <div class="insight-content collapsed" id="large-result-set-queries-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="large-results-count">0 queries</span> (<span class="highlight-number" id="large-results-percent">0%</span>) return
@@ -1066,7 +1053,7 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title collapsed" onclick="toggleInsight('timeout-prone-queries')"><span class="insight-indicator" id="timeout-prone-queries-indicator"></span>Timeout-Prone
-                                Queries<span class="beta-badge">Beta</span></h4>
+                                Queries</h4>
                             <div class="insight-content collapsed" id="timeout-prone-queries-content">
 
                             </div>
@@ -1074,7 +1061,7 @@
 
                         <div class="insight-item">
                             <h4 class="insight-title collapsed" onclick="toggleInsight('concurrent-query-conflicts')"><span class="insight-indicator" id="concurrent-query-conflicts-indicator"></span>Concurrent
-                                Query Conflicts<span class="beta-badge">Beta</span></h4>
+                                Query Conflicts</h4>
                             <div class="insight-content collapsed" id="concurrent-query-conflicts-content">
                                 <p class="insight-description">
                                     <span class="highlight-number" id="concurrent-conflicts-count">0 queries</span> (<span class="highlight-number" id="concurrent-conflicts-percent">0%</span>) show evidence of resource contention with service-level performance degradation.
