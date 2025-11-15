@@ -2,8 +2,8 @@
 <html lang="en">
 <!--
     Couchbase Query Analyzer
-    Version: 3.29.0
-    Last Updated: 2025-11-12
+    Version: 3.29.1
+    Last Updated: 2025-11-15
     
     🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
     This guide covers all HTML elements, JavaScript variables, and documentation files that need updating.
@@ -18,9 +18,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.29.0" />
-    <meta name="last-updated" content="2025-11-12" />
-    <title>Query Analyzer v3.29.0</title>
+    <meta name="version" content="3.29.1" />
+    <meta name="last-updated" content="2025-11-15" />
+    <title>Query Analyzer v3.29.1</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/themes/base/jquery-ui.min.css" integrity="sha512-TFee0335YRJoyiqz8hA8KV3P0tXa5CpRBSoM0Wnkn7JoJx1kaq1yXL/rb8YFpWXkMOjRcv5txv+C6UluttluCQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -617,7 +617,7 @@ if (window.TEXT_CONSTANTS) {
 <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v3.29.0
+        v3.29.1
     </div>
 
     <!-- Bug report link (bottom-right) -->
@@ -7202,14 +7202,25 @@ function renderQueryGroupPhaseTimesChart(group) {
             
             // Use IntersectionObserver for lazy loading
             if ('IntersectionObserver' in window) {
+                let timeoutId = null;
+                let hasBeenCreated = false;
+                
+                const createChart = (sourcePriority) => {
+                    if (hasBeenCreated) return; // Prevent duplicate creation
+                    hasBeenCreated = true;
+                    
+                    enqueueChartTask(chartName, () => {
+                        createFn();
+                        attachHandlersToChart(canvasId);
+                    }, sourcePriority);
+                };
+                
                 const observer = new IntersectionObserver((entries) => {
                     if (entries.some(e => e.isIntersecting)) {
                         observer.disconnect();
+                        if (timeoutId) clearTimeout(timeoutId); // Cancel background load
                         // Visible charts get higher priority (base priority + 10)
-                        enqueueChartTask(chartName, () => {
-                            createFn();
-                            attachHandlersToChart(canvasId);
-                        }, priority + 10);
+                        createChart(priority + 10);
                     }
                 }, { 
                     root: null, 
@@ -7220,14 +7231,9 @@ function renderQueryGroupPhaseTimesChart(group) {
                 
                 // Also enqueue with lower priority for background loading
                 // This ensures charts load even if user doesn't scroll
-                setTimeout(() => {
-                    if (observer) {
-                        enqueueChartTask(chartName, () => {
-                            observer.disconnect();
-                            createFn();
-                            attachHandlersToChart(canvasId);
-                        }, priority);
-                    }
+                timeoutId = setTimeout(() => {
+                    observer.disconnect();
+                    createChart(priority);
                 }, 5000); // Background load after 5 seconds
             } else {
                 // Fallback: enqueue immediately if IntersectionObserver not supported
@@ -24646,8 +24652,8 @@ function generateElapsedTimeChart(requests) {
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = "3.29.0";
-const LAST_UPDATED = "2025-11-12";
+        const APP_VERSION = "3.29.1";
+        const LAST_UPDATED = "2025-11-15";
 
         // Timezone management - initialize early to avoid undefined errors
         let detectedTimezone = "UTC"; // Timezone detected from data

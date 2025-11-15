@@ -1,3 +1,8 @@
+### Version 3.29.1 (November 15, 2025)
+- **Fix: Chart Duplication Race Condition** - Fixed duplicate chart creation when changing time grouping, particularly in Firefox (closes #226, #239)
+- **Fix: Chart Loading Performance** - Prevented race condition between IntersectionObserver and setTimeout in lazy chart creation (closes #238)
+- **Enhancement: Chart Creation Optimization** - Added hasBeenCreated flag to ensure each chart is created exactly once per loading cycle (closes #237)
+
 ### Version 3.29.0 (November 12, 2025)
 - **Enhancement: Index Flow Query Aggregation** - Improved index flow tab query aggregation for better performance analysis (closes #236)
 - **Enhancement: Advanced Date Range Filters** - Added relative date range filters (last 1h, 24h, 7d, 30d) and custom date range picker (closes #235)
