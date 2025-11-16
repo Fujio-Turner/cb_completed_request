@@ -47,6 +47,11 @@ def get_couchbase_connection(config):
     """Get or create Couchbase cluster connection"""
     global _cluster, _config
     
+    # Validate credentials before attempting connection
+    if not config.get('username') or not config.get('password'):
+        ic("⚠️ Missing credentials - username or password is empty")
+        return None
+    
     # If config changed or no connection, create new one
     if _config != config or _cluster is None:
         if _cluster:
@@ -56,14 +61,27 @@ def get_couchbase_connection(config):
                 pass
         
         try:
+            # Parse URL to extract hostname/IP (strip protocol and port since Couchbase SDK uses its own ports)
+            url_cleaned = config['url'].replace('http://', '').replace('https://', '')
+            hostname = url_cleaned.split(':')[0]  # Get hostname/IP only
+            connection_string = f"couchbase://{hostname}"
+            
+            ic(f"🔌 Connecting to Couchbase: {connection_string}", config['username'])
+            
             _cluster = Cluster(
-                f"couchbase://{config['url'].replace('http://', '').replace('https://', '').split(':')[0]}",
+                connection_string,
                 ClusterOptions(PasswordAuthenticator(config['username'], config['password']))
             )
+            
+            # Wait for cluster to be ready (this will raise exception if auth fails)
+            from datetime import timedelta
+            _cluster.wait_until_ready(timedelta(seconds=10))
+            
             _config = config
+            ic("✅ Cluster connection established successfully")
             return _cluster
         except Exception as e:
-            ic("❌ Failed to connect to Couchbase", e)
+            ic("❌ Failed to connect to Couchbase", connection_string, e)
             return None
     
     return _cluster

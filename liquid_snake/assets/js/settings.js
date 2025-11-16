@@ -217,7 +217,7 @@ function renderClusterList() {
             
             <div class="cluster-field">
                 <label>Type:</label>
-                <select id="cluster-type" onchange="updateClusterField('type', this.value)">
+                <select id="cluster-type" onchange="updateClusterType(this.value)">
                     ${clusterTypes.map(type => 
                         `<option value="${type}" ${cluster.type === type ? 'selected' : ''}>${type}</option>`
                     ).join('')}
@@ -258,6 +258,30 @@ function renderClusterList() {
         </div>
     `;
 }
+
+/**
+ * Update cluster type and auto-fill URL template
+ */
+window.updateClusterType = async function(type) {
+    Logger.debug(`Updating cluster type to: ${type}`);
+    const config = await loadConfig();
+    
+    if (config.cluster) {
+        config.cluster.type = type;
+        
+        // Auto-fill URL based on cluster type
+        if (type === 'Self-Hosted') {
+            config.cluster.url = 'http://localhost:8091';
+        } else if (type === 'Capella (DBaaS)') {
+            config.cluster.url = 'couchbases://cb.your-cluster.cloud.couchbase.com';
+        }
+        
+        await saveConfig(config);
+        
+        // Refresh the UI to show updated URL
+        document.getElementById('cluster-url').value = config.cluster.url;
+    }
+};
 
 /**
  * Update cluster field value

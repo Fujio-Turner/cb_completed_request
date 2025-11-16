@@ -41,14 +41,13 @@ export async function loadConfig() {
 function getDefaultConfig() {
     return {
         cluster: {
-            name: 'My Couchbase Cluster',
-            url: 'localhost',
+            name: 'Localhost Cluster',
+            url: 'http://localhost:8091',
             username: 'Administrator',
-            password: '',
-            type: 'Localhost'
+            password: 'password',
+            type: 'Self-Hosted'
         },
         clusterTypes: [
-            'Localhost',
             'Self-Hosted',
             'Capella (DBaaS)'
         ],

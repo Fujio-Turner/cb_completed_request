@@ -3,7 +3,7 @@
     "name": "My Couchbase Cluster",
     "url": "http://localhost:8091",
     "username": "Administrator",
-    "password": "",
+    "password": "password",
     "type": "Localhost"
   },
   "clusterTypes": [
