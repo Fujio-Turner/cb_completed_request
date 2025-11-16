@@ -171,7 +171,7 @@ export async function saveAnalyzerData(requestId, analysisData) {
                 data: {
                     ...analysisData,
                     savedAt: new Date().toISOString(),
-                    version: '3.28.2'
+                    version: '4.0.0-dev'
                 }
             })
         });

@@ -9,7 +9,7 @@ import { Logger, TEXT_CONSTANTS } from './base.js';
 // Get app version info
 export function getVersionInfo() {
     return {
-        version: "3.28.2",
+        version: "4.0.0-dev",
         lastUpdated: "2025-11-06",
         features: [
             "Global system query exclusion",

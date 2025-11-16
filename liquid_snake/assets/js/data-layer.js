@@ -77,12 +77,54 @@ export function clearCaches() {
     Logger.debug(TEXT_CONSTANTS.ALL_CACHES_CLEARED);
 }
 
+/**
+ * Calculate approximate memory size of cached data in MB
+ */
+function calculateCacheMemorySize() {
+    let totalBytes = 0;
+    
+    // Estimate parseTimeCache size (key: string, value: number)
+    parseTimeCache.forEach((value, key) => {
+        totalBytes += key.length * 2; // UTF-16 string (2 bytes per char)
+        totalBytes += 8; // Number value (8 bytes for double)
+    });
+    
+    // Estimate normalizeStatementCache size (key: string, value: string)
+    normalizeStatementCache.forEach((value, key) => {
+        totalBytes += key.length * 2;
+        totalBytes += value.length * 2;
+    });
+    
+    // Estimate timestampRoundingCache size (key: string, value: Date)
+    timestampRoundingCache.forEach((value, key) => {
+        totalBytes += key.length * 2;
+        totalBytes += 16; // Date object approximation
+    });
+    
+    // Estimate originalRequests array (rough estimate)
+    if (originalRequests.length > 0) {
+        const sampleSize = JSON.stringify(originalRequests[0]).length;
+        totalBytes += sampleSize * originalRequests.length;
+    }
+    
+    // Estimate statementStore and analysisStatementStore
+    const storeSize = JSON.stringify(statementStore).length + JSON.stringify(analysisStatementStore).length;
+    totalBytes += storeSize * 2; // UTF-16
+    
+    const megabytes = (totalBytes / (1024 * 1024)).toFixed(2);
+    return { totalBytes, megabytes };
+}
+
 export function logCacheStats() {
     const parsePercent = ((parseTimeCache.size / CACHE_LIMITS.parseTime) * 100).toFixed(1);
     const normalizePercent = ((normalizeStatementCache.size / CACHE_LIMITS.normalizeStatement) * 100).toFixed(1);
     const timestampPercent = ((timestampRoundingCache.size / CACHE_LIMITS.timestampRounding) * 100).toFixed(1);
     
     Logger.debug(`Cache stats - parseTime: ${parseTimeCache.size}/${CACHE_LIMITS.parseTime} (${parsePercent}%), normalizeStatement: ${normalizeStatementCache.size}/${CACHE_LIMITS.normalizeStatement} (${normalizePercent}%), timestampRounding: ${timestampRoundingCache.size}/${CACHE_LIMITS.timestampRounding} (${timestampPercent}%)`);
+    
+    // Calculate and log memory usage (only in debug mode)
+    const { totalBytes, megabytes } = calculateCacheMemorySize();
+    Logger.debug(`💾 Cache memory usage: ${megabytes} MB (${totalBytes.toLocaleString()} bytes) | Data stores: ${originalRequests.length} requests, ${Object.keys(statementStore).length} statement groups, ${Object.keys(analysisStatementStore).length} analysis groups`);
 }
 
 // ============================================================

@@ -464,7 +464,7 @@ export function formatTimestamp(dateInput, format = "YYYY-MM-DD HH:MM:SS.sssZ") 
 
 // Log initialization info
 Logger.info(TEXT_CONSTANTS.INITIALIZING_ANALYZER);
-Logger.info(`📦 Version: 3.28.2 (Updated: 2025-11-06)`);
+Logger.info(`📦 Version: 4.0.0-dev (Updated: 2025-11-06)`);
 Logger.info(`🔧 Features: Global system query exclusion, Enhanced accessibility (ARIA), Chart performance optimizations, Time range filtering with buffers, Index/Query Flow analysis, Toast notification system`);
 
 // Log URL flags status

@@ -1047,6 +1047,37 @@ if (window.TEXT_CONSTANTS) {
             const timestampPercent = ((timestampRoundingCache.size / CACHE_LIMITS.timestampRounding) * 100).toFixed(1);
             
             Logger.debug(`Cache stats - parseTime: ${parseTimeCache.size}/${CACHE_LIMITS.parseTime} (${parsePercent}%), normalizeStatement: ${normalizeStatementCache.size}/${CACHE_LIMITS.normalizeStatement} (${normalizePercent}%), timestampRounding: ${timestampRoundingCache.size}/${CACHE_LIMITS.timestampRounding} (${timestampPercent}%)`);
+            
+            // Calculate approximate memory size
+            let totalBytes = 0;
+            
+            // parseTimeCache (key: string, value: number)
+            parseTimeCache.forEach((value, key) => {
+                totalBytes += key.length * 2 + 8;
+            });
+            
+            // normalizeStatementCache (key: string, value: string)
+            normalizeStatementCache.forEach((value, key) => {
+                totalBytes += (key.length + value.length) * 2;
+            });
+            
+            // timestampRoundingCache (key: string, value: Date)
+            timestampRoundingCache.forEach((value, key) => {
+                totalBytes += key.length * 2 + 16;
+            });
+            
+            // originalRequests array
+            if (originalRequests.length > 0) {
+                const sampleSize = JSON.stringify(originalRequests[0]).length;
+                totalBytes += sampleSize * originalRequests.length;
+            }
+            
+            // statementStore and analysisStatementStore
+            const storeSize = JSON.stringify(statementStore).length + JSON.stringify(analysisStatementStore).length;
+            totalBytes += storeSize * 2;
+            
+            const megabytes = (totalBytes / (1024 * 1024)).toFixed(2);
+            Logger.debug(`💾 Cache memory usage: ${megabytes} MB (${totalBytes.toLocaleString()} bytes) | Data stores: ${originalRequests.length} requests, ${Object.keys(statementStore).length} statement groups, ${Object.keys(analysisStatementStore).length} analysis groups`);
         }
 
         // Recursively extract operators from the plan
@@ -18815,7 +18846,6 @@ function generateElapsedTimeChart(requests) {
                             // All batches processed
                             const parseEndTime = performance.now();
                             Logger.info(`${TEXT_CONSTANTS.PARSE_PERFORMANCE} ${Math.round(parseEndTime - parseStartTime)}${TEXT_CONSTANTS.MS_FOR} ${processedRequests.length} ${TEXT_CONSTANTS.REQUESTS} (${skippedCount} ${TEXT_CONSTANTS.FILTERED_OUT_EARLY})`);
-                            logCacheStats();
                             finishProcessing(processedRequests);
                         }
                     }
@@ -19136,6 +19166,9 @@ function generateElapsedTimeChart(requests) {
 
                 // Initialize username autocomplete with current filtered requests
                 initializeUsernameAutocomplete(filteredRequests);
+
+                // Log cache stats now that data stores are populated
+                logCacheStats();
 
                 // Also parse index data if available
                 parseIndexJSON();
@@ -22302,7 +22335,7 @@ function generateElapsedTimeChart(requests) {
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = "3.28.2";
+        const APP_VERSION = "4.0.0-dev";
 const LAST_UPDATED = "2025-11-06";
 
         // Timezone management - initialize early to avoid undefined errors

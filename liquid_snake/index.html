@@ -375,6 +375,10 @@
                 <a href="#report-maker" aria-controls="report-maker" tabindex="0">Report Maker <span
                         class="beta-badge">Beta</span></a>
             </li>
+            <li role="tab">
+                <a href="#ai-analyzer" aria-controls="ai-analyzer" tabindex="0">AI Analyzer <span
+                        class="beta-badge">Beta</span></a>
+            </li>
         </ul>
 
         <!-- Dashboard Tab Content -->
@@ -1809,6 +1813,146 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <div style="margin-top:16px; padding:12px; background:#f8f9fa; border-radius:8px; border:2px dashed #007acc; max-width:450px;">
                     <div style="font-size:12px; font-weight:600; color:#007acc; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Example</div>
                     <img src="https://cb.fuj.io/img/sql_string_filter_and_exclude_system_example.png" alt="Report Maker filters and exclude system example" style="max-width:75%; height:75px; border:2px solid #007acc; border-radius:6px; box-shadow:0 4px 12px rgba(0,122,204,0.15); display:block;" loading="lazy">
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Analyzer Tab Content -->
+        <div id="ai-analyzer" data-report-section="ai-analyzer" style="padding: 20px;">
+            <!-- AI Analyzer banner -->
+            <div style="padding: 16px; background: #e7f3ff; border: 2px solid #2196f3; border-radius: 8px; margin: 0 0 20px;">
+                <h3 style="color: #1565c0; margin: 0 0 6px 0; font-size: 18px; font-weight: bold; text-align: center;">🤖 AI-POWERED QUERY ANALYSIS 🤖</h3>
+                <p style="color: #1565c0; text-align: center; margin: 0; font-size: 13px;">
+                    Send your query data to AI for intelligent analysis and recommendations. Configure your AI provider in <strong>Settings</strong>.
+                </p>
+            </div>
+
+            <!-- AI Service Selection -->
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                <h3 style="margin:0 0 12px 0;">AI Service Provider</h3>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <label style="font-weight: 600;">Selected Provider:</label>
+                    <select id="ai-provider-select" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
+                        <option value="">-- Select AI Provider --</option>
+                        <option value="openai">OpenAI (GPT-4)</option>
+                        <option value="anthropic">Anthropic (Claude)</option>
+                        <option value="grok">Grok (xAI)</option>
+                    </select>
+                    <span style="color: #666; font-size: 0.9em;">(Configure API keys in Settings)</span>
+                </div>
+            </div>
+
+            <!-- Data Selection -->
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                <h3 style="margin:0 0 12px 0;">Data to Analyze</h3>
+                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    <label><input type="checkbox" id="ai-include-dashboard" checked> Dashboard Metrics</label>
+                    <label><input type="checkbox" id="ai-include-insights" checked> Insights Analysis</label>
+                    <label><input type="checkbox" id="ai-include-query-groups" checked> Query Groups Data</label>
+                    <label><input type="checkbox" id="ai-include-indexes"> Indexes Data <span style="color: #999;">(if populated)</span></label>
+                </div>
+            </div>
+
+            <!-- Analysis Options -->
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                <h3 style="margin:0 0 12px 0;">Analysis Options</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="ai-obfuscate-data" checked>
+                        <span>Obfuscate sensitive data (bucket names, collection names, etc.) - <a href="https://github.com/Fujio-Turner/cb_completed_request/issues/200" target="_blank" style="color: #2196f3;">#200</a></span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="ai-store-analysis">
+                        <span>Store analysis results back to Couchbase (in <code>cb_tools.query.analyzer</code>)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- User Prompt -->
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                <h3 style="margin:0 0 12px 0;">Custom Analysis Prompt</h3>
+                <textarea id="ai-user-prompt" 
+                    placeholder="Example: 'AI, could you analyze time between query execution and result delivery for all queries that failed or timed out? Please identify patterns and suggest optimizations.'"
+                    style="width: 100%; height: 120px; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical;"></textarea>
+                <div style="margin-top: 8px; color: #666; font-size: 0.85em;">
+                    💡 Tip: Be specific about what you want the AI to analyze. You can ask about performance patterns, optimization suggestions, or specific query characteristics.
+                </div>
+            </div>
+
+            <!-- Analyze Button -->
+            <div style="margin-bottom: 30px;">
+                <button class="btn-standard" style="background: #2196f3; color: white; padding: 12px 24px; font-size: 16px; font-weight: bold;">
+                    🚀 Analyze with AI
+                </button>
+                <span style="margin-left: 12px; color: #666; font-size: 0.9em;">Estimated cost: $0.05 - $0.25 per analysis</span>
+            </div>
+
+            <!-- Analysis History -->
+            <div class="background-f5 padding-15 border-radius-5 border-1-ddd">
+                <h3 style="margin:0 0 12px 0;">Previous Analyses</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                            <tr>
+                                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Timestamp</th>
+                                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Provider</th>
+                                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Prompt</th>
+                                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Data Included</th>
+                                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Status</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dummy Row 1 -->
+                            <tr style="border-bottom: 1px solid #dee2e6;">
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">2025-11-16 09:45:23</td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">
+                                    <span style="background: #10a37f; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">OpenAI</span>
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">Analyze slow queries and suggest index optimizations</td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">Dashboard, Insights, Query Groups</td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">
+                                    <span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">✓ Complete</span>
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">
+                                    <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;">View</button>
+                                    <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;">Export</button>
+                                </td>
+                            </tr>
+                            <!-- Dummy Row 2 -->
+                            <tr style="border-bottom: 1px solid #dee2e6;">
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">2025-11-15 14:22:11</td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">
+                                    <span style="background: #d97706; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Anthropic</span>
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">Identify queries with high memory usage</td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">Dashboard, Query Groups</td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">
+                                    <span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">✓ Complete</span>
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">
+                                    <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;">View</button>
+                                    <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;">Export</button>
+                                </td>
+                            </tr>
+                            <!-- Dummy Row 3 -->
+                            <tr style="border-bottom: 1px solid #dee2e6;">
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">2025-11-14 10:08:45</td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">
+                                    <span style="background: #000000; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Grok</span>
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">Compare query performance before and after index changes</td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">All Data (obfuscated)</td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6;">
+                                    <span style="background: #dc3545; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">✗ Failed</span>
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">
+                                    <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;">Retry</button>
+                                    <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;">Delete</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
