@@ -14063,6 +14063,12 @@ size: 12
             Logger.debug(`[generateDashboardCharts] About to call updateInsights`);
             updateInsights(requests);
             Logger.debug(`[generateDashboardCharts] Completed updateInsights`);
+            
+            // Build Index/Query Flow data in background for AI analyzer
+            Logger.debug(`[generateDashboardCharts] Building flow data for AI`);
+            if (typeof processIndexQueryData === 'function') {
+                processIndexQueryData(requests);
+            }
         }
 
         // Check if a query uses primary index by analyzing the plan (optimized with cache)
@@ -20230,6 +20236,7 @@ function generateElapsedTimeChart(requests) {
             indexes: new Map(),
             queries: new Map(),
             connections: new Map(),
+            mermaidDiagram: ''  // Cached Mermaid diagram text
         };
 
         // Clear all Index/Query Flow content
@@ -20415,7 +20422,74 @@ function generateElapsedTimeChart(requests) {
             if (indexCountEl) indexCountEl.textContent = uniqueIndexNames.size;
             if (queryCountEl) queryCountEl.textContent = queryGroups.size;
 
+            // Generate and cache Mermaid diagram for AI analyzer
+            indexQueryFlowData.mermaidDiagram = generateMermaidDiagramFromFlow();
+            Logger.debug(`[Flow] ✅ Mermaid diagram cached: ${indexQueryFlowData.connections.size} connections`);
 
+        }
+        
+        /**
+         * Generate Mermaid diagram from flow data (called during flow creation)
+         */
+        function generateMermaidDiagramFromFlow() {
+            Logger.debug(`[Flow] 🎨 generateMermaidDiagramFromFlow() called`);
+            Logger.trace(`[Flow] Connections size: ${indexQueryFlowData?.connections?.size || 0}`);
+            
+            if (!indexQueryFlowData?.connections?.size) {
+                Logger.warn('[Flow] No connections available for Mermaid generation');
+                return 'graph LR\n  A[No flow connections]';
+            }
+            
+            Logger.debug(`[Flow] Building Mermaid from ${indexQueryFlowData.connections.size} connections`);
+            
+            const lines = ['graph LR'];
+            const indexNodeIds = new Map();
+            const queryNodeIds = new Map();
+            let idxCounter = 0;
+            let qryCounter = 0;
+            
+            indexQueryFlowData.connections.forEach(conn => {
+                const indexKey = conn.indexKey || conn.indexName || 'unknown';
+                const queryStmt = conn.queryStatement || '';
+                
+                // Create index node
+                let indexId = indexNodeIds.get(indexKey);
+                if (!indexId) {
+                    indexId = `idx${++idxCounter}`;
+                    indexNodeIds.set(indexKey, indexId);
+                    
+                    // Extract just the index name and bucket.scope.collection
+                    let indexName = conn.indexName || 'index';
+                    let bsc = conn.bucketScopeCollection || '';
+                    
+                    // Simple single-line label (Mermaid doesn't support HTML)
+                    lines.push(`  ${indexId}["${indexName} on ${bsc}"]`);
+                }
+                
+                // Create query node
+                let queryId = queryNodeIds.get(queryStmt);
+                if (!queryId) {
+                    queryId = `q${++qryCounter}`;
+                    queryNodeIds.set(queryStmt, queryId);
+                    
+                    const queryLabel = queryStmt.slice(0, 70).replace(/"/g, "'").replace(/\n/g, ' ');
+                    lines.push(`  ${queryId}("${queryLabel}...")`);
+                }
+                
+                // Create edge with count
+                const edgeLabel = conn.count ? `${conn.count}x` : '';
+                if (edgeLabel) {
+                    lines.push(`  ${indexId} -->|${edgeLabel}| ${queryId}`);
+                } else {
+                    lines.push(`  ${indexId} --> ${queryId}`);
+                }
+            });
+            
+            const diagram = lines.join('\n');
+            Logger.info(`[Flow] ✅ Mermaid diagram generated: ${indexNodeIds.size} indexes, ${queryNodeIds.size} queries, ${lines.length} lines`);
+            Logger.trace(`[Flow] Mermaid preview:\n${diagram.substring(0, 500)}...`);
+            
+            return diagram;
         }
 
         // Helper function to resolve #primary to actual primary index name
@@ -25236,3 +25310,408 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 label.textContent = TEXT_CONSTANTS.TIMEZONE_LABEL;
             }
         });
+
+        // ============================================
+        // AI Analyzer Data Gathering Functions
+        // ============================================
+
+        /**
+         * Extract data from Chart.js instances
+         */
+        function extractChartData(chart, chartType = 'pie') {
+            if (!chart || !chart.data) return null;
+            
+            const labels = chart.data.labels || [];
+            const datasets = chart.data.datasets || [];
+            const data = datasets[0]?.data || [];
+            
+            return labels.map((label, i) => ({
+                label: label,
+                value: data[i] || 0
+            }));
+        }
+
+        /**
+         * Gather dashboard statistics from charts and tables
+         */
+        function gatherDashboardStats() {
+            Logger.debug('[AI] 📊 Gathering dashboard statistics from charts');
+            
+            const stats = {
+                total_queries: everyQueryData?.length || 0,
+                total_patterns: analysisData?.length || 0,
+                charts: {}
+            };
+            
+            // Extract data from all dashboard charts
+            if (window.primaryScanChart) {
+                stats.charts.index_type_usage = extractChartData(window.primaryScanChart);
+                Logger.trace('[AI] Extracted index_type_usage chart');
+            }
+            
+            if (window.stateChart) {
+                stats.charts.query_state = extractChartData(window.stateChart);
+                Logger.trace('[AI] Extracted query_state chart');
+            }
+            
+            if (window.statementTypeChart) {
+                stats.charts.statement_type = extractChartData(window.statementTypeChart);
+                Logger.trace('[AI] Extracted statement_type chart');
+            }
+            
+            if (window.scanConsistencyChart) {
+                stats.charts.scan_consistency = extractChartData(window.scanConsistencyChart);
+                Logger.trace('[AI] Extracted scan_consistency chart');
+            }
+            
+            if (window.elapsedTimeChart) {
+                stats.charts.query_duration_distribution = extractChartData(window.elapsedTimeChart, 'bar');
+                Logger.trace('[AI] Extracted duration_distribution chart');
+            }
+            
+            if (window.queryPatternChart) {
+                stats.charts.query_pattern_features = extractChartData(window.queryPatternChart, 'bar');
+                Logger.trace('[AI] Extracted pattern_features chart');
+            }
+            
+            Logger.debug(`[AI] Dashboard stats gathered: ${Object.keys(stats.charts).length} charts extracted`);
+            return stats;
+        }
+
+        /**
+         * Gather insights data - all 16 insights with stats
+         */
+        function gatherInsightsData() {
+            Logger.debug('[AI] 💡 Gathering all 16 insights data');
+            
+            const INSIGHT_DEFS = [
+                { id: 'inefficient-index-scans', checkElement: 'inefficient-index-scans-count' },
+                { id: 'slow-index-scan-times', checkElements: ['slow-indexes-2-10s', 'slow-indexes-10s-plus', 'slow-primary-indexes'] },
+                { id: 'primary-index-over-usage', checkElement: 'primary-avg-items-scanned' },
+                { id: 'high-kernel-time-queries', checkElement: 'high-kernel-time-queries-count' },
+                { id: 'high-memory-usage', checkElement: 'high-memory-count' },
+                { id: 'slow-parse-plan-times', checkElement: 'slow-parse-plan-count' },
+                { id: 'slow-use-key-queries', checkElement: 'slow-use-keys-count' },
+                { id: 'missing-where-clauses', checkElement: 'missing-where-count' },
+                { id: 'complex-join-operations', checkElement: 'complex-join-count' },
+                { id: 'inefficient-like-operations', checkElement: 'inefficient-like-count' },
+                { id: 'select-star-usage', checkElement: 'select-star-count' },
+                { id: 'pagination-index-overfetch', checkElement: 'pagination-overfetch-count' },
+                { id: 'large-result-set-queries', checkElement: 'large-results-count' },
+                { id: 'large-payload-streaming', checkElement: 'large-payload-count' },
+                { id: 'timeout-prone-queries', checkElements: ['approaching-timeout-count', 'actual-timeout-count'] },
+                { id: 'concurrent-query-conflicts', checkElement: 'concurrent-conflicts-count' }
+            ];
+            
+            const result = { items: [] };
+            
+            INSIGHT_DEFS.forEach(def => {
+                const content = document.getElementById(`${def.id}-content`);
+                if (!content) return;
+                
+                const card = content.closest('.insight-item');
+                if (!card) return;
+                
+                const title = card.querySelector('.insight-title')?.textContent?.trim() || def.id;
+                const description = card.querySelector('.insight-description')?.textContent?.trim() || '';
+                
+                // Extract counts from specific elements
+                const counts = {};
+                if (def.checkElement) {
+                    const el = document.getElementById(def.checkElement);
+                    if (el) counts[def.checkElement] = el.textContent.trim();
+                }
+                if (def.checkElements) {
+                    def.checkElements.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) counts[id] = el.textContent.trim();
+                    });
+                }
+                
+                // Extract sample queries if available
+                const sampleContainer = document.getElementById(`${def.id}-sample-queries-container`);
+                let samples = [];
+                if (sampleContainer) {
+                    const rows = sampleContainer.querySelectorAll('tbody tr');
+                    samples = Array.from(rows).slice(0, 5).map(tr => {
+                        const tds = tr.querySelectorAll('td');
+                        return {
+                            requestTime: tds?.[0]?.textContent?.trim() || '',
+                            statement: tds?.[1]?.textContent?.trim() || ''
+                        };
+                    });
+                }
+                
+                result.items.push({
+                    id: def.id,
+                    title: title,
+                    description: description,
+                    counts: counts,
+                    sample_queries: samples
+                });
+            });
+            
+            Logger.debug(`[AI] Insights gathered: ${result.items.length}/16 insights extracted`);
+            return result;
+        }
+
+        /**
+         * Gather flow diagram data - uses cached Mermaid diagram
+         */
+        function gatherFlowDiagramData() {
+            Logger.debug('[AI] 🔀 Gathering cached flow diagram data');
+            
+            // Use cached Mermaid diagram (created during flow build)
+            const mermaidDiagram = indexQueryFlowData?.mermaidDiagram || 'graph LR\n  A[Flow not generated yet]';
+            
+            const flowData = {
+                mermaid_diagram: mermaidDiagram,
+                indexes_count: indexQueryFlowData?.indexes?.size || 0,
+                queries_count: indexQueryFlowData?.queries?.size || 0,
+                connections_count: indexQueryFlowData?.connections?.size || 0,
+                note: 'Mermaid diagram showing index -> query relationships (generated during flow build)'
+            };
+            
+            Logger.debug(`[AI] Flow diagram gathered: ${flowData.connections_count} connections, mermaid length: ${mermaidDiagram.length} chars`);
+            return flowData;
+        }
+
+        // ============================================
+        // AI Analyzer Preview Functions
+        // ============================================
+
+        /**
+         * Show AI preview overlay with JSON data that will be sent to AI
+         * Sends actual data to Flask for processing
+         */
+        async function showAIPreview() {
+            Logger.debug('[AI] 👁️ showAIPreview() called');
+            
+            const overlay = document.getElementById('ai-preview-overlay');
+            const previewJson = document.getElementById('ai-preview-json');
+            const previewSize = document.getElementById('ai-preview-size');
+            
+            if (!overlay || !previewJson) {
+                Logger.error('[AI] ❌ AI preview overlay elements not found');
+                return;
+            }
+            
+            // Check if data exists
+            if (!everyQueryData || everyQueryData.length === 0) {
+                Logger.error('[AI] ❌ No query data available. Please parse JSON first.');
+                showToast('Please parse JSON data first before previewing', 'error');
+                return;
+            }
+            
+            Logger.debug(`[AI] 📊 Gathering data: ${everyQueryData.length} queries, ${analysisData.length} patterns`);
+            
+            // Gather selections from checkboxes
+            const selections = {
+                dashboard: document.getElementById('ai-include-dashboard')?.checked || false,
+                insights: document.getElementById('ai-include-insights')?.checked || false,
+                query_groups: document.getElementById('ai-include-query-groups')?.checked || false,
+                indexes: document.getElementById('ai-include-indexes')?.checked || false,
+                flow_diagram: document.getElementById('ai-include-flow-diagram')?.checked || false
+            };
+            
+            const options = {
+                obfuscated: document.getElementById('ai-obfuscate-data')?.checked || false,
+                store_results: document.getElementById('ai-store-analysis')?.checked || false
+            };
+            
+            const prompt = document.getElementById('ai-user-prompt')?.value || "Analyze query performance";
+            
+            Logger.debug('[AI] 📤 Sending data to Flask for processing...');
+            Logger.trace(`[AI] Selections: ${JSON.stringify(selections)}`);
+            
+            try {
+                // Build request payload with structured data
+                const requestData = {
+                    data: {
+                        everyQueryData: everyQueryData,
+                        analysisData: analysisData,
+                        indexData: typeof indexData !== 'undefined' ? indexData : [],
+                        dashboardStats: gatherDashboardStats(),
+                        insightsData: gatherInsightsData(),
+                        flowDiagramData: gatherFlowDiagramData(),
+                        version: '4.0.0-dev'
+                    },
+                    prompt: prompt,
+                    selections: selections,
+                    options: options
+                };
+                
+                Logger.trace(`[AI] Request data size: ${JSON.stringify(requestData).length} bytes`);
+                
+                // Show loading state
+                previewJson.textContent = 'Loading preview from server...';
+                overlay.style.display = 'block';
+                
+                // POST to Flask endpoint
+                const response = await fetch('/api/ai/preview', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                Logger.debug('[AI] ✅ Received response from Flask');
+                
+                if (!result.success) {
+                    throw new Error(result.error || 'Unknown error from server');
+                }
+                
+                // Display formatted JSON from server
+                const jsonString = result.payload_json || JSON.stringify(result.payload, null, 2);
+                previewJson.textContent = jsonString;
+                
+                // Update size display
+                const sizeKB = result.size_kb || ((result.size_bytes || 0) / 1024).toFixed(2);
+                const sizeBytes = result.size_bytes || 0;
+                
+                Logger.debug(`[AI] 📊 Payload size: ${sizeKB} KB (${sizeBytes} bytes)`);
+                
+                if (previewSize) {
+                    previewSize.textContent = `Payload size: ${sizeKB} KB (${sizeBytes.toLocaleString()} bytes)`;
+                }
+                
+                Logger.info('[AI] ✅ Preview overlay displayed with server-processed data');
+                
+            } catch (error) {
+                Logger.error('[AI] ❌ Error fetching preview:', error);
+                previewJson.textContent = `Error loading preview:\n${error.message}\n\nPlease check the console for details.`;
+                
+                if (previewSize) {
+                    previewSize.textContent = 'Error';
+                }
+                
+                showToast(`Failed to load preview: ${error.message}`, 'error');
+            }
+        }
+
+        /**
+         * Close AI preview overlay
+         */
+        function closeAIPreview() {
+            Logger.debug('[AI] ✕ closeAIPreview() called');
+            
+            const overlay = document.getElementById('ai-preview-overlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+                Logger.info('[AI] ✅ Preview overlay closed');
+            }
+        }
+
+        /**
+         * Copy AI preview JSON to clipboard
+         */
+        function copyAIPreviewJSON() {
+            Logger.debug('[AI] 📋 copyAIPreviewJSON() called');
+            
+            const previewJson = document.getElementById('ai-preview-json');
+            if (!previewJson) {
+                Logger.error('[AI] ❌ Preview JSON element not found');
+                return;
+            }
+            
+            const jsonText = previewJson.textContent;
+            Logger.trace(`[AI] Copying ${jsonText.length} characters to clipboard`);
+            
+            // Copy to clipboard
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(jsonText).then(() => {
+                    Logger.info('[AI] ✅ JSON copied to clipboard');
+                    showToast('JSON copied to clipboard!', 'success');
+                }).catch(err => {
+                    Logger.error('[AI] ❌ Failed to copy:', err);
+                    showToast('Failed to copy JSON', 'error');
+                });
+            } else {
+                // Fallback for older browsers
+                Logger.debug('[AI] Using fallback copy method');
+                const textArea = document.createElement('textarea');
+                textArea.value = jsonText;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    Logger.info('[AI] ✅ JSON copied to clipboard (fallback)');
+                    showToast('JSON copied to clipboard!', 'success');
+                } catch (err) {
+                    Logger.error('[AI] ❌ Failed to copy (fallback):', err);
+                    showToast('Failed to copy JSON', 'error');
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        // ============================================
+        // Debug: Mermaid Diagram Viewer
+        // ============================================
+        
+        /**
+         * Open cached Mermaid diagram in mermaid.live for debugging
+         */
+        function openMermaidLive() {
+            Logger.debug('[Debug] 🐛 Opening Mermaid diagram in mermaid.live');
+            
+            const mermaidText = indexQueryFlowData?.mermaidDiagram;
+            
+            if (!mermaidText || mermaidText.includes('No flow')) {
+                showToast('No Mermaid diagram available. Parse JSON first.', 'warning');
+                Logger.warn('[Debug] No Mermaid diagram available');
+                Logger.trace('[Debug] indexQueryFlowData:', indexQueryFlowData);
+                return;
+            }
+            
+            Logger.debug(`[Debug] Mermaid diagram: ${mermaidText.length} characters`);
+            Logger.trace(`[Debug] Mermaid preview:\n${mermaidText.substring(0, 300)}`);
+            
+            // Simple approach: Copy to clipboard and open mermaid.live
+            // User can paste it manually (URL encoding can fail for large diagrams)
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(mermaidText).then(() => {
+                    Logger.info('[Debug] ✅ Mermaid diagram copied to clipboard');
+                    showToast('Mermaid diagram copied! Paste it in the editor.', 'success');
+                    
+                    // Open mermaid.live in new tab
+                    window.open('https://mermaid.live/edit', '_blank');
+                    Logger.info('[Debug] ✅ Opened mermaid.live - paste diagram from clipboard');
+                }).catch(err => {
+                    Logger.error('[Debug] Failed to copy:', err);
+                    showToast('Failed to copy Mermaid diagram', 'error');
+                });
+            } else {
+                // Fallback: Show in alert
+                alert('Mermaid diagram (copy this):\n\n' + mermaidText.substring(0, 500) + '\n\n... (truncated)');
+                window.open('https://mermaid.live/edit', '_blank');
+            }
+        }
+        
+        /**
+         * Show/hide debug Mermaid button based on URL flag
+         */
+        function toggleDebugMermaidButton() {
+            const debugBtn = document.getElementById('debug-mermaid-btn');
+            if (debugBtn && isDebugMode()) {
+                debugBtn.style.display = 'block';
+                Logger.debug('[Debug] Mermaid debug button shown');
+            }
+        }
+        
+        // Show debug button on load if debug mode
+        document.addEventListener('DOMContentLoaded', toggleDebugMermaidButton);
+
+        // Make functions globally accessible
+        window.showAIPreview = showAIPreview;
+        window.closeAIPreview = closeAIPreview;
+        window.copyAIPreviewJSON = copyAIPreviewJSON;
+        window.openMermaidLive = openMermaidLive;

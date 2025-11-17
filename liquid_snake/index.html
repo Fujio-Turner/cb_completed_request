@@ -377,7 +377,7 @@
             </li>
             <li role="tab">
                 <a href="#ai-analyzer" aria-controls="ai-analyzer" tabindex="0">AI Analyzer <span
-                        class="beta-badge">Beta</span></a>
+                        class="dev-badge">Dev</span></a>
             </li>
         </ul>
 
@@ -1476,7 +1476,7 @@
                             </div>
                         </div>
                         
-                        <!-- RIGHT: Queries counter -->
+                        <!-- RIGHT: Queries counter & Debug Button -->
                         <div style="flex: 0 0 auto; text-align: right; padding-left: 30px; border-left: 1px solid #ddd;">
                             <div class="font-bold color-333" style="margin-bottom: 8px;">
                                 Queries
@@ -1487,6 +1487,13 @@
                             <div style="font-size: 11px; color: #666;">
                                 Executed
                             </div>
+                            <!-- Debug: Open Mermaid Live button (shown when ?debug=true) -->
+                            <button id="debug-mermaid-btn" 
+                                    onclick="openMermaidLive()" 
+                                    style="display: none; margin-top: 10px; padding: 6px 12px; background: #ff6b35; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;"
+                                    title="Open cached Mermaid diagram in mermaid.live for debugging">
+                                🐛 View Mermaid
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1792,6 +1799,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     <label><input type="checkbox" data-section="insights" checked> Insights</label>
                     <label><input type="checkbox" data-section="timeline" checked> Timeline</label>
                     <label><input type="checkbox" data-section="analysis" checked> Query Groups</label>
+
                     <label><input type="checkbox" data-section="every-query"> Every Query</label>
                     <label><input type="checkbox" data-section="index-query-flow"> Index/Query Flow</label>
                     <label><input type="checkbox" data-section="indexes"> Indexes</label>
@@ -1849,7 +1857,13 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     <label><input type="checkbox" id="ai-include-dashboard" checked> Dashboard Metrics</label>
                     <label><input type="checkbox" id="ai-include-insights" checked> Insights Analysis</label>
                     <label><input type="checkbox" id="ai-include-query-groups" checked> Query Groups Data</label>
+                    <label><input type="checkbox" id="ai-include-flow-diagram" checked> Index/Query Flow </label>
                     <label><input type="checkbox" id="ai-include-indexes"> Indexes Data <span style="color: #999;">(if populated)</span></label>
+                   
+                </div>
+                <div style="margin-top: 12px; padding: 10px; background: #fff3cd; border-left: 3px solid #ffc107; border-radius: 4px;">
+                    <strong style="color: #856404;">💡 Quality Tip:</strong> 
+                    <span style="color: #856404; font-size: 0.9em;">Including more data (especially Index/Query Flow and Indexes) provides richer context for AI analysis, resulting in more accurate recommendations and deeper insights.</span>
                 </div>
             </div>
 
@@ -1859,8 +1873,24 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <label style="display: flex; align-items: center; gap: 8px;">
                         <input type="checkbox" id="ai-obfuscate-data" checked>
-                        <span>Obfuscate sensitive data (bucket names, collection names, etc.) - <a href="https://github.com/Fujio-Turner/cb_completed_request/issues/200" target="_blank" style="color: #2196f3;">#200</a></span>
+                        <span>Obfuscate sensitive data (bucket names, collection names, etc.)</span>
                     </label>
+                    
+                    <!-- Obfuscation Example -->
+                    <div style="margin-left: 28px; padding: 12px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px;">
+                        <div style="margin-bottom: 10px;">
+                            <strong style="color: #28a745;">✓ Before (Original):</strong>
+                            <pre style="margin: 6px 0 0 0; padding: 8px; background: #fff; border-left: 3px solid #28a745; font-family: 'Courier New', monospace; overflow-x: auto; white-space: pre;">SELECT fName, lName, order FROM bucket.scope.collection WHERE customerId = "1234" AND status = "completed"</pre>
+                        </div>
+                        <div>
+                            <strong style="color: #2196f3;">🔒 After (Obfuscated):</strong>
+                            <pre style="margin: 6px 0 0 0; padding: 8px; background: #fff; border-left: 3px solid #2196f3; font-family: 'Courier New', monospace; overflow-x: auto; white-space: pre;">SELECT `21t4hs`, `oaurchn`, `goa09eu` FROM `acuoa`.`orcenth`.`8aouenth` WHERE `racousth` = "stousth" AND `stahosuth` = "aloeuoaytn"</pre>
+                        </div>
+                        <div style="margin-top: 8px; color: #666; font-size: 11px; font-style: italic;">
+                            🔐 Field names, bucket/scope/collection names, and values are replaced with random tokens to protect sensitive information.
+                        </div>
+                    </div>
+                    
                     <label style="display: flex; align-items: center; gap: 8px;">
                         <input type="checkbox" id="ai-store-analysis">
                         <span>Store analysis results back to Couchbase (in <code>cb_tools.query.analyzer</code>)</span>
@@ -1880,11 +1910,14 @@ LET bid = CONCAT("", s.bucket_id, ""),
             </div>
 
             <!-- Analyze Button -->
-            <div style="margin-bottom: 30px;">
-                <button class="btn-standard" style="background: #2196f3; color: white; padding: 12px 24px; font-size: 16px; font-weight: bold;">
+            <div style="margin-bottom: 30px; display: flex; align-items: center; gap: 12px;">
+                <button id="ai-preview-btn" onclick="showAIPreview()" class="btn-standard" style="background: #6c757d; color: white; padding: 12px 24px; font-size: 16px; font-weight: bold;">
+                    👁️ Preview JSON
+                </button>
+                <button id="ai-analyze-btn" class="btn-standard" style="background: #2196f3; color: white; padding: 12px 24px; font-size: 16px; font-weight: bold;">
                     🚀 Analyze with AI
                 </button>
-                <span style="margin-left: 12px; color: #666; font-size: 0.9em;">Estimated cost: $0.05 - $0.25 per analysis</span>
+                <span style="color: #666; font-size: 0.9em;">Estimated cost: $0.05 - $0.25 per analysis</span>
             </div>
 
             <!-- Analysis History -->
@@ -2061,6 +2094,39 @@ LET bid = CONCAT("", s.bucket_id, ""),
         </div>
     </div>
 
+    <!-- AI JSON Preview Overlay -->
+    <div id="ai-preview-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; overflow: hidden;">
+        <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; padding: 20px;">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 style="color: white; margin: 0; font-size: 24px;">📋 AI Analysis Preview - JSON Payload</h2>
+                <button onclick="closeAIPreview()" style="background: #dc3545; color: white; border: none; padding: 10px 20px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 4px;">
+                    ✕ Close
+                </button>
+            </div>
+            
+            <!-- Info Bar -->
+            <div style="background: #fff3cd; padding: 12px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #ffc107;">
+                <strong style="color: #856404;">ℹ️ This is the exact JSON that will be sent to your AI provider.</strong>
+                <span style="color: #856404; margin-left: 8px;">Review the data below before sending for analysis.</span>
+            </div>
+            
+            <!-- JSON Content -->
+            <div style="flex: 1; background: #1e1e1e; border: 2px solid #444; border-radius: 8px; overflow-y: auto; padding: 20px; font-family: 'Courier New', monospace; min-height: 0;">
+                <pre id="ai-preview-json" style="color: #d4d4d4; margin: 0; white-space: pre-wrap; word-wrap: break-word; font-size: 13px; line-height: 1.6;"></pre>
+            </div>
+            
+            <!-- Footer Actions -->
+            <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <button onclick="copyAIPreviewJSON()" class="btn-standard" style="background: #28a745; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
+                    📋 Copy to Clipboard
+                </button>
+                <div style="color: #aaa; font-size: 13px;">
+                    <span id="ai-preview-size"></span>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </body>
 

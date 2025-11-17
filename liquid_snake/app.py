@@ -30,6 +30,9 @@ from couchbase.exceptions import (
     CouchbaseException
 )
 
+# Import AI Analyzer module
+import ai_analyzer
+
 # Configure icecream
 ic.configureOutput(includeContext=True)
 
@@ -505,6 +508,397 @@ def load_user_preferences(user_id):
             'success': False,
             'error': str(e)
         }), 500
+
+# ============================================================================
+# AI Analyzer Endpoints
+# ============================================================================
+
+@app.route('/api/ai/cache', methods=['POST'])
+def cache_analyzer_data_endpoint():
+    """
+    Cache analyzer data for AI analysis
+    
+    Request body:
+    {
+        "data": {
+            "everyQueryData": [...],
+            "analysisData": [...],
+            "version": "4.0.0-dev",
+            ...
+        }
+    }
+    
+    Response:
+    {
+        "success": true,
+        "session_id": "abc123..."
+    }
+    """
+    try:
+        data = request.json
+        ic("💾 Caching analyzer data")
+        
+        analyzer_data = data.get('data', {})
+        
+        if not analyzer_data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        # Cache the data and get session ID
+        session_id = ai_analyzer.cache_analyzer_data(analyzer_data)
+        
+        ic(f"✅ Data cached with session_id: {session_id}")
+        
+        return jsonify({
+            'success': True,
+            'session_id': session_id
+        })
+        
+    except Exception as e:
+        ic("💥 Error caching data", str(e))
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/preview', methods=['POST'])
+def preview_ai_payload():
+    """
+    Preview AI payload without sending to provider
+    Accepts raw data, processes it, returns formatted JSON for preview
+    
+    Request body:
+    {
+        "data": {
+            "everyQueryData": [...],
+            "analysisData": [...],
+            ...
+        },
+        "prompt": "Analyze slow queries",
+        "selections": {
+            "dashboard": true,
+            "insights": true,
+            "query_groups": true,
+            "indexes": false,
+            "flow_diagram": false
+        },
+        "options": {
+            "obfuscated": true,
+            "store_results": false
+        }
+    }
+    
+    Response:
+    {
+        "success": true,
+        "payload": {...},
+        "size_bytes": 12345,
+        "size_kb": 12.05
+    }
+    """
+    try:
+        request_data = request.json
+        ic("👁️ Preview AI payload request received")
+        
+        # Extract request parameters
+        raw_data = request_data.get('data', {})
+        prompt = request_data.get('prompt', 'Analyze query performance')
+        selections = request_data.get('selections', {})
+        options = request_data.get('options', {})
+        
+        if not raw_data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        ic(f"📊 Data size: {len(str(raw_data))} bytes")
+        ic(f"🎯 Selections: {selections}")
+        
+        # Build payload from raw data (no caching)
+        payload = ai_analyzer.payload_builder.build_payload_from_data(
+            raw_data=raw_data,
+            user_prompt=prompt,
+            selections=selections,
+            options=options
+        )
+        
+        # Extract mapping table if obfuscated (don't send to AI, but return to client)
+        obfuscation_mapping = payload.pop('_obfuscation_mapping', None)
+        
+        # Calculate size
+        import json
+        payload_json = json.dumps(payload, indent=2)
+        size_bytes = len(payload_json.encode('utf-8'))
+        
+        ic(f"✅ Payload preview ready, size={size_bytes} bytes")
+        
+        response_data = {
+            'success': True,
+            'payload': payload,
+            'payload_json': payload_json,  # Pre-formatted for display
+            'size_bytes': size_bytes,
+            'size_kb': round(size_bytes / 1024, 2)
+        }
+        
+        # Include mapping table if obfuscated
+        if obfuscation_mapping:
+            response_data['obfuscation_mapping'] = obfuscation_mapping
+            response_data['mapping_count'] = len(obfuscation_mapping)
+            ic(f"🔑 Obfuscation mapping: {len(obfuscation_mapping)} tokens")
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        ic("💥 Error previewing payload", str(e))
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/analyze', methods=['POST'])
+def analyze_with_ai():
+    """
+    Analyze query data with AI provider
+    Accepts raw data, processes it, sends to AI, returns analysis
+    
+    Request body:
+    {
+        "prompt": "Analyze slow queries",
+        "provider": "openai",
+        "model": "gpt-4o",
+        "apiKey": "sk-...",
+        "apiUrl": "https://api.openai.com/v1",
+        "endpoint": "/chat/completions",
+        "selections": {
+            "dashboard": true,
+            "insights": true,
+            "query_groups": true,
+            "indexes": false,
+            "flow_diagram": false
+        },
+        "options": {
+            "obfuscated": true,
+            "store_results": false
+        }
+    }
+    
+    Response:
+    {
+        "success": true,
+        "analysis": {...},
+        "elapsed_ms": 1234,
+        "tokens_used": 5000
+    }
+    """
+    try:
+        request_data = request.json
+        ic("🤖 AI Analysis request received")
+        
+        # Extract parameters
+        raw_data = request_data.get('data', {})
+        prompt = request_data.get('prompt', 'Analyze query performance')
+        provider = request_data.get('provider', 'openai')
+        model = request_data.get('model')
+        api_key = request_data.get('apiKey')
+        api_url = request_data.get('apiUrl')
+        endpoint = request_data.get('endpoint', '/chat/completions')
+        selections = request_data.get('selections', {})
+        options = request_data.get('options', {})
+        
+        # Validation
+        if not raw_data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        if not api_key:
+            return jsonify({
+                'success': False,
+                'error': 'API key is required'
+            }), 400
+        
+        # Build AI payload from raw data
+        ai_payload_data = ai_analyzer.payload_builder.build_payload_from_data(
+            raw_data=raw_data,
+            user_prompt=prompt,
+            selections=selections,
+            options=options
+        )
+        
+        # Extract mapping table if obfuscated (for de-obfuscation later)
+        obfuscation_mapping = ai_payload_data.pop('_obfuscation_mapping', None)
+        
+        ic(f"📊 Payload built: {len(str(ai_payload_data))} bytes")
+        if obfuscation_mapping:
+            ic(f"🔑 Obfuscation mapping: {len(obfuscation_mapping)} tokens")
+        
+        # Get AI system prompt with response format instructions
+        system_prompt = ai_analyzer.get_ai_system_prompt()
+        
+        # Format for AI provider (convert to chat messages format)
+        import json
+        if provider == 'openai':
+            ai_request_payload = {
+                'model': model or 'gpt-4o',
+                'messages': [
+                    {
+                        'role': 'system',
+                        'content': system_prompt
+                    },
+                    {
+                        'role': 'user',
+                        'content': f"{prompt}\n\nQuery Data:\n{json.dumps(ai_payload_data['data'], indent=2)}"
+                    }
+                ],
+                'response_format': {'type': 'json_object'}  # Request JSON response
+            }
+        elif provider == 'anthropic':
+            ai_request_payload = {
+                'model': model or 'claude-3-5-sonnet-20241022',
+                'max_tokens': 4096,
+                'messages': [
+                    {
+                        'role': 'user',
+                        'content': f"{system_prompt}\n\n{prompt}\n\nQuery Data:\n{json.dumps(ai_payload_data['data'], indent=2)}"
+                    }
+                ]
+            }
+        else:
+            # Generic format
+            ai_request_payload = {
+                'prompt': f"{system_prompt}\n\n{prompt}\n\nQuery Data:\n{json.dumps(ai_payload_data['data'], indent=2)}"
+            }
+        
+        ic("📤 Sending to AI provider", provider, model)
+        
+        # Prepare headers
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+        }
+        
+        if provider == 'anthropic':
+            headers['x-api-key'] = api_key
+            headers['anthropic-version'] = '2023-06-01'
+            del headers['Authorization']
+        
+        # Build full URL
+        full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
+        
+        # Make AI API call
+        result = http_client.call_api(
+            method='POST',
+            url=full_url,
+            headers=headers,
+            json_data=ai_request_payload
+        )
+        
+        ic("📥 AI response received", result.get('success'))
+        
+        if result['success']:
+            analysis_data = result['data']
+            
+            # De-obfuscate AI response if we have mapping
+            if obfuscation_mapping:
+                ic("🔓 De-obfuscating AI response")
+                obfuscator = ai_analyzer.DataObfuscator()
+                
+                # Convert analysis to JSON string, de-obfuscate, convert back
+                import json
+                analysis_json = json.dumps(analysis_data)
+                deobfuscated_json = obfuscator.deobfuscate_text(analysis_json, obfuscation_mapping)
+                analysis_data = json.loads(deobfuscated_json)
+                
+                ic(f"✅ De-obfuscation complete, restored {len(obfuscation_mapping)} tokens")
+            
+            return jsonify({
+                'success': True,
+                'analysis': analysis_data,
+                'elapsed_ms': result.get('elapsed_ms'),
+                'provider': provider,
+                'model': model,
+                'deobfuscated': obfuscation_mapping is not None
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error'),
+                'elapsed_ms': result.get('elapsed_ms')
+            }), 500
+        
+    except Exception as e:
+        ic("💥 Error in AI analysis", str(e))
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/stats', methods=['GET'])
+def get_ai_cache_stats():
+    """
+    Get AI cache statistics
+    
+    Response:
+    {
+        "success": true,
+        "stats": {
+            "total_sessions": 5,
+            "total_size_bytes": 123456,
+            "total_size_kb": 120.56,
+            "ttl_seconds": 1800
+        }
+    }
+    """
+    try:
+        stats = ai_analyzer.get_cache_stats()
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/debug', methods=['POST'])
+def set_ai_debug():
+    """
+    Enable or disable AI analyzer debug logging
+    
+    Request body:
+    {
+        "enabled": true
+    }
+    
+    Response:
+    {
+        "success": true,
+        "debug_enabled": true
+    }
+    """
+    try:
+        data = request.json
+        enabled = data.get('enabled', True)
+        
+        ai_analyzer.configure_debug(enabled)
+        
+        return jsonify({
+            'success': True,
+            'debug_enabled': enabled
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ============================================================================
+# Legacy AI API Call Endpoint
+# ============================================================================
 
 @app.route('/api/ai/call', methods=['POST'])
 def ai_api_call():
