@@ -14,6 +14,9 @@ import time
 import hashlib
 import secrets
 import threading
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 from icecream import ic
@@ -46,6 +49,217 @@ ic.configureOutput(prefix='[ai_analyzer] ')
 
 # Enable debug by default
 configure_debug(DEBUG)
+
+# ============================================================================
+# AI HTTP Client
+# ============================================================================
+
+class AIHttpClient:
+    """
+    Robust HTTP client with retry logic, timeout handling, and detailed logging
+    """
+    
+    def __init__(self, 
+                 max_retries=3, 
+                 backoff_factor=0.5, 
+                 timeout=30,
+                 retry_on_status=[429, 500, 502, 503, 504]):
+        """
+        Initialize HTTP client with retry configuration
+        
+        Args:
+            max_retries (int): Maximum number of retry attempts
+            backoff_factor (float): Exponential backoff multiplier (delay = {backoff_factor} * (2 ** retry_count))
+            timeout (int): Request timeout in seconds
+            retry_on_status (list): HTTP status codes to retry on
+        """
+        self.max_retries = max_retries
+        self.backoff_factor = backoff_factor
+        self.timeout = timeout
+        self.retry_on_status = retry_on_status
+        
+        ic("🔧 AIHttpClient initialized", max_retries, backoff_factor, timeout, retry_on_status)
+    
+    def _create_session(self):
+        """Create requests session with retry strategy"""
+        session = requests.Session()
+        
+        # Configure retry strategy
+        retry_strategy = Retry(
+            total=self.max_retries,
+            backoff_factor=self.backoff_factor,
+            status_forcelist=self.retry_on_status,
+            allowed_methods=["POST", "PUT", "GET"],
+            raise_on_status=False
+        )
+        
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        
+        return session
+    
+    def call_api(self, method, url, headers=None, json_data=None, **kwargs):
+        """
+        Make HTTP request with retry logic and comprehensive logging
+        
+        Args:
+            method (str): HTTP method ('POST', 'PUT', 'GET')
+            url (str): API endpoint URL
+            headers (dict): Custom headers
+            json_data (dict): JSON payload
+            **kwargs: Additional requests parameters
+            
+        Returns:
+            dict: Response with success status and data/error
+        """
+        start_time = time.time()
+        attempt = 0
+        
+        ic("🚀 API Call Starting", method, url)
+        ic("📤 Headers", headers)
+        ic("📤 Payload", json_data)
+        
+        session = self._create_session()
+        
+        # Merge custom headers with defaults
+        default_headers = {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Couchbase-Query-Analyzer/3.29.1'
+        }
+        
+        if headers:
+            default_headers.update(headers)
+        
+        while attempt < self.max_retries:
+            attempt += 1
+            
+            try:
+                ic(f"🔄 Attempt {attempt}/{self.max_retries}")
+                
+                # Make the request
+                response = session.request(
+                    method=method.upper(),
+                    url=url,
+                    headers=default_headers,
+                    json=json_data,
+                    timeout=self.timeout,
+                    **kwargs
+                )
+                
+                elapsed_ms = int((time.time() - start_time) * 1000)
+                
+                ic("📥 Response Status", response.status_code, f"{elapsed_ms}ms")
+                
+                # Success case
+                if 200 <= response.status_code < 300:
+                    try:
+                        response_data = response.json()
+                        ic("✅ Success", response_data)
+                        
+                        return {
+                            'success': True,
+                            'status_code': response.status_code,
+                            'data': response_data,
+                            'elapsed_ms': elapsed_ms,
+                            'attempts': attempt
+                        }
+                    except ValueError:
+                        # Response is not JSON
+                        ic("✅ Success (non-JSON response)", response.text[:200])
+                        
+                        return {
+                            'success': True,
+                            'status_code': response.status_code,
+                            'data': response.text,
+                            'elapsed_ms': elapsed_ms,
+                            'attempts': attempt
+                        }
+                
+                # Retry on specific status codes
+                if response.status_code in self.retry_on_status:
+                    ic(f"⚠️ Retryable error {response.status_code}, will retry...")
+                    
+                    # Exponential backoff
+                    if attempt < self.max_retries:
+                        delay = self.backoff_factor * (2 ** (attempt - 1))
+                        ic(f"⏳ Waiting {delay}s before retry")
+                        time.sleep(delay)
+                        continue
+                
+                # Non-retryable error
+                ic("❌ API Error (non-retryable)", response.status_code, response.text[:500])
+                
+                return {
+                    'success': False,
+                    'status_code': response.status_code,
+                    'error': f"HTTP {response.status_code}: {response.text[:500]}",
+                    'elapsed_ms': elapsed_ms,
+                    'attempts': attempt
+                }
+                
+            except requests.exceptions.Timeout:
+                ic(f"⏰ Timeout on attempt {attempt}")
+                
+                if attempt >= self.max_retries:
+                    elapsed_ms = int((time.time() - start_time) * 1000)
+                    return {
+                        'success': False,
+                        'error': f'Request timeout after {self.timeout}s',
+                        'elapsed_ms': elapsed_ms,
+                        'attempts': attempt
+                    }
+                
+                # Wait before retry
+                delay = self.backoff_factor * (2 ** (attempt - 1))
+                ic(f"⏳ Waiting {delay}s before retry")
+                time.sleep(delay)
+                
+            except requests.exceptions.ConnectionError as e:
+                ic(f"🔌 Connection error on attempt {attempt}", str(e))
+                
+                if attempt >= self.max_retries:
+                    elapsed_ms = int((time.time() - start_time) * 1000)
+                    return {
+                        'success': False,
+                        'error': f'Connection error: {str(e)}',
+                        'elapsed_ms': elapsed_ms,
+                        'attempts': attempt
+                    }
+                
+                # Wait before retry
+                delay = self.backoff_factor * (2 ** (attempt - 1))
+                ic(f"⏳ Waiting {delay}s before retry")
+                time.sleep(delay)
+                
+            except Exception as e:
+                ic("💥 Unexpected error", type(e).__name__, str(e))
+                elapsed_ms = int((time.time() - start_time) * 1000)
+                
+                return {
+                    'success': False,
+                    'error': f'Unexpected error: {str(e)}',
+                    'elapsed_ms': elapsed_ms,
+                    'attempts': attempt
+                }
+        
+        # Max retries exceeded
+        elapsed_ms = int((time.time() - start_time) * 1000)
+        ic("❌ Max retries exceeded", attempt)
+        
+        return {
+            'success': False,
+            'error': f'Max retries ({self.max_retries}) exceeded',
+            'elapsed_ms': elapsed_ms,
+            'attempts': attempt
+        }
+
+# Global HTTP client instance
+http_client = AIHttpClient(
+    max_retries=3,
+    backoff_factor=0.5,
+    timeout=30
+)
 
 # ============================================================================
 # Session Cache Manager
@@ -653,8 +867,29 @@ payload_builder = AIPayloadBuilder()
 def get_ai_system_prompt() -> str:
     """
     Get the system prompt that instructs AI how to analyze and format responses
+    with sources, priorities, and HTML formatting
     """
     return """You are a Couchbase N1QL query performance expert. Analyze the provided query data and provide actionable recommendations.
+
+**PRIORITY LEVELS (1-10):**
+- 10 (CRITICAL): Causes timeouts, data loss, or cluster instability
+- 8-9 (HIGH): Major performance degradation (>5s queries, memory issues)
+- 5-7 (MEDIUM): Noticeable impact (1-5s queries, inefficient patterns)
+- 3-4 (LOW): Minor optimizations, best practices
+- 1-2 (OPTIONAL): Nice-to-have improvements
+
+**COLOR CODING FOR HTML (Use Sparingly - Only 1-2 highlights per issue):**
+- <span class="severity-critical">text</span> - RED: ONLY for most critical metric (e.g., "2266ms", "1.5M items scanned")
+- <span class="severity-high">text</span> - ORANGE (#fd7e14): Important numbers (e.g., "64 queries", "46GB")
+- <span class="metric-highlight">text</span> - BLUE LIGHT: General metrics (e.g., "2.3% selectivity", "15k scans")
+- <span class="code-highlight">text</span> - BLUE: Index names, table names only (e.g., "idx_users", "products")
+- <span class="highlight-good">text</span> - GREEN: Positive outcomes (avoid using)
+
+**HIGHLIGHTING RULES:**
+- Maximum 2 highlights per description
+- RED only for the MOST critical number
+- Use plain text for most content
+- Code blocks don't need highlights
 
 **RESPONSE FORMAT REQUIREMENTS:**
 You MUST return your analysis as a valid JSON object with this exact structure:
@@ -669,23 +904,38 @@ You MUST return your analysis as a valid JSON object with this exact structure:
   },
   "critical_issues": [
     {
+      "priority": <number 1-10>,
       "severity": "<critical|high|medium|low>",
       "category": "<index|query|configuration>",
       "title": "Brief issue title",
-      "description": "Detailed explanation",
+      "description_html": "Detailed explanation with <span class='severity-critical'>highlighted terms</span> and <span class='code-highlight'>code</span>",
       "affected_queries": <number>,
       "recommendation": "Specific action to take",
-      "expected_impact": "Expected performance improvement"
+      "expected_impact": "Expected performance improvement",
+      "sources": [
+        {
+          "location": "<dashboard|insights|query_groups|indexes|flow_diagram>",
+          "evidence": "Specific data point that led to this finding",
+          "value": "Actual metric or pattern observed"
+        }
+      ]
     }
   ],
   "recommendations": [
     {
+      "priority_number": <number 1-10>,
       "priority": "<high|medium|low>",
       "category": "<index|query|configuration>",
-      "recommendation": "Specific recommendation",
-      "rationale": "Why this recommendation matters",
+      "recommendation_html": "Specific recommendation with <span class='code-highlight'>CREATE INDEX</span> statements highlighted",
+      "rationale_html": "Why this matters, with <span class='severity-high'>key metrics</span> highlighted",
       "implementation_steps": ["Step 1", "Step 2", "..."],
-      "estimated_impact": "Expected benefit"
+      "estimated_impact": "Expected benefit",
+      "sources": [
+        {
+          "location": "<dashboard|insights|query_groups|indexes|flow_diagram>",
+          "evidence": "Data supporting this recommendation"
+        }
+      ]
     }
   ],
   "index_analysis": {
@@ -813,3 +1063,105 @@ if __name__ == "__main__":
     obfuscated_query = obfuscator.obfuscate_query(test_query)
     ic(f"Original: {test_query}")
     ic(f"Obfuscated: {obfuscated_query}")
+
+# ============================================================================
+# AI Provider API Call
+# ============================================================================
+
+def call_ai_provider(provider: str, 
+                     model: str, 
+                     api_key: str, 
+                     api_url: str, 
+                     endpoint: str, 
+                     prompt: str, 
+                     payload_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Call AI provider with formatted request
+    
+    Args:
+        provider: AI provider name ('openai', 'anthropic', 'grok')
+        model: Model name/ID
+        api_key: API authentication key
+        api_url: Base API URL
+        endpoint: API endpoint path
+        prompt: User's analysis prompt
+        payload_data: Data payload to send to AI
+        
+    Returns:
+        API response dict with success status, data/error, and timing
+    """
+    import json
+    
+    ic(f"🤖 Calling AI provider: {provider}, model: {model}")
+    
+    # Get system prompt
+    system_prompt = get_ai_system_prompt()
+    
+    # Format request payload for specific provider
+    if provider == 'openai' or provider == 'grok':
+        ai_request_payload = {
+            'model': model,
+            'messages': [
+                {
+                    'role': 'system',
+                    'content': system_prompt
+                },
+                {
+                    'role': 'user',
+                    'content': f"{prompt}\n\nQuery Data:\n{json.dumps(payload_data['data'], indent=2)}"
+                }
+            ]
+        }
+        
+        # OpenAI supports json_object response format
+        if provider == 'openai':
+            ai_request_payload['response_format'] = {'type': 'json_object'}
+        
+        headers = {
+            'Authorization': f'Bearer {api_key}'
+        }
+        
+    elif provider == 'anthropic':
+        ai_request_payload = {
+            'model': model,
+            'max_tokens': 4096,
+            'messages': [
+                {
+                    'role': 'user',
+                    'content': f"{system_prompt}\n\n{prompt}\n\nQuery Data:\n{json.dumps(payload_data['data'], indent=2)}"
+                }
+            ]
+        }
+        
+        headers = {
+            'x-api-key': api_key,
+            'anthropic-version': '2023-06-01'
+        }
+        
+    else:
+        # Generic format for unknown providers
+        ai_request_payload = {
+            'model': model,
+            'prompt': f"{system_prompt}\n\n{prompt}\n\nQuery Data:\n{json.dumps(payload_data['data'], indent=2)}"
+        }
+        
+        headers = {
+            'Authorization': f'Bearer {api_key}'
+        }
+    
+    # Build full URL
+    full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
+    
+    ic(f"📤 Sending to {full_url}")
+    
+    # Make API call using AIHttpClient
+    result = http_client.call_api(
+        method='POST',
+        url=full_url,
+        headers=headers,
+        json_data=ai_request_payload
+    )
+    
+    ic(f"📥 Response received: success={result.get('success')}, elapsed={result.get('elapsed_ms')}ms")
+    
+    return result

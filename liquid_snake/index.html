@@ -56,6 +56,16 @@
 
     <!-- External CSS -->
     <link rel="stylesheet" href="assets/css/main.css?v=231.1">
+    
+    <!-- AI Response Formatting CSS -->
+    <style>
+        .severity-critical { background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+        .severity-high { background: #fd7e14; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+        .severity-medium { background: #ffc107; color: #000; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+        .highlight-good { background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+        .code-highlight { background: #007bff; color: white; padding: 2px 5px; border-radius: 3px; font-family: monospace; font-size: 0.85em; }
+        .metric-highlight { background: #e7f3ff; color: #0056b3; padding: 2px 5px; border-radius: 3px; font-weight: bold; border: 1px solid #b3d9ff; }
+    </style>
 
     <!-- External JavaScript - ES6 Modules -->
     <script type="module" src="assets/js/main.js"></script>
@@ -1840,14 +1850,12 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <h3 style="margin:0 0 12px 0;">AI Service Provider</h3>
                 <div style="display: flex; gap: 12px; align-items: center;">
                     <label style="font-weight: 600;">Selected Provider:</label>
-                    <select id="ai-provider-select" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
-                        <option value="">-- Select AI Provider --</option>
-                        <option value="openai">OpenAI (GPT-4)</option>
-                        <option value="anthropic">Anthropic (Claude)</option>
-                        <option value="grok">Grok (xAI)</option>
+                    <select id="ai-provider-select" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 300px;">
+                        <option value="">-- Loading providers... --</option>
                     </select>
                     <span style="color: #666; font-size: 0.9em;">(Configure API keys in Settings)</span>
                 </div>
+                <div id="ai-provider-warning"></div>
             </div>
 
             <!-- Data Selection -->
@@ -2123,6 +2131,44 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 </button>
                 <div style="color: #aaa; font-size: 13px;">
                     <span id="ai-preview-size"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Analysis View Overlay -->
+    <div id="ai-view-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 10000; overflow: hidden;">
+        <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; padding: 15px;">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                <h2 style="color: #333; margin: 0; font-size: 20px;">🤖 AI Analysis Results</h2>
+                <button onclick="closeAIView()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 4px;">
+                    ✕ Close
+                </button>
+            </div>
+            
+            <!-- Content Grid -->
+            <div style="display: grid; grid-template-columns: 320px 1fr; gap: 12px; flex: 1; min-height: 0;">
+                <!-- Left: Context/Inputs -->
+                <div style="background: white; border: 1px solid #ddd; border-radius: 6px; overflow-y: auto; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <h3 style="color: #007bff; margin: 0 0 12px 0; font-size: 16px; border-bottom: 2px solid #007bff; padding-bottom: 6px;">📊 Analysis Context</h3>
+                    <div id="ai-view-context" style="color: #333; font-size: 12px; line-height: 1.6;"></div>
+                </div>
+                
+                <!-- Right: AI Response -->
+                <div style="background: white; border: 1px solid #ddd; border-radius: 6px; overflow-y: auto; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <h3 style="color: #28a745; margin: 0 0 12px 0; font-size: 16px; border-bottom: 2px solid #28a745; padding-bottom: 6px;">🎯 AI Recommendations</h3>
+                    <div id="ai-view-response" style="color: #333; font-size: 13px; line-height: 1.5;"></div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 20px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <button onclick="copyAIResponse()" class="btn-standard" style="background: #28a745; color: white; padding: 8px 16px; font-size: 13px; font-weight: bold;">
+                    📋 Copy JSON
+                </button>
+                <div style="color: #666; font-size: 12px;">
+                    <span id="ai-view-stats"></span>
                 </div>
             </div>
         </div>

@@ -16,9 +16,6 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
 import time
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 from icecream import ic
 from couchbase.cluster import Cluster
 from couchbase.options import ClusterOptions
@@ -88,217 +85,6 @@ def get_couchbase_connection(config):
             return None
     
     return _cluster
-
-# ============================================================================
-# Robust HTTP Client for AI API Calls
-# ============================================================================
-
-class AIHttpClient:
-    """
-    Robust HTTP client with retry logic, timeout handling, and detailed logging
-    """
-    
-    def __init__(self, 
-                 max_retries=3, 
-                 backoff_factor=0.5, 
-                 timeout=30,
-                 retry_on_status=[429, 500, 502, 503, 504]):
-        """
-        Initialize HTTP client with retry configuration
-        
-        Args:
-            max_retries (int): Maximum number of retry attempts
-            backoff_factor (float): Exponential backoff multiplier (delay = {backoff_factor} * (2 ** retry_count))
-            timeout (int): Request timeout in seconds
-            retry_on_status (list): HTTP status codes to retry on
-        """
-        self.max_retries = max_retries
-        self.backoff_factor = backoff_factor
-        self.timeout = timeout
-        self.retry_on_status = retry_on_status
-        
-        ic("🔧 AIHttpClient initialized", max_retries, backoff_factor, timeout, retry_on_status)
-    
-    def _create_session(self):
-        """Create requests session with retry strategy"""
-        session = requests.Session()
-        
-        # Configure retry strategy
-        retry_strategy = Retry(
-            total=self.max_retries,
-            backoff_factor=self.backoff_factor,
-            status_forcelist=self.retry_on_status,
-            allowed_methods=["POST", "PUT", "GET"],
-            raise_on_status=False
-        )
-        
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        session.mount("http://", adapter)
-        session.mount("https://", adapter)
-        
-        return session
-    
-    def call_api(self, method, url, headers=None, json_data=None, **kwargs):
-        """
-        Make HTTP request with retry logic and comprehensive logging
-        
-        Args:
-            method (str): HTTP method ('POST', 'PUT', 'GET')
-            url (str): API endpoint URL
-            headers (dict): Custom headers
-            json_data (dict): JSON payload
-            **kwargs: Additional requests parameters
-            
-        Returns:
-            dict: Response with success status and data/error
-        """
-        start_time = time.time()
-        attempt = 0
-        
-        ic("🚀 API Call Starting", method, url)
-        ic("📤 Headers", headers)
-        ic("📤 Payload", json_data)
-        
-        session = self._create_session()
-        
-        # Merge custom headers with defaults
-        default_headers = {
-            'Content-Type': 'application/json',
-            'User-Agent': 'Couchbase-Query-Analyzer/3.28.2'
-        }
-        
-        if headers:
-            default_headers.update(headers)
-        
-        while attempt < self.max_retries:
-            attempt += 1
-            
-            try:
-                ic(f"🔄 Attempt {attempt}/{self.max_retries}")
-                
-                # Make the request
-                response = session.request(
-                    method=method.upper(),
-                    url=url,
-                    headers=default_headers,
-                    json=json_data,
-                    timeout=self.timeout,
-                    **kwargs
-                )
-                
-                elapsed_ms = int((time.time() - start_time) * 1000)
-                
-                ic("📥 Response Status", response.status_code, f"{elapsed_ms}ms")
-                
-                # Success case
-                if 200 <= response.status_code < 300:
-                    try:
-                        response_data = response.json()
-                        ic("✅ Success", response_data)
-                        
-                        return {
-                            'success': True,
-                            'status_code': response.status_code,
-                            'data': response_data,
-                            'elapsed_ms': elapsed_ms,
-                            'attempts': attempt
-                        }
-                    except ValueError:
-                        # Response is not JSON
-                        ic("✅ Success (non-JSON response)", response.text[:200])
-                        
-                        return {
-                            'success': True,
-                            'status_code': response.status_code,
-                            'data': response.text,
-                            'elapsed_ms': elapsed_ms,
-                            'attempts': attempt
-                        }
-                
-                # Retry on specific status codes
-                if response.status_code in self.retry_on_status:
-                    ic(f"⚠️ Retryable error {response.status_code}, will retry...")
-                    
-                    # Exponential backoff
-                    if attempt < self.max_retries:
-                        delay = self.backoff_factor * (2 ** (attempt - 1))
-                        ic(f"⏳ Waiting {delay}s before retry")
-                        time.sleep(delay)
-                        continue
-                
-                # Non-retryable error
-                ic("❌ API Error (non-retryable)", response.status_code, response.text[:500])
-                
-                return {
-                    'success': False,
-                    'status_code': response.status_code,
-                    'error': f"HTTP {response.status_code}: {response.text[:500]}",
-                    'elapsed_ms': elapsed_ms,
-                    'attempts': attempt
-                }
-                
-            except requests.exceptions.Timeout:
-                ic(f"⏰ Timeout on attempt {attempt}")
-                
-                if attempt >= self.max_retries:
-                    elapsed_ms = int((time.time() - start_time) * 1000)
-                    return {
-                        'success': False,
-                        'error': f'Request timeout after {self.timeout}s',
-                        'elapsed_ms': elapsed_ms,
-                        'attempts': attempt
-                    }
-                
-                # Wait before retry
-                delay = self.backoff_factor * (2 ** (attempt - 1))
-                ic(f"⏳ Waiting {delay}s before retry")
-                time.sleep(delay)
-                
-            except requests.exceptions.ConnectionError as e:
-                ic(f"🔌 Connection error on attempt {attempt}", str(e))
-                
-                if attempt >= self.max_retries:
-                    elapsed_ms = int((time.time() - start_time) * 1000)
-                    return {
-                        'success': False,
-                        'error': f'Connection error: {str(e)}',
-                        'elapsed_ms': elapsed_ms,
-                        'attempts': attempt
-                    }
-                
-                # Wait before retry
-                delay = self.backoff_factor * (2 ** (attempt - 1))
-                ic(f"⏳ Waiting {delay}s before retry")
-                time.sleep(delay)
-                
-            except Exception as e:
-                ic("💥 Unexpected error", type(e).__name__, str(e))
-                elapsed_ms = int((time.time() - start_time) * 1000)
-                
-                return {
-                    'success': False,
-                    'error': f'Unexpected error: {str(e)}',
-                    'elapsed_ms': elapsed_ms,
-                    'attempts': attempt
-                }
-        
-        # Max retries exceeded
-        elapsed_ms = int((time.time() - start_time) * 1000)
-        ic("❌ Max retries exceeded", attempt)
-        
-        return {
-            'success': False,
-            'error': f'Max retries ({self.max_retries}) exceeded',
-            'elapsed_ms': elapsed_ms,
-            'attempts': attempt
-        }
-
-# Global HTTP client instance
-http_client = AIHttpClient(
-    max_retries=3,
-    backoff_factor=0.5,
-    timeout=30
-)
 
 # Static file serving
 @app.route('/')
@@ -697,18 +483,75 @@ def analyze_with_ai():
         import json
         
         request_data = request.json
+        ic("=" * 80)
         ic("🤖 AI Analysis request received")
+        ic("=" * 80)
         
         # Extract parameters
         raw_data = request_data.get('data', {})
         prompt = request_data.get('prompt', 'Analyze query performance')
-        provider = request_data.get('provider', 'openai')
-        model = request_data.get('model')
-        api_key = request_data.get('apiKey')
-        api_url = request_data.get('apiUrl')
-        endpoint = request_data.get('endpoint', '/chat/completions')
+        provider = request_data.get('provider', 'grok')
         selections = request_data.get('selections', {})
         options = request_data.get('options', {})
+        cb_config = request_data.get('couchbaseConfig', {})
+        
+        ic("📋 Request parameters:")
+        ic(f"  Provider: {provider}")
+        ic(f"  Prompt length: {len(prompt)} chars")
+        ic(f"  Selections: {selections}")
+        ic(f"  Options: {options}")
+        
+        # Load API credentials from user::config in Couchbase (SECURE)
+        ic("🔑 Loading AI API credentials from Couchbase user::config")
+        
+        if not cb_config or not cb_config.get('cluster'):
+            return jsonify({
+                'success': False,
+                'error': 'Couchbase configuration required'
+            }), 400
+        
+        cluster = get_couchbase_connection(cb_config['cluster'])
+        if not cluster:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to connect to Couchbase'
+            }), 500
+        
+        # Load user::config document
+        bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
+        prefs_collection = bucket.scope(cb_config['bucketConfig']['preferencesScope']).collection(
+            cb_config['bucketConfig']['preferencesCollection']
+        )
+        
+        user_prefs = prefs_collection.get('user_config').content_as[dict]
+        ai_apis = user_prefs.get('aiApis', [])
+        
+        # Find the requested provider
+        api_config = next((api for api in ai_apis if api['id'] == provider), None)
+        
+        if not api_config:
+            ic(f"❌ Provider '{provider}' not found in user::config")
+            return jsonify({
+                'success': False,
+                'error': f'Provider {provider} not configured'
+            }), 400
+        
+        api_key = api_config.get('apiKey')
+        api_url = api_config.get('apiUrl')
+        model = api_config.get('model')
+        endpoint = '/chat/completions'
+        
+        ic(f"✅ Loaded credentials for provider: {provider}")
+        ic(f"  API URL: {api_url}")
+        ic(f"  Model: {model}")
+        ic(f"  Has API Key: {bool(api_key)}")
+        
+        if not api_key:
+            ic(f"❌ No API key configured for provider: {provider}")
+            return jsonify({
+                'success': False,
+                'error': f'No API key configured for {provider}. Please add in Settings.'
+            }), 400
         
         # Validation
         if not raw_data:
@@ -760,69 +603,33 @@ def analyze_with_ai():
                 'elapsed_ms': 0
             }
         else:
-            # Get AI system prompt with response format instructions
-            system_prompt = ai_analyzer.get_ai_system_prompt()
-            
-            # Format for AI provider (convert to chat messages format)
-            if provider == 'openai':
-                ai_request_payload = {
-                    'model': model or 'gpt-4o',
-                    'messages': [
-                        {
-                            'role': 'system',
-                            'content': system_prompt
-                        },
-                        {
-                            'role': 'user',
-                            'content': f"{prompt}\n\nQuery Data:\n{json.dumps(ai_payload_data['data'], indent=2)}"
-                        }
-                    ],
-                    'response_format': {'type': 'json_object'}  # Request JSON response
-                }
-            elif provider == 'anthropic':
-                ai_request_payload = {
-                    'model': model or 'claude-3-5-sonnet-20241022',
-                    'max_tokens': 4096,
-                    'messages': [
-                        {
-                            'role': 'user',
-                            'content': f"{system_prompt}\n\n{prompt}\n\nQuery Data:\n{json.dumps(ai_payload_data['data'], indent=2)}"
-                        }
-                    ]
-                }
-            else:
-                # Generic format
-                ai_request_payload = {
-                    'prompt': f"{system_prompt}\n\n{prompt}\n\nQuery Data:\n{json.dumps(ai_payload_data['data'], indent=2)}"
-                }
-            
-            ic("📤 Sending to AI provider", provider, model)
-            
-            # Prepare headers
-            headers = {
-                'Authorization': f'Bearer {api_key}',
-            }
-            
-            if provider == 'anthropic':
-                headers['x-api-key'] = api_key
-                headers['anthropic-version'] = '2023-06-01'
-                del headers['Authorization']
-            
-            # Build full URL
-            full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
-            
-            # Make AI API call
-            result = http_client.call_api(
-                method='POST',
-                url=full_url,
-                headers=headers,
-                json_data=ai_request_payload
+            # Call AI provider using ai_analyzer module
+            result = ai_analyzer.call_ai_provider(
+                provider=provider,
+                model=model or ('gpt-4o' if provider == 'openai' else 'claude-3-5-sonnet-20241022'),
+                api_key=api_key,
+                api_url=api_url,
+                endpoint=endpoint,
+                prompt=prompt,
+                payload_data=ai_payload_data
             )
         
         ic("📥 AI response received", result.get('success'))
         
         if result['success']:
             analysis_data = result['data']
+            
+            # Parse JSON content from AI response if it's a string
+            try:
+                if 'choices' in analysis_data and len(analysis_data['choices']) > 0:
+                    content = analysis_data['choices'][0].get('message', {}).get('content', '')
+                    if isinstance(content, str) and content.strip().startswith('{'):
+                        # Parse JSON string to object
+                        parsed_content = json.loads(content)
+                        analysis_data['choices'][0]['message']['content_parsed'] = parsed_content
+                        ic("✅ Parsed AI response JSON content to object")
+            except Exception as e:
+                ic(f"⚠️ Could not parse AI content as JSON: {str(e)}")
             
             # De-obfuscate AI response if we have mapping
             if obfuscation_mapping:
@@ -840,10 +647,15 @@ def analyze_with_ai():
             saved_doc_id = None
             if options.get('store_results', False):
                 try:
-                    ic("💾 Attempting to save AI analysis to Couchbase")
+                    ic("=" * 80)
+                    ic("💾 SAVE TO COUCHBASE REQUESTED")
+                    ic("=" * 80)
                     
                     # Get Couchbase config from request
                     cb_config = request_data.get('couchbaseConfig', {})
+                    ic(f"📋 Couchbase config present: {bool(cb_config)}")
+                    ic(f"📋 Has cluster: {bool(cb_config.get('cluster'))}")
+                    ic(f"📋 Has bucketConfig: {bool(cb_config.get('bucketConfig'))}")
                     
                     if cb_config and cb_config.get('cluster'):
                         # Build document to save
@@ -877,23 +689,40 @@ def analyze_with_ai():
                         }
                         
                         # Save to cb_tools.query.analyzer
+                        ic(f"🔌 Connecting to Couchbase: {cb_config['cluster'].get('url')}")
                         cluster = get_couchbase_connection(cb_config['cluster'])
+                        
                         if cluster:
-                            bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
-                            collection = bucket.scope(cb_config['bucketConfig']['analyzerScope']).collection(
-                                cb_config['bucketConfig']['analyzerCollection']
-                            )
+                            bucket_name = cb_config['bucketConfig']['bucket']
+                            scope_name = cb_config['bucketConfig']['analyzerScope']
+                            collection_name = cb_config['bucketConfig']['analyzerCollection']
+                            
+                            ic(f"📁 Target: {bucket_name}.{scope_name}.{collection_name}")
+                            ic(f"📄 Document ID: {doc_id}")
+                            ic(f"📊 Document size: {len(json.dumps(save_doc))} bytes")
+                            
+                            bucket = cluster.bucket(bucket_name)
+                            collection = bucket.scope(scope_name).collection(collection_name)
                             
                             collection.upsert(doc_id, save_doc)
                             saved_doc_id = doc_id
-                            ic(f"✅ Saved to Couchbase: {doc_id}")
+                            
+                            ic("=" * 80)
+                            ic(f"✅ SUCCESSFULLY SAVED TO COUCHBASE")
+                            ic(f"   Document ID: {doc_id}")
+                            ic(f"   Location: {bucket_name}.{scope_name}.{collection_name}")
+                            ic("=" * 80)
                         else:
-                            ic("⚠️ Couchbase not connected, skipping save")
+                            ic("⚠️ Couchbase cluster connection failed, skipping save")
                     else:
-                        ic("⚠️ No Couchbase config provided, skipping save")
+                        ic("⚠️ No Couchbase config in request, skipping save")
                         
                 except Exception as e:
-                    ic(f"❌ Error saving to Couchbase: {str(e)}")
+                    ic("=" * 80)
+                    ic(f"❌ ERROR SAVING TO COUCHBASE")
+                    ic(f"   Error: {str(e)}")
+                    ic(f"   Type: {type(e).__name__}")
+                    ic("=" * 80)
                     # Don't fail the request if save fails
             
             return jsonify({
@@ -1130,7 +959,7 @@ def ai_api_call():
         ic("📋 Final Payload", payload)
         
         # Create custom HTTP client with request-specific settings
-        custom_client = AIHttpClient(
+        custom_client = ai_analyzer.AIHttpClient(
             max_retries=max_retries,
             backoff_factor=0.5,
             timeout=timeout

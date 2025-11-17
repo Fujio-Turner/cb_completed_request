@@ -25769,12 +25769,26 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 return;
             }
             
-            // Get AI provider settings
-            const provider = document.getElementById('ai-provider-select')?.value;
+            // Get AI provider settings from dropdown
+            const providerDropdown = document.getElementById('ai-provider-select');
+            const provider = providerDropdown?.value;
+            
             if (!provider) {
-                showToast('Please select an AI provider in Settings', 'error');
+                showToast('Please select an AI provider', 'error');
                 return;
             }
+            
+            // Check if provider is configured (has credentials in Couchbase)
+            const selectedOption = providerDropdown.options[providerDropdown.selectedIndex];
+            const hasApiKey = selectedOption?.dataset.apiKey && selectedOption.dataset.apiKey.length > 0;
+            
+            if (!hasApiKey) {
+                showToast('No API key configured for this provider. Please add in Settings.', 'error');
+                Logger.error('[AI] No API key for provider:', provider);
+                return;
+            }
+            
+            Logger.debug(`[AI] Provider: ${provider} (credentials in Couchbase)`);
             
             // Gather selections
             const selections = {
@@ -25824,16 +25838,16 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     options: options,
                     parseContext: gatherParseContext(),
                     couchbaseConfig: cbConfig,
-                    // Placeholder AI response (will be replaced by actual AI call)
-                    provider: provider,
-                    model: 'placeholder',
-                    apiKey: 'placeholder'
+                    // Only send provider ID - Flask will get credentials from user::config
+                    provider: provider
                 };
                 
                 Logger.info(`[AI] Payload size: ${JSON.stringify(savePayload).length} bytes`);
                 
                 try {
-                    showToast('Saving analysis to Couchbase...', 'info');
+                    // Show immediate feedback
+                    showToast('🚀 AI Analyzer job has been submitted. You can track the status of the job in the table below.', 'info');
+                    Logger.info('[AI] 🚀 Job submitted to Flask');
                     
                     // POST to Flask analyze endpoint (which will save even without real AI)
                     const response = await fetch('/api/ai/analyze', {
@@ -25848,14 +25862,19 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     
                     if (result.success) {
                         const docId = result.document_id;
-                        showToast(`✅ Saved to ${cbConfig.bucketConfig.bucket}.${cbConfig.bucketConfig.analyzerScope}.${cbConfig.bucketConfig.analyzerCollection}::${docId}`, 'success');
+                        const location = `${cbConfig.bucketConfig.bucket}.${cbConfig.bucketConfig.analyzerScope}.${cbConfig.bucketConfig.analyzerCollection}`;
+                        
+                        showToast(`✅ Analysis saved: ${docId}`, 'success');
                         Logger.info(`[AI] ✅ Saved to Couchbase: ${docId}`);
+                        
+                        // Reload history to show new record
+                        setTimeout(() => loadAIAnalysisHistory(), 500);
                     } else {
                         throw new Error(result.error || 'Save failed');
                     }
                 } catch (error) {
-                    Logger.error('[AI] ❌ Error saving:', error);
-                    showToast(`Failed to save: ${error.message}`, 'error');
+                    Logger.error('[AI] ❌ Error during analysis:', error);
+                    showToast(`❌ Analysis failed: ${error.message}`, 'error');
                 }
                 
                 return; // Exit early for now (no AI call yet)
@@ -26013,7 +26032,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         document.addEventListener('DOMContentLoaded', function() {
             $('#tabs').on('tabsactivate', function(event, ui) {
                 if (ui.newPanel.attr('id') === 'ai-analyzer') {
-                    loadAIAnalysisHistory();
+                    populateAIProviderDropdown(); loadAIAnalysisHistory();
                 }
             });
         });
@@ -26026,3 +26045,319 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         window.analyzeWithAI = analyzeWithAI;
         window.loadAIAnalysisHistory = loadAIAnalysisHistory;
         window.viewAnalysis = viewAnalysis;
+
+        /**
+         * Populate AI provider dropdown from user config
+         */
+        async function populateAIProviderDropdown() {
+            Logger.debug('[AI] Populating AI provider dropdown');
+
+            const dropdown = document.getElementById('ai-provider-select');
+            if (!dropdown) return;
+            
+            // Get CB config
+            const cbConfig = window.clusterConfig || (typeof clusterConfig !== 'undefined' ? clusterConfig : null);
+            
+            if (!cbConfig || !cbConfig.cluster) {
+                dropdown.innerHTML = '<option value="">⚠️ Configure Couchbase in Settings first</option>';
+                Logger.warn('[AI] No Couchbase config - cannot load AI providers');
+                return;
+            }
+
+            try {
+                // Load preferences from Couchbase
+                const response = await fetch('/api/couchbase/load-preferences/user_config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        config: cbConfig.cluster,
+                        bucketConfig: cbConfig.bucketConfig
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (!result.success || !result.data || !result.data.aiApis) {
+                    dropdown.innerHTML = '<option value="">⚠️ No AI providers configured</option>';
+                    Logger.warn('[AI] No aiApis found in preferences');
+                    return;
+                }
+                
+                const aiApis = result.data.aiApis;
+                dropdown.innerHTML = '<option value="">-- Select AI Provider --</option>';
+                
+                let hasUsableProvider = false;
+
+                aiApis.forEach((api, index) => {
+                    const hasApiKey = api.apiKey && api.apiKey.length > 0;
+                    const status = hasApiKey ? '✅' : '❌';
+                    const defaultTag = index === 0 ? ' (Default)' : '';
+                    const modelInfo = api.model ? ` - ${api.model}` : '';
+
+                    const option = document.createElement('option');
+                    option.value = api.id;
+                    option.textContent = `${status} ${api.name}${defaultTag}${modelInfo}`;
+                    option.disabled = !hasApiKey;
+                    
+                    // Store full API config as data attribute
+                    option.dataset.apiUrl = api.apiUrl;
+                    option.dataset.model = api.model;
+                    option.dataset.apiKey = api.apiKey;
+
+                    if (hasApiKey) {
+                        hasUsableProvider = true;
+                        if (index === 0) {
+                            option.selected = true;
+                        }
+                    }
+
+                    dropdown.appendChild(option);
+                });
+                
+                Logger.info(`[AI] Dropdown populated: ${aiApis.length} providers, ${hasUsableProvider ? 'HAS' : 'NO'} usable keys`);
+                
+            } catch (error) {
+                Logger.error('[AI] Error loading AI providers:', error);
+                dropdown.innerHTML = '<option value="">⚠️ Error loading providers</option>';
+            }
+        }
+
+        window.populateAIProviderDropdown = populateAIProviderDropdown;
+
+        /**
+         * View saved AI analysis in full-screen overlay
+         */
+        async function viewAnalysis(docId) {
+            Logger.info(`[AI] Loading analysis: ${docId}`);
+            
+            const cbConfig = window.clusterConfig || (typeof clusterConfig !== 'undefined' ? clusterConfig : null);
+            
+            if (!cbConfig) {
+                showToast('Cannot load analysis - Couchbase not configured', 'error');
+                return;
+            }
+            
+            try {
+                // Fetch full document
+                const response = await fetch(`/api/couchbase/load-analyzer/${docId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        config: cbConfig.cluster,
+                        bucketConfig: cbConfig.bucketConfig
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    displayAIAnalysis(result.data);
+                } else {
+                    throw new Error(result.error || 'Failed to load');
+                }
+            } catch (error) {
+                Logger.error('[AI] Error loading analysis:', error);
+                showToast(`Failed to load: ${error.message}`, 'error');
+            }
+        }
+        
+        /**
+         * Display AI analysis in overlay
+         */
+        function displayAIAnalysis(doc) {
+            const overlay = document.getElementById('ai-view-overlay');
+            const contextDiv = document.getElementById('ai-view-context');
+            const responseDiv = document.getElementById('ai-view-response');
+            const statsSpan = document.getElementById('ai-view-stats');
+            
+            if (!overlay || !contextDiv || !responseDiv) return;
+            
+            // Build context HTML
+            const ctx = doc.parseJson || {};
+            const meta = doc.metadata || {};
+            
+            contextDiv.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #ffc107; font-weight: bold; margin-bottom: 8px;">📅 Request Info</div>
+                    <div style="margin-left: 10px;">
+                        <div>Date: ${new Date(doc.createdAt).toLocaleString()}</div>
+                        <div>Provider: <span style="background: #000; color: #fff; padding: 2px 6px; border-radius: 4px;">${doc.provider}</span></div>
+                        <div>Model: ${doc.model}</div>
+                        <div>Status: <span style="color: ${doc.status === 'completed' ? '#28a745' : '#dc3545'}; font-weight: bold;">${doc.status}</span></div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <div style="color: #007bff; font-weight: bold; margin-bottom: 6px; font-size: 13px;">💬 Prompt</div>
+                    <div style="margin-left: 10px; background: #f8f9fa; padding: 8px; border-radius: 4px; border-left: 3px solid #007bff; font-size: 12px; line-height: 1.5;">
+                        ${doc.prompt || 'N/A'}
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <div style="color: #007bff; font-weight: bold; margin-bottom: 6px; font-size: 13px;">🔧 Filters Applied</div>
+                    <div style="margin-left: 10px;">
+                        <div>Timezone: ${ctx.filters?.timezone || 'N/A'}</div>
+                        <div>Date Range: ${ctx.filters?.date_range?.from || 'N/A'} → ${ctx.filters?.date_range?.to || 'N/A'}</div>
+                        <div>SQL Filter: ${ctx.filters?.sql_statement || 'None'}</div>
+                        <div>Time Filter: ${ctx.filters?.elapsed_time || 'None'}</div>
+                        <div>Collection: ${ctx.filters?.collection || 'All'}</div>
+                        <div>Exclude System: ${ctx.filters?.exclude_system ? 'Yes' : 'No'}</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #ffc107; font-weight: bold; margin-bottom: 8px;">📂 Data Sources</div>
+                    <div style="margin-left: 10px;">
+                        <div>Queries: ${ctx.data_sources?.completed_requests?.record_count || 0} (${ctx.data_sources?.completed_requests?.source || 'N/A'})</div>
+                        <div>Indexes: ${ctx.data_sources?.indexes?.record_count || 0} (${ctx.data_sources?.indexes?.source || 'N/A'})</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #ffc107; font-weight: bold; margin-bottom: 8px;">📊 Metrics</div>
+                    <div style="margin-left: 10px;">
+                        <div>Payload Size: ${(meta.requestPayloadSize / 1024).toFixed(2)} KB</div>
+                        <div>Response Size: ${(meta.responsePayloadSize / 1024).toFixed(2)} KB</div>
+                        <div>AI Time: ${(meta.elapsed_ms / 1000).toFixed(2)}s</div>
+                        <div>Obfuscated: ${meta.obfuscated ? 'Yes' : 'No'}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Parse and display AI response
+            const aiResponse = doc.aiResponse;
+            let analysisData;
+            
+            if (typeof aiResponse === 'object' && aiResponse.choices) {
+                // OpenAI/Grok format - try content_parsed first
+                const message = aiResponse.choices[0]?.message || {};
+                
+                if (message.content_parsed) {
+                    analysisData = message.content_parsed;
+                } else {
+                    try {
+                        const content = message.content || '';
+                        analysisData = JSON.parse(content);
+                    } catch (e) {
+                        responseDiv.innerHTML = `<div style="color: #dc3545;">Error parsing AI response</div><pre>${message.content}</pre>`;
+                        overlay.style.display = 'block';
+                        return;
+                    }
+                }
+            } else {
+                analysisData = aiResponse;
+            }
+            
+            // Render formatted HTML response
+            responseDiv.innerHTML = formatAIAnalysisHTML(analysisData);
+            
+            // Stats
+            if (statsSpan) {
+                const tokens = aiResponse.usage?.total_tokens || 0;
+                statsSpan.textContent = `Tokens: ${tokens.toLocaleString()}`;
+            }
+            
+            overlay.style.display = 'block';
+            Logger.info('[AI] ✅ Analysis view displayed');
+        }
+        
+        function closeAIView() {
+            const overlay = document.getElementById('ai-view-overlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+        
+        function copyAIResponse() {
+            const responseDiv = document.getElementById('ai-view-response');
+            if (!responseDiv) return;
+            
+            navigator.clipboard.writeText(responseDiv.textContent).then(() => {
+                showToast('AI response copied!', 'success');
+            }).catch(err => {
+                showToast('Failed to copy', 'error');
+            });
+        }
+        
+        window.closeAIView = closeAIView;
+        window.copyAIResponse = copyAIResponse;
+
+        /**
+         * Format AI analysis data as HTML
+         */
+        function formatAIAnalysisHTML(data) {
+            let html = '';
+            
+            // Summary - Compact
+            if (data.summary) {
+                html += `<div style="background: #fff3cd; padding: 10px 12px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #ffc107;">
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px;">
+                        <div>Total: <strong>${data.summary.total_queries_analyzed || 0}</strong> queries</div>
+                        <div>Issues: <span class="severity-critical">${data.summary.critical_issues_found || 0}</span></div>
+                        <div>Rating: <span class="severity-${data.summary.performance_rating}">${data.summary.performance_rating || 'N/A'}</span></div>
+                        <div>Potential: <strong>${data.summary.estimated_improvement_potential || 'N/A'}</strong></div>
+                    </div>
+                </div>`;
+            }
+            
+            // Critical Issues - Compact
+            if (data.critical_issues && data.critical_issues.length > 0) {
+                html += `<div style="margin-bottom: 12px;">
+                    <h4 style="color: #dc3545; margin: 0 0 8px 0; font-size: 15px;">🚨 Critical Issues (${data.critical_issues.length})</h4>`;
+                
+                data.critical_issues.forEach((issue, idx) => {
+                    const priorityNum = issue.priority_number || issue.priority || '?';
+                    
+                    html += `<div style="background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #dc3545; border: 1px solid #f8d7da;">
+                        <div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                            <div><strong style="font-size: 14px;">${idx + 1}. ${issue.title}</strong></div>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <span style="background: #000; color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold;">P${priorityNum}/10</span>
+                                <span class="severity-${issue.severity}" style="font-size: 10px;">${issue.severity.toUpperCase()}</span>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 6px; font-size: 12px; line-height: 1.4;">${issue.description_html || issue.description || ''}</div>
+                        <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px; font-size: 12px; margin-bottom: 6px;">
+                            <div><strong>Affected:</strong></div><div>${issue.affected_queries || 0} queries</div>
+                            <div><strong>Fix:</strong></div><div>${issue.recommendation || ''}</div>
+                            <div><strong>Impact:</strong></div><div>${issue.expected_impact || ''}</div>
+                        </div>
+                        ${issue.sources ? '<div style="font-size: 10px; color: #666; padding: 6px; background: #f8f9fa; border-radius: 3px; margin-top: 6px;"><strong>📍 Sources:</strong> ' + issue.sources.map(s => `<span style="display: inline-block; margin: 2px 4px; padding: 2px 6px; background: #e9ecef; border-radius: 2px;">${s.location}</span>`).join('') + '</div>' : ''}
+                    </div>`;
+                });
+                
+                html += '</div>';
+            }
+            
+            // Recommendations - Compact
+            if (data.recommendations && data.recommendations.length > 0) {
+                html += `<div style="margin-bottom: 12px;">
+                    <h4 style="color: #28a745; margin: 0 0 8px 0; font-size: 15px;">💡 Recommendations (${data.recommendations.length})</h4>`;
+                
+                data.recommendations.forEach((rec, idx) => {
+                    html += `<div style="background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #28a745; border: 1px solid #d4edda;">
+                        <div style="margin-bottom: 6px; font-size: 13px;"><strong>${idx + 1}. ${rec.recommendation_html || rec.recommendation || ''}</strong></div>
+                        <div style="margin-bottom: 6px; font-size: 12px; line-height: 1.4;">${rec.rationale_html || rec.rationale || ''}</div>
+                        ${rec.implementation_steps ? '<div style="margin-bottom: 6px; font-size: 12px;"><strong>Steps:</strong><ol style="margin: 4px 0 0 18px; padding: 0;">' + rec.implementation_steps.map(s => `<li style="margin: 2px 0;">${s}</li>`).join('') + '</ol></div>' : ''}
+                        <div style="font-size: 12px;"><strong>Impact:</strong> ${rec.estimated_impact || ''}</div>
+                    </div>`;
+                });
+                
+                html += '</div>';
+            }
+            
+            // Next Steps - Compact
+            if (data.next_steps && data.next_steps.length > 0) {
+                html += `<div style="background: #e7f3ff; padding: 10px 12px; border-radius: 4px; border-left: 3px solid #007bff;">
+                    <h4 style="color: #007bff; margin: 0 0 8px 0; font-size: 14px;">🎯 Next Steps</h4>
+                    <ol style="margin: 0; padding-left: 18px; font-size: 12px;">
+                        ${data.next_steps.map(step => `<li style="margin: 4px 0;">${step}</li>`).join('')}
+                    </ol>
+                </div>`;
+            }
+            
+            return html || '<div style="color: #999;">No formatted content available</div>';
+        }
+        
+        window.formatAIAnalysisHTML = formatAIAnalysisHTML;
