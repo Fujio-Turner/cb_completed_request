@@ -245,29 +245,83 @@ class DataObfuscator:
             return self._generate_token(str(value))
     
     def obfuscate_query(self, query: str) -> str:
-        """Obfuscate SQL++ query statement"""
-        # Simple implementation - replace identifiers
-        # TODO: More sophisticated SQL++ parsing
+        """
+        Obfuscate SQL++ query statement while preserving SQL keywords and structure
+        Example: CREATE INDEX idx_users ON users(name) WHERE active = true
+        Becomes: CREATE INDEX x4k2m9 ON a9m2k5(j7p3q1) WHERE t8r4n3 = true
+        """
+        if not query:
+            return query
+        
+        # SQL++ keywords that should NOT be obfuscated
+        SQL_KEYWORDS = {
+            'SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'NOT', 'IN', 'IS', 'NULL',
+            'JOIN', 'INNER', 'LEFT', 'RIGHT', 'OUTER', 'ON', 'USING',
+            'GROUP', 'BY', 'HAVING', 'ORDER', 'ASC', 'DESC',
+            'LIMIT', 'OFFSET', 'INSERT', 'UPDATE', 'DELETE', 'UPSERT', 'MERGE',
+            'CREATE', 'INDEX', 'PRIMARY', 'DROP', 'ALTER', 'BUILD',
+            'SET', 'UNSET', 'AS', 'DISTINCT', 'ALL', 'ANY', 'SOME', 'EVERY',
+            'CASE', 'WHEN', 'THEN', 'ELSE', 'END',
+            'UNION', 'INTERSECT', 'EXCEPT', 'NEST', 'UNNEST', 'FLATTEN',
+            'WITH', 'RECURSIVE', 'LET', 'LETTING',
+            'USE', 'KEYS', 'PARTITION', 'ARRAY', 'FIRST', 'OBJECT',
+            'EXECUTE', 'PREPARE', 'EXPLAIN', 'ADVISE', 'INFER',
+            'COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'ARRAY_AGG',
+            'LIKE', 'BETWEEN', 'EXISTS', 'CONTAINS', 'WITHIN',
+            'TRUE', 'FALSE', 'MISSING', 'VALUED'
+        }
+        
+        import re
+        
+        # Split into tokens preserving structure
         tokens = query.split()
         obfuscated_tokens = []
         
         for token in tokens:
-            # Skip SQL keywords
-            if token.upper() in ['SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'JOIN', 
-                                  'ON', 'GROUP', 'BY', 'ORDER', 'LIMIT', 'OFFSET',
-                                  'INSERT', 'UPDATE', 'DELETE', 'SET', 'AS']:
+            # Preserve SQL keywords
+            if token.upper() in SQL_KEYWORDS:
                 obfuscated_tokens.append(token)
-            elif token.startswith('"') or token.startswith("'"):
-                # String literal
-                obfuscated_tokens.append(f'"{self._generate_token(token.strip("\"\\'"))}"')
-            elif '.' in token:
-                # Bucket.scope.collection
-                parts = token.split('.')
-                obfuscated_parts = [self._generate_token(p) for p in parts]
-                obfuscated_tokens.append('.'.join(obfuscated_parts))
-            else:
-                # Field name or value
-                obfuscated_tokens.append(self._generate_token(token))
+                continue
+            
+            # Check if token contains special characters (operators, punctuation)
+            # Need to handle cases like "users(name," -> "users" "(" "name" ","
+            import re
+            
+            # Split token by special characters while keeping them
+            parts = re.split(r'([(),;=<>!*+\-/])', token)
+            obfuscated_parts = []
+            
+            for part in parts:
+                if not part:
+                    continue
+                
+                # Preserve operators/punctuation
+                if part in ['(', ')', ',', ';', '=', '<', '>', '!', '*', '/', '+', '-']:
+                    obfuscated_parts.append(part)
+                # Preserve numbers
+                elif re.match(r'^\d+\.?\d*$', part):
+                    obfuscated_parts.append(part)
+                # Preserve parameters
+                elif part.startswith('$') or part.startswith('?'):
+                    obfuscated_parts.append(part)
+                # Obfuscate quoted strings
+                elif part.startswith('"') or part.startswith("'") or part.startswith('`'):
+                    quote_char = part[0]
+                    inner = part.strip('"\'`')
+                    obfuscated_parts.append(f'{quote_char}{self._generate_token(inner)}{quote_char}')
+                # Obfuscate bucket.scope.collection
+                elif '.' in part:
+                    segments = part.split('.')
+                    obfuscated_segments = [self._generate_token(s.strip('`')) for s in segments]
+                    obfuscated_parts.append('.'.join(obfuscated_segments))
+                # Preserve SQL keywords (case-insensitive check)
+                elif part.upper() in SQL_KEYWORDS:
+                    obfuscated_parts.append(part)
+                # Obfuscate identifier
+                else:
+                    obfuscated_parts.append(self._generate_token(part.strip('`')))
+            
+            obfuscated_tokens.append(''.join(obfuscated_parts))
         
         return ' '.join(obfuscated_tokens)
     
@@ -401,35 +455,40 @@ class AIPayloadBuilder:
         if options.get('obfuscated', False):
             obfuscator = DataObfuscator()
             
-            # Obfuscate SQL++ in query groups
-            if 'query_groups' in payload['data'] and 'patterns' in payload['data']['query_groups']:
-                for pattern in payload['data']['query_groups']['patterns']:
-                    if isinstance(pattern, dict) and 'statement' in pattern:
-                        pattern['statement'] = obfuscator.obfuscate_query(pattern['statement'])
-                        pattern['_obfuscated'] = True
+            # Recursively obfuscate SQL++ fields in any data structure
+            def obfuscate_sql_fields(obj):
+                """Recursively find and obfuscate SQL++ statements and identifiers"""
+                if isinstance(obj, dict):
+                    for key, value in obj.items():
+                        # Skip metadata fields
+                        if key.startswith('_'):
+                            continue
+                        
+                        # Obfuscate SQL++ statement fields
+                        if key in ['statement', 'normalized_statement', 'queryStatement', 
+                                 'indexString', 'preparedText', 'normalizedStatement']:
+                            if isinstance(value, str) and value:
+                                obj[key] = obfuscator.obfuscate_query(value)
+                        # Obfuscate identifier fields
+                        elif key in ['name', 'indexName', 'indexKey', 'bucket_id', 'scope_id', 
+                                   'keyspace_id', 'bucketName', 'scopeName', 'collectionName', 
+                                   'bucketScopeCollection', 'bucket', 'scope', 'collection']:
+                            if isinstance(value, str) and value and not value.startswith('_'):
+                                obj[key] = obfuscator._generate_token(value)
+                        # Recurse into nested structures
+                        elif isinstance(value, (dict, list)):
+                            obfuscate_sql_fields(value)
+                elif isinstance(obj, list):
+                    for item in obj:
+                        obfuscate_sql_fields(item)
             
-            # Obfuscate index names and definitions
-            if 'indexes' in payload['data'] and 'indexes' in payload['data']['indexes']:
-                for index in payload['data']['indexes']['indexes']:
-                    if isinstance(index, dict):
-                        # Obfuscate index name
-                        if 'name' in index:
-                            index['name'] = obfuscator._generate_token(index['name'])
-                        # Obfuscate index string (CREATE INDEX statement)
-                        if 'indexString' in index:
-                            index['indexString'] = obfuscator.obfuscate_query(index['indexString'])
-                        # Obfuscate bucket/scope/collection references
-                        for field in ['bucket_id', 'scope_id', 'keyspace_id']:
-                            if field in index and index[field]:
-                                index[field] = obfuscator._generate_token(str(index[field]))
-                        index['_obfuscated'] = True
+            # Apply obfuscation to all data sections
+            obfuscate_sql_fields(payload['data'])
             
-            # Obfuscate Mermaid diagram
+            # Obfuscate Mermaid diagram text separately
             if 'index_query_flow' in payload['data'] and 'mermaid_diagram' in payload['data']['index_query_flow']:
                 mermaid = payload['data']['index_query_flow']['mermaid_diagram']
-                # Obfuscate index names and bucket names in diagram
                 payload['data']['index_query_flow']['mermaid_diagram'] = obfuscator.obfuscate_query(mermaid)
-                payload['data']['index_query_flow']['_obfuscated'] = True
             
             # Get mapping table for de-obfuscation
             mapping_table = obfuscator.get_mapping_table()
