@@ -25456,6 +25456,51 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         }
 
         /**
+         * Gather parse context - filters, data sources, and settings
+         */
+        function gatherParseContext() {
+            Logger.debug('[AI] ⚙️ Gathering parse context (filters & data sources)');
+            
+            const context = {
+                filters: {
+                    sql_statement: document.getElementById('sql-statement-filter')?.value || '',
+                    elapsed_time: document.getElementById('elapsed-time-filter')?.value || '',
+                    collection: document.getElementById('collection-filter')?.value || '',
+                    timezone: document.getElementById('timezone-selector')?.value || '',
+                    date_range: {
+                        from: document.getElementById('start-date')?.value || '',
+                        to: document.getElementById('end-date')?.value || ''
+                    },
+                    exclude_system: document.getElementById('exclude-system-queries')?.checked || false,
+                    time_range_preset: document.getElementById('time-range-select')?.value || 'original'
+                },
+                data_sources: {
+                    completed_requests: {
+                        source: window._uploadedCompletedRequestsFile ? 'file' : 'paste',
+                        filename: window._uploadedCompletedRequestsFile || null,
+                        has_data: everyQueryData && everyQueryData.length > 0,
+                        record_count: everyQueryData?.length || 0
+                    },
+                    indexes: {
+                        source: window._uploadedIndexesFile ? 'file' : 'paste',
+                        filename: window._uploadedIndexesFile || null,
+                        has_data: indexData && indexData.length > 0,
+                        record_count: indexData?.length || 0
+                    }
+                },
+                stats: {
+                    total_queries: everyQueryData?.length || 0,
+                    total_patterns: analysisData?.length || 0,
+                    total_indexes: indexData?.length || 0,
+                    current_timezone: currentTimezone || 'UTC'
+                }
+            };
+            
+            Logger.debug(`[AI] Parse context gathered: ${context.stats.total_queries} queries, ${context.filters.exclude_system ? 'EXCLUDED' : 'INCLUDED'} system`);
+            return context;
+        }
+
+        /**
          * Gather flow diagram data - uses cached Mermaid diagram
          */
         function gatherFlowDiagramData() {
@@ -25538,7 +25583,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     },
                     prompt: prompt,
                     selections: selections,
-                    options: options
+                    options: options,
+                    parseContext: gatherParseContext()  // Include filter and data source state
                 };
                 
                 Logger.trace(`[AI] Request data size: ${JSON.stringify(requestData).length} bytes`);
@@ -25710,8 +25756,119 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         // Show debug button on load if debug mode
         document.addEventListener('DOMContentLoaded', toggleDebugMermaidButton);
 
+        /**
+         * Analyze data with AI (sends to AI provider)
+         */
+        async function analyzeWithAI() {
+            Logger.info('[AI] 🤖 analyzeWithAI() called');
+            
+            // Check if data exists
+            if (!everyQueryData || everyQueryData.length === 0) {
+                Logger.error('[AI] ❌ No query data available');
+                showToast('Please parse JSON data first', 'error');
+                return;
+            }
+            
+            // Get AI provider settings
+            const provider = document.getElementById('ai-provider-select')?.value;
+            if (!provider) {
+                showToast('Please select an AI provider in Settings', 'error');
+                return;
+            }
+            
+            // Gather selections
+            const selections = {
+                dashboard: document.getElementById('ai-include-dashboard')?.checked || false,
+                insights: document.getElementById('ai-include-insights')?.checked || false,
+                query_groups: document.getElementById('ai-include-query-groups')?.checked || false,
+                indexes: document.getElementById('ai-include-indexes')?.checked || false,
+                flow_diagram: document.getElementById('ai-include-flow-diagram')?.checked || false
+            };
+            
+            const options = {
+                obfuscated: document.getElementById('ai-obfuscate-data')?.checked || false,
+                store_results: document.getElementById('ai-store-analysis')?.checked || false
+            };
+            
+            const prompt = document.getElementById('ai-user-prompt')?.value || "Analyze query performance";
+            
+            Logger.debug(`[AI] Provider: ${provider}, Store: ${options.store_results}`);
+            
+            // Check if save is requested
+            if (options.store_results) {
+                // Get Couchbase config from global clusterConfig (loaded from config.json)
+                const cbConfig = window.clusterConfig || (typeof clusterConfig !== 'undefined' ? clusterConfig : null);
+                
+                if (!cbConfig || !cbConfig.cluster) {
+                    showToast('Couchbase not configured. Please configure in Settings → Save Data To CB.', 'error');
+                    Logger.error('[AI] No Couchbase config available');
+                    Logger.trace('[AI] window.clusterConfig:', window.clusterConfig);
+                    return;
+                }
+                
+                Logger.info('[AI] 💾 Save to Couchbase is enabled - preparing to save');
+                
+                // Build payload (for saving, even without AI call)
+                const savePayload = {
+                    data: {
+                        everyQueryData: everyQueryData,
+                        analysisData: analysisData,
+                        indexData: typeof indexData !== 'undefined' ? indexData : [],
+                        dashboardStats: gatherDashboardStats(),
+                        insightsData: gatherInsightsData(),
+                        flowDiagramData: gatherFlowDiagramData(),
+                        version: '4.0.0-dev'
+                    },
+                    prompt: prompt,
+                    selections: selections,
+                    options: options,
+                    parseContext: gatherParseContext(),
+                    couchbaseConfig: cbConfig,
+                    // Placeholder AI response (will be replaced by actual AI call)
+                    provider: provider,
+                    model: 'placeholder',
+                    apiKey: 'placeholder'
+                };
+                
+                Logger.info(`[AI] Payload size: ${JSON.stringify(savePayload).length} bytes`);
+                
+                try {
+                    showToast('Saving analysis to Couchbase...', 'info');
+                    
+                    // POST to Flask analyze endpoint (which will save even without real AI)
+                    const response = await fetch('/api/ai/analyze', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(savePayload)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        const docId = result.document_id;
+                        showToast(`✅ Saved to ${cbConfig.bucketConfig.bucket}.${cbConfig.bucketConfig.analyzerScope}.${cbConfig.bucketConfig.analyzerCollection}::${docId}`, 'success');
+                        Logger.info(`[AI] ✅ Saved to Couchbase: ${docId}`);
+                    } else {
+                        throw new Error(result.error || 'Save failed');
+                    }
+                } catch (error) {
+                    Logger.error('[AI] ❌ Error saving:', error);
+                    showToast(`Failed to save: ${error.message}`, 'error');
+                }
+                
+                return; // Exit early for now (no AI call yet)
+            }
+            
+            // TODO: Actual AI API call (when not saving)
+            showToast('AI analysis feature coming soon!', 'info');
+            Logger.warn('[AI] ⚠️ AI API call not yet implemented');
+        }
+
         // Make functions globally accessible
         window.showAIPreview = showAIPreview;
         window.closeAIPreview = closeAIPreview;
         window.copyAIPreviewJSON = copyAIPreviewJSON;
         window.openMermaidLive = openMermaidLive;
+        window.analyzeWithAI = analyzeWithAI;

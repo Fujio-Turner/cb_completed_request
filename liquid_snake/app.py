@@ -694,6 +694,8 @@ def analyze_with_ai():
     }
     """
     try:
+        import json
+        
         request_data = request.json
         ic("🤖 AI Analysis request received")
         
@@ -715,7 +717,10 @@ def analyze_with_ai():
                 'error': 'No data provided'
             }), 400
         
-        if not api_key:
+        # Check if this is just a save operation (no AI call)
+        save_only = (api_key == 'placeholder' or not api_url)
+        
+        if not save_only and not api_key:
             return jsonify({
                 'success': False,
                 'error': 'API key is required'
@@ -736,65 +741,83 @@ def analyze_with_ai():
         if obfuscation_mapping:
             ic(f"🔑 Obfuscation mapping: {len(obfuscation_mapping)} tokens")
         
-        # Get AI system prompt with response format instructions
-        system_prompt = ai_analyzer.get_ai_system_prompt()
-        
-        # Format for AI provider (convert to chat messages format)
-        import json
-        if provider == 'openai':
-            ai_request_payload = {
-                'model': model or 'gpt-4o',
-                'messages': [
-                    {
-                        'role': 'system',
-                        'content': system_prompt
-                    },
-                    {
-                        'role': 'user',
-                        'content': f"{prompt}\n\nQuery Data:\n{json.dumps(ai_payload_data['data'], indent=2)}"
-                    }
-                ],
-                'response_format': {'type': 'json_object'}  # Request JSON response
+        # If save_only mode (no real AI call), create placeholder response and save
+        if save_only:
+            ic("💾 Save-only mode: Skipping AI call, saving payload with placeholder response")
+            
+            analysis_data = {
+                'summary': {
+                    'note': 'Placeholder - AI call not executed',
+                    'total_queries_analyzed': len(raw_data.get('everyQueryData', [])),
+                    'saved_without_ai_call': True
+                }
             }
-        elif provider == 'anthropic':
-            ai_request_payload = {
-                'model': model or 'claude-3-5-sonnet-20241022',
-                'max_tokens': 4096,
-                'messages': [
-                    {
-                        'role': 'user',
-                        'content': f"{system_prompt}\n\n{prompt}\n\nQuery Data:\n{json.dumps(ai_payload_data['data'], indent=2)}"
-                    }
-                ]
+            
+            # Skip to save logic below
+            result = {
+                'success': True,
+                'data': analysis_data,
+                'elapsed_ms': 0
             }
         else:
-            # Generic format
-            ai_request_payload = {
-                'prompt': f"{system_prompt}\n\n{prompt}\n\nQuery Data:\n{json.dumps(ai_payload_data['data'], indent=2)}"
+            # Get AI system prompt with response format instructions
+            system_prompt = ai_analyzer.get_ai_system_prompt()
+            
+            # Format for AI provider (convert to chat messages format)
+            if provider == 'openai':
+                ai_request_payload = {
+                    'model': model or 'gpt-4o',
+                    'messages': [
+                        {
+                            'role': 'system',
+                            'content': system_prompt
+                        },
+                        {
+                            'role': 'user',
+                            'content': f"{prompt}\n\nQuery Data:\n{json.dumps(ai_payload_data['data'], indent=2)}"
+                        }
+                    ],
+                    'response_format': {'type': 'json_object'}  # Request JSON response
+                }
+            elif provider == 'anthropic':
+                ai_request_payload = {
+                    'model': model or 'claude-3-5-sonnet-20241022',
+                    'max_tokens': 4096,
+                    'messages': [
+                        {
+                            'role': 'user',
+                            'content': f"{system_prompt}\n\n{prompt}\n\nQuery Data:\n{json.dumps(ai_payload_data['data'], indent=2)}"
+                        }
+                    ]
+                }
+            else:
+                # Generic format
+                ai_request_payload = {
+                    'prompt': f"{system_prompt}\n\n{prompt}\n\nQuery Data:\n{json.dumps(ai_payload_data['data'], indent=2)}"
+                }
+            
+            ic("📤 Sending to AI provider", provider, model)
+            
+            # Prepare headers
+            headers = {
+                'Authorization': f'Bearer {api_key}',
             }
-        
-        ic("📤 Sending to AI provider", provider, model)
-        
-        # Prepare headers
-        headers = {
-            'Authorization': f'Bearer {api_key}',
-        }
-        
-        if provider == 'anthropic':
-            headers['x-api-key'] = api_key
-            headers['anthropic-version'] = '2023-06-01'
-            del headers['Authorization']
-        
-        # Build full URL
-        full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
-        
-        # Make AI API call
-        result = http_client.call_api(
-            method='POST',
-            url=full_url,
-            headers=headers,
-            json_data=ai_request_payload
-        )
+            
+            if provider == 'anthropic':
+                headers['x-api-key'] = api_key
+                headers['anthropic-version'] = '2023-06-01'
+                del headers['Authorization']
+            
+            # Build full URL
+            full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
+            
+            # Make AI API call
+            result = http_client.call_api(
+                method='POST',
+                url=full_url,
+                headers=headers,
+                json_data=ai_request_payload
+            )
         
         ic("📥 AI response received", result.get('success'))
         
@@ -807,12 +830,71 @@ def analyze_with_ai():
                 obfuscator = ai_analyzer.DataObfuscator()
                 
                 # Convert analysis to JSON string, de-obfuscate, convert back
-                import json
                 analysis_json = json.dumps(analysis_data)
                 deobfuscated_json = obfuscator.deobfuscate_text(analysis_json, obfuscation_mapping)
                 analysis_data = json.loads(deobfuscated_json)
                 
                 ic(f"✅ De-obfuscation complete, restored {len(obfuscation_mapping)} tokens")
+            
+            # Save to Couchbase if requested
+            saved_doc_id = None
+            if options.get('store_results', False):
+                try:
+                    ic("💾 Attempting to save AI analysis to Couchbase")
+                    
+                    # Get Couchbase config from request
+                    cb_config = request_data.get('couchbaseConfig', {})
+                    
+                    if cb_config and cb_config.get('cluster'):
+                        # Build document to save
+                        import uuid
+                        from datetime import datetime
+                        
+                        doc_id = f"ai_analysis_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
+                        
+                        # Calculate payload sizes
+                        payload_size = len(json.dumps(ai_payload_data).encode('utf-8'))
+                        response_size = len(json.dumps(analysis_data).encode('utf-8'))
+                        
+                        save_doc = {
+                            'docType': 'ai_analysis',
+                            'createdAt': datetime.utcnow().isoformat() + 'Z',
+                            'status': 'completed',  # completed | failed | pending
+                            'provider': provider,
+                            'model': model,
+                            'prompt': prompt,
+                            'payload': ai_payload_data,
+                            'aiResponse': analysis_data,
+                            'parseJson': request_data.get('parseContext', {}),  # Filter and data source state
+                            'metadata': {
+                                'obfuscated': obfuscation_mapping is not None,
+                                'elapsed_ms': result.get('elapsed_ms'),
+                                'selections': selections,
+                                'total_queries': len(raw_data.get('everyQueryData', [])),
+                                'requestPayloadSize': payload_size,
+                                'responsePayloadSize': response_size
+                            }
+                        }
+                        
+                        # Save to cb_tools.query.analyzer
+                        cluster = get_couchbase_connection(cb_config['cluster'])
+                        if cluster:
+                            bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
+                            collection = bucket.scope(cb_config['bucketConfig']['analyzerScope']).collection(
+                                cb_config['bucketConfig']['analyzerCollection']
+                            )
+                            
+                            collection.upsert(doc_id, save_doc)
+                            saved_doc_id = doc_id
+                            ic(f"✅ Saved to Couchbase: {doc_id}")
+                        else:
+                            ic("⚠️ Couchbase not connected, skipping save")
+                    else:
+                        ic("⚠️ No Couchbase config provided, skipping save")
+                        
+                except Exception as e:
+                    ic(f"❌ Error saving to Couchbase: {str(e)}")
+                    # Don't fail the request if save fails
             
             return jsonify({
                 'success': True,
@@ -820,7 +902,9 @@ def analyze_with_ai():
                 'elapsed_ms': result.get('elapsed_ms'),
                 'provider': provider,
                 'model': model,
-                'deobfuscated': obfuscation_mapping is not None
+                'deobfuscated': obfuscation_mapping is not None,
+                'saved_to_couchbase': saved_doc_id is not None,
+                'document_id': saved_doc_id
             })
         else:
             return jsonify({

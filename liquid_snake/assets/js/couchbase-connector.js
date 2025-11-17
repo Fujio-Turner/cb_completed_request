@@ -27,6 +27,10 @@ export async function loadConfig() {
         }
         clusterConfig = await response.json();
         Logger.info('Loaded cluster configuration', clusterConfig);
+        
+        // Expose to window for non-module scripts (like main-legacy.js)
+        window.clusterConfig = clusterConfig;
+        
         return clusterConfig;
     } catch (error) {
         Logger.error('Error loading config.json:', error);
