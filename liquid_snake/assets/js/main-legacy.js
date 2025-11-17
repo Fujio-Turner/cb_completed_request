@@ -25866,9 +25866,163 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             Logger.warn('[AI] ⚠️ AI API call not yet implemented');
         }
 
+        /**
+         * Load AI analysis history from Couchbase
+         */
+        async function loadAIAnalysisHistory() {
+            Logger.debug('[AI] 📋 Loading analysis history from Couchbase');
+            
+            const cbConfig = window.clusterConfig || (typeof clusterConfig !== 'undefined' ? clusterConfig : null);
+            
+            if (!cbConfig || !cbConfig.cluster) {
+                Logger.debug('[AI] No Couchbase config - skipping history load');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/ai/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        config: cbConfig.cluster,
+                        bucketConfig: cbConfig.bucketConfig,
+                        limit: 10,
+                        offset: 0
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.results) {
+                    displayAIHistory(result.results);
+                    Logger.info(`[AI] ✅ Loaded ${result.count} analysis records`);
+                }
+            } catch (error) {
+                Logger.error('[AI] Error loading history:', error);
+            }
+        }
+        
+        /**
+         * Get relative time string (e.g., "5 minutes ago")
+         */
+        function getRelativeTime(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffSeconds = Math.floor(diffMs / 1000);
+            const diffMinutes = Math.floor(diffSeconds / 60);
+            const diffHours = Math.floor(diffMinutes / 60);
+            const diffDays = Math.floor(diffHours / 24);
+            const diffWeeks = Math.floor(diffDays / 7);
+            const diffMonths = Math.floor(diffDays / 30);
+            
+            if (diffSeconds < 60) return 'Just now';
+            if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+            if (diffWeeks < 4) return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago`;
+            return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
+        }
+        
+        /**
+         * Truncate text with ellipsis
+         */
+        function truncateText(text, maxLength = 60) {
+            if (!text || text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        }
+        
+        /**
+         * Display AI analysis history in table
+         */
+        function displayAIHistory(records) {
+            const tbody = document.querySelector('#ai-analyzer tbody');
+            if (!tbody) return;
+            
+            // Update table headers to center text
+            const headers = document.querySelectorAll('#ai-analyzer thead th');
+            headers.forEach(th => {
+                th.style.textAlign = 'center';
+            });
+            
+            tbody.innerHTML = '';
+            
+            records.forEach(record => {
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid #dee2e6';
+                
+                const exactTime = new Date(record.createdAt).toLocaleString();
+                const relativeTime = getRelativeTime(record.createdAt);
+                const providerBadge = getProviderBadge(record.provider);
+                const statusBadge = getStatusBadge(record.status);
+                const dataIncluded = formatDataIncluded(record.metadata?.selections);
+                const promptFull = record.prompt || 'N/A';
+                const promptShort = truncateText(promptFull, 60);
+                
+                row.innerHTML = `
+                    <td style="padding: 10px; border: 1px solid #dee2e6;" title="${exactTime}">${relativeTime}</td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6;">${providerBadge}</td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6;" title="${promptFull}">${promptShort}</td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6;">${dataIncluded}</td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6;">${statusBadge}</td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">
+                        <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;" onclick="viewAnalysis('${record.documentId}')">View</button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        function getProviderBadge(provider) {
+            const badges = {
+                'openai': '<span style="background: #10a37f; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">OpenAI</span>',
+                'anthropic': '<span style="background: #d97706; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Anthropic</span>',
+                'grok': '<span style="background: #000000; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Grok</span>'
+            };
+            return badges[provider] || `<span>${provider}</span>`;
+        }
+        
+        function getStatusBadge(status) {
+            if (status === 'completed') {
+                return '<span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">✓ Complete</span>';
+            } else if (status === 'failed') {
+                return '<span style="background: #dc3545; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">✗ Failed</span>';
+            }
+            return '<span>Unknown</span>';
+        }
+        
+        function formatDataIncluded(selections) {
+            if (!selections) return 'N/A';
+            const included = [];
+            if (selections.dashboard) included.push('Dashboard');
+            if (selections.insights) included.push('Insights');
+            if (selections.query_groups) included.push('Query Groups');
+            if (selections.indexes) included.push('Indexes');
+            if (selections.flow_diagram) included.push('Flow');
+            return included.join(', ') || 'None';
+        }
+        
+        function viewAnalysis(docId) {
+            Logger.info(`[AI] Viewing analysis: ${docId}`);
+            showToast(`View analysis: ${docId}`, 'info');
+            // TODO: Load and display full analysis
+        }
+        
+        // Load history when AI Analyzer tab is opened
+        document.addEventListener('DOMContentLoaded', function() {
+            $('#tabs').on('tabsactivate', function(event, ui) {
+                if (ui.newPanel.attr('id') === 'ai-analyzer') {
+                    loadAIAnalysisHistory();
+                }
+            });
+        });
+
         // Make functions globally accessible
         window.showAIPreview = showAIPreview;
         window.closeAIPreview = closeAIPreview;
         window.copyAIPreviewJSON = copyAIPreviewJSON;
         window.openMermaidLive = openMermaidLive;
         window.analyzeWithAI = analyzeWithAI;
+        window.loadAIAnalysisHistory = loadAIAnalysisHistory;
+        window.viewAnalysis = viewAnalysis;

@@ -948,6 +948,77 @@ def get_ai_cache_stats():
             'error': str(e)
         }), 500
 
+@app.route('/api/ai/history', methods=['POST'])
+def get_ai_analysis_history():
+    """
+    Get AI analysis history from Couchbase
+    
+    Request body:
+    {
+        "config": {...},
+        "bucketConfig": {...},
+        "limit": 10,
+        "offset": 0
+    }
+    
+    Response:
+    {
+        "success": true,
+        "results": [...],
+        "count": 10
+    }
+    """
+    try:
+        data = request.json
+        cluster_config = data.get('config', {})
+        bucket_config = data.get('bucketConfig', {})
+        limit = data.get('limit', 10)
+        offset = data.get('offset', 0)
+        
+        cluster = get_couchbase_connection(cluster_config)
+        if not cluster:
+            return jsonify({'success': False, 'error': 'Not connected'}), 500
+        
+        # Build N1QL query
+        bucket = bucket_config.get('bucket', 'cb_tools')
+        scope = bucket_config.get('analyzerScope', 'query')
+        collection = bucket_config.get('analyzerCollection', 'analyzer')
+        
+        query = f'''
+            SELECT `createdAt`,
+                   `provider`,
+                   `status`,
+                   `prompt`,
+                   `metadata`,
+                   META().id as documentId
+            FROM `{bucket}`.`{scope}`.`{collection}`
+            WHERE docType = "ai_analysis"
+            ORDER BY `createdAt` DESC
+            LIMIT $limit
+            OFFSET $offset
+        '''
+        
+        ic(f"📋 Fetching AI analysis history: limit={limit}, offset={offset}")
+        
+        # Execute query
+        result = cluster.query(query, limit=limit, offset=offset)
+        rows = [row for row in result]
+        
+        ic(f"✅ Retrieved {len(rows)} analysis records")
+        
+        return jsonify({
+            'success': True,
+            'results': rows,
+            'count': len(rows)
+        })
+        
+    except Exception as e:
+        ic(f"❌ Error fetching analysis history: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/ai/debug', methods=['POST'])
 def set_ai_debug():
     """
