@@ -118,7 +118,7 @@ class AIHttpClient:
         
         ic("🚀 API Call Starting", method, url)
         ic("📤 Headers", headers)
-        ic("📤 Payload", json_data)
+        ic(f"📤 Payload size: {len(str(json_data))} bytes")
         
         session = self._create_session()
         
@@ -1121,10 +1121,11 @@ def call_ai_provider(provider: str,
             'Authorization': f'Bearer {api_key}'
         }
         
-    elif provider == 'anthropic':
+    elif provider == 'anthropic' or provider == 'claude':
         ai_request_payload = {
             'model': model,
-            'max_tokens': 4096,
+            'max_tokens': 20000,
+            'temperature': 1,
             'messages': [
                 {
                     'role': 'user',
@@ -1152,7 +1153,9 @@ def call_ai_provider(provider: str,
     # Build full URL
     full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
     
-    ic(f"📤 Sending to {full_url}")
+    ic(f"📤 API URL: {api_url}")
+    ic(f"📤 Endpoint: {endpoint}")
+    ic(f"📤 Full URL: {full_url}")
     
     # Make API call using AIHttpClient
     result = http_client.call_api(

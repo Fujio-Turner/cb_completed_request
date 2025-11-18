@@ -400,11 +400,23 @@ async function saveCurrentPreferences() {
         });
     }
     
+    // Load existing preferences to preserve values not in the form
+    const existingPrefs = await loadUserPrefsFromCB('user_config');
+    const existingAiApis = existingPrefs?.aiApis || [];
+    
     // Save AI API credentials in order (first is default)
     preferences.aiApis = currentAiOrder.map(provider => {
-        const selectedModel = document.getElementById(`${provider.id}-model`)?.value || provider.models[0].id;
-        const apiKey = document.getElementById(`${provider.id}-api-key`)?.value || '';
-        const apiUrl = document.getElementById(`${provider.id}-api-url`)?.value || provider.defaultUrl;
+        // Find existing config for this provider
+        const existing = existingAiApis.find(api => api.id === provider.id);
+        
+        const selectedModel = document.getElementById(`${provider.id}-model`)?.value || existing?.model || provider.models[0].id;
+        const apiKeyField = document.getElementById(`${provider.id}-api-key`)?.value;
+        const apiUrlField = document.getElementById(`${provider.id}-api-url`)?.value;
+        
+        // Only update if field has value, otherwise keep existing (skip redaction markers)
+        const existingKey = (existing?.apiKey && !existing.apiKey.startsWith('[REDACTED:')) ? existing.apiKey : '';
+        const apiKey = apiKeyField || existingKey || '';
+        const apiUrl = apiUrlField || existing?.apiUrl || provider.defaultUrl;
         
         return {
             id: provider.id,
@@ -531,8 +543,13 @@ async function loadUserPreferences() {
                     modelSelect.value = savedProvider.model;
                 }
                 
-                if (keyInput) keyInput.value = savedProvider.apiKey || '';
-                if (urlInput) urlInput.value = savedProvider.apiUrl || '';
+                // Only populate if value exists and not a redaction marker
+                if (keyInput && savedProvider.apiKey && !savedProvider.apiKey.startsWith('[REDACTED:')) {
+                    keyInput.value = savedProvider.apiKey;
+                }
+                if (urlInput && savedProvider.apiUrl) {
+                    urlInput.value = savedProvider.apiUrl;
+                }
             });
         }
         

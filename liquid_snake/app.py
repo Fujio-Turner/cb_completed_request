@@ -218,8 +218,13 @@ def load_analyzer_data(request_id):
 
 @app.route('/api/couchbase/save-preferences', methods=['POST'])
 def save_user_preferences():
-    """Save user preferences using K/V upsert"""
+    """Save user preferences using K/V upsert with automatic backup"""
     try:
+        import hashlib
+        import json
+        from datetime import timedelta
+        from couchbase.options import UpsertOptions
+        
         data = request.json
         ic(data)  # Log input
         cluster_config = data.get('config', {})
@@ -234,8 +239,37 @@ def save_user_preferences():
         bucket = cluster.bucket(bucket_config['bucket'])
         collection = bucket.scope(bucket_config['preferencesScope']).collection(bucket_config['preferencesCollection'])
         
-        # K/V UPSERT operation (no query needed!)
+        # K/V UPSERT main document
         result = collection.upsert(user_id, preferences)
+        
+        # Create backup with MD5 hash and 7-day TTL
+        try:
+            # Generate MD5 hash of JSON
+            json_str = json.dumps(preferences, sort_keys=True)
+            hash_md5 = hashlib.md5(json_str.encode()).hexdigest()
+            backup_id = f"{user_id}::{hash_md5}"
+            
+            # Add backup metadata
+            backup_doc = {
+                **preferences,
+                '_backup_metadata': {
+                    'original_doc_id': user_id,
+                    'backup_timestamp': preferences.get('updatedAt'),
+                    'hash': hash_md5
+                }
+            }
+            
+            # Upsert backup with 7-day TTL (604800 seconds)
+            collection.upsert(
+                backup_id, 
+                backup_doc,
+                UpsertOptions(expiry=timedelta(days=7))
+            )
+            
+            ic(f"✅ Backup saved: {backup_id} (expires in 7 days)")
+        except Exception as backup_error:
+            ic(f"⚠️ Backup failed (non-critical): {backup_error}")
+            # Don't fail the main save if backup fails
         
         response = {
             'success': True,
@@ -539,7 +573,12 @@ def analyze_with_ai():
         api_key = api_config.get('apiKey')
         api_url = api_config.get('apiUrl')
         model = api_config.get('model')
-        endpoint = '/chat/completions'
+        
+        # Set endpoint based on provider
+        if provider in ['anthropic', 'claude']:
+            endpoint = '/v1/messages'
+        else:
+            endpoint = '/chat/completions'
         
         ic(f"✅ Loaded credentials for provider: {provider}")
         ic(f"  API URL: {api_url}")
@@ -583,6 +622,48 @@ def analyze_with_ai():
         ic(f"📊 Payload built: {len(str(ai_payload_data))} bytes")
         if obfuscation_mapping:
             ic(f"🔑 Obfuscation mapping: {len(obfuscation_mapping)} tokens")
+        
+        # Save initial request to Couchbase if requested (before AI call)
+        saved_doc_id = None
+        if options.get('store_results', False):
+            try:
+                import uuid
+                from datetime import datetime
+                
+                doc_id = f"ai_analysis_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
+                payload_size = len(json.dumps(ai_payload_data).encode('utf-8'))
+                
+                initial_doc = {
+                    'docType': 'ai_analysis',
+                    'createdAt': datetime.utcnow().isoformat() + 'Z',
+                    'status': 'pending',
+                    'provider': provider,
+                    'model': model,
+                    'prompt': prompt,
+                    'payload': ai_payload_data,
+                    'parseJson': request_data.get('parseContext', {}),
+                    'metadata': {
+                        'obfuscated': obfuscation_mapping is not None,
+                        'selections': selections,
+                        'total_queries': len(raw_data.get('everyQueryData', [])),
+                        'requestPayloadSize': payload_size
+                    }
+                }
+                
+                cluster = get_couchbase_connection(cb_config['cluster'])
+                if cluster:
+                    bucket_name = cb_config['bucketConfig']['bucket']
+                    scope_name = cb_config['bucketConfig']['analyzerScope']
+                    collection_name = cb_config['bucketConfig']['analyzerCollection']
+                    
+                    bucket = cluster.bucket(bucket_name)
+                    collection = bucket.scope(scope_name).collection(collection_name)
+                    collection.upsert(doc_id, initial_doc)
+                    saved_doc_id = doc_id
+                    
+                    ic(f"✅ Saved initial request: {doc_id} (status: pending)")
+            except Exception as e:
+                ic(f"⚠️ Failed to save initial request: {str(e)}")
         
         # If save_only mode (no real AI call), create placeholder response and save
         if save_only:
@@ -643,87 +724,45 @@ def analyze_with_ai():
                 
                 ic(f"✅ De-obfuscation complete, restored {len(obfuscation_mapping)} tokens")
             
-            # Save to Couchbase if requested
-            saved_doc_id = None
-            if options.get('store_results', False):
+            # Update Couchbase doc with success results
+            if saved_doc_id:
                 try:
-                    ic("=" * 80)
-                    ic("💾 SAVE TO COUCHBASE REQUESTED")
-                    ic("=" * 80)
+                    import uuid
+                    from datetime import datetime
                     
-                    # Get Couchbase config from request
-                    cb_config = request_data.get('couchbaseConfig', {})
-                    ic(f"📋 Couchbase config present: {bool(cb_config)}")
-                    ic(f"📋 Has cluster: {bool(cb_config.get('cluster'))}")
-                    ic(f"📋 Has bucketConfig: {bool(cb_config.get('bucketConfig'))}")
+                    response_size = len(json.dumps(analysis_data).encode('utf-8'))
                     
-                    if cb_config and cb_config.get('cluster'):
-                        # Build document to save
-                        import uuid
-                        from datetime import datetime
-                        
-                        doc_id = f"ai_analysis_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
-                        
-                        # Calculate payload sizes
-                        payload_size = len(json.dumps(ai_payload_data).encode('utf-8'))
-                        response_size = len(json.dumps(analysis_data).encode('utf-8'))
-                        
-                        save_doc = {
-                            'docType': 'ai_analysis',
-                            'createdAt': datetime.utcnow().isoformat() + 'Z',
-                            'status': 'completed',  # completed | failed | pending
-                            'provider': provider,
-                            'model': model,
-                            'prompt': prompt,
-                            'payload': ai_payload_data,
-                            'aiResponse': analysis_data,
-                            'parseJson': request_data.get('parseContext', {}),  # Filter and data source state
-                            'metadata': {
-                                'obfuscated': obfuscation_mapping is not None,
-                                'elapsed_ms': result.get('elapsed_ms'),
-                                'selections': selections,
-                                'total_queries': len(raw_data.get('everyQueryData', [])),
-                                'requestPayloadSize': payload_size,
-                                'responsePayloadSize': response_size
-                            }
+                    update_doc = {
+                        'docType': 'ai_analysis',
+                        'createdAt': initial_doc['createdAt'],
+                        'completedAt': datetime.utcnow().isoformat() + 'Z',
+                        'status': 'completed',
+                        'provider': provider,
+                        'model': model,
+                        'prompt': prompt,
+                        'payload': ai_payload_data,
+                        'aiResponse': analysis_data,
+                        'parseJson': request_data.get('parseContext', {}),
+                        'metadata': {
+                            'obfuscated': obfuscation_mapping is not None,
+                            'elapsed_ms': result.get('elapsed_ms'),
+                            'selections': selections,
+                            'total_queries': len(raw_data.get('everyQueryData', [])),
+                            'requestPayloadSize': initial_doc['metadata']['requestPayloadSize'],
+                            'responsePayloadSize': response_size
                         }
-                        
-                        # Save to cb_tools.query.analyzer
-                        ic(f"🔌 Connecting to Couchbase: {cb_config['cluster'].get('url')}")
-                        cluster = get_couchbase_connection(cb_config['cluster'])
-                        
-                        if cluster:
-                            bucket_name = cb_config['bucketConfig']['bucket']
-                            scope_name = cb_config['bucketConfig']['analyzerScope']
-                            collection_name = cb_config['bucketConfig']['analyzerCollection']
-                            
-                            ic(f"📁 Target: {bucket_name}.{scope_name}.{collection_name}")
-                            ic(f"📄 Document ID: {doc_id}")
-                            ic(f"📊 Document size: {len(json.dumps(save_doc))} bytes")
-                            
-                            bucket = cluster.bucket(bucket_name)
-                            collection = bucket.scope(scope_name).collection(collection_name)
-                            
-                            collection.upsert(doc_id, save_doc)
-                            saved_doc_id = doc_id
-                            
-                            ic("=" * 80)
-                            ic(f"✅ SUCCESSFULLY SAVED TO COUCHBASE")
-                            ic(f"   Document ID: {doc_id}")
-                            ic(f"   Location: {bucket_name}.{scope_name}.{collection_name}")
-                            ic("=" * 80)
-                        else:
-                            ic("⚠️ Couchbase cluster connection failed, skipping save")
-                    else:
-                        ic("⚠️ No Couchbase config in request, skipping save")
-                        
+                    }
+                    
+                    cluster = get_couchbase_connection(cb_config['cluster'])
+                    if cluster:
+                        bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
+                        collection = bucket.scope(cb_config['bucketConfig']['analyzerScope']).collection(
+                            cb_config['bucketConfig']['analyzerCollection']
+                        )
+                        collection.upsert(saved_doc_id, update_doc)
+                        ic(f"✅ Updated doc {saved_doc_id} with success results")
                 except Exception as e:
-                    ic("=" * 80)
-                    ic(f"❌ ERROR SAVING TO COUCHBASE")
-                    ic(f"   Error: {str(e)}")
-                    ic(f"   Type: {type(e).__name__}")
-                    ic("=" * 80)
-                    # Don't fail the request if save fails
+                    ic(f"⚠️ Failed to update doc with results: {str(e)}")
             
             return jsonify({
                 'success': True,
@@ -736,10 +775,38 @@ def analyze_with_ai():
                 'document_id': saved_doc_id
             })
         else:
+            # Update Couchbase doc with failure
+            if saved_doc_id:
+                try:
+                    from datetime import datetime
+                    
+                    cluster = get_couchbase_connection(cb_config['cluster'])
+                    if cluster:
+                        bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
+                        collection = bucket.scope(cb_config['bucketConfig']['analyzerScope']).collection(
+                            cb_config['bucketConfig']['analyzerCollection']
+                        )
+                        
+                        # Get current doc and update with error
+                        current_doc = collection.get(saved_doc_id).content_as[dict]
+                        current_doc['status'] = 'failed'
+                        current_doc['failedAt'] = datetime.utcnow().isoformat() + 'Z'
+                        current_doc['error'] = {
+                            'message': result.get('error'),
+                            'elapsed_ms': result.get('elapsed_ms'),
+                            'attempts': result.get('attempts', 1)
+                        }
+                        
+                        collection.upsert(saved_doc_id, current_doc)
+                        ic(f"✅ Updated doc {saved_doc_id} with failure status")
+                except Exception as e:
+                    ic(f"⚠️ Failed to update doc with error: {str(e)}")
+            
             return jsonify({
                 'success': False,
                 'error': result.get('error'),
-                'elapsed_ms': result.get('elapsed_ms')
+                'elapsed_ms': result.get('elapsed_ms'),
+                'document_id': saved_doc_id
             }), 500
         
     except Exception as e:
