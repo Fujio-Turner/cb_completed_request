@@ -3365,11 +3365,13 @@ if (window.TEXT_CONSTANTS) {
                 render: (value) => {
                     const safeId = String(value);
                     return `
-                        <code style="font-size:11px;">${escapeHtml(safeId)}</code>
-                        <button data-id="${escapeHtml(safeId)}" 
-                                onclick="copyRequestId(this.dataset.id, event)" 
-                                class="btn-standard" 
-                                style="margin-left:6px;">${TEXT_CONSTANTS.COPY}</button>
+                        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <code style="font-size:11px; word-break: break-all;">${escapeHtml(safeId)}</code>
+                            <button data-id="${escapeHtml(safeId)}" 
+                                    onclick="openRawRecordFullscreen(this.dataset.id, event)" 
+                                    class="btn-standard" 
+                                    style="padding: 4px 8px; font-size: 11px;">👁️ View</button>
+                        </div>
                     `;
                 }
             }
@@ -20140,6 +20142,108 @@ function generateElapsedTimeChart(requests) {
             if (event && event.stopPropagation) event.stopPropagation();
         }
 
+        /**
+         * Open Raw Record in fullscreen overlay
+         * @param {string} reqId - Request ID to display
+         * @param {Event} event - Click event to stop propagation
+         */
+        function openRawRecordFullscreen(reqId, event) {
+            Logger.debug(`[Raw Record] 👁️ Opening fullscreen for requestId: ${reqId}`);
+            
+            if (event && event.stopPropagation) {
+                event.stopPropagation();
+            }
+            
+            if (!reqId) {
+                Logger.error('[Raw Record] ❌ No requestId provided');
+                return;
+            }
+            
+            // Find the request record
+            const record = findRequestById(reqId);
+            if (!record) {
+                Logger.error(`[Raw Record] ❌ Request not found: ${reqId}`);
+                showToast('Request ID not found', 'error');
+                return;
+            }
+            
+            // Get overlay elements
+            const overlay = document.getElementById('raw-record-overlay');
+            const jsonPre = document.getElementById('raw-record-overlay-json');
+            const info = document.getElementById('raw-record-overlay-info');
+            
+            if (!overlay || !jsonPre) {
+                Logger.error('[Raw Record] ❌ Overlay elements not found');
+                return;
+            }
+            
+            // Format and display JSON
+            const jsonString = JSON.stringify(record, null, 2);
+            jsonPre.textContent = jsonString;
+            
+            // Update info display
+            if (info) {
+                const sizeBytes = new Blob([jsonString]).size;
+                const sizeKB = (sizeBytes / 1024).toFixed(2);
+                info.textContent = `Request ID: ${reqId} | Size: ${sizeKB} KB (${sizeBytes.toLocaleString()} bytes)`;
+            }
+            
+            // Show overlay
+            overlay.style.display = 'block';
+            
+            // Add ESC key handler
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    closeRawRecordOverlay();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+            
+            // Close on overlay click (outside content area)
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    closeRawRecordOverlay();
+                }
+            });
+            
+            Logger.info(`[Raw Record] ✅ Fullscreen opened for requestId: ${reqId}`);
+        }
+
+        /**
+         * Close Raw Record fullscreen overlay
+         */
+        function closeRawRecordOverlay() {
+            Logger.debug('[Raw Record] ✕ Closing fullscreen overlay');
+            
+            const overlay = document.getElementById('raw-record-overlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+
+        /**
+         * Copy Raw Record JSON from overlay to clipboard
+         */
+        function copyRawRecordOverlayJSON() {
+            Logger.debug('[Raw Record] 📋 Copying JSON to clipboard');
+            
+            const jsonPre = document.getElementById('raw-record-overlay-json');
+            if (!jsonPre || !jsonPre.textContent) {
+                Logger.error('[Raw Record] ❌ No JSON content to copy');
+                showToast('No content to copy', 'error');
+                return;
+            }
+            
+            navigator.clipboard.writeText(jsonPre.textContent).then(() => {
+                Logger.info('[Raw Record] ✅ JSON copied to clipboard');
+                showToast('JSON copied to clipboard!', 'success');
+            }).catch((err) => {
+                Logger.error('[Raw Record] ❌ Failed to copy:', err);
+                showToast('Failed to copy to clipboard', 'error');
+            });
+        }
+
         function findRequestById(requestId) {
             if (!requestId) return null;
             const idStr = String(requestId);
@@ -25561,7 +25665,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             const options = {
                 obfuscated: document.getElementById('ai-obfuscate-data')?.checked || false,
-                store_results: document.getElementById('ai-store-analysis')?.checked || false
+                store_results: true  // Always save for tracking and auditing
             };
             
             const prompt = document.getElementById('ai-user-prompt')?.value || "Analyze query performance";
@@ -25801,7 +25905,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             const options = {
                 obfuscated: document.getElementById('ai-obfuscate-data')?.checked || false,
-                store_results: document.getElementById('ai-store-analysis')?.checked || false
+                store_results: true  // Always save for tracking and auditing
             };
             
             const prompt = document.getElementById('ai-user-prompt')?.value || "Analyze query performance";
