@@ -382,10 +382,6 @@
                 <a href="#schema-inference" aria-controls="schema-inference" tabindex="0">Schema Inference</a>
             </li>
             <li role="tab">
-                <a href="#report-maker" aria-controls="report-maker" tabindex="0">Report Maker <span
-                        class="beta-badge">Beta</span></a>
-            </li>
-            <li role="tab">
                 <a href="#ai-analyzer" aria-controls="ai-analyzer" tabindex="0">AI Analyzer <span
                         class="dev-badge">Dev</span></a>
             </li>
@@ -393,11 +389,74 @@
 
         <!-- Reports / History Tab Content -->
         <div id="reports-history" data-report-section="reports-history" style="padding: 20px;">
-            <!-- Content will be added here -->
-            <div style="text-align: center; padding: 50px; color: #666;">
-                <h3>Reports / History</h3>
-                <p>Access saved reports and AI analysis history here.</p>
-                <p style="font-size: 0.9em; font-style: italic;">Content coming soon...</p>
+            <!-- AI Analyzer History Section -->
+            <div class="insight-category" id="ai-analyzer-history">
+                <h3 class="category-title" onclick="toggleCategory('ai-analyzer-history')">🤖 AI Analyzer History</h3>
+                <div class="insight-category-content" id="ai-analyzer-history-content">
+                    <div style="padding: 20px;">
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                <thead style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                                    <tr>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Request Date</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Provider</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Prompt</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Data Included</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Status</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ai-history-list">
+                                    <!-- AI history items will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Maker Section -->
+            <div class="insight-category" id="report-maker-section">
+                <h3 class="category-title collapsed" onclick="toggleCategory('report-maker-section')">📊 Report Maker</h3>
+                <div class="insight-category-content collapsed" id="report-maker-section-content">
+                    <div style="padding: 15px;">
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
+                            <button id="btn-preview-report" class="btn-standard" style="background:#0d6efd;color:#fff"></button>
+                            <button id="btn-print-report" class="btn-standard"></button>
+                            <button id="btn-exit-report" class="btn-standard"></button>
+                        </div>
+                        <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                            <h3 id="rm-select-sections-title" style="margin:0 0 8px 0;"></h3>
+                            <div id="report-sections" style="display:flex; gap: 16px; flex-wrap: wrap;">
+                                <label><input type="checkbox" data-section="dashboard" checked> Dashboard</label>
+                                <label><input type="checkbox" data-section="insights" checked> Insights</label>
+                                <label><input type="checkbox" data-section="timeline" checked> Timeline</label>
+                                <label><input type="checkbox" data-section="analysis" checked> Query Groups</label>
+                                <label><input type="checkbox" data-section="every-query"> Every Query</label>
+                                <label><input type="checkbox" data-section="index-query-flow"> Index/Query Flow</label>
+                                <label><input type="checkbox" data-section="indexes"> Indexes</label>
+                            </div>
+                        </div>
+                        <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                            <h3 id="rm-select-timeline-title" style="margin:0 0 8px 0;"></h3>
+                            <div id="report-timeline-charts" style="display:flex; gap: 16px; flex-wrap: wrap;"></div>
+                        </div>
+                        <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                            <h3 id="rm-options-title" style="margin:0 0 8px 0;"></h3>
+                            <label style="margin-right:16px;"><input type="checkbox" id="opt-include-header" checked> <span id="rm-opt-include-header"></span></label>
+                            <label style="margin-right:16px;"><input type="checkbox" id="opt-include-filters" checked> <span id="rm-opt-include-filters"></span></label>
+                            <label style="margin-right:16px;"><input type="checkbox" id="opt-flatten-tables" checked> <span id="rm-opt-flatten-tables"></span></label>
+                            <label style="margin-right:16px;"><input type="checkbox" id="opt-charts-as-images" checked> <span id="rm-opt-charts-as-images"></span></label>
+                        </div>
+                        <div class="report-tip" style="margin-top:8px; margin-bottom:12px;">
+                            <div class="tip-text" style="font-size:16px; font-weight:700; color:#343a40;"><span class="badge-pro">PRO</span> Use SQL++ filter and/or Elapsed Time filter in Data & Filters above to narrow stats and analysis to specific queries or time ranges before generating your report.</div>
+                            <div style="margin-top:16px; padding:12px; background:#f8f9fa; border-radius:8px; border:2px dashed #007acc; max-width:450px;">
+                                <div style="font-size:12px; font-weight:600; color:#007acc; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Example</div>
+                                <img src="https://cb.fuj.io/img/sql_string_filter_and_exclude_system_example.png" alt="Report Maker filters and exclude system example" style="max-width:75%; height:75px; border:2px solid #007acc; border-radius:6px; box-shadow:0 4px 12px rgba(0,122,204,0.15); display:block;" loading="lazy">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1776,55 +1835,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
             </div>
         </div>
 
-        <!-- Report Maker Tab Content -->
-       <div id="report-maker" data-report-section="report-maker" style="padding: 15px;">
-            <!-- Report Maker banner at top of tab -->
-            <div style="padding: 16px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; margin: 0 0 14px;">
-                <h3 style="color: #856404; margin: 0 0 6px 0; font-size: 18px; font-weight: bold; text-align: center;">🚧 REPORT MAKER IN DEVELOPMENT 🚧</h3>
-                <p style="color: #856404; text-align: center; margin: 0; font-size: 13px;">
-                    Some insights show <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold;">LIVE</span>
-                    data, <span style="background: #007bff; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold;">BETA</span>
-                    insights are work in progress (might have false positives), others display placeholder content.
-                </p>
-            </div>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
-                <button id="btn-preview-report" class="btn-standard" style="background:#0d6efd;color:#fff"></button>
-                <button id="btn-print-report" class="btn-standard"></button>
-                <button id="btn-exit-report" class="btn-standard"></button>
-            </div>
-            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
-                <h3 id="rm-select-sections-title" style="margin:0 0 8px 0;"></h3>
-                <div id="report-sections" style="display:flex; gap: 16px; flex-wrap: wrap;">
-                    <label><input type="checkbox" data-section="dashboard" checked> Dashboard</label>
-                    <label><input type="checkbox" data-section="insights" checked> Insights</label>
-                    <label><input type="checkbox" data-section="timeline" checked> Timeline</label>
-                    <label><input type="checkbox" data-section="analysis" checked> Query Groups</label>
-
-                    <label><input type="checkbox" data-section="every-query"> Every Query</label>
-                    <label><input type="checkbox" data-section="index-query-flow"> Index/Query Flow</label>
-                    <label><input type="checkbox" data-section="indexes"> Indexes</label>
-                </div>
-            </div>
-            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
-                <h3 id="rm-select-timeline-title" style="margin:0 0 8px 0;"></h3>
-                <div id="report-timeline-charts" style="display:flex; gap: 16px; flex-wrap: wrap;"></div>
-            </div>
-            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
-                <h3 id="rm-options-title" style="margin:0 0 8px 0;"></h3>
-                <label style="margin-right:16px;"><input type="checkbox" id="opt-include-header" checked> <span id="rm-opt-include-header"></span></label>
-                <label style="margin-right:16px;"><input type="checkbox" id="opt-include-filters" checked> <span id="rm-opt-include-filters"></span></label>
-                <label style="margin-right:16px;"><input type="checkbox" id="opt-flatten-tables" checked> <span id="rm-opt-flatten-tables"></span></label>
-                <label style="margin-right:16px;"><input type="checkbox" id="opt-charts-as-images" checked> <span id="rm-opt-charts-as-images"></span></label>
-            </div>
-            <div class="report-tip" style="margin-top:8px; margin-bottom:12px;">
-                <div class="tip-text" style="font-size:16px; font-weight:700; color:#343a40;"><span class="badge-pro">PRO</span> Use SQL++ filter and/or Elapsed Time filter in Data & Filters above to narrow stats and analysis to specific queries or time ranges before generating your report.</div>
-                <div style="margin-top:16px; padding:12px; background:#f8f9fa; border-radius:8px; border:2px dashed #007acc; max-width:450px;">
-                    <div style="font-size:12px; font-weight:600; color:#007acc; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Example</div>
-                    <img src="https://cb.fuj.io/img/sql_string_filter_and_exclude_system_example.png" alt="Report Maker filters and exclude system example" style="max-width:75%; height:75px; border:2px solid #007acc; border-radius:6px; box-shadow:0 4px 12px rgba(0,122,204,0.15); display:block;" loading="lazy">
-                </div>
-            </div>
-        </div>
-
         <!-- AI Analyzer Tab Content -->
         <div id="ai-analyzer" data-report-section="ai-analyzer" style="padding: 20px;">
             <!-- AI Analyzer banner -->
@@ -1918,74 +1928,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <span style="color: #666; font-size: 0.9em;">Estimated cost: $0.05 - $0.25 per analysis</span>
             </div>
 
-            <!-- Analysis History -->
-            <div class="background-f5 padding-15 border-radius-5 border-1-ddd">
-                <h3 style="margin:0 0 12px 0;">Previous Analyses</h3>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                        <thead style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                            <tr>
-                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Request Date</th>
-                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Provider</th>
-                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Prompt</th>
-                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Data Included</th>
-                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Status</th>
-                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Dummy Row 1 -->
-                            <tr style="border-bottom: 1px solid #dee2e6;">
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">2025-11-16 09:45:23</td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">
-                                    <span style="background: #10a37f; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">OpenAI</span>
-                                </td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">Analyze slow queries and suggest index optimizations</td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">Dashboard, Insights, Query Groups</td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">
-                                    <span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">✓ Complete</span>
-                                </td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">
-                                    <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;">View</button>
-                                    <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;">Export</button>
-                                </td>
-                            </tr>
-                            <!-- Dummy Row 2 -->
-                            <tr style="border-bottom: 1px solid #dee2e6;">
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">2025-11-15 14:22:11</td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">
-                                    <span style="background: #d97706; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Anthropic</span>
-                                </td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">Identify queries with high memory usage</td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">Dashboard, Query Groups</td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">
-                                    <span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">✓ Complete</span>
-                                </td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">
-                                    <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;">View</button>
-                                    <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;">Export</button>
-                                </td>
-                            </tr>
-                            <!-- Dummy Row 3 -->
-                            <tr style="border-bottom: 1px solid #dee2e6;">
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">2025-11-14 10:08:45</td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">
-                                    <span style="background: #000000; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Grok</span>
-                                </td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">Compare query performance before and after index changes</td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">All Data (obfuscated)</td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6;">
-                                    <span style="background: #dc3545; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">✗ Failed</span>
-                                </td>
-                                <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">
-                                    <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;">Retry</button>
-                                    <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;">Delete</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+
         </div>
     </div>
      <!-- Modals (outside tabs) -->

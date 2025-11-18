@@ -24360,7 +24360,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Setup lazy Report Maker initialization
             $('#tabs').on('tabsactivate', function(event, ui) {
                 const tabId = ui.newPanel.attr('id');
-                if (tabId === 'report-maker') {
+                if (tabId === 'reports-history') {
                     initializeReportMaker();
                 }
             });
@@ -26059,16 +26059,49 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
          * Display AI analysis history in table
          */
         function displayAIHistory(records) {
-            const tbody = document.querySelector('#ai-analyzer tbody');
-            if (!tbody) return;
+            const tbody = document.getElementById('ai-history-list');
+            if (!tbody) {
+                Logger.warn('[AI] ai-history-list tbody not found');
+                return;
+            }
             
-            // Update table headers to center text
-            const headers = document.querySelectorAll('#ai-analyzer thead th');
-            headers.forEach(th => {
-                th.style.textAlign = 'center';
-            });
+            Logger.debug(`[AI] Displaying ${records.length} history records`);
+            Logger.debug(`[AI] tbody parent tab: ${tbody.closest('[data-report-section]')?.id}`);
+            
+            // Auto-expand the AI Analyzer History section if it has data
+            if (records.length > 0) {
+                Logger.debug('[AI] Attempting to auto-expand history section');
+                const section = document.getElementById('ai-analyzer-history');
+                const content = document.getElementById('ai-analyzer-history-content');
+                Logger.debug(`[AI] Section found: ${!!section}, Content found: ${!!content}`);
+                if (section && content) {
+                    const title = section.querySelector('.category-title');
+                    Logger.debug(`[AI] Title found: ${!!title}, Has collapsed class: ${title?.classList.contains('collapsed')}`);
+                    if (title && title.classList.contains('collapsed')) {
+                        title.classList.remove('collapsed');
+                        content.classList.remove('collapsed');
+                        Logger.debug('[AI] ✅ Auto-expanded AI Analyzer History section');
+                    } else {
+                        Logger.debug('[AI] ⚠️ Section already expanded or title not found');
+                    }
+                } else {
+                    Logger.warn('[AI] ❌ Could not find section or content elements');
+                }
+            }
+            
+            // Update table headers to center text (find the table that contains our tbody)
+            const table = tbody.closest('table');
+            if (table) {
+                const headers = table.querySelectorAll('thead th');
+                headers.forEach(th => {
+                    th.style.textAlign = 'center';
+                });
+            }
             
             tbody.innerHTML = '';
+            tbody.setAttribute('data-last-update', new Date().toISOString());
+            
+            Logger.debug(`[AI] Building ${records.length} table rows`);
             
             records.forEach(record => {
                 const row = document.createElement('tr');
@@ -26095,6 +26128,16 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 
                 tbody.appendChild(row);
             });
+            
+            Logger.debug(`[AI] ✅ Table now has ${tbody.children.length} rows`);
+            
+            // Check if rows persist after 500ms
+            setTimeout(() => {
+                Logger.debug(`[AI] 🔍 After 500ms, table has ${tbody.children.length} rows`);
+                if (tbody.children.length === 0) {
+                    Logger.warn('[AI] ⚠️ Rows were CLEARED after being added!');
+                }
+            }, 500);
         }
         
         function getProviderBadge(provider) {
@@ -26132,11 +26175,16 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // TODO: Load and display full analysis
         }
         
-        // Load history when AI Analyzer tab is opened
+        // Load history when AI Analyzer or Reports/History tab is opened
         document.addEventListener('DOMContentLoaded', function() {
             $('#tabs').on('tabsactivate', function(event, ui) {
-                if (ui.newPanel.attr('id') === 'ai-analyzer') {
-                    populateAIProviderDropdown(); loadAIAnalysisHistory();
+                const tabId = ui.newPanel.attr('id');
+                
+                if (tabId === 'ai-analyzer') {
+                    populateAIProviderDropdown();
+                    loadAIAnalysisHistory();
+                } else if (tabId === 'reports-history') {
+                    loadAIAnalysisHistory();
                 }
             });
         });
