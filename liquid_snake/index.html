@@ -1813,14 +1813,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
         <!-- AI Analyzer Tab Content -->
         <div id="ai-analyzer" data-report-section="ai-analyzer" style="padding: 20px;">
-            <!-- AI Analyzer banner -->
-            <div style="padding: 16px; background: #e7f3ff; border: 2px solid #2196f3; border-radius: 8px; margin: 0 0 20px;">
-                <h3 style="color: #1565c0; margin: 0 0 6px 0; font-size: 18px; font-weight: bold; text-align: center;">🤖 AI-POWERED QUERY ANALYSIS 🤖</h3>
-                <p style="color: #1565c0; text-align: center; margin: 0; font-size: 13px;">
-                    Send your query data to AI for intelligent analysis and recommendations. Configure your AI provider in <strong>Settings</strong>.
-                </p>
-            </div>
-
             <!-- AI Service Selection -->
             <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
                 <h3 style="margin:0 0 12px 0;">AI Service Provider</h3>
@@ -1842,12 +1834,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     <label><input type="checkbox" id="ai-include-insights" checked> Insights Analysis</label>
                     <label><input type="checkbox" id="ai-include-query-groups" checked> Query Groups Data</label>
                     <label><input type="checkbox" id="ai-include-flow-diagram" checked> Index/Query Flow </label>
-                    <label><input type="checkbox" id="ai-include-indexes"> Indexes Data <span style="color: #999;">(if populated)</span></label>
-                   
-                </div>
-                <div style="margin-top: 12px; padding: 10px; background: #fff3cd; border-left: 3px solid #ffc107; border-radius: 4px;">
-                    <strong style="color: #856404;">💡 Quality Tip:</strong> 
-                    <span style="color: #856404; font-size: 0.9em;">Including more data (especially Index/Query Flow and Indexes) provides richer context for AI analysis, resulting in more accurate recommendations and deeper insights.</span>
+                    <label><input type="checkbox" id="ai-include-indexes"> Indexes Data <span style="color: #999;">(if populated)</span></label>                   
                 </div>
             </div>
 
@@ -1874,11 +1861,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
                             🔐 Field names, bucket/scope/collection names, and values are replaced with random tokens to protect sensitive information.
                         </div>
                     </div>
-                    
-                    <div style="margin-top: 12px; padding: 10px; background: #e7f3ff; border-left: 3px solid #007bff; border-radius: 4px; font-size: 12px;">
-                        <strong style="color: #0056b3;">ℹ️ Analysis Storage:</strong> 
-                        <span style="color: #0056b3;">All analysis requests and AI responses are automatically saved to <code>cb_tools.query.analyzer</code> for tracking and auditing purposes.</span>
-                    </div>
                 </div>
             </div>
 
@@ -1887,7 +1869,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <h3 style="margin:0 0 12px 0;">Custom Analysis Prompt</h3>
                 <textarea id="ai-user-prompt" 
                     placeholder="Example: 'AI, could you analyze time between query execution and result delivery for all queries that failed or timed out? Please identify patterns and suggest optimizations.'"
-                    style="width: 100%; height: 120px; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical;"></textarea>
+                    style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical;"></textarea>
                 <div style="margin-top: 8px; color: #666; font-size: 0.85em;">
                     💡 Tip: Be specific about what you want the AI to analyze. You can ask about performance patterns, optimization suggestions, or specific query characteristics.
                 </div>
@@ -1901,7 +1883,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <button id="ai-analyze-btn" onclick="analyzeWithAI()" class="btn-standard" style="background: #2196f3; color: white; padding: 12px 24px; font-size: 16px; font-weight: bold;">
                     🚀 Analyze with AI
                 </button>
-                <span style="color: #666; font-size: 0.9em;">Estimated cost: $0.05 - $0.25 per analysis</span>
             </div>
 
             <!-- AI Analysis History -->
