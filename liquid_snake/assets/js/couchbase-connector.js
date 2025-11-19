@@ -220,6 +220,35 @@ export async function loadAnalyzerData(requestId) {
 }
 
 /**
+ * Delete query analysis data from cb_tools.query.analyzer via Python server
+ */
+export async function deleteAnalyzerData(requestId) {
+    const cluster = getCurrentCluster();
+    if (!cluster) {
+        return { success: false, error: 'No cluster configured' };
+    }
+    
+    try {
+        const response = await fetch('/api/couchbase/delete-analyzer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                config: cluster,
+                bucketConfig: clusterConfig.bucketConfig,
+                requestId
+            })
+        });
+
+        return await response.json();
+    } catch (error) {
+        Logger.error('Error deleting analyzer data:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
  * Save user preferences to cb_tools._default._default via Python server
  */
 export async function saveUserPreferences(userId, preferences) {

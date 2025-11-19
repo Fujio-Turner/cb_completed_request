@@ -216,6 +216,39 @@ def load_analyzer_data(request_id):
             'error': str(e)
         }), 500
 
+@app.route('/api/couchbase/delete-analyzer', methods=['POST'])
+def delete_analyzer_data():
+    """Delete query analyzer data"""
+    try:
+        data = request.json
+        cluster_config = data.get('config', {})
+        bucket_config = data.get('bucketConfig', {})
+        request_id = data.get('requestId')
+        
+        cluster = get_couchbase_connection(cluster_config)
+        if not cluster:
+            return jsonify({'success': False, 'error': 'Not connected'}), 500
+        
+        bucket = cluster.bucket(bucket_config['bucket'])
+        collection = bucket.scope(bucket_config['analyzerScope']).collection(bucket_config['analyzerCollection'])
+        
+        # Delete document
+        collection.remove(request_id)
+        
+        return jsonify({
+            'success': True
+        })
+    except DocumentNotFoundException:
+        return jsonify({
+            'success': False,
+            'error': 'Document not found'
+        }), 404
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/couchbase/save-preferences', methods=['POST'])
 def save_user_preferences():
     """Save user preferences using K/V upsert with automatic backup"""
@@ -793,6 +826,8 @@ def analyze_with_ai():
                         current_doc['failedAt'] = datetime.utcnow().isoformat() + 'Z'
                         current_doc['error'] = {
                             'message': result.get('error'),
+                            'raw_response': result.get('raw_response'),
+                            'status_code': result.get('status_code'),
                             'elapsed_ms': result.get('elapsed_ms'),
                             'attempts': result.get('attempts', 1)
                         }
@@ -810,10 +845,13 @@ def analyze_with_ai():
             }), 500
         
     except Exception as e:
+        import traceback
         ic("💥 Error in AI analysis", str(e))
+        ic(traceback.format_exc())
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': str(e),
+            'traceback': traceback.format_exc()
         }), 500
 
 @app.route('/api/ai/stats', methods=['GET'])

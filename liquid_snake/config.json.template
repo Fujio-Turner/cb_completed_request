@@ -4,10 +4,9 @@
     "url": "http://localhost:8091",
     "username": "Administrator",
     "password": "password",
-    "type": "Localhost"
+    "type": "Self-Hosted"
   },
   "clusterTypes": [
-    "Localhost",
     "Self-Hosted",
     "Capella (DBaaS)"
   ],

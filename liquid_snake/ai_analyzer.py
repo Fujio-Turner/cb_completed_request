@@ -15,11 +15,20 @@ import hashlib
 import secrets
 import threading
 import requests
+import json
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 from icecream import ic
+
+# Try to import OpenAI SDK
+try:
+    from openai import OpenAI, OpenAIError
+    OPENAI_SDK_AVAILABLE = True
+except ImportError:
+    OPENAI_SDK_AVAILABLE = False
+    ic("⚠️ OpenAI SDK not installed. Please run: pip install openai")
 
 # ============================================================================
 # Global Debug Configuration
@@ -183,6 +192,38 @@ class AIHttpClient:
                     # Exponential backoff
                     if attempt < self.max_retries:
                         delay = self.backoff_factor * (2 ** (attempt - 1))
+                        
+                        # Check for Retry-After header
+                        retry_after = response.headers.get('Retry-After')
+                        if retry_after:
+                            try:
+                                delay = max(delay, float(retry_after))
+                                ic(f"🛑 Server requested wait (header): {retry_after}s")
+                            except ValueError:
+                                pass
+                                
+                        # Check for "try again in Xms" in text
+                        if 'try again in' in response.text:
+                            try:
+                                import re
+                                # Match "try again in 120ms" or "try again in 1s"
+                                match = re.search(r'try again in (\d+(?:\.\d+)?)(ms|s|m)', response.text)
+                                if match:
+                                    val = float(match.group(1))
+                                    unit = match.group(2)
+                                    if unit == 'ms':
+                                        wait_s = val / 1000.0
+                                    elif unit == 'm':
+                                        wait_s = val * 60
+                                    else:
+                                        wait_s = val
+                                    
+                                    if wait_s > delay:
+                                        delay = wait_s
+                                        ic(f"🛑 Error message requested wait: {delay}s")
+                            except Exception as e:
+                                ic(f"⚠️ Failed to parse wait time: {e}")
+                        
                         ic(f"⏳ Waiting {delay}s before retry")
                         time.sleep(delay)
                         continue
@@ -194,6 +235,7 @@ class AIHttpClient:
                     'success': False,
                     'status_code': response.status_code,
                     'error': f"HTTP {response.status_code}: {response.text[:500]}",
+                    'raw_response': response.text,
                     'elapsed_ms': elapsed_ms,
                     'attempts': attempt
                 }
@@ -256,9 +298,9 @@ class AIHttpClient:
 
 # Global HTTP client instance
 http_client = AIHttpClient(
-    max_retries=3,
-    backoff_factor=0.5,
-    timeout=30
+    max_retries=5,
+    backoff_factor=1.0,
+    timeout=60
 )
 
 # ============================================================================
@@ -817,14 +859,32 @@ class AIPayloadBuilder:
         if not analysis:
             return {'note': 'No query group data available'}
         
-        # Sample first 50 patterns to keep payload manageable
-        sample_patterns = analysis[:50] if len(analysis) > 50 else analysis
+        # Sample first 10 patterns to keep payload manageable for lower TPM tiers
+        sample_patterns = []
+        
+        # Sort by total time (impact) before sampling
+        try:
+            sorted_analysis = sorted(analysis, key=lambda x: x.get('totalDuration', 0), reverse=True)
+        except:
+            sorted_analysis = analysis
+            
+        # Take top 10
+        top_patterns = sorted_analysis[:10] if len(sorted_analysis) > 10 else sorted_analysis
+        
+        # Truncate long query strings in the patterns
+        for pattern in top_patterns:
+            # Create a copy to avoid modifying original data
+            pattern_copy = pattern.copy()
+            if 'statement' in pattern_copy and isinstance(pattern_copy['statement'], str):
+                if len(pattern_copy['statement']) > 200:
+                    pattern_copy['statement'] = pattern_copy['statement'][:200] + '... (truncated)'
+            sample_patterns.append(pattern_copy)
         
         return {
             'total_patterns': len(analysis),
             'sample_size': len(sample_patterns),
             'patterns': sample_patterns,
-            'note': f'Showing first {len(sample_patterns)} of {len(analysis)} normalized query patterns'
+            'note': f'Showing top {len(sample_patterns)} of {len(analysis)} query patterns by duration. Statements truncated to 200 chars.'
         }
     
     def _build_indexes(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -847,8 +907,14 @@ class AIPayloadBuilder:
         if not flow_data or not flow_data.get('mermaid_diagram'):
             return {'note': 'No flow diagram data available - Index/Query Flow tab may not be populated'}
         
+        mermaid_diagram = flow_data.get('mermaid_diagram', '')
+        
+        # Truncate diagram if too large (approx 2000 chars)
+        if len(mermaid_diagram) > 2000:
+            mermaid_diagram = mermaid_diagram[:2000] + '\n... (diagram truncated for size)'
+            
         return {
-            'mermaid_diagram': flow_data.get('mermaid_diagram', ''),
+            'mermaid_diagram': mermaid_diagram,
             'statistics': {
                 'total_indexes': flow_data.get('indexes_count', 0),
                 'total_queries': flow_data.get('queries_count', 0),
@@ -1096,6 +1162,74 @@ def call_ai_provider(provider: str,
     
     # Get system prompt
     system_prompt = get_ai_system_prompt()
+    
+    # ---------------------------------------------------------
+    # Option 1: Use OpenAI SDK (Preferred for OpenAI/Grok)
+    # ---------------------------------------------------------
+    if (provider == 'openai' or provider == 'grok') and OPENAI_SDK_AVAILABLE:
+        try:
+            ic(f"🚀 Using OpenAI SDK for {provider}")
+            start_time = time.time()
+            
+            # Clean base_url for SDK (it expects base, not chat/completions)
+            # If user provided full endpoint in config, strip it
+            base_url = api_url.rstrip('/')
+            if base_url.endswith('/chat/completions'):
+                base_url = base_url.replace('/chat/completions', '')
+            elif base_url.endswith('/v1'):
+                pass # Keep /v1
+            
+            client = OpenAI(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=60.0,
+                max_retries=2
+            )
+            
+            params = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"{prompt}\n\nQuery Data:\n{json.dumps(payload_data['data'], indent=2)}"}
+                ],
+                "temperature": 0.5,
+                # "max_tokens": 4096 # Optional, let model decide
+            }
+            
+            if provider == 'openai':
+                params["response_format"] = {"type": "json_object"}
+                
+            response = client.chat.completions.create(**params)
+            
+            elapsed_ms = int((time.time() - start_time) * 1000)
+            
+            # Convert Pydantic model to dict
+            response_data = json.loads(response.model_dump_json())
+            
+            ic(f"✅ OpenAI SDK Success ({elapsed_ms}ms)")
+            
+            return {
+                'success': True,
+                'status_code': 200,
+                'data': response_data,
+                'elapsed_ms': elapsed_ms,
+                'attempts': 1
+            }
+            
+        except Exception as e:
+            elapsed_ms = int((time.time() - start_time) * 1000) if 'start_time' in locals() else 0
+            ic(f"❌ OpenAI SDK Error: {str(e)}")
+            # Don't fall back to HTTP if SDK fails (likely auth or logic error), return error
+            return {
+                'success': False,
+                'error': f"OpenAI SDK Error: {str(e)}",
+                'elapsed_ms': elapsed_ms,
+                'attempts': 1
+            }
+
+    # ---------------------------------------------------------
+    # Option 2: Manual HTTP Request (Fallback / Anthropic / Others)
+    # ---------------------------------------------------------
     
     # Format request payload for specific provider
     if provider == 'openai' or provider == 'grok':

@@ -25914,6 +25914,12 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     <td style="padding: 10px; border: 1px solid #dee2e6;">${statusBadge}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">
                         <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;" onclick="viewAnalysis('${record.documentId}')">View</button>
+                        <button class="btn-standard" style="font-size: 11px; padding: 4px 8px; margin-left: 4px; background-color: #dc3545; color: white; display: inline-flex; align-items: center; vertical-align: middle;" onclick="deleteAnalysis('${record.documentId}', this)" title="Delete Analysis">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
                     </td>
                 `;
                 
@@ -25988,6 +25994,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         window.analyzeWithAI = analyzeWithAI;
         window.loadAIAnalysisHistory = loadAIAnalysisHistory;
         window.viewAnalysis = viewAnalysis;
+        window.deleteAnalysis = deleteAnalysis;
 
         /**
          * Populate AI provider dropdown from user config
@@ -26066,6 +26073,60 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         }
 
         window.populateAIProviderDropdown = populateAIProviderDropdown;
+
+        /**
+         * Delete AI analysis
+         */
+        async function deleteAnalysis(docId, buttonEl) {
+            if (!confirm('Are you sure you want to delete this analysis history? This cannot be undone.')) {
+                return;
+            }
+            
+            Logger.info(`[AI] Deleting analysis: ${docId}`);
+            
+            const cbConfig = window.clusterConfig || (typeof clusterConfig !== 'undefined' ? clusterConfig : null);
+            
+            if (!cbConfig) {
+                showToast('Cannot delete analysis - Couchbase not configured', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/couchbase/delete-analyzer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        config: cbConfig.cluster,
+                        bucketConfig: cbConfig.bucketConfig,
+                        requestId: docId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Analysis deleted successfully', 'success');
+                    
+                    // Remove row from DOM immediately
+                    if (buttonEl) {
+                        const row = buttonEl.closest('tr');
+                        if (row) {
+                            row.remove();
+                            Logger.debug('[AI] Removed deleted row from table');
+                        }
+                    } else {
+                        // Fallback if button element not passed
+                        loadAIAnalysisHistory();
+                    }
+                } else {
+                    showToast(`Failed to delete: ${result.error || 'Unknown error'}`, 'error');
+                }
+                
+            } catch (error) {
+                Logger.error('[AI] Error deleting analysis:', error);
+                showToast(`Error deleting analysis: ${error.message}`, 'error');
+            }
+        }
 
         /**
          * View saved AI analysis in full-screen overlay

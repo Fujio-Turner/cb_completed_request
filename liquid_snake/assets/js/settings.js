@@ -27,13 +27,17 @@ const AI_PROVIDERS = [
         keyPlaceholder: 'sk-...', 
         defaultUrl: 'https://api.openai.com/v1',
         models: [
-            { id: 'gpt-4o', name: 'GPT-4o (Latest, Most Capable)' },
+            { id: 'gpt-4o', name: 'GPT-4o (Flagship)' },
             { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Fast & Affordable)' },
+            { id: 'o1', name: 'O1 (Reasoning)' },
+            { id: 'o1-mini', name: 'O1 Mini (Reasoning)' },
+            { id: 'o1-pro', name: 'O1 Pro (Reasoning)' },
+            { id: 'o3-mini', name: 'O3 Mini (High Speed Reasoning)' },
+            { id: 'gpt-5', name: 'GPT-5 (Next Gen)' },
+            { id: 'gpt-4.1', name: 'GPT-4.1' },
             { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
             { id: 'gpt-4', name: 'GPT-4' },
-            { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
-            { id: 'o1-preview', name: 'O1 Preview (Reasoning)' },
-            { id: 'o1-mini', name: 'O1 Mini (Reasoning)' }
+            { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' }
         ]
     },
     { 
