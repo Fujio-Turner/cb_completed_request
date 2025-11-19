@@ -71,7 +71,7 @@
     <script type="module" src="assets/js/main.js"></script>
     <script type="module" src="assets/js/charts.js"></script>
     <script type="module" src="assets/js/tables.js"></script>
-    <script type="module" src="assets/js/flow-diagram.js"></script>
+    <script type="module" src="assets/js/flow-diagram-v2.js"></script>
     <script type="module" src="assets/js/insights.js"></script>
     <script type="module" src="assets/js/modals.js"></script>
     <script type="module" src="assets/js/parsers.js"></script>
@@ -83,7 +83,7 @@
     <script type="module" src="assets/js/settings.js"></script>
     
     <!-- Legacy app code (temporary - will be modularized) -->
-    <script src="assets/js/main-legacy.js" defer></script>
+    <script src="assets/js/main-legacy.js?v=debug_force_v1" defer></script>
 
 </head>
 
@@ -389,31 +389,7 @@
 
         <!-- Reports / History Tab Content -->
         <div id="reports-history" data-report-section="reports-history" style="padding: 20px;">
-            <!-- AI Analyzer History Section -->
-            <div class="insight-category" id="ai-analyzer-history">
-                <h3 class="category-title" onclick="toggleCategory('ai-analyzer-history')">🤖 AI Analyzer History</h3>
-                <div class="insight-category-content" id="ai-analyzer-history-content">
-                    <div style="padding: 20px;">
-                        <div style="overflow-x: auto;">
-                            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                                <thead style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                                    <tr>
-                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Request Date</th>
-                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Provider</th>
-                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Prompt</th>
-                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Data Included</th>
-                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Status</th>
-                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="ai-history-list">
-                                    <!-- AI history items will be loaded here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- Report Maker Section -->
             <div class="insight-category" id="report-maker-section">
@@ -1928,7 +1904,27 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <span style="color: #666; font-size: 0.9em;">Estimated cost: $0.05 - $0.25 per analysis</span>
             </div>
 
-
+            <!-- AI Analysis History -->
+            <div style="margin-top: 30px;">
+                <h3 style="margin: 0 0 12px 0;">Previous Analyses</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                            <tr>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Request Date</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Provider</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Prompt</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Data Included</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Status</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ai-history-list">
+                            <!-- AI history items will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
      <!-- Modals (outside tabs) -->
