@@ -18,7 +18,7 @@ import os
 import time
 from icecream import ic
 from couchbase.cluster import Cluster
-from couchbase.options import ClusterOptions
+from couchbase.options import ClusterOptions, QueryOptions
 from couchbase.auth import PasswordAuthenticator
 from couchbase.exceptions import (
     DocumentExistsException,
@@ -673,6 +673,7 @@ def analyze_with_ai():
                     'provider': provider,
                     'model': model,
                     'prompt': prompt,
+                    'sourceCluster': raw_data.get('clusterName', 'Unknown Cluster'),
                     'payload': ai_payload_data,
                     'parseJson': request_data.get('parseContext', {}),
                     'metadata': {
@@ -773,6 +774,7 @@ def analyze_with_ai():
                         'provider': provider,
                         'model': model,
                         'prompt': prompt,
+                        'sourceCluster': initial_doc.get('sourceCluster', 'Unknown Cluster'),
                         'payload': ai_payload_data,
                         'aiResponse': analysis_data,
                         'parseJson': request_data.get('parseContext', {}),
@@ -923,6 +925,7 @@ def get_ai_analysis_history():
                    `provider`,
                    `status`,
                    `prompt`,
+                   `sourceCluster`,
                    `metadata`,
                    META().id as documentId
             FROM `{bucket}`.`{scope}`.`{collection}`
@@ -948,6 +951,72 @@ def get_ai_analysis_history():
         
     except Exception as e:
         ic(f"❌ Error fetching analysis history: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/clusters', methods=['POST'])
+def get_ai_clusters():
+    """
+    Get unique source cluster names for autocomplete
+    Uses index: analysis_old_table_v1
+    
+    Request body:
+    {
+        "config": {...},
+        "bucketConfig": {...},
+        "term": "qa" (optional)
+    }
+    """
+    try:
+        data = request.json
+        cluster_config = data.get('config', {})
+        bucket_config = data.get('bucketConfig', {})
+        term = data.get('term', '')
+        
+        cluster = get_couchbase_connection(cluster_config)
+        if not cluster:
+            return jsonify({'success': False, 'error': 'Not connected'}), 500
+        
+        bucket = bucket_config.get('bucket', 'cb_tools')
+        scope = bucket_config.get('analyzerScope', 'query')
+        collection = bucket_config.get('analyzerCollection', 'analyzer')
+        
+        # Query for recent distinct source clusters
+        # Using N1QL SEARCH function (requires FTS index) and prepared statement (adhoc=False)
+        query = f'''
+            SELECT RAW sourceCluster
+            FROM `{bucket}`.`{scope}`.`{collection}`
+            WHERE docType = "ai_analysis"
+              AND sourceCluster IS NOT MISSING
+              AND sourceCluster != ""
+              AND SEARCH(sourceCluster, $term)
+            GROUP BY sourceCluster
+            ORDER BY MAX(createdAt) DESC
+            LIMIT 10
+        '''
+        
+        # Add wildcard for prefix matching
+        search_term = f"{term}*" if term else "*"
+        ic(f"🔎 Searching clusters with SEARCH term: '{search_term}'")
+        
+        result = cluster.query(
+            query, 
+            QueryOptions(
+                adhoc=False, 
+                named_parameters={'term': search_term}
+            )
+        )
+        clusters = [row for row in result]
+        
+        return jsonify({
+            'success': True,
+            'results': clusters
+        })
+        
+    except Exception as e:
+        ic(f"❌ Error fetching clusters: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)

@@ -25699,6 +25699,20 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 store_results: true  // Always save for tracking and auditing
             };
             
+            // Get and validate Cluster Name (Required)
+            const clusterNameInput = document.getElementById('ai-cluster-name');
+            const clusterName = clusterNameInput ? clusterNameInput.value.trim() : '';
+            
+            if (!clusterName) {
+                showToast('Please enter a Cluster Name in the Analysis Source section.', 'error');
+                if (clusterNameInput) {
+                    clusterNameInput.focus();
+                    clusterNameInput.style.borderColor = '#dc3545';
+                    setTimeout(() => clusterNameInput.style.borderColor = '#ccc', 3000);
+                }
+                return;
+            }
+
             const prompt = document.getElementById('ai-user-prompt')?.value || "Analyze query performance";
             
             Logger.debug(`[AI] Provider: ${provider}, Store: ${options.store_results}`);
@@ -25720,6 +25734,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 // Build payload (for saving, even without AI call)
                 const savePayload = {
                     data: {
+                        clusterName: clusterName,
                         everyQueryData: everyQueryData,
                         analysisData: analysisData,
                         indexData: typeof indexData !== 'undefined' ? indexData : [],
@@ -25780,11 +25795,15 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             Logger.warn('[AI] ⚠️ AI API call not yet implemented');
         }
 
+        let aiHistoryCurrentPage = 1;
+        let aiHistoryPageSize = 10;
+
         /**
          * Load AI analysis history from Couchbase
          */
-        async function loadAIAnalysisHistory() {
-            Logger.debug('[AI] 📋 Loading analysis history from Couchbase');
+        async function loadAIAnalysisHistory(page = 1) {
+            aiHistoryCurrentPage = page;
+            Logger.debug(`[AI] 📋 Loading analysis history page ${page}`);
             
             const cbConfig = window.clusterConfig || (typeof clusterConfig !== 'undefined' ? clusterConfig : null);
             
@@ -25794,22 +25813,24 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             }
             
             try {
+                const offset = (page - 1) * aiHistoryPageSize;
+                
                 const response = await fetch('/api/ai/history', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         config: cbConfig.cluster,
                         bucketConfig: cbConfig.bucketConfig,
-                        limit: 10,
-                        offset: 0
+                        limit: aiHistoryPageSize,
+                        offset: offset
                     })
                 });
                 
                 const result = await response.json();
                 
                 if (result.success && result.results) {
-                    displayAIHistory(result.results);
-                    Logger.info(`[AI] ✅ Loaded ${result.count} analysis records`);
+                    displayAIHistory(result.results, result.count); // Pass count of returned rows
+                    Logger.info(`[AI] ✅ Loaded ${result.count} analysis records (Page ${page})`);
                 }
             } catch (error) {
                 Logger.error('[AI] Error loading history:', error);
@@ -25849,7 +25870,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         /**
          * Display AI analysis history in table
          */
-        function displayAIHistory(records) {
+        function displayAIHistory(records, currentCount) {
             const tbody = document.getElementById('ai-history-list');
             if (!tbody) {
                 Logger.warn('[AI] ai-history-list tbody not found');
@@ -25900,14 +25921,25 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 
                 const exactTime = new Date(record.createdAt).toLocaleString();
                 const relativeTime = getRelativeTime(record.createdAt);
+                const sourceCluster = record.sourceCluster || '<span style="color: #999;">N/A</span>';
+                
+                // Obfuscation badge
+                const isObfuscated = record.metadata?.obfuscated;
+                const obfuscatedBadge = isObfuscated 
+                    ? '<span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Yes</span>'
+                    : '<span style="background: #dc3545; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">No</span>';
+                
                 const providerBadge = getProviderBadge(record.provider);
                 const statusBadge = getStatusBadge(record.status);
                 const dataIncluded = formatDataIncluded(record.metadata?.selections);
+                
                 const promptFull = record.prompt || 'N/A';
                 const promptShort = truncateText(promptFull, 60);
                 
                 row.innerHTML = `
                     <td style="padding: 10px; border: 1px solid #dee2e6;" title="${exactTime}">${relativeTime}</td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: 500;">${sourceCluster}</td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">${obfuscatedBadge}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6;">${providerBadge}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6;" title="${promptFull}">${promptShort}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6;">${dataIncluded}</td>
@@ -25935,6 +25967,51 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     Logger.warn('[AI] ⚠️ Rows were CLEARED after being added!');
                 }
             }, 500);
+
+            // Update pagination controls
+            addAIHistoryPaginationControls(currentCount);
+        }
+
+        function addAIHistoryPaginationControls(currentCount) {
+            const paginationDiv = document.getElementById('ai-history-pagination');
+            if (!paginationDiv) return;
+            
+            paginationDiv.innerHTML = '';
+            
+            // Prev button
+            const prevButton = document.createElement('button');
+            prevButton.className = 'btn-standard';
+            prevButton.textContent = '◀ Prev';
+            prevButton.style.margin = '0 5px';
+            prevButton.disabled = aiHistoryCurrentPage === 1;
+            prevButton.onclick = () => {
+                if (aiHistoryCurrentPage > 1) {
+                    loadAIAnalysisHistory(aiHistoryCurrentPage - 1);
+                }
+            };
+            if (prevButton.disabled) prevButton.style.opacity = '0.5';
+            
+            // Page info
+            const pageInfo = document.createElement('span');
+            pageInfo.textContent = ` Page ${aiHistoryCurrentPage} `;
+            pageInfo.style.margin = '0 15px';
+            pageInfo.style.fontWeight = 'bold';
+            
+            // Next button
+            const nextButton = document.createElement('button');
+            nextButton.className = 'btn-standard';
+            nextButton.textContent = 'Next ▶';
+            nextButton.style.margin = '0 5px';
+            // Disable if we got fewer records than page size (end of list)
+            nextButton.disabled = !currentCount || currentCount < aiHistoryPageSize;
+            nextButton.onclick = () => {
+                loadAIAnalysisHistory(aiHistoryCurrentPage + 1);
+            };
+            if (nextButton.disabled) nextButton.style.opacity = '0.5';
+            
+            paginationDiv.appendChild(prevButton);
+            paginationDiv.appendChild(pageInfo);
+            paginationDiv.appendChild(nextButton);
         }
         
         function getProviderBadge(provider) {
@@ -26365,3 +26442,78 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         }
         
         window.formatAIAnalysisHTML = formatAIAnalysisHTML;
+
+        // Add event listener for cluster name input to toggle analyze button
+        document.addEventListener('DOMContentLoaded', function() {
+            const clusterInput = document.getElementById('ai-cluster-name');
+            const analyzeBtn = document.getElementById('ai-analyze-btn');
+            
+            if (clusterInput && analyzeBtn) {
+                // Initial check
+                analyzeBtn.disabled = !clusterInput.value.trim();
+                if (analyzeBtn.disabled) {
+                    analyzeBtn.style.opacity = '0.6';
+                    analyzeBtn.style.cursor = 'not-allowed';
+                    analyzeBtn.title = 'Please enter a Cluster Name first';
+                }
+                
+                // Update on input
+                clusterInput.addEventListener('input', function() {
+                    const hasValue = this.value.trim().length > 0;
+                    analyzeBtn.disabled = !hasValue;
+                    
+                    if (hasValue) {
+                        analyzeBtn.style.opacity = '1';
+                        analyzeBtn.style.cursor = 'pointer';
+                        analyzeBtn.title = '';
+                    } else {
+                        analyzeBtn.style.opacity = '0.6';
+                        analyzeBtn.style.cursor = 'not-allowed';
+                        analyzeBtn.title = 'Please enter a Cluster Name first';
+                    }
+                });
+
+                // Initialize jQuery UI Autocomplete
+                if (typeof $ !== 'undefined' && $.fn.autocomplete) {
+                    $(clusterInput).autocomplete({
+                        source: function(request, response) {
+                            const cbConfig = window.clusterConfig || (typeof clusterConfig !== 'undefined' ? clusterConfig : null);
+                            if (!cbConfig) return response([]);
+                            
+                            fetch('/api/ai/clusters', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    config: cbConfig.cluster,
+                                    bucketConfig: cbConfig.bucketConfig,
+                                    term: request.term
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    response(data.results);
+                                } else {
+                                    response([]);
+                                }
+                            })
+                            .catch(err => {
+                                console.error('Error fetching clusters:', err);
+                                response([]);
+                            });
+                        },
+                        minLength: 0, // Allow showing list on focus
+                        delay: 300,
+                        select: function(event, ui) {
+                            // Trigger input event manually to update button state
+                            this.value = ui.item.value;
+                            this.dispatchEvent(new Event('input'));
+                        }
+                    }).focus(function() {
+                        // Trigger search on focus to show recent history if empty
+                        // Or just show recent 10 always
+                        $(this).autocomplete("search", $(this).val());
+                    });
+                }
+            }
+        });

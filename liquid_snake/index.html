@@ -1813,6 +1813,18 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
         <!-- AI Analyzer Tab Content -->
         <div id="ai-analyzer" data-report-section="ai-analyzer" style="padding: 20px;">
+            <!-- Analysis Source -->
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                <h3 style="margin:0 0 12px 0;">Analysis Source</h3>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <label style="font-weight: 600; min-width: 120px;">Cluster Name:<span style="color: red;">*</span></label>
+                    <input type="text" id="ai-cluster-name" placeholder="Ex: QA East Cloud" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; max-width: 400px;" />
+                </div>
+                <div style="margin-top: 8px; color: #666; font-size: 0.9em;">
+                    Identify the source cluster for this analysis (Required).
+                </div>
+            </div>
+
             <!-- AI Service Selection -->
             <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
                 <h3 style="margin:0 0 12px 0;">AI Service Provider</h3>
@@ -1893,6 +1905,8 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         <thead style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
                             <tr>
                                 <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Request Date</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Source Cluster</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Obfuscated</th>
                                 <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Provider</th>
                                 <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Prompt</th>
                                 <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Data Included</th>
@@ -1905,6 +1919,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         </tbody>
                     </table>
                 </div>
+                <div id="ai-history-pagination" style="margin-top: 10px; text-align: center; background-color: #f5f5f5; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6;"></div>
             </div>
         </div>
     </div>
