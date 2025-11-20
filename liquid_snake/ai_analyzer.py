@@ -439,6 +439,9 @@ class DataObfuscator:
         Uses SHA-256 hash with base36 encoding for compact, readable tokens
         Example: "city" -> "x4k2m9", "users" -> "j7p3q1"
         """
+        # Normalize: remove backticks to ensure `city` and city map to same token
+        original = original.strip('`')
+
         if original in self._token_cache:
             return self._token_cache[original]
         
@@ -731,6 +734,35 @@ class AIPayloadBuilder:
                                    'bucketScopeCollection', 'bucket', 'scope', 'collection']:
                             if isinstance(value, str) and value and not value.startswith('_'):
                                 obj[key] = obfuscator._generate_token(value)
+                        # Obfuscate user_query_counts keys (usernames)
+                        elif key == 'user_query_counts':
+                            if isinstance(value, dict):
+                                new_counts = {}
+                                for user, count in value.items():
+                                    new_user = obfuscator._generate_token(user)
+                                    new_counts[new_user] = count
+                                obj[key] = new_counts
+                            elif isinstance(value, str):
+                                # Handle string format: "user1: (count), user2: (count)"
+                                import re
+                                parts = value.split(", ")
+                                new_parts = []
+                                for part in parts:
+                                    # Match "username: (count)" - find last colon
+                                    match = re.match(r'^(.*):\s*\((\d+)\)$', part)
+                                    if match:
+                                        user = match.group(1)
+                                        count = match.group(2)
+                                        new_user = obfuscator._generate_token(user)
+                                        new_parts.append(f"{new_user}: ({count})")
+                                    else:
+                                        new_parts.append(part)
+                                obj[key] = ", ".join(new_parts)
+                        # Obfuscate users field (comma-separated usernames)
+                        elif key == 'users' and isinstance(value, str):
+                             parts = value.split(", ")
+                             new_parts = [obfuscator._generate_token(part) for part in parts if part]
+                             obj[key] = ", ".join(new_parts)
                         # Recurse into nested structures
                         elif isinstance(value, (dict, list)):
                             obfuscate_sql_fields(value)
