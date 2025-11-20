@@ -1813,87 +1813,106 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
         <!-- AI Analyzer Tab Content -->
         <div id="ai-analyzer" data-report-section="ai-analyzer" style="padding: 20px;">
-            <!-- Analysis Source -->
-            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
-                <h3 style="margin:0 0 12px 0;">Analysis Source</h3>
-                <div style="display: flex; gap: 12px; align-items: center;">
-                    <label style="font-weight: 600; min-width: 120px;">Cluster Name:<span style="color: red;">*</span></label>
-                    <input type="text" id="ai-cluster-name" placeholder="Ex: QA East Cloud" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; max-width: 400px;" />
+            <!-- Top Grid: Source and Provider -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
+                <!-- Analysis Source -->
+                <div class="background-f5 padding-15 border-radius-5 border-1-ddd">
+                    <h3 style="margin:0 0 8px 0; font-size: 14px;">Analysis Source</h3>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <label style="font-weight: 600; min-width: 100px; font-size: 13px;">Cluster Name:<span style="color: red;">*</span></label>
+                        <input type="text" id="ai-cluster-name" placeholder="Ex: QA East Cloud" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; flex: 1; font-size: 13px;" />
+                    </div>
+                    <div style="margin-top: 4px; color: #666; font-size: 11px;">
+                        Identify the source cluster for this analysis (Required).
+                    </div>
                 </div>
-                <div style="margin-top: 8px; color: #666; font-size: 0.9em;">
-                    Identify the source cluster for this analysis (Required).
-                </div>
-            </div>
 
-            <!-- AI Service Selection -->
-            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
-                <h3 style="margin:0 0 12px 0;">AI Service Provider</h3>
-                <div style="display: flex; gap: 12px; align-items: center;">
-                    <label style="font-weight: 600;">Selected Provider:</label>
-                    <select id="ai-provider-select" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 300px;">
-                        <option value="">-- Loading providers... --</option>
-                    </select>
-                    <span style="color: #666; font-size: 0.9em;">(Configure API keys in Settings)</span>
+                <!-- AI Service Selection -->
+                <div class="background-f5 padding-15 border-radius-5 border-1-ddd">
+                    <h3 style="margin:0 0 8px 0; font-size: 14px;">AI Service Provider</h3>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <label style="font-weight: 600; min-width: 100px; font-size: 13px;">Provider:</label>
+                        <select id="ai-provider-select" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; flex: 1; font-size: 13px;">
+                            <option value="">-- Loading... --</option>
+                        </select>
+                    </div>
+                    <div style="margin-top: 4px; color: #666; font-size: 11px;">
+                        (Configure API keys in Settings)
+                    </div>
+                    <div id="ai-provider-warning"></div>
                 </div>
-                <div id="ai-provider-warning"></div>
             </div>
 
             <!-- Data Selection -->
-            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
-                <h3 style="margin:0 0 12px 0;">Data to Analyze</h3>
-                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                    <label><input type="checkbox" id="ai-include-dashboard" checked> Dashboard Metrics</label>
-                    <label><input type="checkbox" id="ai-include-insights" checked> Insights Analysis</label>
-                    <label><input type="checkbox" id="ai-include-query-groups" checked> Query Groups Data</label>
-                    <label><input type="checkbox" id="ai-include-flow-diagram" checked> Index/Query Flow </label>
-                    <label><input type="checkbox" id="ai-include-indexes"> Indexes Data <span style="color: #999;">(if populated)</span></label>                   
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px;">
+                <h3 style="margin:0 0 8px 0; font-size: 14px;">Data to Analyze</h3>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 13px;">
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-dashboard" checked> Dashboard Metrics</label>
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-insights" checked> Insights Analysis</label>
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-query-groups" checked> Query Groups</label>
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-flow-diagram" checked> Flow Diagram</label>
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-indexes"> Indexes <span style="color: #999; font-size: 11px;">(if loaded)</span></label>                   
                 </div>
             </div>
 
             <!-- Analysis Options -->
-            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
-                <h3 style="margin:0 0 12px 0;">Analysis Options</h3>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <label style="display: flex; align-items: center; gap: 8px;">
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px; position: relative;">
+                <div style="display: flex; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;">
                         <input type="checkbox" id="ai-obfuscate-data" checked>
-                        <span>Obfuscate sensitive data (bucket names, collection names, etc.)</span>
+                        <span>Obfuscate sensitive data (bucket names, collection names, values)</span>
+                        <span id="obfuscation-toggle-link"
+                              style="font-size: 11px; color: #007bff; cursor: help; text-decoration: underline; margin-left: 4px;">
+                            (Hover/Click to see example)
+                        </span>
                     </label>
-                    
-                    <!-- Obfuscation Example -->
-                    <div style="margin-left: 28px; padding: 12px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px;">
-                        <div style="margin-bottom: 10px;">
-                            <strong style="color: #28a745;">✓ Before (Original):</strong>
-                            <pre style="margin: 6px 0 0 0; padding: 8px; background: #fff; border-left: 3px solid #28a745; font-family: 'Courier New', monospace; overflow-x: auto; white-space: pre;">SELECT fName, lName, order FROM bucket.scope.collection WHERE customerId = "1234" AND status = "completed"</pre>
-                        </div>
-                        <div>
-                            <strong style="color: #2196f3;">🔒 After (Obfuscated):</strong>
-                            <pre style="margin: 6px 0 0 0; padding: 8px; background: #fff; border-left: 3px solid #2196f3; font-family: 'Courier New', monospace; overflow-x: auto; white-space: pre;">SELECT `21t4hs`, `oaurchn`, `goa09eu` FROM `acuoa`.`orcenth`.`8aouenth` WHERE `racousth` = "stousth" AND `stahosuth` = "aloeuoaytn"</pre>
-                        </div>
-                        <div style="margin-top: 8px; color: #666; font-size: 11px; font-style: italic;">
-                            🔐 Field names, bucket/scope/collection names, and values are replaced with random tokens to protect sensitive information.
-                        </div>
+                </div>
+                
+                <!-- Obfuscation Example (Hidden by default) -->
+                <div id="obfuscation-example" style="display: none; margin-top: 10px; padding: 12px; background: #fff; border: 1px solid #999; border-radius: 4px; font-size: 11px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: absolute; z-index: 100; width: calc(100% - 30px);">
+                    <div style="margin-bottom: 8px;">
+                        <strong style="color: #28a745;">✓ Before (Original):</strong>
+                        <pre style="margin: 4px 0 0 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #28a745; font-family: 'Courier New', monospace; overflow-x: auto; white-space: pre; color: #333; font-weight: 500;">SELECT <span style="background:#fff9c4; padding: 0 2px; border-radius: 2px;">fName</span>, <span style="background:#e1f5fe; padding: 0 2px; border-radius: 2px;">lName</span> FROM bucket.scope.collection WHERE id = <span style="background:#fce4ec; padding: 0 2px; border-radius: 2px;">"1234"</span></pre>
+                    </div>
+                    <div>
+                        <strong style="color: #2196f3;">🔒 After (Obfuscated):</strong>
+                        <pre style="margin: 4px 0 0 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #2196f3; font-family: 'Courier New', monospace; overflow-x: auto; white-space: pre; color: #333; font-weight: 500;">SELECT `<span style="background:#fff9c4; padding: 0 2px; border-radius: 2px;">21t4hs</span>`, `<span style="background:#e1f5fe; padding: 0 2px; border-radius: 2px;">oaurchn</span>` FROM `acuoa`.`orcenth`.`8aouenth` WHERE `racousth` = "<span style="background:#fce4ec; padding: 0 2px; border-radius: 2px;">stousth</span>"</pre>
                     </div>
                 </div>
             </div>
 
+            <script>
+                // Inline script for hover/click behavior
+                (function() {
+                    const link = document.getElementById('obfuscation-toggle-link');
+                    const example = document.getElementById('obfuscation-example');
+                    if (link && example) {
+                        link.addEventListener('mouseenter', () => example.style.display = 'block');
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            example.style.display = example.style.display === 'none' ? 'block' : 'none';
+                        });
+                        // Hide when leaving the container to allow hovering the example itself
+                        link.parentElement.parentElement.parentElement.addEventListener('mouseleave', () => example.style.display = 'none');
+                    }
+                })();
+            </script>
+
             <!-- User Prompt -->
-            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
-                <h3 style="margin:0 0 12px 0;">Custom Analysis Prompt</h3>
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px;">
+                <h3 style="margin:0 0 8px 0; font-size: 14px;">Custom Analysis Prompt</h3>
                 <textarea id="ai-user-prompt" 
-                    placeholder="Example: 'AI, could you analyze time between query execution and result delivery for all queries that failed or timed out? Please identify patterns and suggest optimizations.'"
-                    style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical;"></textarea>
-                <div style="margin-top: 8px; color: #666; font-size: 0.85em;">
-                    💡 Tip: Be specific about what you want the AI to analyze. You can ask about performance patterns, optimization suggestions, or specific query characteristics.
-                </div>
+                    placeholder="Example: 'Identify patterns in slow queries and suggest specific index optimizations.'"
+                    style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 12px; resize: vertical; height: 60px; min-height: 40px;"></textarea>
             </div>
 
             <!-- Analyze Button -->
-            <div style="margin-bottom: 30px; display: flex; align-items: center; gap: 12px;">
-                <button id="ai-preview-btn" onclick="showAIPreview()" class="btn-standard" style="background: #6c757d; color: white; padding: 12px 24px; font-size: 16px; font-weight: bold;">
-                    👁️ Preview JSON
-                </button>
-                <button id="ai-analyze-btn" onclick="analyzeWithAI()" class="btn-standard" style="background: #2196f3; color: white; padding: 12px 24px; font-size: 16px; font-weight: bold;">
+            <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                <button id="ai-analyze-btn" onclick="analyzeWithAI()" class="btn-standard" style="background: #2196f3; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
                     🚀 Analyze with AI
+                </button>
+                <button id="ai-preview-btn" onclick="showAIPreview()" class="btn-standard" style="background: #6c757d; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
+                    👁️ Preview JSON
                 </button>
             </div>
 
