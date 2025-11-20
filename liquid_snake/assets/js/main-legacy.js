@@ -24,7 +24,7 @@
         NO_DATA_FOUND: "No data found in the JSON",
         UNEXPECTED_DATA_FORMAT: "Unexpected data format in JSON",
         ERROR_PARSING_JSON: "Error parsing JSON:",
-        FILTERS_CHANGED_REMINDER: "⚠️ Filters changed. Click \"Parse JSON\" to apply changes.",
+        FILTERS_CHANGED_REMINDER: "⚠️ Filters changed. Click \"Analyze\" to apply changes.",
 
         // Chart and table captions
         SHOWING_TOP: "Showing top",

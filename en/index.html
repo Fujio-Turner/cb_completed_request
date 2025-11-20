@@ -279,7 +279,7 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         NO_DATA_FOUND: "No data found in the JSON",
         UNEXPECTED_DATA_FORMAT: "Unexpected data format in JSON",
         ERROR_PARSING_JSON: "Error parsing JSON:",
-        FILTERS_CHANGED_REMINDER: "⚠️ Filters changed. Click \"Parse JSON\" to apply changes.",
+        FILTERS_CHANGED_REMINDER: "⚠️ Filters changed. Click \"Analyze\" to apply changes.",
 
         // Chart and table captions
         SHOWING_TOP: "Showing top",
@@ -780,7 +780,7 @@ if (window.TEXT_CONSTANTS) {
             <div style="display: flex; align-items: center; gap: 10px;">
                 <button id="parse-json-btn" onclick="parseJSON()" aria-label="Parse and analyze JSON data" tabindex="0"
                     role="button">
-                    Parse JSON
+                    Analyze
                 </button>
                 <div id="progress-container">
                     <div class="progress-background">
@@ -2322,7 +2322,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         2. Run it in Couchbase Query Workbench<br />
                         3. Copy the JSON results<br />
                         4. Paste into the second textarea ,on the right, at the top<br />
-                        5. Click "Parse JSON" again
+                        5. Click "Analyze" again
                     </p>
                 </div>
             </div>

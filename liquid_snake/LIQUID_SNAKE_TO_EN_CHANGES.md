@@ -306,3 +306,32 @@ This feature enhances the user experience by:
 - The `copyRequestId()` function remains in the codebase for backward compatibility
 - Old JavaScript functions for the Raw Record tab (`loadWholeRecordFromInput`, `copyWholeRecordJson`) can be removed or kept for backward compatibility
 - Any URL hash navigation to `#whole-record` will no longer work (consider adding a redirect to `#every-query` if needed)
+
+## Date: 2025-11-19
+
+### Change 5: Rename "Parse JSON" to "Analyze"
+
+**Description**: 
+Changed the primary action button text from "Parse JSON" to "Analyze" to better reflect the tool's functionality. Also updated related notification messages.
+
+**File**: `/liquid_snake/index.html`
+
+**Action**: Update button text (around line 180) and instruction text (around line 1780)
+
+```html
+<!-- Button -->
+<button id="parse-json-btn" onclick="parseJSON()" aria-label="Parse and analyze JSON data" tabindex="0" role="button">
+    Analyze
+</button>
+
+<!-- Instructions -->
+5. Click "Analyze" again
+```
+
+**File**: `/liquid_snake/assets/js/main-legacy.js`
+
+**Action**: Update `FILTERS_CHANGED_REMINDER` constant
+
+```javascript
+FILTERS_CHANGED_REMINDER: "⚠️ Filters changed. Click \"Analyze\" to apply changes.",
+```
