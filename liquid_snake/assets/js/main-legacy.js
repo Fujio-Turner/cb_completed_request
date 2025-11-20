@@ -25421,15 +25421,21 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         // ============================================
 
         /**
-         * Show AI preview overlay with JSON data that will be sent to AI
+         * Show AI preview overlay with JSON/TOON data that will be sent to AI
          * Sends actual data to Flask for processing
          */
-        async function showAIPreview() {
-            Logger.debug('[AI] 👁️ showAIPreview() called');
+        async function showAIPreview(format = 'json') {
+            Logger.debug(`[AI] 👁️ showAIPreview(${format}) called`);
             
             const overlay = document.getElementById('ai-preview-overlay');
             const previewJson = document.getElementById('ai-preview-json');
             const previewSize = document.getElementById('ai-preview-size');
+            
+            // Update title based on format
+            const titleEl = overlay ? overlay.querySelector('h2') : null;
+            if (titleEl) {
+                titleEl.textContent = format === 'toon' ? '📋 AI Analysis Preview - TOON Payload' : '📋 AI Analysis Preview - JSON Payload';
+            }
             
             if (!overlay || !previewJson) {
                 Logger.error('[AI] ❌ AI preview overlay elements not found');
@@ -25479,13 +25485,14 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     prompt: prompt,
                     selections: selections,
                     options: options,
+                    format: format,
                     parseContext: gatherParseContext()  // Include filter and data source state
                 };
                 
                 Logger.trace(`[AI] Request data size: ${JSON.stringify(requestData).length} bytes`);
                 
                 // Show loading state
-                previewJson.textContent = 'Loading preview from server...';
+                previewJson.textContent = `Loading ${format.toUpperCase()} preview from server...`;
                 overlay.style.display = 'block';
                 
                 // POST to Flask endpoint
@@ -25508,18 +25515,20 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     throw new Error(result.error || 'Unknown error from server');
                 }
                 
-                // Display formatted JSON from server
-                const jsonString = result.payload_json || JSON.stringify(result.payload, null, 2);
-                previewJson.textContent = jsonString;
+                // Display formatted content from server (json or toon)
+                // Check payload_text (new) first, then payload_json (old), then raw payload fallback
+                const contentString = result.payload_text || result.payload_json || JSON.stringify(result.payload, null, 2);
+                previewJson.textContent = contentString;
                 
                 // Update size display
                 const sizeKB = result.size_kb || ((result.size_bytes || 0) / 1024).toFixed(2);
                 const sizeBytes = result.size_bytes || 0;
+                const formatLabel = result.format ? result.format.toUpperCase() : format.toUpperCase();
                 
                 Logger.debug(`[AI] 📊 Payload size: ${sizeKB} KB (${sizeBytes} bytes)`);
                 
                 if (previewSize) {
-                    previewSize.textContent = `Payload size: ${sizeKB} KB (${sizeBytes.toLocaleString()} bytes)`;
+                    previewSize.textContent = `${formatLabel} Payload size: ${sizeKB} KB (${sizeBytes.toLocaleString()} bytes)`;
                 }
                 
                 Logger.info('[AI] ✅ Preview overlay displayed with server-processed data');

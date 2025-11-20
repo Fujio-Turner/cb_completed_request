@@ -18,5 +18,8 @@ openai>=1.0.0
 # Enhanced logging
 icecream>=2.1.3
 
+# TOON Converter (Token Object Oriented Notation)
+json-toon-converter>=0.1.0
+
 # Optional: For enhanced error handling and logging
 python-dotenv>=1.0.0

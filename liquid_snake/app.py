@@ -29,6 +29,24 @@ from couchbase.exceptions import (
 
 # Import AI Analyzer module
 import ai_analyzer
+import sys
+ic(sys.executable)
+
+# Import TOON converter
+try:
+    import toon_python
+    TOON_AVAILABLE = True
+except ImportError:
+    ic("⚠️ toon-python not installed, attempting runtime install...")
+    try:
+        import subprocess
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "toon-python"])
+        import toon_python
+        TOON_AVAILABLE = True
+        ic("✅ toon-python installed successfully at runtime")
+    except Exception as e:
+        TOON_AVAILABLE = False
+        ic(f"❌ Runtime install failed: {e}")
 
 # Configure icecream
 ic.configureOutput(includeContext=True)
@@ -451,6 +469,7 @@ def preview_ai_payload():
         "size_kb": 12.05
     }
     """
+    global TOON_AVAILABLE
     try:
         request_data = request.json
         ic("👁️ Preview AI payload request received")
@@ -460,6 +479,7 @@ def preview_ai_payload():
         prompt = request_data.get('prompt', 'Analyze query performance')
         selections = request_data.get('selections', {})
         options = request_data.get('options', {})
+        output_format = request_data.get('format', 'json')
         
         if not raw_data:
             return jsonify({
@@ -469,6 +489,8 @@ def preview_ai_payload():
         
         ic(f"📊 Data size: {len(str(raw_data))} bytes")
         ic(f"🎯 Selections: {selections}")
+        ic(f"📝 Format: {output_format}")
+        ic(f"📦 TOON Available: {TOON_AVAILABLE}")
         
         # Build payload from raw data (no caching)
         payload = ai_analyzer.payload_builder.build_payload_from_data(
@@ -481,17 +503,58 @@ def preview_ai_payload():
         # Extract mapping table if obfuscated (don't send to AI, but return to client)
         obfuscation_mapping = payload.pop('_obfuscation_mapping', None)
         
-        # Calculate size
+        # Convert to requested format
         import json
-        payload_json = json.dumps(payload, indent=2)
-        size_bytes = len(payload_json.encode('utf-8'))
+        
+        # Try dynamic install if not available and requested
+        if output_format == 'toon' and not TOON_AVAILABLE:
+            ic("⚠️ TOON not loaded, attempting lazy install...")
+            try:
+                import subprocess
+                import sys
+                subprocess.check_call([sys.executable, "-m", "pip", "install", "toon-python"])
+                import toon_python
+                TOON_AVAILABLE = True
+                # Inject into global scope
+                globals()['toon_python'] = toon_python
+                ic("✅ TOON installed and loaded lazily")
+            except Exception as e:
+                ic(f"❌ Lazy install failed: {e}")
+
+        if output_format == 'toon' and TOON_AVAILABLE:
+            try:
+                # Retrieve module safely (handles both global and local import cases)
+                import sys
+                mod_toon = sys.modules.get('toon_python')
+                if not mod_toon:
+                    import toon_python as mod_toon
+
+                # Use toon_python.encode directly
+                if hasattr(mod_toon, 'encode'):
+                    payload_str = mod_toon.encode(payload)
+                elif hasattr(mod_toon, 'dumps'):
+                    payload_str = mod_toon.dumps(payload)
+                else:
+                    from toon_python.encoder import encode
+                    payload_str = encode(payload)
+                    
+                ic("✅ Converted payload to TOON")
+            except Exception as e:
+                ic(f"❌ TOON conversion failed: {e}")
+                payload_str = json.dumps(payload, indent=2)
+                output_format = 'json (fallback)'
+        else:
+            payload_str = json.dumps(payload, indent=2)
+            
+        size_bytes = len(payload_str.encode('utf-8'))
         
         ic(f"✅ Payload preview ready, size={size_bytes} bytes")
         
         response_data = {
             'success': True,
             'payload': payload,
-            'payload_json': payload_json,  # Pre-formatted for display
+            'payload_text': payload_str,  # Renamed from payload_json to be generic
+            'format': output_format,
             'size_bytes': size_bytes,
             'size_kb': round(size_bytes / 1024, 2)
         }
