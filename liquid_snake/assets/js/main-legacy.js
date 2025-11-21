@@ -25462,7 +25462,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             const options = {
                 obfuscated: document.getElementById('ai-obfuscate-data')?.checked || false,
-                store_results: true  // Always save for tracking and auditing
+                store_results: true,  // Always save for tracking and auditing
+                query_group_limit: parseInt(document.querySelector('input[name="ai-qg-limit"]:checked')?.value || "10")
             };
             
             const prompt = document.getElementById('ai-user-prompt')?.value || "Analyze query performance";
@@ -25705,7 +25706,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             const options = {
                 obfuscated: document.getElementById('ai-obfuscate-data')?.checked || false,
-                store_results: true  // Always save for tracking and auditing
+                store_results: true,  // Always save for tracking and auditing
+                query_group_limit: parseInt(document.querySelector('input[name="ai-qg-limit"]:checked')?.value || "10")
             };
             
             // Get and validate Cluster Name (Required)
@@ -25764,8 +25766,21 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 Logger.info(`[AI] Payload size: ${JSON.stringify(savePayload).length} bytes`);
                 
                 try {
-                    // Show immediate feedback
-                    showToast('🚀 AI Analyzer job has been submitted. You can track the status of the job in the table below.', 'info');
+                    // Show immediate feedback with loading state
+                    const btn = document.getElementById('ai-analyze-btn');
+                    const originalBtnContent = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '🤖 Processing... <span class="spinner-border" style="width: 12px; height: 12px; border-width: 2px; display: inline-block; border: 2px solid #fff; border-right-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-left: 8px;"></span>';
+                    
+                    // Add CSS keyframe for spin if not exists
+                    if (!document.getElementById('spinner-style')) {
+                        const style = document.createElement('style');
+                        style.id = 'spinner-style';
+                        style.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+                        document.head.appendChild(style);
+                    }
+
+                    showToast('🚀 AI Analyzer job has been submitted. This may take a few minutes...', 'info');
                     Logger.info('[AI] 🚀 Job submitted to Flask');
                     
                     // POST to Flask analyze endpoint (which will save even without real AI)
@@ -25781,20 +25796,91 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     
                     if (result.success) {
                         const docId = result.document_id;
-                        const location = `${cbConfig.bucketConfig.bucket}.${cbConfig.bucketConfig.analyzerScope}.${cbConfig.bucketConfig.analyzerCollection}`;
                         
-                        showToast(`✅ Analysis saved: ${docId}`, 'success');
-                        Logger.info(`[AI] ✅ Saved to Couchbase: ${docId}`);
-                        
-                        // Reload history to show new record
-                        setTimeout(() => loadAIAnalysisHistory(), 500);
+                        if (result.status === 'submitted' || result.status === 'pending') {
+                            Logger.info(`[AI] 🔄 Job submitted (ID: ${docId}), starting poll...`);
+                            
+                            // Polling loop
+                            const pollInterval = 3000; // 3 seconds
+                            let attempts = 0;
+                            const maxAttempts = 200; // ~10 minutes timeout
+                            
+                            const poll = async () => {
+                                attempts++;
+                                if (attempts > maxAttempts) {
+                                    throw new Error('Analysis timed out after 10 minutes');
+                                }
+                                
+                                try {
+                                    const statusRes = await fetch(`/api/ai/status/${docId}`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            config: cbConfig.cluster,
+                                            bucketConfig: cbConfig.bucketConfig
+                                        })
+                                    });
+                                    
+                                    const statusData = await statusRes.json();
+                                    
+                                    if (statusData.status === 'completed') {
+                                        showToast(`✅ Analysis complete!`, 'success');
+                                        Logger.info(`[AI] ✅ Analysis completed for ${docId}`);
+                                        
+                                        // Restore button
+                                        const btn = document.getElementById('ai-analyze-btn');
+                                        if (btn) {
+                                            btn.disabled = false;
+                                            btn.innerHTML = originalBtnContent;
+                                        }
+                                        
+                                        // Refresh history
+                                        setTimeout(() => loadAIAnalysisHistory(), 500);
+                                        return;
+                                    } else if (statusData.status === 'failed') {
+                                        throw new Error(statusData.error?.message || 'Analysis failed during processing');
+                                    } else {
+                                        // Still pending, poll again
+                                        setTimeout(poll, pollInterval);
+                                    }
+                                } catch (e) {
+                                    if (e.message.includes('timed out')) throw e;
+                                    Logger.warn('[AI] Polling error (retrying):', e);
+                                    setTimeout(poll, pollInterval);
+                                }
+                            };
+                            
+                            // Start polling (don't await here so main thread isn't blocked, 
+                            // but we do want to keep spinner active... wait, if we don't await, finally block runs immediately)
+                            // Actually we SHOULD await the polling if we want the spinner to stay
+                            
+                            await poll();
+                            
+                        } else {
+                            // Immediate success (fallback or cached)
+                            showToast(`✅ Analysis saved: ${docId}`, 'success');
+                            Logger.info(`[AI] ✅ Saved to Couchbase: ${docId}`);
+                            setTimeout(() => loadAIAnalysisHistory(), 500);
+                        }
                     } else {
                         throw new Error(result.error || 'Save failed');
                     }
                 } catch (error) {
                     Logger.error('[AI] ❌ Error during analysis:', error);
                     showToast(`❌ Analysis failed: ${error.message}`, 'error');
-                }
+                    
+                    // Ensure button is reset on error
+                    const btn = document.getElementById('ai-analyze-btn');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = originalBtnContent;
+                    }
+                } 
+                // Removed finally block to handle button reset manually in poll/success paths
+                // because we await poll(), but if poll() finishes successfully, we want to reset.
+                // If we used finally, it would run after await poll(), which is correct.
+                // BUT, I moved the button reset inside poll() success/error to be explicit.
+                // Let's stick to resetting in catch and success paths to be safe with the async logic.
                 
                 return; // Exit early for now (no AI call yet)
             }

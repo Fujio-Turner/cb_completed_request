@@ -19,12 +19,14 @@ import time
 from icecream import ic
 from couchbase.cluster import Cluster
 from couchbase.options import ClusterOptions, QueryOptions
+import couchbase.subdocument as SD
 from couchbase.auth import PasswordAuthenticator
 from couchbase.exceptions import (
     DocumentExistsException,
     DocumentNotFoundException,
     TimeoutException, 
-    CouchbaseException
+    CouchbaseException,
+    PathNotFoundException
 )
 
 # Import AI Analyzer module
@@ -574,6 +576,118 @@ def preview_ai_payload():
             'error': str(e)
         }), 500
 
+import threading
+
+def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prompt, ai_payload_data, cb_config, initial_doc, obfuscation_mapping):
+    """Background thread to process AI request and update Couchbase document"""
+    try:
+        import json
+        from datetime import datetime
+        
+        ic(f"🧵 Starting background AI task for doc {doc_id}")
+        
+        # Call AI provider using ai_analyzer module
+        result = ai_analyzer.call_ai_provider(
+            provider=provider,
+            model=model or ('gpt-4o' if provider == 'openai' else 'claude-3-5-sonnet-20241022'),
+            api_key=api_key,
+            api_url=api_url,
+            endpoint=endpoint,
+            prompt=prompt,
+            payload_data=ai_payload_data
+        )
+        
+        ic(f"📥 AI response received for {doc_id}", result.get('success'))
+        
+        # Get Couchbase connection
+        cluster = get_couchbase_connection(cb_config['cluster'])
+        if not cluster:
+            ic(f"❌ Failed to connect to Couchbase for background update of {doc_id}")
+            return
+
+        bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
+        collection = bucket.scope(cb_config['bucketConfig']['analyzerScope']).collection(
+            cb_config['bucketConfig']['analyzerCollection']
+        )
+        
+        if result['success']:
+            analysis_data = result['data']
+            
+            # Parse JSON content from AI response if it's a string
+            try:
+                if 'choices' in analysis_data and len(analysis_data['choices']) > 0:
+                    content = analysis_data['choices'][0].get('message', {}).get('content', '')
+                    if isinstance(content, str) and content.strip().startswith('{'):
+                        # Parse JSON string to object
+                        parsed_content = json.loads(content)
+                        analysis_data['choices'][0]['message']['content_parsed'] = parsed_content
+                        ic("✅ Parsed AI response JSON content to object")
+            except Exception as e:
+                ic(f"⚠️ Could not parse AI content as JSON: {str(e)}")
+            
+            # De-obfuscate AI response if we have mapping
+            if obfuscation_mapping:
+                ic("🔓 De-obfuscating AI response")
+                obfuscator = ai_analyzer.DataObfuscator()
+                
+                # Convert analysis to JSON string, de-obfuscate, convert back
+                analysis_json = json.dumps(analysis_data)
+                deobfuscated_json = obfuscator.deobfuscate_text(analysis_json, obfuscation_mapping)
+                analysis_data = json.loads(deobfuscated_json)
+                
+                ic(f"✅ De-obfuscation complete, restored {len(obfuscation_mapping)} tokens")
+            
+            # Update Couchbase doc with success results
+            try:
+                response_size = len(json.dumps(analysis_data).encode('utf-8'))
+                
+                # Get current doc to preserve fields
+                current_doc = collection.get(doc_id).content_as[dict]
+                
+                current_doc.update({
+                    'completedAt': datetime.utcnow().isoformat() + 'Z',
+                    'status': 'completed',
+                    'aiResponse': analysis_data,
+                    'metadata': {
+                        **current_doc.get('metadata', {}),
+                        'elapsed_ms': result.get('elapsed_ms'),
+                        'responsePayloadSize': response_size
+                    }
+                })
+                
+                collection.upsert(doc_id, current_doc)
+                ic(f"✅ Updated doc {doc_id} with success results")
+            except Exception as e:
+                ic(f"⚠️ Failed to update doc with results: {str(e)}")
+                
+        else:
+            # Update Couchbase doc with failure
+            try:
+                # Get current doc
+                current_doc = collection.get(doc_id).content_as[dict]
+                
+                current_doc.update({
+                    'status': 'failed',
+                    'failedAt': datetime.utcnow().isoformat() + 'Z',
+                    'error': {
+                        'message': result.get('error'),
+                        'raw_response': result.get('raw_response'),
+                        'status_code': result.get('status_code'),
+                        'elapsed_ms': result.get('elapsed_ms'),
+                        'attempts': result.get('attempts', 1)
+                    }
+                })
+                
+                collection.upsert(doc_id, current_doc)
+                ic(f"✅ Updated doc {doc_id} with failure status")
+            except Exception as e:
+                ic(f"⚠️ Failed to update doc with error: {str(e)}")
+                
+    except Exception as e:
+        import traceback
+        ic(f"💥 Unhandled error in background task for {doc_id}", str(e))
+        ic(traceback.format_exc())
+
 @app.route('/api/ai/analyze', methods=['POST'])
 def analyze_with_ai():
     """
@@ -774,141 +888,73 @@ def analyze_with_ai():
                 }
             }
             
-            # Skip to save logic below
-            result = {
+            # Wait, we still need to save this placeholder data if doc exists
+            if saved_doc_id:
+                try:
+                    cluster = get_couchbase_connection(cb_config['cluster'])
+                    if cluster:
+                        bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
+                        collection = bucket.scope(cb_config['bucketConfig']['analyzerScope']).collection(
+                            cb_config['bucketConfig']['analyzerCollection']
+                        )
+                        
+                        import uuid
+                        from datetime import datetime
+                        
+                        current_doc = collection.get(saved_doc_id).content_as[dict]
+                        current_doc.update({
+                            'completedAt': datetime.utcnow().isoformat() + 'Z',
+                            'status': 'completed',
+                            'aiResponse': analysis_data
+                        })
+                        collection.upsert(saved_doc_id, current_doc)
+                        ic(f"✅ Updated placeholder doc {saved_doc_id}")
+                except Exception as e:
+                    ic(f"⚠️ Failed to update placeholder doc: {str(e)}")
+
+            return jsonify({
                 'success': True,
                 'data': analysis_data,
-                'elapsed_ms': 0
-            }
-        else:
-            # Call AI provider using ai_analyzer module
-            result = ai_analyzer.call_ai_provider(
-                provider=provider,
-                model=model or ('gpt-4o' if provider == 'openai' else 'claude-3-5-sonnet-20241022'),
-                api_key=api_key,
-                api_url=api_url,
-                endpoint=endpoint,
-                prompt=prompt,
-                payload_data=ai_payload_data
-            )
-        
-        ic("📥 AI response received", result.get('success'))
-        
-        if result['success']:
-            analysis_data = result['data']
-            
-            # Parse JSON content from AI response if it's a string
-            try:
-                if 'choices' in analysis_data and len(analysis_data['choices']) > 0:
-                    content = analysis_data['choices'][0].get('message', {}).get('content', '')
-                    if isinstance(content, str) and content.strip().startswith('{'):
-                        # Parse JSON string to object
-                        parsed_content = json.loads(content)
-                        analysis_data['choices'][0]['message']['content_parsed'] = parsed_content
-                        ic("✅ Parsed AI response JSON content to object")
-            except Exception as e:
-                ic(f"⚠️ Could not parse AI content as JSON: {str(e)}")
-            
-            # De-obfuscate AI response if we have mapping
-            if obfuscation_mapping:
-                ic("🔓 De-obfuscating AI response")
-                obfuscator = ai_analyzer.DataObfuscator()
-                
-                # Convert analysis to JSON string, de-obfuscate, convert back
-                analysis_json = json.dumps(analysis_data)
-                deobfuscated_json = obfuscator.deobfuscate_text(analysis_json, obfuscation_mapping)
-                analysis_data = json.loads(deobfuscated_json)
-                
-                ic(f"✅ De-obfuscation complete, restored {len(obfuscation_mapping)} tokens")
-            
-            # Update Couchbase doc with success results
-            if saved_doc_id:
-                try:
-                    import uuid
-                    from datetime import datetime
-                    
-                    response_size = len(json.dumps(analysis_data).encode('utf-8'))
-                    
-                    update_doc = {
-                        'docType': 'ai_analysis',
-                        'createdAt': initial_doc['createdAt'],
-                        'completedAt': datetime.utcnow().isoformat() + 'Z',
-                        'status': 'completed',
-                        'provider': provider,
-                        'model': model,
-                        'prompt': prompt,
-                        'sourceCluster': initial_doc.get('sourceCluster', 'Unknown Cluster'),
-                        'payload': ai_payload_data,
-                        'aiResponse': analysis_data,
-                        'parseJson': request_data.get('parseContext', {}),
-                        'metadata': {
-                            'obfuscated': obfuscation_mapping is not None,
-                            'elapsed_ms': result.get('elapsed_ms'),
-                            'selections': selections,
-                            'total_queries': len(raw_data.get('everyQueryData', [])),
-                            'requestPayloadSize': initial_doc['metadata']['requestPayloadSize'],
-                            'responsePayloadSize': response_size
-                        }
-                    }
-                    
-                    cluster = get_couchbase_connection(cb_config['cluster'])
-                    if cluster:
-                        bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
-                        collection = bucket.scope(cb_config['bucketConfig']['analyzerScope']).collection(
-                            cb_config['bucketConfig']['analyzerCollection']
-                        )
-                        collection.upsert(saved_doc_id, update_doc)
-                        ic(f"✅ Updated doc {saved_doc_id} with success results")
-                except Exception as e:
-                    ic(f"⚠️ Failed to update doc with results: {str(e)}")
-            
-            return jsonify({
-                'success': True,
-                'analysis': analysis_data,
-                'elapsed_ms': result.get('elapsed_ms'),
-                'provider': provider,
-                'model': model,
-                'deobfuscated': obfuscation_mapping is not None,
-                'saved_to_couchbase': saved_doc_id is not None,
-                'document_id': saved_doc_id
+                'elapsed_ms': 0,
+                'document_id': saved_doc_id,
+                'status': 'completed'
             })
         else:
-            # Update Couchbase doc with failure
+            # Launch background task for real AI call
             if saved_doc_id:
-                try:
-                    from datetime import datetime
-                    
-                    cluster = get_couchbase_connection(cb_config['cluster'])
-                    if cluster:
-                        bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
-                        collection = bucket.scope(cb_config['bucketConfig']['analyzerScope']).collection(
-                            cb_config['bucketConfig']['analyzerCollection']
-                        )
-                        
-                        # Get current doc and update with error
-                        current_doc = collection.get(saved_doc_id).content_as[dict]
-                        current_doc['status'] = 'failed'
-                        current_doc['failedAt'] = datetime.utcnow().isoformat() + 'Z'
-                        current_doc['error'] = {
-                            'message': result.get('error'),
-                            'raw_response': result.get('raw_response'),
-                            'status_code': result.get('status_code'),
-                            'elapsed_ms': result.get('elapsed_ms'),
-                            'attempts': result.get('attempts', 1)
-                        }
-                        
-                        collection.upsert(saved_doc_id, current_doc)
-                        ic(f"✅ Updated doc {saved_doc_id} with failure status")
-                except Exception as e:
-                    ic(f"⚠️ Failed to update doc with error: {str(e)}")
-            
-            return jsonify({
-                'success': False,
-                'error': result.get('error'),
-                'elapsed_ms': result.get('elapsed_ms'),
-                'document_id': saved_doc_id
-            }), 500
-        
+                ic(f"🚀 Launching background AI task for {saved_doc_id}")
+                thread = threading.Thread(target=background_ai_task, args=(
+                    saved_doc_id, provider, model, api_key, api_url, endpoint, prompt, 
+                    ai_payload_data, cb_config, initial_doc, obfuscation_mapping
+                ))
+                thread.start()
+                
+                return jsonify({
+                    'success': True,
+                    'status': 'submitted',
+                    'document_id': saved_doc_id,
+                    'message': 'Analysis job submitted for background processing'
+                })
+            else:
+                # Fallback for no storage (synchronous, discouraged)
+                ic("⚠️ Storage disabled, running synchronously (may timeout)")
+                result = ai_analyzer.call_ai_provider(
+                    provider=provider,
+                    model=model or ('gpt-4o' if provider == 'openai' else 'claude-3-5-sonnet-20241022'),
+                    api_key=api_key,
+                    api_url=api_url,
+                    endpoint=endpoint,
+                    prompt=prompt,
+                    payload_data=ai_payload_data
+                )
+                
+                return jsonify({
+                    'success': result.get('success'),
+                    'analysis': result.get('data'),
+                    'elapsed_ms': result.get('elapsed_ms'),
+                    'error': result.get('error')
+                })
+
     except Exception as e:
         import traceback
         ic("💥 Error in AI analysis", str(e))
@@ -918,6 +964,69 @@ def analyze_with_ai():
             'error': str(e),
             'traceback': traceback.format_exc()
         }), 500
+
+@app.route('/api/ai/status/<document_id>', methods=['POST'])
+def check_ai_status(document_id):
+    """
+    Check status of AI analysis document
+    Request body: {"config": {...}, "bucketConfig": {...}}
+    """
+    try:
+        data = request.json
+        cb_config = data.get('config', {})
+        bucket_config = data.get('bucketConfig', {})
+        
+        cluster = get_couchbase_connection(cb_config)
+        if not cluster:
+            return jsonify({'success': False, 'error': 'Not connected'}), 500
+            
+        bucket = cluster.bucket(bucket_config.get('bucket'))
+        collection = bucket.scope(bucket_config.get('analyzerScope')).collection(
+            bucket_config.get('analyzerCollection')
+        )
+        
+        # Use Sub-Document API to fetch only status and minimal metadata
+        try:
+            # Lookup status, error, and metadata.elapsed_ms
+            # Path "status" -> index 0
+            # Path "error" -> index 1
+            # Path "metadata.elapsed_ms" -> index 2
+            result = collection.lookup_in(document_id, [
+                SD.get("status"),
+                SD.get("error"),
+                SD.get("metadata.elapsed_ms")
+            ])
+            
+            status = result.content_as[str](0)
+            
+            response = {
+                'success': True,
+                'status': status,
+                'document_id': document_id
+            }
+            
+            if status == 'completed':
+                # We don't need the full analysis for polling check
+                try:
+                    response['elapsed_ms'] = result.content_as[int](2)
+                except:
+                    response['elapsed_ms'] = 0
+            elif status == 'failed':
+                try:
+                    response['error'] = result.content_as[dict](1)
+                except:
+                    response['error'] = {'message': 'Unknown error'}
+                    
+            return jsonify(response)
+            
+        except PathNotFoundException:
+            # Status field might not exist yet? Should unlikely happen if doc exists
+            return jsonify({'success': True, 'status': 'unknown', 'document_id': document_id})
+            
+    except DocumentNotFoundException:
+        return jsonify({'success': False, 'status': 'not_found'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/ai/stats', methods=['GET'])
 def get_ai_cache_stats():

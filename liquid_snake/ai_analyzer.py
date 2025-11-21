@@ -687,7 +687,8 @@ class AIPayloadBuilder:
             }
         
         if selections.get('query_groups', False):
-            query_groups = self._build_query_groups(raw_data)
+            limit = options.get('query_group_limit', 10)
+            query_groups = self._build_query_groups(raw_data, limit=limit)
             payload['data']['query_groups'] = {
                 '_description': 'Normalized query patterns (literals replaced with ?) showing count, avg time, and representative samples',
                 '_note': 'Each pattern represents multiple similar queries with different parameter values',
@@ -842,7 +843,8 @@ class AIPayloadBuilder:
             payload['data']['insights'] = self._build_insights(cached_data)
         
         if selections.get('query_groups', False):
-            payload['data']['query_groups'] = self._build_query_groups(cached_data)
+            limit = options.get('query_group_limit', 10)
+            payload['data']['query_groups'] = self._build_query_groups(cached_data, limit=limit)
         
         if selections.get('indexes', False):
             payload['data']['indexes'] = self._build_indexes(cached_data)
@@ -884,14 +886,14 @@ class AIPayloadBuilder:
             'insights': insights.get('items', [])
         }
     
-    def _build_query_groups(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _build_query_groups(self, data: Dict[str, Any], limit: int = 10) -> Dict[str, Any]:
         """Extract query groups (normalized patterns) from analysisData"""
         analysis = data.get('analysisData', [])
         
         if not analysis:
             return {'note': 'No query group data available'}
         
-        # Sample first 10 patterns to keep payload manageable for lower TPM tiers
+        # Sample top patterns based on limit
         sample_patterns = []
         
         # Sort by total time (impact) before sampling
@@ -900,8 +902,8 @@ class AIPayloadBuilder:
         except:
             sorted_analysis = analysis
             
-        # Take top 10
-        top_patterns = sorted_analysis[:10] if len(sorted_analysis) > 10 else sorted_analysis
+        # Take top N based on limit
+        top_patterns = sorted_analysis[:limit] if len(sorted_analysis) > limit else sorted_analysis
         
         # Truncate long query strings in the patterns
         for pattern in top_patterns:
@@ -967,7 +969,7 @@ def get_ai_system_prompt() -> str:
     Get the system prompt that instructs AI how to analyze and format responses
     with sources, priorities, and HTML formatting
     """
-    return """You are a Couchbase N1QL query performance expert. Analyze the provided query data and provide actionable recommendations.
+    return """You are a Couchbase N1QL query performance expert. Analyze the provided query data and provide actionable recommendations. Analyze ALL provided query groups and insights. Do NOT arbitrarily limit the number of critical issues or recommendations (e.g. do not stop at 5). Return ALL valid findings derived from the insights and query groups.
 
 **PRIORITY LEVELS (1-10):**
 - 10 (CRITICAL): Causes timeouts, data loss, or cluster instability
@@ -990,7 +992,8 @@ def get_ai_system_prompt() -> str:
 - Code blocks don't need highlights
 
 **RESPONSE FORMAT REQUIREMENTS:**
-You MUST return your analysis as a valid JSON object with this exact structure:
+You MUST return your analysis as a valid JSON object with this exact structure.
+IMPORTANT: Do NOT limit lists to top 5. If you find 15 issues, return 15 issues.
 
 ```json
 {
@@ -1005,8 +1008,8 @@ You MUST return your analysis as a valid JSON object with this exact structure:
       "priority": <number 1-10>,
       "severity": "<critical|high|medium|low>",
       "category": "<index|query|configuration>",
-      "title": "Brief issue title",
-      "description_html": "Detailed explanation with <span class='severity-critical'>highlighted terms</span> and <span class='code-highlight'>code</span>",
+      "title": "Issue Title (e.g. 'Missing Index FOR travel-sample.inventory.hotel')",
+      "description_html": "<b>Current Situation</b>: <span class='code-highlight'>details</span><br><b>Suggested Fix</b>: <span class='code-highlight'>details</span><br>Reasoning...",
       "affected_queries": <number>,
       "recommendation": "Specific action to take",
       "expected_impact": "Expected performance improvement",
@@ -1024,8 +1027,8 @@ You MUST return your analysis as a valid JSON object with this exact structure:
       "priority_number": <number 1-10>,
       "priority": "<high|medium|low>",
       "category": "<index|query|configuration>",
-      "recommendation_html": "Specific recommendation with <span class='code-highlight'>CREATE INDEX</span> statements highlighted",
-      "rationale_html": "Why this matters, with <span class='severity-high'>key metrics</span> highlighted",
+      "recommendation_html": "<Action> Index(es) FOR <Bucket.Scope.Collection> (e.g. 'Create Index FOR travel-sample.inventory.hotel')",
+      "rationale_html": "<b>Current Index</b> (if exists):<br><div class='index-statement'>def</div><br><b>Suggested Index</b>:<br><div class='index-statement'>def <button class='btn-standard copy-btn' onclick='navigator.clipboard.writeText(\"def\")'>Copy</button></div><br>Reasoning: ...",
       "implementation_steps": ["Step 1", "Step 2", "..."],
       "estimated_impact": "Expected benefit",
       "sources": [

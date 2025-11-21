@@ -1911,6 +1911,22 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <button id="ai-analyze-btn" onclick="analyzeWithAI()" class="btn-standard" style="background: #2196f3; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
                     🚀 Analyze with AI
                 </button>
+                
+                <!-- Query Groups Limit Option -->
+                <div style="display: flex; flex-direction: column; gap: 2px; border-left: 1px solid #ddd; padding-left: 12px;" title="To reduce payload size and improve speed, limit the number of Query Groups sent to AI (sorted by impact).">
+                    <label style="font-size: 11px; font-weight: bold; color: #666; cursor: help;">Query Groups: <span style="font-size: 10px;">ⓘ</span></label>
+                    <div style="display: flex; gap: 10px;">
+                        <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <input type="radio" name="ai-qg-limit" value="10" checked> Top 10
+                        </label>
+                        <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <input type="radio" name="ai-qg-limit" value="50"> Top 50
+                        </label>
+                    </div>
+                </div>
+
+                <div style="flex-grow: 1;"></div>
+
                 <button id="ai-preview-btn" onclick="showAIPreview('json')" class="btn-standard" style="background: #6c757d; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
                     👁️ Preview JSON
                 </button>
