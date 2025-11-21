@@ -25463,7 +25463,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             const options = {
                 obfuscated: document.getElementById('ai-obfuscate-data')?.checked || false,
                 store_results: true,  // Always save for tracking and auditing
-                query_group_limit: parseInt(document.querySelector('input[name="ai-qg-limit"]:checked')?.value || "10")
+                query_group_limit: parseInt(document.querySelector('input[name="ai-qg-limit"]:checked')?.value || "10"),
+                use_toon: document.getElementById('ai-send-toon')?.checked || false
             };
             
             const prompt = document.getElementById('ai-user-prompt')?.value || "Analyze query performance";
@@ -25659,7 +25660,28 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         }
         
         // Show debug button on load if debug mode
-        document.addEventListener('DOMContentLoaded', toggleDebugMermaidButton);
+        document.addEventListener('DOMContentLoaded', () => {
+            toggleDebugMermaidButton();
+            
+            // Show/Hide TOON Preview button based on Dev Mode
+            if (isDevMode()) {
+                const toonBtn = document.getElementById('ai-preview-toon-btn');
+                if (toonBtn) toonBtn.style.display = 'inline-block';
+                
+                // Add TOON checkbox option if in dev mode
+                const optionsDiv = document.querySelector('#ai-obfuscate-data')?.closest('.background-f5');
+                if (optionsDiv && !document.getElementById('ai-send-toon')) {
+                    const toonOption = document.createElement('div');
+                    toonOption.innerHTML = `
+                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; color: #6610f2; font-weight: bold;">
+                            <input type="checkbox" id="ai-send-toon"> 📦 Send as TOON (Experimental)
+                        </label>
+                        <div style="font-size: 11px; color: #666; margin-left: 22px;">Use optimized TOON format to reduce payload size</div>
+                    `;
+                    optionsDiv.appendChild(toonOption);
+                }
+            }
+        });
 
         /**
          * Analyze data with AI (sends to AI provider)
@@ -25707,7 +25729,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             const options = {
                 obfuscated: document.getElementById('ai-obfuscate-data')?.checked || false,
                 store_results: true,  // Always save for tracking and auditing
-                query_group_limit: parseInt(document.querySelector('input[name="ai-qg-limit"]:checked')?.value || "10")
+                query_group_limit: parseInt(document.querySelector('input[name="ai-qg-limit"]:checked')?.value || "10"),
+                use_toon: document.getElementById('ai-send-toon')?.checked || false
             };
             
             // Get and validate Cluster Name (Required)
@@ -25839,6 +25862,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     
                     if (result.success) {
                         const docId = result.document_id;
+                        
+                        // Immediately show in history table as "Pending"
+                        setTimeout(() => loadAIAnalysisHistory(), 500);
                         
                         if (result.status === 'submitted' || result.status === 'pending') {
                             Logger.info(`[AI] 🔄 Job submitted (ID: ${docId}), starting poll...`);
@@ -26182,6 +26208,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 return '<span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">✓ Complete</span>';
             } else if (status === 'failed') {
                 return '<span style="background: #dc3545; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">✗ Failed</span>';
+            } else if (status === 'pending' || status === 'submitted') {
+                return '<span style="background: #ffc107; color: #212529; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">⏳ Pending</span>';
             }
             return '<span>Unknown</span>';
         }

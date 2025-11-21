@@ -833,6 +833,33 @@ def analyze_with_ai():
         if obfuscation_mapping:
             ic(f"🔑 Obfuscation mapping: {len(obfuscation_mapping)} tokens")
         
+        # Convert to TOON format if requested and available
+        use_toon = options.get('use_toon', False)
+        ai_request_payload = ai_payload_data # default to JSON object
+        
+        if use_toon and TOON_AVAILABLE:
+            try:
+                # Retrieve module safely
+                import sys
+                mod_toon = sys.modules.get('toon_python')
+                if not mod_toon:
+                    import toon_python as mod_toon
+
+                # Use toon_python.encode directly
+                if hasattr(mod_toon, 'encode'):
+                    ai_request_payload = mod_toon.encode(ai_payload_data)
+                elif hasattr(mod_toon, 'dumps'):
+                    ai_request_payload = mod_toon.dumps(ai_payload_data)
+                else:
+                    from toon_python.encoder import encode
+                    ai_request_payload = encode(ai_payload_data)
+                    
+                ic("✅ Converted payload to TOON for AI request")
+                ic(f"TOON Size: {len(ai_request_payload)} bytes vs JSON: {len(json.dumps(ai_payload_data))} bytes")
+            except Exception as e:
+                ic(f"❌ TOON conversion failed for request: {e}")
+                # Fallback to JSON object (ai_payload_data is already dict)
+        
         # Save initial request to Couchbase if requested (before AI call)
         saved_doc_id = None
         if options.get('store_results', False):
@@ -841,7 +868,9 @@ def analyze_with_ai():
                 from datetime import datetime
                 
                 doc_id = f"ai_analysis_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
-                payload_size = len(json.dumps(ai_payload_data).encode('utf-8'))
+                # Calculate payload size based on format used
+                payload_content = ai_request_payload if isinstance(ai_request_payload, str) else json.dumps(ai_request_payload)
+                payload_size = len(payload_content.encode('utf-8'))
                 
                 initial_doc = {
                     'docType': 'ai_analysis',
@@ -851,8 +880,9 @@ def analyze_with_ai():
                     'model': model,
                     'prompt': prompt,
                     'sourceCluster': raw_data.get('clusterName', 'Unknown Cluster'),
-                    'payload': ai_payload_data,
+                    'payload': ai_payload_data, # Always store JSON structure for readability/compatibility
                     'parseJson': request_data.get('parseContext', {}),
+                    'sentToApiAs': 'toon' if use_toon and TOON_AVAILABLE else 'json',
                     'metadata': {
                         'obfuscated': obfuscation_mapping is not None,
                         'selections': selections,
