@@ -644,10 +644,12 @@ class AIPayloadBuilder:
             'context': {
                 'tool': 'Couchbase Query Analyzer',
                 'purpose': 'This tool analyzes N1QL query performance from system:completed_requests',
+                'reference_docs': 'For general best practices, stats definitions, and optimization strategies, refer to: https://cb.fuj.io/analysis_hub',
                 'data_source': 'Queries extracted from: SELECT *, meta().plan FROM system:completed_requests',
                 'tabs_explained': {
                     'Dashboard': 'High-level metrics and charts showing query distribution, index usage, and performance patterns',
                     'Insights': 'Automated detection of performance issues, missing indexes, and inefficient query patterns',
+                    'Timeline': 'Time-series charts showing request volume, latency, memory, and throughput trends over the selected time range',
                     'Query Groups': 'Normalized query patterns showing aggregated statistics for similar queries (literals replaced with ?)',
                     'Every Query': 'Individual query records with full execution details and timing breakdowns',
                     'Index/Query Flow': 'Visual execution plan showing operator tree, index scans, joins, and data flow',
@@ -659,7 +661,8 @@ class AIPayloadBuilder:
                     'Primary index scans (#primary) = full bucket scans (VERY SLOW in production)',
                     'USE INDEX hints force specific index usage',
                     'Missing WHERE clauses often indicate table scans',
-                    'High resultCount with LIMIT suggests index overfetch'
+                    'High resultCount with LIMIT suggests index overfetch',
+                    'What high kernTime means: kernTime is time spent waiting to be scheduled on CPU. If it dominates ServiceTime and/or Execution Time (e.g., ~99%), the node is CPU-bound and the query spends most of its life paused, not doing useful work. Look for high request.active.count, cpu.user.percent, or gc.pause.percent. Actions: reduce concurrency, add query nodes, or separate services.'
                 ]
             },
             'data': {},
@@ -709,6 +712,13 @@ class AIPayloadBuilder:
                 '_description': 'Query execution plan operators: scans, joins, filters, projections, and data flow hierarchy',
                 '_note': 'Operator tree shows actual execution path. High #items at early stages indicates inefficiency.',
                 **flow
+            }
+            
+        if selections.get('timeline_charts', False):
+            timeline = self._build_timeline_charts(raw_data)
+            payload['data']['timeline_charts'] = {
+                '_description': 'Time-series data from Timeline Charts showing traffic spikes, latency trends, memory usage, and throughput over time',
+                **timeline
             }
         
         # Apply obfuscation if requested (ONLY to SQL++ and index names)
@@ -851,6 +861,9 @@ class AIPayloadBuilder:
         
         if selections.get('flow_diagram', False):
             payload['data']['index_query_flow'] = self._build_flow_diagram(cached_data)
+            
+        if selections.get('timeline_charts', False):
+            payload['data']['timeline_charts'] = self._build_timeline_charts(cached_data)
         
         # Apply obfuscation if requested
         if options.get('obfuscated', False):
@@ -956,6 +969,39 @@ class AIPayloadBuilder:
             },
             'note': 'Mermaid graph showing which indexes are used by which queries'
         }
+        
+    def _build_timeline_charts(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract timeline charts data"""
+        timeline_data = data.get('timelineChartsData', {})
+        
+        if not timeline_data:
+            return {'note': 'No timeline chart data available - charts may not be loaded'}
+            
+        # Filter out charts with no data
+        valid_charts = {}
+        for chart_id, chart_info in timeline_data.items():
+            # New format check: has 'datasets' directly or in 'data'
+            if chart_id == 'common_timeline':
+                valid_charts[chart_id] = chart_info
+                continue
+                
+            has_data = False
+            if chart_info.get('datasets') and len(chart_info['datasets']) > 0:
+                has_data = True
+            elif chart_info.get('data') and chart_info['data'].get('datasets') and len(chart_info['data']['datasets']) > 0:
+                has_data = True
+            # Fallback for older structure (array of objects)
+            elif chart_info.get('data') and isinstance(chart_info['data'], list) and len(chart_info['data']) > 0:
+                has_data = True
+                
+            if has_data:
+                valid_charts[chart_id] = chart_info
+        
+        return {
+            'total_charts': len(valid_charts),
+            'charts': valid_charts,
+            'note': 'Sampled time-series data from interactive charts'
+        }
 
 # Global payload builder instance
 payload_builder = AIPayloadBuilder()
@@ -997,6 +1043,9 @@ IMPORTANT: Do NOT limit lists to top 5. If you find 15 issues, return 15 issues.
 
 ```json
 {
+  "analysis_summary": {
+    "overview_html": "1-3 paragraphs summarizing the overall health, key bottlenecks, and main findings. Use HTML tags like <b>bold</b> and <span class='severity-critical'>highlights</span> to emphasize critical problems. Reference specific metrics found in critical_issues and recommendations below."
+  },
   "summary": {
     "total_queries_analyzed": <number>,
     "critical_issues_found": <number>,

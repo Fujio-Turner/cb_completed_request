@@ -25218,12 +25218,169 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             const labels = chart.data.labels || [];
             const datasets = chart.data.datasets || [];
+            
+            // For timeline charts (multiple datasets), extract all datasets
+            // The caller can decide how to simplify it
+            if (datasets.length > 1) {
+                const datasetMap = {};
+                datasets.forEach(ds => {
+                    datasetMap[ds.label || 'data'] = ds.data || [];
+                });
+                return {
+                    labels: labels,
+                    datasets: datasetMap
+                };
+            }
+            
+            // Default single dataset behavior (backward compatible for dashboard stats)
             const data = datasets[0]?.data || [];
             
             return labels.map((label, i) => ({
                 label: label,
                 value: data[i] || 0
             }));
+        }
+
+        /**
+         * Gather Timeline Charts data
+         */
+        function gatherTimelineChartsData() {
+            Logger.debug('[AI] 📈 Gathering Timeline Charts data');
+            
+            // Map charts to descriptions
+            const chartDefs = [
+                { name: 'timelineChart', id: 'request_count', description: 'Request Count over Time (detects traffic spikes, query bursts, and quiet periods)' },
+                { name: 'queryTypesChart', id: 'query_types', description: 'Query Types over Time (shows distribution of SELECT, UPDATE, INSERT, DELETE operations to identify workload shifts)' },
+                { name: 'durationBucketsChart', id: 'duration_buckets', description: 'Duration Buckets over Time (tracks latency trends by grouping queries into <10ms, 10-100ms, >1s buckets to spot performance degradation)' },
+                { name: 'memoryChart', id: 'memory_usage', description: 'Total Memory Usage over Time (identifies Out-Of-Memory risks and memory-intensive query patterns)' },
+                { name: 'resultCountChart', id: 'result_count', description: 'Result Count over Time (detects queries returning excessive rows, indicating missing LIMITs or inefficient filtering)' },
+                { name: 'resultSizeChart', id: 'result_size', description: 'Result Size (Bytes) over Time (monitors network bandwidth usage and large payload transfers)' },
+                { name: 'cpuTimeChart', id: 'cpu_time', description: 'Total CPU Time over Time (shows processing load and CPU-intensive operations)' },
+                { name: 'indexScanThroughputChart', id: 'index_throughput', description: 'Index Scan Throughput (measures index usage intensity in items scanned/sec)' },
+                { name: 'docFetchThroughputChart', id: 'fetch_throughput', description: 'Doc Fetch Throughput (measures data service load in fetches/sec)' },
+                { name: 'execVsKernelChart', id: 'exec_vs_kernel', description: 'Execution Time vs Kernel Time (compares query processing time vs system scheduling overhead)' },
+                { name: 'enhancedOperationsChart', id: 'operations', description: 'Detailed Operations over Time (breakdown of specific phases like JOINs, SORTS, FILTERS to pinpoint bottlenecks)' },
+                { name: 'serviceTimeAnalysisLineChart', id: 'service_time_analysis', description: 'Service Time vs Elapsed Time (compares server-side processing vs total duration to identify network latency or client-side delays)' }
+            ];
+            
+            // Check if any chart is missing
+            const anyChartMissing = chartDefs.some(def => !window[def.name]);
+            
+            if ((anyChartMissing || !window.timelineChart) && everyQueryData && everyQueryData.length > 0) {
+                Logger.info('[AI] ⚠️ Some timeline charts missing. Regenerating ALL for analysis...');
+                
+                // Helper to safely generate a chart without stopping the chain on error
+                const safeGenerate = (fnName) => {
+                    try {
+                        if (typeof window[fnName] === 'function') {
+                            window[fnName](everyQueryData);
+                        }
+                    } catch (e) {
+                        Logger.warn(`[AI] ⚠️ Failed to generate ${fnName}:`, e);
+                    }
+                };
+
+                // Generate all timeline charts individually
+                safeGenerate('generateTimelineChart');
+                safeGenerate('generateQueryTypesChart');
+                safeGenerate('generateDurationBucketsChart');
+                safeGenerate('generateMemoryChart');
+                safeGenerate('generateResultCountChart');
+                safeGenerate('generateResultSizeChart');
+                safeGenerate('generateCpuTimeChart');
+                safeGenerate('generateIndexScanThroughputChart');
+                safeGenerate('generateDocFetchThroughputChart');
+                safeGenerate('generateExecVsKernelChart');
+                safeGenerate('generateEnhancedOperationsChart');
+                safeGenerate('generateServiceTimeAnalysisLineChart');
+                
+                Logger.info('[AI] ✅ Timeline charts generation attempt complete');
+            }
+            
+            const charts = {};
+            
+            // First pass: collect all unique x-axis labels (timestamps) from all charts to build a unified timeline
+            const allTimestamps = new Set();
+            
+            chartDefs.forEach(def => {
+                const chartInstance = window[def.name];
+                if (chartInstance && chartInstance.data && chartInstance.data.labels) {
+                    chartInstance.data.labels.forEach(label => allTimestamps.add(label));
+                }
+            });
+            
+            // Sort timestamps
+            const sortedTimestamps = Array.from(allTimestamps).sort();
+            
+            // Sample timestamps if too many (limit to ~60 points)
+            let sampledTimestamps = sortedTimestamps;
+            let samplingFactor = 1;
+            
+            if (sortedTimestamps.length > 100) {
+                samplingFactor = Math.ceil(sortedTimestamps.length / 60);
+                sampledTimestamps = sortedTimestamps.filter((_, i) => i % samplingFactor === 0);
+            }
+            
+            charts.common_timeline = {
+                labels: sampledTimestamps,
+                note: samplingFactor > 1 ? `Sampled 1/${samplingFactor} points from unified timeline` : 'Complete timeline'
+            };
+            
+            chartDefs.forEach(def => {
+                const chartInstance = window[def.name];
+                // Only process if chart exists AND has data
+                if (chartInstance && chartInstance.data && chartInstance.data.datasets && chartInstance.data.datasets.length > 0) {
+                    const data = extractChartData(chartInstance);
+                    
+                    // Instead of storing labels + data, just store data keyed by timestamp or aligned to common_timeline
+                    // For AI payload optimization, we'll map data to the common sampled timeline
+                    
+                    const sampledDatasets = {};
+                    
+                    // Helper to find value for a specific timestamp (or nearest)
+                    // Chart.js data matches labels index 1:1
+                    
+                    const chartLabels = data.labels || [];
+                    
+                    // Handle both flat structure (single dataset) and nested (multi-dataset)
+                    let datasetsToProcess = {};
+                    if (data.datasets && !Array.isArray(data.datasets)) {
+                        datasetsToProcess = data.datasets;
+                    } else {
+                        // Single dataset case or old format
+                        if (Array.isArray(data)) {
+                             datasetsToProcess = { 'data': data.map(d => d.value) };
+                        } else {
+                             datasetsToProcess = { 'data': data.map(d => d.value) };
+                        }
+                    }
+                    
+                    // Map each dataset to the sampled common timeline
+                    Object.keys(datasetsToProcess).forEach(key => {
+                        const sourceData = datasetsToProcess[key];
+                        
+                        // Create a map for quick lookup: timestamp -> value
+                        const timeValueMap = new Map();
+                        chartLabels.forEach((ts, idx) => {
+                            timeValueMap.set(ts, sourceData[idx]);
+                        });
+                        
+                        // Map to common sampled timeline
+                        sampledDatasets[key] = sampledTimestamps.map(ts => {
+                            // Exact match
+                            if (timeValueMap.has(ts)) return timeValueMap.get(ts);
+                            return 0; // Default to 0 if no data point at this exact timestamp
+                        });
+                    });
+                    
+                    charts[def.id] = {
+                        description: def.description,
+                        datasets: sampledDatasets
+                    };
+                }
+            });
+            
+            return charts;
         }
 
         /**
@@ -25457,7 +25614,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 insights: document.getElementById('ai-include-insights')?.checked || false,
                 query_groups: document.getElementById('ai-include-query-groups')?.checked || false,
                 indexes: document.getElementById('ai-include-indexes')?.checked || false,
-                flow_diagram: document.getElementById('ai-include-flow-diagram')?.checked || false
+                flow_diagram: document.getElementById('ai-include-flow-diagram')?.checked || false,
+                timeline_charts: document.getElementById('ai-include-timeline')?.checked || false
             };
             
             const options = {
@@ -25482,6 +25640,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         dashboardStats: gatherDashboardStats(),
                         insightsData: gatherInsightsData(),
                         flowDiagramData: gatherFlowDiagramData(),
+                        timelineChartsData: gatherTimelineChartsData(),
                         version: '4.0.0-dev'
                     },
                     prompt: prompt,
@@ -25663,10 +25822,14 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         document.addEventListener('DOMContentLoaded', () => {
             toggleDebugMermaidButton();
             
-            // Show/Hide TOON Preview button based on Dev Mode
+            // Show/Hide TOON Preview button and Timeline Charts option based on Dev Mode
             if (isDevMode()) {
                 const toonBtn = document.getElementById('ai-preview-toon-btn');
                 if (toonBtn) toonBtn.style.display = 'inline-block';
+                
+                // Show Timeline Charts checkbox
+                const timelineContainer = document.getElementById('ai-include-timeline-container');
+                if (timelineContainer) timelineContainer.style.display = 'flex';
                 
                 // Add TOON checkbox option if in dev mode
                 const optionsDiv = document.querySelector('#ai-obfuscate-data')?.closest('.background-f5');
@@ -25723,7 +25886,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 insights: document.getElementById('ai-include-insights')?.checked || false,
                 query_groups: document.getElementById('ai-include-query-groups')?.checked || false,
                 indexes: document.getElementById('ai-include-indexes')?.checked || false,
-                flow_diagram: document.getElementById('ai-include-flow-diagram')?.checked || false
+                flow_diagram: document.getElementById('ai-include-flow-diagram')?.checked || false,
+                timeline_charts: document.getElementById('ai-include-timeline')?.checked || false
             };
             
             const options = {
@@ -25775,6 +25939,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         dashboardStats: gatherDashboardStats(),
                         insightsData: gatherInsightsData(),
                         flowDiagramData: gatherFlowDiagramData(),
+                        timelineChartsData: gatherTimelineChartsData(),
                         version: '4.0.0-dev'
                     },
                     prompt: prompt,
@@ -26551,6 +26716,16 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
          */
         function formatAIAnalysisHTML(data) {
             let html = '';
+            
+            // Analysis Summary - New Section
+            if (data.analysis_summary && data.analysis_summary.overview_html) {
+                html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #6c757d;">
+                    <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">📋 Analysis Summary</h4>
+                    <div style="font-size: 13px; line-height: 1.5; color: #333;">
+                        ${data.analysis_summary.overview_html}
+                    </div>
+                </div>`;
+            }
             
             // Summary - Compact
             if (data.summary) {

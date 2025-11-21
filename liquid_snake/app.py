@@ -455,7 +455,8 @@ def preview_ai_payload():
             "insights": true,
             "query_groups": true,
             "indexes": false,
-            "flow_diagram": false
+            "flow_diagram": false,
+            "timeline_charts": false
         },
         "options": {
             "obfuscated": true,
@@ -707,7 +708,8 @@ def analyze_with_ai():
             "insights": true,
             "query_groups": true,
             "indexes": false,
-            "flow_diagram": false
+            "flow_diagram": false,
+            "timeline_charts": false
         },
         "options": {
             "obfuscated": true,
