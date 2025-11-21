@@ -26055,27 +26055,30 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                                     const statusData = await statusRes.json();
                                     
                                     if (statusData.status === 'completed') {
-                                        // Move to Step 3 (Saving) -> Step 4 (Done) quickly
+                                        // Move to Step 3 (Received/Saved) -> Step 4 (Done)
                                         updateProgress(3);
-                                        setTimeout(() => updateProgress(4), 500);
                                         
                                         showToast(`✅ Analysis complete!`, 'success');
                                         Logger.info(`[AI] ✅ Analysis completed for ${docId}`);
                                         
-                                        // Restore button
-                                        const btn = document.getElementById('ai-analyze-btn');
-                                        if (btn) {
-                                            btn.disabled = false;
-                                            btn.innerHTML = originalBtnContent;
-                                        }
-                                        
-                                        // Hide progress bar after delay
+                                        // Refresh history to update status from Pending to Complete
                                         setTimeout(() => {
-                                            if (progressBar) progressBar.style.display = 'none';
-                                        }, 3000);
+                                            loadAIAnalysisHistory();
+                                            updateProgress(4);
+                                            
+                                            // Restore button
+                                            const btn = document.getElementById('ai-analyze-btn');
+                                            if (btn) {
+                                                btn.disabled = false;
+                                                btn.innerHTML = originalBtnContent;
+                                            }
+                                            
+                                            // Hide progress bar after delay
+                                            setTimeout(() => {
+                                                if (progressBar) progressBar.style.display = 'none';
+                                            }, 3000);
+                                        }, 1000);
                                         
-                                        // Refresh history
-                                        setTimeout(() => loadAIAnalysisHistory(), 500);
                                         return;
                                     } else if (statusData.status === 'failed') {
                                         updateProgress(2, true); // Error on processing step
