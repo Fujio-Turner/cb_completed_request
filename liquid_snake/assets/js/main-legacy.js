@@ -25374,6 +25374,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     });
                     
                     charts[def.id] = {
+                        title: def.description.split(' (')[0], // Extract title part
                         description: def.description,
                         datasets: sampledDatasets
                     };
@@ -26726,6 +26727,23 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 </div>`;
             }
             
+            
+            // Chart Trends Analysis
+            if (data.chart_trends && data.chart_trends.timeline_analysis_html) {
+                html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #17a2b8;">
+                    <h4 style="color: #17a2b8; margin: 0 0 10px 0; font-size: 15px;">📈 Chart Trends & Analysis</h4>
+                    <div style="font-size: 12px; line-height: 1.5; color: #333;">
+                        ${data.chart_trends.timeline_analysis_html}
+                    </div>`;
+                
+                // Add sources if available
+                if (data.chart_trends.sources && data.chart_trends.sources.length > 0) {
+                     html += '<div style="font-size: 10px; color: #666; padding: 6px; background: #e9ecef; border-radius: 3px; margin-top: 10px;"><strong>📍 Sources:</strong> ' + data.chart_trends.sources.map(s => `<span style="display: inline-block; margin: 2px 4px; padding: 2px 6px; background: #fff; border: 1px solid #dee2e6; border-radius: 2px;">${s.evidence || s.location}</span>`).join('') + '</div>';
+                }
+                
+                html += `</div>`;
+            }
+            
             // Summary - Compact
             if (data.summary) {
                 html += `<div style="background: #fff3cd; padding: 10px 12px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #ffc107;">
@@ -26793,6 +26811,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     </ol>
                 </div>`;
             }
+            
             
             return html || '<div style="color: #999;">No formatted content available</div>';
         }

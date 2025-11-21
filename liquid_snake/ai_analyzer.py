@@ -1046,6 +1046,16 @@ IMPORTANT: Do NOT limit lists to top 5. If you find 15 issues, return 15 issues.
   "analysis_summary": {
     "overview_html": "1-3 paragraphs summarizing the overall health, key bottlenecks, and main findings. Use HTML tags like <b>bold</b> and <span class='severity-critical'>highlights</span> to emphasize critical problems. Reference specific metrics found in critical_issues and recommendations below."
   },
+  "chart_trends": {
+    "timeline_analysis_html": "Detailed analysis of timeline trends (if data available) formatted as an HTML unordered list &lt;ul&gt;&lt;li&gt;. Highlight specific time ranges using <span class='code-highlight'>HH:MM</span> tags. Focus on correlations between spikes in requests, latency, and system resources.",
+    "sources": [
+      {
+        "location": "timeline_charts",
+        "evidence": "Exact Chart Title provided in the data",
+        "value": "Metric observed"
+      }
+    ]
+  },
   "summary": {
     "total_queries_analyzed": <number>,
     "critical_issues_found": <number>,
