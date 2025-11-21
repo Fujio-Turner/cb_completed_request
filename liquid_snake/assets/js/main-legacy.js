@@ -25822,14 +25822,10 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         document.addEventListener('DOMContentLoaded', () => {
             toggleDebugMermaidButton();
             
-            // Show/Hide TOON Preview button and Timeline Charts option based on Dev Mode
+            // Show/Hide TOON Preview button based on Dev Mode
             if (isDevMode()) {
                 const toonBtn = document.getElementById('ai-preview-toon-btn');
                 if (toonBtn) toonBtn.style.display = 'inline-block';
-                
-                // Show Timeline Charts checkbox
-                const timelineContainer = document.getElementById('ai-include-timeline-container');
-                if (timelineContainer) timelineContainer.style.display = 'flex';
                 
                 // Add TOON checkbox option if in dev mode
                 const optionsDiv = document.querySelector('#ai-obfuscate-data')?.closest('.background-f5');
