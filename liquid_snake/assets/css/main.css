@@ -4,6 +4,77 @@ body{font-family:Arial, sans-serif;display:flex;flex-direction:column;height:100
         /* Issue #178: Add more vertical spacing between index and query DIVs */
         .index-item { margin-bottom: 20px !important; }
         .query-item { margin-bottom: 20px !important; }
+
+        /* Progress bar steps */
+        .progress-steps-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 360px;
+            margin-left: 20px;
+            position: relative;
+        }
+        
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .step-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #e0e0e0;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .step-label {
+            font-size: 10px;
+            color: #666;
+            margin-top: 4px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        
+        .progress-line {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            height: 2px;
+            background-color: #e0e0e0;
+            z-index: 1;
+        }
+        
+        .progress-line-fill {
+            height: 100%;
+            background-color: #28a745;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        /* Step states */
+        .progress-step.active .step-circle {
+            background-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+        }
+        
+        .progress-step.completed .step-circle {
+            background-color: #28a745;
+        }
+        
+        .progress-step.error .step-circle {
+            background-color: #dc3545;
+        }
         
         /* Align stacked date pickers: equal label width and input width */
         .date-range-stack > div > label { display: inline-block; width: 48px; text-align: right; }

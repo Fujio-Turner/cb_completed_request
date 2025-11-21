@@ -25772,6 +25772,46 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     btn.disabled = true;
                     btn.innerHTML = '🤖 Processing... <span class="spinner-border" style="width: 12px; height: 12px; border-width: 2px; display: inline-block; border: 2px solid #fff; border-right-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-left: 8px;"></span>';
                     
+                    // Show progress bar
+                    const progressBar = document.getElementById('ai-progress-bar');
+                    if (progressBar) progressBar.style.display = 'flex';
+                    
+                    // Function to update progress steps
+                    const updateProgress = (step, isError = false) => {
+                        if (!progressBar) return;
+                        
+                        // Calculate width based on step (0-3 = 4 steps)
+                        // Step 1: Sending (0% line)
+                        // Step 2: Processing (33% line)
+                        // Step 3: Saving (66% line)
+                        // Step 4: Done (100% line)
+                        
+                        const steps = progressBar.querySelectorAll('.progress-step');
+                        const lineFill = progressBar.querySelector('.progress-line-fill');
+                        
+                        // Update line width
+                        if (step === 1) lineFill.style.width = '0%';
+                        else if (step === 2) lineFill.style.width = '33%';
+                        else if (step === 3) lineFill.style.width = '66%';
+                        else if (step === 4) lineFill.style.width = '100%';
+                        
+                        // Update step classes
+                        steps.forEach((el, index) => {
+                            const stepNum = index + 1;
+                            el.classList.remove('active', 'completed', 'error');
+                            
+                            if (stepNum < step) {
+                                el.classList.add('completed');
+                            } else if (stepNum === step) {
+                                if (isError) el.classList.add('error');
+                                else el.classList.add('active');
+                            }
+                        });
+                    };
+                    
+                    // Initial state: Step 1 (Sending)
+                    updateProgress(1);
+                    
                     // Add CSS keyframe for spin if not exists
                     if (!document.getElementById('spinner-style')) {
                         const style = document.createElement('style');
@@ -25794,6 +25834,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     
                     const result = await response.json();
                     
+                    // Move to Step 2 (Processing)
+                    updateProgress(2);
+                    
                     if (result.success) {
                         const docId = result.document_id;
                         
@@ -25808,6 +25851,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             const poll = async () => {
                                 attempts++;
                                 if (attempts > maxAttempts) {
+                                    updateProgress(2, true); // Error on processing step
                                     throw new Error('Analysis timed out after 10 minutes');
                                 }
                                 
@@ -25824,6 +25868,10 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                                     const statusData = await statusRes.json();
                                     
                                     if (statusData.status === 'completed') {
+                                        // Move to Step 3 (Saving) -> Step 4 (Done) quickly
+                                        updateProgress(3);
+                                        setTimeout(() => updateProgress(4), 500);
+                                        
                                         showToast(`✅ Analysis complete!`, 'success');
                                         Logger.info(`[AI] ✅ Analysis completed for ${docId}`);
                                         
@@ -25834,35 +25882,45 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                                             btn.innerHTML = originalBtnContent;
                                         }
                                         
+                                        // Hide progress bar after delay
+                                        setTimeout(() => {
+                                            if (progressBar) progressBar.style.display = 'none';
+                                        }, 3000);
+                                        
                                         // Refresh history
                                         setTimeout(() => loadAIAnalysisHistory(), 500);
                                         return;
                                     } else if (statusData.status === 'failed') {
+                                        updateProgress(2, true); // Error on processing step
                                         throw new Error(statusData.error?.message || 'Analysis failed during processing');
                                     } else {
                                         // Still pending, poll again
                                         setTimeout(poll, pollInterval);
                                     }
                                 } catch (e) {
-                                    if (e.message.includes('timed out')) throw e;
+                                    if (e.message.includes('timed out') || e.message.includes('failed')) throw e;
                                     Logger.warn('[AI] Polling error (retrying):', e);
                                     setTimeout(poll, pollInterval);
                                 }
                             };
                             
-                            // Start polling (don't await here so main thread isn't blocked, 
-                            // but we do want to keep spinner active... wait, if we don't await, finally block runs immediately)
-                            // Actually we SHOULD await the polling if we want the spinner to stay
-                            
                             await poll();
                             
                         } else {
                             // Immediate success (fallback or cached)
+                            updateProgress(4);
                             showToast(`✅ Analysis saved: ${docId}`, 'success');
                             Logger.info(`[AI] ✅ Saved to Couchbase: ${docId}`);
+                            
+                            // Hide progress bar after delay
+                            setTimeout(() => {
+                                if (progressBar) progressBar.style.display = 'none';
+                            }, 3000);
+                            
                             setTimeout(() => loadAIAnalysisHistory(), 500);
                         }
                     } else {
+                        updateProgress(1, true); // Error on sending/initial step
                         throw new Error(result.error || 'Save failed');
                     }
                 } catch (error) {
@@ -25875,12 +25933,13 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         btn.disabled = false;
                         btn.innerHTML = originalBtnContent;
                     }
+                    
+                    // Keep progress bar visible but in error state for a bit
+                    setTimeout(() => {
+                        const progressBar = document.getElementById('ai-progress-bar');
+                        if (progressBar) progressBar.style.display = 'none';
+                    }, 5000);
                 } 
-                // Removed finally block to handle button reset manually in poll/success paths
-                // because we await poll(), but if poll() finishes successfully, we want to reset.
-                // If we used finally, it would run after await poll(), which is correct.
-                // BUT, I moved the button reset inside poll() success/error to be explicit.
-                // Let's stick to resetting in catch and success paths to be safe with the async logic.
                 
                 return; // Exit early for now (no AI call yet)
             }
