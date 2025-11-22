@@ -26626,7 +26626,13 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     <div style="color: #007bff; font-weight: bold; margin-bottom: 6px; font-size: 13px;">🔧 Filters Applied</div>
                     <div style="margin-left: 10px;">
                         <div>Timezone: ${ctx.filters?.timezone || 'N/A'}</div>
-                        <div>Date Range: ${ctx.filters?.date_range?.from || 'N/A'} → ${ctx.filters?.date_range?.to || 'N/A'}</div>
+                        <div style="margin-top: 4px; margin-bottom: 4px;">
+                            <div>Date Range:</div>
+                            <div style="margin-left: 10px; font-family: monospace; color: #666;">
+                                <div>From: ${ctx.filters?.date_range?.from || 'N/A'}</div>
+                                <div>To:&nbsp;&nbsp; ${ctx.filters?.date_range?.to || 'N/A'}</div>
+                            </div>
+                        </div>
                         <div>SQL Filter: ${ctx.filters?.sql_statement || 'None'}</div>
                         <div>Time Filter: ${ctx.filters?.elapsed_time || 'None'}</div>
                         <div>Collection: ${ctx.filters?.collection || 'All'}</div>
@@ -26744,22 +26750,23 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 html += `</div>`;
             }
             
-            // Summary - Compact
-            if (data.summary) {
-                html += `<div style="background: #fff3cd; padding: 10px 12px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #ffc107;">
-                    <div style="display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px;">
-                        <div>Total: <strong>${data.summary.total_queries_analyzed || 0}</strong> queries</div>
-                        <div>Issues: <span class="severity-critical">${data.summary.critical_issues_found || 0}</span></div>
-                        <div>Rating: <span class="severity-${data.summary.performance_rating}">${data.summary.performance_rating || 'N/A'}</span></div>
-                        <div>Potential: <strong>${data.summary.estimated_improvement_potential || 'N/A'}</strong></div>
-                    </div>
-                </div>`;
-            }
             
             // Critical Issues - Compact
             if (data.critical_issues && data.critical_issues.length > 0) {
                 html += `<div style="margin-bottom: 12px;">
                     <h4 style="color: #dc3545; margin: 0 0 8px 0; font-size: 15px;">🚨 Critical Issues (${data.critical_issues.length})</h4>`;
+                
+                // Summary - Compact (Moved here)
+                if (data.summary) {
+                    html += `<div style="background: #fff3cd; padding: 10px 12px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #ffc107;">
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px;">
+                            <div>Total: <strong>${data.summary.total_queries_analyzed || 0}</strong> queries</div>
+                            <div>Issues: <span class="severity-critical">${data.summary.critical_issues_found || 0}</span></div>
+                            <div>Rating: <span class="severity-${data.summary.performance_rating}">${data.summary.performance_rating || 'N/A'}</span></div>
+                            <div>Potential: <strong>${data.summary.estimated_improvement_potential || 'N/A'}</strong></div>
+                        </div>
+                    </div>`;
+                }
                 
                 data.critical_issues.forEach((issue, idx) => {
                     const priorityNum = issue.priority_number || issue.priority || '?';
