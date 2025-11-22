@@ -31,6 +31,9 @@ export async function loadConfig() {
         // Expose to window for non-module scripts (like main-legacy.js)
         window.clusterConfig = clusterConfig;
         
+        // Dispatch event to notify listeners
+        window.dispatchEvent(new CustomEvent('clusterConfigLoaded', { detail: clusterConfig }));
+        
         return clusterConfig;
     } catch (error) {
         Logger.error('Error loading config.json:', error);

@@ -26398,6 +26398,11 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         
         // Load history when AI Analyzer or Reports/History tab is opened
         document.addEventListener('DOMContentLoaded', function() {
+            // Listen for config load to populate dropdown if it failed initially (race condition)
+            window.addEventListener('clusterConfigLoaded', function() {
+                populateAIProviderDropdown();
+            });
+
             $('#tabs').on('tabsactivate', function(event, ui) {
                 const tabId = ui.newPanel.attr('id');
                 
@@ -26489,6 +26494,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 });
                 
                 Logger.info(`[AI] Dropdown populated: ${aiApis.length} providers, ${hasUsableProvider ? 'HAS' : 'NO'} usable keys`);
+                
+                // Trigger change event to update button state
+                dropdown.dispatchEvent(new Event('change'));
                 
             } catch (error) {
                 Logger.error('[AI] Error loading AI providers:', error);
@@ -26886,32 +26894,42 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         // Add event listener for cluster name input to toggle analyze button
         document.addEventListener('DOMContentLoaded', function() {
             const clusterInput = document.getElementById('ai-cluster-name');
+            const providerSelect = document.getElementById('ai-provider-select');
             const analyzeBtn = document.getElementById('ai-analyze-btn');
             
             if (clusterInput && analyzeBtn) {
-                // Initial check
-                analyzeBtn.disabled = !clusterInput.value.trim();
-                if (analyzeBtn.disabled) {
-                    analyzeBtn.style.opacity = '0.6';
-                    analyzeBtn.style.cursor = 'not-allowed';
-                    analyzeBtn.title = 'Please enter a Cluster Name first';
-                }
-                
-                // Update on input
-                clusterInput.addEventListener('input', function() {
-                    const hasValue = this.value.trim().length > 0;
-                    analyzeBtn.disabled = !hasValue;
+                const updateButtonState = () => {
+                    const hasClusterName = clusterInput.value.trim().length > 0;
+                    const hasProvider = providerSelect && providerSelect.value !== "";
                     
-                    if (hasValue) {
+                    // Enable only if both are present
+                    const shouldEnable = hasClusterName && hasProvider;
+                    
+                    analyzeBtn.disabled = !shouldEnable;
+                    
+                    if (shouldEnable) {
                         analyzeBtn.style.opacity = '1';
                         analyzeBtn.style.cursor = 'pointer';
                         analyzeBtn.title = '';
                     } else {
                         analyzeBtn.style.opacity = '0.6';
                         analyzeBtn.style.cursor = 'not-allowed';
-                        analyzeBtn.title = 'Please enter a Cluster Name first';
+                        if (!hasClusterName) {
+                            analyzeBtn.title = 'Please enter a Cluster Name first';
+                        } else if (!hasProvider) {
+                            analyzeBtn.title = 'Please select an AI Provider';
+                        }
                     }
-                });
+                };
+
+                // Initial check
+                updateButtonState();
+                
+                // Update on input
+                clusterInput.addEventListener('input', updateButtonState);
+                if (providerSelect) {
+                    providerSelect.addEventListener('change', updateButtonState);
+                }
 
                 // Initialize jQuery UI Autocomplete
                 if (typeof $ !== 'undefined' && $.fn.autocomplete) {

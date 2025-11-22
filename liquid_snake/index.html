@@ -354,7 +354,8 @@
         <!-- Tab Headers -->
         <ul role="tablist" aria-label="Analysis views">
             <li role="tab">
-                <a href="#reports-history" aria-controls="reports-history" tabindex="0">Reports / History</a>
+                <a href="#ai-analyzer" aria-controls="ai-analyzer" tabindex="0">AI Analyzer <span
+                        class="dev-badge">Dev</span></a>
             </li>
             <li role="tab">
                 <a href="#dashboard" aria-controls="dashboard" tabindex="0">Dashboard</a>
@@ -382,60 +383,183 @@
                 <a href="#schema-inference" aria-controls="schema-inference" tabindex="0">Schema Inference</a>
             </li>
             <li role="tab">
-                <a href="#ai-analyzer" aria-controls="ai-analyzer" tabindex="0">AI Analyzer <span
-                        class="dev-badge">Dev</span></a>
+                <a href="#reports-history" aria-controls="reports-history" tabindex="0">Reports / History</a>
             </li>
         </ul>
 
-        <!-- Reports / History Tab Content -->
-        <div id="reports-history" data-report-section="reports-history" style="padding: 20px;">
-
-
-            <!-- Report Maker Section -->
-            <div class="insight-category" id="report-maker-section">
-                <h3 class="category-title collapsed" onclick="toggleCategory('report-maker-section')">📊 Report Maker</h3>
-                <div class="insight-category-content collapsed" id="report-maker-section-content">
-                    <div style="padding: 15px;">
-                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
-                            <button id="btn-preview-report" class="btn-standard" style="background:#0d6efd;color:#fff"></button>
-                            <button id="btn-print-report" class="btn-standard"></button>
-                            <button id="btn-exit-report" class="btn-standard"></button>
-                        </div>
-                        <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
-                            <h3 id="rm-select-sections-title" style="margin:0 0 8px 0;"></h3>
-                            <div id="report-sections" style="display:flex; gap: 16px; flex-wrap: wrap;">
-                                <label><input type="checkbox" data-section="dashboard" checked> Dashboard</label>
-                                <label><input type="checkbox" data-section="insights" checked> Insights</label>
-                                <label><input type="checkbox" data-section="timeline" checked> Timeline</label>
-                                <label><input type="checkbox" data-section="analysis" checked> Query Groups</label>
-                                <label><input type="checkbox" data-section="every-query"> Every Query</label>
-                                <label><input type="checkbox" data-section="index-query-flow"> Index/Query Flow</label>
-                                <label><input type="checkbox" data-section="indexes"> Indexes</label>
-                            </div>
-                        </div>
-                        <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
-                            <h3 id="rm-select-timeline-title" style="margin:0 0 8px 0;"></h3>
-                            <div id="report-timeline-charts" style="display:flex; gap: 16px; flex-wrap: wrap;"></div>
-                        </div>
-                        <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
-                            <h3 id="rm-options-title" style="margin:0 0 8px 0;"></h3>
-                            <label style="margin-right:16px;"><input type="checkbox" id="opt-include-header" checked> <span id="rm-opt-include-header"></span></label>
-                            <label style="margin-right:16px;"><input type="checkbox" id="opt-include-filters" checked> <span id="rm-opt-include-filters"></span></label>
-                            <label style="margin-right:16px;"><input type="checkbox" id="opt-flatten-tables" checked> <span id="rm-opt-flatten-tables"></span></label>
-                            <label style="margin-right:16px;"><input type="checkbox" id="opt-charts-as-images" checked> <span id="rm-opt-charts-as-images"></span></label>
-                        </div>
-                        <div class="report-tip" style="margin-top:8px; margin-bottom:12px;">
-                            <div class="tip-text" style="font-size:16px; font-weight:700; color:#343a40;"><span class="badge-pro">PRO</span> Use SQL++ filter and/or Elapsed Time filter in Data & Filters above to narrow stats and analysis to specific queries or time ranges before generating your report.</div>
-                            <div style="margin-top:16px; padding:12px; background:#f8f9fa; border-radius:8px; border:2px dashed #007acc; max-width:450px;">
-                                <div style="font-size:12px; font-weight:600; color:#007acc; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Example</div>
-                                <img src="https://cb.fuj.io/img/sql_string_filter_and_exclude_system_example.png" alt="Report Maker filters and exclude system example" style="max-width:75%; height:75px; border:2px solid #007acc; border-radius:6px; box-shadow:0 4px 12px rgba(0,122,204,0.15); display:block;" loading="lazy">
-                            </div>
-                        </div>
+        <!-- AI Analyzer Tab Content -->
+        <div id="ai-analyzer" data-report-section="ai-analyzer" style="padding: 20px;">
+            <!-- Top Grid: Source and Provider -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
+                <!-- Analysis Source -->
+                <div class="background-f5 padding-15 border-radius-5 border-1-ddd">
+                    <h3 style="margin:0 0 8px 0; font-size: 14px;">Analysis Source</h3>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <label style="font-weight: 600; min-width: 100px; font-size: 13px;">Cluster Name:<span style="color: red;">*</span></label>
+                        <input type="text" id="ai-cluster-name" placeholder="Ex: QA East Cloud" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; flex: 1; font-size: 13px;" />
+                    </div>
+                    <div style="margin-top: 4px; color: #666; font-size: 11px;">
+                        Identify the source cluster for this analysis (Required).
                     </div>
                 </div>
+
+                <!-- AI Service Selection -->
+                <div class="background-f5 padding-15 border-radius-5 border-1-ddd">
+                    <h3 style="margin:0 0 8px 0; font-size: 14px;">AI Service Provider</h3>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <label style="font-weight: 600; min-width: 100px; font-size: 13px;">Provider:</label>
+                        <select id="ai-provider-select" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; flex: 1; font-size: 13px;">
+                            <option value="">-- Loading... --</option>
+                        </select>
+                    </div>
+                    <div style="margin-top: 4px; color: #666; font-size: 11px;">
+                        (Configure API keys in Settings)
+                    </div>
+                    <div id="ai-provider-warning"></div>
+                </div>
+            </div>
+
+            <!-- Data Selection -->
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px;">
+                <h3 style="margin:0 0 8px 0; font-size: 14px;">Data to Analyze</h3>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 13px;">
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-dashboard" checked> Dashboard Metrics</label>
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-insights" checked> Insights Analysis</label>
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-timeline" checked> Timeline Charts</label>
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-query-groups" checked> Query Groups</label>
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-flow-diagram" checked> Flow Diagram</label>
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-indexes"> Indexes <span style="color: #999; font-size: 11px;">(if loaded)</span></label>                   
+                </div>
+            </div>
+
+            <!-- Analysis Options -->
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px; position: relative;">
+                <div style="display: flex; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;">
+                        <input type="checkbox" id="ai-obfuscate-data" checked>
+                        <span>Obfuscate sensitive data (bucket names, collection names, values and SDK's user names)</span>
+                        <span id="obfuscation-toggle-link"
+                              style="font-size: 11px; color: #007bff; cursor: help; text-decoration: underline; margin-left: 4px;">
+                            (Hover/Click to see example)
+                        </span>
+                    </label>
+                </div>
+                
+                <!-- Obfuscation Example (Hidden by default) -->
+                <div id="obfuscation-example" style="display: none; margin-top: 10px; padding: 12px; background: #fff; border: 1px solid #999; border-radius: 4px; font-size: 11px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: absolute; z-index: 100; width: calc(100% - 30px);">
+                    <div style="margin-bottom: 8px;">
+                        <strong style="color: #28a745;">✓ Before (Original):</strong>
+                        <pre style="margin: 4px 0 0 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #28a745; font-family: 'Courier New', monospace; overflow-x: auto; white-space: pre; color: #333; font-weight: 500;">SELECT <span style="background:#fff9c4; padding: 0 2px; border-radius: 2px;">fName</span>, <span style="background:#e1f5fe; padding: 0 2px; border-radius: 2px;">lName</span> FROM bucket.scope.collection WHERE id = <span style="background:#fce4ec; padding: 0 2px; border-radius: 2px;">"1234"</span></pre>
+                    </div>
+                    <div>
+                        <strong style="color: #2196f3;">🔒 After (Obfuscated):</strong>
+                        <pre style="margin: 4px 0 0 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #2196f3; font-family: 'Courier New', monospace; overflow-x: auto; white-space: pre; color: #333; font-weight: 500;">SELECT `<span style="background:#fff9c4; padding: 0 2px; border-radius: 2px;">21t4hs</span>`, `<span style="background:#e1f5fe; padding: 0 2px; border-radius: 2px;">oaurchn</span>` FROM `acuoa`.`orcenth`.`8aouenth` WHERE `racousth` = "<span style="background:#fce4ec; padding: 0 2px; border-radius: 2px;">stousth</span>"</pre>
+                    </div>
+                    With Preview JSON you can inspect the data payload to be sent to the AI API. 
+                </div>
+            </div>
+
+            <script>
+                // Inline script for hover/click behavior
+                (function() {
+                    const link = document.getElementById('obfuscation-toggle-link');
+                    const example = document.getElementById('obfuscation-example');
+                    if (link && example) {
+                        link.addEventListener('mouseenter', () => example.style.display = 'block');
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            example.style.display = example.style.display === 'none' ? 'block' : 'none';
+                        });
+                        // Hide when leaving the container to allow hovering the example itself
+                        link.parentElement.parentElement.parentElement.addEventListener('mouseleave', () => example.style.display = 'none');
+                    }
+                })();
+            </script>
+
+            <!-- User Prompt -->
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px;">
+                <h3 style="margin:0 0 8px 0; font-size: 14px;">Custom Analysis Prompt</h3>
+                <textarea id="ai-user-prompt" 
+                    placeholder="Example: 'Identify patterns in slow queries and suggest specific index optimizations.'"
+                    style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 12px; resize: vertical; height: 60px; min-height: 40px;"></textarea>
+            </div>
+
+            <!-- Analyze Button -->
+            <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                <button id="ai-analyze-btn" onclick="analyzeWithAI()" class="btn-standard" style="background: #2196f3; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
+                    🚀 Analyze with AI
+                </button>
+                
+                <!-- Query Groups Limit Option -->
+                <div style="display: flex; flex-direction: column; gap: 2px; border-left: 1px solid #ddd; padding-left: 12px;" title="To reduce payload size and improve speed, limit the number of Query Groups sent to AI (sorted by impact).">
+                    <label style="font-size: 11px; font-weight: bold; color: #666; cursor: help;">Query Groups: <span style="font-size: 10px;">ⓘ</span></label>
+                    <div style="display: flex; gap: 10px;">
+                        <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <input type="radio" name="ai-qg-limit" value="10" checked> Top 10
+                        </label>
+                        <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <input type="radio" name="ai-qg-limit" value="50"> Top 50
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Progress Bar (Hidden by default) -->
+                <div id="ai-progress-bar" class="progress-steps-container" style="display: none;">
+                    <div class="progress-line"><div class="progress-line-fill"></div></div>
+                    <div class="progress-step active" id="step-1">
+                        <div class="step-circle">1</div>
+                        <div class="step-label">Sent to AI</div>
+                    </div>
+                    <div class="progress-step" id="step-2">
+                        <div class="step-circle">2</div>
+                        <div class="step-label">AI Processing</div>
+                    </div>
+                    <div class="progress-step" id="step-3">
+                        <div class="step-circle">3</div>
+                        <div class="step-label">Received/Saved</div>
+                    </div>
+                    <div class="progress-step" id="step-4">
+                        <div class="step-circle">4</div>
+                        <div class="step-label">Done</div>
+                    </div>
+                </div>
+
+                <div style="flex-grow: 1;"></div>
+
+                <button id="ai-preview-btn" onclick="showAIPreview('json')" class="btn-standard" style="background: #6c757d; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
+                    👁️ Preview JSON
+                </button>
+                <!-- TOON Preview (Dev Mode Only) -->
+                <button id="ai-preview-toon-btn" onclick="showAIPreview('toon')" class="btn-standard" style="background: #495057; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold; display: none;">
+                    🎭 Preview TOON
+                </button>
+            </div>
+
+            <!-- AI Analysis History -->
+            <div style="margin-top: 30px;">
+                <h3 style="margin: 0 0 12px 0;">Previous Analyses</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                            <tr>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Request Date</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Source Cluster</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Obfuscated</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Provider</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Prompt</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Data Included</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Status</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ai-history-list">
+                            <!-- AI history items will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="ai-history-pagination" style="margin-top: 10px; text-align: center; background-color: #f5f5f5; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6;"></div>
             </div>
         </div>
-
         <!-- Dashboard Tab Content -->
         <div id="dashboard" data-report-section="dashboard">
             <div class="dashboard-grid">
@@ -1811,179 +1935,56 @@ LET bid = CONCAT("", s.bucket_id, ""),
             </div>
         </div>
 
-        <!-- AI Analyzer Tab Content -->
-        <div id="ai-analyzer" data-report-section="ai-analyzer" style="padding: 20px;">
-            <!-- Top Grid: Source and Provider -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
-                <!-- Analysis Source -->
-                <div class="background-f5 padding-15 border-radius-5 border-1-ddd">
-                    <h3 style="margin:0 0 8px 0; font-size: 14px;">Analysis Source</h3>
-                    <div style="display: flex; gap: 12px; align-items: center;">
-                        <label style="font-weight: 600; min-width: 100px; font-size: 13px;">Cluster Name:<span style="color: red;">*</span></label>
-                        <input type="text" id="ai-cluster-name" placeholder="Ex: QA East Cloud" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; flex: 1; font-size: 13px;" />
-                    </div>
-                    <div style="margin-top: 4px; color: #666; font-size: 11px;">
-                        Identify the source cluster for this analysis (Required).
+        <!-- Reports / History Tab Content -->
+        <div id="reports-history" data-report-section="reports-history" style="padding: 20px;">
+
+
+            <!-- Report Maker Section -->
+            <div class="insight-category" id="report-maker-section">
+                <h3 class="category-title" onclick="toggleCategory('report-maker-section')">📊 Report Maker</h3>
+                <div class="insight-category-content" id="report-maker-section-content">
+                    <div style="padding: 15px;">
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
+                            <button id="btn-preview-report" class="btn-standard" style="background:#0d6efd;color:#fff"></button>
+                            <button id="btn-print-report" class="btn-standard"></button>
+                            <button id="btn-exit-report" class="btn-standard"></button>
+                        </div>
+                        <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                            <h3 id="rm-select-sections-title" style="margin:0 0 8px 0;"></h3>
+                            <div id="report-sections" style="display:flex; gap: 16px; flex-wrap: wrap;">
+                                <label><input type="checkbox" data-section="dashboard" checked> Dashboard</label>
+                                <label><input type="checkbox" data-section="insights" checked> Insights</label>
+                                <label><input type="checkbox" data-section="timeline" checked> Timeline</label>
+                                <label><input type="checkbox" data-section="analysis" checked> Query Groups</label>
+                                <label><input type="checkbox" data-section="every-query"> Every Query</label>
+                                <label><input type="checkbox" data-section="index-query-flow"> Index/Query Flow</label>
+                                <label><input type="checkbox" data-section="indexes"> Indexes</label>
+                            </div>
+                        </div>
+                        <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                            <h3 id="rm-select-timeline-title" style="margin:0 0 8px 0;"></h3>
+                            <div id="report-timeline-charts" style="display:flex; gap: 16px; flex-wrap: wrap;"></div>
+                        </div>
+                        <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                            <h3 id="rm-options-title" style="margin:0 0 8px 0;"></h3>
+                            <label style="margin-right:16px;"><input type="checkbox" id="opt-include-header" checked> <span id="rm-opt-include-header"></span></label>
+                            <label style="margin-right:16px;"><input type="checkbox" id="opt-include-filters" checked> <span id="rm-opt-include-filters"></span></label>
+                            <label style="margin-right:16px;"><input type="checkbox" id="opt-flatten-tables" checked> <span id="rm-opt-flatten-tables"></span></label>
+                            <label style="margin-right:16px;"><input type="checkbox" id="opt-charts-as-images" checked> <span id="rm-opt-charts-as-images"></span></label>
+                        </div>
+                        <div class="report-tip" style="margin-top:8px; margin-bottom:12px;">
+                            <div class="tip-text" style="font-size:16px; font-weight:700; color:#343a40;"><span class="badge-pro">PRO</span> Use SQL++ filter and/or Elapsed Time filter in Data & Filters above to narrow stats and analysis to specific queries or time ranges before generating your report.</div>
+                            <div style="margin-top:16px; padding:12px; background:#f8f9fa; border-radius:8px; border:2px dashed #007acc; max-width:450px;">
+                                <div style="font-size:12px; font-weight:600; color:#007acc; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Example</div>
+                                <img src="https://cb.fuj.io/img/sql_string_filter_and_exclude_system_example.png" alt="Report Maker filters and exclude system example" style="max-width:75%; height:75px; border:2px solid #007acc; border-radius:6px; box-shadow:0 4px 12px rgba(0,122,204,0.15); display:block;" loading="lazy">
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <!-- AI Service Selection -->
-                <div class="background-f5 padding-15 border-radius-5 border-1-ddd">
-                    <h3 style="margin:0 0 8px 0; font-size: 14px;">AI Service Provider</h3>
-                    <div style="display: flex; gap: 12px; align-items: center;">
-                        <label style="font-weight: 600; min-width: 100px; font-size: 13px;">Provider:</label>
-                        <select id="ai-provider-select" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; flex: 1; font-size: 13px;">
-                            <option value="">-- Loading... --</option>
-                        </select>
-                    </div>
-                    <div style="margin-top: 4px; color: #666; font-size: 11px;">
-                        (Configure API keys in Settings)
-                    </div>
-                    <div id="ai-provider-warning"></div>
-                </div>
-            </div>
-
-            <!-- Data Selection -->
-            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px;">
-                <h3 style="margin:0 0 8px 0; font-size: 14px;">Data to Analyze</h3>
-                <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 13px;">
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-dashboard" checked> Dashboard Metrics</label>
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-insights" checked> Insights Analysis</label>
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-timeline"> Timeline Charts</label>
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-query-groups" checked> Query Groups</label>
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-flow-diagram" checked> Flow Diagram</label>
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-indexes"> Indexes <span style="color: #999; font-size: 11px;">(if loaded)</span></label>                   
-                </div>
-            </div>
-
-            <!-- Analysis Options -->
-            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px; position: relative;">
-                <div style="display: flex; align-items: center;">
-                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;">
-                        <input type="checkbox" id="ai-obfuscate-data" checked>
-                        <span>Obfuscate sensitive data (bucket names, collection names, values)</span>
-                        <span id="obfuscation-toggle-link"
-                              style="font-size: 11px; color: #007bff; cursor: help; text-decoration: underline; margin-left: 4px;">
-                            (Hover/Click to see example)
-                        </span>
-                    </label>
-                </div>
-                
-                <!-- Obfuscation Example (Hidden by default) -->
-                <div id="obfuscation-example" style="display: none; margin-top: 10px; padding: 12px; background: #fff; border: 1px solid #999; border-radius: 4px; font-size: 11px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: absolute; z-index: 100; width: calc(100% - 30px);">
-                    <div style="margin-bottom: 8px;">
-                        <strong style="color: #28a745;">✓ Before (Original):</strong>
-                        <pre style="margin: 4px 0 0 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #28a745; font-family: 'Courier New', monospace; overflow-x: auto; white-space: pre; color: #333; font-weight: 500;">SELECT <span style="background:#fff9c4; padding: 0 2px; border-radius: 2px;">fName</span>, <span style="background:#e1f5fe; padding: 0 2px; border-radius: 2px;">lName</span> FROM bucket.scope.collection WHERE id = <span style="background:#fce4ec; padding: 0 2px; border-radius: 2px;">"1234"</span></pre>
-                    </div>
-                    <div>
-                        <strong style="color: #2196f3;">🔒 After (Obfuscated):</strong>
-                        <pre style="margin: 4px 0 0 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #2196f3; font-family: 'Courier New', monospace; overflow-x: auto; white-space: pre; color: #333; font-weight: 500;">SELECT `<span style="background:#fff9c4; padding: 0 2px; border-radius: 2px;">21t4hs</span>`, `<span style="background:#e1f5fe; padding: 0 2px; border-radius: 2px;">oaurchn</span>` FROM `acuoa`.`orcenth`.`8aouenth` WHERE `racousth` = "<span style="background:#fce4ec; padding: 0 2px; border-radius: 2px;">stousth</span>"</pre>
-                    </div>
-                </div>
-            </div>
-
-            <script>
-                // Inline script for hover/click behavior
-                (function() {
-                    const link = document.getElementById('obfuscation-toggle-link');
-                    const example = document.getElementById('obfuscation-example');
-                    if (link && example) {
-                        link.addEventListener('mouseenter', () => example.style.display = 'block');
-                        link.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            example.style.display = example.style.display === 'none' ? 'block' : 'none';
-                        });
-                        // Hide when leaving the container to allow hovering the example itself
-                        link.parentElement.parentElement.parentElement.addEventListener('mouseleave', () => example.style.display = 'none');
-                    }
-                })();
-            </script>
-
-            <!-- User Prompt -->
-            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px;">
-                <h3 style="margin:0 0 8px 0; font-size: 14px;">Custom Analysis Prompt</h3>
-                <textarea id="ai-user-prompt" 
-                    placeholder="Example: 'Identify patterns in slow queries and suggest specific index optimizations.'"
-                    style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 12px; resize: vertical; height: 60px; min-height: 40px;"></textarea>
-            </div>
-
-            <!-- Analyze Button -->
-            <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
-                <button id="ai-analyze-btn" onclick="analyzeWithAI()" class="btn-standard" style="background: #2196f3; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
-                    🚀 Analyze with AI
-                </button>
-                
-                <!-- Query Groups Limit Option -->
-                <div style="display: flex; flex-direction: column; gap: 2px; border-left: 1px solid #ddd; padding-left: 12px;" title="To reduce payload size and improve speed, limit the number of Query Groups sent to AI (sorted by impact).">
-                    <label style="font-size: 11px; font-weight: bold; color: #666; cursor: help;">Query Groups: <span style="font-size: 10px;">ⓘ</span></label>
-                    <div style="display: flex; gap: 10px;">
-                        <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                            <input type="radio" name="ai-qg-limit" value="10" checked> Top 10
-                        </label>
-                        <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                            <input type="radio" name="ai-qg-limit" value="50"> Top 50
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Progress Bar (Hidden by default) -->
-                <div id="ai-progress-bar" class="progress-steps-container" style="display: none;">
-                    <div class="progress-line"><div class="progress-line-fill"></div></div>
-                    <div class="progress-step active" id="step-1">
-                        <div class="step-circle">1</div>
-                        <div class="step-label">Sent to AI</div>
-                    </div>
-                    <div class="progress-step" id="step-2">
-                        <div class="step-circle">2</div>
-                        <div class="step-label">AI Processing</div>
-                    </div>
-                    <div class="progress-step" id="step-3">
-                        <div class="step-circle">3</div>
-                        <div class="step-label">Received/Saved</div>
-                    </div>
-                    <div class="progress-step" id="step-4">
-                        <div class="step-circle">4</div>
-                        <div class="step-label">Done</div>
-                    </div>
-                </div>
-
-                <div style="flex-grow: 1;"></div>
-
-                <button id="ai-preview-btn" onclick="showAIPreview('json')" class="btn-standard" style="background: #6c757d; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
-                    👁️ Preview JSON
-                </button>
-                <!-- TOON Preview (Dev Mode Only) -->
-                <button id="ai-preview-toon-btn" onclick="showAIPreview('toon')" class="btn-standard" style="background: #495057; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold; display: none;">
-                    🎭 Preview TOON
-                </button>
-            </div>
-
-            <!-- AI Analysis History -->
-            <div style="margin-top: 30px;">
-                <h3 style="margin: 0 0 12px 0;">Previous Analyses</h3>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                        <thead style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                            <tr>
-                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Request Date</th>
-                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Source Cluster</th>
-                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Obfuscated</th>
-                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Provider</th>
-                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Prompt</th>
-                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Data Included</th>
-                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Status</th>
-                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ai-history-list">
-                            <!-- AI history items will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-                <div id="ai-history-pagination" style="margin-top: 10px; text-align: center; background-color: #f5f5f5; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6;"></div>
             </div>
         </div>
     </div>
+
      <!-- Modals (outside tabs) -->
     <div id="plan-modal" class="modal">
         <div class="modal-content">
