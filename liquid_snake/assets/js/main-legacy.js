@@ -26703,19 +26703,77 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             }
         }
         
-        function copyAIResponse() {
+        function copyAIResponseAsMarkdown() {
+            const contextDiv = document.getElementById('ai-view-context');
             const responseDiv = document.getElementById('ai-view-response');
-            if (!responseDiv) return;
             
-            navigator.clipboard.writeText(responseDiv.textContent).then(() => {
-                showToast('AI response copied!', 'success');
+            if (!contextDiv || !responseDiv) return;
+            
+            // Helper to convert HTML to Markdown
+            const htmlToMarkdown = (element) => {
+                let md = '';
+                
+                // Process child nodes
+                element.childNodes.forEach(node => {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        md += node.textContent.trim().replace(/\s+/g, ' ') + ' ';
+                    } else if (node.nodeType === Node.ELEMENT_NODE) {
+                        const tagName = node.tagName.toLowerCase();
+                        
+                        // Special handling for SQL code blocks (prioritize over generic div)
+                        if (tagName === 'pre' || (tagName === 'div' && node.classList.contains('index-statement'))) {
+                            // Remove "Copy" button text from code blocks
+                            const clone = node.cloneNode(true);
+                            const btn = clone.querySelector('button');
+                            if (btn) btn.remove();
+                            md += '\n```sql\n' + clone.textContent.trim().replace(/\s+$/, '') + '\n```\n\n';
+                        } 
+                        // Special handling for highlighted code spans
+                        else if (tagName === 'span' && node.classList.contains('code-highlight')) {
+                            const text = node.textContent.trim();
+                            if (text.includes('\n') || text.length > 50) {
+                                md += '\n```sql\n' + text + '\n```\n';
+                            } else {
+                                md += '`' + text + '` ';
+                            }
+                        }
+                        // Generic containers
+                        else if (tagName === 'div') {
+                            md += '\n' + htmlToMarkdown(node) + '\n';
+                        } else if (tagName === 'h3' || tagName === 'h4') {
+                            md += '\n### ' + node.textContent.trim() + '\n\n';
+                        } else if (tagName === 'strong' || tagName === 'b') {
+                            md += '**' + node.textContent.trim() + '** ';
+                        } else if (tagName === 'ul' || tagName === 'ol') {
+                            md += '\n' + htmlToMarkdown(node) + '\n';
+                        } else if (tagName === 'li') {
+                            md += '- ' + htmlToMarkdown(node) + '\n';
+                        } else if (tagName === 'br') {
+                            md += '\n';
+                        } else {
+                            md += htmlToMarkdown(node);
+                        }
+                    }
+                });
+                
+                return md.replace(/\n{3,}/g, '\n\n').trim();
+            };
+            
+            const contextMd = `## Request Info\n${htmlToMarkdown(contextDiv)}`;
+            const responseMd = `## AI Analysis Results\n${htmlToMarkdown(responseDiv)}`;
+            
+            const fullMd = `${contextMd}\n\n---\n\n${responseMd}`;
+            
+            navigator.clipboard.writeText(fullMd).then(() => {
+                showToast('Analysis copied as Markdown!', 'success');
             }).catch(err => {
-                showToast('Failed to copy', 'error');
+                Logger.error('Failed to copy markdown:', err);
+                showToast('Failed to copy as Markdown', 'error');
             });
         }
         
         window.closeAIView = closeAIView;
-        window.copyAIResponse = copyAIResponse;
+        window.copyAIResponseAsMarkdown = copyAIResponseAsMarkdown;
 
         /**
          * Format AI analysis data as HTML
