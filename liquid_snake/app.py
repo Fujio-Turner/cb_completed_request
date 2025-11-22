@@ -645,6 +645,11 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
                 # Get current doc to preserve fields
                 current_doc = collection.get(doc_id).content_as[dict]
                 
+                # Check if cancelled
+                if current_doc.get('status') == 'cancelled':
+                    ic(f"🛑 Task was cancelled, aborting update for {doc_id}")
+                    return
+                
                 current_doc.update({
                     'completedAt': datetime.utcnow().isoformat() + 'Z',
                     'status': 'completed',
@@ -996,6 +1001,48 @@ def analyze_with_ai():
             'error': str(e),
             'traceback': traceback.format_exc()
         }), 500
+
+@app.route('/api/ai/cancel', methods=['POST'])
+def cancel_ai_analysis():
+    """Cancel a running AI analysis"""
+    try:
+        from datetime import datetime
+        
+        data = request.json
+        doc_id = data.get('document_id')
+        cb_config = data.get('config')
+        bucket_config = data.get('bucketConfig')
+        
+        if not doc_id or not cb_config:
+            return jsonify({'success': False, 'error': 'Missing document_id or config'}), 400
+            
+        cluster = get_couchbase_connection(cb_config)
+        if not cluster:
+            return jsonify({'success': False, 'error': 'Not connected'}), 500
+            
+        bucket = cluster.bucket(bucket_config['bucket'])
+        collection = bucket.scope(bucket_config['analyzerScope']).collection(
+            bucket_config['analyzerCollection']
+        )
+        
+        # Update status to cancelled
+        try:
+            current_doc = collection.get(doc_id).content_as[dict]
+            # Allow cancelling pending, submitted, or even processing states
+            if current_doc.get('status') in ['pending', 'submitted', 'processing']:
+                current_doc['status'] = 'cancelled'
+                current_doc['cancelledAt'] = datetime.utcnow().isoformat() + 'Z'
+                collection.upsert(doc_id, current_doc)
+                ic(f"🚫 Cancelled analysis: {doc_id}")
+                return jsonify({'success': True, 'status': 'cancelled'})
+            else:
+                return jsonify({'success': False, 'error': f'Cannot cancel status: {current_doc.get("status")}'})
+        except DocumentNotFoundException:
+            return jsonify({'success': False, 'error': 'Document not found'}), 404
+            
+    except Exception as e:
+        ic(f"❌ Error cancelling analysis: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/ai/status/<document_id>', methods=['POST'])
 def check_ai_status(document_id):

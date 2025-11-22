@@ -423,11 +423,11 @@
             <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px;">
                 <h3 style="margin:0 0 8px 0; font-size: 14px;">Data to Analyze</h3>
                 <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 13px;">
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-dashboard" checked> Dashboard Metrics</label>
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-insights" checked> Insights Analysis</label>
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-timeline" checked> Timeline Charts</label>
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-query-groups" checked> Query Groups</label>
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-flow-diagram" checked> Flow Diagram</label>
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-dashboard" checked> Dashboard </label>
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-insights" checked> Insights </label>
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-timeline" checked> Timeline </label>
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-query-groups" checked> Query Groups </label>
+                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-flow-diagram" checked> Index/Query Flow </label>
                     <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-indexes"> Indexes <span style="color: #999; font-size: 11px;">(if loaded)</span></label>                   
                 </div>
             </div>
@@ -455,7 +455,7 @@
                         <strong style="color: #2196f3;">🔒 After (Obfuscated):</strong>
                         <pre style="margin: 4px 0 0 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #2196f3; font-family: 'Courier New', monospace; overflow-x: auto; white-space: pre; color: #333; font-weight: 500;">SELECT `<span style="background:#fff9c4; padding: 0 2px; border-radius: 2px;">21t4hs</span>`, `<span style="background:#e1f5fe; padding: 0 2px; border-radius: 2px;">oaurchn</span>` FROM `acuoa`.`orcenth`.`8aouenth` WHERE `racousth` = "<span style="background:#fce4ec; padding: 0 2px; border-radius: 2px;">stousth</span>"</pre>
                     </div>
-                    With Preview JSON you can inspect the data payload to be sent to the AI API. 
+                    Preview Payload - Inspect the data payload to be sent to the AI API. 
                 </div>
             </div>
 
@@ -525,13 +525,12 @@
                 </div>
 
                 <div style="flex-grow: 1;"></div>
-
                 <button id="ai-preview-btn" onclick="showAIPreview('json')" class="btn-standard" style="background: #6c757d; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
-                    👁️ Preview JSON
+                    Preview Payload
                 </button>
                 <!-- TOON Preview (Dev Mode Only) -->
                 <button id="ai-preview-toon-btn" onclick="showAIPreview('toon')" class="btn-standard" style="background: #495057; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold; display: none;">
-                    🎭 Preview TOON
+                    Preview TOON
                 </button>
             </div>
 

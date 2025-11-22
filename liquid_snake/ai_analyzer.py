@@ -663,6 +663,12 @@ class AIPayloadBuilder:
                     'Missing WHERE clauses often indicate table scans',
                     'High resultCount with LIMIT suggests index overfetch',
                     'What high kernTime means: kernTime is time spent waiting to be scheduled on CPU. If it dominates ServiceTime and/or Execution Time (e.g., ~99%), the node is CPU-bound and the query spends most of its life paused, not doing useful work. Look for high request.active.count, cpu.user.percent, or gc.pause.percent. Actions: reduce concurrency, add query nodes, or separate services.'
+                ],
+                'best_practices': [
+                    'When suggesting a new or updated index, append "_v1" or "_v2" to the index name to indicate a versioned change (e.g. "idx_user_search_v1").',
+                    'EXCEPTION: Primary indexes cannot be versioned (do not append _v1 to #primary or equivalent).',
+                    'For replica changes, prefer ALTER INDEX syntax: ALTER INDEX index_name ON bucket WITH {"action": "replica_count", "num_replica": 1}.',
+                    'Always use strict JSON object syntax for WITH clauses (e.g. WITH {"num_replica": 1}).'
                 ]
             },
             'data': {},
@@ -1040,14 +1046,15 @@ def get_ai_system_prompt() -> str:
 **RESPONSE FORMAT REQUIREMENTS:**
 You MUST return your analysis as a valid JSON object with this exact structure.
 IMPORTANT: Do NOT limit lists to top 5. If you find 15 issues, return 15 issues.
+If the user provided a specific request or question in their prompt, you MUST answer it in the 'overview_html' field under a '<h3>User Specific Request</h3>' section. If the user prompt is generic (e.g. 'Analyze query performance'), do NOT include this section.
 
 ```json
 {
   "analysis_summary": {
-    "overview_html": "Structured summary using HTML elements to organize findings.<br><br><b>Suggested Structure:</b><br><h3>Overall Health</h3><p>Summary of system health...</p><h3>Key Bottlenecks</h3><ul><li>Point 1</li><li>Point 2</li></ul><h3>Main Findings</h3><p>Details...</p><br>Use tags like <span class='severity-critical'>highlights</span> for critical metrics."
+    "overview_html": "Structured summary using HTML elements to organize findings.<br><br><b>Suggested Structure:</b><br><h3>Overall Health</h3><p>Summary of system health...</p><h3>Key Bottlenecks</h3><ul><li>Point 1</li><li>Point 2</li></ul><h3>Main Findings</h3><p>Details...</p><h3>User Specific Request</h3><p>Answer to specific user questions/requests (ONLY if applicable, otherwise omit)</p><br>Use tags like <span class='severity-critical'>highlights</span> for critical metrics."
   },
   "chart_trends": {
-    "timeline_analysis_html": "Detailed analysis of timeline trends (if data available) formatted as an HTML unordered list &lt;ul&gt;&lt;li&gt;. Highlight specific time ranges using <span class='code-highlight'>HH:MM</span> tags. Focus on correlations between spikes in requests, latency, and system resources.",
+    "timeline_analysis_html": "Detailed analysis of timeline trends (if data available) formatted as an HTML unordered list &lt;ul&gt;&lt;li&gt;. Highlight specific time ranges using <span class='code-highlight'>YYYY-MM-DD HH:MM</span> tags. ALWAYS include the full date (YYYY-MM-DD) when mentioning times. Focus on correlations between spikes in requests, latency, and system resources.",
     "sources": [
       {
         "location": "timeline_charts",
@@ -1086,8 +1093,8 @@ IMPORTANT: Do NOT limit lists to top 5. If you find 15 issues, return 15 issues.
       "priority_number": <number 1-10>,
       "priority": "<high|medium|low>",
       "category": "<index|query|configuration>",
-      "recommendation_html": "<Action> Index(es) FOR <Bucket.Scope.Collection> (e.g. 'Create Index FOR travel-sample.inventory.hotel')",
-      "rationale_html": "<b>Current Index</b> (if exists):<br><div class='index-statement'>def</div><br><b>Suggested Index</b>:<br><div class='index-statement'>def <button class='btn-standard copy-btn' onclick='navigator.clipboard.writeText(\"def\")'>Copy</button></div><br>Reasoning: ...",
+      "recommendation_html": "<Action> Index(es) FOR <Bucket.Scope.Collection> (e.g. 'Create Index FOR travel-sample.inventory.hotel'). MUST append '_v1', '_v2', etc. to new index names.",
+      "rationale_html": "<b>Current Index</b> (if exists):<br><div class='index-statement'>def</div><br><b>Suggested Index</b>:<br><div class='index-statement'>CREATE INDEX idx_name_v1 ON ... <button class='btn-standard copy-btn' onclick='navigator.clipboard.writeText(\"CREATE INDEX idx_name_v1 ...\")'>Copy</button></div><br>Reasoning: ...",
       "implementation_steps": ["Step 1", "Step 2", "..."],
       "estimated_impact": "Expected benefit",
       "sources": [
@@ -1135,7 +1142,11 @@ IMPORTANT: Do NOT limit lists to top 5. If you find 15 issues, return 15 issues.
 - Use the exact field names shown above
 - Include ALL sections even if empty (use [] or {} for empty sections)
 - Be specific and actionable in recommendations
-- Focus on performance improvements and best practices"""
+- Focus on performance improvements and best practices
+- **CRITICAL**: When referencing times in Chart Trends, ALWAYS include the full date (YYYY-MM-DD).
+- **CRITICAL**: All suggested index names MUST end with '_v1', '_v2', etc. (e.g. 'idx_users_v1').
+- **CRITICAL**: EXCEPTION: Primary indexes MUST NOT be versioned.
+- **CRITICAL**: Use ALTER INDEX with strict JSON syntax for replica changes: WITH {"action":"replica_count", "num_replica": 1}."""
 
 # ============================================================================
 # Helper Functions

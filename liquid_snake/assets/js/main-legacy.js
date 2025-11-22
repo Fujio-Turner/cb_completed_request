@@ -25844,6 +25844,43 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         });
 
         /**
+         * Cancel running AI analysis
+         */
+        async function cancelAIAnalysis(docId) {
+            Logger.info(`[AI] Cancelling analysis: ${docId}`);
+            const btn = document.getElementById('ai-analyze-btn');
+            if (btn) {
+                btn.innerHTML = 'Stopping...';
+                btn.disabled = true;
+            }
+            
+            const cbConfig = window.clusterConfig || (typeof clusterConfig !== 'undefined' ? clusterConfig : null);
+            
+            try {
+                const response = await fetch('/api/ai/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        document_id: docId,
+                        config: cbConfig.cluster,
+                        bucketConfig: cbConfig.bucketConfig
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Analysis request cancelled', 'info');
+                } else {
+                    showToast(`Failed to cancel: ${result.error}`, 'error');
+                }
+            } catch (e) {
+                Logger.error('[AI] Error cancelling:', e);
+                showToast('Error cancelling request', 'error');
+            }
+        }
+        window.cancelAIAnalysis = cancelAIAnalysis;
+
+        /**
          * Analyze data with AI (sends to AI provider)
          */
         async function analyzeWithAI() {
@@ -26025,6 +26062,16 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     if (result.success) {
                         const docId = result.document_id;
                         
+                        // Enable Cancel button
+                        const btn = document.getElementById('ai-analyze-btn');
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = '❌ Cancel Analysis';
+                            btn.onclick = () => cancelAIAnalysis(docId);
+                            btn.style.backgroundColor = '#dc3545'; 
+                            btn.style.borderColor = '#dc3545';
+                        }
+                        
                         // Immediately show in history table as "Pending"
                         setTimeout(() => loadAIAnalysisHistory(), 500);
                         
@@ -26072,14 +26119,38 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                                             if (btn) {
                                                 btn.disabled = false;
                                                 btn.innerHTML = originalBtnContent;
+                                                btn.onclick = () => analyzeWithAI();
+                                                btn.style.backgroundColor = ''; 
+                                                btn.style.borderColor = '';
                                             }
                                             
                                             // Hide progress bar after delay
                                             setTimeout(() => {
                                                 if (progressBar) progressBar.style.display = 'none';
+                                                
+                                                // Auto-open report 1s after progress bar hides
+                                                setTimeout(() => {
+                                                    viewAnalysis(docId);
+                                                }, 1000);
                                             }, 3000);
                                         }, 1000);
                                         
+                                        return;
+                                    } else if (statusData.status === 'cancelled') {
+                                        showToast('Analysis cancelled by user', 'info');
+                                        Logger.info(`[AI] Analysis cancelled: ${docId}`);
+                                        
+                                        const btn = document.getElementById('ai-analyze-btn');
+                                        if (btn) {
+                                            btn.disabled = false;
+                                            btn.innerHTML = originalBtnContent;
+                                            btn.onclick = () => analyzeWithAI();
+                                            btn.style.backgroundColor = ''; 
+                                            btn.style.borderColor = '';
+                                        }
+                                        
+                                        loadAIAnalysisHistory();
+                                        if (progressBar) progressBar.style.display = 'none';
                                         return;
                                     } else if (statusData.status === 'failed') {
                                         updateProgress(2, true); // Error on processing step
@@ -26106,6 +26177,11 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             // Hide progress bar after delay
                             setTimeout(() => {
                                 if (progressBar) progressBar.style.display = 'none';
+                                
+                                // Auto-open report 1s after progress bar hides
+                                setTimeout(() => {
+                                    viewAnalysis(docId);
+                                }, 1000);
                             }, 3000);
                             
                             setTimeout(() => loadAIAnalysisHistory(), 500);
@@ -26123,6 +26199,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = originalBtnContent;
+                        btn.onclick = () => analyzeWithAI();
+                        btn.style.backgroundColor = ''; 
+                        btn.style.borderColor = '';
                     }
                     
                     // Keep progress bar visible but in error state for a bit
@@ -26401,6 +26480,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Listen for config load to populate dropdown if it failed initially (race condition)
             window.addEventListener('clusterConfigLoaded', function() {
                 populateAIProviderDropdown();
+                loadAIAnalysisHistory();
             });
 
             $('#tabs').on('tabsactivate', function(event, ui) {
