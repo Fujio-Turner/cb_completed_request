@@ -62,6 +62,7 @@ const AI_PROVIDERS = [
         defaultUrl: 'https://api.x.ai/v1',
         models: [
             { id: 'grok-4-fast', name: 'Grok 4 Fast (Latest, Cost-Effective)' },
+            { id: 'grok-4-1-fast-reasoning', name: 'Grok 4.1 Fast Reasoning (Latest)' },
             { id: 'grok-4', name: 'Grok 4 (Most Capable)' },
             { id: 'grok-3', name: 'Grok 3 (Advanced Reasoning)' },
             { id: 'grok-3-mini', name: 'Grok 3 Mini (Fast)' },
