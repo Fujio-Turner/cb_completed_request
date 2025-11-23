@@ -480,6 +480,7 @@ def preview_ai_payload():
         # Extract request parameters
         raw_data = request_data.get('data', {})
         prompt = request_data.get('prompt', 'Analyze query performance')
+        extra_instructions = request_data.get('extra_instructions', '')
         selections = request_data.get('selections', {})
         options = request_data.get('options', {})
         output_format = request_data.get('format', 'json')
@@ -500,7 +501,8 @@ def preview_ai_payload():
             raw_data=raw_data,
             user_prompt=prompt,
             selections=selections,
-            options=options
+            options=options,
+            extra_instructions=extra_instructions
         )
         
         # Extract mapping table if obfuscated (don't send to AI, but return to client)
@@ -579,7 +581,7 @@ def preview_ai_payload():
 
 import threading
 
-def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prompt, ai_payload_data, cb_config, initial_doc, obfuscation_mapping):
+def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prompt, ai_payload_data, cb_config, initial_doc, obfuscation_mapping, language=None):
     """Background thread to process AI request and update Couchbase document"""
     try:
         import json
@@ -595,7 +597,8 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
             api_url=api_url,
             endpoint=endpoint,
             prompt=prompt,
-            payload_data=ai_payload_data
+            payload_data=ai_payload_data,
+            language=language
         )
         
         ic(f"📥 AI response received for {doc_id}", result.get('success'))
@@ -741,6 +744,8 @@ def analyze_with_ai():
         # Extract parameters
         raw_data = request_data.get('data', {})
         prompt = request_data.get('prompt', 'Analyze query performance')
+        extra_instructions = request_data.get('extra_instructions', '')
+        language = request_data.get('language', 'English')
         provider = request_data.get('provider', 'grok')
         selections = request_data.get('selections', {})
         options = request_data.get('options', {})
@@ -748,6 +753,7 @@ def analyze_with_ai():
         
         ic("📋 Request parameters:")
         ic(f"  Provider: {provider}")
+        ic(f"  Language: {language}")
         ic(f"  Prompt length: {len(prompt)} chars")
         ic(f"  Selections: {selections}")
         ic(f"  Options: {options}")
@@ -830,7 +836,8 @@ def analyze_with_ai():
             raw_data=raw_data,
             user_prompt=prompt,
             selections=selections,
-            options=options
+            options=options,
+            extra_instructions=extra_instructions
         )
         
         # Extract mapping table if obfuscated (for de-obfuscation later)
@@ -962,7 +969,7 @@ def analyze_with_ai():
                 ic(f"🚀 Launching background AI task for {saved_doc_id}")
                 thread = threading.Thread(target=background_ai_task, args=(
                     saved_doc_id, provider, model, api_key, api_url, endpoint, prompt, 
-                    ai_payload_data, cb_config, initial_doc, obfuscation_mapping
+                    ai_payload_data, cb_config, initial_doc, obfuscation_mapping, language
                 ))
                 thread.start()
                 
@@ -982,7 +989,8 @@ def analyze_with_ai():
                     api_url=api_url,
                     endpoint=endpoint,
                     prompt=prompt,
-                    payload_data=ai_payload_data
+                    payload_data=ai_payload_data,
+                    language=language
                 )
                 
                 return jsonify({

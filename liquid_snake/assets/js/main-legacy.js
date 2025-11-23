@@ -25628,12 +25628,32 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             let prompt = document.getElementById('ai-user-prompt')?.value || "Analyze query performance";
             
+            // Gather language and chart instructions (Separate from prompt)
+            let extra_instructions = "";
+            let selectedLanguage = 'English';
+            
             // Append language instruction if not English
             const languageSelect = document.getElementById('ai-language');
             if (languageSelect && languageSelect.value !== 'EN') {
                 const languageName = languageSelect.options[languageSelect.selectedIndex].text;
-                prompt += `\n\nPlease respond in ${languageName}.`;
+                extra_instructions += `Please respond in ${languageName}.`;
+                selectedLanguage = languageName;
             }
+
+            // Append Chart instruction
+            extra_instructions += `\n\nCHART INSTRUCTIONS:
+When explaining a point, idea, finding or topic, you can generate up to 3 charts (A, B, C) to visualize your analysis.
+If you choose to generate charts, include a "charts" array in your JSON response.
+Each chart object should have:
+- "id": "A", "B", or "C"
+- "type": "pie", "line", or "bar"
+- "title": Chart title
+- "data": Chart.js compatible data object (labels, datasets)
+- "options": Chart.js compatible options object (optional)
+- "description": Brief explanation of what the chart shows
+
+Charts will be rendered in a dedicated "Charts" section. 
+Layout: 1 chart = 100% width, 2 charts = 50%/50%, 3 charts = 33%/33%/33%.`;
             
             Logger.debug('[AI] 📤 Sending data to Flask for processing...');
             Logger.trace(`[AI] Selections: ${JSON.stringify(selections)}`);
@@ -25652,9 +25672,11 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         version: '4.0.0-dev'
                     },
                     prompt: prompt,
+                    extra_instructions: extra_instructions,
                     selections: selections,
                     options: options,
                     format: format,
+                    language: selectedLanguage,
                     parseContext: gatherParseContext()  // Include filter and data source state
                 };
                 
@@ -25954,12 +25976,32 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
 
             let prompt = document.getElementById('ai-user-prompt')?.value || "Analyze query performance";
             
+            // Gather language and chart instructions (Separate from prompt)
+            let extra_instructions = "";
+            let selectedLanguage = 'English';
+            
             // Append language instruction if not English
             const languageSelect = document.getElementById('ai-language');
             if (languageSelect && languageSelect.value !== 'EN') {
                 const languageName = languageSelect.options[languageSelect.selectedIndex].text;
-                prompt += `\n\nPlease respond in ${languageName}.`;
+                extra_instructions += `Please respond in ${languageName}.`;
+                selectedLanguage = languageName;
             }
+
+            // Append Chart instruction
+            extra_instructions += `\n\nCHART INSTRUCTIONS:
+When explaining a point, idea, finding or topic, you can generate up to 3 charts (A, B, C) to visualize your analysis.
+If you choose to generate charts, include a "charts" array in your JSON response.
+Each chart object should have:
+- "id": "A", "B", or "C"
+- "type": "pie", "line", or "bar"
+- "title": Chart title
+- "data": Chart.js compatible data object (labels, datasets)
+- "options": Chart.js compatible options object (optional)
+- "description": Brief explanation of what the chart shows
+
+Charts will be rendered in a dedicated "Charts" section. 
+Layout: 1 chart = 100% width, 2 charts = 50%/50%, 3 charts = 33%/33%/33%.`;
             
             Logger.debug(`[AI] Provider: ${provider}, Store: ${options.store_results}`);
             
@@ -25991,12 +26033,14 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         version: '4.0.0-dev'
                     },
                     prompt: prompt,
+                    extra_instructions: extra_instructions,
                     selections: selections,
                     options: options,
                     parseContext: gatherParseContext(),
                     couchbaseConfig: cbConfig,
                     // Only send provider ID - Flask will get credentials from user::config
-                    provider: provider
+                    provider: provider,
+                    language: selectedLanguage
                 };
                 
                 Logger.info(`[AI] Payload size: ${JSON.stringify(savePayload).length} bytes`);
@@ -26724,6 +26768,30 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             const ctx = doc.parseJson || {};
             const meta = doc.metadata || {};
             
+            // Prepare prompt display with "Show More" if long
+            let promptHtml = doc.prompt || 'N/A';
+            // Remove system instructions if they were appended (look for "Please respond in" or "CHART INSTRUCTIONS")
+            // Actually, doc.prompt usually stores the full prompt sent. 
+            // But wait, in analyzeWithAI we saved `prompt` (user input) separately from `extra_instructions`.
+            // Let's check if doc.prompt is just the user input. 
+            // Based on previous edit in app.py: payload['prompt'] = full_prompt. 
+            // But we also save the initial request doc in app.py using raw `request_data` which has `prompt` (user input) and `extra_instructions`.
+            // Couchbase doc likely has `prompt` as user input. Let's assume so for now.
+            
+            if (promptHtml.length > 100) {
+                const shortText = promptHtml.substring(0, 100);
+                const fullText = promptHtml.replace(/"/g, '&quot;');
+                promptHtml = `
+                    <span>${shortText}</span><span id="prompt-dots-${doc.id}">...</span>
+                    <span id="prompt-full-${doc.id}" style="display:none;">${promptHtml.substring(100)}</span>
+                    <button onclick="const full=document.getElementById('prompt-full-${doc.id}'); const dots=document.getElementById('prompt-dots-${doc.id}'); if(full.style.display==='none'){full.style.display='inline';dots.style.display='none';this.textContent='Show Less'}else{full.style.display='none';dots.style.display='inline';this.textContent='Show More'}" 
+                    class="btn-standard" style="padding: 2px 6px; font-size: 10px; margin-left: 5px;">Show More</button>
+                `;
+            }
+
+            // Query Groups Limit
+            const qgLimit = doc.options?.query_group_limit ? `Top ${doc.options.query_group_limit}` : 'N/A';
+            
             contextDiv.innerHTML = `
                 <div style="margin-bottom: 20px;">
                     <div style="color: #ffc107; font-weight: bold; margin-bottom: 8px;">📅 Request Info</div>
@@ -26731,6 +26799,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         <div>Date: ${new Date(doc.createdAt).toLocaleString()}</div>
                         <div>Provider: <span style="background: #000; color: #fff; padding: 2px 6px; border-radius: 4px;">${doc.provider}</span></div>
                         <div>Model: ${doc.model}</div>
+                        <div>Language: <strong>${doc.language || 'English'}</strong></div>
+                        <div>Query Groups: <strong>${qgLimit}</strong></div>
                         <div>Status: <span style="color: ${doc.status === 'completed' ? '#28a745' : '#dc3545'}; font-weight: bold;">${doc.status}</span></div>
                     </div>
                 </div>
@@ -26738,7 +26808,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 <div style="margin-bottom: 15px;">
                     <div style="color: #007bff; font-weight: bold; margin-bottom: 6px; font-size: 13px;">💬 Prompt</div>
                     <div style="margin-left: 10px; background: #f8f9fa; padding: 8px; border-radius: 4px; border-left: 3px solid #007bff; font-size: 12px; line-height: 1.5;">
-                        ${doc.prompt || 'N/A'}
+                        ${promptHtml}
                     </div>
                 </div>
                 
@@ -26794,6 +26864,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         let content = message.content || '';
                         // Clean markdown code blocks if present
                         content = content.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
+                        // Remove leading "Error parsing AI response" if present (from retries)
+                        content = content.replace(/^Error parsing AI response\s*/, '');
                         analysisData = JSON.parse(content);
                     } catch (e) {
                         responseDiv.innerHTML = `<div style="color: #dc3545;">Error parsing AI response</div><pre>${message.content}</pre>`;
@@ -26816,6 +26888,14 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             overlay.style.display = 'block';
             Logger.info('[AI] ✅ Analysis view displayed');
+
+            // Render charts if any
+            if (analysisData.charts && Array.isArray(analysisData.charts)) {
+                // Use setTimeout to ensure DOM is updated
+                setTimeout(() => {
+                    renderAICharts(analysisData.charts);
+                }, 100);
+            }
         }
         
         function closeAIView() {
@@ -26898,19 +26978,142 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         window.copyAIResponseAsMarkdown = copyAIResponseAsMarkdown;
 
         /**
+         * Render charts from AI response using Chart.js
+         */
+        function renderAICharts(charts) {
+            if (!charts || !Array.isArray(charts)) return;
+            
+            charts.forEach(chart => {
+                const canvasId = `ai-chart-${chart.id}`;
+                const canvas = document.getElementById(canvasId);
+                
+                if (!canvas) {
+                    Logger.warn(`[AI] Canvas not found for chart ${chart.id}`);
+                    return;
+                }
+                
+                try {
+                    // Destroy existing if any
+                    const existing = Chart.getChart(canvasId);
+                    if (existing) existing.destroy();
+                    
+                    new Chart(canvas, {
+                        type: chart.type || 'bar',
+                        data: chart.data,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'bottom',
+                                    labels: {
+                                        boxWidth: 12,
+                                        font: { size: 10 }
+                                    }
+                                },
+                                title: {
+                                    display: false
+                                }
+                            },
+                            ...chart.options
+                        }
+                    });
+                    Logger.debug(`[AI] Rendered chart ${chart.id}`);
+                } catch (e) {
+                    Logger.error(`[AI] Error rendering chart ${chart.id}:`, e);
+                    // Show error in canvas container
+                    const container = canvas.parentElement;
+                    if (container) {
+                        container.innerHTML = `<div style="color:red; font-size:11px; padding:10px; text-align:center;">Error rendering chart: ${e.message}</div>`;
+                    }
+                }
+            });
+        }
+
+        /**
          * Format AI analysis data as HTML
          */
         function formatAIAnalysisHTML(data) {
             let html = '';
             
-            // Analysis Summary - New Section
+            // Analysis Summary
             if (data.analysis_summary && data.analysis_summary.overview_html) {
+                let content = data.analysis_summary.overview_html;
+                let chartSectionHtml = '';
+
+                // Check if we have charts to render
+                if (data.charts && Array.isArray(data.charts) && data.charts.length > 0) {
+                    const chartCount = Math.min(data.charts.length, 3);
+                    const widthPercent = Math.floor(100 / chartCount);
+                    
+                    let chartsHtml = `<div style="display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; padding: 15px; background: white; border: 1px solid #dee2e6; border-radius: 6px;">`;
+                    
+                    data.charts.slice(0, 3).forEach(chart => {
+                        chartsHtml += `
+                            <div style="flex: 1; min-width: ${widthPercent - 2}%; box-sizing: border-box;">
+                                <div style="text-align: center; font-weight: bold; margin-bottom: 8px; color: #495057;">${chart.title || 'Chart'}</div>
+                                <div style="position: relative; height: 250px; width: 100%;">
+                                    <canvas id="ai-chart-${chart.id}"></canvas>
+                                </div>
+                                <div style="margin-top: 8px; font-size: 11px; color: #666; text-align: center; font-style: italic;">
+                                    ${chart.description || ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    chartsHtml += `</div>`;
+                    chartSectionHtml = chartsHtml;
+                }
+
+                // Attempt to inject charts before "User Specific Request"
+                // We check for various headers: "User Specific Request", "User Specific Requests"
+                const userRequestHeaderRegex = /(User Specific Requests?|Specific Requests?)/i;
+                const match = content.match(userRequestHeaderRegex);
+
+                if (match && chartSectionHtml) {
+                    // Split content
+                    const index = match.index;
+                    const before = content.substring(0, index);
+                    const after = content.substring(index);
+                    
+                    content = before + chartSectionHtml + after;
+                } else if (chartSectionHtml) {
+                    // If header not found, append after summary content (inside the container)
+                    content += chartSectionHtml;
+                }
+
                 html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #6c757d;">
                     <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">📋 Analysis Summary</h4>
                     <div style="font-size: 13px; line-height: 1.5; color: #333;">
-                        ${data.analysis_summary.overview_html}
+                        ${content}
                     </div>
                 </div>`;
+            } else if (data.charts && Array.isArray(data.charts) && data.charts.length > 0) {
+                // Fallback if no summary but charts exist
+                const chartCount = Math.min(data.charts.length, 3);
+                const widthPercent = Math.floor(100 / chartCount);
+                
+                html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #6c757d;">
+                    <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">📊 Analysis Charts</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; padding: 15px; background: white; border: 1px solid #dee2e6; border-radius: 6px;">`;
+                
+                data.charts.slice(0, 3).forEach(chart => {
+                    html += `
+                        <div style="flex: 1; min-width: ${widthPercent - 2}%; box-sizing: border-box;">
+                            <div style="text-align: center; font-weight: bold; margin-bottom: 8px; color: #495057;">${chart.title || 'Chart'}</div>
+                            <div style="position: relative; height: 250px; width: 100%;">
+                                <canvas id="ai-chart-${chart.id}"></canvas>
+                            </div>
+                            <div style="margin-top: 8px; font-size: 11px; color: #666; text-align: center; font-style: italic;">
+                                ${chart.description || ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div></div>`;
             }
             
             

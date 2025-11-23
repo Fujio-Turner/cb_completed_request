@@ -623,7 +623,8 @@ class AIPayloadBuilder:
                                 raw_data: Dict[str, Any],
                                 user_prompt: str,
                                 selections: Dict[str, bool],
-                                options: Dict[str, Any]) -> Dict[str, Any]:
+                                options: Dict[str, Any],
+                                extra_instructions: str = "") -> Dict[str, Any]:
         """
         Build AI payload directly from raw data (no session cache)
         
@@ -632,6 +633,7 @@ class AIPayloadBuilder:
             user_prompt: User's analysis prompt
             selections: Which data sections to include
             options: Options like obfuscation
+            extra_instructions: System instructions (language, charts) to append
             
         Returns:
             Complete payload dict
@@ -639,8 +641,12 @@ class AIPayloadBuilder:
         ic(f"🔨 Building payload from raw data")
         
         # Initialize payload with context
+        full_prompt = user_prompt
+        if extra_instructions:
+            full_prompt += f"\n\n{extra_instructions}"
+
         payload = {
-            'prompt': user_prompt,
+            'prompt': full_prompt,
             'context': {
                 'tool': 'Couchbase Query Analyzer',
                 'purpose': 'This tool analyzes N1QL query performance from system:completed_requests',
@@ -1016,12 +1022,12 @@ payload_builder = AIPayloadBuilder()
 # AI System Prompts
 # ============================================================================
 
-def get_ai_system_prompt() -> str:
+def get_ai_system_prompt(language: str = None) -> str:
     """
     Get the system prompt that instructs AI how to analyze and format responses
     with sources, priorities, and HTML formatting
     """
-    return """You are a Couchbase N1QL query performance expert. Analyze the provided query data and provide actionable recommendations. Analyze ALL provided query groups and insights. Do NOT arbitrarily limit the number of critical issues or recommendations (e.g. do not stop at 5). Return ALL valid findings derived from the insights and query groups.
+    prompt = """You are a Couchbase N1QL query performance expert. Analyze the provided query data and provide actionable recommendations. Analyze ALL provided query groups and insights. Do NOT arbitrarily limit the number of critical issues or recommendations (e.g. do not stop at 5). Return ALL valid findings derived from the insights and query groups.
 
 **PRIORITY LEVELS (1-10):**
 - 10 (CRITICAL): Causes timeouts, data loss, or cluster instability
@@ -1133,6 +1139,24 @@ If the user provided a specific request or question in their prompt, you MUST an
     "Immediate action 1",
     "Immediate action 2",
     "Long-term improvement 1"
+  ],
+  "charts": [
+    {
+      "id": "A",
+      "type": "bar",
+      "title": "Query Count by Collection",
+      "data": {
+        "labels": ["orders", "customers", "products"],
+        "datasets": [
+          {
+            "label": "Count",
+            "data": [18, 9, 9],
+            "backgroundColor": "#36a2eb"
+          }
+        ]
+      },
+      "description": "Visual breakdown of query volume per collection."
+    }
   ]
 }
 ```
@@ -1146,7 +1170,13 @@ If the user provided a specific request or question in their prompt, you MUST an
 - **CRITICAL**: When referencing times in Chart Trends, ALWAYS include the full date (YYYY-MM-DD).
 - **CRITICAL**: All suggested index names MUST end with '_v1', '_v2', etc. (e.g. 'idx_users_v1').
 - **CRITICAL**: EXCEPTION: Primary indexes MUST NOT be versioned.
-- **CRITICAL**: Use ALTER INDEX with strict JSON syntax for replica changes: WITH {"action":"replica_count", "num_replica": 1}."""
+- **CRITICAL**: Use ALTER INDEX with strict JSON syntax for replica changes: WITH {"action":"replica_count", "num_replica": 1}.
+- **CRITICAL**: If the user asks for charts or if a chart would help explain a point, include the "charts" array with valid Chart.js data structures. Use simple 'bar', 'pie', or 'line' types. Do not hallucinate data; use the provided metrics."""
+
+    if language and language.lower() != 'english':
+        prompt += f"\n\n**CRITICAL OUTPUT LANGUAGE REQUIREMENT**:\nYou MUST provide your analysis, explanations, and recommendations in {language}. The JSON keys must remain in English, but all string values (overview_html, descriptions, titles, etc.) must be in {language}."
+    
+    return prompt
 
 # ============================================================================
 # Helper Functions
@@ -1245,7 +1275,8 @@ def call_ai_provider(provider: str,
                      api_url: str, 
                      endpoint: str, 
                      prompt: str, 
-                     payload_data: Dict[str, Any]) -> Dict[str, Any]:
+                     payload_data: Dict[str, Any],
+                     language: str = None) -> Dict[str, Any]:
     """
     Call AI provider with formatted request
     
@@ -1257,16 +1288,17 @@ def call_ai_provider(provider: str,
         endpoint: API endpoint path
         prompt: User's analysis prompt
         payload_data: Data payload to send to AI
+        language: Output language
         
     Returns:
         API response dict with success status, data/error, and timing
     """
     import json
     
-    ic(f"🤖 Calling AI provider: {provider}, model: {model}")
+    ic(f"🤖 Calling AI provider: {provider}, model: {model}, language: {language}")
     
     # Get system prompt
-    system_prompt = get_ai_system_prompt()
+    system_prompt = get_ai_system_prompt(language)
     
     # ---------------------------------------------------------
     # Option 1: Use OpenAI SDK (Preferred for OpenAI/Grok)
