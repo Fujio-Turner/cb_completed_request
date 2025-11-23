@@ -1,0 +1,302 @@
+[
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-aaaaaa-12345-aaa-aaaaaaaaa",
+      "cpuTime": "252.362ms",
+      "elapsedTime": "2.732401s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$Aaaaaa": "Aaaa123",
+        "$Aaaaaaaaa": "2025-01-01"
+      },
+      "phaseCounts": {
+        "indexScan": 5,
+        "fetch": 5
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "15.110ms",
+        "instantiate": "8.901\u00b5s",
+        "parse": "32.222ms",
+        "plan": "41.668ms",
+        "plan.index.metadata": "23.456\u00b5s",
+        "plan.keyspace.metadata": "12.345\u00b5s",
+        "indexScan": "3.055ms",
+        "fetch": "2.125449s",
+        "project": "283.455ms",
+        "run": "2.595781s",
+        "stream": "216.830ms"
+      },
+      "remoteAddr": "127.0.0.1:43318",
+      "requestId": "Aaaa-aaaaaa-12345-aaa-aaaaaaaaa",
+      "requestTime": "2025-08-15T00:01:00.000Z",
+      "resultCount": 5,
+      "resultSize": 1280,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "2.677753s",
+      "state": "completed",
+      "statement": "SELECT u.Aaaa, u.Aaaaa, u.Aaaaaaa FROM `Aaaaa` u WHERE u.Aaaaaa = $Aaaaaa AND u.Aaaaaaaaaaaaaaaa >= $Aaaaaaaaa",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 1024,
+      "userAgent": "node-couchbase/4.1.2",
+      "users": "local:Aaa_aaaaaaa_aaaa",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-13T10:15:22.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.06\u00b5s\",\"servTime\":\"10.45\u00b5s\"},\"privileges\":{\"List\":[{\"Target\":\"default:Aaaaa\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"3.456\u00b5s\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":20,\"execTime\":\"2.345ms\",\"kernTime\":\"2.1ms\",\"servTime\":\"1.8ms\"},\"index\":\"idx_Aaaa_aaaaaaaaaaaa\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"Aaaa123\\\"\",\"inclusion\":3,\"low\":\"\\\"Aaaa123\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"8.901ms\",\"kernTime\":\"8.2ms\",\"servTime\":\"7.8ms\"},\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"1.234ms\",\"kernTime\":\"1.1ms\"},\"result_terms\":[{\"expr\":\"(`u`.`Aaaa`)\"},{\"expr\":\"(`u`.`Aaaaa`)\"},{\"expr\":\"(`u`.`Aaaaaaa`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":6,\"execTime\":\"0.456ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-join-123",
+      "cpuTime": "345.123ms",
+      "elapsedTime": "3.100200s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$Aaaa": "AaaaaValue"
+      },
+      "phaseCounts": {
+        "indexScan": 10,
+        "fetch": 10,
+        "join": 10
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "join": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "10.000ms",
+        "indexScan": "5.000ms",
+        "fetch": "1.500s",
+        "join": "1.000s",
+        "project": "50.000ms",
+        "run": "2.900s",
+        "stream": "100.000ms"
+      },
+      "remoteAddr": "127.0.0.1:50000",
+      "requestId": "Aaaa-join-123",
+      "requestTime": "2025-08-15T00:05:00.000Z",
+      "resultCount": 10,
+      "resultSize": 5000,
+      "scanConsistency": "request_plus",
+      "serviceTime": "3.000000s",
+      "state": "completed",
+      "statement": "SELECT b1.Aaaa, b2.Aaaaa FROM `Aaaaa` b1 JOIN `Aaaaaa` b2 ON KEYS b1.Aaa WHERE b1.Aaa = $Aaaa",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 2048,
+      "userAgent": "java-client/3.4.0",
+      "users": "local:Aaaaa_User",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-13T10:20:00.000Z\",\"privileges\":{\"List\":[{\"Target\":\"default:Aaaaa\",\"Priv\":7},{\"Target\":\"default:Aaaaaa\",\"Priv\":7}]},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"index\":\"idx_Aaaa_join\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"Join\",\"keyspace\":\"Aaaaaa\",\"namespace\":\"default\",\"on_keys\":\"(`b1`.`Aaa`)\"},{\"#operator\":\"InitialProject\",\"result_terms\":[{\"expr\":\"(`b1`.`Aaaa`)\"},{\"expr\":\"(`b2`.`Aaaaa`)\"}]},{\"#operator\":\"Stream\"}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-like-456",
+      "cpuTime": "123.456ms",
+      "elapsedTime": "1.500s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "primaryScan": 100,
+        "fetch": 100,
+        "filter": 100
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "primaryScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "5.000ms",
+        "primaryScan": "800.000ms",
+        "fetch": "500.000ms",
+        "filter": "100.000ms",
+        "run": "1.400s",
+        "stream": "50.000ms"
+      },
+      "remoteAddr": "127.0.0.1:50001",
+      "requestId": "Aaaa-like-456",
+      "requestTime": "2025-08-15T00:10:00.000Z",
+      "resultCount": 20,
+      "resultSize": 2000,
+      "scanConsistency": "not_bounded",
+      "serviceTime": "1.450s",
+      "state": "completed",
+      "statement": "SELECT * FROM `Aaaaa` WHERE Aaaa LIKE 'Aa%'",
+      "statementType": "SELECT",
+      "useCBO": false,
+      "usedMemory": 1024,
+      "userAgent": "python-sdk/4.0.0",
+      "users": "local:Aaa_Reader",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"privileges\":{\"List\":[{\"Target\":\"default:Aaaaa\",\"Priv\":7}]},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"PrimaryScan3\",\"index\":\"#primary\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"condition\":\"((`Aaaaa`.`Aaaa`) like 'Aa%')\"},{\"#operator\":\"InitialProject\",\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Stream\"}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-update-789",
+      "cpuTime": "50.000ms",
+      "elapsedTime": "0.500s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$Aaaa": "OldValue"
+      },
+      "phaseCounts": {
+        "indexScan": 1,
+        "fetch": 1,
+        "update": 1
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "update": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "2.000ms",
+        "indexScan": "10.000ms",
+        "fetch": "20.000ms",
+        "update": "400.000ms",
+        "run": "0.450s",
+        "stream": "10.000ms"
+      },
+      "remoteAddr": "127.0.0.1:50002",
+      "requestId": "Aaaa-update-789",
+      "requestTime": "2025-08-15T00:15:00.000Z",
+      "resultCount": 1,
+      "resultSize": 100,
+      "scanConsistency": "statement_plus",
+      "serviceTime": "0.490s",
+      "state": "completed",
+      "statement": "UPDATE `Aaaaa` SET Aaaa = 'Aaaaa' WHERE Aaa = $Aaaa",
+      "statementType": "UPDATE",
+      "useCBO": true,
+      "usedMemory": 512,
+      "userAgent": "go-agent/2.5.0",
+      "users": "local:Aaa_Writer",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"privileges\":{\"List\":[{\"Target\":\"default:Aaaaa\",\"Priv\":7}]},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"index\":\"idx_Aaaa_update\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"SendUpdate\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"Stream\"}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-delete-012",
+      "cpuTime": "40.000ms",
+      "elapsedTime": "0.400s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$Aaaa": "DeleteMe"
+      },
+      "phaseCounts": {
+        "indexScan": 1,
+        "fetch": 1,
+        "delete": 1
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "delete": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "2.000ms",
+        "indexScan": "10.000ms",
+        "fetch": "20.000ms",
+        "delete": "300.000ms",
+        "run": "0.350s",
+        "stream": "10.000ms"
+      },
+      "remoteAddr": "127.0.0.1:50003",
+      "requestId": "Aaaa-delete-012",
+      "requestTime": "2025-08-15T00:20:00.000Z",
+      "resultCount": 1,
+      "resultSize": 50,
+      "scanConsistency": "statement_plus",
+      "serviceTime": "0.390s",
+      "state": "completed",
+      "statement": "DELETE FROM `Aaaaa` WHERE Aaa = $Aaaa",
+      "statementType": "DELETE",
+      "useCBO": true,
+      "usedMemory": 512,
+      "userAgent": "go-agent/2.5.0",
+      "users": "local:Aaa_Admin",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"privileges\":{\"List\":[{\"Target\":\"default:Aaaaa\",\"Priv\":7}]},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"index\":\"idx_Aaaa_delete\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"SendDelete\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"Stream\"}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-agg-345",
+      "cpuTime": "600.000ms",
+      "elapsedTime": "5.500s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 5000,
+        "fetch": 5000,
+        "group": 50
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "group": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "20.000ms",
+        "indexScan": "1.000s",
+        "fetch": "3.000s",
+        "group": "1.000s",
+        "project": "100.000ms",
+        "run": "5.400s",
+        "stream": "500.000ms"
+      },
+      "remoteAddr": "127.0.0.1:50004",
+      "requestId": "Aaaa-agg-345",
+      "requestTime": "2025-08-15T00:25:00.000Z",
+      "resultCount": 50,
+      "resultSize": 1500,
+      "scanConsistency": "request_plus",
+      "serviceTime": "5.450s",
+      "state": "completed",
+      "statement": "SELECT count(*) as Aaaa, Aaaaa FROM `Aaaaa` GROUP BY Aaaaa",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 4096,
+      "userAgent": "node-analytics/1.0.0",
+      "users": "local:Aaa_Analyst",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"privileges\":{\"List\":[{\"Target\":\"default:Aaaaa\",\"Priv\":7}]},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"index\":\"idx_Aaaa_agg\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"InitialGroup\",\"aggregates\":[\"count(*)\"],\"group_keys\":[\"(`Aaaaa`.`Aaaaa`)\"]},{\"#operator\":\"InitialProject\",\"result_terms\":[{\"expr\":\"count(*)\"},{\"expr\":\"(`Aaaaa`.`Aaaaa`)\"}]},{\"#operator\":\"Stream\"}]}}"
+  }
+]

@@ -561,8 +561,18 @@ class DataObfuscator:
                 elif re.match(r'^\d+\.?\d*$', part):
                     obfuscated_parts.append(part)
                 # Preserve parameters
-                elif part.startswith('$') or part.startswith('?'):
+                elif part.startswith('?'):
                     obfuscated_parts.append(part)
+                # Obfuscate named parameters (e.g., $userId -> $a1b2c3)
+                elif part.startswith('$'):
+                    # Handle $param
+                    param_name = part[1:]
+                    # If it's just $, keep it
+                    if not param_name:
+                        obfuscated_parts.append(part)
+                    else:
+                        # Obfuscate the parameter name
+                        obfuscated_parts.append(f'${self._generate_token(param_name)}')
                 # Obfuscate quoted strings
                 elif part.startswith('"') or part.startswith("'") or part.startswith('`'):
                     quote_char = part[0]
@@ -754,9 +764,18 @@ class AIPayloadBuilder:
                         # Obfuscate identifier fields
                         elif key in ['name', 'indexName', 'indexKey', 'bucket_id', 'scope_id', 
                                    'keyspace_id', 'bucketName', 'scopeName', 'collectionName', 
-                                   'bucketScopeCollection', 'bucket', 'scope', 'collection']:
+                                   'bucketScopeCollection', 'bucket', 'scope', 'collection',
+                                   'clientContextID', 'requestId']:
                             if isinstance(value, str) and value and not value.startswith('_'):
                                 obj[key] = obfuscator._generate_token(value)
+                        # Obfuscate namedArgs (keys and values)
+                        elif key == 'namedArgs' and isinstance(value, dict):
+                            new_args = {}
+                            for arg_key, arg_val in value.items():
+                                new_arg_key = obfuscator._generate_token(arg_key)
+                                new_arg_val = obfuscator.obfuscate_value(arg_val)
+                                new_args[new_arg_key] = new_arg_val
+                            obj[key] = new_args
                         # Obfuscate user_query_counts keys (usernames)
                         elif key == 'user_query_counts':
                             if isinstance(value, dict):
