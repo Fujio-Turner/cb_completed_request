@@ -25626,7 +25626,14 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 use_toon: document.getElementById('ai-send-toon')?.checked || false
             };
             
-            const prompt = document.getElementById('ai-user-prompt')?.value || "Analyze query performance";
+            let prompt = document.getElementById('ai-user-prompt')?.value || "Analyze query performance";
+            
+            // Append language instruction if not English
+            const languageSelect = document.getElementById('ai-language');
+            if (languageSelect && languageSelect.value !== 'EN') {
+                const languageName = languageSelect.options[languageSelect.selectedIndex].text;
+                prompt += `\n\nPlease respond in ${languageName}.`;
+            }
             
             Logger.debug('[AI] 📤 Sending data to Flask for processing...');
             Logger.trace(`[AI] Selections: ${JSON.stringify(selections)}`);
@@ -25945,7 +25952,14 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 return;
             }
 
-            const prompt = document.getElementById('ai-user-prompt')?.value || "Analyze query performance";
+            let prompt = document.getElementById('ai-user-prompt')?.value || "Analyze query performance";
+            
+            // Append language instruction if not English
+            const languageSelect = document.getElementById('ai-language');
+            if (languageSelect && languageSelect.value !== 'EN') {
+                const languageName = languageSelect.options[languageSelect.selectedIndex].text;
+                prompt += `\n\nPlease respond in ${languageName}.`;
+            }
             
             Logger.debug(`[AI] Provider: ${provider}, Store: ${options.store_results}`);
             
@@ -26160,6 +26174,24 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                                         setTimeout(poll, pollInterval);
                                     }
                                 } catch (e) {
+                                    // Handle HTTP 429 specifically (Request too large / Rate limit)
+                                    if (e.message.includes('429') && (e.message.includes('Request too large') || e.message.includes('rate_limit_exceeded'))) {
+                                        updateProgress(2, true);
+                                        showToast('❌ AI Request Limit Exceeded: The data payload is too large for your AI tier (30k TPM). Please select "Top 3" or "Top 10" query groups, or exclude sections like Timeline/Insights.', 'error');
+                                        Logger.error('[AI] ❌ 429 Rate Limit / Request Too Large:', e.message);
+                                        
+                                        // Restore button
+                                        const btn = document.getElementById('ai-analyze-btn');
+                                        if (btn) {
+                                            btn.disabled = false;
+                                            btn.innerHTML = originalBtnContent;
+                                            btn.onclick = () => analyzeWithAI();
+                                            btn.style.backgroundColor = ''; 
+                                            btn.style.borderColor = '';
+                                        }
+                                        return; // Stop polling
+                                    }
+
                                     if (e.message.includes('timed out') || e.message.includes('failed')) throw e;
                                     Logger.warn('[AI] Polling error (retrying):', e);
                                     setTimeout(poll, pollInterval);
@@ -26759,7 +26791,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     analysisData = message.content_parsed;
                 } else {
                     try {
-                        const content = message.content || '';
+                        let content = message.content || '';
+                        // Clean markdown code blocks if present
+                        content = content.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
                         analysisData = JSON.parse(content);
                     } catch (e) {
                         responseDiv.innerHTML = `<div style="color: #dc3545;">Error parsing AI response</div><pre>${message.content}</pre>`;
