@@ -378,15 +378,14 @@ async function saveCurrentPreferences() {
         connected: new Date().toISOString()  // ISO-8601 timestamp
     };
     
-    // Save cluster configuration
+    // Save cluster configuration (excluding sensitive credentials)
     const cluster = getCurrentCluster();
     if (cluster) {
-        preferences.cluster = {
+        preferences.clusterInfo = {
             name: cluster.name,
             url: cluster.url,
-            username: cluster.username,
-            password: cluster.password,  // TODO: Consider encryption
-            type: cluster.type
+            type: cluster.type,
+            note: "Credentials managed locally via config.json"
         };
     }
     
@@ -469,15 +468,12 @@ async function loadUserPreferences() {
             return;
         }
         
-        // Restore cluster configuration
-        if (preferences.cluster) {
-        Logger.info('Restoring cluster config from user_config');
-        const config = await loadConfig();
-        config.cluster = preferences.cluster;
-        await saveConfig(config);
-
-        // Update connection status to show cluster name
-        updateConnectionStatus('connected', preferences.cluster.name);
+        // Restore cluster connection info only (not credentials)
+        if (preferences.clusterInfo) {
+            Logger.info('Cluster info from user_config:', preferences.clusterInfo);
+            // We do NOT overwrite the local config credentials here
+            // Just update the UI connection status
+            updateConnectionStatus('connected', preferences.clusterInfo.name);
         }
         
         // Apply timezone if available

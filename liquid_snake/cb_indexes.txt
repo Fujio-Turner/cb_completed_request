@@ -1,1 +1,3 @@
 CREATE INDEX `analysis_old_table_v1` ON `cb_tools`.`query`.`analyzer`(`createdAt` DESC INCLUDE MISSING,`metadata`,`status`,`prompt`,`provider`,`sourceCluster`) WHERE (`docType` = "ai_analysis")
+
+CREATE INDEX `analysis_old_table_v2` ON `cb_tools`.`query`.`analyzer`(`createdAt` DESC INCLUDE MISSING,`metadata`,`status`,`prompt`,`provider`,`sourceCluster`,`parseJson`.`filters`) WHERE (`docType` = "ai_analysis")

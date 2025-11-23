@@ -893,6 +893,8 @@ def analyze_with_ai():
                     'provider': provider,
                     'model': model,
                     'prompt': prompt,
+                    'language': language,
+                    'options': options,
                     'sourceCluster': raw_data.get('clusterName', 'Unknown Cluster'),
                     'payload': ai_payload_data, # Always store JSON structure for readability/compatibility
                     'parseJson': request_data.get('parseContext', {}),
@@ -1186,6 +1188,7 @@ def get_ai_analysis_history():
                    `prompt`,
                    `sourceCluster`,
                    `metadata`,
+                   `parseJson`.`filters`,
                    META().id as documentId
             FROM `{bucket}`.`{scope}`.`{collection}`
             WHERE docType = "ai_analysis"
@@ -1252,7 +1255,7 @@ def get_ai_clusters():
               AND sourceCluster != ""
               AND SEARCH(sourceCluster, $term)
             GROUP BY sourceCluster
-            ORDER BY MAX(createdAt) DESC
+            ORDER BY sourceCluster
             LIMIT 10
         '''
         

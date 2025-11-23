@@ -26436,16 +26436,33 @@ Layout: 1 chart = 100% width, 2 charts = 50%/50%, 3 charts = 33%/33%/33%.`;
                 const promptFull = record.prompt || 'N/A';
                 const promptShort = truncateText(promptFull, 60);
                 
+                // Format filters
+                const filters = record.filters || record.parseJson?.filters || {};
+                const dateRangeHtml = `From: ${filters.date_range?.from || 'N/A'}<br>To:&nbsp;&nbsp; ${filters.date_range?.to || 'N/A'}`;
+                
+                const filtersHtml = `
+                    <div style="font-size: 11px; line-height: 1.3; min-width: 180px; text-align: center;">
+                        <div style="font-family: monospace; color: #666; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 2px;">
+                            ${filters.date_range?.from || 'N/A'} ➔ ${filters.date_range?.to || 'N/A'}
+                        </div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                            <div title="${filters.sql_statement || 'None'}">SQL: <span style="font-family: monospace; font-weight: 600;">${truncateText(filters.sql_statement || 'None', 15)}</span></div>
+                            <div>Time: <span style="font-family: monospace; font-weight: 600;">${filters.elapsed_time || 'None'}</span></div>
+                        </div>
+                        <div style="margin-top: 2px;">Coll: <span style="font-family: monospace; font-weight: 600;">${filters.collection || 'All'}</span></div>
+                    </div>
+                `;
+                
                 row.innerHTML = `
                     <td style="padding: 10px; border: 1px solid #dee2e6;" title="${exactTime}">${relativeTime}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: 500;">${sourceCluster}</td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6;" title="${promptFull}">${promptShort}</td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">${filtersHtml}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">${obfuscatedBadge}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6;">${providerBadge}</td>
-                    <td style="padding: 10px; border: 1px solid #dee2e6;" title="${promptFull}">${promptShort}</td>
-                    <td style="padding: 10px; border: 1px solid #dee2e6;">${dataIncluded}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6;">${statusBadge}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">
-                        <button class="btn-standard" style="font-size: 11px; padding: 4px 8px;" onclick="viewAnalysis('${record.documentId}')">View</button>
+                        ${record.status === 'completed' ? `<button class="btn-standard" style="font-size: 11px; padding: 4px 8px;" onclick="viewAnalysis('${record.documentId}')">View</button>` : ''}
                         <button class="btn-standard" style="font-size: 11px; padding: 4px 8px; margin-left: 4px; background-color: #dc3545; color: white; display: inline-flex; align-items: center; vertical-align: middle;" onclick="deleteAnalysis('${record.documentId}', this)" title="Delete Analysis">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -26518,6 +26535,7 @@ Layout: 1 chart = 100% width, 2 charts = 50%/50%, 3 charts = 33%/33%/33%.`;
             const badges = {
                 'openai': '<span style="background: #10a37f; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">OpenAI</span>',
                 'anthropic': '<span style="background: #d97706; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Anthropic</span>',
+                'claude': '<span style="background: #d97706; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Claude</span>',
                 'grok': '<span style="background: #000000; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Grok</span>'
             };
             return badges[provider] || `<span>${provider}</span>`;
