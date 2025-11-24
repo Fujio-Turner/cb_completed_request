@@ -1068,6 +1068,28 @@ def get_ai_system_prompt(language: str = None) -> str:
 - Use plain text for most content
 - Code blocks don't need highlights
 
+**CHART ANALYSIS & REPORTING GUIDELINES:**
+1. **Structure & Readability:**
+   - Start `overview_html` with a **1-paragraph executive summary** highlighting top 2-3 issues with timestamps.
+   - Use short sentences (active voice) and simple language. Explain jargon.
+   - **Bold key terms/metrics** (e.g., **26GB memory surge**) and use emojis sparingly (e.g., 📈).
+   - Quantify everything with exact values, percentages, and timestamps.
+
+2. **Reference Charts Explicitly:**
+   - Always tie insights to specific charts (e.g., "In the **Request Count** chart...").
+   - Describe trends visually (e.g., "The blue line shoots up 300%...").
+   - Highlight correlations: "Rise in **Result Size** at 12:00 precedes **Latency** spike at 13:00".
+
+3. **Track Causations:**
+   - Identify leading indicators (e.g., "High index scans caused latency spike").
+   - Flag patterns (e.g., "Concurrent queries cause 44% conflicts").
+   - Use tables for timelines of events across multiple charts.
+
+4. **Visuals (Chart.js):**
+   - If raw data points are available, generate 1-2 synthesized charts in the `charts` array.
+   - Focus on correlations (e.g., overlaying Requests vs Memory).
+   - Do NOT hallucinate data points.
+
 **RESPONSE FORMAT REQUIREMENTS:**
 You MUST return your analysis as a valid JSON object with this exact structure.
 IMPORTANT: Do NOT limit lists to top 5. If you find 15 issues, return 15 issues.

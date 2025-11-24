@@ -505,6 +505,9 @@ def preview_ai_payload():
             extra_instructions=extra_instructions
         )
         
+        # Get System Prompt for visibility
+        system_prompt = ai_analyzer.get_ai_system_prompt(request_data.get('language', 'English'))
+        
         # Extract mapping table if obfuscated (don't send to AI, but return to client)
         obfuscation_mapping = payload.pop('_obfuscation_mapping', None)
         
@@ -559,6 +562,7 @@ def preview_ai_payload():
             'success': True,
             'payload': payload,
             'payload_text': payload_str,  # Renamed from payload_json to be generic
+            'system_prompt': system_prompt, # Include system prompt for visibility
             'format': output_format,
             'size_bytes': size_bytes,
             'size_kb': round(size_bytes / 1024, 2)

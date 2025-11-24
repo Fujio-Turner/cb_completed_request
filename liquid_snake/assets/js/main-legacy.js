@@ -25640,20 +25640,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 selectedLanguage = languageName;
             }
 
-            // Append Chart instruction
-            extra_instructions += `\n\nCHART INSTRUCTIONS:
-When explaining a point, idea, finding or topic, you can generate up to 3 charts (A, B, C) to visualize your analysis.
-If you choose to generate charts, include a "charts" array in your JSON response.
-Each chart object should have:
-- "id": "A", "B", or "C"
-- "type": "pie", "line", or "bar"
-- "title": Chart title
-- "data": Chart.js compatible data object (labels, datasets)
-- "options": Chart.js compatible options object (optional)
-- "description": Brief explanation of what the chart shows
-
-Charts will be rendered in a dedicated "Charts" section. 
-Layout: 1 chart = 100% width, 2 charts = 50%/50%, 3 charts = 33%/33%/33%.`;
+            // Append Chart instruction - REMOVED (Now in System Prompt)
             
             Logger.debug('[AI] 📤 Sending data to Flask for processing...');
             Logger.trace(`[AI] Selections: ${JSON.stringify(selections)}`);
@@ -25707,9 +25694,17 @@ Layout: 1 chart = 100% width, 2 charts = 50%/50%, 3 charts = 33%/33%/33%.`;
                 }
                 
                 // Display formatted content from server (json or toon)
-                // Check payload_text (new) first, then payload_json (old), then raw payload fallback
-                const contentString = result.payload_text || result.payload_json || JSON.stringify(result.payload, null, 2);
-                previewJson.textContent = contentString;
+                if (format === 'json' && result.system_prompt) {
+                    // Create new object with system prompt at the top for visibility
+                    const previewObj = {
+                        _system_prompt_config: result.system_prompt,
+                        ...result.payload
+                    };
+                    previewJson.textContent = JSON.stringify(previewObj, null, 2);
+                } else {
+                    // Fallback for TOON or missing system prompt
+                    previewJson.textContent = result.payload_text || result.payload_json || JSON.stringify(result.payload, null, 2);
+                }
                 
                 // Update size display
                 const sizeKB = result.size_kb || ((result.size_bytes || 0) / 1024).toFixed(2);
@@ -25988,20 +25983,7 @@ Layout: 1 chart = 100% width, 2 charts = 50%/50%, 3 charts = 33%/33%/33%.`;
                 selectedLanguage = languageName;
             }
 
-            // Append Chart instruction
-            extra_instructions += `\n\nCHART INSTRUCTIONS:
-When explaining a point, idea, finding or topic, you can generate up to 3 charts (A, B, C) to visualize your analysis.
-If you choose to generate charts, include a "charts" array in your JSON response.
-Each chart object should have:
-- "id": "A", "B", or "C"
-- "type": "pie", "line", or "bar"
-- "title": Chart title
-- "data": Chart.js compatible data object (labels, datasets)
-- "options": Chart.js compatible options object (optional)
-- "description": Brief explanation of what the chart shows
-
-Charts will be rendered in a dedicated "Charts" section. 
-Layout: 1 chart = 100% width, 2 charts = 50%/50%, 3 charts = 33%/33%/33%.`;
+            // Append Chart instruction - REMOVED (Now in System Prompt)
             
             Logger.debug(`[AI] Provider: ${provider}, Store: ${options.store_results}`);
             
@@ -26880,10 +26862,22 @@ Layout: 1 chart = 100% width, 2 charts = 50%/50%, 3 charts = 33%/33%/33%.`;
                 } else {
                     try {
                         let content = message.content || '';
-                        // Clean markdown code blocks if present
-                        content = content.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
-                        // Remove leading "Error parsing AI response" if present (from retries)
-                        content = content.replace(/^Error parsing AI response\s*/, '');
+                        
+                        // Robust JSON extraction: Find first '{' and last '}'
+                        const jsonStart = content.indexOf('{');
+                        const jsonEnd = content.lastIndexOf('}');
+                        
+                        if (jsonStart !== -1 && jsonEnd !== -1) {
+                            // Extract just the JSON part, ignoring preamble/postscript/markdown
+                            content = content.substring(jsonStart, jsonEnd + 1);
+                        }
+                        
+                        // Attempt to sanitize literal newlines in strings (common AI JSON error)
+                        // This is a simple heuristic: replace newlines that aren't preceded by escape
+                        // Note: A full parser is better, but this helps with simple cases
+                        // content = content.replace(/(?<!\\)\n/g, '\\n'); 
+                        // Commented out as it might break formatting, sticking to extraction first
+                        
                         analysisData = JSON.parse(content);
                     } catch (e) {
                         responseDiv.innerHTML = `<div style="color: #dc3545;">Error parsing AI response</div><pre>${message.content}</pre>`;
