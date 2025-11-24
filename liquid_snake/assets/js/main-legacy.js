@@ -26553,6 +26553,12 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         
         // Load history when AI Analyzer or Reports/History tab is opened
         document.addEventListener('DOMContentLoaded', function() {
+            // FIX: Check if config is already loaded (race condition fix)
+            if (window.clusterConfig) {
+                populateAIProviderDropdown();
+                loadAIAnalysisHistory();
+            }
+
             // Listen for config load to populate dropdown if it failed initially (race condition)
             window.addEventListener('clusterConfigLoaded', function() {
                 populateAIProviderDropdown();

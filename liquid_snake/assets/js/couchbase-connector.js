@@ -38,6 +38,13 @@ export async function loadConfig() {
     } catch (error) {
         Logger.error('Error loading config.json:', error);
         clusterConfig = getDefaultConfig();
+        
+        // Expose to window for non-module scripts (fallback)
+        window.clusterConfig = clusterConfig;
+        
+        // Dispatch event to notify listeners (fallback)
+        window.dispatchEvent(new CustomEvent('clusterConfigLoaded', { detail: clusterConfig }));
+        
         return clusterConfig;
     }
 }
