@@ -685,6 +685,29 @@ class AIPayloadBuilder:
                     'EXCEPTION: Primary indexes cannot be versioned (do not append _v1 to #primary or equivalent).',
                     'For replica changes, prefer ALTER INDEX syntax: ALTER INDEX index_name ON bucket WITH {"action": "replica_count", "num_replica": 1}.',
                     'Always use strict JSON object syntax for WITH clauses (e.g. WITH {"num_replica": 1}).'
+                ],
+                'couchbase_index_creation': [
+                    {
+                        'type': 'GSI',
+                        'description': 'Global Secondary Index - standard B-tree index for equality, range, and ORDER BY queries',
+                        'docs_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createindex.html'
+                    },
+                    {
+                        'type': 'GSI_array',
+                        'description': 'Array index using DISTINCT ARRAY or ALL ARRAY for querying array fields',
+                        'docs_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/indexing-arrays.html'
+                    },
+                    {
+                        'type': 'FTS/Search',
+                        'description': 'Full-Text Search index for text search, fuzzy matching, and geo queries',
+                        'docs_url': 'https://docs.couchbase.com/server/current/search/search-index-params.html',
+                        'using_search_in_n1ql_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/searchfun.html'
+                    },
+                    {
+                        'type': 'Vector',
+                        'description': 'Vector index for similarity search on embeddings (AI/ML use cases)',
+                        'docs_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createvectorindex.html'
+                    }
                 ]
             },
             'data': {},
@@ -1212,7 +1235,8 @@ If the user provided a specific request or question in their prompt, you MUST an
 - **CRITICAL**: All suggested index names MUST end with '_v1', '_v2', etc. (e.g. 'idx_users_v1').
 - **CRITICAL**: EXCEPTION: Primary indexes MUST NOT be versioned.
 - **CRITICAL**: Use ALTER INDEX with strict JSON syntax for replica changes: WITH {"action":"replica_count", "num_replica": 1}.
-- **CRITICAL**: If the user asks for charts or if a chart would help explain a point, include the "charts" array with valid Chart.js data structures. Use simple 'bar', 'pie', or 'line' types. Do not hallucinate data; use the provided metrics."""
+- **CRITICAL**: If the user asks for charts or if a chart would help explain a point, include the "charts" array with valid Chart.js data structures. Use simple 'bar', 'pie', or 'line' types. Do not hallucinate data; use the provided metrics.
+- **CRITICAL**: When suggesting indexes, refer to the `couchbase_index_creation` array in the payload context for proper syntax. Use GSI for standard queries, GSI_array (DISTINCT ARRAY) for array fields, FTS/Search for text search, and Vector for embeddings. Always include the docs_url in your recommendation for user reference."""
 
     if language and language.lower() != 'english':
         prompt += f"\n\n**CRITICAL OUTPUT LANGUAGE REQUIREMENT**:\nYou MUST provide your analysis, explanations, and recommendations in {language}. The JSON keys must remain in English, but all string values (overview_html, descriptions, titles, etc.) must be in {language}."

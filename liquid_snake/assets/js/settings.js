@@ -444,6 +444,12 @@ async function saveCurrentPreferences() {
         if (preferences.cluster) {
             updateConnectionStatus('connected', preferences.cluster.name);
         }
+        
+        // Refresh AI provider dropdown in AI Analyzer tab
+        if (typeof window.populateAIProviderDropdown === 'function') {
+            Logger.info('Refreshing AI provider dropdown after settings save');
+            window.populateAIProviderDropdown();
+        }
     } else {
         Logger.error('Failed to save preferences:', result.error);
         showToast(`Failed to save: ${result.error}`, 'error');
