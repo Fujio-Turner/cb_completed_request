@@ -624,12 +624,25 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
             # Parse JSON content from AI response if it's a string
             try:
                 if 'choices' in analysis_data and len(analysis_data['choices']) > 0:
+                    # OpenAI/Grok format
                     content = analysis_data['choices'][0].get('message', {}).get('content', '')
                     if isinstance(content, str) and content.strip().startswith('{'):
                         # Parse JSON string to object
                         parsed_content = json.loads(content)
                         analysis_data['choices'][0]['message']['content_parsed'] = parsed_content
-                        ic("✅ Parsed AI response JSON content to object")
+                        ic("✅ Parsed OpenAI/Grok AI response JSON content to object")
+                elif 'content' in analysis_data and isinstance(analysis_data['content'], list):
+                    # Anthropic/Claude format: content[0].text
+                    if len(analysis_data['content']) > 0 and 'text' in analysis_data['content'][0]:
+                        content = analysis_data['content'][0].get('text', '')
+                        # Extract JSON from potential markdown code blocks or preamble
+                        json_start = content.find('{')
+                        json_end = content.rfind('}')
+                        if json_start != -1 and json_end != -1:
+                            json_content = content[json_start:json_end + 1]
+                            parsed_content = json.loads(json_content)
+                            analysis_data['content_parsed'] = parsed_content
+                            ic("✅ Parsed Anthropic/Claude AI response JSON content to object")
             except Exception as e:
                 ic(f"⚠️ Could not parse AI content as JSON: {str(e)}")
             

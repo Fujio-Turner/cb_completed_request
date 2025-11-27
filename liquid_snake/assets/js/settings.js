@@ -27,17 +27,28 @@ const AI_PROVIDERS = [
         keyPlaceholder: 'sk-...', 
         defaultUrl: 'https://api.openai.com/v1',
         models: [
-            { id: 'gpt-4o', name: 'GPT-4o (Flagship)' },
-            { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Fast & Affordable)' },
-            { id: 'o1', name: 'O1 (Reasoning)' },
-            { id: 'o1-mini', name: 'O1 Mini (Reasoning)' },
-            { id: 'o1-pro', name: 'O1 Pro (Reasoning)' },
-            { id: 'o3-mini', name: 'O3 Mini (High Speed Reasoning)' },
-            { id: 'gpt-5', name: 'GPT-5 (Next Gen)' },
-            { id: 'gpt-4.1', name: 'GPT-4.1' },
-            { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
-            { id: 'gpt-4', name: 'GPT-4' },
-            { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' }
+            // GPT-5.x Series (Latest Frontier)
+            { id: 'gpt-5.1', name: 'GPT-5.1 (Best for Coding/Agents) - 1M ctx' },
+            { id: 'gpt-5', name: 'GPT-5 (Intelligent Reasoning) - 256K ctx' },
+            { id: 'gpt-5-mini', name: 'GPT-5 Mini (Fast) - 1M ctx' },
+            { id: 'gpt-5-nano', name: 'GPT-5 Nano (Fastest) - 1M ctx' },
+            { id: 'gpt-5-pro', name: 'GPT-5 Pro (Smarter Responses) - 256K ctx' },
+            // GPT-4.x Series
+            { id: 'gpt-4.1', name: 'GPT-4.1 (Smartest Non-Reasoning) - 1M ctx' },
+            { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini (Faster) - 1M ctx' },
+            { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano (Cost-Efficient) - 1M ctx' },
+            { id: 'gpt-4o', name: 'GPT-4o (Fast & Flexible) - 128K ctx' },
+            { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Affordable) - 128K ctx' },
+            { id: 'gpt-4-turbo', name: 'GPT-4 Turbo - 128K ctx' },
+            // O-Series (Reasoning)
+            { id: 'o4-mini', name: 'o4-mini (Fast Reasoning) - 200K ctx' },
+            { id: 'o3', name: 'o3 (Complex Tasks) - 200K ctx' },
+            { id: 'o3-mini', name: 'o3-mini (Small Reasoning) - 200K ctx' },
+            { id: 'o1', name: 'o1 (Full Reasoning) - 200K ctx' },
+            { id: 'o1-pro', name: 'o1-pro (More Compute) - 200K ctx' },
+            // Legacy
+            { id: 'gpt-4', name: 'GPT-4 (Legacy) - 8K ctx' },
+            { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo (Legacy) - 16K ctx' }
         ]
     },
     { 
@@ -47,11 +58,17 @@ const AI_PROVIDERS = [
         keyPlaceholder: 'sk-ant-...', 
         defaultUrl: 'https://api.anthropic.com',
         models: [
-            { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet (Latest)' },
-            { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku (Fast)' },
-            { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus (Most Capable)' },
-            { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet' },
-            { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku' }
+            // Claude 4.x Series (Latest)
+            { id: 'claude-opus-4', name: 'Claude Opus 4.5 (Most Capable) - 200K ctx, 30K TPM' },
+            { id: 'claude-sonnet-4', name: 'Claude Sonnet 4.5 (Balanced) - 200K ctx, 30K TPM' },
+            { id: 'claude-haiku-4', name: 'Claude Haiku 4.x (Fast) - 200K ctx, 50K TPM' },
+            // Claude 3.5 Series
+            { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet (Oct 2024) - 200K ctx, 30K TPM' },
+            { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku (Oct 2024) - 200K ctx, 50K TPM' },
+            // Claude 3 Series
+            { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus - 200K ctx, 30K TPM' },
+            { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet - 200K ctx, 30K TPM' },
+            { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku - 200K ctx, 50K TPM' }
         ]
     },
     { 
@@ -61,17 +78,20 @@ const AI_PROVIDERS = [
         keyPlaceholder: 'xai-...', 
         defaultUrl: 'https://api.x.ai/v1',
         models: [
-            { id: 'grok-4-fast', name: 'Grok 4 Fast (Latest, Cost-Effective)' },
-            { id: 'grok-4-1-fast-reasoning', name: 'Grok 4.1 Fast Reasoning (Latest)' },
-            { id: 'grok-4', name: 'Grok 4 (Most Capable)' },
-            { id: 'grok-3', name: 'Grok 3 (Advanced Reasoning)' },
-            { id: 'grok-3-mini', name: 'Grok 3 Mini (Fast)' },
-            { id: 'grok-2-latest', name: 'Grok 2 Latest' },
-            { id: 'grok-2-vision-latest', name: 'Grok 2 Vision (Multimodal)' },
-            { id: 'grok-2-1212', name: 'Grok 2 (Dec 2024)' },
-            { id: 'grok-2-vision-1212', name: 'Grok 2 Vision (Dec 2024)' },
-            { id: 'grok-beta', name: 'Grok Beta (Experimental)' },
-            { id: 'grok-vision-beta', name: 'Grok Vision Beta' }
+            // Grok 4.x Series (Latest - 2M context!)
+            { id: 'grok-4-1-fast-reasoning', name: 'Grok 4.1 Fast Reasoning - 2M ctx, 4M TPM' },
+            { id: 'grok-4-1-fast-non-reasoning', name: 'Grok 4.1 Fast Non-Reasoning - 2M ctx, 4M TPM' },
+            { id: 'grok-4-fast-reasoning', name: 'Grok 4 Fast Reasoning - 2M ctx, 4M TPM' },
+            { id: 'grok-4-fast-non-reasoning', name: 'Grok 4 Fast Non-Reasoning - 2M ctx, 4M TPM' },
+            { id: 'grok-4-0709', name: 'Grok 4 (July 2025) - 256K ctx, 2M TPM' },
+            // Grok 3 Series
+            { id: 'grok-3', name: 'Grok 3 (Advanced) - 131K ctx' },
+            { id: 'grok-3-mini', name: 'Grok 3 Mini (Fast) - 131K ctx' },
+            // Grok Code
+            { id: 'grok-code-fast-1', name: 'Grok Code Fast 1 - 256K ctx, 2M TPM' },
+            // Legacy
+            { id: 'grok-2-latest', name: 'Grok 2 Latest (Legacy)' },
+            { id: 'grok-2-vision-latest', name: 'Grok 2 Vision (Multimodal)' }
         ]
     }
 ];

@@ -25873,12 +25873,29 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         async function cancelAIAnalysis(docId) {
             Logger.info(`[AI] Cancelling analysis: ${docId}`);
             const btn = document.getElementById('ai-analyze-btn');
+            const originalBtnContent = '🤖 Analyze with AI';
+            
             if (btn) {
                 btn.innerHTML = 'Stopping...';
                 btn.disabled = true;
             }
             
             const cbConfig = window.clusterConfig || (typeof clusterConfig !== 'undefined' ? clusterConfig : null);
+            
+            const restoreButton = () => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtnContent;
+                    btn.onclick = () => analyzeWithAI();
+                    btn.style.backgroundColor = '';
+                    btn.style.borderColor = '';
+                }
+                // Hide progress bar
+                const progressBar = document.getElementById('ai-progress-bar');
+                if (progressBar) progressBar.style.display = 'none';
+                // Refresh history
+                loadAIAnalysisHistory();
+            };
             
             try {
                 const response = await fetch('/api/ai/cancel', {
@@ -25900,6 +25917,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             } catch (e) {
                 Logger.error('[AI] Error cancelling:', e);
                 showToast('Error cancelling request', 'error');
+            } finally {
+                // Always restore the button state
+                restoreButton();
             }
         }
         window.cancelAIAnalysis = cancelAIAnalysis;
@@ -26122,12 +26142,32 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             const pollInterval = 3000; // 3 seconds
                             let attempts = 0;
                             const maxAttempts = 200; // ~10 minutes timeout
+                            let consecutiveErrors = 0;
+                            const maxConsecutiveErrors = 5; // Stop after 5 consecutive errors
+                            
+                            // Helper to restore button to default state
+                            const restoreButtonToDefault = () => {
+                                const btn = document.getElementById('ai-analyze-btn');
+                                if (btn) {
+                                    btn.disabled = false;
+                                    btn.innerHTML = originalBtnContent;
+                                    btn.onclick = () => analyzeWithAI();
+                                    btn.style.backgroundColor = ''; 
+                                    btn.style.borderColor = '';
+                                }
+                                if (progressBar) {
+                                    setTimeout(() => { progressBar.style.display = 'none'; }, 3000);
+                                }
+                                loadAIAnalysisHistory();
+                            };
                             
                             const poll = async () => {
                                 attempts++;
                                 if (attempts > maxAttempts) {
                                     updateProgress(2, true); // Error on processing step
-                                    throw new Error('Analysis timed out after 10 minutes');
+                                    showToast('❌ Analysis timed out after 10 minutes', 'error');
+                                    restoreButtonToDefault();
+                                    return;
                                 }
                                 
                                 try {
@@ -26140,7 +26180,15 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                                         })
                                     });
                                     
+                                    // Check for HTTP errors
+                                    if (!statusRes.ok) {
+                                        throw new Error(`HTTP ${statusRes.status}: ${statusRes.statusText}`);
+                                    }
+                                    
                                     const statusData = await statusRes.json();
+                                    
+                                    // Reset consecutive errors on successful response
+                                    consecutiveErrors = 0;
                                     
                                     if (statusData.status === 'completed') {
                                         // Move to Step 3 (Received/Saved) -> Step 4 (Done)
@@ -26155,71 +26203,54 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                                             updateProgress(4);
                                             
                                             // Restore button
-                                            const btn = document.getElementById('ai-analyze-btn');
-                                            if (btn) {
-                                                btn.disabled = false;
-                                                btn.innerHTML = originalBtnContent;
-                                                btn.onclick = () => analyzeWithAI();
-                                                btn.style.backgroundColor = ''; 
-                                                btn.style.borderColor = '';
-                                            }
+                                            restoreButtonToDefault();
                                             
-                                            // Hide progress bar after delay
+                                            // Auto-open report 1s after progress bar hides
                                             setTimeout(() => {
-                                                if (progressBar) progressBar.style.display = 'none';
-                                                
-                                                // Auto-open report 1s after progress bar hides
-                                                setTimeout(() => {
-                                                    viewAnalysis(docId);
-                                                }, 1000);
-                                            }, 3000);
+                                                viewAnalysis(docId);
+                                            }, 4000);
                                         }, 1000);
                                         
                                         return;
                                     } else if (statusData.status === 'cancelled') {
                                         showToast('Analysis cancelled by user', 'info');
                                         Logger.info(`[AI] Analysis cancelled: ${docId}`);
-                                        
-                                        const btn = document.getElementById('ai-analyze-btn');
-                                        if (btn) {
-                                            btn.disabled = false;
-                                            btn.innerHTML = originalBtnContent;
-                                            btn.onclick = () => analyzeWithAI();
-                                            btn.style.backgroundColor = ''; 
-                                            btn.style.borderColor = '';
-                                        }
-                                        
-                                        loadAIAnalysisHistory();
-                                        if (progressBar) progressBar.style.display = 'none';
+                                        restoreButtonToDefault();
                                         return;
                                     } else if (statusData.status === 'failed') {
                                         updateProgress(2, true); // Error on processing step
-                                        throw new Error(statusData.error?.message || 'Analysis failed during processing');
+                                        const errorMsg = statusData.error?.message || statusData.error || 'Analysis failed during processing';
+                                        showToast(`❌ Analysis failed: ${errorMsg}`, 'error');
+                                        Logger.error(`[AI] ❌ Analysis failed: ${errorMsg}`);
+                                        restoreButtonToDefault();
+                                        return;
                                     } else {
-                                        // Still pending, poll again
+                                        // Still pending/processing, poll again
                                         setTimeout(poll, pollInterval);
                                     }
                                 } catch (e) {
+                                    consecutiveErrors++;
+                                    Logger.warn(`[AI] Polling error (${consecutiveErrors}/${maxConsecutiveErrors}):`, e.message);
+                                    
                                     // Handle HTTP 429 specifically (Request too large / Rate limit)
                                     if (e.message.includes('429') && (e.message.includes('Request too large') || e.message.includes('rate_limit_exceeded'))) {
                                         updateProgress(2, true);
                                         showToast('❌ AI Request Limit Exceeded: The data payload is too large for your AI tier (30k TPM). Please select "Top 3" or "Top 10" query groups, or exclude sections like Timeline/Insights.', 'error');
                                         Logger.error('[AI] ❌ 429 Rate Limit / Request Too Large:', e.message);
-                                        
-                                        // Restore button
-                                        const btn = document.getElementById('ai-analyze-btn');
-                                        if (btn) {
-                                            btn.disabled = false;
-                                            btn.innerHTML = originalBtnContent;
-                                            btn.onclick = () => analyzeWithAI();
-                                            btn.style.backgroundColor = ''; 
-                                            btn.style.borderColor = '';
-                                        }
-                                        return; // Stop polling
+                                        restoreButtonToDefault();
+                                        return;
                                     }
 
-                                    if (e.message.includes('timed out') || e.message.includes('failed')) throw e;
-                                    Logger.warn('[AI] Polling error (retrying):', e);
+                                    // Check if we've hit too many consecutive errors
+                                    if (consecutiveErrors >= maxConsecutiveErrors) {
+                                        updateProgress(2, true);
+                                        showToast(`❌ Analysis failed: Too many errors (${e.message})`, 'error');
+                                        Logger.error('[AI] ❌ Max consecutive errors reached:', e.message);
+                                        restoreButtonToDefault();
+                                        return;
+                                    }
+                                    
+                                    // Retry after a delay
                                     setTimeout(poll, pollInterval);
                                 }
                             };
@@ -26528,10 +26559,14 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 return '<span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">✓ Complete</span>';
             } else if (status === 'failed') {
                 return '<span style="background: #dc3545; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">✗ Failed</span>';
+            } else if (status === 'cancelled') {
+                return '<span style="background: #6c757d; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">⊘ Cancelled</span>';
+            } else if (status === 'processing') {
+                return '<span style="background: #17a2b8; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">⚙ Processing</span>';
             } else if (status === 'pending' || status === 'submitted') {
                 return '<span style="background: #ffc107; color: #212529; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">⏳ Pending</span>';
             }
-            return '<span>Unknown</span>';
+            return `<span style="background: #6c757d; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">${status || 'Unknown'}</span>`;
         }
         
         function formatDataIncluded(selections) {
@@ -26887,6 +26922,29 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         analysisData = JSON.parse(content);
                     } catch (e) {
                         responseDiv.innerHTML = `<div style="color: #dc3545;">Error parsing AI response</div><pre>${message.content}</pre>`;
+                        overlay.style.display = 'block';
+                        return;
+                    }
+                }
+            } else if (typeof aiResponse === 'object' && aiResponse.content && Array.isArray(aiResponse.content)) {
+                // Anthropic/Claude format - try content_parsed first (set by backend)
+                if (aiResponse.content_parsed) {
+                    analysisData = aiResponse.content_parsed;
+                } else {
+                    try {
+                        let content = aiResponse.content[0]?.text || '';
+                        
+                        // Robust JSON extraction: Find first '{' and last '}'
+                        const jsonStart = content.indexOf('{');
+                        const jsonEnd = content.lastIndexOf('}');
+                        
+                        if (jsonStart !== -1 && jsonEnd !== -1) {
+                            content = content.substring(jsonStart, jsonEnd + 1);
+                        }
+                        
+                        analysisData = JSON.parse(content);
+                    } catch (e) {
+                        responseDiv.innerHTML = `<div style="color: #dc3545;">Error parsing Claude AI response</div><pre>${aiResponse.content[0]?.text || 'No text content'}</pre>`;
                         overlay.style.display = 'block';
                         return;
                     }

@@ -1331,6 +1331,107 @@ if __name__ == "__main__":
     ic(f"Obfuscated: {obfuscated_query}")
 
 # ============================================================================
+# Model Token Limits Configuration
+# ============================================================================
+
+def get_max_output_tokens(provider: str, model: str) -> int:
+    """
+    Get the maximum output tokens for a given provider and model.
+    
+    Args:
+        provider: AI provider name ('openai', 'anthropic', 'claude', 'grok')
+        model: Model ID string
+        
+    Returns:
+        Maximum output tokens allowed for the model
+    """
+    # OpenAI models
+    OPENAI_LIMITS = {
+        # GPT-5.x series
+        'gpt-5.1': 32768,
+        'gpt-5': 32768,
+        'gpt-5-mini': 16384,
+        'gpt-5-nano': 16384,
+        'gpt-5-pro': 32768,
+        # GPT-4.x series
+        'gpt-4.1': 32768,
+        'gpt-4.1-mini': 16384,
+        'gpt-4.1-nano': 16384,
+        'gpt-4o': 16384,
+        'gpt-4o-mini': 16384,
+        'gpt-4-turbo': 4096,
+        'gpt-4': 8192,
+        # O-series (reasoning models - higher output)
+        'o4-mini': 65536,
+        'o3': 100000,
+        'o3-mini': 65536,
+        'o1': 32768,
+        'o1-pro': 32768,
+        'o1-mini': 16384,
+        # Legacy
+        'gpt-3.5-turbo': 4096,
+    }
+    
+    # Anthropic Claude models
+    CLAUDE_LIMITS = {
+        # Claude 4.x series
+        'claude-opus-4': 8192,
+        'claude-sonnet-4': 8192,
+        'claude-haiku-4': 8192,
+        # Claude 3.5 series
+        'claude-3-5-sonnet-20241022': 8192,
+        'claude-3-5-haiku-20241022': 8192,
+        # Claude 3 series
+        'claude-3-opus-20240229': 4096,
+        'claude-3-sonnet-20240229': 4096,
+        'claude-3-haiku-20240307': 4096,
+    }
+    
+    # xAI Grok models
+    GROK_LIMITS = {
+        # Grok 4.x series (high capacity)
+        'grok-4-1-fast-reasoning': 131072,
+        'grok-4-1-fast-non-reasoning': 131072,
+        'grok-4-fast-reasoning': 131072,
+        'grok-4-fast-non-reasoning': 131072,
+        'grok-4-0709': 32768,
+        # Grok 3 series
+        'grok-3': 32768,
+        'grok-3-mini': 16384,
+        # Grok Code
+        'grok-code-fast-1': 32768,
+        # Legacy
+        'grok-2-latest': 8192,
+        'grok-2-vision-latest': 8192,
+    }
+    
+    # Select the right limits based on provider
+    if provider == 'openai':
+        limits = OPENAI_LIMITS
+        default = 16384
+    elif provider in ('anthropic', 'claude'):
+        limits = CLAUDE_LIMITS
+        default = 8192
+    elif provider == 'grok':
+        limits = GROK_LIMITS
+        default = 32768
+    else:
+        return 8192  # Safe default for unknown providers
+    
+    # Look up the model, try partial match if exact not found
+    if model in limits:
+        return limits[model]
+    
+    # Try partial matching (e.g., "gpt-4o-2024-08-06" should match "gpt-4o")
+    for model_prefix, tokens in limits.items():
+        if model.startswith(model_prefix):
+            return tokens
+    
+    ic(f"⚠️ Unknown model '{model}' for {provider}, using default {default}")
+    return default
+
+
+# ============================================================================
 # AI Provider API Call
 # ============================================================================
 
@@ -1361,6 +1462,10 @@ def call_ai_provider(provider: str,
     import json
     
     ic(f"🤖 Calling AI provider: {provider}, model: {model}, language: {language}")
+    
+    # Get dynamic max_tokens based on model
+    max_tokens = get_max_output_tokens(provider, model)
+    ic(f"📊 Max output tokens for {model}: {max_tokens}")
     
     # Get system prompt
     system_prompt = get_ai_system_prompt(language)
@@ -1395,7 +1500,7 @@ def call_ai_provider(provider: str,
                     {"role": "user", "content": f"{prompt}\n\nQuery Data:\n{json.dumps(payload_data['data'], indent=2)}"}
                 ],
                 "temperature": 0.5,
-                # "max_tokens": 4096 # Optional, let model decide
+                "max_tokens": max_tokens
             }
             
             if provider == 'openai':
@@ -1437,6 +1542,7 @@ def call_ai_provider(provider: str,
     if provider == 'openai' or provider == 'grok':
         ai_request_payload = {
             'model': model,
+            'max_tokens': max_tokens,
             'messages': [
                 {
                     'role': 'system',
@@ -1460,7 +1566,7 @@ def call_ai_provider(provider: str,
     elif provider == 'anthropic' or provider == 'claude':
         ai_request_payload = {
             'model': model,
-            'max_tokens': 20000,
+            'max_tokens': max_tokens,
             'temperature': 1,
             'messages': [
                 {
