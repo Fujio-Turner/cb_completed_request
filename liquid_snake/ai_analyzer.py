@@ -1124,7 +1124,16 @@ If the user provided a specific request or question in their prompt, you MUST an
     "overview_html": "Structured summary using HTML elements to organize findings.<br><br><b>Suggested Structure:</b><br><h3>Overall Health</h3><p>Summary of system health...</p><h3>Key Bottlenecks</h3><ul><li>Point 1</li><li>Point 2</li></ul><h3>Main Findings</h3><p>Details...</p><h3>User Specific Request</h3><p>Answer to specific user questions/requests (ONLY if applicable, otherwise omit)</p><br>Use tags like <span class='severity-critical'>highlights</span> for critical metrics."
   },
   "chart_trends": {
-    "timeline_analysis_html": "Detailed analysis of timeline trends (if data available) formatted as an HTML unordered list &lt;ul&gt;&lt;li&gt;. Highlight specific time ranges using <span class='code-highlight'>YYYY-MM-DD HH:MM</span> tags. ALWAYS include the full date (YYYY-MM-DD) when mentioning times. Focus on correlations between spikes in requests, latency, and system resources.",
+    "insights": [
+      {
+        "start": "YYYY-MM-DDTHH:MM:SS (ISO 8601 format - REQUIRED)",
+        "end": "YYYY-MM-DDTHH:MM:SS (ISO 8601 format - use start + reasonable duration if point event)",
+        "group": "<Request Count|Memory Usage|Duration|CPU Time|Index Scan|Fetch Throughput> (chart source category)",
+        "severity": "<critical|warning|info>",
+        "title": "Short title for timeline display (max 50 chars)",
+        "content": "Full detailed description of the insight. Include specific metrics, correlations, and impact."
+      }
+    ],
     "sources": [
       {
         "location": "timeline_charts",
@@ -1231,7 +1240,7 @@ If the user provided a specific request or question in their prompt, you MUST an
 - Include ALL sections even if empty (use [] or {} for empty sections)
 - Be specific and actionable in recommendations
 - Focus on performance improvements and best practices
-- **CRITICAL**: When referencing times in Chart Trends, ALWAYS include the full date (YYYY-MM-DD).
+- **CRITICAL**: Chart Trends insights MUST use ISO 8601 format (YYYY-MM-DDTHH:MM:SS) for start/end times. Group by chart category (Request Count, Memory Usage, Duration, CPU Time, Index Scan, Fetch Throughput). Keep titles short (max 50 chars) - full details go in content field.
 - **CRITICAL**: All suggested index names MUST end with '_v1', '_v2', etc. (e.g. 'idx_users_v1').
 - **CRITICAL**: EXCEPTION: Primary indexes MUST NOT be versioned.
 - **CRITICAL**: Use ALTER INDEX with strict JSON syntax for replica changes: WITH {"action":"replica_count", "num_replica": 1}.

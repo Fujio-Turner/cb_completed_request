@@ -27077,6 +27077,14 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     renderAICharts(analysisData.charts);
                 }, 100);
             }
+            
+            // Render vis.js Timeline for Chart Trends insights
+            if (window._pendingTimelineInsights) {
+                setTimeout(() => {
+                    renderAIInsightsTimeline(window._pendingTimelineInsights);
+                    window._pendingTimelineInsights = null; // Clear after rendering
+                }, 150);
+            }
         }
         
         function closeAIView() {
@@ -27213,6 +27221,231 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         }
 
         /**
+         * Calculate human-readable duration between two ISO timestamps
+         */
+        function formatDuration(startStr, endStr) {
+            if (!startStr || !endStr) return '';
+            try {
+                const start = new Date(startStr);
+                const end = new Date(endStr);
+                const diffMs = end - start;
+                
+                if (diffMs <= 0) return 'point event';
+                
+                const seconds = Math.floor(diffMs / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const hours = Math.floor(minutes / 60);
+                const days = Math.floor(hours / 24);
+                
+                if (days > 0) return `${days}d ${hours % 24}h`;
+                if (hours > 0) return `${hours}h ${minutes % 60}m`;
+                if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+                return `${seconds}s`;
+            } catch (e) {
+                return '';
+            }
+        }
+        
+        /**
+         * Format ISO timestamp to readable format
+         */
+        function formatTimestamp(isoStr) {
+            if (!isoStr) return '';
+            try {
+                const d = new Date(isoStr);
+                return d.toISOString().replace('T', ' ').substring(0, 19);
+            } catch (e) {
+                return isoStr;
+            }
+        }
+        
+        /**
+         * Render vis.js Timeline for AI Chart Trends insights
+         * @param {Array} insights - Array of insight objects with start, end, group, severity, title, content
+         */
+        function renderAIInsightsTimeline(insights) {
+            const container = document.getElementById('ai-insights-timeline');
+            if (!container || !insights || !insights.length) {
+                Logger.warn('[AI] No timeline container or insights to render');
+                return;
+            }
+            
+            // Check if vis Timeline is available
+            if (typeof vis === 'undefined' || !vis.Timeline) {
+                Logger.error('[AI] vis.js Timeline library not loaded');
+                container.innerHTML = '<div style="color: #dc3545; padding: 20px; text-align: center;">Timeline library not loaded. Please refresh the page.</div>';
+                return;
+            }
+            
+            Logger.info(`[AI] Rendering insights timeline with ${insights.length} items`);
+            
+            // Store insights for tooltip access
+            window._aiInsightsData = insights;
+            
+            // Define groups (chart categories) with colors
+            const groupColors = {
+                'Request Count': { bg: '#e3f2fd', border: '#1976d2' },
+                'Memory Usage': { bg: '#fce4ec', border: '#c2185b' },
+                'Duration': { bg: '#fff3e0', border: '#e65100' },
+                'CPU Time': { bg: '#ffebee', border: '#c62828' },
+                'Index Scan': { bg: '#e8f5e9', border: '#2e7d32' },
+                'Fetch Throughput': { bg: '#f3e5f5', border: '#7b1fa2' }
+            };
+            
+            // Create groups from insights
+            const uniqueGroups = [...new Set(insights.map(i => i.group).filter(Boolean))];
+            const groups = new vis.DataSet(
+                uniqueGroups.map((name, idx) => ({
+                    id: name,
+                    content: name,
+                    order: idx
+                }))
+            );
+            
+            // Severity to color mapping
+            const severityColors = {
+                'critical': { background: '#ffcdd2', border: '#d32f2f', color: '#b71c1c' },
+                'warning': { background: '#fff9c4', border: '#f9a825', color: '#f57f17' },
+                'info': { background: '#e3f2fd', border: '#1976d2', color: '#0d47a1' }
+            };
+            
+            // Create items from insights with enhanced tooltip data
+            const items = new vis.DataSet(
+                insights.map((insight, idx) => {
+                    const severity = insight.severity || 'info';
+                    const colors = severityColors[severity] || severityColors.info;
+                    const duration = formatDuration(insight.start, insight.end);
+                    
+                    return {
+                        id: idx + 1,
+                        content: insight.title || `Insight ${idx + 1}`,
+                        start: insight.start,
+                        end: insight.end || insight.start,
+                        group: insight.group || 'General',
+                        // Enhanced tooltip with FROM/TO/Duration
+                        title: `<div style="max-width: 450px; padding: 10px; font-size: 12px; line-height: 1.5;">
+                            <div style="font-weight: bold; font-size: 13px; margin-bottom: 8px; color: ${colors.color};">${insight.title || 'Insight'}</div>
+                            <div style="background: #f8f9fa; padding: 6px 8px; border-radius: 4px; margin-bottom: 8px; font-family: monospace; font-size: 11px;">
+                                <div><strong>FROM:</strong> ${formatTimestamp(insight.start)}</div>
+                                <div><strong>TO:</strong> ${formatTimestamp(insight.end || insight.start)}</div>
+                                <div><strong>Duration:</strong> ${duration}</div>
+                            </div>
+                            <div style="color: #333;">${insight.content || ''}</div>
+                        </div>`,
+                        style: `background-color: ${colors.background}; border-color: ${colors.border}; color: ${colors.color}; border-width: 2px; border-radius: 4px;`
+                    };
+                })
+            );
+            
+            // Timeline options
+            const options = {
+                height: '100%',
+                margin: { item: 10, axis: 5 },
+                orientation: 'top',
+                stack: true,
+                showCurrentTime: false,
+                zoomable: true,
+                moveable: true,
+                tooltip: {
+                    followMouse: true,
+                    overflowMethod: 'cap'
+                },
+                format: {
+                    minorLabels: {
+                        minute: 'HH:mm',
+                        hour: 'HH:mm'
+                    },
+                    majorLabels: {
+                        minute: 'ddd MMM D',
+                        hour: 'ddd MMM D',
+                        day: 'MMM D'
+                    }
+                }
+            };
+            
+            try {
+                // Destroy existing timeline if any
+                if (window._aiInsightsTimeline) {
+                    window._aiInsightsTimeline.destroy();
+                }
+                
+                // Create new timeline
+                window._aiInsightsTimeline = new vis.Timeline(container, items, groups, options);
+                
+                // Fit all items in view
+                window._aiInsightsTimeline.fit();
+                
+                Logger.info('[AI] ✅ Insights timeline rendered successfully');
+                
+                // Build and append the insights table below the timeline
+                const tableContainer = document.getElementById('ai-insights-table');
+                if (tableContainer) {
+                    tableContainer.innerHTML = buildInsightsTable(insights);
+                }
+                
+            } catch (e) {
+                Logger.error('[AI] Error rendering insights timeline:', e);
+                container.innerHTML = `<div style="color: #dc3545; padding: 20px; text-align: center;">Error rendering timeline: ${e.message}</div>`;
+            }
+        }
+        
+        /**
+         * Build HTML table for insights data
+         */
+        function buildInsightsTable(insights) {
+            if (!insights || !insights.length) return '';
+            
+            const severityBadge = (severity) => {
+                const colors = {
+                    'critical': 'background: #dc3545; color: white;',
+                    'warning': 'background: #ffc107; color: #000;',
+                    'info': 'background: #17a2b8; color: white;'
+                };
+                return `<span style="${colors[severity] || colors.info} padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold;">${(severity || 'info').toUpperCase()}</span>`;
+            };
+            
+            let html = `
+                <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px;" id="ai-insights-data-table">
+                    <thead>
+                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                            <th style="padding: 8px; text-align: left; width: 80px;">Severity</th>
+                            <th style="padding: 8px; text-align: left; width: 100px;">Category</th>
+                            <th style="padding: 8px; text-align: left; width: 150px;">Time Range</th>
+                            <th style="padding: 8px; text-align: left; width: 70px;">Duration</th>
+                            <th style="padding: 8px; text-align: left;">Insight</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            insights.forEach((insight, idx) => {
+                const duration = formatDuration(insight.start, insight.end);
+                const startTime = formatTimestamp(insight.start).substring(5); // Remove year
+                const endTime = formatTimestamp(insight.end || insight.start).substring(5);
+                const rowBg = idx % 2 === 0 ? '#fff' : '#f8f9fa';
+                
+                html += `
+                    <tr style="background: ${rowBg}; border-bottom: 1px solid #eee;">
+                        <td style="padding: 8px; vertical-align: top;">${severityBadge(insight.severity)}</td>
+                        <td style="padding: 8px; vertical-align: top; font-weight: 600; color: #495057;">${insight.group || 'General'}</td>
+                        <td style="padding: 8px; vertical-align: top; font-family: monospace; font-size: 10px;">
+                            ${startTime}<br>→ ${endTime}
+                        </td>
+                        <td style="padding: 8px; vertical-align: top; font-weight: 500;">${duration}</td>
+                        <td style="padding: 8px; vertical-align: top;">
+                            <strong>${insight.title || ''}</strong><br>
+                            <span style="color: #666;">${insight.content || ''}</span>
+                        </td>
+                    </tr>`;
+            });
+            
+            html += `</tbody></table>`;
+            return html;
+        }
+        
+        window.renderAIInsightsTimeline = renderAIInsightsTimeline;
+        window.buildInsightsTable = buildInsightsTable;
+
+        /**
          * Format AI analysis data as HTML
          */
         function formatAIAnalysisHTML(data) {
@@ -27298,8 +27531,27 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             }
             
             
-            // Chart Trends Analysis
-            if (data.chart_trends && data.chart_trends.timeline_analysis_html) {
+            // Chart Trends Analysis - vis.js Timeline
+            if (data.chart_trends && data.chart_trends.insights && data.chart_trends.insights.length > 0) {
+                html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #17a2b8;">
+                    <h4 style="color: #17a2b8; margin: 0 0 10px 0; font-size: 15px;">📈 Chart Trends & Analysis</h4>
+                    <div id="ai-insights-timeline" style="height: 300px; border: 1px solid #dee2e6; border-radius: 4px; background: white;"></div>
+                    
+                    <!-- Insights Data Table (for full context and Copy as Markdown) -->
+                    <div id="ai-insights-table" style="margin-top: 12px; max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px;"></div>`;
+                
+                // Add sources if available
+                if (data.chart_trends.sources && data.chart_trends.sources.length > 0) {
+                     html += '<div style="font-size: 10px; color: #666; padding: 6px; background: #e9ecef; border-radius: 3px; margin-top: 10px;"><strong>📍 Sources:</strong> ' + data.chart_trends.sources.map(s => `<span style="display: inline-block; margin: 2px 4px; padding: 2px 6px; background: #fff; border: 1px solid #dee2e6; border-radius: 2px;">${s.evidence || s.location}</span>`).join('') + '</div>';
+                }
+                
+                html += `</div>`;
+                
+                // Store insights data for timeline rendering after DOM update
+                window._pendingTimelineInsights = data.chart_trends.insights;
+            }
+            // Fallback: Legacy HTML format (for backward compatibility)
+            else if (data.chart_trends && data.chart_trends.timeline_analysis_html) {
                 html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #17a2b8;">
                     <h4 style="color: #17a2b8; margin: 0 0 10px 0; font-size: 15px;">📈 Chart Trends & Analysis</h4>
                     <div style="font-size: 12px; line-height: 1.5; color: #333;">

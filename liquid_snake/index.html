@@ -46,6 +46,10 @@
     <script src="assets/js/echarts.min.js"></script>
     <script src="assets/js/echarts-gl.min.js"></script>
 
+    <!-- Include vis.js Timeline for AI Insights Timeline -->
+    <script src="assets/js/vis-timeline-graph2d.min.js"></script>
+    <link href="assets/css/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+
     <!-- Include Panzoom, jQuery, and jQuery UI -->
     <script src="assets/js/panzoom.min.js"></script>
     <script src="assets/js/jquery.min.js"></script>
@@ -65,6 +69,32 @@
         .highlight-good { background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
         .code-highlight { background: #007bff; color: white; padding: 2px 5px; border-radius: 3px; font-family: monospace; font-size: 0.85em; }
         .metric-highlight { background: #e7f3ff; color: #0056b3; padding: 2px 5px; border-radius: 3px; font-weight: bold; border: 1px solid #b3d9ff; }
+        
+        /* vis.js Timeline Customization */
+        #ai-insights-timeline .vis-item {
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        #ai-insights-timeline .vis-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        #ai-insights-timeline .vis-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #495057;
+        }
+        #ai-insights-timeline .vis-time-axis .vis-text {
+            font-size: 10px;
+            color: #6c757d;
+        }
+        #ai-insights-timeline .vis-tooltip {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 0;
+        }
     </style>
 
     <!-- External JavaScript - ES6 Modules -->
@@ -426,9 +456,15 @@
                     <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-dashboard" checked> Dashboard </label>
                     <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-insights" checked> Insights </label>
                     <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-timeline" checked> Timeline </label>
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-query-groups" checked> Query Groups </label>
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-flow-diagram" checked> Index/Query Flow </label>
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-indexes"> Indexes <span style="color: #999; font-size: 11px;">(if loaded)</span></label>                   
+                    <label style="display: flex; align-items: center; gap: 6px;" title="⚠️ Large payload - may slow response"><input type="checkbox" id="ai-include-query-groups" checked> Query Groups <span style="color: #e65100; font-size: 10px;">⏱</span></label>
+                    <label style="display: flex; align-items: center; gap: 6px;" title="⚠️ Large payload - may slow response"><input type="checkbox" id="ai-include-flow-diagram" checked> Index/Query Flow <span style="color: #e65100; font-size: 10px;">⏱</span></label>
+                    <label style="display: flex; align-items: center; gap: 6px;" title="⚠️ Large payload - may slow response"><input type="checkbox" id="ai-include-indexes"> Indexes <span style="color: #999; font-size: 11px;">(if loaded)</span> <span style="color: #e65100; font-size: 10px;">⏱</span></label>                   
+                </div>
+                <!-- Performance Note -->
+                <div style="margin-top: 8px; padding: 6px 10px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; font-size: 11px; color: #856404;">
+                    <strong>⚠️ Note:</strong> Selecting more data improves accuracy but increases response time. Items marked with <span style="color: #e65100;">⏱</span> 
+                    (Query Groups, Index/Query Flow, Indexes) send larger payloads and may cause timeouts with some AI providers. 
+                    For faster responses, uncheck these or reduce "Query Groups" limit below.
                 </div>
             </div>
 
