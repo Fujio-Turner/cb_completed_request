@@ -584,8 +584,53 @@ def preview_ai_payload():
         }), 500
 
 import threading
+import re
 
-def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prompt, ai_payload_data, cb_config, initial_doc, obfuscation_mapping, language=None):
+def _extract_by_path(data: dict, path: str):
+    """
+    Extract value from nested dict/list using a path string.
+    Supports paths like: 'choices[0].message.content', 'content[0].text', 'response'
+    
+    Args:
+        data: The dictionary to extract from
+        path: Dot-separated path with optional array indices
+        
+    Returns:
+        The extracted value or None if not found
+    """
+    if not data or not path:
+        return None
+    
+    try:
+        # Split path into parts, handling array indices
+        # e.g., "choices[0].message.content" -> ["choices", "[0]", "message", "content"]
+        parts = re.split(r'\.|\[', path)
+        current = data
+        
+        for part in parts:
+            if not part:
+                continue
+            
+            # Handle array index (closes with ])
+            if part.endswith(']'):
+                index = int(part[:-1])
+                if isinstance(current, list) and len(current) > index:
+                    current = current[index]
+                else:
+                    return None
+            else:
+                # Handle dict key
+                if isinstance(current, dict) and part in current:
+                    current = current[part]
+                else:
+                    return None
+        
+        return current
+    except (KeyError, IndexError, TypeError, ValueError):
+        return None
+
+
+def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prompt, ai_payload_data, cb_config, initial_doc, obfuscation_mapping, language=None, custom_config=None):
     """Background thread to process AI request and update Couchbase document"""
     try:
         import json
@@ -593,17 +638,27 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
         
         ic(f"🧵 Starting background AI task for doc {doc_id}")
         
-        # Call AI provider using ai_analyzer module
-        result = ai_analyzer.call_ai_provider(
-            provider=provider,
-            model=model or ('gpt-4o' if provider == 'openai' else 'claude-3-5-sonnet-20241022'),
-            api_key=api_key,
-            api_url=api_url,
-            endpoint=endpoint,
-            prompt=prompt,
-            payload_data=ai_payload_data,
-            language=language
-        )
+        # Check if this is a custom AI provider
+        if custom_config and custom_config.get('isCustom'):
+            ic(f"🔧 Using custom AI provider: {custom_config.get('name')}")
+            result = ai_analyzer.call_custom_ai_provider(
+                custom_config=custom_config,
+                prompt=prompt,
+                payload_data=ai_payload_data,
+                language=language
+            )
+        else:
+            # Call standard AI provider using ai_analyzer module
+            result = ai_analyzer.call_ai_provider(
+                provider=provider,
+                model=model or ('gpt-4o' if provider == 'openai' else 'claude-3-5-sonnet-20241022'),
+                api_key=api_key,
+                api_url=api_url,
+                endpoint=endpoint,
+                prompt=prompt,
+                payload_data=ai_payload_data,
+                language=language
+            )
         
         ic(f"📥 AI response received for {doc_id}", result.get('success'))
         
@@ -643,6 +698,21 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
                             parsed_content = json.loads(json_content)
                             analysis_data['content_parsed'] = parsed_content
                             ic("✅ Parsed Anthropic/Claude AI response JSON content to object")
+                elif result.get('isCustomProvider') and result.get('responsePath'):
+                    # Custom AI provider - use configured response path
+                    response_path = result.get('responsePath')
+                    ic(f"🔧 Parsing custom AI response using path: {response_path}")
+                    
+                    # Parse the response path to extract content
+                    content = _extract_by_path(analysis_data, response_path)
+                    if content and isinstance(content, str):
+                        json_start = content.find('{')
+                        json_end = content.rfind('}')
+                        if json_start != -1 and json_end != -1:
+                            json_content = content[json_start:json_end + 1]
+                            parsed_content = json.loads(json_content)
+                            analysis_data['content_parsed'] = parsed_content
+                            ic("✅ Parsed custom AI response JSON content to object")
             except Exception as e:
                 ic(f"⚠️ Could not parse AI content as JSON: {str(e)}")
             
@@ -767,6 +837,7 @@ def analyze_with_ai():
         selections = request_data.get('selections', {})
         options = request_data.get('options', {})
         cb_config = request_data.get('couchbaseConfig', {})
+        custom_config = request_data.get('customConfig')  # Custom AI provider config
         
         ic("📋 Request parameters:")
         ic(f"  Provider: {provider}")
@@ -774,63 +845,76 @@ def analyze_with_ai():
         ic(f"  Prompt length: {len(prompt)} chars")
         ic(f"  Selections: {selections}")
         ic(f"  Options: {options}")
+        ic(f"  Custom config: {bool(custom_config)}")
         
-        # Load API credentials from user::config in Couchbase (SECURE)
-        ic("🔑 Loading AI API credentials from Couchbase user::config")
-        
-        if not cb_config or not cb_config.get('cluster'):
-            return jsonify({
-                'success': False,
-                'error': 'Couchbase configuration required'
-            }), 400
-        
-        cluster = get_couchbase_connection(cb_config['cluster'])
-        if not cluster:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to connect to Couchbase'
-            }), 500
-        
-        # Load user::config document
-        bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
-        prefs_collection = bucket.scope(cb_config['bucketConfig']['preferencesScope']).collection(
-            cb_config['bucketConfig']['preferencesCollection']
-        )
-        
-        user_prefs = prefs_collection.get('user_config').content_as[dict]
-        ai_apis = user_prefs.get('aiApis', [])
-        
-        # Find the requested provider
-        api_config = next((api for api in ai_apis if api['id'] == provider), None)
-        
-        if not api_config:
-            ic(f"❌ Provider '{provider}' not found in user::config")
-            return jsonify({
-                'success': False,
-                'error': f'Provider {provider} not configured'
-            }), 400
-        
-        api_key = api_config.get('apiKey')
-        api_url = api_config.get('apiUrl')
-        model = api_config.get('model')
-        
-        # Set endpoint based on provider
-        if provider in ['anthropic', 'claude']:
-            endpoint = '/v1/messages'
+        # Check if this is a custom AI provider
+        if custom_config and custom_config.get('isCustom'):
+            ic("🔧 Using custom AI provider from request")
+            api_key = None  # Custom providers use their own auth
+            api_url = custom_config.get('url')
+            model = custom_config.get('model')
+            endpoint = ''  # Custom providers use full URL
+            
+            ic(f"✅ Custom provider: {custom_config.get('name')}")
+            ic(f"  API URL: {api_url}")
+            ic(f"  Model: {model}")
         else:
-            endpoint = '/chat/completions'
-        
-        ic(f"✅ Loaded credentials for provider: {provider}")
-        ic(f"  API URL: {api_url}")
-        ic(f"  Model: {model}")
-        ic(f"  Has API Key: {bool(api_key)}")
-        
-        if not api_key:
-            ic(f"❌ No API key configured for provider: {provider}")
-            return jsonify({
-                'success': False,
-                'error': f'No API key configured for {provider}. Please add in Settings.'
-            }), 400
+            # Load API credentials from user::config in Couchbase (SECURE)
+            ic("🔑 Loading AI API credentials from Couchbase user::config")
+            
+            if not cb_config or not cb_config.get('cluster'):
+                return jsonify({
+                    'success': False,
+                    'error': 'Couchbase configuration required'
+                }), 400
+            
+            cluster = get_couchbase_connection(cb_config['cluster'])
+            if not cluster:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to connect to Couchbase'
+                }), 500
+            
+            # Load user::config document
+            bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
+            prefs_collection = bucket.scope(cb_config['bucketConfig']['preferencesScope']).collection(
+                cb_config['bucketConfig']['preferencesCollection']
+            )
+            
+            user_prefs = prefs_collection.get('user_config').content_as[dict]
+            ai_apis = user_prefs.get('aiApis', [])
+            
+            # Find the requested provider
+            api_config = next((api for api in ai_apis if api['id'] == provider), None)
+            
+            if not api_config:
+                ic(f"❌ Provider '{provider}' not found in user::config")
+                return jsonify({
+                    'success': False,
+                    'error': f'Provider {provider} not configured'
+                }), 400
+            
+            api_key = api_config.get('apiKey')
+            api_url = api_config.get('apiUrl')
+            model = api_config.get('model')
+            
+            # Set endpoint based on provider
+            if provider in ['anthropic', 'claude']:
+                endpoint = '/v1/messages'
+            else:
+                endpoint = '/chat/completions'
+            
+            ic(f"✅ Loaded credentials for provider: {provider}")
+            ic(f"  API URL: {api_url}")
+            ic(f"  Model: {model}")
+            ic(f"  Has API Key: {bool(api_key)}")
+            
+            if not api_key:
+                ic(f"❌ No API key configured for provider: {provider}")
+                return jsonify({
+                    'success': False,
+                    'error': f'No API key configured for {provider}. Please add in Settings.'
+                }), 400
         
         # Validation
         if not raw_data:
@@ -988,7 +1072,7 @@ def analyze_with_ai():
                 ic(f"🚀 Launching background AI task for {saved_doc_id}")
                 thread = threading.Thread(target=background_ai_task, args=(
                     saved_doc_id, provider, model, api_key, api_url, endpoint, prompt, 
-                    ai_payload_data, cb_config, initial_doc, obfuscation_mapping, language
+                    ai_payload_data, cb_config, initial_doc, obfuscation_mapping, language, custom_config
                 ))
                 thread.start()
                 
@@ -1001,16 +1085,25 @@ def analyze_with_ai():
             else:
                 # Fallback for no storage (synchronous, discouraged)
                 ic("⚠️ Storage disabled, running synchronously (may timeout)")
-                result = ai_analyzer.call_ai_provider(
-                    provider=provider,
-                    model=model or ('gpt-4o' if provider == 'openai' else 'claude-3-5-sonnet-20241022'),
-                    api_key=api_key,
-                    api_url=api_url,
-                    endpoint=endpoint,
-                    prompt=prompt,
-                    payload_data=ai_payload_data,
-                    language=language
-                )
+                
+                if custom_config and custom_config.get('isCustom'):
+                    result = ai_analyzer.call_custom_ai_provider(
+                        custom_config=custom_config,
+                        prompt=prompt,
+                        payload_data=ai_payload_data,
+                        language=language
+                    )
+                else:
+                    result = ai_analyzer.call_ai_provider(
+                        provider=provider,
+                        model=model or ('gpt-4o' if provider == 'openai' else 'claude-3-5-sonnet-20241022'),
+                        api_key=api_key,
+                        api_url=api_url,
+                        endpoint=endpoint,
+                        prompt=prompt,
+                        payload_data=ai_payload_data,
+                        language=language
+                    )
                 
                 return jsonify({
                     'success': result.get('success'),

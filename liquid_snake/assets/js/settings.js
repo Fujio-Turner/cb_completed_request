@@ -99,6 +99,12 @@ const AI_PROVIDERS = [
 // Current order of AI providers (will be modified by user)
 let currentAiOrder = [...AI_PROVIDERS];
 
+// Custom AI APIs (user-defined)
+let customAiApis = [];
+
+// Currently editing custom API (null for new, id for editing)
+let editingCustomAiId = null;
+
 /**
  * Render AI providers in current order
  */
@@ -427,6 +433,29 @@ async function saveCurrentPreferences() {
     // Load existing preferences to preserve values not in the form
     const existingPrefs = await loadUserPrefsFromCB('user_config');
     const existingAiApis = existingPrefs?.aiApis || [];
+    const existingCustomApis = existingPrefs?.customAiApis || [];
+    
+    // Save custom AI APIs
+    preferences.customAiApis = customAiApis.map(api => {
+        // Find existing to preserve credentials if not re-entered
+        const existing = existingCustomApis.find(a => a.id === api.id);
+        
+        const savedApi = { ...api };
+        
+        // Preserve credentials if not updated
+        if (api.authType === 'bearer' && !api.bearerToken && existing?.bearerToken) {
+            savedApi.bearerToken = existing.bearerToken;
+        }
+        if (api.authType === 'api-key-header' && !api.apiKeyHeaderValue && existing?.apiKeyHeaderValue) {
+            savedApi.apiKeyHeaderValue = existing.apiKeyHeaderValue;
+        }
+        if (api.authType === 'basic') {
+            if (!api.basicUsername && existing?.basicUsername) savedApi.basicUsername = existing.basicUsername;
+            if (!api.basicPassword && existing?.basicPassword) savedApi.basicPassword = existing.basicPassword;
+        }
+        
+        return savedApi;
+    });
     
     // Save AI API credentials in order (first is default)
     preferences.aiApis = currentAiOrder.map(provider => {
@@ -580,6 +609,13 @@ async function loadUserPreferences() {
             });
         }
         
+        // Restore custom AI APIs
+        if (preferences.customAiApis && Array.isArray(preferences.customAiApis)) {
+            Logger.info(`Restoring ${preferences.customAiApis.length} custom AI APIs`);
+            customAiApis = preferences.customAiApis;
+            renderCustomAiList();
+        }
+        
         return true;
     } else {
         Logger.debug('No user_config document found, using defaults');
@@ -661,6 +697,537 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 1000); // Wait 1 second for page to fully load
 });
+
+// ============================================
+// Custom AI API Functions
+// ============================================
+
+/**
+ * Open custom AI modal for adding a new API
+ */
+window.openCustomAIModal = function(customApiId = null) {
+    editingCustomAiId = customApiId;
+    const modal = document.getElementById('custom-ai-modal');
+    const titleEl = document.getElementById('custom-ai-modal-title');
+    
+    if (!modal) return;
+    
+    // Clear form
+    document.getElementById('custom-ai-name').value = '';
+    document.getElementById('custom-ai-url').value = '';
+    document.getElementById('custom-ai-model').value = '';
+    document.getElementById('custom-ai-auth-type').value = 'none';
+    document.getElementById('custom-ai-request-template').value = '';
+    document.getElementById('custom-ai-response-path').value = 'choices[0].message.content';
+    document.getElementById('custom-ai-headers-list').innerHTML = '';
+    document.getElementById('custom-ai-auth-fields').innerHTML = '';
+    
+    if (customApiId) {
+        // Editing existing
+        titleEl.textContent = 'Edit Custom AI API';
+        const existing = customAiApis.find(api => api.id === customApiId);
+        if (existing) {
+            document.getElementById('custom-ai-name').value = existing.name || '';
+            document.getElementById('custom-ai-url').value = existing.url || '';
+            document.getElementById('custom-ai-model').value = existing.model || '';
+            document.getElementById('custom-ai-auth-type').value = existing.authType || 'none';
+            document.getElementById('custom-ai-request-template').value = existing.requestTemplate || '';
+            document.getElementById('custom-ai-response-path').value = existing.responsePath || 'choices[0].message.content';
+            
+            // Restore auth fields
+            updateCustomAIAuthFields();
+            if (existing.authType === 'bearer' && existing.bearerToken) {
+                const tokenField = document.getElementById('custom-ai-bearer-token');
+                if (tokenField) tokenField.value = existing.bearerToken;
+            } else if (existing.authType === 'api-key-header') {
+                const headerNameField = document.getElementById('custom-ai-api-key-header-name');
+                const headerValueField = document.getElementById('custom-ai-api-key-header-value');
+                if (headerNameField) headerNameField.value = existing.apiKeyHeaderName || 'X-API-Key';
+                if (headerValueField) headerValueField.value = existing.apiKeyHeaderValue || '';
+            } else if (existing.authType === 'basic') {
+                const usernameField = document.getElementById('custom-ai-basic-username');
+                const passwordField = document.getElementById('custom-ai-basic-password');
+                if (usernameField) usernameField.value = existing.basicUsername || '';
+                if (passwordField) passwordField.value = existing.basicPassword || '';
+            } else if (existing.authType === 'digest') {
+                const usernameField = document.getElementById('custom-ai-digest-username');
+                const passwordField = document.getElementById('custom-ai-digest-password');
+                if (usernameField) usernameField.value = existing.digestUsername || '';
+                if (passwordField) passwordField.value = existing.digestPassword || '';
+            }
+            
+            // Restore custom headers
+            if (existing.customHeaders && Array.isArray(existing.customHeaders)) {
+                existing.customHeaders.forEach(header => {
+                    addCustomAIHeader(header.name, header.value);
+                });
+            }
+        }
+    } else {
+        titleEl.textContent = 'Add Custom AI API';
+        // Set default request template
+        document.getElementById('custom-ai-request-template').value = `{
+  "model": "{{MODEL}}",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a Couchbase query performance analyst. Analyze the provided query data and return a JSON response with analysis_summary, critical_issues, and recommendations."
+    },
+    {
+      "role": "user",
+      "content": "{{PAYLOAD}}"
+    }
+  ],
+  "max_tokens": 4096
+}`;
+    }
+    
+    modal.style.display = 'block';
+};
+
+/**
+ * Close custom AI modal
+ */
+window.closeCustomAIModal = function() {
+    const modal = document.getElementById('custom-ai-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    editingCustomAiId = null;
+};
+
+/**
+ * Update auth fields based on selected auth type
+ */
+window.updateCustomAIAuthFields = function() {
+    const authType = document.getElementById('custom-ai-auth-type').value;
+    const container = document.getElementById('custom-ai-auth-fields');
+    
+    if (!container) return;
+    
+    switch (authType) {
+        case 'bearer':
+            container.innerHTML = `
+                <div class="settings-row">
+                    <label>Bearer Token:</label>
+                    <input type="password" id="custom-ai-bearer-token" placeholder="Your API token" style="width: 350px;" />
+                </div>
+            `;
+            break;
+        case 'api-key-header':
+            container.innerHTML = `
+                <div class="settings-row">
+                    <label>Header Name:</label>
+                    <input type="text" id="custom-ai-api-key-header-name" value="X-API-Key" style="width: 200px;" />
+                </div>
+                <div class="settings-row">
+                    <label>API Key Value:</label>
+                    <input type="password" id="custom-ai-api-key-header-value" placeholder="Your API key" style="width: 350px;" />
+                </div>
+            `;
+            break;
+        case 'basic':
+            container.innerHTML = `
+                <div class="settings-row">
+                    <label>Username:</label>
+                    <input type="text" id="custom-ai-basic-username" style="width: 200px;" />
+                </div>
+                <div class="settings-row">
+                    <label>Password:</label>
+                    <input type="password" id="custom-ai-basic-password" style="width: 200px;" />
+                </div>
+            `;
+            break;
+        case 'digest':
+            container.innerHTML = `
+                <div class="settings-row">
+                    <label>Username:</label>
+                    <input type="text" id="custom-ai-digest-username" style="width: 200px;" />
+                </div>
+                <div class="settings-row">
+                    <label>Password:</label>
+                    <input type="password" id="custom-ai-digest-password" style="width: 200px;" />
+                </div>
+                <p style="color: #666; font-size: 0.85em; margin-top: 8px;">
+                    Digest authentication is handled server-side via the Flask backend.
+                </p>
+            `;
+            break;
+        default:
+            container.innerHTML = '<p style="color: #666; font-size: 0.85em;">No authentication required</p>';
+    }
+};
+
+/**
+ * Add a custom header row
+ */
+window.addCustomAIHeader = function(name = '', value = '') {
+    const container = document.getElementById('custom-ai-headers-list');
+    if (!container) return;
+    
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'custom-header-row';
+    headerDiv.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px; align-items: center;';
+    
+    headerDiv.innerHTML = `
+        <input type="text" class="header-name" placeholder="Header Name" value="${name}" style="width: 150px; padding: 6px; border: 1px solid #ccc; border-radius: 4px;" />
+        <input type="text" class="header-value" placeholder="Header Value" value="${value}" style="flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px;" />
+        <button type="button" onclick="this.parentElement.remove()" style="background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">✕</button>
+    `;
+    
+    container.appendChild(headerDiv);
+};
+
+/**
+ * Get custom headers from form
+ */
+function getCustomHeaders() {
+    const container = document.getElementById('custom-ai-headers-list');
+    if (!container) return [];
+    
+    const headers = [];
+    container.querySelectorAll('.custom-header-row').forEach(row => {
+        const name = row.querySelector('.header-name')?.value?.trim();
+        const value = row.querySelector('.header-value')?.value?.trim();
+        if (name && value) {
+            headers.push({ name, value });
+        }
+    });
+    
+    return headers;
+}
+
+/**
+ * Save custom AI API
+ */
+window.saveCustomAI = async function() {
+    const name = document.getElementById('custom-ai-name')?.value?.trim();
+    const url = document.getElementById('custom-ai-url')?.value?.trim();
+    const model = document.getElementById('custom-ai-model')?.value?.trim();
+    const authType = document.getElementById('custom-ai-auth-type')?.value;
+    const requestTemplate = document.getElementById('custom-ai-request-template')?.value?.trim();
+    const responsePath = document.getElementById('custom-ai-response-path')?.value?.trim();
+    
+    // Validation
+    if (!name) {
+        showToast('API Name is required', 'error');
+        return;
+    }
+    if (!url) {
+        showToast('API URL is required', 'error');
+        return;
+    }
+    
+    // Validate URL format
+    try {
+        new URL(url);
+    } catch (e) {
+        showToast('Invalid URL format', 'error');
+        return;
+    }
+    
+    // Validate request template is valid JSON (with placeholders replaced)
+    if (requestTemplate) {
+        try {
+            const testJson = requestTemplate
+                .replace(/\{\{PAYLOAD\}\}/g, '"test"')
+                .replace(/\{\{MODEL\}\}/g, '"test-model"');
+            JSON.parse(testJson);
+        } catch (e) {
+            showToast('Invalid JSON in request template: ' + e.message, 'error');
+            return;
+        }
+    }
+    
+    // Build custom API config
+    const customApi = {
+        id: editingCustomAiId || `custom_${Date.now()}`,
+        name,
+        url,
+        model: model || 'default',
+        authType,
+        requestTemplate: requestTemplate || '',
+        responsePath: responsePath || 'choices[0].message.content',
+        customHeaders: getCustomHeaders(),
+        isCustom: true
+    };
+    
+    // Add auth-specific fields
+    if (authType === 'bearer') {
+        customApi.bearerToken = document.getElementById('custom-ai-bearer-token')?.value || '';
+    } else if (authType === 'api-key-header') {
+        customApi.apiKeyHeaderName = document.getElementById('custom-ai-api-key-header-name')?.value || 'X-API-Key';
+        customApi.apiKeyHeaderValue = document.getElementById('custom-ai-api-key-header-value')?.value || '';
+    } else if (authType === 'basic') {
+        customApi.basicUsername = document.getElementById('custom-ai-basic-username')?.value || '';
+        customApi.basicPassword = document.getElementById('custom-ai-basic-password')?.value || '';
+    } else if (authType === 'digest') {
+        customApi.digestUsername = document.getElementById('custom-ai-digest-username')?.value || '';
+        customApi.digestPassword = document.getElementById('custom-ai-digest-password')?.value || '';
+    }
+    
+    // Add or update in customAiApis array
+    if (editingCustomAiId) {
+        const index = customAiApis.findIndex(api => api.id === editingCustomAiId);
+        if (index !== -1) {
+            customAiApis[index] = customApi;
+        } else {
+            customAiApis.push(customApi);
+        }
+    } else {
+        customAiApis.push(customApi);
+    }
+    
+    // Render the list
+    renderCustomAiList();
+    
+    // Close modal
+    closeCustomAIModal();
+    
+    // Save to Couchbase
+    await saveCurrentPreferences();
+    
+    showToast(`Custom API "${name}" saved successfully!`, 'success');
+    
+    // Refresh AI provider dropdown
+    if (typeof window.populateAIProviderDropdown === 'function') {
+        window.populateAIProviderDropdown();
+    }
+};
+
+/**
+ * Render the list of custom AI APIs
+ */
+function renderCustomAiList() {
+    const container = document.getElementById('custom-ai-list');
+    if (!container) return;
+    
+    if (customAiApis.length === 0) {
+        container.innerHTML = '<p style="color: #999; font-style: italic;">No custom APIs configured</p>';
+        return;
+    }
+    
+    container.innerHTML = customAiApis.map(api => `
+        <div class="custom-ai-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e9ecef;">
+            <div>
+                <strong style="color: #333;">${api.name}</strong>
+                <div style="font-size: 0.85em; color: #666; margin-top: 4px;">
+                    ${api.url}
+                    ${api.model ? `• Model: ${api.model}` : ''}
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-standard" onclick="openCustomAIModal('${api.id}')" style="font-size: 12px; padding: 4px 10px;">
+                    ✏️ Edit
+                </button>
+                <button class="btn-standard" onclick="deleteCustomAI('${api.id}')" style="font-size: 12px; padding: 4px 10px; background: #dc3545; color: white;">
+                    🗑️ Delete
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Delete a custom AI API
+ */
+window.deleteCustomAI = async function(apiId) {
+    const api = customAiApis.find(a => a.id === apiId);
+    if (!api) return;
+    
+    if (!confirm(`Are you sure you want to delete "${api.name}"?`)) {
+        return;
+    }
+    
+    customAiApis = customAiApis.filter(a => a.id !== apiId);
+    renderCustomAiList();
+    
+    // Save to Couchbase
+    await saveCurrentPreferences();
+    
+    showToast(`Custom API "${api.name}" deleted`, 'success');
+    
+    // Refresh AI provider dropdown
+    if (typeof window.populateAIProviderDropdown === 'function') {
+        window.populateAIProviderDropdown();
+    }
+};
+
+/**
+ * Test custom AI configuration
+ */
+window.testCustomAIConfig = async function() {
+    const url = document.getElementById('custom-ai-url')?.value?.trim();
+    const authType = document.getElementById('custom-ai-auth-type')?.value;
+    
+    if (!url) {
+        showToast('Please enter an API URL first', 'error');
+        return;
+    }
+    
+    showToast('Testing connection...', 'info');
+    
+    // Build headers
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    
+    // Add auth headers
+    if (authType === 'bearer') {
+        const token = document.getElementById('custom-ai-bearer-token')?.value;
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+    } else if (authType === 'api-key-header') {
+        const headerName = document.getElementById('custom-ai-api-key-header-name')?.value || 'X-API-Key';
+        const headerValue = document.getElementById('custom-ai-api-key-header-value')?.value;
+        if (headerValue) {
+            headers[headerName] = headerValue;
+        }
+    } else if (authType === 'basic') {
+        const username = document.getElementById('custom-ai-basic-username')?.value;
+        const password = document.getElementById('custom-ai-basic-password')?.value;
+        if (username && password) {
+            headers['Authorization'] = 'Basic ' + btoa(`${username}:${password}`);
+        }
+    }
+    
+    // Add custom headers
+    getCustomHeaders().forEach(h => {
+        headers[h.name] = h.value;
+    });
+    
+    try {
+        // Just test if the endpoint is reachable
+        const response = await fetch(url, {
+            method: 'OPTIONS',
+            headers: headers
+        });
+        
+        showToast(`Connection test: ${response.ok ? 'Success' : 'Endpoint responded with status ' + response.status}`, response.ok ? 'success' : 'warning');
+    } catch (error) {
+        // CORS might block OPTIONS, try a simple HEAD request
+        try {
+            const response = await fetch(url, {
+                method: 'HEAD',
+                headers: headers
+            });
+            showToast(`Connection test: ${response.ok ? 'Success' : 'Endpoint responded'}`, 'success');
+        } catch (e) {
+            showToast(`Connection test failed: ${error.message}. Note: CORS restrictions may prevent browser-based testing.`, 'warning');
+        }
+    }
+};
+
+/**
+ * Get all custom AI APIs (for use by other modules)
+ */
+export function getCustomAiApis() {
+    return [...customAiApis];
+}
+
+/**
+ * Set custom AI APIs (for loading from preferences)
+ */
+export function setCustomAiApis(apis) {
+    customAiApis = apis || [];
+    renderCustomAiList();
+}
+
+/**
+ * Generate cURL preview from current form values
+ */
+window.generateCurlPreview = function() {
+    const url = document.getElementById('custom-ai-url')?.value?.trim() || 'https://api.example.com/v1/chat/completions';
+    const model = document.getElementById('custom-ai-model')?.value?.trim() || 'model-name';
+    const authType = document.getElementById('custom-ai-auth-type')?.value || 'none';
+    const requestTemplate = document.getElementById('custom-ai-request-template')?.value?.trim();
+    
+    // Build cURL command
+    let curl = 'curl -X POST \\\n';
+    curl += `  "${url}" \\\n`;
+    
+    // Content-Type header
+    curl += `  -H "Content-Type: application/json" \\\n`;
+    
+    // Auth headers
+    if (authType === 'bearer') {
+        const token = document.getElementById('custom-ai-bearer-token')?.value || 'YOUR_API_TOKEN';
+        curl += `  -H "Authorization: Bearer ${token}" \\\n`;
+    } else if (authType === 'api-key-header') {
+        const headerName = document.getElementById('custom-ai-api-key-header-name')?.value || 'X-API-Key';
+        const headerValue = document.getElementById('custom-ai-api-key-header-value')?.value || 'YOUR_API_KEY';
+        curl += `  -H "${headerName}: ${headerValue}" \\\n`;
+    } else if (authType === 'basic') {
+        const username = document.getElementById('custom-ai-basic-username')?.value || 'username';
+        const password = document.getElementById('custom-ai-basic-password')?.value || 'password';
+        curl += `  -u "${username}:${password}" \\\n`;
+    } else if (authType === 'digest') {
+        const username = document.getElementById('custom-ai-digest-username')?.value || 'username';
+        const password = document.getElementById('custom-ai-digest-password')?.value || 'password';
+        curl += `  --digest -u "${username}:${password}" \\\n`;
+    }
+    
+    // Custom headers
+    getCustomHeaders().forEach(h => {
+        curl += `  -H "${h.name}: ${h.value}" \\\n`;
+    });
+    
+    // Request body
+    let bodyJson;
+    if (requestTemplate) {
+        // Replace placeholders with example values
+        let body = requestTemplate
+            .replace(/\{\{MODEL\}\}/g, model)
+            .replace(/\{\{PAYLOAD\}\}/g, 'Your analysis prompt and query data will be inserted here...');
+        
+        try {
+            // Pretty-print the JSON
+            bodyJson = JSON.stringify(JSON.parse(body), null, 2);
+        } catch (e) {
+            bodyJson = body;
+        }
+    } else {
+        // Default request body
+        bodyJson = JSON.stringify({
+            model: model,
+            messages: [
+                { role: "system", content: "You are a Couchbase query performance analyst." },
+                { role: "user", content: "Your analysis prompt and query data will be inserted here..." }
+            ],
+            max_tokens: 4096
+        }, null, 2);
+    }
+    
+    // Escape single quotes in JSON for shell and add to curl
+    const escapedBody = bodyJson.replace(/'/g, "'\\''");
+    curl += `  -d '${escapedBody}'`;
+    
+    // Set the textarea value
+    const previewEl = document.getElementById('custom-ai-curl-preview');
+    if (previewEl) {
+        previewEl.value = curl;
+    }
+    
+    showToast('cURL command generated', 'success');
+};
+
+/**
+ * Copy cURL preview to clipboard
+ */
+window.copyCurlPreview = function() {
+    const previewEl = document.getElementById('custom-ai-curl-preview');
+    if (!previewEl || !previewEl.value) {
+        showToast('Generate cURL first', 'warning');
+        return;
+    }
+    
+    navigator.clipboard.writeText(previewEl.value).then(() => {
+        showToast('cURL copied to clipboard', 'success');
+    }).catch(err => {
+        showToast('Failed to copy: ' + err, 'error');
+    });
+};
 
 // Export functions to window for onclick handlers
 window.openSettingsModal = openSettingsModal;

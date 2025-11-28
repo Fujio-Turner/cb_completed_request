@@ -1595,8 +1595,13 @@ def call_ai_provider(provider: str,
     # Build full URL
     full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
     
-    ic(f"📤 API URL: {api_url}")
-    ic(f"📤 Endpoint: {endpoint}")
+    return _execute_ai_request(full_url, headers, ai_request_payload)
+
+
+def _execute_ai_request(full_url: str, headers: dict, ai_request_payload: dict) -> dict:
+    """Execute the AI API request and return result."""
+    http_client = AIHttpClient()
+    
     ic(f"📤 Full URL: {full_url}")
     
     # Make API call using AIHttpClient
@@ -1610,3 +1615,204 @@ def call_ai_provider(provider: str,
     ic(f"📥 Response received: success={result.get('success')}, elapsed={result.get('elapsed_ms')}ms")
     
     return result
+
+
+def call_custom_ai_provider(
+    custom_config: dict,
+    prompt: str,
+    payload_data: dict,
+    system_prompt: str = None,
+    language: str = 'en'
+) -> dict:
+    """
+    Call a custom AI provider with user-defined configuration.
+    
+    Args:
+        custom_config: Dict containing:
+            - url: API endpoint URL
+            - model: Model name
+            - authType: 'none', 'bearer', 'api-key-header', 'basic'
+            - bearerToken: Token for bearer auth
+            - apiKeyHeaderName: Header name for API key auth
+            - apiKeyHeaderValue: Header value for API key auth  
+            - basicUsername/basicPassword: For basic auth
+            - customHeaders: List of {name, value} dicts
+            - requestTemplate: JSON template with {{PAYLOAD}} and {{MODEL}} placeholders
+            - responsePath: JSON path to extract response text
+        prompt: The analysis prompt
+        payload_data: Data to send for analysis
+        system_prompt: Optional system prompt
+        language: Language code
+        
+    Returns:
+        API response dict with success/data/error
+    """
+    ic("🔧 Calling custom AI provider")
+    ic(f"📤 Custom API Name: {custom_config.get('name')}")
+    ic(f"📤 Custom API URL: {custom_config.get('url')}")
+    
+    url = custom_config.get('url', '')
+    model = custom_config.get('model', 'default')
+    auth_type = custom_config.get('authType', 'none')
+    request_template = custom_config.get('requestTemplate', '')
+    
+    if not url:
+        return {
+            'success': False,
+            'error': 'Custom API URL is required'
+        }
+    
+    # Build headers
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    
+    # Add auth headers
+    if auth_type == 'bearer':
+        token = custom_config.get('bearerToken', '')
+        if token:
+            headers['Authorization'] = f'Bearer {token}'
+    elif auth_type == 'api-key-header':
+        header_name = custom_config.get('apiKeyHeaderName', 'X-API-Key')
+        header_value = custom_config.get('apiKeyHeaderValue', '')
+        if header_value:
+            headers[header_name] = header_value
+    elif auth_type == 'basic':
+        import base64
+        username = custom_config.get('basicUsername', '')
+        password = custom_config.get('basicPassword', '')
+        if username and password:
+            credentials = base64.b64encode(f"{username}:{password}".encode()).decode()
+            headers['Authorization'] = f'Basic {credentials}'
+    # Note: digest auth is handled separately below using requests.auth.HTTPDigestAuth
+    
+    # Store digest credentials for later use
+    digest_auth = None
+    if auth_type == 'digest':
+        username = custom_config.get('digestUsername', '')
+        password = custom_config.get('digestPassword', '')
+        if username and password:
+            digest_auth = (username, password)
+            ic(f"🔐 Digest auth configured for user: {username}")
+    
+    # Add custom headers
+    custom_headers = custom_config.get('customHeaders', [])
+    for header in custom_headers:
+        if header.get('name') and header.get('value'):
+            headers[header['name']] = header['value']
+    
+    # Build request payload
+    if request_template:
+        # Use the user-defined template
+        full_prompt = f"{system_prompt or ''}\n\n{prompt}\n\nQuery Data:\n{json.dumps(payload_data.get('data', {}), indent=2)}"
+        
+        request_body_str = request_template.replace('{{MODEL}}', model)
+        request_body_str = request_body_str.replace('{{PAYLOAD}}', full_prompt)
+        
+        try:
+            ai_request_payload = json.loads(request_body_str)
+        except json.JSONDecodeError as e:
+            return {
+                'success': False,
+                'error': f'Invalid request template JSON: {str(e)}'
+            }
+    else:
+        # Default OpenAI-compatible format
+        ai_request_payload = {
+            'model': model,
+            'messages': [
+                {
+                    'role': 'system',
+                    'content': system_prompt or 'You are a helpful assistant.'
+                },
+                {
+                    'role': 'user',
+                    'content': f"{prompt}\n\nQuery Data:\n{json.dumps(payload_data.get('data', {}), indent=2)}"
+                }
+            ],
+            'max_tokens': 4096
+        }
+    
+    ic(f"📤 Request payload keys: {list(ai_request_payload.keys())}")
+    
+    # Execute the request
+    if digest_auth:
+        # Use digest auth - need to make request directly with requests library
+        result = _execute_ai_request_with_digest(url, headers, ai_request_payload, digest_auth)
+    else:
+        result = _execute_ai_request(url, headers, ai_request_payload)
+    
+    # If successful, add the response path for frontend processing
+    if result.get('success') and result.get('data'):
+        result['responsePath'] = custom_config.get('responsePath', 'choices[0].message.content')
+        result['isCustomProvider'] = True
+    
+    return result
+
+
+def _execute_ai_request_with_digest(full_url: str, headers: dict, ai_request_payload: dict, digest_auth: tuple) -> dict:
+    """Execute AI API request with Digest authentication."""
+    import requests
+    from requests.auth import HTTPDigestAuth
+    
+    ic(f"📤 Full URL (Digest Auth): {full_url}")
+    
+    start_time = time.time()
+    
+    try:
+        response = requests.post(
+            full_url,
+            headers=headers,
+            json=ai_request_payload,
+            auth=HTTPDigestAuth(digest_auth[0], digest_auth[1]),
+            timeout=300  # 5 minute timeout for AI requests
+        )
+        
+        elapsed_ms = int((time.time() - start_time) * 1000)
+        
+        ic(f"📥 Response Status (Digest): {response.status_code}, {elapsed_ms}ms")
+        
+        if 200 <= response.status_code < 300:
+            try:
+                response_data = response.json()
+                ic("✅ Success (Digest Auth)")
+                
+                return {
+                    'success': True,
+                    'status_code': response.status_code,
+                    'data': response_data,
+                    'elapsed_ms': elapsed_ms,
+                    'attempts': 1
+                }
+            except ValueError:
+                return {
+                    'success': True,
+                    'status_code': response.status_code,
+                    'data': response.text,
+                    'elapsed_ms': elapsed_ms,
+                    'attempts': 1
+                }
+        else:
+            ic(f"❌ Request failed (Digest): {response.status_code}")
+            return {
+                'success': False,
+                'status_code': response.status_code,
+                'error': f"HTTP {response.status_code}: {response.text[:200]}",
+                'elapsed_ms': elapsed_ms
+            }
+            
+    except requests.exceptions.Timeout:
+        elapsed_ms = int((time.time() - start_time) * 1000)
+        return {
+            'success': False,
+            'error': 'Request timeout (5 minutes)',
+            'elapsed_ms': elapsed_ms
+        }
+    except Exception as e:
+        elapsed_ms = int((time.time() - start_time) * 1000)
+        ic(f"💥 Exception (Digest Auth): {str(e)}")
+        return {
+            'success': False,
+            'error': str(e),
+            'elapsed_ms': elapsed_ms
+        }

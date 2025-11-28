@@ -25948,15 +25948,30 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             // Check if provider is configured (has credentials in Couchbase)
             const selectedOption = providerDropdown.options[providerDropdown.selectedIndex];
-            const hasApiKey = selectedOption?.dataset.apiKey && selectedOption.dataset.apiKey.length > 0;
+            const isCustomProvider = selectedOption?.dataset.isCustom === 'true';
+            let customConfig = null;
             
-            if (!hasApiKey) {
-                showToast('No API key configured for this provider. Please add in Settings.', 'error');
-                Logger.error('[AI] No API key for provider:', provider);
-                return;
+            if (isCustomProvider) {
+                // Custom AI provider - parse the stored config
+                try {
+                    customConfig = JSON.parse(selectedOption.dataset.customConfig);
+                    Logger.debug(`[AI] Custom provider: ${customConfig.name}`);
+                } catch (e) {
+                    showToast('Invalid custom provider configuration', 'error');
+                    return;
+                }
+            } else {
+                // Standard provider - check API key
+                const hasApiKey = selectedOption?.dataset.apiKey && selectedOption.dataset.apiKey.length > 0;
+                
+                if (!hasApiKey) {
+                    showToast('No API key configured for this provider. Please add in Settings.', 'error');
+                    Logger.error('[AI] No API key for provider:', provider);
+                    return;
+                }
             }
             
-            Logger.debug(`[AI] Provider: ${provider} (credentials in Couchbase)`);
+            Logger.debug(`[AI] Provider: ${provider} (${isCustomProvider ? 'custom' : 'credentials in Couchbase'})`);
             
             // Gather selections
             const selections = {
@@ -26042,7 +26057,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     couchbaseConfig: cbConfig,
                     // Only send provider ID - Flask will get credentials from user::config
                     provider: provider,
-                    language: selectedLanguage
+                    language: selectedLanguage,
+                    // Include custom config if using a custom provider
+                    customConfig: customConfig
                 };
                 
                 Logger.info(`[AI] Payload size: ${JSON.stringify(savePayload).length} bytes`);
@@ -26448,28 +26465,50 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 
                 const promptFull = record.prompt || 'N/A';
                 const promptShort = truncateText(promptFull, 60);
+                const promptId = `prompt-${record.documentId}`;
+                const needsExpand = promptFull.length > 60;
+                
+                // Prompt cell with Show More/Show Less
+                const promptHtml = needsExpand ? `
+                    <div>
+                        <span id="${promptId}-short">${promptShort}</span>
+                        <span id="${promptId}-full" style="display: none;">${promptFull}</span>
+                        <button onclick="togglePromptExpand('${promptId}')" 
+                                id="${promptId}-btn"
+                                style="background: none; border: none; color: #007bff; cursor: pointer; font-size: 11px; padding: 2px 4px; margin-left: 4px;">
+                            Show More
+                        </button>
+                    </div>
+                ` : promptFull;
                 
                 // Format filters
                 const filters = record.filters || record.parseJson?.filters || {};
                 const dateRangeHtml = `From: ${filters.date_range?.from || 'N/A'}<br>To:&nbsp;&nbsp; ${filters.date_range?.to || 'N/A'}`;
                 
+                // Check if any filter is active (non-default value)
+                const sqlFilter = filters.sql_statement || '';
+                const timeFilter = filters.elapsed_time || '';
+                const collFilter = filters.collection || 'All';
+                const hasActiveFilter = sqlFilter !== '' || timeFilter !== '' || collFilter !== 'All';
+                const activeFilterColor = '#0d6efd';  // Blue to indicate non-default value
+                
                 const filtersHtml = `
-                    <div style="font-size: 11px; line-height: 1.3; min-width: 180px; text-align: center;">
-                        <div style="font-family: monospace; color: #666; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 2px;">
+                    <div style="font-size: 11px; line-height: 1.3; min-width: 180px; text-align: center; color: #666;">
+                        <div style="font-family: monospace; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 2px;">
                             ${filters.date_range?.from || 'N/A'} ➔ ${filters.date_range?.to || 'N/A'}
                         </div>
                         <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
-                            <div title="${filters.sql_statement || 'None'}">SQL: <span style="font-family: monospace; font-weight: 600;">${truncateText(filters.sql_statement || 'None', 15)}</span></div>
-                            <div>Time: <span style="font-family: monospace; font-weight: 600;">${filters.elapsed_time || 'None'}</span></div>
+                            <div title="${sqlFilter || 'None'}">SQL: <span style="font-family: monospace; font-weight: 600; ${sqlFilter ? `color: ${activeFilterColor};` : ''}">${truncateText(sqlFilter || 'None', 15)}</span></div>
+                            <div>Time: <span style="font-family: monospace; font-weight: 600; ${timeFilter ? `color: ${activeFilterColor};` : ''}">${timeFilter || 'None'}</span></div>
                         </div>
-                        <div style="margin-top: 2px;">Coll: <span style="font-family: monospace; font-weight: 600;">${filters.collection || 'All'}</span></div>
+                        <div style="margin-top: 2px;">Coll: <span style="font-family: monospace; font-weight: 600; ${collFilter !== 'All' ? `color: ${activeFilterColor};` : ''}">${collFilter}</span></div>
                     </div>
                 `;
                 
                 row.innerHTML = `
                     <td style="padding: 10px; border: 1px solid #dee2e6;" title="${exactTime}">${relativeTime}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: 500;">${sourceCluster}</td>
-                    <td style="padding: 10px; border: 1px solid #dee2e6;" title="${promptFull}">${promptShort}</td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6; max-width: 250px;">${promptHtml}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">${filtersHtml}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">${obfuscatedBadge}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6;">${providerBadge}</td>
@@ -26623,6 +26662,31 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         window.deleteAnalysis = deleteAnalysis;
 
         /**
+         * Toggle prompt text expand/collapse in history table
+         */
+        window.togglePromptExpand = function(promptId) {
+            const shortEl = document.getElementById(`${promptId}-short`);
+            const fullEl = document.getElementById(`${promptId}-full`);
+            const btnEl = document.getElementById(`${promptId}-btn`);
+            
+            if (!shortEl || !fullEl || !btnEl) return;
+            
+            const isExpanded = fullEl.style.display !== 'none';
+            
+            if (isExpanded) {
+                // Collapse
+                shortEl.style.display = 'inline';
+                fullEl.style.display = 'none';
+                btnEl.textContent = 'Show More';
+            } else {
+                // Expand
+                shortEl.style.display = 'none';
+                fullEl.style.display = 'inline';
+                btnEl.textContent = 'Show Less';
+            }
+        };
+
+        /**
          * Populate AI provider dropdown from user config
          */
         async function populateAIProviderDropdown() {
@@ -26659,11 +26723,14 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     return;
                 }
                 
-                const aiApis = result.data.aiApis;
+                const aiApis = result.data.aiApis || [];
+                const customAiApis = result.data.customAiApis || [];
+                
                 dropdown.innerHTML = '<option value="">-- Select AI Provider --</option>';
                 
                 let hasUsableProvider = false;
 
+                // Add standard AI providers
                 aiApis.forEach((api, index) => {
                     const hasApiKey = api.apiKey && api.apiKey.length > 0;
                     const status = hasApiKey ? '✅' : '❌';
@@ -26690,7 +26757,45 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     dropdown.appendChild(option);
                 });
                 
-                Logger.info(`[AI] Dropdown populated: ${aiApis.length} providers, ${hasUsableProvider ? 'HAS' : 'NO'} usable keys`);
+                // Add custom AI providers (if any)
+                if (customAiApis.length > 0) {
+                    // Add a separator
+                    const separator = document.createElement('option');
+                    separator.disabled = true;
+                    separator.textContent = '──── Custom APIs ────';
+                    dropdown.appendChild(separator);
+                    
+                    customAiApis.forEach(api => {
+                        // For custom APIs, check if they have auth configured
+                        let hasAuth = api.authType === 'none';
+                        if (api.authType === 'bearer') hasAuth = !!api.bearerToken;
+                        if (api.authType === 'api-key-header') hasAuth = !!api.apiKeyHeaderValue;
+                        if (api.authType === 'basic') hasAuth = !!(api.basicUsername && api.basicPassword);
+                        if (api.authType === 'digest') hasAuth = !!(api.digestUsername && api.digestPassword);
+                        
+                        const status = hasAuth ? '🔧' : '❌';
+                        const modelInfo = api.model ? ` - ${api.model}` : '';
+                        
+                        const option = document.createElement('option');
+                        option.value = api.id;
+                        option.textContent = `${status} ${api.name}${modelInfo}`;
+                        option.disabled = !hasAuth;
+                        
+                        // Store custom config as JSON
+                        option.dataset.isCustom = 'true';
+                        option.dataset.customConfig = JSON.stringify(api);
+                        
+                        if (hasAuth) {
+                            hasUsableProvider = true;
+                        }
+                        
+                        dropdown.appendChild(option);
+                    });
+                    
+                    Logger.info(`[AI] Added ${customAiApis.length} custom AI providers to dropdown`);
+                }
+                
+                Logger.info(`[AI] Dropdown populated: ${aiApis.length} standard + ${customAiApis.length} custom providers, ${hasUsableProvider ? 'HAS' : 'NO'} usable keys`);
                 
                 // Trigger change event to update button state
                 dropdown.dispatchEvent(new Event('change'));

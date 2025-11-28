@@ -2106,6 +2106,20 @@ LET bid = CONCAT("", s.bucket_id, ""),
                             
                             <!-- AI providers will be dynamically rendered here -->
                             <div id="ai-providers-container"></div>
+                            
+                            <!-- Custom AI API Section -->
+                            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px dashed #ccc;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <h3 style="margin: 0;">Custom AI APIs</h3>
+                                    <button class="btn-standard" onclick="openCustomAIModal()" style="background: #28a745; color: white;">
+                                        + Add Custom API
+                                    </button>
+                                </div>
+                                <p style="color: #666; font-size: 0.9em; margin: 10px 0;">
+                                    Add custom AI API endpoints (local LLMs, alternative providers, etc.)
+                                </p>
+                                <div id="custom-ai-list"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2114,6 +2128,139 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     <button class="btn-standard" onclick="testConnection()">Test Connection</button>
                     <button class="btn-standard" onclick="saveSettings()">Save Settings</button>
                     <button class="btn-standard" onclick="closeSettingsModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom AI API Modal -->
+    <div id="custom-ai-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <span class="close" onclick="closeCustomAIModal()">&times;</span>
+            <h2 id="custom-ai-modal-title">Add Custom AI API</h2>
+            
+            <div style="padding: 20px;">
+                <!-- Basic Info -->
+                <div class="settings-section">
+                    <h3>Basic Configuration</h3>
+                    <div class="settings-row">
+                        <label>API Name: <span style="color: red;">*</span></label>
+                        <input type="text" id="custom-ai-name" placeholder="e.g., My Local LLM, Ollama, etc." style="width: 300px;" />
+                    </div>
+                    <div class="settings-row">
+                        <label>API URL: <span style="color: red;">*</span></label>
+                        <input type="text" id="custom-ai-url" placeholder="https://api.example.com/v1/chat/completions" style="width: 400px;" />
+                    </div>
+                    <div class="settings-row">
+                        <label>Model Name:</label>
+                        <input type="text" id="custom-ai-model" placeholder="e.g., llama3, mistral-7b" style="width: 300px;" />
+                    </div>
+                </div>
+                
+                <!-- Authentication -->
+                <div class="settings-section">
+                    <h3>Authentication</h3>
+                    <div class="settings-row">
+                        <label>Auth Type:</label>
+                        <select id="custom-ai-auth-type" onchange="updateCustomAIAuthFields()" style="width: 200px;">
+                            <option value="none">None</option>
+                            <option value="bearer">Bearer Token</option>
+                            <option value="api-key-header">API Key (Header)</option>
+                            <option value="basic">Basic Auth</option>
+                            <option value="digest">Digest Auth</option>
+                        </select>
+                    </div>
+                    <div id="custom-ai-auth-fields" style="margin-top: 10px;"></div>
+                </div>
+                
+                <!-- Custom Headers -->
+                <div class="settings-section">
+                    <h3>Custom Headers</h3>
+                    <p style="color: #666; font-size: 0.85em; margin-bottom: 10px;">
+                        Add any additional headers required by your API.
+                    </p>
+                    <div id="custom-ai-headers-list"></div>
+                    <button class="btn-standard" onclick="addCustomAIHeader()" style="margin-top: 8px; font-size: 12px;">
+                        + Add Header
+                    </button>
+                </div>
+                
+                <!-- Request Template -->
+                <div class="settings-section">
+                    <h3>Request Body Template</h3>
+                    <p style="color: #666; font-size: 0.85em; margin-bottom: 10px;">
+                        Define the JSON request body. Use <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">{{PAYLOAD}}</code> where the analysis data should be inserted.
+                        Use <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">{{MODEL}}</code> for the model name.
+                    </p>
+                    <textarea id="custom-ai-request-template" 
+                              style="width: 100%; height: 200px; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;"
+                              placeholder='{
+  "model": "{{MODEL}}",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a Couchbase query performance analyst."
+    },
+    {
+      "role": "user", 
+      "content": "Analyze this data: {{PAYLOAD}}"
+    }
+  ],
+  "max_tokens": 4096
+}'></textarea>
+                </div>
+                
+                <!-- Response Mapping -->
+                <div class="settings-section">
+                    <h3>Response Mapping</h3>
+                    <p style="color: #666; font-size: 0.85em; margin-bottom: 10px;">
+                        Specify the JSON path to extract the AI response text from the API response.
+                    </p>
+                    <div class="settings-row">
+                        <label>Response Path:</label>
+                        <input type="text" id="custom-ai-response-path" 
+                               placeholder="e.g., choices[0].message.content or content[0].text" 
+                               style="width: 350px;" />
+                    </div>
+                    <div style="margin-top: 10px; background: #f8f9fa; padding: 12px; border-radius: 4px; font-size: 0.85em;">
+                        <strong>Common Response Paths:</strong><br>
+                        <code>choices[0].message.content</code> - OpenAI/Grok format<br>
+                        <code>content[0].text</code> - Anthropic/Claude format<br>
+                        <code>response</code> - Simple text response<br>
+                        <code>message.content</code> - Ollama format
+                    </div>
+                </div>
+                
+                <!-- cURL Preview -->
+                <div class="settings-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0;">cURL Preview</h3>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-standard" onclick="generateCurlPreview()" style="font-size: 12px; padding: 6px 12px;">
+                                🔄 Generate cURL
+                            </button>
+                            <button class="btn-standard" onclick="copyCurlPreview()" style="font-size: 12px; padding: 6px 12px;">
+                                📋 Copy
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="custom-ai-curl-preview" 
+                              readonly 
+                              style="width: 100%; height: 150px; font-family: monospace; font-size: 11px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: #1e1e1e; color: #d4d4d4; margin-top: 10px; resize: vertical;"
+                              placeholder="Click 'Generate cURL' to preview the request as a cURL command..."></textarea>
+                </div>
+                
+                <!-- Actions -->
+                <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                    <button class="btn-standard" onclick="testCustomAIConfig()" style="background: #17a2b8; color: white;">
+                        🧪 Test Configuration
+                    </button>
+                    <button class="btn-standard" onclick="saveCustomAI()" style="background: #28a745; color: white;">
+                        💾 Save Custom API
+                    </button>
+                    <button class="btn-standard" onclick="closeCustomAIModal()">
+                        Cancel
+                    </button>
                 </div>
             </div>
         </div>
