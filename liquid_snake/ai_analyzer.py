@@ -70,8 +70,8 @@ class AIHttpClient:
     
     def __init__(self, 
                  max_retries=3, 
-                 backoff_factor=0.5, 
-                 timeout=30,
+                 backoff_factor=5.0,  # 5 second wait before retry
+                 timeout=300,  # 5 minutes - AI models need time for complex analysis
                  retry_on_status=[429, 500, 502, 503, 504]):
         """
         Initialize HTTP client with retry configuration
@@ -1509,7 +1509,7 @@ def call_ai_provider(provider: str,
                     {"role": "user", "content": f"{prompt}\n\nQuery Data:\n{json.dumps(payload_data['data'], indent=2)}"}
                 ],
                 "temperature": 0.5,
-                "max_tokens": max_tokens
+                "max_completion_tokens": max_tokens
             }
             
             if provider == 'openai':
@@ -1551,7 +1551,6 @@ def call_ai_provider(provider: str,
     if provider == 'openai' or provider == 'grok':
         ai_request_payload = {
             'model': model,
-            'max_tokens': max_tokens,
             'messages': [
                 {
                     'role': 'system',
@@ -1564,9 +1563,12 @@ def call_ai_provider(provider: str,
             ]
         }
         
-        # OpenAI supports json_object response format
+        # OpenAI uses max_completion_tokens, Grok uses max_tokens
         if provider == 'openai':
+            ai_request_payload['max_completion_tokens'] = max_tokens
             ai_request_payload['response_format'] = {'type': 'json_object'}
+        else:
+            ai_request_payload['max_tokens'] = max_tokens
         
         headers = {
             'Authorization': f'Bearer {api_key}'

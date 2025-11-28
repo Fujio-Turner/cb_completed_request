@@ -27018,11 +27018,12 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             content = content.substring(jsonStart, jsonEnd + 1);
                         }
                         
-                        // Attempt to sanitize literal newlines in strings (common AI JSON error)
-                        // This is a simple heuristic: replace newlines that aren't preceded by escape
-                        // Note: A full parser is better, but this helps with simple cases
-                        // content = content.replace(/(?<!\\)\n/g, '\\n'); 
-                        // Commented out as it might break formatting, sticking to extraction first
+                        // Sanitize literal newlines inside JSON strings (common AI JSON error)
+                        // Replace unescaped newlines with escaped version
+                        content = content.replace(/\r\n/g, '\\n').replace(/\n/g, '\\n').replace(/\r/g, '\\n');
+                        
+                        // Also fix common HTML-in-JSON issues: unescaped < and > inside strings
+                        // (but preserve HTML tags that should render)
                         
                         analysisData = JSON.parse(content);
                     } catch (e) {
@@ -27046,6 +27047,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         if (jsonStart !== -1 && jsonEnd !== -1) {
                             content = content.substring(jsonStart, jsonEnd + 1);
                         }
+                        
+                        // Sanitize literal newlines inside JSON strings
+                        content = content.replace(/\r\n/g, '\\n').replace(/\n/g, '\\n').replace(/\r/g, '\\n');
                         
                         analysisData = JSON.parse(content);
                     } catch (e) {
@@ -27100,6 +27104,63 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             if (!contextDiv || !responseDiv) return;
             
+            // Extract context data into structured format
+            const extractContextAsTable = () => {
+                const text = contextDiv.textContent || '';
+                
+                // Parse key-value pairs from context
+                const getValue = (label) => {
+                    const regex = new RegExp(label + '[:\\s]+([^\\n]+)', 'i');
+                    const match = text.match(regex);
+                    return match ? match[1].trim() : 'N/A';
+                };
+                
+                let md = '## 📋 Analysis Request Info\n\n';
+                
+                // Request Info Table
+                md += '### Request Details\n\n';
+                md += '| Property | Value |\n';
+                md += '|----------|-------|\n';
+                md += `| **Date** | ${getValue('Date')} |\n`;
+                md += `| **Provider** | ${getValue('Provider')} |\n`;
+                md += `| **Model** | ${getValue('Model')} |\n`;
+                md += `| **Language** | ${getValue('Language')} |\n`;
+                md += `| **Query Groups** | ${getValue('Query Groups')} |\n`;
+                md += `| **Status** | ${getValue('Status')} |\n`;
+                md += '\n';
+                
+                // Prompt
+                const promptMatch = text.match(/Prompt\s*(.*?)(?=Filters Applied|Timezone|$)/is);
+                const prompt = promptMatch ? promptMatch[1].trim() : getValue('Prompt');
+                md += `### 💬 Prompt\n\n> ${prompt}\n\n`;
+                
+                // Filters Table
+                md += '### 🔧 Filters Applied\n\n';
+                md += '| Filter | Value |\n';
+                md += '|--------|-------|\n';
+                md += `| **Timezone** | ${getValue('Timezone')} |\n`;
+                md += `| **Date From** | ${getValue('From')} |\n`;
+                md += `| **Date To** | ${getValue('To')} |\n`;
+                md += `| **SQL Filter** | ${getValue('SQL Filter')} |\n`;
+                md += `| **Time Filter** | ${getValue('Time Filter')} |\n`;
+                md += `| **Collection** | ${getValue('Collection')} |\n`;
+                md += `| **Exclude System** | ${getValue('Exclude System')} |\n`;
+                md += '\n';
+                
+                // Metrics Table
+                md += '### 📊 Metrics\n\n';
+                md += '| Metric | Value |\n';
+                md += '|--------|-------|\n';
+                md += `| **Queries** | ${getValue('Queries')} |\n`;
+                md += `| **Indexes** | ${getValue('Indexes')} |\n`;
+                md += `| **Payload Size** | ${getValue('Payload Size')} |\n`;
+                md += `| **Response Size** | ${getValue('Response Size')} |\n`;
+                md += `| **AI Time** | ${getValue('AI Time')} |\n`;
+                md += `| **Obfuscated** | ${getValue('Obfuscated')} |\n`;
+                
+                return md;
+            };
+            
             // Helper to convert HTML to Markdown
             const htmlToMarkdown = (element) => {
                 let md = '';
@@ -27110,6 +27171,52 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         md += node.textContent.trim().replace(/\s+/g, ' ') + ' ';
                     } else if (node.nodeType === Node.ELEMENT_NODE) {
                         const tagName = node.tagName.toLowerCase();
+                        
+                        // Handle the Chart Trends section - extract only the table, skip diagram
+                        if (node.id === 'ai-insights-table') {
+                            // Find the table inside this container
+                            const table = node.querySelector('#ai-insights-data-table');
+                            if (table) {
+                                const rows = table.querySelectorAll('tbody tr');
+                                if (rows.length > 0) {
+                                    md += '\n### 📈 Chart Trends & Analysis\n\n';
+                                    md += '| Severity | Category | Time Range | Duration | Insight |\n';
+                                    md += '|----------|----------|------------|----------|--------|\n';
+                                    rows.forEach(row => {
+                                        const cells = row.querySelectorAll('td');
+                                        if (cells.length >= 5) {
+                                            const severity = cells[0].textContent.trim();
+                                            const category = cells[1].textContent.trim();
+                                            const timeRange = cells[2].textContent.trim().replace(/\n/g, ' ').replace(/→/g, '→');
+                                            const duration = cells[3].textContent.trim();
+                                            // Get full insight content
+                                            const insightCell = cells[4];
+                                            const title = insightCell.querySelector('strong')?.textContent.trim() || '';
+                                            const content = insightCell.querySelector('span')?.textContent.trim() || '';
+                                            const insight = `**${title}** ${content}`;
+                                            md += `| ${severity} | ${category} | ${timeRange} | ${duration} | ${insight} |\n`;
+                                        }
+                                    });
+                                    md += '\n';
+                                }
+                            }
+                            return; // Skip processing children
+                        }
+                        
+                        // Skip the table if encountered directly (handled above)
+                        if (node.id === 'ai-insights-data-table') {
+                            return;
+                        }
+                        
+                        // Skip timeline diagram div completely
+                        if (node.id === 'ai-insights-timeline') {
+                            return;
+                        }
+                        
+                        // Skip the entire Chart Trends container's button and header
+                        if (node.tagName === 'BUTTON' && node.textContent.includes('Reset Zoom')) {
+                            return;
+                        }
                         
                         // Special handling for SQL code blocks (prioritize over generic div)
                         if (tagName === 'pre' || (tagName === 'div' && node.classList.contains('index-statement'))) {
@@ -27141,6 +27248,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             md += '- ' + htmlToMarkdown(node) + '\n';
                         } else if (tagName === 'br') {
                             md += '\n';
+                        } else if (tagName === 'table') {
+                            // Handle other tables
+                            md += '\n' + htmlToMarkdown(node) + '\n';
                         } else {
                             md += htmlToMarkdown(node);
                         }
@@ -27150,8 +27260,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 return md.replace(/\n{3,}/g, '\n\n').trim();
             };
             
-            const contextMd = `## Request Info\n${htmlToMarkdown(contextDiv)}`;
-            const responseMd = `## AI Analysis Results\n${htmlToMarkdown(responseDiv)}`;
+            const contextMd = extractContextAsTable();
+            const responseMd = `## 🎯 AI Analysis Results\n\n${htmlToMarkdown(responseDiv)}`;
             
             const fullMd = `${contextMd}\n\n---\n\n${responseMd}`;
             
@@ -27379,6 +27489,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 const tableContainer = document.getElementById('ai-insights-table');
                 if (tableContainer) {
                     tableContainer.innerHTML = buildInsightsTable(insights);
+                    
+                    // Setup bidirectional highlighting between timeline and table
+                    setupTimelineTableSync(window._aiInsightsTimeline, insights);
                 }
                 
             } catch (e) {
@@ -27429,7 +27542,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 const rowBg = idx % 2 === 0 ? '#fff' : '#f8f9fa';
                 
                 html += `
-                    <tr style="background: ${rowBg}; border-bottom: 1px solid #eee;">
+                    <tr data-insight-start="${insight.start}" data-insight-idx="${idx}" 
+                        style="background: ${rowBg}; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s;"
+                        class="insight-table-row">
                         <td style="padding: 8px; vertical-align: top;">${severityBadge(insight.severity)}</td>
                         <td style="padding: 8px; vertical-align: top; font-weight: 600; color: #495057;">${insight.group || 'General'}</td>
                         <td style="padding: 8px; vertical-align: top; font-family: monospace; font-size: 10px;">
@@ -27449,6 +27564,118 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         
         window.renderAIInsightsTimeline = renderAIInsightsTimeline;
         window.buildInsightsTable = buildInsightsTable;
+        
+        /**
+         * Setup bidirectional sync between timeline and table
+         * - Hovering timeline item highlights table row
+         * - Hovering table row highlights timeline item
+         */
+        function setupTimelineTableSync(timeline, insights) {
+            if (!timeline || !insights) return;
+            
+            // Sort insights same way as table to create mapping
+            const sortedInsights = [...insights].sort((a, b) => {
+                return new Date(a.start || 0) - new Date(b.start || 0);
+            });
+            
+            // Create mapping from start time to timeline item ID
+            const startTimeToItemId = {};
+            insights.forEach((insight, idx) => {
+                startTimeToItemId[insight.start] = idx + 1; // Timeline uses 1-based IDs
+            });
+            
+            // Timeline hover/select → Highlight table row
+            timeline.on('itemover', function(props) {
+                if (props.item) {
+                    // Find the insight by ID and get its start time
+                    const itemId = props.item;
+                    const insight = insights[itemId - 1]; // Convert to 0-based
+                    if (insight) {
+                        highlightTableRow(insight.start, true);
+                    }
+                }
+            });
+            
+            timeline.on('itemout', function(props) {
+                // Remove all highlights
+                document.querySelectorAll('.insight-table-row').forEach(row => {
+                    row.style.background = '';
+                    row.classList.remove('highlight');
+                });
+            });
+            
+            // Table row click → Highlight timeline item (changed from hover to avoid excessive zooming)
+            document.querySelectorAll('.insight-table-row').forEach(row => {
+                row.addEventListener('click', function() {
+                    const startTime = this.dataset.insightStart;
+                    const itemId = startTimeToItemId[startTime];
+                    
+                    // Remove highlight from all rows first
+                    document.querySelectorAll('.insight-table-row').forEach(r => {
+                        r.style.background = '';
+                        r.classList.remove('highlight');
+                    });
+                    
+                    if (itemId && timeline) {
+                        // Select the item in timeline (visual highlight)
+                        timeline.setSelection([itemId]);
+                        
+                        // Focus timeline on the item with animation
+                        timeline.focus(itemId, { animation: { duration: 300 } });
+                    }
+                    
+                    // Highlight this row
+                    this.style.background = '#fff3cd';
+                    this.classList.add('highlight');
+                });
+            });
+            
+            Logger.debug('[AI] Timeline-table sync setup complete');
+        }
+        
+        /**
+         * Highlight a table row by start time
+         */
+        function highlightTableRow(startTime, highlight) {
+            document.querySelectorAll('.insight-table-row').forEach(row => {
+                if (row.dataset.insightStart === startTime) {
+                    if (highlight) {
+                        row.style.background = '#fff3cd';
+                        row.classList.add('highlight');
+                        // Scroll row into view
+                        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else {
+                        row.style.background = '';
+                        row.classList.remove('highlight');
+                    }
+                }
+            });
+        }
+        
+        window.setupTimelineTableSync = setupTimelineTableSync;
+        
+        /**
+         * Reset timeline zoom to show all items
+         */
+        function resetTimelineZoom() {
+            if (window._aiInsightsTimeline) {
+                // Clear any selection
+                window._aiInsightsTimeline.setSelection([]);
+                
+                // Fit all items in view
+                window._aiInsightsTimeline.fit({ animation: { duration: 300 } });
+                
+                // Clear table row highlights
+                document.querySelectorAll('.insight-table-row').forEach(row => {
+                    row.style.background = '';
+                    row.classList.remove('highlight');
+                });
+                
+                Logger.debug('[AI] Timeline zoom reset');
+            }
+        }
+        
+        window.resetTimelineZoom = resetTimelineZoom;
 
         /**
          * Format AI analysis data as HTML
@@ -27539,7 +27766,10 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Chart Trends Analysis - vis.js Timeline
             if (data.chart_trends && data.chart_trends.insights && data.chart_trends.insights.length > 0) {
                 html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #17a2b8;">
-                    <h4 style="color: #17a2b8; margin: 0 0 10px 0; font-size: 15px;">📈 Chart Trends & Analysis</h4>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h4 style="color: #17a2b8; margin: 0; font-size: 15px;">📈 Chart Trends & Analysis</h4>
+                        <button onclick="resetTimelineZoom()" style="background: #6c757d; color: white; border: none; padding: 4px 10px; font-size: 11px; border-radius: 3px; cursor: pointer;" title="Reset timeline to show all items">🔄 Reset Zoom</button>
+                    </div>
                     <div id="ai-insights-timeline" style="height: 300px; border: 1px solid #dee2e6; border-radius: 4px; background: white;"></div>
                     
                     <!-- Insights Data Table (for full context and Copy as Markdown) -->
