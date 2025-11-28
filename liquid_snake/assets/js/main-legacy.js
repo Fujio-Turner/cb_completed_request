@@ -27322,15 +27322,13 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         start: insight.start,
                         end: insight.end || insight.start,
                         group: insight.group || 'General',
-                        // Enhanced tooltip with FROM/TO/Duration
-                        title: `<div style="max-width: 450px; padding: 10px; font-size: 12px; line-height: 1.5;">
+                        // Enhanced tooltip with FROM/TO/Duration on single line
+                        title: `<div style="max-width: 500px; max-height: 400px; padding: 10px; font-size: 12px; line-height: 1.5; overflow-y: auto;">
                             <div style="font-weight: bold; font-size: 13px; margin-bottom: 8px; color: ${colors.color};">${insight.title || 'Insight'}</div>
                             <div style="background: #f8f9fa; padding: 6px 8px; border-radius: 4px; margin-bottom: 8px; font-family: monospace; font-size: 11px;">
-                                <div><strong>FROM:</strong> ${formatTimestamp(insight.start)}</div>
-                                <div><strong>TO:</strong> ${formatTimestamp(insight.end || insight.start)}</div>
-                                <div><strong>Duration:</strong> ${duration}</div>
+                                <div><strong>FROM:</strong> ${formatTimestamp(insight.start)} → <strong>TO:</strong> ${formatTimestamp(insight.end || insight.start)} <span style="color: #666;">(${duration})</span></div>
                             </div>
-                            <div style="color: #333;">${insight.content || ''}</div>
+                            <div style="color: #333; word-wrap: break-word; white-space: pre-wrap;">${insight.content || ''}</div>
                         </div>`,
                         style: `background-color: ${colors.background}; border-color: ${colors.border}; color: ${colors.color}; border-width: 2px; border-radius: 4px;`
                     };
@@ -27395,6 +27393,13 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         function buildInsightsTable(insights) {
             if (!insights || !insights.length) return '';
             
+            // Sort insights by start time (ascending) to match timeline left-to-right order
+            const sortedInsights = [...insights].sort((a, b) => {
+                const dateA = new Date(a.start || 0);
+                const dateB = new Date(b.start || 0);
+                return dateA - dateB;
+            });
+            
             const severityBadge = (severity) => {
                 const colors = {
                     'critical': 'background: #dc3545; color: white;',
@@ -27417,7 +27422,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     </thead>
                     <tbody>`;
             
-            insights.forEach((insight, idx) => {
+            sortedInsights.forEach((insight, idx) => {
                 const duration = formatDuration(insight.start, insight.end);
                 const startTime = formatTimestamp(insight.start).substring(5); // Remove year
                 const endTime = formatTimestamp(insight.end || insight.start).substring(5);
