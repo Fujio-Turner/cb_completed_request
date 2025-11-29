@@ -277,6 +277,20 @@ if (window.TEXT_CONSTANTS) {
         // Vertical stake line functions (Issue #148)
         function addVerticalStake(timestamp) {
             verticalStakePosition = timestamp;
+            const stakeDateTime = new Date(timestamp);
+            const stakeDateTimeISO = stakeDateTime.toISOString();
+            Logger.debug(`📍 Stake created at x-axis value: ${timestamp} → ${stakeDateTimeISO}`);
+            
+            // Update AI Analyzer stake focus UI
+            const stakeDatetimeInput = document.getElementById('ai-stake-datetime');
+            const stakeFocusCheckbox = document.getElementById('ai-stake-focus-enabled');
+            if (stakeDatetimeInput) {
+                stakeDatetimeInput.value = stakeDateTimeISO;
+            }
+            if (stakeFocusCheckbox) {
+                stakeFocusCheckbox.checked = true;
+                stakeFocusCheckbox.disabled = false;
+            }
             
             const charts = [
                 window.filterChart,
@@ -338,6 +352,18 @@ if (window.TEXT_CONSTANTS) {
 
         function removeVerticalStake() {
             verticalStakePosition = null;
+            Logger.debug(`📍 Stake removed`);
+            
+            // Clear AI Analyzer stake focus UI
+            const stakeDatetimeInput = document.getElementById('ai-stake-datetime');
+            const stakeFocusCheckbox = document.getElementById('ai-stake-focus-enabled');
+            if (stakeDatetimeInput) {
+                stakeDatetimeInput.value = '';
+            }
+            if (stakeFocusCheckbox) {
+                stakeFocusCheckbox.checked = false;
+                stakeFocusCheckbox.disabled = true;
+            }
             
             const charts = [
                 window.filterChart,
@@ -25619,11 +25645,19 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 timeline_charts: document.getElementById('ai-include-timeline')?.checked || false
             };
             
+            // Get stake focus if enabled
+            const stakeFocusEnabled = document.getElementById('ai-stake-focus-enabled')?.checked || false;
+            const stakeFocusDatetime = document.getElementById('ai-stake-datetime')?.value || null;
+            
             const options = {
                 obfuscated: document.getElementById('ai-obfuscate-data')?.checked || false,
                 store_results: true,  // Always save for tracking and auditing
                 query_group_limit: parseInt(document.querySelector('input[name="ai-qg-limit"]:checked')?.value || "10"),
-                use_toon: document.getElementById('ai-send-toon')?.checked || false
+                use_toon: document.getElementById('ai-send-toon')?.checked || false,
+                stake_focus: stakeFocusEnabled && stakeFocusDatetime ? {
+                    enabled: true,
+                    datetime: stakeFocusDatetime
+                } : null
             };
             
             let prompt = document.getElementById('ai-user-prompt')?.value || "Analyze query performance";
@@ -25643,6 +25677,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Append Chart instruction - REMOVED (Now in System Prompt)
             
             Logger.debug('[AI] 📤 Sending data to Flask for processing...');
+            if (options.stake_focus) {
+                Logger.debug(`[AI] 📍 Stake focus enabled at: ${options.stake_focus.datetime}`);
+            }
             Logger.trace(`[AI] Selections: ${JSON.stringify(selections)}`);
             
             try {
@@ -25983,12 +26020,24 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 timeline_charts: document.getElementById('ai-include-timeline')?.checked || false
             };
             
+            // Get stake focus if enabled
+            const stakeFocusEnabled = document.getElementById('ai-stake-focus-enabled')?.checked || false;
+            const stakeFocusDatetime = document.getElementById('ai-stake-datetime')?.value || null;
+            
             const options = {
                 obfuscated: document.getElementById('ai-obfuscate-data')?.checked || false,
                 store_results: true,  // Always save for tracking and auditing
                 query_group_limit: parseInt(document.querySelector('input[name="ai-qg-limit"]:checked')?.value || "10"),
-                use_toon: document.getElementById('ai-send-toon')?.checked || false
+                use_toon: document.getElementById('ai-send-toon')?.checked || false,
+                stake_focus: stakeFocusEnabled && stakeFocusDatetime ? {
+                    enabled: true,
+                    datetime: stakeFocusDatetime
+                } : null
             };
+            
+            if (options.stake_focus) {
+                Logger.debug(`[AI] 📍 Stake focus enabled at: ${options.stake_focus.datetime}`);
+            }
             
             // Get and validate Cluster Name (Required)
             const clusterNameInput = document.getElementById('ai-cluster-name');

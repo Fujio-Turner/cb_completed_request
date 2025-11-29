@@ -136,6 +136,8 @@ export function syncChartZoom(sourceChart, xMin, xMax) {
  */
 export function addVerticalStake(timestamp) {
     verticalStakePosition = timestamp;
+    const stakeDateTime = new Date(timestamp);
+    Logger.debug(`📍 Stake created at x-axis value: ${timestamp} → ${stakeDateTime.toISOString()}`);
     
     const charts = [
         window.filterChart,
@@ -299,6 +301,8 @@ export function attachDoubleClickHandler(chartInstance) {
         
         // Get the timestamp at the clicked x position
         const timestamp = currentChart.scales.x.getValueForPixel(x);
+        const clickDateTime = new Date(timestamp);
+        Logger.debug(`📍 Double-click stake at x=${x}px → timestamp=${timestamp} → ${clickDateTime.toISOString()}`);
         
         // Add vertical stake line at this timestamp
         addVerticalStake(timestamp);
@@ -517,6 +521,8 @@ export function syncTimelineCharts(sourceEvent, activeChart) {
 
         try {
             const xValue = activeChart.scales.x.getValueForPixel(sourceEvent.x);
+            const xDateTime = new Date(xValue);
+            Logger.debug(`🎯 Stake x-axis value: ${xValue} → ${xDateTime.toISOString()}`);
             const targetX = chart.scales.x.getPixelForValue(xValue);
 
             if (chart.verticalLine && targetX >= chart.chartArea.left && targetX <= chart.chartArea.right) {

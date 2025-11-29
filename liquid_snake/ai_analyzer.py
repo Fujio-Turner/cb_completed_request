@@ -654,6 +654,24 @@ class AIPayloadBuilder:
         full_prompt = user_prompt
         if extra_instructions:
             full_prompt += f"\n\n{extra_instructions}"
+        
+        # Add stake focus instructions if enabled
+        stake_focus = options.get('stake_focus')
+        if stake_focus and stake_focus.get('enabled') and stake_focus.get('datetime'):
+            stake_datetime = stake_focus.get('datetime')
+            full_prompt += f"""
+
+**🎯 STAKE FOCUS POINT - IMPORTANT:**
+The user has marked a specific time point on the Timeline charts for focused analysis: **{stake_datetime}**
+
+This "stake" indicates the user observed something significant at this exact moment and wants you to:
+1. **Identify what happened at or around {stake_datetime}** - Look for anomalies, spikes, or pattern changes in the Timeline data
+2. **Analyze queries executing at this time** - Check requestTime values close to this timestamp for slow queries, errors, or unusual patterns
+3. **Look for correlations** - Examine if metrics like memory, CPU time, kernel time, result size, or index scans show unusual values around this time
+4. **Provide specific insights** - In your response, include a dedicated section titled "**📍 Stake Point Analysis ({stake_datetime})**" that addresses what was happening at this specific moment
+5. **Connect to broader patterns** - Explain if this time point is part of a larger trend or an isolated incident
+
+Prioritize analysis of this time point alongside your overall analysis."""
 
         payload = {
             'prompt': full_prompt,

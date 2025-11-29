@@ -571,8 +571,22 @@
                             </label>
                         </div>
                     </div>
+
+                    <!-- Divider -->
+                    <div style="width: 1px; height: 24px; background: #e0e0e0;"></div>
+
+                    <!-- Timeline Stake Focus Option -->
+                    <div style="display: flex; align-items: center; gap: 8px;" title="When a stake is placed on Timeline charts, the AI will focus analysis on that specific time point.">
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" id="ai-stake-focus-enabled" disabled>
+                            <span style="font-weight: 600; color: #333;">Stake Focus:</span>
+                        </label>
+                        <input type="text" id="ai-stake-datetime" readonly 
+                            style="width: 180px; padding: 4px 8px; font-size: 12px; font-family: monospace; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; color: #666;"
+                            placeholder="Double-click Timeline chart"
+                            title="Double-click on any Timeline chart to set a stake point for focused AI analysis">
+                    </div>
                  </div>
-            </div>
 
             <script>
                 // Inline script for hover/click behavior
@@ -590,6 +604,7 @@
                     }
                 })();
             </script>
+            </div>
 
             <!-- User Prompt -->
             <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px;">
