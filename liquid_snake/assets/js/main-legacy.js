@@ -27063,6 +27063,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Render formatted HTML response
             responseDiv.innerHTML = formatAIAnalysisHTML(analysisData);
             
+            // Add copy buttons to all code blocks (index-statement divs)
+            addCopyButtonsToCodeBlocks(responseDiv);
+            
             // Stats
             if (statsSpan) {
                 const tokens = aiResponse.usage?.total_tokens || 0;
@@ -27087,6 +27090,55 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     window._pendingTimelineInsights = null; // Clear after rendering
                 }, 150);
             }
+        }
+        
+        /**
+         * Add copy buttons to all code blocks in a container
+         * This ensures consistent copy functionality regardless of AI output
+         */
+        function addCopyButtonsToCodeBlocks(container) {
+            // Find all index-statement divs (SQL code blocks)
+            const codeBlocks = container.querySelectorAll('.index-statement');
+            
+            codeBlocks.forEach(block => {
+                // Skip if already has a copy button
+                if (block.querySelector('.code-copy-btn')) return;
+                
+                // Style the block for button positioning
+                block.style.position = 'relative';
+                block.style.paddingRight = '55px';
+                
+                // Create copy button
+                const btn = document.createElement('button');
+                btn.className = 'btn-standard code-copy-btn';
+                btn.textContent = 'Copy';
+                btn.style.cssText = 'position: absolute; right: 5px; top: 5px; padding: 2px 8px; font-size: 10px; z-index: 1;';
+                
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Get text content, excluding the button text
+                    const text = block.textContent.replace(/Copy(ed!)?$/, '').trim();
+                    
+                    navigator.clipboard.writeText(text).then(() => {
+                        btn.textContent = 'Copied!';
+                        btn.style.background = '#28a745';
+                        setTimeout(() => {
+                            btn.textContent = 'Copy';
+                            btn.style.background = '';
+                        }, 1500);
+                    }).catch(err => {
+                        Logger.error('Copy failed:', err);
+                        btn.textContent = 'Error';
+                        setTimeout(() => btn.textContent = 'Copy', 1500);
+                    });
+                };
+                
+                block.appendChild(btn);
+            });
+            
+            Logger.debug(`[AI] Added copy buttons to ${codeBlocks.length} code blocks`);
         }
         
         function closeAIView() {
@@ -27930,6 +27982,10 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 </div>`;
             }
             
+            
+            // Remove any AI-generated copy buttons - we'll add our own consistently
+            html = html.replace(/<button[^>]*class="[^"]*copy-btn[^"]*"[^>]*>Copy<\/button>/gi, '');
+            html = html.replace(/<br\s*\/?>\s*(?=<div class="index-statement")/gi, '');
             
             return html || '<div style="color: #999;">No formatted content available</div>';
         }
