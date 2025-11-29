@@ -27415,6 +27415,17 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                                 content = content.replace(/\*\*Suggested Index\*\*\s*:\s*/gi, '\n\n**Suggested Index:** ');
                                 // Split "Reasoning:" onto its own line
                                 content = content.replace(/\s+Reasoning:\s*/gi, '\n\n**Reasoning:** ');
+                                
+                                // Add section header for "User Specific Request" if detected
+                                content = content.replace(/^\s*(User Specific Requests?)\s*$/gim, '\n\n### 💬 $1\n');
+                                content = content.replace(/^\s*(User Specific Requests?)\s*:/gim, '\n\n### 💬 $1\n\n');
+                                
+                                // Format Stake Analysis sub-sections (BEFORE/AT SPIKE/AFTER)
+                                content = content.replace(/\*\*BEFORE\s*\(/gi, '\n\n**BEFORE (');
+                                content = content.replace(/\*\*AT SPIKE\s*\(/gi, '\n\n**AT SPIKE (');
+                                content = content.replace(/\*\*AFTER\s*\(/gi, '\n\n**AFTER (');
+                                content = content.replace(/\*\*Root Cause\*\*/gi, '\n\n**Root Cause**');
+                                
                                 md += '\n' + content + '\n';
                             }
                         } else if (tagName === 'h3' || tagName === 'h4') {
@@ -27422,7 +27433,13 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             if (node.textContent.includes('Chart Trends & Analysis')) {
                                 return;
                             }
-                            md += '\n### ' + node.textContent.trim() + '\n\n';
+                            // Add emoji for User Specific Request header
+                            const headerText = node.textContent.trim();
+                            if (headerText.match(/User Specific Requests?/i)) {
+                                md += '\n### 💬 ' + headerText + '\n\n';
+                            } else {
+                                md += '\n### ' + headerText + '\n\n';
+                            }
                         } else if (tagName === 'strong' || tagName === 'b') {
                             md += '**' + node.textContent.trim() + '** ';
                         } else if (tagName === 'ul' || tagName === 'ol') {
