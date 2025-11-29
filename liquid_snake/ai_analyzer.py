@@ -825,6 +825,28 @@ Prioritize analysis of this time point alongside your overall analysis."""
                                    'clientContextID', 'requestId']:
                             if isinstance(value, str) and value and not value.startswith('_'):
                                 obj[key] = obfuscator._generate_token(value)
+                        # Obfuscate index 'id' field (handles FTS format like fts::default:bucket:index_name)
+                        elif key == 'id' and isinstance(value, str) and value:
+                            # Check for FTS index ID format: fts::default:bucket:index_name
+                            if value.startswith('fts::'):
+                                # Parse and obfuscate the components after fts::default:
+                                parts = value.split(':')
+                                if len(parts) >= 4:
+                                    # Format: fts::default:bucket:index_name (or more segments)
+                                    # Keep 'fts', '', 'default' and obfuscate the rest
+                                    obfuscated_parts = parts[:3]  # ['fts', '', 'default']
+                                    for part in parts[3:]:
+                                        if part:
+                                            obfuscated_parts.append(obfuscator._generate_token(part))
+                                        else:
+                                            obfuscated_parts.append(part)
+                                    obj[key] = ':'.join(obfuscated_parts)
+                                else:
+                                    # Fallback: obfuscate the whole thing
+                                    obj[key] = obfuscator._generate_token(value)
+                            else:
+                                # Regular index ID (hex string) - keep as-is since it's not sensitive
+                                pass
                         # Obfuscate namedArgs (keys and values)
                         elif key == 'namedArgs' and isinstance(value, dict):
                             new_args = {}
