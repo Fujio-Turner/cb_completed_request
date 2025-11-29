@@ -25680,6 +25680,10 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (options.stake_focus) {
                 Logger.debug(`[AI] 📍 Stake focus enabled at: ${options.stake_focus.datetime}`);
             }
+            
+            // Store stake_focus globally for timeline rendering when response arrives
+            window._lastStakeFocus = options.stake_focus;
+            
             Logger.trace(`[AI] Selections: ${JSON.stringify(selections)}`);
             
             try {
@@ -26038,6 +26042,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (options.stake_focus) {
                 Logger.debug(`[AI] 📍 Stake focus enabled at: ${options.stake_focus.datetime}`);
             }
+            
+            // Store stake_focus globally for timeline rendering when response arrives
+            window._lastStakeFocus = options.stake_focus;
             
             // Get and validate Cluster Name (Required)
             const clusterNameInput = document.getElementById('ai-cluster-name');
@@ -27109,6 +27116,12 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 analysisData = aiResponse;
             }
             
+            // Extract stake_focus from the saved document's options (original request)
+            const savedStakeFocus = doc.options?.stake_focus || null;
+            if (savedStakeFocus && savedStakeFocus.enabled) {
+                Logger.debug(`[AI] 📍 Loaded stake focus from saved doc: ${savedStakeFocus.datetime}`);
+            }
+            
             // Render formatted HTML response
             responseDiv.innerHTML = formatAIAnalysisHTML(analysisData);
             
@@ -27133,10 +27146,13 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             }
             
             // Render vis.js Timeline for Chart Trends insights
+            // Use stake_focus from: 1) pending (new analysis), 2) saved doc (viewing old analysis)
             if (window._pendingTimelineInsights) {
+                const stakeFocusToUse = window._pendingStakeFocus || savedStakeFocus;
                 setTimeout(() => {
-                    renderAIInsightsTimeline(window._pendingTimelineInsights);
+                    renderAIInsightsTimeline(window._pendingTimelineInsights, stakeFocusToUse);
                     window._pendingTimelineInsights = null; // Clear after rendering
+                    window._pendingStakeFocus = null; // Clear stake focus after use
                 }, 150);
             }
         }
@@ -27525,8 +27541,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         /**
          * Render vis.js Timeline for AI Chart Trends insights
          * @param {Array} insights - Array of insight objects with start, end, group, severity, title, content
+         * @param {Object} stakeFocus - Optional stake focus object with { enabled: boolean, datetime: string }
          */
-        function renderAIInsightsTimeline(insights) {
+        function renderAIInsightsTimeline(insights, stakeFocus) {
             const container = document.getElementById('ai-insights-timeline');
             if (!container || !insights || !insights.length) {
                 Logger.warn('[AI] No timeline container or insights to render');
@@ -27541,6 +27558,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             }
             
             Logger.info(`[AI] Rendering insights timeline with ${insights.length} items`);
+            if (stakeFocus && stakeFocus.enabled) {
+                Logger.info(`[AI] 📍 Stake focus enabled at: ${stakeFocus.datetime}`);
+            }
             
             // Store insights for tooltip access
             window._aiInsightsData = insights;
@@ -27552,51 +27572,87 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 'Duration': { bg: '#fff3e0', border: '#e65100' },
                 'CPU Time': { bg: '#ffebee', border: '#c62828' },
                 'Index Scan': { bg: '#e8f5e9', border: '#2e7d32' },
-                'Fetch Throughput': { bg: '#f3e5f5', border: '#7b1fa2' }
+                'Fetch Throughput': { bg: '#f3e5f5', border: '#7b1fa2' },
+                'Stake': { bg: '#e3f2fd', border: '#0d6efd' }  // Bright blue for Stake
             };
             
             // Create groups from insights
             const uniqueGroups = [...new Set(insights.map(i => i.group).filter(Boolean))];
-            const groups = new vis.DataSet(
-                uniqueGroups.map((name, idx) => ({
-                    id: name,
-                    content: name,
-                    order: idx
-                }))
-            );
+            const groupData = uniqueGroups.map((name, idx) => ({
+                id: name,
+                content: name,
+                order: idx
+            }));
+            
+            // Add "Stake" group at the bottom if stake_focus is enabled
+            if (stakeFocus && stakeFocus.enabled && stakeFocus.datetime) {
+                groupData.push({
+                    id: 'Stake',
+                    content: '<span style="color: #0d6efd; font-weight: bold;">📍 Stake</span>',
+                    order: uniqueGroups.length  // Last position
+                });
+            }
+            
+            const groups = new vis.DataSet(groupData);
             
             // Severity to color mapping
             const severityColors = {
                 'critical': { background: '#ffcdd2', border: '#d32f2f', color: '#b71c1c' },
                 'warning': { background: '#fff9c4', border: '#f9a825', color: '#f57f17' },
-                'info': { background: '#e3f2fd', border: '#1976d2', color: '#0d47a1' }
+                'info': { background: '#e3f2fd', border: '#1976d2', color: '#0d47a1' },
+                'stake': { background: '#0d6efd', border: '#0a58ca', color: '#ffffff' }  // Bright blue stake
             };
             
             // Create items from insights with enhanced tooltip data
-            const items = new vis.DataSet(
-                insights.map((insight, idx) => {
-                    const severity = insight.severity || 'info';
-                    const colors = severityColors[severity] || severityColors.info;
-                    const duration = formatDuration(insight.start, insight.end);
-                    
-                    return {
-                        id: idx + 1,
-                        content: insight.title || `Insight ${idx + 1}`,
-                        start: insight.start,
-                        end: insight.end || insight.start,
-                        group: insight.group || 'General',
-                        // Enhanced tooltip with FROM/TO/Duration on single line
-                        title: `<div style="max-width: 500px; max-height: 400px; padding: 10px; font-size: 12px; line-height: 1.5; overflow-y: auto;">
-                            <div style="font-weight: bold; font-size: 13px; margin-bottom: 8px; color: ${colors.color};">${insight.title || 'Insight'}</div>
-                            <div style="background: #f8f9fa; padding: 6px 8px; border-radius: 4px; margin-bottom: 8px; font-family: monospace; font-size: 11px;">
-                                <div><strong>FROM:</strong> ${formatTimestamp(insight.start)} → <strong>TO:</strong> ${formatTimestamp(insight.end || insight.start)} <span style="color: #666;">(${duration})</span></div>
-                            </div>
-                            <div style="color: #333; word-wrap: break-word; white-space: pre-wrap;">${insight.content || ''}</div>
-                        </div>`,
-                        style: `background-color: ${colors.background}; border-color: ${colors.border}; color: ${colors.color}; border-width: 2px; border-radius: 4px;`
-                    };
-                })
-            );
+            const itemsData = insights.map((insight, idx) => {
+                const severity = insight.severity || 'info';
+                const colors = severityColors[severity] || severityColors.info;
+                const duration = formatDuration(insight.start, insight.end);
+                
+                return {
+                    id: idx + 1,
+                    content: insight.title || `Insight ${idx + 1}`,
+                    start: insight.start,
+                    end: insight.end || insight.start,
+                    group: insight.group || 'General',
+                    // Enhanced tooltip with FROM/TO/Duration on single line
+                    title: `<div style="max-width: 500px; max-height: 400px; padding: 10px; font-size: 12px; line-height: 1.5; overflow-y: auto;">
+                        <div style="font-weight: bold; font-size: 13px; margin-bottom: 8px; color: ${colors.color};">${insight.title || 'Insight'}</div>
+                        <div style="background: #f8f9fa; padding: 6px 8px; border-radius: 4px; margin-bottom: 8px; font-family: monospace; font-size: 11px;">
+                            <div><strong>FROM:</strong> ${formatTimestamp(insight.start)} → <strong>TO:</strong> ${formatTimestamp(insight.end || insight.start)} <span style="color: #666;">(${duration})</span></div>
+                        </div>
+                        <div style="color: #333; word-wrap: break-word; white-space: pre-wrap;">${insight.content || ''}</div>
+                    </div>`,
+                    style: `background-color: ${colors.background}; border-color: ${colors.border}; color: ${colors.color}; border-width: 2px; border-radius: 4px;`
+                };
+            });
+            
+            // Add stake focus item if enabled
+            if (stakeFocus && stakeFocus.enabled && stakeFocus.datetime) {
+                const stakeColors = severityColors.stake;
+                const stakeTime = formatTimestamp(stakeFocus.datetime);
+                
+                itemsData.push({
+                    id: 'stake-point',
+                    content: '📍 Stake',
+                    start: stakeFocus.datetime,
+                    type: 'point',  // Point type for single moment
+                    group: 'Stake',
+                    className: 'stake-focus-item',
+                    title: `<div style="max-width: 300px; padding: 10px; font-size: 12px; line-height: 1.5;">
+                        <div style="font-weight: bold; font-size: 13px; margin-bottom: 8px; color: #0d6efd;">📍 Stake Focus Point</div>
+                        <div style="background: #e7f1ff; padding: 6px 8px; border-radius: 4px; font-family: monospace; font-size: 11px;">
+                            <strong>Time:</strong> ${stakeTime}
+                        </div>
+                        <div style="margin-top: 8px; color: #666; font-size: 11px;">
+                            This marks the specific time of interest you selected for analysis.
+                        </div>
+                    </div>`,
+                    style: `background-color: ${stakeColors.background}; border-color: ${stakeColors.border}; color: ${stakeColors.color}; border-width: 3px; border-radius: 50%; font-weight: bold;`
+                });
+            }
+            
+            const items = new vis.DataSet(itemsData);
             
             // Timeline options
             const options = {
@@ -27632,6 +27688,14 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 
                 // Create new timeline
                 window._aiInsightsTimeline = new vis.Timeline(container, items, groups, options);
+                
+                // Add custom time marker (vertical line) for stake focus
+                if (stakeFocus && stakeFocus.enabled && stakeFocus.datetime) {
+                    const stakeDate = new Date(stakeFocus.datetime);
+                    window._aiInsightsTimeline.addCustomTime(stakeDate, 'stake-focus-line');
+                    window._aiInsightsTimeline.setCustomTimeTitle('📍 Stake Focus: ' + formatTimestamp(stakeFocus.datetime), 'stake-focus-line');
+                    Logger.info('[AI] 📍 Added stake focus vertical line at: ' + stakeFocus.datetime);
+                }
                 
                 // Fit all items in view
                 window._aiInsightsTimeline.fit();
@@ -27937,6 +28001,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 
                 // Store insights data for timeline rendering after DOM update
                 window._pendingTimelineInsights = data.chart_trends.insights;
+                // Store stake_focus if present in the response or from original request context
+                window._pendingStakeFocus = data.stake_focus || window._lastStakeFocus || null;
             }
             // Fallback: Legacy HTML format (for backward compatibility)
             else if (data.chart_trends && data.chart_trends.timeline_analysis_html) {
