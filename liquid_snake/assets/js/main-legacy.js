@@ -27285,6 +27285,10 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                                 md += '\n' + content + '\n';
                             }
                         } else if (tagName === 'h3' || tagName === 'h4') {
+                            // Skip duplicate Chart Trends header (already added by table handler)
+                            if (node.textContent.includes('Chart Trends & Analysis')) {
+                                return;
+                            }
                             md += '\n### ' + node.textContent.trim() + '\n\n';
                         } else if (tagName === 'strong' || tagName === 'b') {
                             md += '**' + node.textContent.trim() + '** ';
