@@ -27009,6 +27009,10 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     try {
                         let content = message.content || '';
                         
+                        // Strip markdown code fences if present (common with Grok/some models)
+                        content = content.replace(/^```json\s*\n?/i, '').replace(/\n?```\s*$/i, '');
+                        content = content.trim();
+                        
                         // Robust JSON extraction: Find first '{' and last '}'
                         const jsonStart = content.indexOf('{');
                         const jsonEnd = content.lastIndexOf('}');
@@ -27017,13 +27021,6 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             // Extract just the JSON part, ignoring preamble/postscript/markdown
                             content = content.substring(jsonStart, jsonEnd + 1);
                         }
-                        
-                        // Sanitize literal newlines inside JSON strings (common AI JSON error)
-                        // Replace unescaped newlines with escaped version
-                        content = content.replace(/\r\n/g, '\\n').replace(/\n/g, '\\n').replace(/\r/g, '\\n');
-                        
-                        // Also fix common HTML-in-JSON issues: unescaped < and > inside strings
-                        // (but preserve HTML tags that should render)
                         
                         analysisData = JSON.parse(content);
                     } catch (e) {
@@ -27040,6 +27037,10 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     try {
                         let content = aiResponse.content[0]?.text || '';
                         
+                        // Strip markdown code fences if present
+                        content = content.replace(/^```json\s*\n?/i, '').replace(/\n?```\s*$/i, '');
+                        content = content.trim();
+                        
                         // Robust JSON extraction: Find first '{' and last '}'
                         const jsonStart = content.indexOf('{');
                         const jsonEnd = content.lastIndexOf('}');
@@ -27047,9 +27048,6 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         if (jsonStart !== -1 && jsonEnd !== -1) {
                             content = content.substring(jsonStart, jsonEnd + 1);
                         }
-                        
-                        // Sanitize literal newlines inside JSON strings
-                        content = content.replace(/\r\n/g, '\\n').replace(/\n/g, '\\n').replace(/\r/g, '\\n');
                         
                         analysisData = JSON.parse(content);
                     } catch (e) {
