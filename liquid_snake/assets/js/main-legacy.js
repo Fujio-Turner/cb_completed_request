@@ -343,10 +343,13 @@ if (window.TEXT_CONSTANTS) {
                 }
             });
             
-            // Show the floating unstake button
+            // Show the floating unstake button only if on Timeline tab
             const unstakeBtn = document.getElementById('floating-unstake-btn');
             if (unstakeBtn) {
-                unstakeBtn.style.display = 'block';
+                const activeTabId = $('#tabs .ui-tabs-panel:visible').attr('id');
+                if (activeTabId === 'timeline') {
+                    unstakeBtn.style.display = 'block';
+                }
             }
         }
 
@@ -24174,11 +24177,24 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         document.addEventListener('DOMContentLoaded', () => {
             // No dev-only charts to hide (all removed)
             
-            // Setup lazy Report Maker initialization
+            // Setup lazy Report Maker initialization and floating button visibility
             $('#tabs').on('tabsactivate', function(event, ui) {
                 const tabId = ui.newPanel.attr('id');
                 if (tabId === 'reports-history') {
                     initializeReportMaker();
+                }
+                
+                // Show "Remove Stake" button only on Timeline tab
+                const unstakeBtn = document.getElementById('floating-unstake-btn');
+                if (unstakeBtn) {
+                    if (tabId === 'timeline') {
+                        // Only show if stake is actually visible
+                        if (verticalStakePosition !== null) {
+                            unstakeBtn.style.display = 'block';
+                        }
+                    } else {
+                        unstakeBtn.style.display = 'none';
+                    }
                 }
             });
 
