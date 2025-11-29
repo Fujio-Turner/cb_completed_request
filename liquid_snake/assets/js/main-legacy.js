@@ -27096,6 +27096,31 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             }
         }
         
+        // Track panel state
+        let aiViewPanelExpanded = false;
+        
+        function toggleAIViewPanel() {
+            const panel = document.getElementById('ai-view-left-panel');
+            const arrow = document.getElementById('ai-view-toggle-arrow');
+            const btn = document.getElementById('ai-view-toggle-btn');
+            
+            if (!panel || !arrow) return;
+            
+            aiViewPanelExpanded = !aiViewPanelExpanded;
+            
+            if (aiViewPanelExpanded) {
+                panel.style.width = '270px';
+                panel.style.minWidth = '270px';
+                arrow.style.transform = 'rotate(180deg)';
+                btn.title = 'Hide Context Panel';
+            } else {
+                panel.style.width = '0';
+                panel.style.minWidth = '0';
+                arrow.style.transform = 'rotate(0deg)';
+                btn.title = 'Show Context Panel';
+            }
+        }
+        
         function copyAIResponseAsMarkdown() {
             const contextDiv = document.getElementById('ai-view-context');
             const responseDiv = document.getElementById('ai-view-response');
@@ -27233,9 +27258,32 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                                 md += '`' + text + '` ';
                             }
                         }
+                        // Skip priority badge spans (P#/10 and severity) - we have Priority line at end
+                        else if (tagName === 'span' && (node.textContent.match(/^P\d+\/10$/) || ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].includes(node.textContent.trim()))) {
+                            // Skip these - redundant with Priority line
+                        }
                         // Generic containers
                         else if (tagName === 'div') {
-                            md += '\n' + htmlToMarkdown(node) + '\n';
+                            // Check if this div is a label+value pair (bold followed by content)
+                            const firstChild = node.firstElementChild;
+                            const hasLabelPattern = firstChild && (firstChild.tagName === 'STRONG' || firstChild.tagName === 'B');
+                            
+                            if (hasLabelPattern) {
+                                // Keep label and value inline
+                                md += '\n' + htmlToMarkdown(node).replace(/\n+/g, ' ').trim() + '\n';
+                            } else {
+                                // Check for description with inline labels that should be split
+                                let content = htmlToMarkdown(node);
+                                // Split "Current Situation : ... Suggested Fix :" into separate lines
+                                content = content.replace(/\*\*Current Situation\*\*\s*:\s*/gi, '\n**Current Situation:** ');
+                                content = content.replace(/\*\*Suggested Fix\*\*\s*:\s*/gi, '\n\n**Suggested Fix:** ');
+                                // Split "Current Index : ... Suggested Index :" into separate lines
+                                content = content.replace(/\*\*Current Index\*\*\s*:\s*/gi, '\n**Current Index:** ');
+                                content = content.replace(/\*\*Suggested Index\*\*\s*:\s*/gi, '\n\n**Suggested Index:** ');
+                                // Split "Reasoning:" onto its own line
+                                content = content.replace(/\s+Reasoning:\s*/gi, '\n\n**Reasoning:** ');
+                                md += '\n' + content + '\n';
+                            }
                         } else if (tagName === 'h3' || tagName === 'h4') {
                             md += '\n### ' + node.textContent.trim() + '\n\n';
                         } else if (tagName === 'strong' || tagName === 'b') {
@@ -27243,9 +27291,11 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         } else if (tagName === 'ul' || tagName === 'ol') {
                             md += '\n' + htmlToMarkdown(node) + '\n';
                         } else if (tagName === 'li') {
-                            md += '- ' + htmlToMarkdown(node) + '\n';
+                            md += '- ' + htmlToMarkdown(node).replace(/\n+/g, ' ').trim() + '\n';
                         } else if (tagName === 'br') {
                             md += '\n';
+                        } else if (tagName === 'hr') {
+                            md += '\n\n---\n\n';
                         } else if (tagName === 'table') {
                             // Handle other tables
                             md += '\n' + htmlToMarkdown(node) + '\n';
@@ -27820,7 +27870,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 data.critical_issues.forEach((issue, idx) => {
                     const priorityNum = issue.priority_number || issue.priority || '?';
                     
-                    html += `<div style="background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #dc3545; border: 1px solid #f8d7da;">
+                    html += `<hr class="md-separator" style="border: none; border-top: 1px solid #eee; margin: 12px 0;">
+                    <div style="background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #dc3545; border: 1px solid #f8d7da;">
                         <div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
                             <div><strong style="font-size: 14px;">${idx + 1}. ${issue.title}</strong></div>
                             <div style="display: flex; gap: 6px; align-items: center;">
@@ -27829,12 +27880,13 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             </div>
                         </div>
                         <div style="margin-bottom: 6px; font-size: 12px; line-height: 1.4;">${issue.description_html || issue.description || ''}</div>
-                        <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px; font-size: 12px; margin-bottom: 6px;">
-                            <div><strong>Affected:</strong></div><div>${issue.affected_queries || 0} queries</div>
-                            <div><strong>Fix:</strong></div><div>${issue.recommendation || ''}</div>
-                            <div><strong>Impact:</strong></div><div>${issue.expected_impact || ''}</div>
+                        <div style="font-size: 12px; margin-bottom: 6px; line-height: 1.6;">
+                            <div><strong>Affected:</strong> ${issue.affected_queries || 0} queries</div>
+                            <div><strong>Fix:</strong> ${issue.recommendation || ''}</div>
+                            <div><strong>Impact:</strong> ${issue.expected_impact || ''}</div>
                         </div>
                         ${issue.sources ? '<div style="font-size: 10px; color: #666; padding: 6px; background: #f8f9fa; border-radius: 3px; margin-top: 6px;"><strong>📍 Sources:</strong> ' + issue.sources.map(s => `<span style="display: inline-block; margin: 2px 4px; padding: 2px 6px; background: #e9ecef; border-radius: 2px;">${s.location}</span>`).join('') + '</div>' : ''}
+                        <div style="font-size: 11px; margin-top: 8px;"><strong>Priority:</strong> P${priorityNum}/10 ${issue.severity.toUpperCase()}</div>
                     </div>`;
                 });
                 
@@ -27847,11 +27899,17 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     <h4 style="color: #28a745; margin: 0 0 8px 0; font-size: 15px;">💡 Recommendations (${data.recommendations.length})</h4>`;
                 
                 data.recommendations.forEach((rec, idx) => {
-                    html += `<div style="background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #28a745; border: 1px solid #d4edda;">
+                    const priorityNum = rec.priority_number || rec.priority || '?';
+                    const priorityLabel = typeof priorityNum === 'number' ? `P${priorityNum}/10` : priorityNum;
+                    
+                    html += `<hr class="md-separator" style="border: none; border-top: 1px solid #eee; margin: 12px 0;">
+                    <div style="background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #28a745; border: 1px solid #d4edda;">
                         <div style="margin-bottom: 6px; font-size: 13px;"><strong>${idx + 1}. ${rec.recommendation_html || rec.recommendation || ''}</strong></div>
                         <div style="margin-bottom: 6px; font-size: 12px; line-height: 1.4;">${rec.rationale_html || rec.rationale || ''}</div>
                         ${rec.implementation_steps ? '<div style="margin-bottom: 6px; font-size: 12px;"><strong>Steps:</strong><ol style="margin: 4px 0 0 18px; padding: 0;">' + rec.implementation_steps.map(s => `<li style="margin: 2px 0;">${s}</li>`).join('') + '</ol></div>' : ''}
                         <div style="font-size: 12px;"><strong>Impact:</strong> ${rec.estimated_impact || ''}</div>
+                        ${rec.sources ? '<div style="font-size: 10px; color: #666; padding: 6px; background: #f8f9fa; border-radius: 3px; margin-top: 6px;"><strong>📍 Sources:</strong> ' + rec.sources.map(s => `${s.location}`).join(', ') + '</div>' : ''}
+                        <div style="font-size: 11px; margin-top: 8px;"><strong>Priority:</strong> ${priorityLabel} ${rec.priority ? rec.priority.toUpperCase() : ''}</div>
                     </div>`;
                 });
                 
