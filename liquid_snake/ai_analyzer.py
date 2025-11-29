@@ -673,6 +673,21 @@ This "stake" indicates the user observed something significant at this exact mom
 
 Prioritize analysis of this time point alongside your overall analysis."""
 
+        # Build stake_focus context if enabled
+        stake_focus_context = None
+        if stake_focus and stake_focus.get('enabled') and stake_focus.get('datetime'):
+            stake_focus_context = {
+                'enabled': True,
+                'datetime': stake_focus.get('datetime'),
+                'description': 'User placed a visual marker ("stake") on Timeline charts at this exact timestamp. This indicates they observed something significant and want focused analysis on what was happening at this moment.',
+                'analysis_required': [
+                    'Identify queries executing at or near this timestamp (check requestTime fields)',
+                    'Look for anomalies, spikes, or pattern changes in Timeline metrics around this time',
+                    'Check for correlations between memory, CPU time, kernel time, result size, or index scans',
+                    'Include a dedicated section in your response: "📍 Stake Point Analysis" addressing this specific moment'
+                ]
+            }
+
         payload = {
             'prompt': full_prompt,
             'context': {
@@ -680,6 +695,7 @@ Prioritize analysis of this time point alongside your overall analysis."""
                 'purpose': 'This tool analyzes N1QL query performance from system:completed_requests',
                 'reference_docs': 'For general best practices, stats definitions, and optimization strategies, refer to: https://cb.fuj.io/analysis_hub',
                 'data_source': 'Queries extracted from: SELECT *, meta().plan FROM system:completed_requests',
+                'stake_focus': stake_focus_context,
                 'tabs_explained': {
                     'Dashboard': 'High-level metrics and charts showing query distribution, index usage, and performance patterns',
                     'Insights': 'Automated detection of performance issues, missing indexes, and inefficient query patterns',
