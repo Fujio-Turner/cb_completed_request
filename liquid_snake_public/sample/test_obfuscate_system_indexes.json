@@ -1,0 +1,422 @@
+[
+  {
+    "name": "Aaa_Aaaaaaa",
+    "id": "b9d63840edf7d142",
+    "metadata": {
+      "last_scan_time": "2025-08-15T00:15:27.683Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752981267683661056
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX Aaa_Aaaaaaa ON `Aaaaaaa`;"
+  },
+  {
+    "name": "idx_Aaaa_Aaaaaaaaaaaa",
+    "id": "58a7d6b10415a83c",
+    "metadata": {
+      "last_scan_time": "2025-08-15T00:01:00.000Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1752985353790000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_Aaaa_Aaaaaaaaaaaa ON `Aaaaa`(`Aaaaaa`, `AaaaaaaaaaaaaAaaa`) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "idx_bbbBbb_Bbbbbbb_Bbbb",
+    "id": "200ee02ff3388f66",
+    "metadata": {
+      "last_scan_time": "2025-08-15T00:52:00.000Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752899133124000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_bbbBbb_Bbbbbbb_Bbbb ON bbbBbbb(BbbbbbbbbBbbb);"
+  },
+  {
+    "name": "idx_Aaaaa_Aaaaaa",
+    "id": "f149dc589151a08d",
+    "metadata": {
+      "last_scan_time": "2025-08-15T01:10:00.000Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1752899133124000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_Aaaaa_Aaaaaa ON `Aaaaa`(`Aaaaaa`) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "idx_bbbBbb_BbbbbBbbb",
+    "id": "a1b2c3d4e5f67890",
+    "metadata": {
+      "last_scan_time": "2025-08-15T01:53:00.000Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752966942568000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_bbbBbb_BbbbbBbbb ON `bbbBbbb`(`BbbbbBbbb`);"
+  },
+  {
+    "name": "idx_Aaaaaaa_Aaaaa",
+    "id": "b2c3d4e5f6789012",
+    "metadata": {
+      "last_scan_time": "2025-08-15T02:45:00.000Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1752993912346000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_Aaaaaaa_Aaaaa ON Aaaaaaa(Aaaaa) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "idx_bbbBbb_Bbbbb_Bbbb",
+    "id": "c3d4e5f678901234",
+    "metadata": {
+      "last_scan_time": "2025-08-15T03:58:00.000Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752996030679000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_bbbBbb_Bbbbb_Bbbb ON `bbbBbb_Bbbbb`(`BbbbbBbbb`);"
+  },
+  {
+    "name": "idx_Aaaaaa_Aaaaaa_Aaaa2",
+    "id": "d4e5f6789012345a",
+    "metadata": {
+      "last_scan_time": "2025-08-15T03:58:00.000Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753014045679000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_Aaaaaa_Aaaaaa_Aaaa2 ON `Aaaaaa_Aaaaaa`(`AaaaaAaaa`) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "idx_bbbBb_Bbbb",
+    "id": "e5f678901234567b",
+    "metadata": {
+      "last_scan_time": "2025-08-15T04:48:00.000Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753054812346000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_bbbBb_Bbbb ON bbbBbb(Bbbb);"
+  },
+  {
+    "name": "idx_Aaaaaaa_Aaaa",
+    "id": "f6789012345678c9",
+    "metadata": {
+      "last_scan_time": "2025-08-15T05:15:00.000Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1752983118124000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_Aaaaaaa_Aaaa ON `Aaaaaaa`(DISTINCT ARRAY `Aaa` FOR `Aaa` IN `Aaaa` END) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "idx_bbbBbbb_Bbbbbbbb",
+    "id": "789012345678d0e1",
+    "metadata": {
+      "last_scan_time": "2025-08-15T08:30:00.000Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753007018790000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_bbbBbbb_Bbbbbbbb ON `bbbBbbb`(`Bbbbbbbb`);"
+  },
+  {
+    "name": "idx_Aaaaaaaa_Aaaaaaa",
+    "id": "890123456789e1f2",
+    "metadata": {
+      "last_scan_time": "2025-08-15T09:15:00.000Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753017055235000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_Aaaaaaaa_Aaaaaaa ON Aaaaaaaaa(Aaaaaaa) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "idx_bbbBb_Bbbbbbbbbb",
+    "id": "901234567890f2g3",
+    "metadata": {
+      "last_scan_time": "2025-08-15T10:45:00.000Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753001945124000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_bbbBb_Bbbbbbbbbb ON `bbbBb`(`Bbbbbbbbbb`);"
+  },
+  {
+    "name": "idx_Aaaaaaaaa_Aaaaaaaa",
+    "id": "012345678901g3h4",
+    "metadata": {
+      "last_scan_time": "2025-08-15T11:30:00.000Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753004922457000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_Aaaaaaaaa_Aaaaaaaa ON `Aaaaaaaaa`(`Aaaaaaaa`) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "idx_bbbBbb_Bbbbbbbb",
+    "id": "123456789012h4i5",
+    "metadata": {
+      "last_scan_time": "2025-08-15T12:15:00.000Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753010733457000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_bbbBbb_Bbbbbbbb ON bbbBbb_Bbbbb(Bbbbbbbb);"
+  },
+  {
+    "name": "idx_Aaaaaa_Aaaaaa",
+    "id": "234567890123i5j6",
+    "metadata": {
+      "last_scan_time": "2025-08-15T13:00:00.000Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1752747630123000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_Aaaaaa_Aaaaaa ON `Aaaaaa`(`Aaaaaa`) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "idx_bbbBbbbbbbb_Bbbb_Bbbbbb_Bbbb",
+    "id": "345678901234j6k7",
+    "metadata": {
+      "last_scan_time": "2025-08-15T14:00:00.000Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752985353790000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_bbbBbbbbbbb_Bbbb_Bbbbbb_Bbbb ON `bbbBbbbbbbb_Bbbb`(`BbbbbBbbb`);"
+  },
+  {
+    "name": "idx_Aaaaaaaaa_Aaaaaa_Aaaa",
+    "id": "456789012345k7l8",
+    "metadata": {
+      "last_scan_time": "2025-08-15T15:00:00.000Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1752795930127836928
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_Aaaaaaaaa_Aaaaaa_Aaaa ON Aaaaaaaaa(AaaaaaAaaa) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "idx_bbbBbbbbb_Bbbbbbbbbb",
+    "id": "567890123456l8m9",
+    "metadata": {
+      "last_scan_time": "2025-08-15T16:00:00.000Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1752856245567000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_bbbBbbbbb_Bbbbbbbbbb ON `bbbBbbbbb`(`Bbbbbbbbbb`);"
+  },
+  {
+    "name": "idx_Aaaaaaaaa_Aaaa_Aaaa",
+    "id": "678901234567m9n0",
+    "metadata": {
+      "last_scan_time": "2025-08-15T17:00:00.000Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753041330456000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_Aaaaaaaaa_Aaaa_Aaaa ON `Aaaaaaaaa`(`AaaaAaaa`) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "idx_bbbBbbbbb_Bbbb",
+    "id": "789012345678n0o1",
+    "metadata": {
+      "last_scan_time": "2025-08-15T18:00:00.000Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753041645789000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_bbbBbbbbb_Bbbb ON bbbBbbbbb(Bbbb);"
+  },
+  {
+    "name": "Aaa_Aaaaaaa_Aaaaa_Aaaa",
+    "id": "fts::default:Aaaaaaa:Aaa_Aaaaaaa_Aaaaa_Aaaa",
+    "metadata": {
+      "num_replica": 0,
+      "last_scan_time": "2025-08-15T19:00:00.000Z",
+      "using": "fts"
+    },
+    "state": "online",
+    "num_replica": 0,
+    "indexType": "fts",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX Aaa_Aaaaaaa_Aaaaa_Aaaa ON `Aaaaaaa`(SEARCH(`Aaaaa`), SEARCH(`Aaaaaaaaaaa`))"
+  },
+  {
+    "name": "idx_bbbB_Bbbbb_Bbbbbb",
+    "id": "abcdef123456789a",
+    "metadata": {
+      "last_scan_time": "2025-08-15T20:00:00.000Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753045678901000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_bbbB_Bbbbb_Bbbbbb ON `bbbBbbb`(`Bbbbb`, `Bbbbbb`);"
+  },
+  {
+    "name": "idx_Aaaaa_Aaaa_Aaaaa",
+    "id": "bcdef0123456789b",
+    "metadata": {
+      "last_scan_time": "2025-08-15T21:00:00.000Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753049012345000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_Aaaaa_Aaaa_Aaaaa ON Aaaaaa(Aaaa, Aaaaa) WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "idx_bbbBbb_Bbbbbbb_Bbbb_Bbb",
+    "id": "cdef01234567890c",
+    "metadata": {
+      "last_scan_time": "2025-08-15T22:00:00.000Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753052345678000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_bbbBbb_Bbbbbbb_Bbbb_Bbb ON `bbbBbb`(`Bbbbbbb`, `Bbbb`, `Bbb`);"
+  },
+  {
+    "name": "idx_Aaaa_Aaaaaaaaa",
+    "id": "def012345678901d",
+    "metadata": {
+      "last_scan_time": "2025-08-15T23:00:00.000Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753055678901000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_Aaaa_Aaaaaaaaa ON `Aaaaaaa`(`Aaaaaaaaa`) WHERE `Aaaaaa` = 'Aaaaa' WITH {\"num_replica\": 1};"
+  },
+  {
+    "name": "idx_bbbBb_Bbb_Bbbbb",
+    "id": "ef0123456789012e",
+    "metadata": {
+      "last_scan_time": "2025-08-16T00:00:00.000Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753059012345000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_bbbBb_Bbb_Bbbbb ON bbbBbb(ALL ARRAY Bbb.Bbbbb FOR Bbb IN Bbbbbbb END);"
+  },
+  {
+    "name": "idx_Aaaaaa_Aaaa_Aaaaaa",
+    "id": "f01234567890123f",
+    "metadata": {
+      "last_scan_time": "2025-08-16T01:00:00.000Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753062345678000000
+      }
+    },
+    "state": "building",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_Aaaaaa_Aaaa_Aaaaaa ON `Aaaaaaa`(`Aaaa`, `Aaaaaa`) WITH {\"num_replica\": 1, \"defer_build\": true};"
+  },
+  {
+    "name": "idx_bbbBbbb_Bbbb_Bbbbbb",
+    "id": "0123456789abcde0",
+    "metadata": {
+      "last_scan_time": "2025-08-16T02:00:00.000Z",
+      "num_replica": 0,
+      "stats": {
+        "last_known_scan_time": 1753065678901000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_bbbBbbb_Bbbb_Bbbbbb ON `Bbbbbbbb`(LOWER(`Bbbb`), UPPER(`Bbbbbb`));"
+  },
+  {
+    "name": "idx_Aaaaaaaaa_Aaaaaaa_Aaaaaa",
+    "id": "123456789abcdef1",
+    "metadata": {
+      "last_scan_time": "2025-08-16T03:00:00.000Z",
+      "num_replica": 1,
+      "stats": {
+        "last_known_scan_time": 1753069012345000000
+      }
+    },
+    "state": "online",
+    "datastore_id": "http://127.0.0.1:8091",
+    "indexString": "CREATE INDEX idx_Aaaaaaaaa_Aaaaaaa_Aaaaaa ON Aaaaaaaaaa(Aaaaaaa.Aaaaaa) WITH {\"num_replica\": 1};"
+  }
+]

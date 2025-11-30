@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Couchbase Query Analysis Hub</title>
+    <meta name="description" content="Minimalist Couchbase Query Analysis Hub: how to process data, interpret stats, optimize (Crawl→Walk→Run), and glossary. Styled like the main Analyzer page.">
+    <!-- canonical to be finalized when deployed -->
+    <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+    <style>
+        /* Base layout (parity with index.html) */
+        html{scroll-behavior:smooth}
+        body{
+            font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+            line-height:1.6;color:#333;max-width:1000px;margin:0 auto;padding:20px;background:#f5f7fa;
+            -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+        }
+        header{text-align:center;padding:5px 20px;background:linear-gradient(135deg,#007acc 0%,#00b4d8 100%);color:#fff;border-radius:12px;margin-bottom:20px;box-shadow:0 6px 18px rgba(0,0,0,0.08)}
+        h1{font-size:2.4em;margin:0;letter-spacing:0.2px}
+        h2{font-size:1.8em;color:#007acc;margin-top:40px;position:relative}
+        h2::after{content:"";display:block;width:56px;height:3px;background:#00b4d8;border-radius:2px;margin-top:8px}
+        .intro{ text-align:center;font-size:1.05em;max-width:720px;margin:10px auto 24px;color:#4a5568 }
+
+        /* Card/grid primitives for later phases */
+        .steps,.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+        .steps.stacked{grid-template-columns:1fr}
+        .features.stacked{grid-template-columns:1fr}
+        .step,.feature{background:#fff;padding:20px;border-radius:10px;border:1px solid #eaeef2;box-shadow:0 4px 14px rgba(0,0,0,0.06);transition:transform .25s ease, box-shadow .25s ease}
+        .step:hover,.feature:hover{transform:translateY(-4px);box-shadow:0 10px 24px rgba(0,0,0,0.10)}
+
+        /* Accordion (used from Part 2 & 4) */
+        .accordion{background:#fff;border-radius:10px;border:1px solid #eaeef2;box-shadow:0 4px 14px rgba(0,0,0,0.06);margin:20px 0}
+        .accordion-header{padding:15px;cursor:pointer;background:#f0f8ff;font-weight:bold;border-bottom:1px solid #e6eef5}
+        .accordion-content{padding:0 15px;max-height:0;overflow:hidden;transition:max-height .3s ease, padding .3s ease}
+        .accordion-content.open{max-height:500px;padding:15px}
+        /* Glossary transitions */
+        #part-4 .accordion-content{transition:max-height .5s ease, padding .5s ease}
+        #part-4 .accordion-content.slow-close{transition:max-height .7s ease, padding .7s ease}
+        
+        /* Glossary header hint */
+        #part-4 .accordion-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+        #part-4 .accordion-header::after{content:'click to keep open/close';font-size:12px;color:#94a3b8;transition:color .2s ease, background .2s ease}
+               #part-4 .accordion-header::before{content:'▶';display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;border:1px solid #94a3b8;color:#94a3b8;margin-right:8px;font-size:12px;transform:rotate(0deg);transition:transform .3s ease, color .3s ease, border-color .3s ease, background .3s ease;background:#fff}
+               #part-4 .accordion[data-locked='true'] .accordion-header{background:#f0f8ff}
+                #part-4 .accordion[data-locked='true'] .accordion-header::before{transform:rotate(90deg);color:#0ea5e9;border-color:#0ea5e9;background:rgba(14,165,233,0.1)}
+                #part-4 .accordion[data-locked='true'] .accordion-header::after{content:'Locked — click to close';color:#0ea5e9;font-weight:700;background:rgba(14,165,233,0.12);padding:2px 6px;border-radius:999px}
+
+        /* Complex JOINs accordions (same style as Glossary) */
+        #complex-joins .accordion-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+        #complex-joins .accordion-header::after{content:'click to keep open/close';font-size:12px;color:#94a3b8;transition:color .2s ease, background .2s ease}
+        #complex-joins .accordion-header::before{content:'▶';display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;border:1px solid #94a3b8;color:#94a3b8;margin-right:8px;font-size:12px;transform:rotate(0deg);transition:transform .3s ease, color .3s ease, border-color .3s ease, background .3s ease;background:#fff}
+        #complex-joins .accordion[data-locked='true'] .accordion-header{background:#f0f8ff}
+        #complex-joins .accordion[data-locked='true'] .accordion-header::before{transform:rotate(90deg);color:#0ea5e9;border-color:#0ea5e9;background:rgba(14,165,233,0.1)}
+        #complex-joins .accordion[data-locked='true'] .accordion-header::after{content:'Locked — click to close';color:#0ea5e9;font-weight:700;background:rgba(14,165,233,0.12);padding:2px 6px;border-radius:999px}
+
+        #concurrent-conflicts .accordion-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+        #concurrent-conflicts .accordion-header::after{content:'click to keep open/close';font-size:12px;color:#94a3b8;transition:color .2s ease, background .2s ease}
+        #concurrent-conflicts .accordion-header::before{content:'▶';display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;border:1px solid #94a3b8;color:#94a3b8;margin-right:8px;font-size:12px;transform:rotate(0deg);transition:transform .3s ease, color .3s ease, border-color .3s ease, background .3s ease;background:#fff}
+        #concurrent-conflicts .accordion[data-locked='true'] .accordion-header{background:#f0f8ff}
+        #concurrent-conflicts .accordion[data-locked='true'] .accordion-header::before{transform:rotate(90deg);color:#0ea5e9;border-color:#0ea5e9;background:rgba(14,165,233,0.1)}
+        #concurrent-conflicts .accordion[data-locked='true'] .accordion-header::after{content:'Locked — click to close';color:#0ea5e9;font-weight:700;background:rgba(14,165,233,0.12);padding:2px 6px;border-radius:999px}
+
+        /* Elapsed Time Filter examples accordion (same hover/lock behavior) */
+        #elapsedTimeExamples .accordion-content{transition:max-height .5s ease, padding .5s ease}
+        #elapsedTimeExamples.slow-close .accordion-content{transition:max-height .7s ease, padding .7s ease}
+        #elapsedTimeExamples .accordion-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+        #elapsedTimeExamples .accordion-header::after{content:'hover to open, click to lock';font-size:12px;color:#94a3b8;transition:color .2s ease, background .2s ease}
+        #elapsedTimeExamples .accordion-header::before{content:'▶';display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;border:1px solid #94a3b8;color:#94a3b8;margin-right:8px;font-size:12px;transform:rotate(0deg);transition:transform .3s ease, color .3s ease, border-color .3s ease, background .3s ease;background:#fff}
+        #elapsedTimeExamples[data-locked='true'] .accordion-header{background:#f0f8ff}
+        #elapsedTimeExamples[data-locked='true'] .accordion-header::before{transform:rotate(90deg);color:#0ea5e9;border-color:#0ea5e9;background:rgba(14,165,233,0.1)}
+        #elapsedTimeExamples[data-locked='true'] .accordion-header::after{content:'Locked — click to close';color:#0ea5e9;font-weight:700;background:rgba(14,165,233,0.12);padding:2px 6px;border-radius:999px}
+         
+         /* CRAWL/WALK/RUN images */
+        .cwr-img{width:100%;height:auto;border:1px solid #e6eef5;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin:10px 0 12px}
+        
+        /* Badges */
+         .badge-pro{display:inline-block;padding:2px 8px;background:#f59e0b;color:#fff;border-radius:999px;font-size:12px;font-weight:700;margin-left:8px;box-shadow:0 2px 6px rgba(0,0,0,0.12)}
+         .badge-warning{display:inline-block;padding:2px 8px;background:#dc2626;color:#fff;border-radius:999px;font-size:12px;font-weight:700;margin-left:8px;box-shadow:0 2px 6px rgba(0,0,0,0.12)}
+
+          /* SQL code UI */
+        .sql-query-box{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;padding:15px;margin:15px 0;position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+        .sql-query-box pre{background:#fff;border:1px solid #e9ecef;border-radius:6px;padding:10px;margin:10px 0;font-family:monospace;font-size:12px;line-height:1.5;overflow-x:auto}
+        .sql-copy-btn{position:absolute;top:10px;right:10px;background:#007bff;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.12);transition: background .2s ease, transform .2s ease}
+        .sql-copy-btn:hover{background:#0056b3;transform:translateY(-1px)}
+
+        /* Gallery thumbnails */
+        .gallery{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin:30px 0}
+        .gallery img:not(.tab-img-large){width:300px;height:200px;object-fit:cover;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.08);transition:transform .3s ease, box-shadow .3s ease;will-change:transform}
+        .gallery img:not(.tab-img-large):hover{transform:scale(1.7);box-shadow:0 14px 30px rgba(0,0,0,0.25);position:relative;z-index:2}
+
+        /* Parse JSON filters: spacing and hover-swap thumbnails */
+        #parseJSON ul li{ margin-bottom:6px }
+        #parseJSON .gallery{ gap:14px; justify-content:flex-start }
+        #parseJSON .gallery img:not(.tab-img):not(.tab-img-large){ width:240px; height:auto }
+        #parseJSON .gallery img:not(.tab-img):not(.tab-img-large):not(.hover):hover{ transform:none; box-shadow:0 4px 14px rgba(0,0,0,0.08); position:static; z-index:auto }
+        #parseJSON .hover-swap{ position:relative; display:inline-block; border:1px solid #e6eef5; border-radius:8px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05) }
+        #parseJSON .hover-swap img{ display:block }
+        #parseJSON .hover-swap img.hover{ position:absolute; top:0; left:0; width:100%; height:auto; opacity:0; transition: opacity .3s ease }
+        #parseJSON .hover-swap:hover img.hover{ opacity:1 }
+        #parseJSON .hover-swap img:hover{ transform:none !important; box-shadow:none !important }
+
+        /* Tabs grid */
+        .tab-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:8px}
+        .tab-card{background:#fff;border:1px solid #eaeef2;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.06);padding:10px;overflow:hidden;transition:box-shadow .2s ease}
+        .tab-card.flat{padding:0;border:none;box-shadow:none;background:transparent;border-radius:0}
+        .tab-img{width:100%;height:160px;border-radius:8px;border:1px solid #e6eef5;object-fit:cover;display:block;transition:transform .3s ease, box-shadow .3s ease}
+        .tab-card:hover .tab-img{transform:scale(1.05);box-shadow:0 10px 24px rgba(0,0,0,0.10)}
+        .tab-img.placeholder{display:flex;align-items:center;justify-content:center;background:#f8fafc;color:#94a3b8;font-weight:700}
+         .tab-card .caption{text-align:center;margin-top:8px;color:#2d3748}
+
+        /* Bigger hover enlargement for tab images */
+        .tab-card{position:relative}
+        .tab-card:hover{overflow:visible;z-index:2}
+        .tab-img-wrap{position:relative}
+        .tab-img-large{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.01);opacity:0;pointer-events:none;border:1px solid #e6eef5;border-radius:10px;box-shadow:0 14px 30px rgba(0,0,0,0.25);background:#fff;max-width:720px;max-height:70vh;width:auto;height:auto;transition:opacity .6s ease-in-out, transform .6s ease-in-out;z-index:3}
+        .tab-card:hover .tab-img-large{opacity:1;transform:translate(-50%,-50%) scale(1)}
+        .tab-card:hover .tab-img{visibility:hidden}
+
+               /* Larger overlay for parseJSON gallery items */
+        #parseJSON .tab-img-large{ max-width:95vw; max-height:85vh; border:none; border-radius:0; background:transparent; box-shadow:none }
+ 
+         /* Contents navigation (legacy, not used) */
+        .contents{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:10px 0 24px}
+        .contents a{display:inline-block;background:#fff;border:1px solid #eaeef2;color:#007acc;text-decoration:none;padding:8px 12px;border-radius:999px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+        .contents a:hover{background:#f0f8ff}
+        @media (min-width:1024px){ .contents.sticky{position:sticky; top:10px; z-index:10} }
+
+        /* Sidebar layout */
+        .layout{display:flex;gap:20px}
+        .sidebar{background:#fff;border:1px solid #eaeef2;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.06);padding:16px;width:260px;position:sticky;top:10px;align-self:flex-start;max-height:calc(100vh - 120px);overflow:auto}
+        .sidebar .sub{margin-left:14px;font-size:13px;color:#4a5568}
+        .sidebar a{display:block;padding:6px 8px;border-radius:6px}
+        .sidebar a.active{background:#f0f8ff;color:#005f99;font-weight:700}
+        .content{flex:1}
+        @media (max-width:980px){
+                  .layout{flex-direction:column}
+          .sidebar{position:static;width:auto;max-height:none}
+        }
+
+        /* Collapsible sidebar */
+         .sidebar{transition: width .3s ease, padding .3s ease, border-width .3s ease}
+         body.sidebar-collapsed .sidebar{width:0;padding:0;border-width:0;overflow:hidden}
+         .sidebar-toggle{position:fixed;left:10px;top:90px;z-index:1001;cursor:pointer;padding:8px;background:#fff;border:1px solid #eaeef2;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.06)}
+         .sidebar-toggle .arrow{fill:none;stroke:#2980b9;stroke-width:2;transition: transform .3s ease}
+         body.sidebar-collapsed .sidebar-toggle .arrow{transform:rotate(180deg)}
+
+         /* Back-to-top link */
+         .back-to-top{display:block;text-align:right;margin-top:8px}
+         .back-to-top a{color:#007acc;text-decoration:none;font-weight:600}
+         .back-to-top a:hover{text-decoration:underline}
+
+        /* Version badge + footer (parity) */
+        .version-info{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.1);color:#333;padding:4px 8px;border-radius:4px;font-size:.75em;font-family:monospace;z-index:999;opacity:.7;transition:opacity .3s ease}
+        .version-info:hover{opacity:1;background:rgba(0,0,0,0.2)}
+        footer{text-align:center;padding:20px;font-size:.9em;color:#666;border-top:1px solid #eaeef2;margin-top:30px}
+        footer a{color:#007acc;text-decoration:none}
+        footer a:hover{text-decoration:underline}
+
+        /* Accessible focus */
+        a:focus-visible,button:focus-visible{outline:3px solid rgba(0,122,204,0.35);outline-offset:2px;border-radius:6px}
+
+        /* Anchor link indicator */
+        .anchor-link{text-decoration:none;color:#94a3b8;margin-left:8px;opacity:0;transition:opacity .2s ease;font-size:0.8em;font-weight:400}
+        .feature:hover .anchor-link,.step:hover .anchor-link,h2:hover .anchor-link,h3:hover .anchor-link{opacity:1}
+        .anchor-link:hover{color:#007acc}
+
+        @media (max-width:600px){body{padding:10px}h1{font-size:2em}.gallery img{width:100%;max-width:300px;height:auto}}
+    </style>
+</head>
+<body id="top">
+    <header>
+        <h1>Couchbase Query Analysis Hub</h1>
+        <p>Concise guidance to process data, interpret stats, and optimize queries.</p>
+    </header>
+
+    <div class="intro"><strong>Why is my query slow?</strong> Start with <a href="#read-stats">Reading the Performance Data</a></div>
+    
+    <div class="layout">
+        <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true" aria-controls="sidebar">
+            <svg class="arrow" width="24" height="24" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+        <nav id="sidebar" class="sidebar" aria-label="Topics">
+            <h2 style="margin:0 0 8px;font-size:16px;color:#2d3748">Topics</h2>
+            <ul style="list-style:none;margin:0;padding:0">
+                <li><a href="#process-charts-stats">Process → Charts & Stats</a></li>
+                <li class="sub"><a href="#parseJSON">• Parse JSON & Filters</a></li>
+                <li class="sub"><a href="#tabs">• Analyzer Tabs</a></li>
+                <li><a href="#read-the-stats">Read the Stats</a></li>
+                <li class="sub"><a href="#read-stats">• Performance Data</a></li>
+                <li class="sub"><a href="#system-node-impact">• System & Node Impact</a></li>
+                <li class="sub"><a href="#phase-metrics">• ServiceTime Context</a></li>
+                <li class="sub"><a href="#practical-tips">• Pro Insights</a></li>
+                <li><a href="#crawl-walk-run">Crawl → Walk → Run</a></li>
+                <li><a href="#performance">Performance</a></li>
+                <li><a href="#glossary">Glossary</a></li>
+            </ul>
+        </nav>
+        <main class="content">
+        <section id="process-charts-stats">
+            <h2>How to Process and Generate Charts/Stats</h2>
+            <div class="steps stacked">
+                <div class="step">
+                    <strong>1) Extract Data</strong>
+                    <p>Run this in Query Workbench, Capella Query tab, or <code>cbq</code>, then export as JSON.</p>
+                    <div class="sql-query-box">
+<pre>SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;</pre>
+                        <button class="sql-copy-btn">Copy</button>
+                    </div>
+                    <p style="color:#4a5568;font-size:0.95em">Tip: For larger datasets, prefer targeted filters (see below) before exporting.</p>
+                    <p><a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample completed_requests JSON</a></p>
+                </div>
+
+                <div class="step">
+                    <strong>2) Paste or Upload JSON</strong>
+                    <p><a href="en/index.html">Open Analyzer</a> — in the upper-left input, paste or upload your JSON and it will auto-parse, or click <b>Parse JSON</b>.</p>
+                    
+                    <img style="width: 500px;"  src="assets/img/parse_upload_json_completed_requests.png" alt="Parse JSON button in the analyzer" loading="lazy">
+
+                    <p><b>Private & secure:</b> Runs and processes your data entirely in your browser and its memory. No server uploads.</p>
+                  
+                </div>
+
+                <div class="step" id="parseJSON">
+                    <strong>3) Parse JSON & Filters Overview</strong>
+                    <p>After parsing, use filters to focus analysis:</p>
+                    <ul>
+                    <li>
+                       <b>Date/Time Range</b> — From/To with quick presets (Original | 1 Week | 1 Day | 1 Hour)
+                       <div class="gallery" style="margin:8px 0 0">
+                                                   <div class="tab-card flat">
+                                                        <div class="tab-img-wrap">
+                                                            <img class="tab-img" src="assets/img/datepicker.png" alt="Datetime picker controls" loading="lazy">
+                                                            <img class="tab-img-large" src="assets/img/datepicker.png" alt="Datetime picker controls (full view)" loading="lazy">
+                                                        </div>
+                                                    </div>
+                            <span class="hover-swap">
+                                                       <img src="assets/img/preset_dates.png" alt="Preset date range buttons" loading="lazy">
+                                <img class="hover" src="assets/img/preset_dates_drop_down.png" alt="Preset date range dropdown example" loading="lazy">
+                                                   </span>
+                        </div>
+                    </li>
+
+                        <li>
+                            <b>SQL++ Statement Contains</b> — text filter for keywords/patterns
+                            <p style="margin:6px 0 0; color:#4a5568; font-size:0.9em"><span class="badge-pro">PRO</span> – a great way to focus only on one query pattern and reduce the noise from other queries</p>
+                            <div class="gallery" style="margin:8px 0 0">
+                                <span class="hover-swap">
+                                    <img src="assets/img/sql_string_filter_and_exclude_system.png" alt="SQL++ contains filter and exclude system toggle" loading="lazy">
+                                    <img class="hover" src="assets/img/sql_string_filter_and_exclude_system_example.png" alt="Example with SQL++ text in filter input" loading="lazy">
+                                </span>
+                            </div>
+                        </li>
+
+                        <li>
+                            <b>Elapsed Time Filter</b> — comparisons and ranges (e.g., <code>&gt;=500ms</code>, <code>0.5s-2s</code>)
+                            <div class="gallery" style="margin:8px 0 0">
+                                <span class="hover-swap">
+                                    <img src="assets/img/elapsedTime_filter.png" alt="Elapsed Time filter input" loading="lazy">
+                                    <img class="hover" src="assets/img/elapsedTime_filter_example.png" alt="Examples entered into Elapsed Time Filter input" loading="lazy">
+                                </span>
+                            </div>
+                            <div class="accordion" id="elapsedTimeExamples" style="margin-top:12px">
+                                <div class="accordion-header" onclick="toggleAccordion(this)">Elapsed Filter Examples</div>
+                                <div class="accordion-content">
+                                    <p>Filter by the <code>elapsedTime</code> of each query using comparisons and ranges. Supported: <code>&lt;</code>, <code>&lt;=</code>, <code>=</code>, <code>&gt;</code>, <code>&gt;=</code>, ranges like <code>100-500ms</code> or <code>0.5s-2s</code>, unit-inferred ranges like <code>3-15s</code>, shorthand <code>500ms+</code> (means <code>&gt;= 500ms</code>), and bare numbers (e.g., <code>150</code> means <code>&gt;= 150ms</code>).</p>
+                                    <ul>
+                                        <li><b>Comparators:</b> <code>&gt;500ms</code>, <code>&gt;=1s</code>, <code>&lt;2s</code>, <code>=150ms</code></li>
+                                        <li><b>Ranges (inclusive):</b> <code>100-500ms</code>, <code>0.5s-2s</code>, <code>3-15s</code> (unit applied to both sides)</li>
+                                        <li><b>Shorthand:</b> <code>500ms+</code> (same as <code>&gt;=500ms</code>)</li>
+                                        <li><b>Bare number:</b> <code>150</code> is interpreted as <code>&gt;=150ms</code></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <b>Timezone Picker</b> — Adjust the charts/graphs x-axis time to display in your chosen timezone. Select from the dropdown to convert all timestamps accordingly.
+                            <div class="gallery" style="margin:8px 0 0">
+                                <span class="hover-swap">
+                                    <img src="assets/img/timezones.png" alt="Timezone picker dropdown" style="width:240px;height:auto" loading="lazy">
+                                </span>
+                            </div>
+                        </li>
+
+                        <li><b>Exclude System Queries</b> — hides system:*, INFER/ADVISE, CREATE/ALTER INDEX, etc.</li>
+                    </ul>
+                </div>
+
+                <div class="step" id="tabs">
+                    <strong>4) Analyzer Tabs</strong>
+                    <div class="tab-grid">
+                        <div class="tab-card">
+                            <div class="tab-img-wrap">
+                                <img class="tab-img" src="assets/img/dashboard.png" alt="Dashboard screenshot" loading="lazy">
+                                <img class="tab-img-large" src="assets/img/dashboard.png" alt="Dashboard screenshot (full view)" loading="lazy">
+                            </div>
+                            <div class="caption"><strong>Dashboard</strong><div>High-level charts and distributions</div></div>
+                        </div>
+                        <div class="tab-card">
+                            <div class="tab-img-wrap">
+                                <img class="tab-img" src="assets/img/insights_demo.png" alt="Insights screenshot" loading="lazy">
+                                <img class="tab-img-large" src="assets/img/insights_demo.png" alt="Insights screenshot (full view)" loading="lazy">
+                            </div>
+                            <div class="caption"><strong>Insights</strong><div>Automated checks and quick wins</div></div>
+                        </div>
+                        <div class="tab-card">
+                            <div class="tab-img-wrap">
+                                <img class="tab-img" src="assets/img/timeline.png" alt="Timeline screenshot" loading="lazy">
+                                <img class="tab-img-large" src="assets/img/timeline.png" alt="Timeline screenshot (full view)" loading="lazy">
+                            </div>
+                            <div class="caption"><strong>Timeline</strong><div>Time-series performance with zoom</div></div>
+                        </div>
+                        <div class="tab-card">
+                            <div class="tab-img-wrap">
+                                <img class="tab-img" src="assets/img/query_groups_demo.png" alt="Query Groups screenshot" loading="lazy">
+                                <img class="tab-img-large" src="assets/img/query_groups_demo.png" alt="Query Groups screenshot (full view)" loading="lazy">
+                            </div>
+                            <div class="caption"><strong>Query Groups</strong><div>Normalized patterns and aggregates</div></div>
+                        </div>
+                        <div class="tab-card">
+                            <div class="tab-img-wrap">
+                                <img class="tab-img" src="assets/img/every_query_demo.png" alt="Every Query screenshot" loading="lazy">
+                                <img class="tab-img-large" src="assets/img/every_query_demo.png" alt="Every Query screenshot (full view)" loading="lazy">
+                            </div>
+                            <div class="caption"><strong>Every Query</strong><div>Sortable table of executions</div></div>
+                        </div>
+                        <div class="tab-card">
+                            <div class="tab-img-wrap">
+                                <img class="tab-img" src="assets/img/indexes_queries_flow.png" alt="Index/Query Flow screenshot" loading="lazy">
+                                <img class="tab-img-large" src="assets/img/indexes_queries_flow.png" alt="Index/Query Flow (full view)" loading="lazy">
+                            </div>
+                            <div class="caption"><strong>Index/Query Flow</strong><div>Relationship diagram</div></div>
+                        </div>
+                        <div class="tab-card">
+                            <div class="tab-img-wrap">
+                                <img class="tab-img" src="assets/img/indexes_demo.png" alt="Indexes screenshot" loading="lazy">
+                                <img class="tab-img-large" src="assets/img/indexes_demo.png" alt="Indexes screenshot (full view)" loading="lazy">
+                            </div>
+                            <div class="caption"><strong>Indexes</strong><div>Inventory and performance of indexes</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step" id="indexes">
+                    <strong>5) Add Indexes JSON </strong><i>(Optional but Recommended)</i></strong>
+                    <p>Run this separate query for <code>system:indexes</code> and paste/upload to the upper-right input to enrich Indexes and Flow views.</p>
+                    <div class="sql-query-box">
+<pre>SELECT 
+    s.name,
+    s.id,
+    s.metadata,
+    s.state,
+    s.num_replica,
+    s.`using` AS indexType,
+    CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+FROM system:indexes AS s
+LET bid = CONCAT("", s.bucket_id, ""),
+    sid = CONCAT("", s.scope_id, ""),
+    kid = CONCAT("", s.keyspace_id, ""),
+    k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
+    ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
+    w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
+    p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;</pre>
+                        <button class="sql-copy-btn">Copy</button>
+                    </div>
+                    <p><a href="sample/test_system_indexes.json" target="_blank" rel="noopener noreferrer">Sample system:indexes JSON</a></p>
+                </div>
+
+                </div>
+                <div class="back-to-top"><a href="#top">Back to top</a></div>
+                   </section>
+                
+                <section id="read-the-stats">
+            <h2>What the Stats and Tables Mean</h2>
+
+            <div class="feature" id="read-stats">
+                <strong>Reading the Performance Data <a href="#read-stats" class="anchor-link">#</a></strong>
+                <p>The <strong>Every Query</strong> tab lets you see stats per individual query to spot bottlenecks and get timings of operations in detail.</p>
+                <img src="assets/img/stats_to_plan.png" alt="Query statistics table showing performance metrics" style="max-width:100%; border:1px solid #e6eef5; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin:8px 0;">
+                <ul>
+                    <li><code>elapsedTime</code> — Total wall-clock from request acknowledgment to last byte sent.</li>
+                    <li><code>serviceTime</code> — Active execution time while waiting on services (Index, Data, FTS).</li>
+                    <li><code>executionTime</code> — Internal query processing time (engine logic).</li>
+                    <li><code>cpuTime</code> — Cumulative CPU consumed across threads (can exceed wall time).</li>
+                    <li><code>kernTime</code> — Time spent waiting for CPU scheduling by the OS.</li>
+                    <li><code>resultCount</code> — Number of documents returned to the client.</li>
+                    <li><code>resultSize</code> — Total bytes sent; affects network transfer time.</li>
+                    <li><code>phaseCounts.fetch</code> — Number of full documents retrieved from data service</li>
+                    <li><code>phaseCounts.indexScan</code> — Number of matching records from the index(es) service</li>
+                </ul>
+                <p style="color:#4a5568;font-size:0.95em">Watch-outs: large <code>resultSize</code> stretches <code>elapsedTime</code>; high <code>usedMemory</code> suggests heavy sorts/aggregations or big payloads.</p>
+            </div>
+        
+
+            <div class="feature" id="system-node-impact">
+                <strong>System & Node Impact <a href="#system-node-impact" class="anchor-link">#</a></strong>
+                <p>Performance is influenced by node CPU, memory, and service placement. Large results also increase network time.</p>
+                  <img src="assets/img/query_node.png" alt="Query node architecture impact" style="max-width:100%; border:1px solid #e6eef5; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin:8px 0;">          
+                <ul>
+                    <li><code>kernTime</code> — Time spent waiting for CPU scheduling by the OS.</li>
+                    <li><code>cpuTime</code> — Cumulative CPU consumed across threads (can exceed wall time).</li>
+                    <li><code>memoryUsed</code> — Cumulative Memory used to execute a query</li>
+                </ul>
+                <p>The image above shows the Query service handling multiple concurrent requests on a single node. The OS kernel schedules query threads onto a limited number of CPU cores, so parts of a query must “wait” when resources are contended. This scheduling delay appears as <code>kernTime</code> at the operator level and stretches execution/elapsed time without doing useful work.</p>
+                <ul>
+                    <li><b>Limited CPU cores</b> → thread contention and context switching under load</li>
+                    <li><b>Memory pressure</b> → GC/paging can increase pauses and reduce throughput</li>
+                    <li><b>Service co-location</b> (Query with Index/KV) → competition for CPU and memory on the same node</li>
+                    <li><b>Large <code>resultSize</code></b> → longer post-execution network transfer time</li>
+                </ul>
+                <p style="color:#4a5568;font-size:0.95em">Reduce contention by scaling query nodes, tuning concurrency, creating covering indexes to reduce fetches, and minimizing payload size.</p>
+            </div>
+
+            <div class="feature" id="phase-metrics">
+                <strong>ServiceTime in Context <a href="#phase-metrics" class="anchor-link">#</a></strong>
+                <p>The Query service relies on other services in the cluster to operate (Data, Index, FTS, and Auth Service). This statistic is a sum of time spent waiting on all these services for this particular query.</p>
+                <div class="gallery" style="margin:10px 0 0">
+                    <img src="assets/img/serviceTime.png" alt="ServiceTime breakdown and phases" loading="lazy">
+                </div>
+            </div>
+
+
+                <div class="feature" id="practical-tips">
+                    <strong>Pro Insights: How to Read the Stats <span class="badge-pro">PRO</span> <a href="#practical-tips" class="anchor-link">#</a></strong>
+                    <ul>
+                        <li>High <code>kernTime</code> → CPU contention; check system load and concurrency.</li>
+                        <li>High <code>phaseCounts.fetch</code> → add covering indexes; reduce fetches.</li>
+                        <li>Large <code>resultSize</code> vs <code>resultCount</code> → optimize projection; narrow scans.</li>
+                        <li><code>elapsedTime</code> ≫ <code>serviceTime</code> → queuing/network; scale query nodes/services.</li>
+                        <li><code>cpuTime</code> high ~ <code>serviceTime</code> → CPU-bound; simplify expressions or add cores.</li>
+                    </ul>
+                    
+                    <p style="color:#4a5568;font-size:0.95em">Quick patterns: <b>elapsedTime ≫ serviceTime</b> → queuing or network; <b>cpuTime ~ serviceTime</b> → CPU-bound; <b>kernTime high</b> → CPU contention.</p>
+
+                    <p style="color:#4a5568;font-size:0.95em">See also: <a href="#read-stats">Performance Data</a> and <a href="#phase-metrics">ServiceTime Context</a>.</p>
+                </div>
+            
+        <div class="back-to-top"><a href="#top">Back to top</a></div>
+               </section>
+        
+         <section id="crawl-walk-run">
+         <h2>Crawl → Walk → Run</h2>
+         <div class="features stacked">
+                <div class="feature" id="crawl-strategy">
+                    <strong>CRAWL · Basic Index Strategy <a href="#crawl-strategy" class="anchor-link">#</a></strong>
+                    <img class="cwr-img" src="assets/img/full_index.png" alt="CRAWL: full index scan pattern" loading="lazy">
+                    <ul>
+                        <li>High <code>phaseCounts.fetch</code>; <code>phaseTimes.fetch</code> dominates.</li>
+                        <li>Larger <code>resultSize</code>; moderate <a href="#serviceTime">serviceTime</a>.</li>
+                        <li>Often primary or non-covering indexes; broad scans.</li>
+                    </ul>
+                    <p style="color:#4a5568;font-size:0.95em">Success: reduce <code>phaseCounts.fetch</code> and <code>phaseTimes.fetch</code> by 30–50%.</p>
+                    <p>See the glossary: <a href="#serviceTime">serviceTime</a>, <a href="#elapsedTime">elapsedTime</a></p>
+                </div>
+
+                <div class="feature" id="walk-strategy">
+                    <strong>WALK · Targeted Composite Indexes <a href="#walk-strategy" class="anchor-link">#</a></strong>
+                    <img class="cwr-img" src="assets/img/reduced_index.png" alt="WALK: reduced index scan pattern" loading="lazy">
+                    <ul>
+                        <li>Reduced <code>phaseCounts.fetch</code> via better pre-filtering in indexes.</li>
+                        <li>More selective <code>phaseCounts.indexScan</code>; improved <a href="#serviceTime">serviceTime</a>.</li>
+                        <li>Projection refined; data scanned narrows.</li>
+                    </ul>
+                    <p style="color:#4a5568;font-size:0.95em">Success: sustained drops in fetch counts/time; stable or lower <code>resultSize</code>; fewer I/O waits.</p>
+                    <p>See the glossary: <a href="#executionTime">executionTime</a>, <a href="#serviceTime">serviceTime</a></p>
+                </div>
+
+                <div class="feature" id="run-strategy">
+                    <strong>RUN · Covering Indexes <a href="#run-strategy" class="anchor-link">#</a></strong>
+                    <img class="cwr-img" src="assets/img/covered_index.png" alt="RUN: covering index pattern" loading="lazy">
+                    <ul>
+                        <li><code>phaseCounts.fetch = 0</code> — no document fetches.</li>
+                        <li>Minimal <code>resultSize</code> (project only needed fields).</li>
+                        <li>Minimal <a href="#serviceTime">serviceTime</a>; low <code>kernTime</code>.</li>
+                    </ul>
+                    <p style="color:#4a5568;font-size:0.95em">Success: 70–90% reduction in <code>serviceTime</code>; faster and more predictable queries.</p>
+                    <p>See the glossary: <a href="#kernTime">kernTime</a>, <a href="#serviceTime">serviceTime</a></p>
+                </div>
+            </div>
+
+            <div class="feature" id="cwr-summary">
+                <strong>In Summary: Crawl / Walk / Run Metrics</strong>
+                <ul>
+                    <li><b>CRAWL:</b> High <code>phaseCounts.fetch</code>, large <code>resultSize</code>, higher <code>serviceTime</code></li>
+                    <li><b>WALK:</b> Reduced <code>fetch</code>, more selective <code>indexScan</code>, improved <code>serviceTime</code></li>
+                    <li><b>RUN:</b> <code>fetch=0</code> (covering index), minimal <code>resultSize</code>, optimal <code>serviceTime</code></li>
+                </ul>
+            </div>
+
+        <div class="back-to-top"><a href="#top">Back to top</a></div>
+               </section>
+
+        <section id="performance">
+            <h2>Performance</h2>
+
+            <div class="feature" id="what-is-index">
+                <strong>What is a Couchbase Index? <a href="#what-is-index" class="anchor-link">#</a></strong>
+                <p>A Couchbase index is a data structure that creates shortcuts to your documents, allowing queries to find data efficiently without scanning entire buckets. When you create indexes with <code>CREATE INDEX</code> statements, they are stored and managed by the Index Service.</p>
+                <img src="assets/img/index_node_create_indexes.png" alt="Couchbase CREATE INDEX commands showing how indexes are organized on Index Node with key-value pairs" style="max-width:100%; border:1px solid #e6eef5; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin:12px 0;" loading="lazy">
+                
+                <p style="margin-top:16px"><strong>How Index Creation Works</strong></p>
+                <p style="color:#4a5568;font-size:0.95em">As shown in the diagram above, when you execute CREATE INDEX statements:</p>
+                <ul>
+                    <li><strong>custId_status_v1:</strong> Creates an index on <code>(status, custId)</code> fields, organizing data like "done,1234", "done,5678", "draft,1234"</li>
+                    <li><strong>email_v1:</strong> Creates an index on <code>(email)</code> field, organizing data like "@yahoo.com", "@gmail.com", "@aol.com"</li>
+                    <li><strong>Index Node Storage:</strong> All indexes are stored on dedicated Index Service nodes</li>
+                    <li><strong>Key-Value Organization:</strong> Each index maintains sorted key-value pairs for fast lookups</li>
+                    <li><strong>Document References:</strong> Index values point to document keys (like 1234, 5678) for quick document retrieval</li>
+                </ul>
+            </div>
+
+            <div class="feature" id="index-memory">
+                <strong>Index Memory Usage: The Performance Game-Changer <a href="#index-memory" class="anchor-link">#</a></strong>
+                <p>The percentage of your index stored in memory directly impacts query performance. Higher memory residency means faster query execution, while lower memory residency can lead to disk I/O and slower responses.</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                    <div>
+                        <p><strong>High Memory Residency (90%+)</strong></p>
+                        <img src="assets/img/index_high_memory.png" alt="Couchbase index with high percentage of data in memory showing optimal performance" style="width:100%; border:1px solid #e6eef5; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05);" loading="lazy">
+                        <p style="color:#4a5568;font-size:0.95em;margin-top:8px">
+                            <strong>Optimal Performance:</strong> Most index data is in RAM, resulting in fast lookups and minimal disk I/O. Ideal for frequently accessed indexes.
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <p><strong>⚠️ Low Memory Residency (20-40%)</strong></p>
+                        <img src="assets/img/index_low_memory.png" alt="Couchbase index with small percentage of data in memory showing performance impact" style="width:100%; border:1px solid #e6eef5; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05);" loading="lazy">
+                        <p style="color:#4a5568;font-size:0.95em;margin-top:8px">
+                            <strong>Performance Impact:</strong> Frequent disk reads required, leading to higher latency and reduced throughput. Consider increasing memory allocation.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature">
+                <strong>Index Memory Optimization Strategies</strong>
+                
+                <p style="margin-top:16px"><strong>Memory Optimization Tips</strong></p>
+                <ul>
+                    <li><strong>Monitor Memory Residency:</strong> Use our tool to track what percentage of your indexes are in memory</li>
+                    <li><strong>Increase Index RAM:</strong> Allocate more memory to the Index Service for frequently used indexes</li>
+                    <li><strong>Index Selectivity:</strong> Create more selective indexes to reduce overall memory footprint</li>
+                    <li><strong>Partition Indexes:</strong> Use partitioned indexes to distribute memory load across nodes</li>
+                    <li><strong>Archive Old Data:</strong> Remove or separate historical data that doesn't need high-performance access</li>
+                </ul>
+
+                <p style="margin-top:16px"><strong>Index Performance Impact</strong></p>
+                <p style="color:#4a5568;font-size:0.95em">Memory residency directly affects:</p>
+                <ul>
+                    <li><strong>Query Latency:</strong> In-memory indexes respond 10-100x faster than disk-based lookups</li>
+                    <li><strong>Throughput:</strong> Higher memory residency allows more concurrent queries without performance degradation</li>
+                    <li><strong>CPU Usage:</strong> Less CPU spent waiting for disk I/O when indexes are in memory</li>
+                    <li><strong>Consistency:</strong> Predictable performance when indexes don't compete for disk resources</li>
+                </ul>
+            </div>
+            
+            <div class="feature" id="primary-index-drawbacks">
+                <strong>⚠️ Drawbacks of Primary Indexes <span class="badge-warning">WARNING</span> <a href="#primary-index-drawbacks" class="anchor-link">#</a></strong>
+                <p>While primary indexes in Couchbase provide a basic way to scan all documents in a bucket by their keys, they come with significant drawbacks that make them unsuitable for most production scenarios. Primary indexes lead to very slow performance because they fetch all documents across all types in the bucket before applying filters, resulting in unnecessary I/O, memory, and CPU waste.</p>
+                <ul>
+                    <li><b>Performance Impact:</b> Excessive document retrievals and post-scan filtering make operations "VERY EXPENSIVE"</li>
+                    <li><b>Resource Waste:</b> Unnecessary I/O, memory, and CPU consumption</li>
+                    <li><b>Not Recommended:</b> The Couchbase index advisor never recommends primary indexes</li>
+                    <li><b>Better Alternatives:</b> Secondary or composite indexes are almost always more efficient</li>
+                </ul>
+                <p style="color:#4a5568;font-size:0.95em"><b>Recommendation:</b> Avoid primary indexes in production—use them only for initial data exploration or when no other index applies, and opt for targeted secondary indexes to minimize latency and resource usage.</p>
+            </div>
+
+            <div class="feature" id="sequential-scan-drawbacks">
+                <strong>⚠️ Drawbacks of Sequential Scans <span class="badge-warning">WARNING</span> <a href="#sequential-scan-drawbacks" class="anchor-link">#</a></strong>
+                <p>Sequential scans in Couchbase involve scanning documents directly without an index, which can be simple but comes with performance limitations. "Sequential scans are intended for simple, ready access to data, and are not intended as a high performance solution."</p>
+                <ul>
+                    <li><b>Limited Use Cases:</b> Best suited to small collections where key order is unimportant</li>
+                    <li><b>Index Overhead:</b> Only when the overhead of maintaining an index can't be justified</li>
+                    <li><b>Performance Issues:</b> Lead to full bucket traversals, high latency, and increased resource consumption</li>
+                    <li><b>Primary Index Alternative:</b> For ordered document key operations, a primary index provides the same functionality and will outperform a sequential scan</li>
+                </ul>
+                <p style="color:#4a5568;font-size:0.95em"><b>Recommendation:</b> Avoid sequential scans for large datasets or frequent queries—always prioritize indexing for scalability.</p>
+            </div>
+
+            <div class="feature" id="slow-parse-plan">
+                <strong>⚠️ Slow Parse and Plan Times <a href="#slow-parse-plan" class="anchor-link">#</a></strong>
+                <p>Parse (SQL++ text → internal structure) and plan (optimizer choosing execution strategy) phases normally complete in microseconds. When either exceeds 1ms, it indicates CPU contention or kernel scheduling delays—queries waiting for CPU time instead of executing.</p>
+                
+                <p><b>Example - Normal times (reference query):</b></p>
+                <pre style="background:#2d3748;color:#e2e8f0;padding:12px;border-radius:4px;overflow-x:auto;margin:10px 0;font-size:0.9em;">Query: SELECT * , meta() FROM `travel-sample` ORDER BY `type` DESC
+
+phaseTimes: {
+  "parse": "271.666µs",    ✅ Normal (< 1ms)
+  "plan": "441.75µs"       ✅ Normal (< 1ms)
+}</pre>
+
+                <p><b>Why times > 1ms are problematic:</b></p>
+                <ul>
+                    <li><b>CPU Saturation:</b> Query service node lacks available CPU cores</li>
+                    <li><b>Kernel Waits:</b> Threads queued in OS scheduler (see <a href="#kernTime">kernTime</a>)</li>
+                    <li><b>Co-located Services:</b> Query competing with Index/Data services on same node</li>
+                    <li><b>High Concurrency:</b> Too many simultaneous queries</li>
+                </ul>
+
+                <p><b>Diagnose via:</b></p>
+                <ul>
+                    <li><code>system:vitals</code> → <code>cpu.user.percent</code> (&gt;80%), <code>request.active.count</code></li>
+                    <li>Operator stats → high <code>kernTime</code> throughout execution plan</li>
+                    <li>Node config → check if services are co-located</li>
+                </ul>
+
+                <p><b>Fixes:</b> Reduce query concurrency, use prepared statements (skip parse), add dedicated query nodes, separate co-located services, or optimize complex queries.</p>
+                
+            </div>
+
+            <div class="feature" id="complex-joins">
+                <strong>⚠️ Complex JOIN Operations <span class="badge-beta">BETA</span> <a href="#complex-joins" class="anchor-link">#</a></strong>
+                <p>JOIN operations in Couchbase N1QL/SQL++ can introduce significant performance overhead when not properly optimized. Complex JOINs are flagged based on multiple indicators (A-H) that signal resource contention, inefficient execution patterns, or unexpected data explosion.</p>
+                
+                <div class="accordion" id="join-complexity-flags">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Common JOIN Complexity Flags (A-H)</div>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><b>🔴 Flag A - Primary Scan in JOIN:</b> Using primary index instead of secondary index during JOIN phase (Critical). The right-side keyspace lacks a proper index on the join predicate, forcing a full collection scan.</li>
+                            <li><b>🔴 Flag B - Cartesian Product:</b> CROSS JOIN or missing/poor ON clause causing exponential result multiplication (Critical). Example: joining 1,000 rows with 1,000 rows produces 1,000,000 results.</li>
+                            <li><b>🔴 Flag D - Severe Data Explosion:</b> Result set 10x+ larger than input documents (Critical). Often caused by UNNEST followed by JOIN where each array element joins to multiple records.</li>
+                            <li><b>🟡 Flag C - Moderate Data Explosion:</b> Result set 2x-10x larger than input (High). Indicates JOIN conditions that aren't selective enough or UNNEST creating intermediate expansion.</li>
+                            <li><b>🟡 Flag E - Slow JOIN Phase:</b> JOIN phase time ≥2 seconds (High). Join execution is taking too long, potentially due to large datasets, missing indexes, or poor join predicates.</li>
+                            <li><b>🟡 Flag F - High Document Processing:</b> JOIN processed ≥100,000 documents (High). Large intermediate result sets consuming memory and CPU.</li>
+                            <li><b>🟡 Flag H - JOIN Time Dominant:</b> JOIN phase consumes ≥30% of total query time (High). The join operation is the bottleneck in query execution.</li>
+                            <li><b>🟠 Flag G - Multiple JOINs:</b> Query contains 4+ JOIN keywords (Medium). Complex multi-table joins increase complexity and maintenance difficulty.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="accordion" id="join-explosion-example">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Example - UNNEST + JOIN Data Explosion</div>
+                    <div class="accordion-content">
+                        <pre style="background:#2d3748;color:#e2e8f0;padding:12px;border-radius:4px;overflow-x:auto;margin:10px 0;font-size:0.9em;">Query: SELECT o.*, p.* FROM orders o 
+       UNNEST o.items AS item 
+       JOIN products p ON KEYS item.productId
+
+Input:  10,000 orders
+UNNEST: 50,000 items (avg 5 items per order)
+JOIN:   50,000 products matched
+Result: 50,000 rows (5x explosion) ⚠️
+
+Flags Triggered:
+- D: 5.0x explosion (10,000 → 50,000)
+- E: JOIN took 2.80s
+- H: JOIN is 32.7% of query time</pre>
+                    </div>
+                </div>
+
+                <div class="accordion" id="join-problems">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Why JOINs Can Be Problematic</div>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><b>Network Round-Trips:</b> Each join may require fetching documents from Data Service</li>
+                            <li><b>Memory Consumption:</b> Intermediate result sets held in memory during execution</li>
+                            <li><b>CPU Overhead:</b> Matching and filtering join predicates</li>
+                            <li><b>Index Dependencies:</b> Performance heavily depends on proper index coverage on both sides</li>
+                            <li><b>UNNEST Multiplication:</b> Array expansion before JOIN multiplies dataset size exponentially</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="accordion" id="join-optimization">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Optimization Strategies</div>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><b>Create Secondary Indexes:</b> Ensure both left and right keyspaces have indexes on join keys (fixes Flag A)</li>
+                            <li><b>Use Covering Indexes:</b> Include projected fields in index definition to avoid document fetches</li>
+                            <li><b>Add WHERE Filters Early:</b> Filter data before JOIN to reduce intermediate result set size</li>
+                            <li><b>Denormalize Data:</b> For frequently joined data, embed related documents to eliminate JOINs</li>
+                            <li><b>Optimize JOIN Order:</b> Join smallest dataset first, then progressively add larger datasets</li>
+                            <li><b>Review UNNEST Usage:</b> Consider if array elements truly need joining or can be filtered first</li>
+                            <li><b>Use Prepared Statements:</b> Cache execution plans for frequently executed JOINs</li>
+                            <li><b>Monitor JOIN Phase Metrics:</b> Track <code>phaseTimes.join</code> and <code>phaseCounts.join</code> to identify bottlenecks</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="accordion" id="join-denormalize-decision">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">When to Denormalize vs JOIN</div>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><b>Denormalize (embed) if:</b> Data is read frequently together, updates are infrequent, relationship is 1-to-1 or 1-to-few</li>
+                            <li><b>Use JOIN if:</b> Data changes frequently, relationship is many-to-many, need to maintain referential integrity</li>
+                            <li><b>Hybrid Approach:</b> Embed critical fields, JOIN for full details when needed</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <p style="color:#4a5568;font-size:0.95em;margin-top:15px;"><b>💡 Recommendation:</b> Monitor JOIN queries with multiple complexity flags (especially A, B, D) as they often indicate systemic design issues. Consider denormalizing frequently-joined data paths or restructuring queries to reduce JOIN overhead.</p>
+            </div>
+
+            <div class="feature" id="concurrent-conflicts">
+                <strong>⚠️ Concurrent Query Conflicts <span class="badge-beta">BETA</span> <a href="#concurrent-conflicts" class="anchor-link">#</a></strong>
+                <p>Concurrent query conflicts occur when Couchbase services (Query, Data, Index) become overloaded, causing resource contention and performance degradation. Unlike peak vs. off-peak analysis, this insight detects service-level pressure through phase timing anomalies, regardless of when queries run.</p>
+                
+                <div class="accordion" id="service-pressure-indicators">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Service Pressure Indicators (Flags A-H)</div>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><b>🟡 Flag A - Query Service Warning:</b> Parse+Plan time >1ms (should be <1ms). Indicates Query Service CPU pressure when running hundreds of queries/sec on an 8-core system.</li>
+                            <li><b>🔴 Flag B - Query Service Critical:</b> Parse+Plan time >10ms. Query Service critically overloaded, immediate scaling required.</li>
+                            <li><b>🟡 Flag C - Data Service Warning:</b> Fetch >5ms per document (should be <1ms). KV service under pressure, possibly due to memory/disk I/O contention.</li>
+                            <li><b>🔴 Flag D - Data Service Critical:</b> Fetch >10ms per document. KV service critically slow, immediate investigation required.</li>
+                            <li><b>🟡 Flag E - Index Service Warning:</b> Index scan <5K records/sec (should be >10K). Index service running slow, potentially due to resource constraints.</li>
+                            <li><b>🔴 Flag F - Index Service Critical:</b> Index scan <1K records/sec. Index service critically slow, add replicas or optimize indexes.</li>
+                            <li><b>🟡 Flag G - CPU Contention:</b> Kernel time >30% of elapsed time. CPU scheduling overhead indicating processes fighting for cores.</li>
+                            <li><b>🔴 Flag H - System-Wide Pressure:</b> Multiple services (2+) under pressure simultaneously. System-wide resource exhaustion detected.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="accordion" id="conflict-example">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Example - System-Wide Pressure</div>
+                    <div class="accordion-content">
+                        <pre style="background:#2d3748;color:#e2e8f0;padding:12px;border-radius:4px;overflow-x:auto;margin:10px 0;font-size:0.9em;">Query: SELECT o.*, c.* FROM orders o JOIN customers c ON o.customerId = c.id
+
+Metrics:
+- Parse+Plan:  5.0ms (Flag A - should be <1ms)
+- Fetch:       15ms per doc for 100 docs (Flag D - >10ms/doc)
+- Kernel Time: 6,000ms / 15,000ms = 40% (Flag G - >30%)
+- Services:    Query, Data, CPU/OS affected (Flag H)
+
+Flags Triggered: A, D, G, H
+Severity: 🔴 Critical - System-Wide Pressure
+
+This indicates the entire Couchbase cluster is under heavy load with 
+Query Service CPU contention, KV service slow fetches, and OS-level 
+CPU scheduling overhead.</pre>
+                    </div>
+                </div>
+
+                <div class="accordion" id="conflict-detection">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">How Detection Works</div>
+                    <div class="accordion-content">
+                        <p><b>Key Insight:</b> system:completed_requests only captures slow queries (>1 second). We detect service pressure by analyzing phase timing anomalies, not by comparing fast vs. slow query baselines.</p>
+                        <ul>
+                            <li><b>Query Service Pressure:</b> Parse+Plan time should be <1ms. Values >1ms indicate Query Service CPU contention.</li>
+                            <li><b>Data Service Pressure:</b> Calculate fetch-per-document ratio. Normal: <1ms/doc, Warning: >5ms/doc, Critical: >10ms/doc.</li>
+                            <li><b>Index Service Pressure:</b> Calculate index scan throughput (records/sec). Normal: >10K/sec, Warning: <5K/sec, Critical: <1K/sec.</li>
+                            <li><b>CPU Contention:</b> Kernel time percentage indicates OS scheduler overhead. Normal: <10%, Warning: >30%, Critical: >50%.</li>
+                            <li><b>System-Wide Issues:</b> When 2+ services show pressure simultaneously, flag as cluster-wide resource exhaustion.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="accordion" id="conflict-optimization">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Resolution Strategies</div>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><b>Query Service Pressure (A, B):</b> Scale Query nodes horizontally, reduce query concurrency, implement rate limiting.</li>
+                            <li><b>Data Service Pressure (C, D):</b> Review KV operations, check memory/disk I/O, add Data Service nodes, optimize document sizes.</li>
+                            <li><b>Index Service Pressure (E, F):</b> Add index replicas, optimize index definitions, scale Index Service nodes.</li>
+                            <li><b>CPU Contention (G):</b> Reduce concurrent query load, add CPU cores, review co-located processes, optimize query logic.</li>
+                            <li><b>System-Wide Pressure (H):</b> Critical - requires immediate cluster scaling or load reduction. Review workload distribution and resource allocation.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="accordion" id="conflict-vs-peak">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Service Pressure vs Peak Hour Analysis</div>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><b>Traditional Approach:</b> Compare query times during peak vs. off-peak hours to identify concurrency issues.</li>
+                            <li><b>Limitation:</b> system:completed_requests only captures slow queries (>1 second), so we can't establish fast baselines.</li>
+                            <li><b>Our Approach:</b> Detect service pressure through phase timing anomalies (Parse+Plan >1ms, Fetch >5ms/doc, etc.) which indicate resource contention.</li>
+                            <li><b>Advantage:</b> Works with slow-query-only data and directly identifies which service (Query, Data, Index, CPU) is under pressure.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <p style="color:#4a5568;font-size:0.95em;margin-top:15px;"><b>💡 Recommendation:</b> Queries with Flag H (System-Wide Pressure) indicate cluster-level resource exhaustion. Immediate action required: scale horizontally, optimize workload, or implement query throttling. Monitor individual service flags (A-G) to identify specific bottlenecks for targeted optimization.</p>
+            </div>
+
+            <div class="back-to-top"><a href="#top">Back to top</a></div>
+        </section>
+        
+         <section id="part-4">
+            <h2 id="glossary">Glossary of Terms</h2>
+            <div class="accordion" id="scanConsistency">
+                <div class="accordion-header" onclick="toggleAccordion(this)">scanConsistency</div>
+                <div class="accordion-content">
+                    <p>Controls freshness vs performance of index scans.</p>
+                    <ul>
+                        <li><b>not_bounded (unbounded)</b> — fastest; may return slightly stale results.</li>
+                        <li><b>at_plus</b> — waits for indexes to catch up to last known mutation time.</li>
+                        <li><b>request_plus</b> — strongest; indexes sync to this request’s timestamp (slowest).</li>
+                    </ul>
+                    <p style="color:#4a5568;font-size:0.95em">Guidance: use unbounded for analytics, at_plus for recent writes, request_plus for strict freshness.</p>
+                </div>
+            </div>
+
+            <div class="accordion" id="serviceTime">
+                <div class="accordion-header" onclick="toggleAccordion(this)">serviceTime</div>
+                <div class="accordion-content">
+                    <p>Calendar time actively executing the query, including waits on Index/Data/FTS services.</p>
+                    <ul>
+                        <li>High vs <code>elapsedTime</code> → execution is the bottleneck.</li>
+                        <li>Dominated by <code>servTime</code> in profiling → external services are slow.</li>
+                    </ul>
+                    <p><a href="#read-the-stats">See timing relationships</a></p>
+                </div>
+            </div>
+
+            <div class="accordion" id="elapsedTime">
+                <div class="accordion-header" onclick="toggleAccordion(this)">elapsedTime</div>
+                <div class="accordion-content">
+                    <p>Total end-to-end time: queuing + execution + result transmission.</p>
+                    <ul>
+                        <li><b>elapsedTime ≫ execution/service</b> → queuing or large result transfer.</li>
+                        <li>Large <code>resultSize</code> or slow network stretches elapsedTime.</li>
+                    </ul>
+                    <p><a href="#read-the-stats">See timing diagram</a></p>
+                </div>
+            </div>
+
+            <div class="accordion" id="executionTime">
+                <div class="accordion-header" onclick="toggleAccordion(this)">executionTime</div>
+                <div class="accordion-content">
+                    <p>Pure query processing time in the Query service (parse → plan → execute), excluding waits on services and result transmission.</p>
+                    <ul>
+                        <li>High values indicate computational complexity or inefficient plans.</li>
+                        <li>Optimize via EXPLAIN, better indexes (covering), and simplified logic.</li>
+                        <li>Context: see <a href="#read-stats">Performance Data</a> for metric relationships.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="accordion" id="cpuTime">
+                <div class="accordion-header" onclick="toggleAccordion(this)">cpuTime</div>
+                <div class="accordion-content">
+                    <p>Cumulative CPU across threads; may exceed wall time due to parallelism.</p>
+                    <ul>
+                        <li><b>cpuTime ~ serviceTime</b> → CPU‑bound workload.</li>
+                        <li>Check sorts, aggregations, and complex expressions.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="accordion" id="kernTime">
+                <div class="accordion-header" onclick="toggleAccordion(this)">kernTime</div>
+                <div class="accordion-content">
+                    <p>Time the OS kernel spends scheduling the query’s threads (waiting for a CPU), not doing useful work.</p>
+                    <ul>
+                        <li>High kernTime → CPU contention/overload; threads compete for cores.</li>
+                        <li>Check node CPU metrics, thread counts, and co-located services; reduce concurrency or add cores.</li>
+                        <li>Per operator: time ≈ execTime + servTime + kernTime; high kernTime stretches execution/elapsed time.</li>
+                    </ul>
+                    <p>See also: <a href="#read-stats">Performance Data</a> and <a href="#system-node-impact">System & Node Impact</a>.</p>
+                </div>
+            </div>
+
+            <div class="accordion" id="state">
+                <div class="accordion-header" onclick="toggleAccordion(this)">state</div>
+                <div class="accordion-content">
+                    <p>Execution status of a request.</p>
+                    <ul>
+                        <li><b>completed</b> — finished successfully</li>
+                        <li><b>running</b> — currently executing</li>
+                        <li><b>cancelled</b> — terminated before completion</li>
+                        <li><b>timeout</b> — exceeded configured timeout</li>
+                        <li><b>error</b> — failed; inspect <code>errors</code></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="accordion" id="usedMemory">
+                <div class="accordion-header" onclick="toggleAccordion(this)">usedMemory</div>
+                <div class="accordion-content">
+                    <p>Peak document memory used (requires <code>memory_quota</code>).</p>
+                    <ul>
+                        <li>High values indicate big payloads, large sorts/aggregations, or inefficient scans.</li>
+                        <li>Correlate with <code>resultSize</code> and phase patterns; consider LIMIT/covering indexes.</li>
+                    </ul>
+                </div>
+            </div>
+        <div class="back-to-top"><a href="#top">Back to top</a></div>
+           </section>
+     </main>
+
+    </div>
+
+    <footer>
+        <p>&copy; 2025 <a href="https://fuj.io" target="_blank" rel="noopener noreferrer">fuj.io</a>. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Accordion toggle behavior (shared component)
+        function toggleAccordion(header){
+            const content = header.nextElementSibling; if(!content) return;
+            const isOpen = content.classList.toggle('open');
+            header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+
+        // Initialize accordion ARIA and keyboard support
+        document.addEventListener('DOMContentLoaded',()=>{
+            document.querySelectorAll('.accordion').forEach((acc,i)=>{
+                const header = acc.querySelector('.accordion-header');
+                const content = acc.querySelector('.accordion-content');
+                if(!header||!content) return;
+                const id = content.id || `acc-content-${i}`;
+                content.id = id;
+                header.setAttribute('role','button');
+                header.setAttribute('tabindex','0');
+                header.setAttribute('aria-controls', id);
+                header.setAttribute('aria-expanded','false');
+                // Skip default keydown for glossary (custom behavior below)
+                if (!acc.closest('#part-4')){
+                  header.addEventListener('keydown',(e)=>{
+                      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); toggleAccordion(header); }
+                  });
+                }
+            });
+        });
+        
+        // Scrollspy: highlight current section in sidebar
+        document.addEventListener('DOMContentLoaded',()=>{
+        const sidebar = document.getElementById('sidebar');
+        if(!sidebar) return;
+        const links = Array.from(sidebar.querySelectorAll('a[href^="#"]'));
+        const sections = links.map(a=>{
+        try{ return document.querySelector(a.getAttribute('href')); }catch{ return null; }
+        }).filter(Boolean);
+        const setActive = (id)=>{
+            links.forEach(a=>{
+                    const active = a.getAttribute('href') === '#' + id;
+                    a.classList.toggle('active', active);
+                    a.setAttribute('aria-current', active ? 'true' : 'false');
+                });
+            };
+            const update = ()=>{
+                const y = window.scrollY;
+                const mid = y + window.innerHeight * 0.35;
+                let activeId = sections[0] ? sections[0].id : '';
+                for(const sec of sections){
+                    const top = sec.getBoundingClientRect().top + y;
+                    if(top <= mid) activeId = sec.id;
+                }
+                if(activeId) setActive(activeId);
+            };
+            update();
+            let ticking=false;
+            window.addEventListener('scroll',()=>{ if(!ticking){ requestAnimationFrame(()=>{ update(); ticking=false; }); ticking=true; } }, { passive:true });
+            window.addEventListener('resize', update);
+            links.forEach(a=> a.addEventListener('click', ()=> setTimeout(update, 50)));
+        });
+        
+        // SQL Copy behavior (shared component)
+        document.querySelectorAll('.sql-copy-btn').forEach(button=>{
+            button.addEventListener('click',()=>{
+                const code = button.parentElement.querySelector('pre')?.textContent || '';
+                navigator.clipboard.writeText(code).then(()=>{
+                    button.style.background='#28a745';
+                    const prev=button.textContent; button.textContent='Copied!';
+                    setTimeout(()=>{button.textContent=prev;button.style.background='';},2000);
+                }).catch(err=>{console.error('Failed to copy: ',err)});
+            });
+        });
+
+        // Sidebar collapse toggle
+        document.addEventListener('DOMContentLoaded',()=>{
+            const toggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            if(!toggle || !sidebar) return;
+            const sync = () => {
+                const collapsed = document.body.classList.contains('sidebar-collapsed');
+                toggle.setAttribute('aria-expanded', (!collapsed).toString());
+                sidebar.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+            };
+            toggle.addEventListener('click', ()=>{
+                document.body.classList.toggle('sidebar-collapsed');
+                sync();
+            });
+            sync();
+        });
+
+        // Glossary, Elapsed Time Filter, and Complex JOINs hover-to-open with slow close; click locks open
+        document.addEventListener('DOMContentLoaded',()=>{
+            document.querySelectorAll('#part-4 .accordion, #elapsedTimeExamples, #complex-joins .accordion, #concurrent-conflicts .accordion').forEach((acc)=>{
+                const header = acc.querySelector('.accordion-header');
+                const content = acc.querySelector('.accordion-content');
+                if(!header||!content) return;
+                // Remove default onclick handler so we fully control behavior
+                header.removeAttribute('onclick');
+
+                const closeSlow = () => {
+                    if(!content.classList.contains('open')) return;
+                    content.classList.add('slow-close');
+                    content.classList.remove('open');
+                    header.setAttribute('aria-expanded','false');
+                    const onEnd = () => { content.classList.remove('slow-close'); content.removeEventListener('transitionend', onEnd); };
+                    content.addEventListener('transitionend', onEnd);
+                };
+                const openNow = () => {
+                    if(content.classList.contains('open')) return;
+                    content.classList.add('open');
+                    header.setAttribute('aria-expanded','true');
+                };
+
+                let hoverTimer = null;
+                // Hover behavior with dwell (if not locked)
+                acc.addEventListener('mouseenter', ()=>{ if(acc.dataset.locked === 'true') return; hoverTimer = setTimeout(()=>{ openNow(); }, 350); });
+                acc.addEventListener('mouseleave', ()=>{ if(hoverTimer){ clearTimeout(hoverTimer); hoverTimer=null; } if(acc.dataset.locked !== 'true'){ closeSlow(); } });
+
+                // Click toggles locked state
+                header.addEventListener('click', (e)=>{
+                    e.preventDefault(); e.stopPropagation();
+                    const locked = acc.dataset.locked === 'true';
+                    if(!locked){
+                        acc.dataset.locked = 'true';
+                        openNow();
+                    } else {
+                        acc.dataset.locked = 'false';
+                        closeSlow();
+                    }
+                });
+
+                // Keyboard behaves like click for accessibility
+                header.addEventListener('keydown', (e)=>{
+                    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); header.click(); }
+                });
+            });
+        });
+
+               // Open and lock glossary term when linked via hash (e.g., #serviceTime)
+               document.addEventListener('DOMContentLoaded', ()=>{
+            const openAndLockGlossary = (acc)=>{
+                if(!acc) return;
+                acc.dataset.locked = 'true';
+                const header = acc.querySelector('.accordion-header');
+                const content = acc.querySelector('.accordion-content');
+                if(content && !content.classList.contains('open')) content.classList.add('open');
+                if(header) header.setAttribute('aria-expanded','true');
+            };
+            const handleGlossaryHash = (hash)=>{
+                if(!hash || hash === '#') return;
+                let el = null;
+                try{ el = document.querySelector(hash); }catch{ el = null; }
+                if(!el) return;
+                let acc = null;
+                if(el.matches && el.matches('#part-4 .accordion')) acc = el; else acc = el.closest && el.closest('#part-4 .accordion');
+                if(!acc) return;
+                openAndLockGlossary(acc);
+                acc.scrollIntoView({ behavior:'smooth', block:'start' });
+            };
+            
+            // General hash handler for all anchors
+            const handleHash = (hash)=>{
+                if(!hash || hash === '#') return;
+                let el = null;
+                try{ el = document.querySelector(hash); }catch{ el = null; }
+                if(!el) return;
+                
+                // Handle glossary accordion items
+                let acc = null;
+                if(el.classList && el.classList.contains('accordion') && el.closest('#part-4')) {
+                    acc = el;
+                } else {
+                    acc = el.closest && el.closest('#part-4 .accordion');
+                }
+                
+                if(acc) {
+                    openAndLockGlossary(acc);
+                    acc.scrollIntoView({ behavior:'smooth', block:'start' });
+                } else {
+                    // Scroll to any other anchor
+                    el.scrollIntoView({ behavior:'smooth', block:'start' });
+                }
+            };
+            
+            // Initial hash
+            handleHash(location.hash);
+            // On hash change
+            window.addEventListener('hashchange', ()=> handleHash(location.hash));
+            // Also handle clicks to internal links
+            document.querySelectorAll('a[href^="#"]').forEach(a=>{
+                a.addEventListener('click', ()=> setTimeout(()=> handleHash(location.hash), 0));
+            });
+        });
+     </script>
+ </body>
+ </html>

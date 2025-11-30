@@ -1,0 +1,61 @@
+[
+  {
+    "completed_requests": {
+      "clientContextID": "565cb5a3-12f5-4c2a-9bc7-ba7395eb1ed4",
+      "cpuTime": "1.064252883s",
+      "elapsedTime": "1.052481792s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$email": "user1@example.com",
+        "$pass": "$2b$12$dLGeRftTbhqexvtXf20sj.ecMo8lY8Lgg3i1vkMqN0S7xzcFxfrse"
+      },
+      "phaseCounts": {
+        "fetch": 31591,
+        "primaryScan": 31591,
+        "primaryScan.GSI": 31591,
+        "sort": 31591
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "fetch": 1,
+        "primaryScan": 1,
+        "primaryScan.GSI": 1,
+        "project": 1,
+        "sort": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "35.5µs",
+        "fetch": "207.798497ms",
+        "instantiate": "118.666µs",
+        "parse": "271.666µs",
+        "plan": "441.75µs",
+        "plan.index.metadata": "53.958µs",
+        "plan.keyspace.metadata": "6.833µs",
+        "primaryScan": "33.022888ms",
+        "primaryScan.GSI": "33.022888ms",
+        "project": "100.732607ms",
+        "run": "1.051511083s",
+        "sort": "126.891203ms",
+        "stream": "790.232656ms"
+      },
+      "remoteAddr": "127.0.0.1:54060",
+      "requestId": "e9f882bc-1b7f-4818-b5d4-03434aab6781",
+      "requestTime": "2025-08-26T14:06:02.129-05:00",
+      "resultCount": 31591,
+      "resultSize": 102681004,
+      "scanConsistency": "unbounded",
+      "serviceTime": "1.052419708s",
+      "state": "completed",
+      "statement": "SELECT * , meta() FROM `travel-sample` ORDER BY `type` DESC",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15",
+      "users": "builtin:Administrator",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\n\t    \"#operator\": \"Authorize\",\n\t    \"#planPreparedTime\": \"2025-08-26T14:06:02.129-05:00\",\n\t    \"#stats\": {\n\t        \"#phaseSwitches\": 4,\n\t        \"execTime\": \"8.125µs\",\n\t        \"servTime\": \"27.375µs\"\n\t    },\n\t    \"privileges\": {\n\t        \"List\": [\n\t            {\n\t                \"Target\": \"default:travel-sample\",\n\t                \"Priv\": 7,\n\t                \"Props\": 0\n\t            }\n\t        ]\n\t    },\n\t    \"~child\": {\n\t        \"#operator\": \"Sequence\",\n\t        \"#stats\": {\n\t            \"#phaseSwitches\": 2,\n\t            \"execTime\": \"11.001µs\"\n\t        },\n\t        \"~children\": [\n\t            {\n\t                \"#operator\": \"PrimaryScan3\",\n\t                \"#stats\": {\n\t                    \"#heartbeatYields\": 1,\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 126367,\n\t                    \"execTime\": \"19.949962ms\",\n\t                    \"kernTime\": \"202.868362ms\",\n\t                    \"servTime\": \"13.072926ms\"\n\t                },\n\t                \"index\": \"def_primary\",\n\t                \"index_projection\": {\n\t                    \"primary_key\": true\n\t                },\n\t                \"keyspace\": \"travel-sample\",\n\t                \"namespace\": \"default\",\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 5402.279801258844,\n\t                    \"fr_cost\": 12.170627071041082,\n\t                    \"size\": 11\n\t                },\n\t                \"using\": \"gsi\"\n\t            },\n\t            {\n\t                \"#operator\": \"Fetch\",\n\t                \"#stats\": {\n\t                    \"#heartbeatYields\": 7,\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 126500,\n\t                    \"execTime\": \"26.427329ms\",\n\t                    \"kernTime\": \"35.189503ms\",\n\t                    \"servTime\": \"181.371168ms\"\n\t                },\n\t                \"keyspace\": \"travel-sample\",\n\t                \"namespace\": \"default\",\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 46269.39474997121,\n\t                    \"fr_cost\": 25.46387878667884,\n\t                    \"size\": 669\n\t                }\n\t            },\n\t            {\n\t                \"#operator\": \"InitialProject\",\n\t                \"#stats\": {\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 126368,\n\t                    \"execTime\": \"100.732607ms\",\n\t                    \"kernTime\": \"144.286559ms\"\n\t                },\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 47903.599347919706,\n\t                    \"fr_cost\": 25.51560885530435,\n\t                    \"size\": 669\n\t                },\n\t                \"preserve_order\": true,\n\t                \"result_terms\": [\n\t                    {\n\t                        \"expr\": \"self\",\n\t                        \"star\": true\n\t                    },\n\t                    {\n\t                        \"expr\": \"meta(`travel-sample`)\"\n\t                    }\n\t                ]\n\t            },\n\t            {\n\t                \"#operator\": \"Order\",\n\t                \"#stats\": {\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 94777,\n\t                    \"execTime\": \"126.891203ms\",\n\t                    \"kernTime\": \"131.678094ms\"\n\t                },\n\t                \"flags\": 6,\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 52136.44564242353,\n\t                    \"fr_cost\": 4258.361903359133,\n\t                    \"size\": 669\n\t                },\n\t                \"sort_terms\": [\n\t                    {\n\t                        \"desc\": \"\\\"desc\\\"\",\n\t                        \"expr\": \"(`travel-sample`.`type`)\"\n\t                    }\n\t                ]\n\t            },\n\t            {\n\t                \"#operator\": \"Stream\",\n\t                \"#stats\": {\n\t                    \"#itemsIn\": 31591,\n\t                    \"#itemsOut\": 31591,\n\t                    \"#phaseSwitches\": 31592,\n\t                    \"execTime\": \"790.232656ms\"\n\t                },\n\t                \"optimizer_estimates\": {\n\t                    \"cardinality\": 31591,\n\t                    \"cost\": 52136.44564242353,\n\t                    \"fr_cost\": 4258.361903359133,\n\t                    \"size\": 669\n\t                },\n\t                \"serializable\": true\n\t            }\n\t        ]\n\t    },\n\t    \"~versions\": [\n\t        \"7.6.5-N1QL\",\n\t        \"7.6.5-5704-enterprise\"\n\t    ]\n\t}"
+  }
+]

@@ -1,0 +1,1254 @@
+[
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-aaaaaa-12345-aaa-aaaaaaaaa",
+      "cpuTime": "252.362ms",
+      "elapsedTime": "2.732401s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$Aaaaaa": "Aaaa123",
+        "$Aaaaaaaaa": "2025-01-01"
+      },
+      "phaseCounts": {
+        "indexScan": 5,
+        "fetch": 5
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "15.110ms",
+        "instantiate": "8.901\u00b5s",
+        "parse": "32.222ms",
+        "plan": "41.668ms",
+        "plan.index.metadata": "23.456\u00b5s",
+        "plan.keyspace.metadata": "12.345\u00b5s",
+        "indexScan": "3.055ms",
+        "fetch": "2.125449s",
+        "project": "283.455ms",
+        "run": "2.595781s",
+        "stream": "216.830ms"
+      },
+      "remoteAddr": "127.0.0.1:43318",
+      "requestId": "Aaaa-aaaaaa-12345-aaa-aaaaaaaaa",
+      "requestTime": "2025-08-15T00:01:00.000Z",
+      "resultCount": 5,
+      "resultSize": 1280,
+      "scanConsistency": "scan_plus",
+      "serviceTime": "2.677753s",
+      "state": "completed",
+      "statement": "SELECT u.Aaaa, u.Aaaaa, u.Aaaaaaa FROM `Aaaaa` u WHERE u.Aaaaaa = $Aaaaaa AND u.Aaaaaaaaaaaaaaaa >= $Aaaaaaaaa",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 1024,
+      "userAgent": "node-couchbase/4.1.2",
+      "users": "local:Aaa_aaaaaaa_aaaa",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-13T10:15:22.124Z\",\"#stats\":{\"#phaseSwitches\":4,\"execTime\":\"2.06\u00b5s\",\"servTime\":\"10.45\u00b5s\"},\"privileges\":{\"List\":[{\"Target\":\"default:Aaaaa\",\"Priv\":7,\"Props\":0}]},\"~child\":{\"#operator\":\"Sequence\",\"#stats\":{\"#phaseSwitches\":2,\"execTime\":\"3.456\u00b5s\"},\"~children\":[{\"#operator\":\"IndexScan3\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":20,\"execTime\":\"2.345ms\",\"kernTime\":\"2.1ms\",\"servTime\":\"1.8ms\"},\"index\":\"idx_Aaaa_aaaaaaaaaaaa\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\",\"spans\":[{\"range\":[{\"high\":\"\\\"Aaaa123\\\"\",\"inclusion\":3,\"low\":\"\\\"Aaaa123\\\"\"}]}],\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"8.901ms\",\"kernTime\":\"8.2ms\",\"servTime\":\"7.8ms\"},\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"InitialProject\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":10,\"execTime\":\"1.234ms\",\"kernTime\":\"1.1ms\"},\"result_terms\":[{\"expr\":\"(`u`.`Aaaa`)\"},{\"expr\":\"(`u`.`Aaaaa`)\"},{\"expr\":\"(`u`.`Aaaaaaa`)\"}]},{\"#operator\":\"Stream\",\"#stats\":{\"#itemsIn\":5,\"#itemsOut\":5,\"#phaseSwitches\":6,\"execTime\":\"0.456ms\"},\"serializable\":true}]},\"~versions\":[\"7.6.5-N1QL\",\"7.6.5-5719-enterprise\"]}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-join-123",
+      "cpuTime": "345.123ms",
+      "elapsedTime": "3.100200s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$Aaaa": "AaaaaValue"
+      },
+      "phaseCounts": {
+        "indexScan": 10,
+        "fetch": 10,
+        "join": 10
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "join": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "10.000ms",
+        "indexScan": "5.000ms",
+        "fetch": "1.500s",
+        "join": "1.000s",
+        "project": "50.000ms",
+        "run": "2.900s",
+        "stream": "100.000ms"
+      },
+      "remoteAddr": "127.0.0.1:50000",
+      "requestId": "Aaaa-join-123",
+      "requestTime": "2025-08-15T00:05:00.000Z",
+      "resultCount": 10,
+      "resultSize": 5000,
+      "scanConsistency": "request_plus",
+      "serviceTime": "3.000000s",
+      "state": "completed",
+      "statement": "SELECT b1.Aaaa, b2.Aaaaa FROM `Aaaaa` b1 JOIN `Aaaaaa` b2 ON KEYS b1.Aaa WHERE b1.Aaa = $Aaaa",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 2048,
+      "userAgent": "java-client/3.4.0",
+      "users": "local:Aaaaa_User",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"#planPreparedTime\":\"2025-07-13T10:20:00.000Z\",\"privileges\":{\"List\":[{\"Target\":\"default:Aaaaa\",\"Priv\":7},{\"Target\":\"default:Aaaaaa\",\"Priv\":7}]},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"index\":\"idx_Aaaa_join\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"Join\",\"keyspace\":\"Aaaaaa\",\"namespace\":\"default\",\"on_keys\":\"(`b1`.`Aaa`)\"},{\"#operator\":\"InitialProject\",\"result_terms\":[{\"expr\":\"(`b1`.`Aaaa`)\"},{\"expr\":\"(`b2`.`Aaaaa`)\"}]},{\"#operator\":\"Stream\"}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-like-456",
+      "cpuTime": "123.456ms",
+      "elapsedTime": "1.500s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "primaryScan": 100,
+        "fetch": 100,
+        "filter": 100
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "primaryScan": 1,
+        "fetch": 1,
+        "filter": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "5.000ms",
+        "primaryScan": "800.000ms",
+        "fetch": "500.000ms",
+        "filter": "100.000ms",
+        "run": "1.400s",
+        "stream": "50.000ms"
+      },
+      "remoteAddr": "127.0.0.1:50001",
+      "requestId": "bbbB-like-456",
+      "requestTime": "2025-08-15T00:10:00.000Z",
+      "resultCount": 20,
+      "resultSize": 2000,
+      "scanConsistency": "not_bounded",
+      "serviceTime": "1.450s",
+      "state": "completed",
+      "statement": "SELECT * FROM `bbbBb` WHERE `Bbbb` LIKE 'Bb%'",
+      "statementType": "SELECT",
+      "useCBO": false,
+      "usedMemory": 1024,
+      "userAgent": "python-sdk/4.0.0",
+      "users": "local:Bbb_Reader",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"privileges\":{\"List\":[{\"Target\":\"default:Aaaaa\",\"Priv\":7}]},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"PrimaryScan3\",\"index\":\"#primary\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"Filter\",\"condition\":\"((`Aaaaa`.`Aaaa`) like 'Aa%')\"},{\"#operator\":\"InitialProject\",\"result_terms\":[{\"expr\":\"self\",\"star\":true}]},{\"#operator\":\"Stream\"}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-update-789",
+      "cpuTime": "50.000ms",
+      "elapsedTime": "0.500s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$Aaaa": "OldValue"
+      },
+      "phaseCounts": {
+        "indexScan": 1,
+        "fetch": 1,
+        "update": 1
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "update": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "2.000ms",
+        "indexScan": "10.000ms",
+        "fetch": "20.000ms",
+        "update": "400.000ms",
+        "run": "0.450s",
+        "stream": "10.000ms"
+      },
+      "remoteAddr": "127.0.0.1:50002",
+      "requestId": "Aaaa-update-789",
+      "requestTime": "2025-08-15T00:15:00.000Z",
+      "resultCount": 1,
+      "resultSize": 100,
+      "scanConsistency": "statement_plus",
+      "serviceTime": "0.490s",
+      "state": "completed",
+      "statement": "UPDATE `bbbBb` SET `Bbbb` = 'Bbbbb' WHERE `Bbb` = $Bbbb",
+      "statementType": "UPDATE",
+      "useCBO": true,
+      "usedMemory": 512,
+      "userAgent": "go-agent/2.5.0",
+      "users": "local:Aaa_Writer",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"privileges\":{\"List\":[{\"Target\":\"default:Aaaaa\",\"Priv\":7}]},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"index\":\"idx_Aaaa_update\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"SendUpdate\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"Stream\"}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-delete-012",
+      "cpuTime": "40.000ms",
+      "elapsedTime": "0.400s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {
+        "$Aaaa": "DeleteMe"
+      },
+      "phaseCounts": {
+        "indexScan": 1,
+        "fetch": 1,
+        "delete": 1
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "delete": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "2.000ms",
+        "indexScan": "10.000ms",
+        "fetch": "20.000ms",
+        "delete": "300.000ms",
+        "run": "0.350s",
+        "stream": "10.000ms"
+      },
+      "remoteAddr": "127.0.0.1:50003",
+      "requestId": "Aaaa-delete-012",
+      "requestTime": "2025-08-15T00:20:00.000Z",
+      "resultCount": 1,
+      "resultSize": 50,
+      "scanConsistency": "statement_plus",
+      "serviceTime": "0.390s",
+      "state": "completed",
+      "statement": "DELETE FROM `bbbBb` WHERE `Bbb` = $Bbbb",
+      "statementType": "DELETE",
+      "useCBO": true,
+      "usedMemory": 512,
+      "userAgent": "go-agent/2.5.0",
+      "users": "local:Aaa_Admin",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"privileges\":{\"List\":[{\"Target\":\"default:Aaaaa\",\"Priv\":7}]},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"index\":\"idx_Aaaa_delete\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"SendDelete\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"Stream\"}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-agg-345",
+      "cpuTime": "600.000ms",
+      "elapsedTime": "5.500s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "namedArgs": {},
+      "phaseCounts": {
+        "indexScan": 5000,
+        "fetch": 5000,
+        "group": 50
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "indexScan": 1,
+        "fetch": 1,
+        "group": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "20.000ms",
+        "indexScan": "1.000s",
+        "fetch": "3.000s",
+        "group": "1.000s",
+        "project": "100.000ms",
+        "run": "5.400s",
+        "stream": "500.000ms"
+      },
+      "remoteAddr": "127.0.0.1:50004",
+      "requestId": "Aaaa-agg-345",
+      "requestTime": "2025-08-15T00:25:00.000Z",
+      "resultCount": 50,
+      "resultSize": 1500,
+      "scanConsistency": "request_plus",
+      "serviceTime": "5.450s",
+      "state": "completed",
+      "statement": "SELECT count(*) as bbbB, `Bbbbb` FROM `bbbBb` GROUP BY `Bbbbb`",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "usedMemory": 4096,
+      "userAgent": "node-analytics/1.0.0",
+      "users": "local:Aaa_Analyst",
+      "~qualifier": "threshold"
+    },
+    "plan": "{\"#operator\":\"Authorize\",\"privileges\":{\"List\":[{\"Target\":\"default:Aaaaa\",\"Priv\":7}]},\"~child\":{\"#operator\":\"Sequence\",\"~children\":[{\"#operator\":\"IndexScan3\",\"index\":\"idx_Aaaa_agg\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\",\"using\":\"gsi\"},{\"#operator\":\"Fetch\",\"keyspace\":\"Aaaaa\",\"namespace\":\"default\"},{\"#operator\":\"InitialGroup\",\"aggregates\":[\"count(*)\"],\"group_keys\":[\"(`Aaaaa`.`Aaaaa`)\"]},{\"#operator\":\"InitialProject\",\"result_terms\":[{\"expr\":\"count(*)\"},{\"expr\":\"(`Aaaaa`.`Aaaaa`)\"}]},{\"#operator\":\"Stream\"}]}}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-subquery-001",
+      "cpuTime": "150.000ms",
+      "elapsedTime": "1.200s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-subquery-001",
+      "requestTime": "2025-08-15T00:30:00.000Z",
+      "resultCount": 25,
+      "state": "completed",
+      "statement": "SELECT Aaaa, Aaaaa FROM `Aaaaaa` WHERE Aaaa IN (SELECT RAW Aaaa FROM `Aaaaaaa` WHERE Aaaaa = 'Aaaa')",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-cte-002",
+      "cpuTime": "200.000ms",
+      "elapsedTime": "1.500s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-cte-002",
+      "requestTime": "2025-08-15T00:35:00.000Z",
+      "resultCount": 10,
+      "state": "completed",
+      "statement": "WITH bbbBbb AS (SELECT `Bbbb`, `Bbbbb` FROM `bbbBbbb` WHERE `Bbb` > 1000) SELECT * FROM bbbBbb WHERE `Bbbbb` = 'Bbbb'",
+      "statementType": "SELECT",
+      "users": "local:Bbb_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-array-003",
+      "cpuTime": "80.000ms",
+      "elapsedTime": "0.800s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-array-003",
+      "requestTime": "2025-08-15T00:40:00.000Z",
+      "resultCount": 50,
+      "state": "completed",
+      "statement": "SELECT Aaaa, ARRAY Aaaa FOR Aaaa IN Aaaaa WHEN Aaaa.Aaaaa > 100 END AS Aaaaaaa FROM `Aaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-unnest-004",
+      "cpuTime": "120.000ms",
+      "elapsedTime": "1.100s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-unnest-004",
+      "requestTime": "2025-08-15T00:45:00.000Z",
+      "resultCount": 200,
+      "state": "completed",
+      "statement": "SELECT bbbB.`Bbbbb`, `Bbb` AS bbbBbbb FROM `bbbBbb` bbbB UNNEST bbbB.`Bbbbb` AS `Bbb` WHERE `Bbb`.`Bbbb` = 'Bbbbb'",
+      "statementType": "SELECT",
+      "users": "local:Bbb_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-nest-005",
+      "cpuTime": "180.000ms",
+      "elapsedTime": "1.400s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-nest-005",
+      "requestTime": "2025-08-15T00:50:00.000Z",
+      "resultCount": 75,
+      "state": "completed",
+      "statement": "SELECT Aaaa.Aaaaa, Aaa FROM `Aaaaaa` Aaaa NEST `Aaaaaaa` Aaa ON KEYS Aaaa.Aaaaaaaa WHERE Aaaa.Aaaaaa = true",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-left-join-006",
+      "cpuTime": "220.000ms",
+      "elapsedTime": "1.600s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-left-join-006",
+      "requestTime": "2025-08-15T00:55:00.000Z",
+      "resultCount": 100,
+      "state": "completed",
+      "statement": "SELECT bbbB.`Bbbbb`, `Bbb`.`Bbbb` FROM `bbbBbb` bbbB LEFT JOIN `bbbBbbb` `Bbb` ON bbbB.`Bbbbb` = `Bbb`.`Bbbb` WHERE bbbB.`Bbbbb` IS NOT NULL",
+      "statementType": "SELECT",
+      "users": "local:Bbb_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-right-join-007",
+      "cpuTime": "190.000ms",
+      "elapsedTime": "1.450s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-right-join-007",
+      "requestTime": "2025-08-15T01:00:00.000Z",
+      "resultCount": 80,
+      "state": "completed",
+      "statement": "SELECT Aaaa.Aaaaa, Aaa.Aaaa FROM `Aaaaaa` Aaaa RIGHT JOIN `Aaaaaaa` Aaa ON Aaaa.Aaaaa = Aaa.Aaaa",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-case-008",
+      "cpuTime": "100.000ms",
+      "elapsedTime": "0.900s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-case-008",
+      "requestTime": "2025-08-15T01:05:00.000Z",
+      "resultCount": 150,
+      "state": "completed",
+      "statement": "SELECT `Bbbb`, CASE WHEN `Bbbbb` > 1000 THEN 'Bbbbb' WHEN `Bbbbb` > 500 THEN 'Bbbbbb' ELSE 'Bbbb' END AS bbbBbbb FROM `bbbBbbb`",
+      "statementType": "SELECT",
+      "users": "local:Bbb_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-having-009",
+      "cpuTime": "250.000ms",
+      "elapsedTime": "1.700s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-having-009",
+      "requestTime": "2025-08-15T01:10:00.000Z",
+      "resultCount": 30,
+      "state": "completed",
+      "statement": "SELECT Aaaa, COUNT(*) AS Aaaaa FROM `Aaaaaa` GROUP BY Aaaa HAVING COUNT(*) > 10 ORDER BY Aaaaa DESC",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-union-010",
+      "cpuTime": "300.000ms",
+      "elapsedTime": "2.000s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-union-010",
+      "requestTime": "2025-08-15T01:15:00.000Z",
+      "resultCount": 200,
+      "state": "completed",
+      "statement": "SELECT `Bbbb`, `Bbbbb` FROM `bbbBbb` WHERE `Bbb` = 'Bbbb' UNION SELECT `Bbbb`, `Bbbbb` FROM `bbbBbbb` WHERE `Bbb` = 'Bbbbb'",
+      "statementType": "SELECT",
+      "users": "local:Bbb_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-intersect-011",
+      "cpuTime": "280.000ms",
+      "elapsedTime": "1.900s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-intersect-011",
+      "requestTime": "2025-08-15T01:20:00.000Z",
+      "resultCount": 50,
+      "state": "completed",
+      "statement": "SELECT Aaaa FROM `Aaaaaa` INTERSECT SELECT Aaaa FROM `Aaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-except-012",
+      "cpuTime": "260.000ms",
+      "elapsedTime": "1.850s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-except-012",
+      "requestTime": "2025-08-15T01:25:00.000Z",
+      "resultCount": 75,
+      "state": "completed",
+      "statement": "SELECT Aaaa FROM `Aaaaaa` EXCEPT SELECT Aaaa FROM `Aaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-exists-013",
+      "cpuTime": "170.000ms",
+      "elapsedTime": "1.300s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-exists-013",
+      "requestTime": "2025-08-15T01:30:00.000Z",
+      "resultCount": 40,
+      "state": "completed",
+      "statement": "SELECT Aaaa, Aaaaa FROM `Aaaaaa` Aaaa WHERE EXISTS (SELECT 1 FROM `Aaaaaaa` Aaa WHERE Aaa.Aaaa = Aaaa.Aaaa)",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-not-exists-014",
+      "cpuTime": "160.000ms",
+      "elapsedTime": "1.250s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-not-exists-014",
+      "requestTime": "2025-08-15T01:35:00.000Z",
+      "resultCount": 60,
+      "state": "completed",
+      "statement": "SELECT * FROM `Aaaaaa` WHERE NOT EXISTS (SELECT 1 FROM `Aaaaaaa` WHERE Aaaaaaa.Aaaa = Aaaaaa.Aaaa)",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-any-015",
+      "cpuTime": "130.000ms",
+      "elapsedTime": "1.050s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-any-015",
+      "requestTime": "2025-08-15T01:40:00.000Z",
+      "resultCount": 35,
+      "state": "completed",
+      "statement": "SELECT * FROM `bbbBbb` WHERE ANY `Bbbb` IN `Bbbbb` SATISFIES `Bbbb`.`Bbbbbb` > 500 END",
+      "statementType": "SELECT",
+      "users": "local:Bbb_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-every-016",
+      "cpuTime": "140.000ms",
+      "elapsedTime": "1.150s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-every-016",
+      "requestTime": "2025-08-15T01:45:00.000Z",
+      "resultCount": 20,
+      "state": "completed",
+      "statement": "SELECT * FROM `Aaaaaa` WHERE EVERY Aaaa IN Aaaaa SATISFIES Aaaa.Aaaaa = true END",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-any-and-every-017",
+      "cpuTime": "155.000ms",
+      "elapsedTime": "1.200s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-any-and-every-017",
+      "requestTime": "2025-08-15T01:50:00.000Z",
+      "resultCount": 15,
+      "state": "completed",
+      "statement": "SELECT * FROM `Aaaaaa` WHERE ANY AND EVERY Aaaa IN Aaaaa SATISFIES Aaaa.Aaaaaa = 'Aaaa' END",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-coalesce-018",
+      "cpuTime": "90.000ms",
+      "elapsedTime": "0.750s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-coalesce-018",
+      "requestTime": "2025-08-15T01:55:00.000Z",
+      "resultCount": 100,
+      "state": "completed",
+      "statement": "SELECT Aaaa, COALESCE(Aaaaa, Aaaaaa, 'Aaaa') AS Aaaaaaa FROM `Aaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-nullif-019",
+      "cpuTime": "85.000ms",
+      "elapsedTime": "0.700s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-nullif-019",
+      "requestTime": "2025-08-15T02:00:00.000Z",
+      "resultCount": 80,
+      "state": "completed",
+      "statement": "SELECT `Bbbb`, NULLIF(`Bbbbb`, 0) AS bbbBbb FROM `bbbBbbb`",
+      "statementType": "SELECT",
+      "users": "local:Bbb_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-ifmissing-020",
+      "cpuTime": "75.000ms",
+      "elapsedTime": "0.650s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-ifmissing-020",
+      "requestTime": "2025-08-15T02:05:00.000Z",
+      "resultCount": 120,
+      "state": "completed",
+      "statement": "SELECT Aaaa, IFMISSING(Aaaaa, 'Aaaa') AS Aaaaaa FROM `Aaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-ifnull-021",
+      "cpuTime": "78.000ms",
+      "elapsedTime": "0.680s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-ifnull-021",
+      "requestTime": "2025-08-15T02:10:00.000Z",
+      "resultCount": 110,
+      "state": "completed",
+      "statement": "SELECT Aaaa, IFNULL(Aaaaa, 'Aaaaa') AS Aaaaaa FROM `Aaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-object-funcs-022",
+      "cpuTime": "110.000ms",
+      "elapsedTime": "0.950s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-object-funcs-022",
+      "requestTime": "2025-08-15T02:15:00.000Z",
+      "resultCount": 50,
+      "state": "completed",
+      "statement": "SELECT OBJECT_NAMES(`Bbbb`) AS bbbBb, OBJECT_VALUES(`Bbbb`) AS bbbBbb FROM `bbbBbbb`",
+      "statementType": "SELECT",
+      "users": "local:Bbb_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-array-funcs-023",
+      "cpuTime": "95.000ms",
+      "elapsedTime": "0.850s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-array-funcs-023",
+      "requestTime": "2025-08-15T02:20:00.000Z",
+      "resultCount": 45,
+      "state": "completed",
+      "statement": "SELECT ARRAY_LENGTH(Aaaa) AS Aaaaa, ARRAY_SUM(Aaaaaa) AS Aaaaaaa FROM `Aaaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-string-funcs-024",
+      "cpuTime": "70.000ms",
+      "elapsedTime": "0.600s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-string-funcs-024",
+      "requestTime": "2025-08-15T02:25:00.000Z",
+      "resultCount": 200,
+      "state": "completed",
+      "statement": "SELECT UPPER(Aaaa) AS Aaaaa, LOWER(Aaaaaa) AS Aaaaaaa, TRIM(Aaaaaaaa) AS Aaaaaaaaa FROM `Aaaaaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-date-funcs-025",
+      "cpuTime": "105.000ms",
+      "elapsedTime": "0.900s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-date-funcs-025",
+      "requestTime": "2025-08-15T02:30:00.000Z",
+      "resultCount": 150,
+      "state": "completed",
+      "statement": "SELECT DATE_TRUNC_STR(`Bbbb`, 'day') AS bbbBb, DATE_ADD_STR(`Bbbbbb`, 7, 'day') AS bbbBbbb FROM `bbbBbbbb`",
+      "statementType": "SELECT",
+      "users": "local:Bbb_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-math-funcs-026",
+      "cpuTime": "65.000ms",
+      "elapsedTime": "0.550s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-math-funcs-026",
+      "requestTime": "2025-08-15T02:35:00.000Z",
+      "resultCount": 100,
+      "state": "completed",
+      "statement": "SELECT ROUND(Aaaa, 2) AS Aaaaa, CEIL(Aaaaaa) AS Aaaaaaa, FLOOR(Aaaaaaaa) AS Aaaaaaaaa FROM `Aaaaaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-meta-027",
+      "cpuTime": "55.000ms",
+      "elapsedTime": "0.500s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-meta-027",
+      "requestTime": "2025-08-15T02:40:00.000Z",
+      "resultCount": 75,
+      "state": "completed",
+      "statement": "SELECT META().id AS Aaaa, META().cas AS Aaaaa FROM `Aaaaaa` WHERE META().id LIKE 'Aaaa%'",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-between-028",
+      "cpuTime": "88.000ms",
+      "elapsedTime": "0.750s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-between-028",
+      "requestTime": "2025-08-15T02:45:00.000Z",
+      "resultCount": 60,
+      "state": "completed",
+      "statement": "SELECT * FROM `Aaaaaa` WHERE Aaaa BETWEEN '2025-01-01' AND '2025-12-31' AND Aaaaa BETWEEN 100 AND 1000",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-in-array-029",
+      "cpuTime": "92.000ms",
+      "elapsedTime": "0.800s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-in-array-029",
+      "requestTime": "2025-08-15T02:50:00.000Z",
+      "resultCount": 40,
+      "state": "completed",
+      "statement": "SELECT * FROM `bbbBbb` WHERE `Bbbb` IN ['Bbbb', 'Bbbbb', 'Bbbbbb']",
+      "statementType": "SELECT",
+      "users": "local:Bbb_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-within-030",
+      "cpuTime": "115.000ms",
+      "elapsedTime": "0.950s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-within-030",
+      "requestTime": "2025-08-15T02:55:00.000Z",
+      "resultCount": 25,
+      "state": "completed",
+      "statement": "SELECT * FROM `Aaaaaa` WHERE 'Aaaa' WITHIN Aaaaa",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-is-valued-031",
+      "cpuTime": "68.000ms",
+      "elapsedTime": "0.580s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-is-valued-031",
+      "requestTime": "2025-08-15T03:00:00.000Z",
+      "resultCount": 90,
+      "state": "completed",
+      "statement": "SELECT Aaaa, Aaaaa FROM `Aaaaaa` WHERE Aaaa IS VALUED AND Aaaaa IS NOT MISSING",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-type-funcs-032",
+      "cpuTime": "72.000ms",
+      "elapsedTime": "0.620s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-type-funcs-032",
+      "requestTime": "2025-08-15T03:05:00.000Z",
+      "resultCount": 85,
+      "state": "completed",
+      "statement": "SELECT TYPE(Aaaa) AS Aaaaa, ISARRAY(Aaaaaa) AS Aaaaaaa, ISOBJECT(Aaaaaaaa) AS Aaaaaaaaa FROM `Aaaaaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-encode-033",
+      "cpuTime": "60.000ms",
+      "elapsedTime": "0.520s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-encode-033",
+      "requestTime": "2025-08-15T03:10:00.000Z",
+      "resultCount": 70,
+      "state": "completed",
+      "statement": "SELECT BASE64_ENCODE(Aaaa) AS Aaaaa, ENCODE_JSON(Aaaaaa) AS Aaaaaaa FROM `Aaaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-insert-034",
+      "cpuTime": "45.000ms",
+      "elapsedTime": "0.400s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-insert-034",
+      "requestTime": "2025-08-15T03:15:00.000Z",
+      "resultCount": 1,
+      "state": "completed",
+      "statement": "INSERT INTO `bbbBbb` (KEY, VALUE) VALUES ('Bbbb::12345', {'Bbbbb': 'Bbbbbb', 'Bbbbbbb': 100})",
+      "statementType": "INSERT",
+      "users": "local:Bbb_Writer"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-insert-select-035",
+      "cpuTime": "180.000ms",
+      "elapsedTime": "1.400s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-insert-select-035",
+      "requestTime": "2025-08-15T03:20:00.000Z",
+      "resultCount": 50,
+      "state": "completed",
+      "statement": "INSERT INTO `Aaaaaa` (KEY Aaaa, VALUE Aaaaa) SELECT META().id AS Aaaa, Aaaa AS Aaaaa FROM `Aaaaaaa` WHERE Aaaaaa = 'Aaaa'",
+      "statementType": "INSERT",
+      "users": "local:Aaa_Writer"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-upsert-036",
+      "cpuTime": "55.000ms",
+      "elapsedTime": "0.480s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-upsert-036",
+      "requestTime": "2025-08-15T03:25:00.000Z",
+      "resultCount": 1,
+      "state": "completed",
+      "statement": "UPSERT INTO `Aaaaaa` (KEY, VALUE) VALUES ('Aaaa::67890', {'Aaaaa': 'Aaaaaa', 'Aaaaaaa': 200})",
+      "statementType": "UPSERT",
+      "users": "local:Aaa_Writer"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-update-set-037",
+      "cpuTime": "65.000ms",
+      "elapsedTime": "0.550s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-update-set-037",
+      "requestTime": "2025-08-15T03:30:00.000Z",
+      "resultCount": 10,
+      "state": "completed",
+      "statement": "UPDATE `bbbBbb` SET `Bbbb` = 'Bbbbb', `Bbbbbb` = `Bbbbbb` + 100 WHERE `Bbbbbbb` = $Bbbb",
+      "statementType": "UPDATE",
+      "users": "local:Bbb_Writer"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-update-unset-038",
+      "cpuTime": "58.000ms",
+      "elapsedTime": "0.500s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-update-unset-038",
+      "requestTime": "2025-08-15T03:35:00.000Z",
+      "resultCount": 5,
+      "state": "completed",
+      "statement": "UPDATE `Aaaaaa` UNSET Aaaa, Aaaaa WHERE Aaaaaa = 'Aaaaaaa'",
+      "statementType": "UPDATE",
+      "users": "local:Aaa_Writer"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-delete-returning-039",
+      "cpuTime": "48.000ms",
+      "elapsedTime": "0.420s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-delete-returning-039",
+      "requestTime": "2025-08-15T03:40:00.000Z",
+      "resultCount": 3,
+      "state": "completed",
+      "statement": "DELETE FROM `Aaaaaa` WHERE Aaaa = $Aaaa RETURNING Aaaaa, Aaaaaa",
+      "statementType": "DELETE",
+      "users": "local:Aaa_Admin"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-merge-040",
+      "cpuTime": "220.000ms",
+      "elapsedTime": "1.600s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-merge-040",
+      "requestTime": "2025-08-15T03:45:00.000Z",
+      "resultCount": 25,
+      "state": "completed",
+      "statement": "MERGE INTO `bbbBbb` AS bbbB USING `bbbBbbb` AS `Bbb` ON bbbB.`Bbbb` = `Bbb`.`Bbbb` WHEN MATCHED THEN UPDATE SET bbbB.`Bbbbb` = `Bbb`.`Bbbbb` WHEN NOT MATCHED THEN INSERT (KEY UUID(), VALUE `Bbb`)",
+      "statementType": "MERGE",
+      "users": "local:Bbb_Writer"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-infer-041",
+      "cpuTime": "350.000ms",
+      "elapsedTime": "2.200s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-infer-041",
+      "requestTime": "2025-08-15T03:50:00.000Z",
+      "resultCount": 1,
+      "state": "completed",
+      "statement": "INFER `Aaaaaa` WITH {'sample_size': 1000}",
+      "statementType": "INFER",
+      "users": "local:Aaa_Admin"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-explain-042",
+      "cpuTime": "25.000ms",
+      "elapsedTime": "0.200s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-explain-042",
+      "requestTime": "2025-08-15T03:55:00.000Z",
+      "resultCount": 1,
+      "state": "completed",
+      "statement": "EXPLAIN SELECT Aaaa, Aaaaa FROM `Aaaaaa` WHERE Aaaaaaa = $Aaaa",
+      "statementType": "EXPLAIN",
+      "users": "local:Aaa_Dev"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-advise-043",
+      "cpuTime": "180.000ms",
+      "elapsedTime": "1.300s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-advise-043",
+      "requestTime": "2025-08-15T04:00:00.000Z",
+      "resultCount": 1,
+      "state": "completed",
+      "statement": "ADVISE SELECT * FROM `Aaaaaa` WHERE Aaaa = $Aaaa AND Aaaaa > 1000",
+      "statementType": "ADVISE",
+      "users": "local:Aaa_Dev"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-let-044",
+      "cpuTime": "135.000ms",
+      "elapsedTime": "1.100s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-let-044",
+      "requestTime": "2025-08-15T04:05:00.000Z",
+      "resultCount": 80,
+      "state": "completed",
+      "statement": "SELECT Aaaa, Aaaaa, Aaaaaa FROM `Aaaaaaa` LET Aaaaaa = Aaaa * 1.1 WHERE Aaaaa = 'Aaaaaaaaa'",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-window-045",
+      "cpuTime": "200.000ms",
+      "elapsedTime": "1.500s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-window-045",
+      "requestTime": "2025-08-15T04:10:00.000Z",
+      "resultCount": 100,
+      "state": "completed",
+      "statement": "SELECT `Bbbb`, `Bbbbb`, ROW_NUMBER() OVER (PARTITION BY `Bbbbbb` ORDER BY `Bbbbbbb` DESC) AS bbbBbbbb FROM `bbbBbbbbb`",
+      "statementType": "SELECT",
+      "users": "local:Bbb_Analyst"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-rank-046",
+      "cpuTime": "190.000ms",
+      "elapsedTime": "1.450s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-rank-046",
+      "requestTime": "2025-08-15T04:15:00.000Z",
+      "resultCount": 75,
+      "state": "completed",
+      "statement": "SELECT Aaaa, Aaaaa, RANK() OVER (ORDER BY Aaaaaa DESC) AS Aaaaaaa, DENSE_RANK() OVER (ORDER BY Aaaaaa DESC) AS Aaaaaaaa FROM `Aaaaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_Analyst"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-lag-lead-047",
+      "cpuTime": "175.000ms",
+      "elapsedTime": "1.350s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-lag-lead-047",
+      "requestTime": "2025-08-15T04:20:00.000Z",
+      "resultCount": 60,
+      "state": "completed",
+      "statement": "SELECT Aaaa, Aaaaa, LAG(Aaaaa) OVER (ORDER BY Aaaaaa) AS Aaaaaaa, LEAD(Aaaaa) OVER (ORDER BY Aaaaaa) AS Aaaaaaaa FROM `Aaaaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_Analyst"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-offset-048",
+      "cpuTime": "85.000ms",
+      "elapsedTime": "0.720s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-offset-048",
+      "requestTime": "2025-08-15T04:25:00.000Z",
+      "resultCount": 20,
+      "state": "completed",
+      "statement": "SELECT Aaaa, Aaaaa FROM `Aaaaaa` WHERE Aaaaaa = 'Aaaaaaa' ORDER BY Aaaaaaaa DESC LIMIT 20 OFFSET 100",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-distinct-049",
+      "cpuTime": "165.000ms",
+      "elapsedTime": "1.250s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-distinct-049",
+      "requestTime": "2025-08-15T04:30:00.000Z",
+      "resultCount": 45,
+      "state": "completed",
+      "statement": "SELECT DISTINCT `Bbbb`, `Bbbbb` FROM `bbbBbb` WHERE `Bbbbbb` IN ['Bbbb', 'Bbbbb', 'Bbbbbb']",
+      "statementType": "SELECT",
+      "users": "local:Bbb_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-raw-050",
+      "cpuTime": "55.000ms",
+      "elapsedTime": "0.480s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-raw-050",
+      "requestTime": "2025-08-15T04:35:00.000Z",
+      "resultCount": 100,
+      "state": "completed",
+      "statement": "SELECT RAW Aaaa FROM `Aaaaaa` WHERE Aaaaa = $Aaaa",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-element-051",
+      "cpuTime": "62.000ms",
+      "elapsedTime": "0.530s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-element-051",
+      "requestTime": "2025-08-15T04:40:00.000Z",
+      "resultCount": 1,
+      "state": "completed",
+      "statement": "SELECT ELEMENT Aaaa FROM `Aaaaaa` WHERE Aaaaa = $Aaaa LIMIT 1",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-first-052",
+      "cpuTime": "72.000ms",
+      "elapsedTime": "0.600s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-first-052",
+      "requestTime": "2025-08-15T04:45:00.000Z",
+      "resultCount": 1,
+      "state": "completed",
+      "statement": "SELECT FIRST Aaaa FOR Aaaa IN Aaaaa WHEN Aaaa.Aaaaaa > 100 END AS Aaaaaaa FROM `Aaaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-object-construct-053",
+      "cpuTime": "78.000ms",
+      "elapsedTime": "0.650s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-object-construct-053",
+      "requestTime": "2025-08-15T04:50:00.000Z",
+      "resultCount": 50,
+      "state": "completed",
+      "statement": "SELECT {'Aaaa': Aaaa, 'Aaaaa': Aaaaa, 'Aaaaaa': Aaaaaa * 1.5} AS Aaaaaaa FROM `Aaaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "Aaaa-array-construct-054",
+      "cpuTime": "68.000ms",
+      "elapsedTime": "0.580s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "Aaaa-array-construct-054",
+      "requestTime": "2025-08-15T04:55:00.000Z",
+      "resultCount": 40,
+      "state": "completed",
+      "statement": "SELECT [Aaaa, Aaaaa, Aaaaaa] AS Aaaaaaa FROM `Aaaaaaaa`",
+      "statementType": "SELECT",
+      "users": "local:Aaa_User"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-search-055",
+      "cpuTime": "145.000ms",
+      "elapsedTime": "1.200s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-search-055",
+      "requestTime": "2025-08-15T05:00:00.000Z",
+      "resultCount": 120,
+      "state": "completed",
+      "statement": "SELECT META().id, `Bbbb` FROM `bbbBbb` WHERE SEARCH(`Bbbbbb`, 'Bbbbb') AND `Bbbbbbb` < 2000",
+      "statementType": "SELECT",
+      "users": "local:Bbb_Search"
+    },
+    "plan": "{}"
+  },
+  {
+    "completed_requests": {
+      "clientContextID": "bbbB-regex-056",
+      "cpuTime": "125.000ms",
+      "elapsedTime": "1.050s",
+      "errorCount": 0,
+      "errors": [],
+      "requestId": "bbbB-regex-056",
+      "requestTime": "2025-08-15T05:05:00.000Z",
+      "resultCount": 85,
+      "state": "completed",
+      "statement": "SELECT * FROM `bbbBbb` WHERE REGEXP_LIKE(`Bbbb`, '^Bbbb.*@Bbbbb\\\\.Bbb$')",
+      "statementType": "SELECT",
+      "users": "local:Bbb_User"
+    },
+    "plan": "{}"
+  }
+]

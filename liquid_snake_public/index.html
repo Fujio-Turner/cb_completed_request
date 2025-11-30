@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="version" content="4.0.0-dev" />
+    <meta name="last-updated" content="2025-11-29" />
+    <title>Couchbase Query Analyzer v4.0.0 - AI-Powered N1QL/SQL++ Analysis</title>
+    <meta name="description" content="Open-source Couchbase query analyzer with AI-powered insights. Analyze slow N1QL/SQL++ queries using OpenAI or xAI Grok for intelligent optimization recommendations.">
+    <meta name="keywords" content="Couchbase query analyzer, AI query optimization, N1QL analysis, SQL++ performance, OpenAI integration, Grok AI, Couchbase slow query, index advisor, query profiler">
+    <link rel="canonical" href="https://cb.fuj.io/">
+    <meta property="og:title" content="Couchbase Query Analyzer v4.0.0 - AI-Powered Analysis">
+    <meta property="og:description" content="Open-source Couchbase query analyzer with AI-powered insights. Analyze slow N1QL/SQL++ queries using OpenAI or xAI Grok.">
+    <meta property="og:url" content="https://cb.fuj.io/">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        header {
+            text-align: center;
+            padding: 20px 20px;
+            background: linear-gradient(135deg, #007acc 0%, #00b4d8 100%);
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+        }
+        h1 {
+            font-size: 2.5em;
+            margin: 0;
+            letter-spacing: 0.2px;
+        }
+        header p {
+            margin: 10px 0 0 0;
+            opacity: 0.95;
+        }
+        .version-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff8c00 0%, #ffb347 100%);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9em;
+            margin-right: 6px;
+            box-shadow: 0 2px 8px rgba(255,140,0,0.4);
+            animation: pulse-badge 2s ease-in-out infinite;
+        }
+        @keyframes pulse-badge {
+            0%, 100% { box-shadow: 0 2px 8px rgba(255,140,0,0.4); }
+            50% { box-shadow: 0 2px 16px rgba(255,140,0,0.7); }
+        }
+        .badge-new {
+            display: inline-block;
+            background: #e53e3e;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        h2 {
+            font-size: 1.8em;
+            color: #007acc;
+            margin-top: 40px;
+            position: relative;
+        }
+        h2::after {
+            content: "";
+            display: block;
+            width: 56px;
+            height: 3px;
+            background: #00b4d8;
+            border-radius: 2px;
+            margin-top: 8px;
+        }
+
+        /* AI Banner / Version Evolution Card */
+        .ai-evolution-card {
+            background: white;
+            border: 2px solid #007acc;
+            border-radius: 12px;
+            padding: 25px 30px;
+            margin: 25px 0;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+        }
+        .ai-evolution-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .evolution-item {
+            text-align: center;
+        }
+        .evolution-item.version-label {
+            font-size: 2em;
+            font-weight: 700;
+            color: #333;
+        }
+        .evolution-item.version-label.new-version {
+            color: #ff8c00;
+        }
+        .evolution-item img.screenshot {
+            max-width: 280px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .evolution-operator {
+            font-size: 2.5em;
+            font-weight: 300;
+            color: #007acc;
+        }
+        .ai-logos-box {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px 20px;
+            text-align: center;
+        }
+        .ai-logos-box .ai-label {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .ai-logos-box .logos-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .ai-logos-box img.ai-logo {
+            height: 32px;
+            width: auto;
+        }
+        .ai-logos-box .ai-subtext {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* Steps / Cards */
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .step {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #eaeef2;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .step:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.10);
+        }
+        .step strong {
+            display: block;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .step a.btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007acc;
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            margin-top: 10px;
+            box-shadow: 0 2px 6px rgba(0,122,204,0.25);
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+        .step a.btn:hover {
+            background: #005f99;
+            transform: translateY(-1px);
+        }
+        .step a.btn.secondary {
+            background: #48bb78;
+        }
+        .step a.btn.secondary:hover {
+            background: #38a169;
+        }
+        .btn-large {
+            padding: 14px 28px;
+            font-size: 1.15em;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,122,204,0.3);
+        }
+        .btn-large:hover {
+            box-shadow: 0 6px 18px rgba(0,122,204,0.4);
+        }
+
+        /* Shared icon row styles */
+        .icon-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .icon-row .icon-wrapper {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .icon-row img {
+            width: auto;
+            height: 40px;
+            max-width: 50px;
+        }
+        .icon-row a {
+            color: #007acc;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .icon-row a:hover {
+            text-decoration: underline;
+        }
+
+        /* Inline icons (side by side) */
+        .icons-inline {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-top: 12px;
+        }
+        .icons-inline .icon-wrapper {
+            width: 50px;
+            height: 50px;
+        }
+        .icons-inline img {
+            height: 44px;
+            width: auto;
+            max-width: 60px;
+        }
+
+        /* Step description */
+        .step-desc {
+            color: #666;
+            font-size: 0.95em;
+            margin: 8px 0 0 0;
+        }
+
+        /* API Key options (legacy, can remove) */
+        .api-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        /* Tabs */
+        .tabs-container {
+            margin-top: 15px;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 0;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: #e2e8f0;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            color: #4a5568;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        .tab-btn:first-child {
+            border-radius: 8px 0 0 0;
+        }
+        .tab-btn:last-child {
+            border-radius: 0 8px 0 0;
+        }
+        .tab-btn.active {
+            background: #007acc;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            background: white;
+            border: 2px dashed #007acc;
+            border-radius: 0 10px 10px 10px;
+            padding: 25px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Feature Matrix Tooltip */
+        .feature-matrix-trigger {
+            display: inline-block;
+            position: relative;
+            color: #007acc;
+            font-size: 0.95em;
+            cursor: help;
+            border-bottom: 1px dashed #007acc;
+            margin-left: 12px;
+        }
+        .feature-matrix-trigger:hover .feature-matrix-popup {
+            display: block;
+        }
+        .feature-matrix-popup {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            background: white;
+            border: 2px solid #007acc;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            min-width: 420px;
+            margin-top: 8px;
+        }
+        .feature-matrix-popup::before {
+            content: "";
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid #007acc;
+        }
+        .feature-matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        .feature-matrix-table th {
+            background: linear-gradient(135deg, #007acc 0%, #00b4d8 100%);
+            color: white;
+            padding: 10px 15px;
+            font-weight: 700;
+            font-size: 1.2em;
+        }
+        .feature-matrix-table th:first-child {
+            background: #f0f8ff;
+            color: #333;
+            font-size: 0.9em;
+        }
+        .feature-matrix-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            text-align: center;
+        }
+        .feature-matrix-table td:first-child {
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+        }
+        .feature-matrix-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* SQL Query Box */
+        .sql-query-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .sql-query-box pre {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+        .sql-copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 11px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+        .sql-copy-btn:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        /* Accordion */
+        .accordion {
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #eaeef2;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+            margin: 20px 0;
+        }
+        .accordion-header {
+            padding: 15px;
+            cursor: pointer;
+            background: #f0f8ff;
+            font-weight: bold;
+            border-bottom: 1px solid #e6eef5;
+        }
+        .accordion-content {
+            padding: 0 15px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        .accordion-content.open {
+            max-height: 500px;
+            padding: 15px;
+        }
+
+        /* Footer elements */
+        .floating-github {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            z-index: 999;
+            text-align: center;
+        }
+        .floating-github img {
+            width: 40px;
+            height: 40px;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2));
+        }
+        .floating-github .copyright {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #777;
+        }
+        .version-info {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(255,140,0,0.15);
+            color: #b35900;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-family: monospace;
+            z-index: 999;
+            border: 1px solid rgba(255,140,0,0.3);
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9em;
+            color: #666;
+            border-top: 1px solid #eaeef2;
+            margin-top: 30px;
+        }
+        footer a {
+            color: #007acc;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        a:focus-visible, button:focus-visible {
+            outline: 3px solid rgba(0,122,204,0.35);
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            h1 { font-size: 2em; }
+            .ai-evolution-content { flex-direction: column; }
+            .evolution-item img.screenshot { max-width: 90%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-github">
+        <a href="https://github.com/Fujio-Turner/cb_completed_request" target="_blank" rel="noopener noreferrer">
+            <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub repository">
+        </a>
+        <div class="copyright">© 2025 fuj.io</div>
+    </div>
+
+    <header>
+        <h1>Couchbase Query Analyzer</h1>
+        <p><span class="version-badge">New 4.0.0</span> Open-source tool to debug and analyze slow N1QL/SQL++ queries with AI-powered analysis.</p>
+    </header>
+
+    <!-- AI Evolution Banner -->
+    <section class="ai-evolution-card">
+        <div class="ai-evolution-content">
+            <div class="evolution-item">
+                <div class="version-label"><b>3.x</b></div>
+                <img src="assets/img/old_timeline_3_x_sample_page.png" alt="Version 3.x Dashboard" class="screenshot">
+            </div>
+            <div class="evolution-operator">+</div>
+            <div class="evolution-item">
+                <div class="ai-logos-box">
+                    <div class="ai-label">AI</div>
+                    <div class="logos-row">
+                        <img src="assets/img/x_ai_logo.png" alt="xAI Grok" class="ai-logo">
+                        <img src="assets/img/openAid_logo.png" alt="OpenAI" class="ai-logo">
+                    </div>
+                    <div class="ai-subtext">Custom AI API</div>
+                </div>
+            </div>
+            <div class="evolution-operator">=</div>
+            <div class="evolution-item">
+                <div class="version-label new-version"><b>4.x</b></div>
+                <img src="assets/img/new_4_0_0_ai_report_sample_page.png" alt="Version 4.0 AI Report" class="screenshot">
+            </div>
+        </div>
+    </section>
+
+    <main>
+        <section>
+            <h2>Why Are My Queries Slow?</h2>
+            <p>Slow Couchbase queries can stem from unoptimized N1QL/SQL++ statements, missing indexes, or inefficient data scans. This open-source tool helps you:</p>
+            <ul>
+                <li>Identify bottlenecks with detailed query analysis.</li>
+                <li><b>Insights</b> provides a quick overview and suggestions.</li>
+                <li>Visualize query performance with timelines and metrics.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Get Started</h2>
+            <span class="feature-matrix-trigger">4.x vs 3.x Features
+                <div class="feature-matrix-popup">
+                    <table class="feature-matrix-table">
+                        <tr>
+                            <th></th>
+                            <th>4.x</th>
+                            <th>3.x</th>
+                        </tr>
+                        <tr>
+                            <td>Analyzer</td>
+                            <td>JavaScript / AI API</td>
+                            <td>JavaScript</td>
+                        </tr>
+                        <tr>
+                            <td>Runs Locally</td>
+                            <td>Yes</td>
+                            <td>Yes</td>
+                        </tr>
+                        <tr>
+                            <td>Stores Data</td>
+                            <td>Yes, In Your Couchbase</td>
+                            <td>No</td>
+                        </tr>
+                        <tr>
+                            <td>Masks / Obfuscate Your Data</td>
+                            <td>Yes, Data Sent to AI API</td>
+                            <td>No, Never Leaves Browser</td>
+                        </tr>
+                    </table>
+                </div>
+            </span>
+            <div class="tabs-container">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchTab('desktop')"><span class="badge-new">NEW</span> Desktop App (4.x)</button>
+                    <button class="tab-btn" onclick="switchTab('browser')">Browser (3.x)</button>
+                </div>
+
+                <!-- Browser Tab (existing workflow) -->
+                <div id="tab-browser" class="tab-content">
+                    <div class="steps">
+                        <div class="step">
+                            <strong>1. Extract Data</strong>
+                            <p>Run the following query in your Couchbase Query Workbench, Capella Query tab or <code>cbq</code>, then export the results as JSON.</p>
+                            <div class="sql-query-box">
+                                <pre>SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;</pre>
+                                <button class="sql-copy-btn">Copy</button>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <strong>2. Analyze & Optimize</strong>
+                            <p><a href="https://cb.fuj.io/en/" target="_blank" rel="noopener noreferrer" class="btn">Open Analyzer</a> — in the <b>upper-left corner</b>, paste or upload your JSON to get instant analysis and suggestions.</p>
+                            <p><b>Private & Secure:</b> <i>Runs entirely in your browser with no server uploads.</i></p>
+                        </div>
+                        <div class="step">
+                            <strong>3. Apply & Test</strong>
+                            <p>Implement index or query changes, then re-run to confirm performance gains.</p>
+                            <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer" class="btn secondary">Need help? Analysis Hub</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desktop App Tab (new 4.0 workflow) -->
+                <div id="tab-desktop" class="tab-content active">
+                    <div class="steps">
+                        <div class="step">
+                            <strong>1. Download</strong>
+                            <p class="step-desc">Pick your favorite platform to run the analyzer.</p>
+                            <div class="icons-inline">
+                                <span class="icon-wrapper"><img src="assets/img/ms_windows_logo.png" alt="Windows"></span>
+                                <span class="icon-wrapper"><img src="assets/img/macOS_logo.png" alt="macOS"></span>
+                                <span class="icon-wrapper"><img src="assets/img/docker_hub_logo_round.png" alt="Docker"></span>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <strong>2. Connect To Your Cluster</strong>
+                            <p class="step-desc">Save AI analysis results in your Couchbase cluster.</p>
+                            <div class="icons-inline">
+                                <span class="icon-wrapper"><img src="assets/img/couchbase_capella_logo.png" alt="Capella"></span>
+                                <span class="icon-wrapper"><img src="assets/img/couchbase_logo.png" alt="Couchbase Self-Hosted"></span>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <strong>3. Get An API Key</strong>
+                            <p class="step-desc"><i>Optional</i> Use your own custom AI API endpoint.</p>
+                            <div class="icons-inline">
+                                <span class="icon-wrapper"><img src="assets/img/x_ai_logo.png" alt="xAI"></span>
+                                <span class="icon-wrapper"><img src="assets/img/openAid_logo.png" alt="OpenAI"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p style="margin-top: 25px; text-align: center;">
+                        <a href="getting_started.html" class="btn btn-large">📋 Complete Step-by-Step Guide</a>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>FAQs</h2>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">How do I get query data to use for the tool/analyzer?</div>
+                <div class="accordion-content">
+                    <p>Run the SQL++ query from <strong>1. Extract Data</strong> in Couchbase Query Workbench or Capella Query tab, then export queries as JSON by copying and pasting or saving to a file. For advanced, targeted SQL++ queries to filter JSON results, see <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a>.</p>
+                    <p>Also see: <a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample (dummy) completed_requests JSON</a></p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">How do I use this tool and/or debug queries?</div>
+                <div class="accordion-content">
+                    <p>For a step-by-step workflow to analyze your JSON results, interpret metrics, and debug slow queries, visit the <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer">Analysis Hub - Couchbase N1QL Query Optimization Guide & Glossary</a>.</p>
+                    <p>Also see: <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a> <span style="color:#a0aec0">•</span> <a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample (dummy) completed_requests JSON</a></p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">Where does the slow query data come from?</div>
+                <div class="accordion-content">
+                    <p>The Couchbase cluster stores a small history of queries that take longer than 1 second. You can query/get this history via <code>system:completed_requests</code> catalog. Run the query from <strong>1. Extract Data</strong> in Query Workbench or <code>cbq</code> to collect recent query executions, timing metrics, and the execution plan.</p>
+                    <div class="sql-query-box">
+                        <pre>SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;</pre>
+                        <button class="sql-copy-btn">Copy</button>
+                    </div>
+                    <p>NOTE: The above query will not get all of the slow query history but rather a small 2000 sample in random order.</p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">Can I use this with Couchbase Capella?</div>
+                <div class="accordion-content">
+                    <p>Yes, it is fully compatible with both Couchbase Server and Capella. Just run the same query from <strong>1. Extract Data</strong> in the Query tab in your Capella cluster.</p>
+                    <p>Also see: <a href="https://docs.couchbase.com/cloud/" target="_blank" rel="noopener noreferrer">Couchbase Capella documentation</a></p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">What AI providers are supported?</div>
+                <div class="accordion-content">
+                    <p>Version 4.0 supports <b>xAI Grok</b> and <b>OpenAI</b> models. You can use your own API key to get AI-powered analysis and optimization recommendations for your queries.</p>
+                    <p>Your data stays private — queries are sent directly to your chosen AI provider from the desktop app.</p>
+                </div>
+            </div>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">What are the terms of use and license?</div>
+                <div class="accordion-content">
+                    <p>Apache 2.0 license. Contribute or report issues on <a href="https://github.com/Fujio-Turner/cb_completed_request" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+                    <p>Also see: <a href="https://github.com/Fujio-Turner/cb_completed_request/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">LICENSE</a></p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="version-info">Couchbase Query Analyzer v4.0.0-dev</div>
+
+    <footer>
+        <p>&copy; 2025 <a href="https://fuj.io" target="_blank" rel="noopener noreferrer">fuj.io</a>.</p>
+    </footer>
+
+    <script>
+        function toggleAccordion(header) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('open');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+
+        document.querySelectorAll('.sql-copy-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const code = button.parentElement.querySelector('pre').textContent;
+                navigator.clipboard.writeText(code).then(() => {
+                    button.style.background = '#28a745';
+                    const prevText = button.textContent;
+                    button.textContent = 'Copied!';
+                    setTimeout(() => {
+                        button.textContent = prevText;
+                        button.style.background = '';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
