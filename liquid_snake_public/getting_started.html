@@ -10,26 +10,70 @@
     <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
     <link rel="stylesheet" href="assets/css/main.css">
     <style>
-        /* Page-specific styles for getting_started.html */
+        /* Page-specific styles for getting_started.html - Compact layout */
+        header {
+            padding: 12px 20px;
+        }
+        header h1 {
+            font-size: 2em;
+            margin-bottom: 4px;
+        }
         header p {
-            margin: 10px 0 0 0;
+            margin: 4px 0 0 0;
             opacity: 0.95;
         }
         
+        h2 {
+            margin-top: 20px;
+            margin-bottom: 8px;
+        }
+        
         h3 {
-            margin-top: 25px;
+            margin-top: 15px;
+            margin-bottom: 6px;
+        }
+        
+        section {
+            margin-bottom: 15px;
         }
 
         /* Icon row needs margin on this page */
         .icon-row {
-            margin: 10px 0;
+            margin: 6px 0;
         }
 
         .download-options, .connect-options {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            margin-top: 15px;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        /* Compact tabs */
+        .tab-content {
+            padding: 12px 15px;
+        }
+        
+        .steps-list {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        
+        .steps-list li {
+            margin-bottom: 4px;
+        }
+        
+        pre {
+            margin: 8px 0;
+            padding: 10px;
+        }
+        
+        .sql-query-box {
+            margin: 8px 0;
+        }
+        
+        .sql-query-box pre {
+            padding: 8px 10px;
         }
     </style>
 </head>
@@ -41,7 +85,7 @@
         <div class="copyright">© 2025 fuj.io</div>
     </div>
 
-    <a href="dev_index.html" class="back-link">← Back to Home</a>
+    <a href="index.html" class="back-link">← Back to Home</a>
 
     <header>
         <h1>Getting Started</h1>
@@ -61,133 +105,95 @@
                 </div>
 
                 <div id="tab-docker" class="tab-content active">
-                    <div class="icon-row" style="margin-bottom: 15px;">
+                    <div class="icon-row">
                         <span class="icon-wrapper"><img src="assets/img/docker_hub_logo_round.png" alt="Docker"></span>
                         <a href="https://hub.docker.com/r/fujioturner/couchbase-query-analyzer/tags" target="_blank">Pull from Docker Hub</a>
                     </div>
 <pre>docker pull fujioturner/couchbase-query-analyzer:latest
 docker run -p 5000:5000 fujioturner/couchbase-query-analyzer:latest</pre>
-                    <p style="margin-top: 15px; color: #666;"><em>After running, open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a> in your browser.</em></p>
+                    <p style="margin-top:8px;color:#666;font-size:0.9em"><em>After running, open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></em></p>
                 </div>
 
                 <div id="tab-macos" class="tab-content">
-                    <div class="icon-row" style="margin-bottom: 15px;">
+                    <div class="icon-row">
                         <span class="icon-wrapper"><img src="assets/img/macOS_logo.png" alt="macOS"></span>
                         <a href="https://github.com/Fujio-Turner/cb_completed_request/releases" target="_blank">Download for macOS</a>
                     </div>
                     <ol class="steps-list">
-                        <li>Download the <code>cb_query_analyzer_macos</code> executable.</li>
-                        <li>Open Terminal and navigate to the download location.</li>
-                        <li>Make it executable: <code>chmod +x cb_query_analyzer_macos</code></li>
-                        <li>Run it: <code>./cb_query_analyzer_macos</code></li>
-                        <li><em>Note: If you see a security warning, go to System Settings > Privacy & Security and allow the app to run.</em></li>
+                        <li>Download <code>cb_query_analyzer_macos</code>, make executable: <code>chmod +x</code>, then run.</li>
+                        <li><em>Security warning? Go to System Settings > Privacy & Security to allow.</em></li>
                     </ol>
-                <p style="margin-top: 15px; color: #666;"><em>After running, open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a> in your browser.</em></p>
-             
+                    <p style="margin-top:6px;color:#666;font-size:0.9em"><em>Open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></em></p>
                 </div>
 
                 <div id="tab-windows" class="tab-content">
-                    <div class="icon-row" style="margin-bottom: 15px;">
+                    <div class="icon-row">
                         <span class="icon-wrapper"><img src="assets/img/ms_windows_logo.png" alt="Windows"></span>
                         <a href="https://github.com/Fujio-Turner/cb_completed_request/releases" target="_blank">Download for Windows</a>
                     </div>
                     <ol class="steps-list">
-                        <li>Download the <code>cb_query_analyzer.exe</code> file.</li>
-                        <li>Double-click to run.</li>
-                        <li><em>Note: If you see a "Windows protected your PC" warning, click "More info" and then "Run anyway".</em></li>
+                        <li>Download <code>cb_query_analyzer.exe</code> and double-click to run.</li>
+                        <li><em>"Windows protected your PC"? Click "More info" → "Run anyway".</em></li>
                     </ol>
-                <p style="margin-top: 15px; color: #666;"><em>After running, open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a> in your browser.</em></p>
-             
+                    <p style="margin-top:6px;color:#666;font-size:0.9em"><em>Open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></em></p>
                 </div>
             </div>
         </section>
 
         <section>
             <h2>2. Connect to Couchbase</h2>
-            <p>You need to connect the tool to a Couchbase cluster to save analysis data and user preferences.</p>
+            <p style="margin-bottom:8px">Connect to a Couchbase cluster to save analysis data and preferences.</p>
 
             <div class="tabs-container">
                 <div class="tab-buttons">
-                    <button class="tab-btn active" onclick="switchTab('capella')">☁️ Capella (DBaaS)</button>
+                    <button class="tab-btn active" onclick="switchTab('capella')">☁️ Capella</button>
                     <button class="tab-btn" onclick="switchTab('selfhosted')">🖥️ Self-Hosted</button>
                 </div>
 
                 <div id="tab-capella" class="tab-content active">
-                    <div class="connect-options" style="margin-bottom: 20px;">
-                        <div class="icon-row">
-                            <span class="icon-wrapper"><img src="assets/img/couchbase_capella_logo.png" alt="Capella"></span>
-                            <a href="https://cloud.couchbase.com/sign-up" target="_blank">Start a Free Trial</a>
-                            <span style="color: #999; margin: 0 10px;">or</span>
-                            <a href="https://cloud.couchbase.com/sign-in" target="_blank">Sign In</a>
-                        </div>
+                    <div class="icon-row">
+                        <span class="icon-wrapper"><img src="assets/img/couchbase_capella_logo.png" alt="Capella"></span>
+                        <a href="https://cloud.couchbase.com/sign-up" target="_blank">Free Trial</a>
+                        <span style="color:#999;margin:0 6px;">or</span>
+                        <a href="https://cloud.couchbase.com/sign-in" target="_blank">Sign In</a>
                     </div>
-
-                    <h3 style="margin-top: 0;">Setup Steps</h3>
                     <ol class="steps-list">
-                        <li><strong>Create Bucket:</strong> Create a bucket named <code>cb_tools</code> (Quota: 256 MB).</li>
-                        <li><strong>Create Scope/Collection:</strong> In <code>cb_tools</code>, create scope <code>query</code> and collection <code>analyzer</code>.<br><em>(Ensure <code>_default</code> scope/collection exists for preferences)</em></li>
+                        <li><strong>Create Bucket:</strong> <code>cb_tools</code> (256 MB)</li>
+                        <li><strong>Create Scope/Collection:</strong> <code>query.analyzer</code></li>
                         <li><strong>Create Index:</strong>
                             <div class="sql-query-box">
-                                <p style="margin: 0 0 10px 0;">Run the following query in your Query Workbench:</p>
                                 <pre>CREATE INDEX `analysis_old_table_v2` 
 ON `cb_tools`.`query`.`analyzer`(
-    `createdAt` DESC INCLUDE MISSING,
-    `metadata`,
-    `status`,
-    `prompt`,
-    `provider`,
-    `sourceCluster`,
-    `parseJson`.`filters`
-) 
-WHERE (`docType` = "ai_analysis")</pre>
+    `createdAt` DESC INCLUDE MISSING, `metadata`, `status`,
+    `prompt`, `provider`, `sourceCluster`, `parseJson`.`filters`
+) WHERE (`docType` = "ai_analysis")</pre>
                                 <button class="sql-copy-btn">Copy</button>
                             </div>
                         </li>
-                        <li><strong>Create User:</strong> <a href="https://docs.couchbase.com/cloud/clusters/manage-database-users.html" target="_blank">Create Database Credential</a><br>
-                            <strong>Roles:</strong> Read/Write access to <code>cb_tools</code> bucket (and all scopes/collections)</li>
-                        <li><strong>Whitelist IP:</strong> <a href="https://docs.couchbase.com/cloud/get-started/connect.html#prerequisites" target="_blank">Add your IP Address to Allowed List</a></li>
-                        <li><strong>Connection Details:</strong><br>
-                            <strong>URL:</strong> <em>Your Capella Connection String</em> (e.g., <code>couchbases://...</code>)<br>
-                            <strong>Username:</strong> <em>Your DB Credential</em><br>
-                            <strong>Password:</strong> <em>Your Password</em></li>
+                        <li><strong>Create User:</strong> <a href="https://docs.couchbase.com/cloud/clusters/manage-database-users.html" target="_blank">Database Credential</a> with Read/Write on <code>cb_tools</code></li>
+                        <li><strong>Whitelist IP:</strong> <a href="https://docs.couchbase.com/cloud/get-started/connect.html#prerequisites" target="_blank">Add IP to Allowed List</a></li>
                     </ol>
                 </div>
 
                 <div id="tab-selfhosted" class="tab-content">
-                    <div class="connect-options" style="margin-bottom: 20px;">
-                        <div class="icon-row">
-                            <span class="icon-wrapper"><img src="assets/img/couchbase_logo.png" alt="Couchbase"></span>
-                            <span><strong>Localhost</strong> (Docker or local install) or <strong>Remote Cluster</strong></span>
-                        </div>
+                    <div class="icon-row">
+                        <span class="icon-wrapper"><img src="assets/img/couchbase_logo.png" alt="Couchbase"></span>
+                        <span><strong>Localhost</strong> or <strong>Remote Cluster</strong></span>
                     </div>
-
-                    <h3 style="margin-top: 0;">Setup Steps</h3>
                     <ol class="steps-list">
-                        <li><strong>Create Bucket:</strong> Create a bucket named <code>cb_tools</code> (Quota: 256 MB).</li>
-                        <li><strong>Create Scope/Collection:</strong> In <code>cb_tools</code>, create scope <code>query</code> and collection <code>analyzer</code>.<br><em>(Ensure <code>_default</code> scope/collection exists for preferences)</em></li>
+                        <li><strong>Create Bucket:</strong> <code>cb_tools</code> (256 MB)</li>
+                        <li><strong>Create Scope/Collection:</strong> <code>query.analyzer</code></li>
                         <li><strong>Create Index:</strong>
                             <div class="sql-query-box">
-                                <p style="margin: 0 0 10px 0;">Run the following query in your Query Workbench:</p>
                                 <pre>CREATE INDEX `analysis_old_table_v2` 
 ON `cb_tools`.`query`.`analyzer`(
-    `createdAt` DESC INCLUDE MISSING,
-    `metadata`,
-    `status`,
-    `prompt`,
-    `provider`,
-    `sourceCluster`,
-    `parseJson`.`filters`
-) 
-WHERE (`docType` = "ai_analysis")</pre>
+    `createdAt` DESC INCLUDE MISSING, `metadata`, `status`,
+    `prompt`, `provider`, `sourceCluster`, `parseJson`.`filters`
+) WHERE (`docType` = "ai_analysis")</pre>
                                 <button class="sql-copy-btn">Copy</button>
                             </div>
                         </li>
-                        <li><strong>Create User:</strong> <a href="https://docs.couchbase.com/server/current/manage/manage-security/manage-users-and-roles.html#add-a-user" target="_blank">Create a Couchbase SDK (Application) User</a><br>
-                            <strong>Roles:</strong> Data Reader/Writer (<code>cb_tools</code>), Query Select/Insert/Update</li>
-                        <li><strong>Connection Details:</strong><br>
-                            <strong>URL:</strong> <code>http://localhost:8091</code> (or your cluster IP)<br>
-                            <strong>Username:</strong> <em>Your new user</em><br>
-                            <strong>Password:</strong> <em>Your password</em></li>
+                        <li><strong>Create User:</strong> <a href="https://docs.couchbase.com/server/current/manage/manage-security/manage-users-and-roles.html#add-a-user" target="_blank">SDK User</a> with Data Reader/Writer on <code>cb_tools</code></li>
                     </ol>
                 </div>
             </div>
@@ -195,88 +201,70 @@ WHERE (`docType` = "ai_analysis")</pre>
 
         <section>
             <h2>3. Configure the Tool</h2>
-            <p>Once the tool is running and your Couchbase user is ready:</p>
-            <div class="step-card">
-                <ol class="steps-list">
-                    <li>Open your browser and go to <strong><a href="http://localhost:5000" target="_blank">http://localhost:5000</a></strong>.</li>
-                    <li>Click the <strong>Settings (Gear Icon)</strong> in the upper right corner.</li>
-                    <li>Enter your <strong>Cluster URL</strong>, <strong>Username</strong>, and <strong>Password</strong>.</li>
-                    <li>Click <strong>Test Connection</strong>.
-                        <ul><li>If successful, you will see a confirmation message.</li></ul>
-                    </li>
-                    <li>Click <strong>Save Settings</strong>.</li>
-                </ol>
-            </div>
+            <p style="margin-bottom:8px">Once running and your Couchbase user is ready:</p>
+            <ol class="steps-list">
+                <li>Open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></li>
+                <li>Click <strong>Settings (Gear Icon)</strong> → enter Cluster URL, Username, Password</li>
+                <li>Click <strong>Test Connection</strong> → <strong>Save Settings</strong></li>
+            </ol>
         </section>
 
         <section>
-            <h2>4. Setup AI Analysis (Grok x.ai or OpenAI)</h2>
-            <p>To enable the AI Review features for your slow queries, you need an API Key from a supported provider.</p>
+            <h2>4. Setup AI Analysis</h2>
+            <p style="margin-bottom:8px">Get an API Key from xAI Grok or OpenAI for AI-powered query analysis.</p>
 
-            <table class="ai-table">
+            <table class="ai-table" style="font-size:0.9em">
                 <thead>
                     <tr>
-                        <th style="width: 50%;">
-                            <div class="icon-row" style="justify-content: center;">
-                                <img src="assets/img/x_ai_logo.png" alt="xAI" style="height: 24px;">
-                                <span>Grok x.ai <em>(recommended)</em></span>
-                            </div>
+                        <th style="width:50%;padding:8px">
+                            <img src="assets/img/x_ai_logo.png" alt="xAI" style="height:20px;vertical-align:middle;margin-right:6px">
+                            Grok x.ai <em>(recommended)</em>
                         </th>
-                        <th style="width: 50%;">
-                            <div class="icon-row" style="justify-content: center;">
-                                <img src="assets/img/openAid_logo.png" alt="OpenAI" style="height: 24px;">
-                                <span>OpenAI</span>
-                            </div>
+                        <th style="width:50%;padding:8px">
+                            <img src="assets/img/openAid_logo.png" alt="OpenAI" style="height:20px;vertical-align:middle;margin-right:6px">
+                            OpenAI
                         </th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>
-                            <strong>1. Sign Up</strong><br>
-                            <a href="https://x.ai/" target="_blank">Create an x.ai account</a>
-                        </td>
-                        <td>
-                            <strong>1. Sign Up</strong><br>
-                            <a href="https://platform.openai.com/signup" target="_blank">Create an OpenAI account</a>
-                        </td>
+                        <td style="padding:8px"><a href="https://x.ai/" target="_blank">Sign Up</a> → <a href="https://console.x.ai/" target="_blank">Get API Key</a></td>
+                        <td style="padding:8px"><a href="https://platform.openai.com/signup" target="_blank">Sign Up</a> → <a href="https://platform.openai.com/api-keys" target="_blank">Get API Key</a></td>
                     </tr>
                     <tr>
-                        <td>
-                            <strong>2. Get API Key</strong><br>
-                            <a href="https://console.x.ai/" target="_blank">Generate an API Key</a>
-                        </td>
-                        <td>
-                            <strong>2. Get API Key</strong><br>
-                            <a href="https://platform.openai.com/api-keys" target="_blank">Generate an API Key</a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2">
-                            <strong>3. Configure Tool</strong>
-                            <ol class="steps-list">
-                                <li>Go to the <strong>Settings</strong> menu in the Query Analyzer (<code>http://localhost:5000</code>).</li>
-                                <li>Select your provider tab (<strong>Grok</strong> or <strong>OpenAI</strong>).</li>
-                                <li>Paste your key into the <strong>API Key</strong> field.</li>
-                                <li>Click <strong>Save Settings</strong>.</li>
-                            </ol>
-                        </td>
+                        <td colspan="2" style="padding:8px">In Settings, select provider tab, paste API Key, click <strong>Save</strong>.</td>
                     </tr>
                 </tbody>
             </table>
         </section>
 
-        <div class="success-box">
-            <h3>🎉 Ready to Go!</h3>
-            <p>You are now ready to perform your first AI Review of your slow queries.</p>
+        <div class="success-box" style="padding:12px 15px;margin:15px 0">
+            <h3 style="margin:0 0 6px">🎉 Ready to Go!</h3>
+            <p style="margin:0">You can now perform AI-powered analysis of your slow queries.</p>
         </div>
 
-        <div class="note-box" style="margin-top: 30px;">
-            <strong>Note on Versions:</strong>
-            <ul style="margin: 10px 0 0 0; padding-left: 20px;">
-                <li><strong>v3.x (Legacy):</strong> Can still run as a static HTML page. The online version is at: <a href="https://cb.fuj.io/en/" target="_blank">https://cb.fuj.io/en/</a></li>
-                <li><strong>v4.x+ (Current):</strong> Requires a Couchbase bucket (to store analysis history) and internet access (to call AI API endpoints). This guide covers the setup for these newer versions.</li>
-            </ul>
+        <section style="margin-top:15px">
+            <h2>Next Steps</h2>
+            <div class="steps" style="margin-top:10px">
+                <div class="step" style="padding:12px">
+                    <strong><a href="user_guide.html">User Guide</a></strong>
+                    <p style="margin:4px 0 0;font-size:0.9em">Parse JSON, use filters, navigate analyzer tabs.</p>
+                </div>
+                <div class="step" style="padding:12px">
+                    <strong><a href="sql_queries.html">SQL++ Query Examples</a></strong>
+                    <p style="margin:4px 0 0;font-size:0.9em">Filter by node, date range, exclude system queries.</p>
+                </div>
+                <div class="step" style="padding:12px">
+                    <strong><a href="analysis_hub.html">Analysis Hub</a></strong>
+                    <p style="margin:4px 0 0;font-size:0.9em">Metrics, optimization strategies, glossary.</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="note-box" style="margin-top:15px;padding:10px 12px;font-size:0.9em">
+            <strong>Versions:</strong>
+            <b>v3.x</b> runs as static HTML at <a href="https://cb.fuj.io/en/" target="_blank">cb.fuj.io/en</a>.
+            <b>v4.x+</b> requires Couchbase bucket + AI API access (this guide).
         </div>
     </main>
 

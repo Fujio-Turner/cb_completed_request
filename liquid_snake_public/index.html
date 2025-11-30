@@ -17,33 +17,40 @@
     <link rel="icon" type="image/svg+xml" href="asstes/img/favicon.svg">
     <link rel="stylesheet" href="assets/css/main.css">
     <style>
-        /* Page-specific styles for index.html */
+        /* Page-specific styles for index.html - Compact layout */
+        header {
+            padding: 15px 20px;
+        }
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 5px;
+        }
         header p {
-            margin: 10px 0 0 0;
+            margin: 5px 0 0 0;
             opacity: 0.95;
         }
 
-        /* AI Banner / Version Evolution Card */
+        /* AI Banner / Version Evolution Card - Compact */
         .ai-evolution-card {
             background: white;
             border: 2px solid #007acc;
-            border-radius: 12px;
-            padding: 25px 30px;
-            margin: 25px 0;
+            border-radius: 10px;
+            padding: 12px 20px;
+            margin: 12px 0;
             box-shadow: 0 4px 14px rgba(0,0,0,0.06);
         }
         .ai-evolution-content {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 20px;
+            gap: 15px;
             flex-wrap: wrap;
         }
         .evolution-item {
             text-align: center;
         }
         .evolution-item.version-label {
-            font-size: 2em;
+            font-size: 1.4em;
             font-weight: 700;
             color: #333;
         }
@@ -51,42 +58,42 @@
             color: #ff8c00;
         }
         .evolution-item img.screenshot {
-            max-width: 280px;
-            border-radius: 8px;
+            max-width: 200px;
+            border-radius: 6px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .evolution-operator {
-            font-size: 2.5em;
+            font-size: 1.8em;
             font-weight: 300;
             color: #007acc;
         }
         .ai-logos-box {
             background: white;
             border: 1px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 15px 20px;
+            border-radius: 8px;
+            padding: 10px 15px;
             text-align: center;
         }
         .ai-logos-box .ai-label {
-            font-size: 1.3em;
+            font-size: 1.1em;
             font-weight: 700;
             color: #333;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
         .ai-logos-box .logos-row {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
         }
         .ai-logos-box img.ai-logo {
-            height: 32px;
+            height: 24px;
             width: auto;
         }
         .ai-logos-box .ai-subtext {
-            font-size: 0.9em;
+            font-size: 0.8em;
             color: #666;
-            margin-top: 5px;
+            margin-top: 4px;
         }
 
         /* Step description */
@@ -216,13 +223,13 @@
     </section>
 
     <main>
-        <section>
-            <h2>Why Are My Queries Slow?</h2>
-            <p>Slow Couchbase queries can stem from unoptimized N1QL/SQL++ statements, missing indexes, or inefficient data scans. This open-source tool helps you:</p>
-            <ul>
-                <li>Identify bottlenecks with detailed query analysis.</li>
-                <li><b>Insights</b> provides a quick overview and suggestions.</li>
+        <section style="margin-bottom:10px">
+            <h2 style="margin-bottom:8px">Why Are My Queries Slow?</h2>
+            <p style="margin:0 0 8px">Slow Couchbase queries can stem from unoptimized N1QL/SQL++ statements, missing indexes, or inefficient data scans. This tool helps you:</p>
+            <ul style="margin:0;padding-left:20px">
+                <li>Identify bottlenecks with detailed query analysis and <b>Insights</b>.</li>
                 <li>Visualize query performance with timelines and metrics.</li>
+                <li><b>AI Analyzer (4.x)</b> — Optimization recommendations powered by xAI Grok, OpenAI, or Custom AI API.</li>
             </ul>
         </section>
 
@@ -264,7 +271,6 @@
                     <button class="tab-btn active" onclick="switchTab('desktop')"><span class="badge-new">NEW</span> Desktop App (4.x)</button>
                     <button class="tab-btn" onclick="switchTab('browser')">Browser (3.x)</button>
                 </div>
-
                 <!-- Browser Tab (existing workflow) -->
                 <div id="tab-browser" class="tab-content">
                     <div class="steps">
@@ -275,20 +281,21 @@
                                 <pre>SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;</pre>
                                 <button class="sql-copy-btn">Copy</button>
                             </div>
+                            <p style="margin-top:8px;font-size:0.9em;color:#666">Need targeted filters? <a href="sql_queries.html">SQL++ Query Examples</a></p>
                         </div>
                         <div class="step">
                             <strong>2. Analyze & Optimize</strong>
                             <p><a href="https://cb.fuj.io/en/" target="_blank" rel="noopener noreferrer" class="btn">Open Analyzer</a> — in the <b>upper-left corner</b>, paste or upload your JSON to get instant analysis and suggestions.</p>
                             <p><b>Private & Secure:</b> <i>Runs entirely in your browser with no server uploads.</i></p>
+                            <p style="margin-top:8px;font-size:0.9em;color:#666">First time? <a href="user_guide.html">User Guide</a></p>
                         </div>
                         <div class="step">
                             <strong>3. Apply & Test</strong>
                             <p>Implement index or query changes, then re-run to confirm performance gains.</p>
-                            <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer" class="btn secondary">Need help? Analysis Hub</a>
+                            <p style="margin-top:12px"><a href="analysis_hub.html" class="btn secondary">Need help? Analysis Hub</a></p>
                         </div>
                     </div>
                 </div>
-
                 <!-- Desktop App Tab (new 4.0 workflow) -->
                 <div id="tab-desktop" class="tab-content active">
                     <div class="steps">
@@ -330,15 +337,16 @@
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion(this)">How do I get query data to use for the tool/analyzer?</div>
                 <div class="accordion-content">
-                    <p>Run the SQL++ query from <strong>1. Extract Data</strong> in Couchbase Query Workbench or Capella Query tab, then export queries as JSON by copying and pasting or saving to a file. For advanced, targeted SQL++ queries to filter JSON results, see <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a>.</p>
+                    <p>Run the SQL++ query from <strong>1. Extract Data</strong> in Couchbase Query Workbench or Capella Query tab, then export queries as JSON by copying and pasting or saving to a file. For advanced, targeted SQL++ queries to filter JSON results, see <a href="sql_queries.html">SQL++ Query Examples</a>.</p>
                     <p>Also see: <a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample (dummy) completed_requests JSON</a></p>
                 </div>
             </div>
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion(this)">How do I use this tool and/or debug queries?</div>
                 <div class="accordion-content">
-                    <p>For a step-by-step workflow to analyze your JSON results, interpret metrics, and debug slow queries, visit the <a href="https://cb.fuj.io/analysis_hub" target="_blank" rel="noopener noreferrer">Analysis Hub - Couchbase N1QL Query Optimization Guide & Glossary</a>.</p>
-                    <p>Also see: <a href="https://cb.fuj.io/sql_queries" target="_blank" rel="noopener noreferrer">Targeted Query Filters</a> <span style="color:#a0aec0">•</span> <a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample (dummy) completed_requests JSON</a></p>
+                    <p>Start with the <a href="user_guide.html">User Guide</a> for step-by-step instructions on parsing JSON, using filters, and navigating the analyzer tabs.</p>
+                    <p>For interpreting metrics, optimization strategies, and debugging slow queries, visit the <a href="analysis_hub.html">Analysis Hub</a>.</p>
+                    <p style="margin-top:8px;font-size:0.9em;color:#666">Also see: <a href="sql_queries.html">SQL++ Query Examples</a> <span style="color:#a0aec0">•</span> <a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample JSON</a></p>
                 </div>
             </div>
             <div class="accordion">

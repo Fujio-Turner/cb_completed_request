@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Couchbase Query Analysis Hub</title>
-    <meta name="description" content="Minimalist Couchbase Query Analysis Hub: how to process data, interpret stats, optimize (Crawl→Walk→Run), and glossary. Styled like the main Analyzer page.">
+    <meta name="description" content="Couchbase Query Analysis Hub: interpret stats, optimize (Crawl→Walk→Run), performance concepts, and glossary.">
     <!-- canonical to be finalized when deployed -->
     <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
     <link rel="stylesheet" href="assets/css/main.css">
@@ -48,16 +48,6 @@
         #concurrent-conflicts .accordion[data-locked='true'] .accordion-header::before{transform:rotate(90deg);color:#0ea5e9;border-color:#0ea5e9;background:rgba(14,165,233,0.1)}
         #concurrent-conflicts .accordion[data-locked='true'] .accordion-header::after{content:'Locked — click to close';color:#0ea5e9;font-weight:700;background:rgba(14,165,233,0.12);padding:2px 6px;border-radius:999px}
 
-        /* Elapsed Time Filter examples accordion (same hover/lock behavior) */
-        #elapsedTimeExamples .accordion-content{transition:max-height .5s ease, padding .5s ease}
-        #elapsedTimeExamples.slow-close .accordion-content{transition:max-height .7s ease, padding .7s ease}
-        #elapsedTimeExamples .accordion-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
-        #elapsedTimeExamples .accordion-header::after{content:'hover to open, click to lock';font-size:12px;color:#94a3b8;transition:color .2s ease, background .2s ease}
-        #elapsedTimeExamples .accordion-header::before{content:'▶';display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;border:1px solid #94a3b8;color:#94a3b8;margin-right:8px;font-size:12px;transform:rotate(0deg);transition:transform .3s ease, color .3s ease, border-color .3s ease, background .3s ease;background:#fff}
-        #elapsedTimeExamples[data-locked='true'] .accordion-header{background:#f0f8ff}
-        #elapsedTimeExamples[data-locked='true'] .accordion-header::before{transform:rotate(90deg);color:#0ea5e9;border-color:#0ea5e9;background:rgba(14,165,233,0.1)}
-        #elapsedTimeExamples[data-locked='true'] .accordion-header::after{content:'Locked — click to close';color:#0ea5e9;font-weight:700;background:rgba(14,165,233,0.12);padding:2px 6px;border-radius:999px}
-         
          /* CRAWL/WALK/RUN images */
         .cwr-img{width:100%;height:auto;border:1px solid #e6eef5;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin:10px 0 12px}
 
@@ -66,37 +56,6 @@
         .gallery img:not(.tab-img-large){width:300px;height:200px;object-fit:cover;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.08);transition:transform .3s ease, box-shadow .3s ease;will-change:transform}
         .gallery img:not(.tab-img-large):hover{transform:scale(1.7);box-shadow:0 14px 30px rgba(0,0,0,0.25);position:relative;z-index:2}
 
-        /* Parse JSON filters: spacing and hover-swap thumbnails */
-        #parseJSON ul li{ margin-bottom:6px }
-        #parseJSON .gallery{ gap:14px; justify-content:flex-start }
-        #parseJSON .gallery img:not(.tab-img):not(.tab-img-large){ width:240px; height:auto }
-        #parseJSON .gallery img:not(.tab-img):not(.tab-img-large):not(.hover):hover{ transform:none; box-shadow:0 4px 14px rgba(0,0,0,0.08); position:static; z-index:auto }
-        #parseJSON .hover-swap{ position:relative; display:inline-block; border:1px solid #e6eef5; border-radius:8px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05) }
-        #parseJSON .hover-swap img{ display:block }
-        #parseJSON .hover-swap img.hover{ position:absolute; top:0; left:0; width:100%; height:auto; opacity:0; transition: opacity .3s ease }
-        #parseJSON .hover-swap:hover img.hover{ opacity:1 }
-        #parseJSON .hover-swap img:hover{ transform:none !important; box-shadow:none !important }
-
-        /* Tabs grid */
-        .tab-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:8px}
-        .tab-card{background:#fff;border:1px solid #eaeef2;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.06);padding:10px;overflow:hidden;transition:box-shadow .2s ease}
-        .tab-card.flat{padding:0;border:none;box-shadow:none;background:transparent;border-radius:0}
-        .tab-img{width:100%;height:160px;border-radius:8px;border:1px solid #e6eef5;object-fit:cover;display:block;transition:transform .3s ease, box-shadow .3s ease}
-        .tab-card:hover .tab-img{transform:scale(1.05);box-shadow:0 10px 24px rgba(0,0,0,0.10)}
-        .tab-img.placeholder{display:flex;align-items:center;justify-content:center;background:#f8fafc;color:#94a3b8;font-weight:700}
-         .tab-card .caption{text-align:center;margin-top:8px;color:#2d3748}
-
-        /* Bigger hover enlargement for tab images */
-        .tab-card{position:relative}
-        .tab-card:hover{overflow:visible;z-index:2}
-        .tab-img-wrap{position:relative}
-        .tab-img-large{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.01);opacity:0;pointer-events:none;border:1px solid #e6eef5;border-radius:10px;box-shadow:0 14px 30px rgba(0,0,0,0.25);background:#fff;max-width:720px;max-height:70vh;width:auto;height:auto;transition:opacity .6s ease-in-out, transform .6s ease-in-out;z-index:3}
-        .tab-card:hover .tab-img-large{opacity:1;transform:translate(-50%,-50%) scale(1)}
-        .tab-card:hover .tab-img{visibility:hidden}
-
-               /* Larger overlay for parseJSON gallery items */
-        #parseJSON .tab-img-large{ max-width:95vw; max-height:85vh; border:none; border-radius:0; background:transparent; box-shadow:none }
- 
          /* Contents navigation (legacy, not used) */
         .contents{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:10px 0 24px}
         .contents a{display:inline-block;background:#fff;border:1px solid #eaeef2;color:#007acc;text-decoration:none;padding:8px 12px;border-radius:999px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
@@ -104,10 +63,10 @@
         @media (min-width:1024px){ .contents.sticky{position:sticky; top:10px; z-index:10} }
 
         /* Sidebar layout */
-        .layout{display:flex;gap:20px}
-        .sidebar{background:#fff;border:1px solid #eaeef2;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.06);padding:16px;width:260px;position:sticky;top:10px;align-self:flex-start;max-height:calc(100vh - 120px);overflow:auto}
-        .sidebar .sub{margin-left:14px;font-size:13px;color:#4a5568}
-        .sidebar a{display:block;padding:6px 8px;border-radius:6px}
+        .layout{display:flex;gap:16px}
+        .sidebar{background:#fff;border:1px solid #eaeef2;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.06);padding:12px;width:180px;position:sticky;top:10px;align-self:flex-start;max-height:calc(100vh - 120px);overflow:auto;font-size:13px}
+        .sidebar .sub{margin-left:10px;font-size:12px;color:#4a5568}
+        .sidebar a{display:block;padding:4px 6px;border-radius:6px}
         .sidebar a.active{background:#f0f8ff;color:#005f99;font-weight:700}
         .content{flex:1}
         @media (max-width:980px){
@@ -137,21 +96,19 @@
 <body id="top">
     <header>
         <h1>Couchbase Query Analysis Hub</h1>
-        <p>Concise guidance to process data, interpret stats, and optimize queries.</p>
+        <p>Interpret stats, optimize queries, and understand performance concepts.</p>
     </header>
 
-    <div class="intro"><strong>Why is my query slow?</strong> Start with <a href="#read-stats">Reading the Performance Data</a></div>
+    <div class="intro"><strong>Why is my query slow?</strong> Start with <a href="#read-stats">Reading the Performance Data</a>. For tool usage instructions, see the <a href="user_guide.html">User Guide</a>.</div>
     
     <div class="layout">
         <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true" aria-controls="sidebar">
             <svg class="arrow" width="24" height="24" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
         </button>
         <nav id="sidebar" class="sidebar" aria-label="Topics">
-            <h2 style="margin:0 0 8px;font-size:16px;color:#2d3748">Topics</h2>
+            <a href="index.html" style="display:block;margin-bottom:12px;font-size:12px;color:#007acc">← Back to Home</a>
+            <h2 style="margin:0 0 6px;font-size:14px;color:#2d3748">Topics</h2>
             <ul style="list-style:none;margin:0;padding:0">
-                <li><a href="#process-charts-stats">Process → Charts & Stats</a></li>
-                <li class="sub"><a href="#parseJSON">• Parse JSON & Filters</a></li>
-                <li class="sub"><a href="#tabs">• Analyzer Tabs</a></li>
                 <li><a href="#read-the-stats">Read the Stats</a></li>
                 <li class="sub"><a href="#read-stats">• Performance Data</a></li>
                 <li class="sub"><a href="#system-node-impact">• System & Node Impact</a></li>
@@ -161,182 +118,13 @@
                 <li><a href="#performance">Performance</a></li>
                 <li><a href="#glossary">Glossary</a></li>
             </ul>
+            <hr style="margin:16px 0;border:none;border-top:1px solid #eaeef2">
+            <p style="font-size:13px;color:#4a5568;margin:0">
+                <a href="user_guide.html">→ User Guide</a><br>
+                <span style="font-size:11px;color:#94a3b8">How to use the analyzer</span>
+            </p>
         </nav>
         <main class="content">
-        <section id="process-charts-stats">
-            <h2>How to Process and Generate Charts/Stats</h2>
-            <div class="steps stacked">
-                <div class="step">
-                    <strong>1) Extract Data</strong>
-                    <p>Run this in Query Workbench, Capella Query tab, or <code>cbq</code>, then export as JSON.</p>
-                    <div class="sql-query-box">
-<pre>SELECT *, meta().plan FROM system:completed_requests ORDER BY requestId LIMIT 2000;</pre>
-                        <button class="sql-copy-btn">Copy</button>
-                    </div>
-                    <p style="color:#4a5568;font-size:0.95em">Tip: For larger datasets, prefer targeted filters (see below) before exporting.</p>
-                    <p><a href="sample/test_system_completed_requests.json" target="_blank" rel="noopener noreferrer">Sample completed_requests JSON</a></p>
-                </div>
-
-                <div class="step">
-                    <strong>2) Paste or Upload JSON</strong>
-                    <p><a href="en/index.html">Open Analyzer</a> — in the upper-left input, paste or upload your JSON and it will auto-parse, or click <b>Parse JSON</b>.</p>
-                    
-                    <img style="width: 500px;"  src="assets/img/parse_upload_json_completed_requests.png" alt="Parse JSON button in the analyzer" loading="lazy">
-
-                    <p><b>Private & secure:</b> Runs and processes your data entirely in your browser and its memory. No server uploads.</p>
-                  
-                </div>
-
-                <div class="step" id="parseJSON">
-                    <strong>3) Parse JSON & Filters Overview</strong>
-                    <p>After parsing, use filters to focus analysis:</p>
-                    <ul>
-                    <li>
-                       <b>Date/Time Range</b> — From/To with quick presets (Original | 1 Week | 1 Day | 1 Hour)
-                       <div class="gallery" style="margin:8px 0 0">
-                                                   <div class="tab-card flat">
-                                                        <div class="tab-img-wrap">
-                                                            <img class="tab-img" src="assets/img/datepicker.png" alt="Datetime picker controls" loading="lazy">
-                                                            <img class="tab-img-large" src="assets/img/datepicker.png" alt="Datetime picker controls (full view)" loading="lazy">
-                                                        </div>
-                                                    </div>
-                            <span class="hover-swap">
-                                                       <img src="assets/img/preset_dates.png" alt="Preset date range buttons" loading="lazy">
-                                <img class="hover" src="assets/img/preset_dates_drop_down.png" alt="Preset date range dropdown example" loading="lazy">
-                                                   </span>
-                        </div>
-                    </li>
-
-                        <li>
-                            <b>SQL++ Statement Contains</b> — text filter for keywords/patterns
-                            <p style="margin:6px 0 0; color:#4a5568; font-size:0.9em"><span class="badge-pro">PRO</span> – a great way to focus only on one query pattern and reduce the noise from other queries</p>
-                            <div class="gallery" style="margin:8px 0 0">
-                                <span class="hover-swap">
-                                    <img src="assets/img/sql_string_filter_and_exclude_system.png" alt="SQL++ contains filter and exclude system toggle" loading="lazy">
-                                    <img class="hover" src="assets/img/sql_string_filter_and_exclude_system_example.png" alt="Example with SQL++ text in filter input" loading="lazy">
-                                </span>
-                            </div>
-                        </li>
-
-                        <li>
-                            <b>Elapsed Time Filter</b> — comparisons and ranges (e.g., <code>&gt;=500ms</code>, <code>0.5s-2s</code>)
-                            <div class="gallery" style="margin:8px 0 0">
-                                <span class="hover-swap">
-                                    <img src="assets/img/elapsedTime_filter.png" alt="Elapsed Time filter input" loading="lazy">
-                                    <img class="hover" src="assets/img/elapsedTime_filter_example.png" alt="Examples entered into Elapsed Time Filter input" loading="lazy">
-                                </span>
-                            </div>
-                            <div class="accordion" id="elapsedTimeExamples" style="margin-top:12px">
-                                <div class="accordion-header" onclick="toggleAccordion(this)">Elapsed Filter Examples</div>
-                                <div class="accordion-content">
-                                    <p>Filter by the <code>elapsedTime</code> of each query using comparisons and ranges. Supported: <code>&lt;</code>, <code>&lt;=</code>, <code>=</code>, <code>&gt;</code>, <code>&gt;=</code>, ranges like <code>100-500ms</code> or <code>0.5s-2s</code>, unit-inferred ranges like <code>3-15s</code>, shorthand <code>500ms+</code> (means <code>&gt;= 500ms</code>), and bare numbers (e.g., <code>150</code> means <code>&gt;= 150ms</code>).</p>
-                                    <ul>
-                                        <li><b>Comparators:</b> <code>&gt;500ms</code>, <code>&gt;=1s</code>, <code>&lt;2s</code>, <code>=150ms</code></li>
-                                        <li><b>Ranges (inclusive):</b> <code>100-500ms</code>, <code>0.5s-2s</code>, <code>3-15s</code> (unit applied to both sides)</li>
-                                        <li><b>Shorthand:</b> <code>500ms+</code> (same as <code>&gt;=500ms</code>)</li>
-                                        <li><b>Bare number:</b> <code>150</code> is interpreted as <code>&gt;=150ms</code></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </li>
-
-                        <li>
-                            <b>Timezone Picker</b> — Adjust the charts/graphs x-axis time to display in your chosen timezone. Select from the dropdown to convert all timestamps accordingly.
-                            <div class="gallery" style="margin:8px 0 0">
-                                <span class="hover-swap">
-                                    <img src="assets/img/timezones.png" alt="Timezone picker dropdown" style="width:240px;height:auto" loading="lazy">
-                                </span>
-                            </div>
-                        </li>
-
-                        <li><b>Exclude System Queries</b> — hides system:*, INFER/ADVISE, CREATE/ALTER INDEX, etc.</li>
-                    </ul>
-                </div>
-
-                <div class="step" id="tabs">
-                    <strong>4) Analyzer Tabs</strong>
-                    <div class="tab-grid">
-                        <div class="tab-card">
-                            <div class="tab-img-wrap">
-                                <img class="tab-img" src="assets/img/dashboard.png" alt="Dashboard screenshot" loading="lazy">
-                                <img class="tab-img-large" src="assets/img/dashboard.png" alt="Dashboard screenshot (full view)" loading="lazy">
-                            </div>
-                            <div class="caption"><strong>Dashboard</strong><div>High-level charts and distributions</div></div>
-                        </div>
-                        <div class="tab-card">
-                            <div class="tab-img-wrap">
-                                <img class="tab-img" src="assets/img/insights_demo.png" alt="Insights screenshot" loading="lazy">
-                                <img class="tab-img-large" src="assets/img/insights_demo.png" alt="Insights screenshot (full view)" loading="lazy">
-                            </div>
-                            <div class="caption"><strong>Insights</strong><div>Automated checks and quick wins</div></div>
-                        </div>
-                        <div class="tab-card">
-                            <div class="tab-img-wrap">
-                                <img class="tab-img" src="assets/img/timeline.png" alt="Timeline screenshot" loading="lazy">
-                                <img class="tab-img-large" src="assets/img/timeline.png" alt="Timeline screenshot (full view)" loading="lazy">
-                            </div>
-                            <div class="caption"><strong>Timeline</strong><div>Time-series performance with zoom</div></div>
-                        </div>
-                        <div class="tab-card">
-                            <div class="tab-img-wrap">
-                                <img class="tab-img" src="assets/img/query_groups_demo.png" alt="Query Groups screenshot" loading="lazy">
-                                <img class="tab-img-large" src="assets/img/query_groups_demo.png" alt="Query Groups screenshot (full view)" loading="lazy">
-                            </div>
-                            <div class="caption"><strong>Query Groups</strong><div>Normalized patterns and aggregates</div></div>
-                        </div>
-                        <div class="tab-card">
-                            <div class="tab-img-wrap">
-                                <img class="tab-img" src="assets/img/every_query_demo.png" alt="Every Query screenshot" loading="lazy">
-                                <img class="tab-img-large" src="assets/img/every_query_demo.png" alt="Every Query screenshot (full view)" loading="lazy">
-                            </div>
-                            <div class="caption"><strong>Every Query</strong><div>Sortable table of executions</div></div>
-                        </div>
-                        <div class="tab-card">
-                            <div class="tab-img-wrap">
-                                <img class="tab-img" src="assets/img/indexes_queries_flow.png" alt="Index/Query Flow screenshot" loading="lazy">
-                                <img class="tab-img-large" src="assets/img/indexes_queries_flow.png" alt="Index/Query Flow (full view)" loading="lazy">
-                            </div>
-                            <div class="caption"><strong>Index/Query Flow</strong><div>Relationship diagram</div></div>
-                        </div>
-                        <div class="tab-card">
-                            <div class="tab-img-wrap">
-                                <img class="tab-img" src="assets/img/indexes_demo.png" alt="Indexes screenshot" loading="lazy">
-                                <img class="tab-img-large" src="assets/img/indexes_demo.png" alt="Indexes screenshot (full view)" loading="lazy">
-                            </div>
-                            <div class="caption"><strong>Indexes</strong><div>Inventory and performance of indexes</div></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="step" id="indexes">
-                    <strong>5) Add Indexes JSON </strong><i>(Optional but Recommended)</i></strong>
-                    <p>Run this separate query for <code>system:indexes</code> and paste/upload to the upper-right input to enrich Indexes and Flow views.</p>
-                    <div class="sql-query-box">
-<pre>SELECT 
-    s.name,
-    s.id,
-    s.metadata,
-    s.state,
-    s.num_replica,
-    s.`using` AS indexType,
-    CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
-FROM system:indexes AS s
-LET bid = CONCAT("", s.bucket_id, ""),
-    sid = CONCAT("", s.scope_id, ""),
-    kid = CONCAT("", s.keyspace_id, ""),
-    k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
-    ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
-    w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
-    p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;</pre>
-                        <button class="sql-copy-btn">Copy</button>
-                    </div>
-                    <p><a href="sample/test_system_indexes.json" target="_blank" rel="noopener noreferrer">Sample system:indexes JSON</a></p>
-                </div>
-
-                </div>
-                <div class="back-to-top"><a href="#top">Back to top</a></div>
-                   </section>
-                
                 <section id="read-the-stats">
             <h2>What the Stats and Tables Mean</h2>
 
@@ -906,9 +694,9 @@ CPU scheduling overhead.</pre>
             sync();
         });
 
-        // Glossary, Elapsed Time Filter, and Complex JOINs hover-to-open with slow close; click locks open
+        // Glossary and Complex JOINs hover-to-open with slow close; click locks open
         document.addEventListener('DOMContentLoaded',()=>{
-            document.querySelectorAll('#part-4 .accordion, #elapsedTimeExamples, #complex-joins .accordion, #concurrent-conflicts .accordion').forEach((acc)=>{
+            document.querySelectorAll('#part-4 .accordion, #complex-joins .accordion, #concurrent-conflicts .accordion').forEach((acc)=>{
                 const header = acc.querySelector('.accordion-header');
                 const content = acc.querySelector('.accordion-content');
                 if(!header||!content) return;

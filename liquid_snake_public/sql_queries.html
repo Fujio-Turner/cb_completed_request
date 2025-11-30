@@ -11,17 +11,42 @@
   <link rel="stylesheet" href="assets/css/main.css">
   <style>
     /* Page-specific styles for sql_queries.html */
+    html{scroll-behavior:smooth}
     header { padding: 5px 20px; }
     h1 { font-size: 2.2em; }
-    h3 { color: #2d3748; }
-    p.intro { color: #4a5568; margin: 10px auto 18px; max-width: 760px; }
+    h3 { color: #2d3748; margin-top: 20px; }
+    p.intro { color: #4a5568; margin: 10px 0 18px; }
+
+    /* Sidebar layout */
+    .layout{display:flex;gap:16px}
+    .sidebar{background:#fff;border:1px solid #eaeef2;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.06);padding:12px;width:180px;position:sticky;top:10px;align-self:flex-start;max-height:calc(100vh - 120px);overflow:auto;font-size:13px}
+    .sidebar .sub{margin-left:10px;font-size:12px;color:#4a5568}
+    .sidebar a{display:block;padding:4px 6px;border-radius:6px}
+    .sidebar a.active{background:#f0f8ff;color:#005f99;font-weight:700}
+    .content{flex:1}
+    @media (max-width:980px){
+      .layout{flex-direction:column}
+      .sidebar{position:static;width:auto;max-height:none}
+    }
+
+    /* Collapsible sidebar */
+    .sidebar{transition: width .3s ease, padding .3s ease, border-width .3s ease}
+    body.sidebar-collapsed .sidebar{width:0;padding:0;border-width:0;overflow:hidden}
+    .sidebar-toggle{position:fixed;left:10px;top:90px;z-index:1001;cursor:pointer;padding:8px;background:#fff;border:1px solid #eaeef2;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.06)}
+    .sidebar-toggle .arrow{fill:none;stroke:#2980b9;stroke-width:2;transition: transform .3s ease}
+    body.sidebar-collapsed .sidebar-toggle .arrow{transform:rotate(180deg)}
 
     /* Version badge override for subtle style */
     .version-info { background: rgba(0,0,0,0.1); color: #333; border: none; opacity: 0.7; transition: opacity 0.3s ease; }
     .version-info:hover { opacity: 1; background: rgba(0,0,0,0.2); }
+
+    /* Anchor link indicator */
+    .anchor-link{text-decoration:none;color:#94a3b8;margin-left:8px;opacity:0;transition:opacity .2s ease;font-size:0.8em;font-weight:400}
+    h3:hover .anchor-link{opacity:1}
+    .anchor-link:hover{color:#007acc}
   </style>
 </head>
-<body>
+<body id="top">
   <!-- Floating GitHub link (matches original positioning/appearance) -->
   <div class="floating-github">
     <a href="https://github.com/Fujio-Turner/cb_completed_request" target="_blank" rel="noopener noreferrer">
@@ -35,16 +60,40 @@
     <p style="margin:6px 0 0">Targeted filters for system:completed_requests to speed up data extraction and analysis</p>
   </header>
 
-  <main>
-    <p class="intro">
-      Use these SQL++ examples to extract targeted results from <code>system:completed_requests</code> — by node, by date range, and by excluding system-generated statements —
-      so you can focus on the most relevant queries during analysis.
-    </p>
+  <div class="layout">
+    <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true" aria-controls="sidebar">
+      <svg class="arrow" width="24" height="24" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <nav id="sidebar" class="sidebar" aria-label="Topics">
+      <a href="index.html" style="display:block;margin-bottom:12px;font-size:12px;color:#007acc">← Back to Home</a>
+      <h2 style="margin:0 0 6px;font-size:14px;color:#2d3748">Queries</h2>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li><a href="#common-filters">Common Filters</a></li>
+        <li class="sub"><a href="#remove-system">• Remove System</a></li>
+        <li class="sub"><a href="#search-sql">• Search SQL</a></li>
+        <li class="sub"><a href="#date-range">• Date Range</a></li>
+        <li><a href="#by-node">By Node</a></li>
+        <li class="sub"><a href="#current-node">• Current Node</a></li>
+        <li class="sub"><a href="#specific-node">• Specific Node</a></li>
+      </ul>
+      <hr style="margin:16px 0;border:none;border-top:1px solid #eaeef2">
+      <p style="font-size:12px;color:#4a5568;margin:0">
+        <a href="user_guide.html">→ User Guide</a><br>
+        <a href="analysis_hub.html">→ Analysis Hub</a>
+      </p>
+    </nav>
 
-    <h2>Common Filters</h2>
+    <main class="content">
+      <p class="intro">
+        Use these SQL++ examples to extract targeted results from <code>system:completed_requests</code> — by node, by date range, and by excluding system-generated statements —
+        so you can focus on the most relevant queries during analysis.
+      </p>
 
-    <h3>Remove system-level queries</h3>
-    <div class="sql-query-box">
+      <section id="common-filters">
+        <h2>Common Filters</h2>
+
+        <h3 id="remove-system">Remove system-level queries <a href="#remove-system" class="anchor-link">#</a></h3>
+        <div class="sql-query-box">
 <pre>SELECT
     *, 
     meta().plan
@@ -60,11 +109,11 @@ WHERE
     UPPER(IFMISSING(preparedText, statement)) NOT LIKE '% SYSTEM:%' 
 LIMIT 
     2000;</pre>
-      <button class="sql-copy-btn">Copy</button>
-    </div>
+          <button class="sql-copy-btn">Copy</button>
+        </div>
 
-    <h3>Search within SQL strings</h3>
-    <div class="sql-query-box">
+        <h3 id="search-sql">Search within SQL strings <a href="#search-sql" class="anchor-link">#</a></h3>
+        <div class="sql-query-box">
 <pre>SELECT
     *, 
     meta().plan
@@ -78,11 +127,11 @@ ORDER BY
     requestId
 LIMIT
     2000;</pre>
-      <button class="sql-copy-btn">Copy</button>
-    </div>
+          <button class="sql-copy-btn">Copy</button>
+        </div>
 
-    <h3>Between two dates</h3>
-    <div class="sql-query-box">
+        <h3 id="date-range">Between two dates <a href="#date-range" class="anchor-link">#</a></h3>
+        <div class="sql-query-box">
 <pre>SELECT
     *, 
     meta().plan
@@ -90,13 +139,17 @@ FROM
     system:completed_requests 
 WHERE  
     requestTime BETWEEN "2025-06-01" AND "2025-08-02";</pre>
-      <button class="sql-copy-btn">Copy</button>
-    </div>
+          <button class="sql-copy-btn">Copy</button>
+        </div>
 
-    <h2>By Node</h2>
+        <div class="back-to-top"><a href="#top">Back to top</a></div>
+      </section>
 
-    <h3>Current query node</h3>
-    <div class="sql-query-box">
+      <section id="by-node">
+        <h2>By Node</h2>
+
+        <h3 id="current-node">Current query node <a href="#current-node" class="anchor-link">#</a></h3>
+        <div class="sql-query-box">
 <pre>SELECT 
     *,
     meta().plan
@@ -106,11 +159,11 @@ WHERE
     node = NODE_NAME()
 LIMIT 
     2000;</pre>
-      <button class="sql-copy-btn">Copy</button>
-    </div>
+          <button class="sql-copy-btn">Copy</button>
+        </div>
 
-    <h3>Specific query node</h3>
-    <div class="sql-query-box">
+        <h3 id="specific-node">Specific query node <a href="#specific-node" class="anchor-link">#</a></h3>
+        <div class="sql-query-box">
 <pre>SELECT 
     *, 
     meta().plan
@@ -120,22 +173,70 @@ WHERE
     node LIKE "10.132.133.165%" 
 LIMIT
     2000;</pre>
-      <button class="sql-copy-btn">Copy</button>
-    </div>
+          <button class="sql-copy-btn">Copy</button>
+        </div>
 
-    <p class="intro" style="margin-top:24px">
-      Source: <code>sql_queries.md</code>. For broader guidance, see the 
-      <a href="analysis_hub.html" target="_blank" rel="noopener noreferrer">Analysis Hub</a> 
-      or return to the <a href="https://fuj.io/en/index.html" target="_blank" rel="noopener noreferrer">Analyzer</a>.
-    </p>
-  </main>
+        <div class="back-to-top"><a href="#top">Back to top</a></div>
+      </section>
+    </main>
+  </div>
 
-  <div class="version-info">Couchbase Slow Query Analysis Tool v3.16.3</div>
+  <div class="version-info">Couchbase Slow Query Analysis Tool v3.29.1</div>
 
   <footer>
     <p>&copy; 2025 <a href="https://fuj.io" target="_blank" rel="noopener noreferrer">fuj.io</a>.</p>
   </footer>
 
   <script src="assets/js/main.js"></script>
+  <script>
+    // Scrollspy: highlight current section in sidebar
+    document.addEventListener('DOMContentLoaded',()=>{
+      const sidebar = document.getElementById('sidebar');
+      if(!sidebar) return;
+      const links = Array.from(sidebar.querySelectorAll('a[href^="#"]'));
+      const sections = links.map(a=>{
+        try{ return document.querySelector(a.getAttribute('href')); }catch{ return null; }
+      }).filter(Boolean);
+      const setActive = (id)=>{
+        links.forEach(a=>{
+          const active = a.getAttribute('href') === '#' + id;
+          a.classList.toggle('active', active);
+          a.setAttribute('aria-current', active ? 'true' : 'false');
+        });
+      };
+      const update = ()=>{
+        const y = window.scrollY;
+        const mid = y + window.innerHeight * 0.35;
+        let activeId = sections[0] ? sections[0].id : '';
+        for(const sec of sections){
+          const top = sec.getBoundingClientRect().top + y;
+          if(top <= mid) activeId = sec.id;
+        }
+        if(activeId) setActive(activeId);
+      };
+      update();
+      let ticking=false;
+      window.addEventListener('scroll',()=>{ if(!ticking){ requestAnimationFrame(()=>{ update(); ticking=false; }); ticking=true; } }, { passive:true });
+      window.addEventListener('resize', update);
+      links.forEach(a=> a.addEventListener('click', ()=> setTimeout(update, 50)));
+    });
+
+    // Sidebar collapse toggle
+    document.addEventListener('DOMContentLoaded',()=>{
+      const toggle = document.getElementById('sidebarToggle');
+      const sidebar = document.getElementById('sidebar');
+      if(!toggle || !sidebar) return;
+      const sync = () => {
+        const collapsed = document.body.classList.contains('sidebar-collapsed');
+        toggle.setAttribute('aria-expanded', (!collapsed).toString());
+        sidebar.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+      };
+      toggle.addEventListener('click', ()=>{
+        document.body.classList.toggle('sidebar-collapsed');
+        sync();
+      });
+      sync();
+    });
+  </script>
 </body>
 </html>
