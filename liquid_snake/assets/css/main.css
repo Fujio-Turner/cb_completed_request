@@ -837,3 +837,93 @@ body { display: block !important; height: auto !important; overflow: visible !im
     display: none !important; 
   } 
 }
+
+/* Severity and Highlight Badges */
+.severity-critical { background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+.severity-high { background: #fd7e14; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+.severity-medium { background: #ffc107; color: #000; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+.highlight-good { background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+.code-highlight { background: #007bff; color: white; padding: 2px 5px; border-radius: 3px; font-family: monospace; font-size: 0.85em; }
+.metric-highlight { background: #e7f3ff; color: #0056b3; padding: 2px 5px; border-radius: 3px; font-weight: bold; border: 1px solid #b3d9ff; }
+
+/* vis.js Timeline Customization */
+#ai-insights-timeline .vis-item {
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+}
+#ai-insights-timeline .vis-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+#ai-insights-timeline .vis-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #495057;
+}
+#ai-insights-timeline .vis-time-axis .vis-text {
+    font-size: 10px;
+    color: #6c757d;
+}
+#ai-insights-timeline .vis-tooltip {
+    background: white !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    padding: 0 !important;
+    max-width: 500px !important;
+    max-height: 450px !important;
+    overflow-y: auto !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+}
+#ai-insights-timeline .vis-tooltip div {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+}
+/* Timeline item selection highlight */
+#ai-insights-timeline .vis-item.vis-selected {
+    box-shadow: 0 0 0 3px #ffc107, 0 4px 12px rgba(255, 193, 7, 0.4) !important;
+    transform: scale(1.02);
+    z-index: 100 !important;
+}
+/* Table row highlight */
+.insight-table-row:hover {
+    background: #fff3cd !important;
+}
+.insight-table-row.highlight {
+    background: #fff3cd !important;
+    box-shadow: inset 0 0 0 2px #ffc107;
+}
+
+/* Stake Focus Item Styling */
+#ai-insights-timeline .vis-item.stake-focus-item {
+    background-color: #0d6efd !important;
+    border-color: #0a58ca !important;
+    color: white !important;
+    font-weight: bold;
+    border-width: 3px !important;
+    box-shadow: 0 0 10px rgba(13, 110, 253, 0.5);
+}
+#ai-insights-timeline .vis-item.stake-focus-item:hover {
+    box-shadow: 0 0 15px rgba(13, 110, 253, 0.7);
+    transform: scale(1.1);
+}
+
+/* Stake Focus Custom Time Line (vertical line) - locked, not draggable */
+#ai-insights-timeline .vis-custom-time.stake-focus-line {
+    background-color: #0d6efd !important;
+    width: 3px !important;
+    z-index: 50;
+    pointer-events: none !important;
+    cursor: default !important;
+}
+#ai-insights-timeline .vis-custom-time.stake-focus-line::before {
+    content: '📍';
+    position: absolute;
+    top: -20px;
+    left: -10px;
+    font-size: 16px;
+    pointer-events: none !important;
+}

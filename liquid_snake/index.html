@@ -59,99 +59,7 @@
     <script src="assets/js/jquery-ui.min.js"></script>
 
     <!-- External CSS -->
-    <link rel="stylesheet" href="assets/css/main.css?v=231.1">
-    
-    <!-- AI Response Formatting CSS -->
-    <style>
-        .severity-critical { background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
-        .severity-high { background: #fd7e14; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
-        .severity-medium { background: #ffc107; color: #000; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
-        .highlight-good { background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
-        .code-highlight { background: #007bff; color: white; padding: 2px 5px; border-radius: 3px; font-family: monospace; font-size: 0.85em; }
-        .metric-highlight { background: #e7f3ff; color: #0056b3; padding: 2px 5px; border-radius: 3px; font-weight: bold; border: 1px solid #b3d9ff; }
-        
-        /* vis.js Timeline Customization */
-        #ai-insights-timeline .vis-item {
-            font-size: 11px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        #ai-insights-timeline .vis-item:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        }
-        #ai-insights-timeline .vis-label {
-            font-size: 11px;
-            font-weight: 600;
-            color: #495057;
-        }
-        #ai-insights-timeline .vis-time-axis .vis-text {
-            font-size: 10px;
-            color: #6c757d;
-        }
-        #ai-insights-timeline .vis-tooltip {
-            background: white !important;
-            border: 1px solid #dee2e6 !important;
-            border-radius: 6px !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-            padding: 0 !important;
-            max-width: 500px !important;
-            max-height: 450px !important;
-            overflow-y: auto !important;
-            white-space: normal !important;
-            word-wrap: break-word !important;
-            overflow-wrap: break-word !important;
-        }
-        #ai-insights-timeline .vis-tooltip div {
-            white-space: normal !important;
-            word-wrap: break-word !important;
-            overflow-wrap: break-word !important;
-        }
-        /* Timeline item selection highlight */
-        #ai-insights-timeline .vis-item.vis-selected {
-            box-shadow: 0 0 0 3px #ffc107, 0 4px 12px rgba(255, 193, 7, 0.4) !important;
-            transform: scale(1.02);
-            z-index: 100 !important;
-        }
-        /* Table row highlight */
-        .insight-table-row:hover {
-            background: #fff3cd !important;
-        }
-        .insight-table-row.highlight {
-            background: #fff3cd !important;
-            box-shadow: inset 0 0 0 2px #ffc107;
-        }
-        
-        /* Stake Focus Item Styling */
-        #ai-insights-timeline .vis-item.stake-focus-item {
-            background-color: #0d6efd !important;
-            border-color: #0a58ca !important;
-            color: white !important;
-            font-weight: bold;
-            border-width: 3px !important;
-            box-shadow: 0 0 10px rgba(13, 110, 253, 0.5);
-        }
-        #ai-insights-timeline .vis-item.stake-focus-item:hover {
-            box-shadow: 0 0 15px rgba(13, 110, 253, 0.7);
-            transform: scale(1.1);
-        }
-        
-        /* Stake Focus Custom Time Line (vertical line) - locked, not draggable */
-        #ai-insights-timeline .vis-custom-time.stake-focus-line {
-            background-color: #0d6efd !important;
-            width: 3px !important;
-            z-index: 50;
-            pointer-events: none !important;
-            cursor: default !important;
-        }
-        #ai-insights-timeline .vis-custom-time.stake-focus-line::before {
-            content: '📍';
-            position: absolute;
-            top: -20px;
-            left: -10px;
-            font-size: 16px;
-            pointer-events: none !important;
-        }
-    </style>
+    <link rel="stylesheet" href="assets/css/main.css?v=231.2">
 
     <!-- External JavaScript - ES6 Modules -->
     <script type="module" src="assets/js/main.js"></script>
@@ -2087,7 +1995,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
             <!-- Report Maker Section -->
             <div class="insight-category" id="report-maker-section">
-                <h3 class="category-title" onclick="toggleCategory('report-maker-section')">📊 Report Maker</h3>
+                <h3 class="category-title" onclick="toggleCategory('report-maker-section')">Report Maker</h3>
                 <div class="insight-category-content" id="report-maker-section-content">
                     <div style="padding: 15px;">
                         <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
@@ -2344,10 +2252,10 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         <h3 style="margin: 0;">cURL Preview</h3>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn-standard" onclick="generateCurlPreview()" style="font-size: 12px; padding: 6px 12px;">
-                                🔄 Generate cURL
+                                Generate cURL
                             </button>
                             <button class="btn-standard" onclick="copyCurlPreview()" style="font-size: 12px; padding: 6px 12px;">
-                                📋 Copy
+                                Copy
                             </button>
                         </div>
                     </div>
@@ -2360,10 +2268,10 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <!-- Actions -->
                 <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
                     <button class="btn-standard" onclick="testCustomAIConfig()" style="background: #17a2b8; color: white;">
-                        🧪 Test Configuration
+                        Test Configuration
                     </button>
                     <button class="btn-standard" onclick="saveCustomAI()" style="background: #28a745; color: white;">
-                        💾 Save Custom API
+                        Save Custom API
                     </button>
                     <button class="btn-standard" onclick="closeCustomAIModal()">
                         Cancel
@@ -2387,15 +2295,15 @@ LET bid = CONCAT("", s.bucket_id, ""),
         <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; padding: 20px;">
             <!-- Header -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h2 style="color: white; margin: 0; font-size: 24px;">📋 AI Analysis Preview - JSON Payload</h2>
+                <h2 style="color: white; margin: 0; font-size: 24px;">AI Analysis Preview - JSON Payload</h2>
                 <button onclick="closeAIPreview()" style="background: #dc3545; color: white; border: none; padding: 10px 20px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 4px;">
-                    ✕ Close
+                    Close
                 </button>
             </div>
             
             <!-- Info Bar -->
             <div style="background: #fff3cd; padding: 12px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #ffc107;">
-                <strong style="color: #856404;">ℹ️ This is the exact JSON that will be sent to your AI provider.</strong>
+                <strong style="color: #856404;">This is the exact JSON that will be sent to your AI provider.</strong>
                 <span style="color: #856404; margin-left: 8px;">Review the data below before sending for analysis.</span>
             </div>
             
@@ -2407,7 +2315,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
             <!-- Footer Actions -->
             <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
                 <button onclick="copyAIPreviewJSON()" class="btn-standard" style="background: #28a745; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
-                    📋 Copy to Clipboard
+                    Copy to Clipboard
                 </button>
                 <div style="color: #aaa; font-size: 13px;">
                     <span id="ai-preview-size"></span>
@@ -2422,7 +2330,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
             <!-- Header -->
             <div style="background: #f5f5f5; padding: 15px 20px; border-bottom: 1px solid #ddd; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <h2 style="margin: 0; font-size: 18px; color: #333;">📋 Raw Record - Complete JSON</h2>
+                    <h2 style="margin: 0; font-size: 18px; color: #333;">Raw Record - Complete JSON</h2>
                     <span id="raw-record-overlay-info" style="color: #666; font-size: 12px; margin-top: 4px; display: inline-block;"></span>
                 </div>
                 <button onclick="closeRawRecordOverlay()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 4px;">
@@ -2437,7 +2345,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         onclick="copyRawRecordOverlayJSON()"
                         style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; font-size: 12px; z-index: 10;"
                         title="Copy entire JSON record to clipboard">
-                    📋 Copy JSON
+                    Copy JSON
                 </button>
                 <pre id="raw-record-overlay-json" style="white-space: pre-wrap; word-break: break-word; margin: 0; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6; color: #333;"></pre>
             </div>
@@ -2449,7 +2357,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
         <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; padding: 15px;">
             <!-- Header -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-                <h2 style="color: #333; margin: 0; font-size: 20px;">🤖 AI Analysis Results</h2>
+                <h2 style="color: #333; margin: 0; font-size: 20px;">AI Analysis Results</h2>
                 <button onclick="closeAIView()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 4px;">
                     ✕ Close
                 </button>
@@ -2460,7 +2368,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <!-- Left: Context/Inputs (Collapsible) -->
                 <div id="ai-view-left-panel" style="width: 0; min-width: 0; overflow: hidden; transition: width 0.3s ease, min-width 0.3s ease, padding 0.3s ease; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     <div style="width: 250px; padding: 15px; overflow-y: auto; height: 100%; box-sizing: border-box;">
-                        <h3 style="color: #007bff; margin: 0 0 12px 0; font-size: 16px; border-bottom: 2px solid #007bff; padding-bottom: 6px;">📊 Analysis Context</h3>
+                        <h3 style="color: #007bff; margin: 0 0 12px 0; font-size: 16px; border-bottom: 2px solid #007bff; padding-bottom: 6px;">Analysis Context</h3>
                         <div id="ai-view-context" style="color: #333; font-size: 12px; line-height: 1.6;"></div>
                     </div>
                 </div>
@@ -2472,7 +2380,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 
                 <!-- Right: AI Response -->
                 <div style="flex: 1; background: white; border: 1px solid #ddd; border-radius: 6px; overflow-y: auto; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <h3 style="color: #28a745; margin: 0 0 12px 0; font-size: 16px; border-bottom: 2px solid #28a745; padding-bottom: 6px;">🎯 AI Recommendations</h3>
+                    <h3 style="color: #28a745; margin: 0 0 12px 0; font-size: 16px; border-bottom: 2px solid #28a745; padding-bottom: 6px;">AI Recommendations</h3>
                     <div id="ai-view-response" style="color: #333; font-size: 13px; line-height: 1.5;"></div>
                 </div>
             </div>
@@ -2480,7 +2388,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
             <!-- Footer -->
             <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 20px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 <button onclick="copyAIResponseAsMarkdown()" class="btn-standard" style="background: #28a745; color: white; padding: 8px 16px; font-size: 13px; font-weight: bold;">
-                    📋 Copy Analysis as Markdown
+                   Copy Analysis as Markdown
                 </button>
                 <div style="color: #666; font-size: 12px;">
                     <span id="ai-view-stats"></span>
