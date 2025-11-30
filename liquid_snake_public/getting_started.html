@@ -8,204 +8,21 @@
     <title>Getting Started - Couchbase Query Analyzer v4.0.0</title>
     <meta name="description" content="Step-by-step guide to set up the Couchbase Query Analyzer with AI-powered insights. Connect to Couchbase and configure OpenAI or xAI Grok.">
     <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+    <link rel="stylesheet" href="assets/css/main.css">
     <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f5f7fa;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        header {
-            text-align: center;
-            padding: 20px 20px;
-            background: linear-gradient(135deg, #007acc 0%, #00b4d8 100%);
-            color: white;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-        }
-        h1 {
-            font-size: 2.5em;
-            margin: 0;
-            letter-spacing: 0.2px;
-        }
+        /* Page-specific styles for getting_started.html */
         header p {
             margin: 10px 0 0 0;
             opacity: 0.95;
         }
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: #007acc;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .back-link:hover {
-            text-decoration: underline;
-        }
-        h2 {
-            font-size: 1.8em;
-            color: #007acc;
-            margin-top: 40px;
-            position: relative;
-        }
-        h2::after {
-            content: "";
-            display: block;
-            width: 56px;
-            height: 3px;
-            background: #00b4d8;
-            border-radius: 2px;
-            margin-top: 8px;
-        }
+        
         h3 {
-            font-size: 1.3em;
-            color: #333;
             margin-top: 25px;
         }
 
-        .note-box {
-            background: #e6f4ff;
-            border-left: 4px solid #007acc;
-            padding: 15px 20px;
-            border-radius: 0 8px 8px 0;
-            margin: 20px 0;
-        }
-        .note-box strong {
-            color: #007acc;
-        }
-
-        .step-card {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            border: 1px solid #eaeef2;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-            margin: 20px 0;
-        }
-        .step-card strong {
-            display: block;
-            font-size: 1.1em;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        code {
-            background: #e9ecef;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 0.9em;
-        }
-        pre {
-            background: #1e1e1e;
-            border-radius: 8px;
-            padding: 15px;
-            overflow-x: auto;
-            font-family: monospace;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .comparison-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-        }
-        .comparison-table th {
-            background: linear-gradient(135deg, #007acc 0%, #00b4d8 100%);
-            color: white;
-            padding: 15px;
-            font-weight: 600;
-            text-align: left;
-        }
-        .comparison-table th:first-child {
-            background: #f0f8ff;
-            color: #333;
-        }
-        .comparison-table td {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            vertical-align: top;
-        }
-        .comparison-table tr:last-child td {
-            border-bottom: none;
-        }
-        .comparison-table a {
-            color: #007acc;
-            text-decoration: none;
-        }
-        .comparison-table a:hover {
-            text-decoration: underline;
-        }
-
-        .ai-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-        }
-        .ai-table th {
-            background: linear-gradient(135deg, #007acc 0%, #00b4d8 100%);
-            color: white;
-            padding: 15px;
-            font-weight: 600;
-            text-align: center;
-        }
-        .ai-table td {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            vertical-align: top;
-        }
-        .ai-table tr:last-child td {
-            border-bottom: none;
-        }
-        .ai-table a {
-            color: #007acc;
-            text-decoration: none;
-        }
-        .ai-table a:hover {
-            text-decoration: underline;
-        }
-
+        /* Icon row needs margin on this page */
         .icon-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
             margin: 10px 0;
-        }
-        .icon-row .icon-wrapper {
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .icon-row img {
-            width: auto;
-            height: 40px;
-            max-width: 50px;
-        }
-        .icon-row a {
-            color: #007acc;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .icon-row a:hover {
-            text-decoration: underline;
         }
 
         .download-options, .connect-options {
@@ -213,172 +30,6 @@
             flex-direction: column;
             gap: 12px;
             margin-top: 15px;
-        }
-
-        .sql-query-box {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 15px 0;
-            position: relative;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .sql-query-box pre {
-            background: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 10px;
-            margin: 10px 0;
-            font-family: monospace;
-            font-size: 12px;
-            line-height: 1.5;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .sql-copy-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 6px 12px;
-            font-size: 11px;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-            transition: background 0.2s ease, transform 0.2s ease;
-        }
-        .sql-copy-btn:hover {
-            background: #0056b3;
-            transform: translateY(-1px);
-        }
-
-        .success-box {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 25px 0;
-            text-align: center;
-        }
-        .success-box h3 {
-            color: #155724;
-            margin: 0 0 10px 0;
-        }
-        .success-box p {
-            color: #155724;
-            margin: 0;
-        }
-
-        ol.steps-list {
-            padding-left: 20px;
-        }
-        ol.steps-list li {
-            margin: 10px 0;
-        }
-        ol.steps-list li strong {
-            display: inline;
-        }
-
-        .tabs-container {
-            margin-top: 15px;
-        }
-        .tab-buttons {
-            display: flex;
-            gap: 0;
-        }
-        .tab-btn {
-            padding: 12px 24px;
-            background: #e2e8f0;
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 500;
-            color: #4a5568;
-            transition: background 0.2s ease, color 0.2s ease;
-        }
-        .tab-btn:first-child {
-            border-radius: 8px 0 0 0;
-        }
-        .tab-btn:last-child {
-            border-radius: 0 8px 0 0;
-        }
-        .tab-btn.active {
-            background: #007acc;
-            color: white;
-        }
-        .tab-content {
-            display: none;
-            background: white;
-            border: 1px solid #eaeef2;
-            border-radius: 0 10px 10px 10px;
-            padding: 25px;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-        }
-        .tab-content.active {
-            display: block;
-        }
-
-        .floating-github {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            z-index: 999;
-            text-align: center;
-        }
-        .floating-github img {
-            width: 40px;
-            height: 40px;
-            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2));
-        }
-        .floating-github .copyright {
-            margin-top: 6px;
-            font-size: 12px;
-            color: #777;
-        }
-        .version-info {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(255,140,0,0.15);
-            color: #b35900;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75em;
-            font-family: monospace;
-            z-index: 999;
-            border: 1px solid rgba(255,140,0,0.3);
-        }
-
-        footer {
-            text-align: center;
-            padding: 20px;
-            font-size: 0.9em;
-            color: #666;
-            border-top: 1px solid #eaeef2;
-            margin-top: 30px;
-        }
-        footer a {
-            color: #007acc;
-            text-decoration: none;
-        }
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        a:focus-visible, button:focus-visible {
-            outline: 3px solid rgba(0,122,204,0.35);
-            outline-offset: 2px;
-            border-radius: 6px;
-        }
-
-        @media (max-width: 600px) {
-            body { padding: 10px; }
-            h1 { font-size: 2em; }
-            .comparison-table, .ai-table { font-size: 0.9em; }
         }
     </style>
 </head>
@@ -425,12 +76,14 @@ docker run -p 5000:5000 fujioturner/couchbase-query-analyzer:latest</pre>
                         <a href="https://github.com/Fujio-Turner/cb_completed_request/releases" target="_blank">Download for macOS</a>
                     </div>
                     <ol class="steps-list">
-                        <li>Download the <code>macos</code> executable.</li>
+                        <li>Download the <code>cb_query_analyzer_macos</code> executable.</li>
                         <li>Open Terminal and navigate to the download location.</li>
-                        <li>Make it executable: <code>chmod +x couchbase-query-analyzer-macos</code></li>
-                        <li>Run it: <code>./couchbase-query-analyzer-macos</code></li>
+                        <li>Make it executable: <code>chmod +x cb_query_analyzer_macos</code></li>
+                        <li>Run it: <code>./cb_query_analyzer_macos</code></li>
                         <li><em>Note: If you see a security warning, go to System Settings > Privacy & Security and allow the app to run.</em></li>
                     </ol>
+                <p style="margin-top: 15px; color: #666;"><em>After running, open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a> in your browser.</em></p>
+             
                 </div>
 
                 <div id="tab-windows" class="tab-content">
@@ -439,10 +92,12 @@ docker run -p 5000:5000 fujioturner/couchbase-query-analyzer:latest</pre>
                         <a href="https://github.com/Fujio-Turner/cb_completed_request/releases" target="_blank">Download for Windows</a>
                     </div>
                     <ol class="steps-list">
-                        <li>Download the <code>windows.exe</code> file.</li>
+                        <li>Download the <code>cb_query_analyzer.exe</code> file.</li>
                         <li>Double-click to run.</li>
                         <li><em>Note: If you see a "Windows protected your PC" warning, click "More info" and then "Run anyway".</em></li>
                     </ol>
+                <p style="margin-top: 15px; color: #666;"><em>After running, open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a> in your browser.</em></p>
+             
                 </div>
             </div>
         </section>
@@ -627,32 +282,7 @@ WHERE (`docType` = "ai_analysis")</pre>
 
     <div class="version-info">Couchbase Query Analyzer v4.0.0-dev</div>
 
-    <script>
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            document.getElementById('tab-' + tabId).classList.add('active');
-        }
-
-        document.querySelectorAll('.sql-copy-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                const code = button.parentElement.querySelector('pre').textContent;
-                navigator.clipboard.writeText(code).then(() => {
-                    button.style.background = '#28a745';
-                    const prevText = button.textContent;
-                    button.textContent = 'Copied!';
-                    setTimeout(() => {
-                        button.textContent = prevText;
-                        button.style.background = '';
-                    }, 2000);
-                }).catch(err => {
-                    console.error('Failed to copy: ', err);
-                });
-            });
-        });
-    </script>
+    <script src="assets/js/main.js"></script>
 
     <footer>
         <p>&copy; 2025 <a href="https://fuj.io" target="_blank" rel="noopener noreferrer">fuj.io</a>.</p>

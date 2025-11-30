@@ -7,32 +7,20 @@
     <meta name="description" content="Minimalist Couchbase Query Analysis Hub: how to process data, interpret stats, optimize (Crawl→Walk→Run), and glossary. Styled like the main Analyzer page.">
     <!-- canonical to be finalized when deployed -->
     <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+    <link rel="stylesheet" href="assets/css/main.css">
     <style>
-        /* Base layout (parity with index.html) */
+        /* Page-specific styles for analysis_hub.html */
         html{scroll-behavior:smooth}
-        body{
-            font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
-            line-height:1.6;color:#333;max-width:1000px;margin:0 auto;padding:20px;background:#f5f7fa;
-            -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-        }
-        header{text-align:center;padding:5px 20px;background:linear-gradient(135deg,#007acc 0%,#00b4d8 100%);color:#fff;border-radius:12px;margin-bottom:20px;box-shadow:0 6px 18px rgba(0,0,0,0.08)}
-        h1{font-size:2.4em;margin:0;letter-spacing:0.2px}
-        h2{font-size:1.8em;color:#007acc;margin-top:40px;position:relative}
-        h2::after{content:"";display:block;width:56px;height:3px;background:#00b4d8;border-radius:2px;margin-top:8px}
+        
+        /* Compact header for this page */
+        header{padding:5px 20px}
+        h1{font-size:2.4em}
+        
         .intro{ text-align:center;font-size:1.05em;max-width:720px;margin:10px auto 24px;color:#4a5568 }
 
-        /* Card/grid primitives for later phases */
-        .steps,.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
-        .steps.stacked{grid-template-columns:1fr}
-        .features.stacked{grid-template-columns:1fr}
-        .step,.feature{background:#fff;padding:20px;border-radius:10px;border:1px solid #eaeef2;box-shadow:0 4px 14px rgba(0,0,0,0.06);transition:transform .25s ease, box-shadow .25s ease}
-        .step:hover,.feature:hover{transform:translateY(-4px);box-shadow:0 10px 24px rgba(0,0,0,0.10)}
+        /* Use 300px min for this page's grids */
+        .steps,.features{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
 
-        /* Accordion (used from Part 2 & 4) */
-        .accordion{background:#fff;border-radius:10px;border:1px solid #eaeef2;box-shadow:0 4px 14px rgba(0,0,0,0.06);margin:20px 0}
-        .accordion-header{padding:15px;cursor:pointer;background:#f0f8ff;font-weight:bold;border-bottom:1px solid #e6eef5}
-        .accordion-content{padding:0 15px;max-height:0;overflow:hidden;transition:max-height .3s ease, padding .3s ease}
-        .accordion-content.open{max-height:500px;padding:15px}
         /* Glossary transitions */
         #part-4 .accordion-content{transition:max-height .5s ease, padding .5s ease}
         #part-4 .accordion-content.slow-close{transition:max-height .7s ease, padding .7s ease}
@@ -72,16 +60,6 @@
          
          /* CRAWL/WALK/RUN images */
         .cwr-img{width:100%;height:auto;border:1px solid #e6eef5;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin:10px 0 12px}
-        
-        /* Badges */
-         .badge-pro{display:inline-block;padding:2px 8px;background:#f59e0b;color:#fff;border-radius:999px;font-size:12px;font-weight:700;margin-left:8px;box-shadow:0 2px 6px rgba(0,0,0,0.12)}
-         .badge-warning{display:inline-block;padding:2px 8px;background:#dc2626;color:#fff;border-radius:999px;font-size:12px;font-weight:700;margin-left:8px;box-shadow:0 2px 6px rgba(0,0,0,0.12)}
-
-          /* SQL code UI */
-        .sql-query-box{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;padding:15px;margin:15px 0;position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
-        .sql-query-box pre{background:#fff;border:1px solid #e9ecef;border-radius:6px;padding:10px;margin:10px 0;font-family:monospace;font-size:12px;line-height:1.5;overflow-x:auto}
-        .sql-copy-btn{position:absolute;top:10px;right:10px;background:#007bff;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.12);transition: background .2s ease, transform .2s ease}
-        .sql-copy-btn:hover{background:#0056b3;transform:translateY(-1px)}
 
         /* Gallery thumbnails */
         .gallery{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin:30px 0}
@@ -144,27 +122,16 @@
          .sidebar-toggle .arrow{fill:none;stroke:#2980b9;stroke-width:2;transition: transform .3s ease}
          body.sidebar-collapsed .sidebar-toggle .arrow{transform:rotate(180deg)}
 
-         /* Back-to-top link */
-         .back-to-top{display:block;text-align:right;margin-top:8px}
-         .back-to-top a{color:#007acc;text-decoration:none;font-weight:600}
-         .back-to-top a:hover{text-decoration:underline}
-
-        /* Version badge + footer (parity) */
-        .version-info{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.1);color:#333;padding:4px 8px;border-radius:4px;font-size:.75em;font-family:monospace;z-index:999;opacity:.7;transition:opacity .3s ease}
+        /* Version badge override for subtle style */
+        .version-info{background:rgba(0,0,0,0.1);color:#333;border:none;opacity:.7;transition:opacity .3s ease}
         .version-info:hover{opacity:1;background:rgba(0,0,0,0.2)}
-        footer{text-align:center;padding:20px;font-size:.9em;color:#666;border-top:1px solid #eaeef2;margin-top:30px}
-        footer a{color:#007acc;text-decoration:none}
-        footer a:hover{text-decoration:underline}
-
-        /* Accessible focus */
-        a:focus-visible,button:focus-visible{outline:3px solid rgba(0,122,204,0.35);outline-offset:2px;border-radius:6px}
 
         /* Anchor link indicator */
         .anchor-link{text-decoration:none;color:#94a3b8;margin-left:8px;opacity:0;transition:opacity .2s ease;font-size:0.8em;font-weight:400}
         .feature:hover .anchor-link,.step:hover .anchor-link,h2:hover .anchor-link,h3:hover .anchor-link{opacity:1}
         .anchor-link:hover{color:#007acc}
 
-        @media (max-width:600px){body{padding:10px}h1{font-size:2em}.gallery img{width:100%;max-width:300px;height:auto}}
+        @media (max-width:600px){h1{font-size:2em}.gallery img{width:100%;max-width:300px;height:auto}}
     </style>
 </head>
 <body id="top">
@@ -885,35 +852,11 @@ CPU scheduling overhead.</pre>
         <p>&copy; 2025 <a href="https://fuj.io" target="_blank" rel="noopener noreferrer">fuj.io</a>. All rights reserved.</p>
     </footer>
 
+    <script src="assets/js/main.js"></script>
     <script>
-        // Accordion toggle behavior (shared component)
-        function toggleAccordion(header){
-            const content = header.nextElementSibling; if(!content) return;
-            const isOpen = content.classList.toggle('open');
-            header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        }
+        // Page-specific: Advanced accordion behavior for glossary/lockable sections
+        // (These override the basic accordion behavior from main.js)
 
-        // Initialize accordion ARIA and keyboard support
-        document.addEventListener('DOMContentLoaded',()=>{
-            document.querySelectorAll('.accordion').forEach((acc,i)=>{
-                const header = acc.querySelector('.accordion-header');
-                const content = acc.querySelector('.accordion-content');
-                if(!header||!content) return;
-                const id = content.id || `acc-content-${i}`;
-                content.id = id;
-                header.setAttribute('role','button');
-                header.setAttribute('tabindex','0');
-                header.setAttribute('aria-controls', id);
-                header.setAttribute('aria-expanded','false');
-                // Skip default keydown for glossary (custom behavior below)
-                if (!acc.closest('#part-4')){
-                  header.addEventListener('keydown',(e)=>{
-                      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); toggleAccordion(header); }
-                  });
-                }
-            });
-        });
-        
         // Scrollspy: highlight current section in sidebar
         document.addEventListener('DOMContentLoaded',()=>{
         const sidebar = document.getElementById('sidebar');
@@ -944,18 +887,6 @@ CPU scheduling overhead.</pre>
             window.addEventListener('scroll',()=>{ if(!ticking){ requestAnimationFrame(()=>{ update(); ticking=false; }); ticking=true; } }, { passive:true });
             window.addEventListener('resize', update);
             links.forEach(a=> a.addEventListener('click', ()=> setTimeout(update, 50)));
-        });
-        
-        // SQL Copy behavior (shared component)
-        document.querySelectorAll('.sql-copy-btn').forEach(button=>{
-            button.addEventListener('click',()=>{
-                const code = button.parentElement.querySelector('pre')?.textContent || '';
-                navigator.clipboard.writeText(code).then(()=>{
-                    button.style.background='#28a745';
-                    const prev=button.textContent; button.textContent='Copied!';
-                    setTimeout(()=>{button.textContent=prev;button.style.background='';},2000);
-                }).catch(err=>{console.error('Failed to copy: ',err)});
-            });
         });
 
         // Sidebar collapse toggle
