@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="assets/css/main.css">
     <style>
         /* Page-specific styles for getting_started.html - Compact layout */
+        html{scroll-behavior:smooth}
         header {
             padding: 12px 20px;
         }
@@ -24,12 +25,12 @@
         }
         
         h2 {
-            margin-top: 20px;
+            margin-top: 15px;
             margin-bottom: 8px;
         }
         
         h3 {
-            margin-top: 15px;
+            margin-top: 12px;
             margin-bottom: 6px;
         }
         
@@ -75,6 +76,108 @@
         .sql-query-box pre {
             padding: 8px 10px;
         }
+
+        /* Layout with sidebar */
+        .layout{display:flex;gap:16px}
+        .content{flex:1}
+        @media (max-width:800px){
+            .layout{flex-direction:column}
+            .progress-sidebar{position:static;width:auto}
+        }
+
+        /* Progress Sidebar */
+        .progress-sidebar {
+            width: 140px;
+            position: sticky;
+            top: 10px;
+            align-self: flex-start;
+            padding: 15px 10px;
+        }
+        
+        .progress-stepper {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        
+        .progress-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            position: relative;
+        }
+        
+        .step-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .step-circle:hover {
+            border-color: #007acc;
+        }
+        
+        .step-line {
+            width: 3px;
+            height: 40px;
+            background: #e0e0e0;
+            transition: background 0.3s ease;
+        }
+        
+        .progress-step:last-child .step-line {
+            display: none;
+        }
+        
+        .step-label {
+            font-size: 11px;
+            color: #666;
+            padding-top: 6px;
+            line-height: 1.2;
+            max-width: 80px;
+            transition: color 0.3s ease;
+        }
+        
+        /* Active/Completed states */
+        .progress-step.completed .step-circle {
+            background: #28a745;
+            color: white;
+        }
+        
+        .progress-step.completed .step-line {
+            background: #28a745;
+        }
+        
+        .progress-step.completed .step-label {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .progress-step.active .step-circle {
+            background: #007acc;
+            color: white;
+            box-shadow: 0 0 0 4px rgba(0,122,204,0.2);
+        }
+        
+        .progress-step.active .step-label {
+            color: #007acc;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -85,23 +188,63 @@
         <div class="copyright">© 2025 fuj.io</div>
     </div>
 
-    <a href="index.html" class="back-link">← Back to Home</a>
-
     <header>
         <h1>Getting Started</h1>
         <p>Set up the Couchbase Query Analyzer with AI-powered analysis</p>
     </header>
 
-    <main>
-        <section>
+    <div class="layout">
+        <!-- Progress Sidebar -->
+        <aside class="progress-sidebar">
+            <a href="index.html" style="display:block;margin-bottom:15px;font-size:12px;color:#007acc">← Back to Home</a>
+            <div class="progress-stepper">
+                <div class="progress-step active" data-step="1">
+                    <div class="step-indicator">
+                        <a href="#step-1" class="step-circle">1</a>
+                        <div class="step-line"></div>
+                    </div>
+                    <span class="step-label">Get the Tool</span>
+                </div>
+                <div class="progress-step" data-step="2">
+                    <div class="step-indicator">
+                        <a href="#step-2" class="step-circle">2</a>
+                        <div class="step-line"></div>
+                    </div>
+                    <span class="step-label">Connect to Couchbase</span>
+                </div>
+                <div class="progress-step" data-step="3">
+                    <div class="step-indicator">
+                        <a href="#step-3" class="step-circle">3</a>
+                        <div class="step-line"></div>
+                    </div>
+                    <span class="step-label">Configure Tool</span>
+                </div>
+                <div class="progress-step" data-step="4">
+                    <div class="step-indicator">
+                        <a href="#step-4" class="step-circle">4</a>
+                        <div class="step-line"></div>
+                    </div>
+                    <span class="step-label">Setup AI</span>
+                </div>
+                <div class="progress-step" data-step="5">
+                    <div class="step-indicator">
+                        <a href="#step-5" class="step-circle">✓</a>
+                    </div>
+                    <span class="step-label">Ready!</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="content">
+        <section id="step-1">
             <h2>1. Get the Tool</h2>
             <p>You can run the tool using Docker or by downloading an executable.</p>
 
             <div class="tabs-container">
                 <div class="tab-buttons">
-                    <button class="tab-btn active" onclick="switchTab('docker')">🐳 Docker</button>
-                    <button class="tab-btn" onclick="switchTab('macos')">🍎 macOS</button>
-                    <button class="tab-btn" onclick="switchTab('windows')">🪟 Windows</button>
+                    <button class="tab-btn active" onclick="switchTab('docker', event)">🐳 Docker</button>
+                    <button class="tab-btn" onclick="switchTab('macos', event)">🍎 macOS</button>
+                    <button class="tab-btn" onclick="switchTab('windows', event)">🪟 Windows</button>
                 </div>
 
                 <div id="tab-docker" class="tab-content active">
@@ -140,20 +283,20 @@ docker run -p 5000:5000 fujioturner/couchbase-query-analyzer:latest</pre>
             </div>
         </section>
 
-        <section>
+        <section id="step-2">
             <h2>2. Connect to Couchbase</h2>
             <p style="margin-bottom:8px">Connect to a Couchbase cluster to save analysis data and preferences.</p>
 
             <div class="tabs-container">
                 <div class="tab-buttons">
-                    <button class="tab-btn active" onclick="switchTab('capella')">☁️ Capella</button>
-                    <button class="tab-btn" onclick="switchTab('selfhosted')">🖥️ Self-Hosted</button>
+                    <button class="tab-btn active" onclick="switchTab('capella', event)">☁️ Capella</button>
+                    <button class="tab-btn" onclick="switchTab('selfhosted', event)">🖥️ Self-Hosted</button>
                 </div>
 
                 <div id="tab-capella" class="tab-content active">
                     <div class="icon-row">
                         <span class="icon-wrapper"><img src="assets/img/couchbase_capella_logo.png" alt="Capella"></span>
-                        <a href="https://cloud.couchbase.com/sign-up" target="_blank">Free Trial</a>
+                        <a href="https://cloud.couchbase.com/sign-up" target="_blank">Free Tier</a>
                         <span style="color:#999;margin:0 6px;">or</span>
                         <a href="https://cloud.couchbase.com/sign-in" target="_blank">Sign In</a>
                     </div>
@@ -199,17 +342,17 @@ ON `cb_tools`.`query`.`analyzer`(
             </div>
         </section>
 
-        <section>
+        <section id="step-3">
             <h2>3. Configure the Tool</h2>
             <p style="margin-bottom:8px">Once running and your Couchbase user is ready:</p>
             <ol class="steps-list">
                 <li>Open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></li>
-                <li>Click <strong>Settings (Gear Icon)</strong> → enter Cluster URL, Username, Password</li>
+                <li>Click <strong>Settings</strong> icon (Upper Right Corner) <img src="assets/img/setting_socket.png" alt="Settings icon" class="icon-zoom" style="height:20px;vertical-align:middle"> → enter Cluster URL, Username, Password <img src="assets/img/setting_page.png" alt="Settings page - click to enlarge" class="screenshot-preview" style="height:40px;vertical-align:middle;margin-left:8px"></li>
                 <li>Click <strong>Test Connection</strong> → <strong>Save Settings</strong></li>
             </ol>
         </section>
 
-        <section>
+        <section id="step-4">
             <h2>4. Setup AI Analysis</h2>
             <p style="margin-bottom:8px">Get an API Key from xAI Grok or OpenAI for AI-powered query analysis.</p>
 
@@ -228,49 +371,77 @@ ON `cb_tools`.`query`.`analyzer`(
                 </thead>
                 <tbody>
                     <tr>
-                        <td style="padding:8px"><a href="https://x.ai/" target="_blank">Sign Up</a> → <a href="https://console.x.ai/" target="_blank">Get API Key</a></td>
+                        <td style="padding:8px"><a href="https://accounts.x.ai/sign-in?redirect=docs" target="_blank">Sign Up</a> → <a href="https://console.x.ai/" target="_blank">Get API Key</a></td>
                         <td style="padding:8px"><a href="https://platform.openai.com/signup" target="_blank">Sign Up</a> → <a href="https://platform.openai.com/api-keys" target="_blank">Get API Key</a></td>
                     </tr>
                     <tr>
-                        <td colspan="2" style="padding:8px">In Settings, select provider tab, paste API Key, click <strong>Save</strong>.</td>
+                        <td colspan="2" style="padding:8px">In Settings Icon <img src="assets/img/setting_socket.png" alt="Settings icon" class="icon-zoom" style="height:18px;vertical-align:middle">, select provider tab, paste API Key, click <strong>Save</strong>. <img src="assets/img/setting_ai_api_page.png" alt="AI API settings - click to enlarge" class="screenshot-preview" style="height:40px;vertical-align:middle;margin-left:8px"></td>
                     </tr>
                 </tbody>
             </table>
         </section>
-
-        <div class="success-box" style="padding:12px 15px;margin:15px 0">
-            <h3 style="margin:0 0 6px">🎉 Ready to Go!</h3>
-            <p style="margin:0">You can now perform AI-powered analysis of your slow queries.</p>
-        </div>
-
-        <section style="margin-top:15px">
-            <h2>Next Steps</h2>
-            <div class="steps" style="margin-top:10px">
-                <div class="step" style="padding:12px">
-                    <strong><a href="user_guide.html">User Guide</a></strong>
-                    <p style="margin:4px 0 0;font-size:0.9em">Parse JSON, use filters, navigate analyzer tabs.</p>
-                </div>
-                <div class="step" style="padding:12px">
-                    <strong><a href="sql_queries.html">SQL++ Query Examples</a></strong>
-                    <p style="margin:4px 0 0;font-size:0.9em">Filter by node, date range, exclude system queries.</p>
-                </div>
-                <div class="step" style="padding:12px">
-                    <strong><a href="analysis_hub.html">Analysis Hub</a></strong>
-                    <p style="margin:4px 0 0;font-size:0.9em">Metrics, optimization strategies, glossary.</p>
-                </div>
-            </div>
-        </section>
-
-        <div class="note-box" style="margin-top:15px;padding:10px 12px;font-size:0.9em">
-            <strong>Versions:</strong>
-            <b>v3.x</b> runs as static HTML at <a href="https://cb.fuj.io/en/" target="_blank">cb.fuj.io/en</a>.
-            <b>v4.x+</b> requires Couchbase bucket + AI API access (this guide).
+        <h2>Ready</h2>
+        <div id="step-5" class="success-box" style="padding:20px 24px;margin:20px 0;text-align:center">
+            <h3 style="margin:0 0 10px">🎉 Ready to Analyze!</h3>
+            <p style="margin:0 0 15px">You can now perform AI-powered analysis of your slow queries.</p>
+            <a href="user_guide.html" class="cta-button" style="display:inline-block;background:#007acc;color:white;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:1.1em">Start Analyzing → User Guide</a>
         </div>
     </main>
+    </div><!-- end layout -->
 
     <div class="version-info">Couchbase Query Analyzer v4.0.0-dev</div>
 
     <script src="assets/js/main.js"></script>
+    <script>
+        // Progress stepper scroll spy
+        document.addEventListener('DOMContentLoaded', () => {
+            const steps = document.querySelectorAll('.progress-step');
+            const sections = ['step-1', 'step-2', 'step-3', 'step-4', 'step-5'].map(id => document.getElementById(id));
+            
+            const updateProgress = () => {
+                const scrollY = window.scrollY;
+                const viewportMid = scrollY + window.innerHeight * 0.3;
+                const atBottom = (window.innerHeight + scrollY) >= document.body.offsetHeight - 50;
+                
+                let activeIndex = 0;
+                
+                // If at bottom of page, activate last step
+                if (atBottom) {
+                    activeIndex = sections.length - 1;
+                } else {
+                    sections.forEach((section, index) => {
+                        if (section) {
+                            const top = section.getBoundingClientRect().top + scrollY;
+                            if (top <= viewportMid) {
+                                activeIndex = index;
+                            }
+                        }
+                    });
+                }
+                
+                steps.forEach((step, index) => {
+                    step.classList.remove('active', 'completed');
+                    if (index < activeIndex) {
+                        step.classList.add('completed');
+                    } else if (index === activeIndex) {
+                        step.classList.add('active');
+                    }
+                });
+            };
+            
+            updateProgress();
+            let ticking = false;
+            window.addEventListener('scroll', () => {
+                if (!ticking) {
+                    requestAnimationFrame(() => {
+                        updateProgress();
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            }, { passive: true });
+        });
+    </script>
 
     <footer>
         <p>&copy; 2025 <a href="https://fuj.io" target="_blank" rel="noopener noreferrer">fuj.io</a>.</p>

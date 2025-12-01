@@ -14,7 +14,7 @@
     <meta property="og:url" content="https://cb.fuj.io/">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="icon" type="image/svg+xml" href="asstes/img/favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
     <link rel="stylesheet" href="assets/css/main.css">
     <style>
         /* Page-specific styles for index.html - Compact layout */
@@ -229,7 +229,7 @@
             <ul style="margin:0;padding-left:20px">
                 <li>Identify bottlenecks with detailed query analysis and <b>Insights</b>.</li>
                 <li>Visualize query performance with timelines and metrics.</li>
-                <li><b>AI Analyzer (4.x)</b> — Optimization recommendations powered by xAI Grok, OpenAI, or Custom AI API.</li>
+                <li><b>AI Analyzer (4.x)</b> — Analyze your slow queries with xAI Grok, OpenAI, or Custom AI API.</li>
             </ul>
         </section>
 
@@ -268,8 +268,8 @@
             </span>
             <div class="tabs-container">
                 <div class="tab-buttons">
-                    <button class="tab-btn active" onclick="switchTab('desktop')"><span class="badge-new">NEW</span> Desktop App (4.x)</button>
-                    <button class="tab-btn" onclick="switchTab('browser')">Browser (3.x)</button>
+                    <button class="tab-btn active" onclick="switchTab('desktop', event)"><span class="badge-new">NEW</span> Desktop App (4.x)</button>
+                    <button class="tab-btn" onclick="switchTab('browser', event)">Browser (3.x)</button>
                 </div>
                 <!-- Browser Tab (existing workflow) -->
                 <div id="tab-browser" class="tab-content">
@@ -325,8 +325,8 @@
                             </div>
                         </div>
                     </div>
-                    <p style="margin-top: 25px; text-align: center;">
-                        <a href="getting_started.html" class="btn btn-large">Complete Step-by-Step Guide</a>
+                    <p style="margin-top: 20px; text-align: center;">
+                        <a href="getting_started.html" class="btn btn-large" style="background:linear-gradient(135deg,#28a745 0%,#20c997 100%)">Click Here to Download and Get Started</a>
                     </p>
                 </div>
             </div>

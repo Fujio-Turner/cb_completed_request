@@ -514,6 +514,22 @@
                     <!-- Divider -->
                     <div style="width: 1px; height: 24px; background: #e0e0e0;"></div>
 
+                    <!-- Chart Trends Depth Option -->
+                    <div style="display: flex; align-items: center; gap: 12px;" title="Controls how many chart trend insights the AI generates. 'High' produces more detailed timeline analysis, especially useful when a stake is set.">
+                        <label style="font-weight: 600; font-size: 13px; color: #333; cursor: help;">Chart Trends: <span style="font-size: 11px; color: #666;">ⓘ</span></label>
+                        <div style="display: flex; gap: 10px;">
+                            <label style="font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                <input type="radio" name="ai-chart-trends-depth" value="low" checked> Low
+                            </label>
+                            <label style="font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                <input type="radio" name="ai-chart-trends-depth" value="high"> High
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Divider -->
+                    <div style="width: 1px; height: 24px; background: #e0e0e0;"></div>
+
                     <!-- Timeline Stake Focus Option -->
                     <div style="display: flex; align-items: center; gap: 8px;" title="When a stake is placed on Timeline charts, the AI will focus analysis on that specific time point.">
                         <label style="display: flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer;">

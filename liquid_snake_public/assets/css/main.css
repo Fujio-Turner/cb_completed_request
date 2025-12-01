@@ -155,29 +155,29 @@ pre {
 a.btn {
     display: inline-block;
     padding: 10px 20px;
-    background: #007acc;
+    background: #48bb78;
     color: white;
     border-radius: 6px;
     text-decoration: none;
     margin-top: 10px;
-    box-shadow: 0 2px 6px rgba(0,122,204,0.25);
+    box-shadow: 0 2px 6px rgba(72,187,120,0.25);
     transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .step a.btn:hover,
 a.btn:hover {
-    background: #005f99;
+    background: #38a169;
     transform: translateY(-1px);
 }
 
 .step a.btn.secondary,
 a.btn.secondary {
-    background: #48bb78;
+    background: #007acc;
 }
 
 .step a.btn.secondary:hover,
 a.btn.secondary:hover {
-    background: #38a169;
+    background: #005f99;
 }
 
 .btn-large {
@@ -699,4 +699,53 @@ button:focus-visible {
     .ai-table {
         font-size: 0.9em;
     }
+}
+
+/* ==========================================================================
+   Icon Hover Zoom Effect
+   ========================================================================== */
+
+.icon-zoom {
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.icon-zoom:hover {
+    transform: scale(2.5);
+    z-index: 100;
+    position: relative;
+}
+
+/* Screenshot preview thumbnail */
+.screenshot-preview {
+    cursor: zoom-in;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    transition: box-shadow 0.2s ease;
+}
+
+.screenshot-preview:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Lightbox overlay */
+.lightbox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    cursor: zoom-out;
+}
+
+.lightbox-overlay img {
+    max-width: 90vw;
+    max-height: 90vh;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+    border-radius: 8px;
 }

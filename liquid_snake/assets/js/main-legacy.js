@@ -26043,11 +26043,13 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Get stake focus if enabled
             const stakeFocusEnabled = document.getElementById('ai-stake-focus-enabled')?.checked || false;
             const stakeFocusDatetime = document.getElementById('ai-stake-datetime')?.value || null;
+            const chartTrendsDepth = document.querySelector('input[name="ai-chart-trends-depth"]:checked')?.value || 'low';
             
             const options = {
                 obfuscated: document.getElementById('ai-obfuscate-data')?.checked || false,
                 store_results: true,  // Always save for tracking and auditing
                 query_group_limit: parseInt(document.querySelector('input[name="ai-qg-limit"]:checked')?.value || "10"),
+                chart_trends_depth: chartTrendsDepth,  // 'low' (5-6 insights) or 'high' (15+ insights)
                 use_toon: document.getElementById('ai-send-toon')?.checked || false,
                 stake_focus: stakeFocusEnabled && stakeFocusDatetime ? {
                     enabled: true,
@@ -26058,6 +26060,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (options.stake_focus) {
                 Logger.debug(`[AI] 📍 Stake focus enabled at: ${options.stake_focus.datetime}`);
             }
+            Logger.debug(`[AI] 📊 Chart trends depth: ${chartTrendsDepth}`);
             
             // Store stake_focus globally for timeline rendering when response arrives
             window._lastStakeFocus = options.stake_focus;
@@ -27078,8 +27081,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 if (message.content_parsed) {
                     analysisData = message.content_parsed;
                 } else {
+                    let rawContent = message.content || '';
                     try {
-                        let content = message.content || '';
+                        let content = rawContent;
                         
                         // Strip markdown code fences if present (common with Grok/some models)
                         content = content.replace(/^```json\s*\n?/i, '').replace(/\n?```\s*$/i, '');
@@ -27094,9 +27098,17 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             content = content.substring(jsonStart, jsonEnd + 1);
                         }
                         
+                        // Fix common JSON escape issues from AI responses
+                        // Replace invalid escape sequences (e.g., \_ which is not valid JSON)
+                        content = content.replace(/\\([^"\\\/bfnrtu])/g, '\\\\$1');
+                        
                         analysisData = JSON.parse(content);
                     } catch (e) {
-                        responseDiv.innerHTML = `<div style="color: #dc3545;">Error parsing AI response</div><pre>${message.content}</pre>`;
+                        Logger.error('[AI] JSON parse error:', e.message);
+                        Logger.debug('[AI] Content type:', typeof rawContent);
+                        Logger.debug('[AI] Content length:', rawContent?.length);
+                        Logger.debug('[AI] First 200 chars:', rawContent?.substring(0, 200));
+                        responseDiv.innerHTML = `<div style="color: #dc3545;">Error parsing AI response: ${e.message}</div><pre style="max-height: 400px; overflow: auto;">${DOMPurify.sanitize(rawContent)}</pre>`;
                         overlay.style.display = 'block';
                         return;
                     }
@@ -27106,8 +27118,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 if (aiResponse.content_parsed) {
                     analysisData = aiResponse.content_parsed;
                 } else {
+                    let rawContent = aiResponse.content[0]?.text || '';
                     try {
-                        let content = aiResponse.content[0]?.text || '';
+                        let content = rawContent;
                         
                         // Strip markdown code fences if present
                         content = content.replace(/^```json\s*\n?/i, '').replace(/\n?```\s*$/i, '');
@@ -27121,9 +27134,13 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             content = content.substring(jsonStart, jsonEnd + 1);
                         }
                         
+                        // Fix common JSON escape issues from AI responses
+                        content = content.replace(/\\([^"\\\/bfnrtu])/g, '\\\\$1');
+                        
                         analysisData = JSON.parse(content);
                     } catch (e) {
-                        responseDiv.innerHTML = `<div style="color: #dc3545;">Error parsing Claude AI response</div><pre>${aiResponse.content[0]?.text || 'No text content'}</pre>`;
+                        Logger.error('[AI] Claude JSON parse error:', e.message);
+                        responseDiv.innerHTML = `<div style="color: #dc3545;">Error parsing Claude AI response: ${e.message}</div><pre style="max-height: 400px; overflow: auto;">${DOMPurify.sanitize(rawContent)}</pre>`;
                         overlay.style.display = 'block';
                         return;
                     }

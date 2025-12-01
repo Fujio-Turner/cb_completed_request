@@ -15,22 +15,42 @@
 
 /**
  * Switch between tabs in a tab container.
+ * Only affects tabs within the same .tabs-container as the clicked button.
  * @param {string} tabId - The ID suffix of the tab to show (e.g., 'docker' for 'tab-docker')
  * @param {Event} [evt] - The click event (optional, for better cross-browser support)
  */
 function switchTab(tabId, evt) {
     const eventSource = evt?.target || window.event?.target;
     
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    // Find the parent .tabs-container to scope the tab switching
+    const container = eventSource?.closest('.tabs-container');
     
-    if (eventSource && eventSource.classList.contains('tab-btn')) {
-        eventSource.classList.add('active');
-    }
-    
-    const targetTab = document.getElementById('tab-' + tabId);
-    if (targetTab) {
-        targetTab.classList.add('active');
+    if (container) {
+        // Only affect tabs within this container
+        container.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        container.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        
+        if (eventSource && eventSource.classList.contains('tab-btn')) {
+            eventSource.classList.add('active');
+        }
+        
+        const targetTab = container.querySelector('#tab-' + tabId);
+        if (targetTab) {
+            targetTab.classList.add('active');
+        }
+    } else {
+        // Fallback to global behavior if no container found
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        
+        if (eventSource && eventSource.classList.contains('tab-btn')) {
+            eventSource.classList.add('active');
+        }
+        
+        const targetTab = document.getElementById('tab-' + tabId);
+        if (targetTab) {
+            targetTab.classList.add('active');
+        }
     }
 }
 
@@ -107,6 +127,44 @@ function initAccordions() {
 }
 
 /* ==========================================================================
+   Screenshot Preview Lightbox
+   ========================================================================== */
+
+/**
+ * Initialize screenshot preview lightbox.
+ * Click on .screenshot-preview images to show full-size in overlay.
+ */
+function initScreenshotPreviews() {
+    document.querySelectorAll('.screenshot-preview').forEach(img => {
+        img.addEventListener('click', () => {
+            const overlay = document.createElement('div');
+            overlay.className = 'lightbox-overlay';
+            
+            const fullImg = document.createElement('img');
+            fullImg.src = img.src;
+            fullImg.alt = img.alt;
+            
+            overlay.appendChild(fullImg);
+            document.body.appendChild(overlay);
+            
+            // Close on click
+            overlay.addEventListener('click', () => {
+                overlay.remove();
+            });
+            
+            // Close on Escape key
+            const handleEsc = (e) => {
+                if (e.key === 'Escape') {
+                    overlay.remove();
+                    document.removeEventListener('keydown', handleEsc);
+                }
+            };
+            document.addEventListener('keydown', handleEsc);
+        });
+    });
+}
+
+/* ==========================================================================
    DOM Ready Initialization
    ========================================================================== */
 
@@ -118,4 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Note: analysis_hub.html has additional accordion logic for glossary/lockable sections
     // that should be kept in that file's <script> block
     initAccordions();
+    
+    // Initialize screenshot preview lightbox
+    initScreenshotPreviews();
 });

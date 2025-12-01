@@ -655,23 +655,36 @@ class AIPayloadBuilder:
         if extra_instructions:
             full_prompt += f"\n\n{extra_instructions}"
         
+        # Add chart trends depth instructions
+        chart_trends_depth = options.get('chart_trends_depth', 'low')
+        if chart_trends_depth == 'high':
+            full_prompt += """
+
+**📊 CHART TRENDS DEPTH: HIGH**
+You MUST provide comprehensive chart_trends analysis with 15-20 insights covering the ENTIRE timeline range.
+- Analyze ALL significant events across the full date range, not just the beginning
+- Distribute insights evenly across early, middle, and late portions of the timeline
+- Include insights from ALL chart types: Request Count, Memory Usage, Duration, CPU Time, Index Scan, Fetch Throughput
+- If a stake point is set, ensure at least 3-5 insights are specifically around that timestamp"""
+        
         # Add stake focus instructions if enabled
         stake_focus = options.get('stake_focus')
         if stake_focus and stake_focus.get('enabled') and stake_focus.get('datetime'):
             stake_datetime = stake_focus.get('datetime')
             full_prompt += f"""
 
-**🎯 STAKE FOCUS POINT - IMPORTANT:**
+**🎯 STAKE FOCUS POINT - CRITICAL:**
 The user has marked a specific time point on the Timeline charts for focused analysis: **{stake_datetime}**
 
 This "stake" indicates the user observed something significant at this exact moment and wants you to:
-1. **Identify what happened at or around {stake_datetime}** - Look for anomalies, spikes, or pattern changes in the Timeline data
-2. **Analyze queries executing at this time** - Check requestTime values close to this timestamp for slow queries, errors, or unusual patterns
-3. **Look for correlations** - Examine if metrics like memory, CPU time, kernel time, result size, or index scans show unusual values around this time
-4. **Provide specific insights** - In your response, include a dedicated section titled "**📍 Stake Point Analysis ({stake_datetime})**" that addresses what was happening at this specific moment
-5. **Connect to broader patterns** - Explain if this time point is part of a larger trend or an isolated incident
+1. **MUST include chart_trends insights around {stake_datetime}** - At least 3-5 insights within ±30 minutes of this timestamp
+2. **Identify what happened at or around {stake_datetime}** - Look for anomalies, spikes, or pattern changes in the Timeline data
+3. **Analyze queries executing at this time** - Check requestTime values close to this timestamp for slow queries, errors, or unusual patterns
+4. **Look for correlations** - Examine if metrics like memory, CPU time, kernel time, result size, or index scans show unusual values around this time
+5. **Provide specific insights** - In your response, include a dedicated section titled "**📍 Stake Point Analysis ({stake_datetime})**" that addresses what was happening at this specific moment
+6. **Connect to broader patterns** - Explain if this time point is part of a larger trend or an isolated incident
 
-Prioritize analysis of this time point alongside your overall analysis."""
+CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wants to know what happened at {stake_datetime}."""
 
         # Build stake_focus context if enabled
         stake_focus_context = None
@@ -695,6 +708,7 @@ Prioritize analysis of this time point alongside your overall analysis."""
                 'purpose': 'This tool analyzes N1QL query performance from system:completed_requests',
                 'reference_docs': 'For general best practices, stats definitions, and optimization strategies, refer to: https://cb.fuj.io/analysis_hub',
                 'data_source': 'Queries extracted from: SELECT *, meta().plan FROM system:completed_requests',
+                'chart_trends_depth': chart_trends_depth,  # 'low' (5-6 insights) or 'high' (15-20 insights)
                 'stake_focus': stake_focus_context,
                 'tabs_explained': {
                     'Dashboard': 'High-level metrics and charts showing query distribution, index usage, and performance patterns',
