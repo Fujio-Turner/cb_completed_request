@@ -486,7 +486,10 @@ class DataObfuscator:
         """
         result = text
         for token, original in mapping.items():
-            result = result.replace(token, original)
+            # Escape special JSON characters in original value to prevent JSON corruption
+            # This is needed because we're replacing inside a JSON string
+            escaped_original = original.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
+            result = result.replace(token, escaped_original)
         return result
     
     def obfuscate_value(self, value: Any) -> Any:
@@ -573,10 +576,16 @@ class DataObfuscator:
                     else:
                         # Obfuscate the parameter name
                         obfuscated_parts.append(f'${self._generate_token(param_name)}')
-                # Obfuscate quoted strings
+                # Obfuscate quoted strings and backtick identifiers
                 elif part.startswith('"') or part.startswith("'") or part.startswith('`'):
                     quote_char = part[0]
-                    inner = part.strip('"\'`')
+                    # Find matching end quote
+                    if len(part) > 1 and part.endswith(quote_char):
+                        inner = part[1:-1]
+                    else:
+                        inner = part[1:]
+                    # For backtick identifiers, generate token based on unquoted name
+                    # so `name` and name get the SAME obfuscated value
                     obfuscated_parts.append(f'{quote_char}{self._generate_token(inner)}{quote_char}')
                 # Obfuscate bucket.scope.collection
                 elif '.' in part:
@@ -1565,10 +1574,16 @@ def call_ai_provider(provider: str,
             elif base_url.endswith('/v1'):
                 pass # Keep /v1
             
+            # Use httpx.Timeout for granular control:
+            # - connect: time to establish connection
+            # - read: time to receive response chunks  
+            # - write: time to send request
+            # - pool: time to acquire connection from pool
+            import httpx
             client = OpenAI(
                 api_key=api_key,
                 base_url=base_url,
-                timeout=60.0,
+                timeout=httpx.Timeout(300.0, connect=30.0),  # 5 min total, 30s connect
                 max_retries=2
             )
             
@@ -1592,7 +1607,7 @@ def call_ai_provider(provider: str,
             # Convert Pydantic model to dict
             response_data = json.loads(response.model_dump_json())
             
-            ic(f"✅ OpenAI SDK Success ({elapsed_ms}ms)")
+            ic(f"✅ {provider.upper()} SDK Success ({elapsed_ms}ms)")
             
             return {
                 'success': True,
@@ -1604,11 +1619,11 @@ def call_ai_provider(provider: str,
             
         except Exception as e:
             elapsed_ms = int((time.time() - start_time) * 1000) if 'start_time' in locals() else 0
-            ic(f"❌ OpenAI SDK Error: {str(e)}")
+            ic(f"❌ {provider.upper()} SDK Error: {str(e)}")
             # Don't fall back to HTTP if SDK fails (likely auth or logic error), return error
             return {
                 'success': False,
-                'error': f"OpenAI SDK Error: {str(e)}",
+                'error': f"{provider.upper()} SDK Error: {str(e)}",
                 'elapsed_ms': elapsed_ms,
                 'attempts': 1
             }
