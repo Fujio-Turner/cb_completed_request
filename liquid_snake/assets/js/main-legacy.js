@@ -3727,6 +3727,34 @@ if (window.TEXT_CONSTANTS) {
                 }
             });
 
+            // Aggregate index usage counts across all requests in this group
+            const index_counts = {};
+            groupedRequests.forEach((r) => {
+                if (r.plan) {
+                    const operators = getOperators(r.plan);
+                    operators.forEach((operator) => {
+                        const opType = operator["#operator"];
+                        let indexName = null;
+                        
+                        if (opType === "IndexScan" || opType === "IndexScan2" || opType === "IndexScan3") {
+                            if (operator.index) {
+                                indexName = operator.index;
+                            }
+                        }
+                        if (opType === "PrimaryScan" || opType === "PrimaryScan2" || opType === "PrimaryScan3") {
+                            indexName = operator.index || "#primary";
+                        }
+                        
+                        if (indexName) {
+                            if (!index_counts[indexName]) {
+                                index_counts[indexName] = 0;
+                            }
+                            index_counts[indexName]++;
+                        }
+                    });
+                }
+            });
+
             // Build average/min/max phase times (ms) for timeline chart
             function phaseStats(keys) {
                 const keysArr = Array.isArray(keys) ? keys : [keys];
@@ -3795,6 +3823,7 @@ if (window.TEXT_CONSTANTS) {
                 avg_resultCount: Math.round(avg_resultCount),
                 avg_resultSize: Math.round(avg_resultSize),
                 status_counts,
+                index_counts,
                 // for chart rendering on row click
                 avgPhaseTimeline
             };
@@ -4020,6 +4049,26 @@ if (window.TEXT_CONSTANTS) {
                     // Bold the counts in parentheses
                     return value.replace(/\((\d+)\)/g, "<b>($1)</b>");
                 }
+            },
+            {
+                id: 'index_counts',
+                header: 'Indexes',
+                dataField: 'index_counts',
+                sortable: false,
+                hidden: !isDevMode(), // Hidden by default, visible with ?dev=true
+                getValue: (group) => {
+                    const counts = group.index_counts || {};
+                    return Object.entries(counts)
+                        .map(([indexName, count]) => `${indexName} (${count})`)
+                        .join("\n");
+                },
+                render: (value) => {
+                    if (!value) return '';
+                    // Format each index on its own line with count in bold
+                    return value.split("\n")
+                        .map(line => line.replace(/\((\d+)\)/g, "<b>($1)</b>"))
+                        .join("<br>");
+                }
             }
         ];
 
@@ -4061,6 +4110,9 @@ if (window.TEXT_CONSTANTS) {
             // Create header row using column config
             const headerRow = document.createElement("tr");
             ANALYSIS_COLUMNS.forEach((colConfig) => {
+                // Skip hidden columns
+                if (colConfig.hidden) return;
+                
                 const th = document.createElement("th");
                 
                 // Use header from config, or TEXT_CONSTANTS for special columns
@@ -4110,6 +4162,13 @@ if (window.TEXT_CONSTANTS) {
                 rowData.users = Object.keys(group.user_query_counts || {}).join(", ");
                 // Attach original group for chart rendering on row click
                 rowData.groupRef = group;
+                
+                // Add indexes_used array for AI payload
+                const indexCounts = group.index_counts || {};
+                rowData.indexes_used = Object.entries(indexCounts).map(([name, count]) => ({
+                    name: name,
+                    count: count
+                }));
 
                 return rowData;
             });
@@ -4164,6 +4223,9 @@ if (window.TEXT_CONSTANTS) {
                     const row = document.createElement("tr");
 
                     ANALYSIS_COLUMNS.forEach((colConfig) => {
+                        // Skip hidden columns
+                        if (colConfig.hidden) return;
+                        
                         const td = document.createElement("td");
                         let value = rowData[colConfig.id];
 
@@ -25327,12 +25389,13 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
 
         /**
          * Gather Timeline Charts data
+         * @param {string} depth - 'basic' (5 points) or 'full' (all points)
          */
-        function gatherTimelineChartsData() {
-            Logger.debug('[AI] 📈 Gathering Timeline Charts data');
+        function gatherTimelineChartsData(depth = 'basic') {
+            Logger.debug(`[AI] 📈 Gathering Timeline Charts data (depth: ${depth})`);
             
-            // Map charts to descriptions
-            const chartDefs = [
+            // All available charts with descriptions
+            const allChartDefs = [
                 { name: 'timelineChart', id: 'request_count', description: 'Request Count over Time (detects traffic spikes, query bursts, and quiet periods)' },
                 { name: 'queryTypesChart', id: 'query_types', description: 'Query Types over Time (shows distribution of SELECT, UPDATE, INSERT, DELETE operations to identify workload shifts)' },
                 { name: 'durationBucketsChart', id: 'duration_buckets', description: 'Duration Buckets over Time (tracks latency trends by grouping queries into <10ms, 10-100ms, >1s buckets to spot performance degradation)' },
@@ -25344,8 +25407,26 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 { name: 'docFetchThroughputChart', id: 'fetch_throughput', description: 'Doc Fetch Throughput (measures data service load in fetches/sec)' },
                 { name: 'execVsKernelChart', id: 'exec_vs_kernel', description: 'Execution Time vs Kernel Time (compares query processing time vs system scheduling overhead)' },
                 { name: 'enhancedOperationsChart', id: 'operations', description: 'Detailed Operations over Time (breakdown of specific phases like JOINs, SORTS, FILTERS to pinpoint bottlenecks)' },
-                { name: 'serviceTimeAnalysisLineChart', id: 'service_time_analysis', description: 'Service Time vs Elapsed Time (compares server-side processing vs total duration to identify network latency or client-side delays)' }
+                { name: 'serviceTimeAnalysisLineChart', id: 'service_time_analysis', description: 'Service Time vs Elapsed Time (compares server-side processing vs total duration to identify network latency or client-side delays)' },
+                { name: 'collectionQueriesChart', id: 'collection_queries', description: 'Collection Queries over Time (shows query distribution across different bucket.scope.collection targets)' },
+                { name: 'filterChart', id: 'filter_operations', description: 'Filter Operations over Time (tracks WHERE clause processing and filtering activity)' }
             ];
+            
+            // Basic mode: Only include the key charts from Rows 1-4 of Timeline tab
+            // Full mode: Include all charts
+            const basicChartNames = [
+                'collectionQueriesChart',   // Row 1: Collection Queries
+                'durationBucketsChart',     // Row 2: Duration Buckets
+                'queryTypesChart',          // Row 2: Query Types
+                'enhancedOperationsChart',  // Row 3: Enhanced Operations
+                'filterChart',              // Row 3: Filter Operations
+                'resultCountChart',         // Row 4: Result Count
+                'resultSizeChart'           // Row 4: Result Size
+            ];
+            
+            const chartDefs = depth === 'basic' 
+                ? allChartDefs.filter(def => basicChartNames.includes(def.name))
+                : allChartDefs;
             
             // Check if any chart is missing
             const anyChartMissing = chartDefs.some(def => !window[def.name]);
@@ -25396,18 +25477,17 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Sort timestamps
             const sortedTimestamps = Array.from(allTimestamps).sort();
             
-            // Sample timestamps if too many (limit to ~60 points)
-            let sampledTimestamps = sortedTimestamps;
-            let samplingFactor = 1;
-            
-            if (sortedTimestamps.length > 100) {
-                samplingFactor = Math.ceil(sortedTimestamps.length / 60);
-                sampledTimestamps = sortedTimestamps.filter((_, i) => i % samplingFactor === 0);
-            }
+            // Both Basic and Full modes use all data points (no sampling)
+            // The difference is which charts are included:
+            // - Basic: 7 key charts from Rows 1-4 (Collection Queries, Duration Buckets, Query Types, Enhanced Ops, Filter, Result Count, Result Size)
+            // - Full: All 14 charts
+            const sampledTimestamps = sortedTimestamps;
             
             charts.common_timeline = {
                 labels: sampledTimestamps,
-                note: samplingFactor > 1 ? `Sampled 1/${samplingFactor} points from unified timeline` : 'Complete timeline'
+                note: depth === 'full' 
+                    ? `Full mode: All ${chartDefs.length} charts with ${sampledTimestamps.length} data points` 
+                    : `Basic mode: ${chartDefs.length} key charts with ${sampledTimestamps.length} data points`
             };
             
             chartDefs.forEach(def => {
@@ -25744,6 +25824,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             Logger.trace(`[AI] Selections: ${JSON.stringify(selections)}`);
             
+            // Get timeline data depth setting
+            const timelineDataDepth = document.querySelector('input[name="ai-timeline-data-depth"]:checked')?.value || 'basic';
+            
             try {
                 // Build request payload with structured data
                 const requestData = {
@@ -25754,7 +25837,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         dashboardStats: gatherDashboardStats(),
                         insightsData: gatherInsightsData(),
                         flowDiagramData: gatherFlowDiagramData(),
-                        timelineChartsData: gatherTimelineChartsData(),
+                        timelineChartsData: gatherTimelineChartsData(timelineDataDepth),
                         version: '4.0.0-dev'
                     },
                     prompt: prompt,
@@ -25946,22 +26029,45 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         document.addEventListener('DOMContentLoaded', () => {
             toggleDebugMermaidButton();
             
+            // Setup Timeline Data depth toggle based on Timeline checkbox
+            const timelineCheckbox = document.getElementById('ai-include-timeline');
+            const timelineDataContainer = document.getElementById('ai-timeline-data-depth-container');
+            const timelineDataRadios = document.querySelectorAll('input[name="ai-timeline-data-depth"]');
+            
+            function updateTimelineDataDepthState() {
+                const isEnabled = timelineCheckbox?.checked;
+                if (timelineDataContainer) {
+                    timelineDataContainer.style.opacity = isEnabled ? '1' : '0.5';
+                }
+                timelineDataRadios.forEach(radio => {
+                    radio.disabled = !isEnabled;
+                });
+            }
+            
+            if (timelineCheckbox) {
+                timelineCheckbox.addEventListener('change', updateTimelineDataDepthState);
+                // Initialize state
+                updateTimelineDataDepthState();
+            }
+            
             // Show/Hide TOON Preview button based on Dev Mode
             if (isDevMode()) {
                 const toonBtn = document.getElementById('ai-preview-toon-btn');
                 if (toonBtn) toonBtn.style.display = 'inline-block';
                 
-                // Add TOON checkbox option if in dev mode
-                const optionsDiv = document.querySelector('#ai-obfuscate-data')?.closest('.background-f5');
-                if (optionsDiv && !document.getElementById('ai-send-toon')) {
+                // Add TOON checkbox option below Analyze button if in dev mode
+                const analyzeBtn = document.getElementById('ai-analyze-btn');
+                if (analyzeBtn && !document.getElementById('ai-send-toon')) {
+                    const buttonContainer = analyzeBtn.parentElement;
                     const toonOption = document.createElement('div');
+                    toonOption.style.cssText = 'margin-top: 8px;';
                     toonOption.innerHTML = `
-                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; color: #6610f2; font-weight: bold;">
+                        <label style="display: flex; align-items: center; gap: 6px; color: #6610f2; font-weight: bold; font-size: 13px;">
                             <input type="checkbox" id="ai-send-toon"> 📦 Send as TOON (Experimental)
                         </label>
                         <div style="font-size: 11px; color: #666; margin-left: 22px;">Use optimized TOON format to reduce payload size</div>
                     `;
-                    optionsDiv.appendChild(toonOption);
+                    buttonContainer.insertAdjacentElement('afterend', toonOption);
                 }
             }
         });
@@ -26029,8 +26135,11 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         async function analyzeWithAI() {
             Logger.info('[AI] 🤖 analyzeWithAI() called');
             
-            // Check if data exists
-            if (!everyQueryData || everyQueryData.length === 0) {
+            // Check if data exists - use window.currentFilteredRequests which is set globally after parsing
+            const hasData = (window.currentFilteredRequests && window.currentFilteredRequests.length > 0) ||
+                           (everyQueryData && everyQueryData.length > 0);
+            
+            if (!hasData) {
                 Logger.error('[AI] ❌ No query data available');
                 showToast('Please parse JSON data first', 'error');
                 return;
@@ -26086,6 +26195,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             const stakeFocusEnabled = document.getElementById('ai-stake-focus-enabled')?.checked || false;
             const stakeFocusDatetime = document.getElementById('ai-stake-datetime')?.value || null;
             const chartTrendsDepth = document.querySelector('input[name="ai-chart-trends-depth"]:checked')?.value || 'low';
+            const timelineDataDepth = document.querySelector('input[name="ai-timeline-data-depth"]:checked')?.value || 'basic';
             
             const options = {
                 obfuscated: document.getElementById('ai-obfuscate-data')?.checked || false,
@@ -26163,7 +26273,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         dashboardStats: gatherDashboardStats(),
                         insightsData: gatherInsightsData(),
                         flowDiagramData: gatherFlowDiagramData(),
-                        timelineChartsData: gatherTimelineChartsData(),
+                        timelineChartsData: gatherTimelineChartsData(timelineDataDepth),
                         version: '4.0.0-dev'
                     },
                     prompt: prompt,
@@ -26958,16 +27068,20 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 if (result.success) {
                     showToast('Analysis deleted successfully', 'success');
                     
-                    // Remove row from DOM immediately
-                    if (buttonEl) {
-                        const row = buttonEl.closest('tr');
-                        if (row) {
-                            row.remove();
-                            Logger.debug('[AI] Removed deleted row from table');
-                        }
+                    // Count remaining rows in the table before removing
+                    const tableBody = document.getElementById('ai-history-list');
+                    const remainingRows = tableBody ? tableBody.querySelectorAll('tr').length : 0;
+                    
+                    Logger.debug(`[AI] Remaining rows before delete: ${remainingRows}, current page: ${aiHistoryCurrentPage}`);
+                    
+                    // If this was the last item on current page and we're not on page 1, go to previous page
+                    if (remainingRows <= 1 && aiHistoryCurrentPage > 1) {
+                        Logger.debug('[AI] Last item on page deleted, going to previous page');
+                        loadAIAnalysisHistory(aiHistoryCurrentPage - 1);
                     } else {
-                        // Fallback if button element not passed
-                        loadAIAnalysisHistory();
+                        // Re-render table on current page to refresh pagination and data
+                        Logger.debug('[AI] Re-rendering table on current page');
+                        loadAIAnalysisHistory(aiHistoryCurrentPage);
                     }
                 } else {
                     showToast(`Failed to delete: ${result.error || 'Unknown error'}`, 'error');

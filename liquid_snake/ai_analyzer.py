@@ -844,9 +844,18 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
                         # Obfuscate identifier fields
                         elif key in ['name', 'indexName', 'indexKey', 'bucket_id', 'scope_id', 
                                    'keyspace_id', 'bucketName', 'scopeName', 'collectionName', 
-                                   'bucketScopeCollection', 'bucket', 'scope', 'collection',
+                                   'bucketScopeCollection', 'bucket', 'scope',
                                    'clientContextID', 'requestId']:
                             if isinstance(value, str) and value and not value.startswith('_'):
+                                obj[key] = obfuscator._generate_token(value)
+                        # Obfuscate collection filter (handles compound paths like "bucket.scope.collection")
+                        elif key == 'collection' and isinstance(value, str) and value:
+                            # If it contains dots, it's a bucket.scope.collection path
+                            if '.' in value:
+                                parts = value.split('.')
+                                obfuscated_parts = [obfuscator._generate_token(part) for part in parts]
+                                obj[key] = '.'.join(obfuscated_parts)
+                            elif value:  # Single identifier
                                 obj[key] = obfuscator._generate_token(value)
                         # Obfuscate index 'id' field (handles FTS format like fts::default:bucket:index_name)
                         elif key == 'id' and isinstance(value, str) and value:
@@ -907,6 +916,43 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
                              parts = value.split(", ")
                              new_parts = [obfuscator._generate_token(part) for part in parts if part]
                              obj[key] = ", ".join(new_parts)
+                        # Obfuscate indexes_used array (index names are sensitive)
+                        elif key == 'indexes_used' and isinstance(value, list):
+                            for idx_item in value:
+                                if isinstance(idx_item, dict) and 'name' in idx_item:
+                                    idx_item['name'] = obfuscator._generate_token(idx_item['name'])
+                        # Obfuscate index_counts display string (format: "idx_name (count)\nidx_name2 (count)")
+                        elif key == 'index_counts' and isinstance(value, str):
+                            import re
+                            lines = value.split("\n")
+                            new_lines = []
+                            for line in lines:
+                                # Match "index_name (count)" pattern
+                                match = re.match(r'^(.+)\s+\((\d+)\)$', line)
+                                if match:
+                                    idx_name = match.group(1)
+                                    count = match.group(2)
+                                    new_idx_name = obfuscator._generate_token(idx_name)
+                                    new_lines.append(f"{new_idx_name} ({count})")
+                                else:
+                                    new_lines.append(line)
+                            obj[key] = "\n".join(new_lines)
+                        # Obfuscate collection_queries chart dataset keys (bucket.scope.collection names)
+                        elif key == 'datasets' and isinstance(value, dict):
+                            # Check if any key looks like a bucket.scope.collection pattern
+                            new_datasets = {}
+                            for dataset_key, dataset_values in value.items():
+                                # If key contains dots (e.g., "addresses._default._default"), it's a collection path
+                                if '.' in dataset_key:
+                                    # Obfuscate each part of the path
+                                    parts = dataset_key.split('.')
+                                    obfuscated_parts = [obfuscator._generate_token(part) for part in parts]
+                                    new_key = '.'.join(obfuscated_parts)
+                                    new_datasets[new_key] = dataset_values
+                                else:
+                                    # Keep non-collection keys as-is (e.g., "SELECT", "UPDATE")
+                                    new_datasets[dataset_key] = dataset_values
+                            obj[key] = new_datasets
                         # Recurse into nested structures
                         elif isinstance(value, (dict, list)):
                             obfuscate_sql_fields(value)
@@ -927,12 +973,27 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
             
             payload['metadata']['obfuscated'] = True
             payload['metadata']['obfuscation_note'] = (
-                'IMPORTANT: Only SQL++ statements, index names, bucket/collection names have been obfuscated. '
-                'Metrics, counts, and timings are REAL values. '
-                'Obfuscated identifiers use 6-character deterministic tokens (e.g., "city" -> "x4k2m9"). '
-                'The SAME name always produces the SAME token, so you CAN identify patterns. '
-                'Dashboard metrics and insight counts are NOT obfuscated.'
+                'IMPORTANT: Sensitive data has been obfuscated using 6-character deterministic tokens '
+                '(e.g., "city" -> "x4k2m9"). The SAME name always produces the SAME token, so you CAN identify patterns.'
             )
+            payload['metadata']['obfuscated_fields'] = {
+                'sql_statements': ['statement', 'normalized_statement', 'queryStatement', 'indexString', 'preparedText', 'normalizedStatement'],
+                'identifiers': ['name', 'indexName', 'indexKey', 'bucket_id', 'scope_id', 'keyspace_id', 'bucketName', 'scopeName', 'collectionName', 'bucketScopeCollection', 'bucket', 'scope'],
+                'collection_paths': ['collection (in filters, handles bucket.scope.collection format)'],
+                'index_data': ['indexes_used[].name', 'index_counts (display string)'],
+                'user_data': ['users', 'user_query_counts', 'clientContextID', 'requestId'],
+                'timeline_charts': ['datasets keys (collection names in collection_queries chart)'],
+                'flow_diagram': ['mermaid_diagram (index and bucket names)'],
+                'named_args': ['namedArgs (both keys and values)']
+            }
+            payload['metadata']['not_obfuscated'] = [
+                'Metrics (counts, timings, sizes)',
+                'Dashboard statistics',
+                'Insight counts',
+                'SQL keywords (SELECT, FROM, WHERE, etc.)',
+                'Operators and punctuation',
+                'Numeric values'
+            ]
             payload['metadata']['mapping_table_size'] = len(mapping_table)
             
             # Store mapping table separately (returned to caller, not sent to AI)
@@ -1463,9 +1524,8 @@ def get_max_output_tokens(provider: str, model: str) -> int:
     # Anthropic Claude models
     CLAUDE_LIMITS = {
         # Claude 4.x series
-        'claude-opus-4': 8192,
-        'claude-sonnet-4': 8192,
-        'claude-haiku-4': 8192,
+        'claude-opus-4-20250514': 8192,
+        'claude-sonnet-4-20250514': 8192,
         # Claude 3.5 series
         'claude-3-5-sonnet-20241022': 8192,
         'claude-3-5-haiku-20241022': 8192,

@@ -424,12 +424,6 @@
                     <label style="display: flex; align-items: center; gap: 6px;" title="⚠️ Large payload - may slow response"><input type="checkbox" id="ai-include-flow-diagram" checked> Index/Query Flow <span style="color: #e65100; font-size: 10px;">⏱</span></label>
                     <label style="display: flex; align-items: center; gap: 6px;" title="⚠️ Large payload - may slow response"><input type="checkbox" id="ai-include-indexes"> Indexes <span style="color: #999; font-size: 11px;">(if loaded)</span> <span style="color: #e65100; font-size: 10px;">⏱</span></label>                   
                 </div>
-                <!-- Performance Note -->
-                <div style="margin-top: 8px; padding: 6px 10px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; font-size: 11px; color: #856404;">
-                    <strong>⚠️ Note:</strong> Selecting more data improves accuracy but increases response time. Items marked with <span style="color: #e65100;">⏱</span> 
-                    (Query Groups, Index/Query Flow, Indexes) send larger payloads and may cause timeouts with some AI providers. 
-                    For faster responses, uncheck these or reduce "Query Groups" limit below.
-                </div>
             </div>
 
             <!-- Analysis Options -->
@@ -465,11 +459,71 @@
                     </div> 
                 </div>
 
-                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0; display: flex; align-items: center; gap: 25px; flex-wrap: wrap;">
-                    <!-- Language Selector -->
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <label for="ai-language" style="font-weight: 600; font-size: 13px; color: #333;">AI Response Language:</label>
-                        <select name="ai-language" id="ai-language" style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; min-width: 150px; background-color: white;">
+                 <!-- Options Grid - Organized by Tab -->
+                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0; display: flex; gap: 20px; flex-wrap: wrap;">
+                    
+                    <!-- Timeline Options Box -->
+                    <div style="flex: 1; min-width: 280px; padding: 12px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px;">
+                        <div style="font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">📊 Timeline</div>
+                        
+                        <!-- Chart Trends -->
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;" title="Controls how many chart trend insights the AI generates.">
+                            <label style="font-size: 13px; color: #333; min-width: 90px;">Chart Trends:</label>
+                            <div style="display: flex; gap: 8px;">
+                                <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                                    <input type="radio" name="ai-chart-trends-depth" value="low" checked> Low
+                                </label>
+                                <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                                    <input type="radio" name="ai-chart-trends-depth" value="high"> High
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Timeline Data -->
+                        <div id="ai-timeline-data-depth-container" style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;" title="'Basic' sends 7 key charts. 'Full' sends all 14 charts.">
+                            <label style="font-size: 13px; color: #333; min-width: 90px;">Data Depth:</label>
+                            <div style="display: flex; gap: 8px;">
+                                <label id="ai-timeline-data-basic-label" style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                                    <input type="radio" name="ai-timeline-data-depth" value="basic" checked> Basic
+                                </label>
+                                <label id="ai-timeline-data-full-label" style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                                    <input type="radio" name="ai-timeline-data-depth" value="full"> Full
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Stake Focus -->
+                        <div style="display: flex; align-items: center; gap: 10px;" title="Double-click on Timeline chart to set a stake point.">
+                            <label style="display: flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer; min-width: 90px;">
+                                <input type="checkbox" id="ai-stake-focus-enabled" disabled>
+                                Stake Focus:
+                            </label>
+                            <input type="text" id="ai-stake-datetime" readonly 
+                                style="flex: 1; padding: 3px 6px; font-size: 11px; font-family: monospace; background: #fff; border: 1px solid #ddd; border-radius: 3px; color: #666;"
+                                placeholder="Double-click Timeline chart">
+                        </div>
+                    </div>
+                    
+                    <!-- Query Groups Box -->
+                    <div style="min-width: 200px; padding: 12px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px;">
+                        <div style="font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">📋 Query Groups</div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;" title="Limit the number of Query Groups sent to AI (sorted by impact).">
+                            <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                <input type="radio" name="ai-qg-limit" value="3"> Top 3
+                            </label>
+                            <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                <input type="radio" name="ai-qg-limit" value="10" checked> Top 10
+                            </label>
+                            <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                <input type="radio" name="ai-qg-limit" value="25"> Top 25
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Language Box -->
+                    <div style="min-width: 180px; padding: 12px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px;">
+                        <div style="font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">🌐 Response Language</div>
+                        <select name="ai-language" id="ai-language" style="width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; background-color: white;">
                             <option value="EN">English</option>
                             <option value="ZH">中文 (Chinese)</option>
                             <option value="HI">हिन्दी (Hindi)</option>
@@ -490,56 +544,6 @@
                             <option value="TH">ภาษาไทย (Thai)</option>
                             <option value="TL">Tagalog (Filipino)</option>
                         </select>
-                    </div>
-
-                    <!-- Divider -->
-                    <div style="width: 1px; height: 24px; background: #e0e0e0;"></div>
-
-                    <!-- Query Groups Limit Option -->
-                    <div style="display: flex; align-items: center; gap: 12px;" title="To reduce payload size and improve speed, limit the number of Query Groups sent to AI (sorted by impact).">
-                        <label style="font-weight: 600; font-size: 13px; color: #333; cursor: help;">Query Groups: <span style="font-size: 11px; color: #666;">ⓘ</span></label>
-                        <div style="display: flex; gap: 10px;">
-                            <label style="font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                <input type="radio" name="ai-qg-limit" value="3"> Top 3
-                            </label>
-                            <label style="font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                <input type="radio" name="ai-qg-limit" value="10" checked> Top 10
-                            </label>
-                            <label style="font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                <input type="radio" name="ai-qg-limit" value="25"> Top 25
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Divider -->
-                    <div style="width: 1px; height: 24px; background: #e0e0e0;"></div>
-
-                    <!-- Chart Trends Depth Option -->
-                    <div style="display: flex; align-items: center; gap: 12px;" title="Controls how many chart trend insights the AI generates. 'High' produces more detailed timeline analysis, especially useful when a stake is set.">
-                        <label style="font-weight: 600; font-size: 13px; color: #333; cursor: help;">Chart Trends: <span style="font-size: 11px; color: #666;">ⓘ</span></label>
-                        <div style="display: flex; gap: 10px;">
-                            <label style="font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                <input type="radio" name="ai-chart-trends-depth" value="low" checked> Low
-                            </label>
-                            <label style="font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                <input type="radio" name="ai-chart-trends-depth" value="high"> High
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Divider -->
-                    <div style="width: 1px; height: 24px; background: #e0e0e0;"></div>
-
-                    <!-- Timeline Stake Focus Option -->
-                    <div style="display: flex; align-items: center; gap: 8px;" title="When a stake is placed on Timeline charts, the AI will focus analysis on that specific time point.">
-                        <label style="display: flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer;">
-                            <input type="checkbox" id="ai-stake-focus-enabled" disabled>
-                            <span style="font-weight: 600; color: #333;">Stake Focus:</span>
-                        </label>
-                        <input type="text" id="ai-stake-datetime" readonly 
-                            style="width: 180px; padding: 4px 8px; font-size: 12px; font-family: monospace; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; color: #666;"
-                            placeholder="Double-click Timeline chart"
-                            title="Double-click on any Timeline chart to set a stake point for focused AI analysis">
                     </div>
                  </div>
 

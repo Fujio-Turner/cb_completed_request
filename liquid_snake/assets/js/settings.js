@@ -59,9 +59,8 @@ const AI_PROVIDERS = [
         defaultUrl: 'https://api.anthropic.com',
         models: [
             // Claude 4.x Series (Latest)
-            { id: 'claude-opus-4', name: 'Claude Opus 4.5 (Most Capable) - 200K ctx, 30K TPM' },
-            { id: 'claude-sonnet-4', name: 'Claude Sonnet 4.5 (Balanced) - 200K ctx, 30K TPM' },
-            { id: 'claude-haiku-4', name: 'Claude Haiku 4.x (Fast) - 200K ctx, 50K TPM' },
+            { id: 'claude-opus-4-20250514', name: 'Claude Opus 4 (Most Capable) - 200K ctx, 30K TPM' },
+            { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4 (Balanced) - 200K ctx, 30K TPM' },
             // Claude 3.5 Series
             { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet (Oct 2024) - 200K ctx, 30K TPM' },
             { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku (Oct 2024) - 200K ctx, 50K TPM' },
