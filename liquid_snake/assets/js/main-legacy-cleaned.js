@@ -8956,6 +8956,33 @@ function renderQueryGroupPhaseTimesChart(group) {
                     }
                 }, delayMs);
             }
+            
+            // Mouse hover auto-hide for input-section (Issue #241)
+            let _inputMouseLeaveTimer = null;
+            function setupInputSectionHoverAutoHide() {
+                const input = document.getElementById('input-section');
+                if (!input) return;
+                
+                input.addEventListener('mouseleave', () => {
+                    // Start 5-second timer when mouse leaves the div
+                    if (_inputMouseLeaveTimer) clearTimeout(_inputMouseLeaveTimer);
+                    _inputMouseLeaveTimer = setTimeout(() => {
+                        const cs = window.getComputedStyle ? getComputedStyle(input) : null;
+                        const isVisible = cs && cs.display !== 'none' && cs.visibility !== 'hidden';
+                        if (isVisible) {
+                            hideInputSection();
+                        }
+                    }, 5000);
+                });
+                
+                input.addEventListener('mouseenter', () => {
+                    // Cancel timer when mouse re-enters the div
+                    if (_inputMouseLeaveTimer) {
+                        clearTimeout(_inputMouseLeaveTimer);
+                        _inputMouseLeaveTimer = null;
+                    }
+                });
+            }
 
             // Finish processing after all batches are done
 
@@ -12469,6 +12496,9 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
             // Defer keyboard navigation enhancement (Step 8 - not critical for initial load)
             setTimeout(() => enhanceKeyboardNavigation(), 1000);
+            
+            // Setup input-section hover auto-hide (Issue #241)
+            setupInputSectionHoverAutoHide();
 
             // Initialize tabs with enhanced accessibility
             $("#tabs").tabs({
