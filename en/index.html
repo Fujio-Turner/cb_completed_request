@@ -21361,13 +21361,17 @@ function generateElapsedTimeChart(requests) {
                 }, delayMs);
             }
             
-            // Mouse hover auto-hide for input-section (Issue #241)
+            // Mouse hover auto-hide for input-section (Issue #241, #242)
             let _inputMouseLeaveTimer = null;
+            let _initialParseComplete = false; // Issue #242: Don't auto-hide until first parse
             function setupInputSectionHoverAutoHide() {
                 const input = document.getElementById('input-section');
                 if (!input) return;
                 
                 input.addEventListener('mouseleave', () => {
+                    // Issue #242: Don't auto-hide on initial page load before first parse
+                    if (!_initialParseComplete) return;
+                    
                     // Start 5-second timer when mouse leaves the div
                     if (_inputMouseLeaveTimer) clearTimeout(_inputMouseLeaveTimer);
                     _inputMouseLeaveTimer = setTimeout(() => {
@@ -21386,6 +21390,11 @@ function generateElapsedTimeChart(requests) {
                         _inputMouseLeaveTimer = null;
                     }
                 });
+            }
+            
+            // Issue #242: Call this after first successful parse to enable hover auto-hide
+            function enableInputHoverAutoHide() {
+                _initialParseComplete = true;
             }
 
             // Finish processing after all batches are done
@@ -21522,6 +21531,9 @@ function generateElapsedTimeChart(requests) {
 
             // Schedule auto-hide of input panel after successful processing
             scheduleInputAutoHide(3000);
+            
+            // Issue #242: Enable hover auto-hide after first successful parse
+            enableInputHoverAutoHide();
         }
 
         // Populate collection filter dropdown with all unique collections
