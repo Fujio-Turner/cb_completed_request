@@ -82,7 +82,7 @@ def check_version_consistency(expected_version):
         issues.append(f"Version mismatch in Dockerfile: {output}")
     
     # Check for old application versions (excluding external libraries)
-    major, minor, _ = expected_version.split('.')
+    major, minor, patch = expected_version.split('.')
     if int(minor) > 0:
         older_minor = int(minor) - 1
         older_versions_pattern = f"{major}\\.{older_minor}\\.[0-9]"
@@ -94,6 +94,16 @@ def check_version_consistency(expected_version):
             non_library_matches = [line for line in output.split('\n') if line and 'src=' not in line and 'href=' not in line]
             if non_library_matches:
                 issues.append(f"Found potential old application versions: {len(non_library_matches)} instances")
+    
+    # Check for previous patch version (e.g., 3.29.2 when releasing 3.29.3)
+    if int(patch) > 0:
+        older_patch = int(patch) - 1
+        older_patch_version = f"{major}.{minor}.{older_patch}"
+        
+        cmd = f'grep -H "{older_patch_version}" .github/workflows/docker-build-push.yml 2>/dev/null | head -5'
+        output, _ = run_command(cmd, quiet=True)
+        if output:
+            issues.append(f"Found previous patch version {older_patch_version} in workflow file - update to {expected_version}")
     
     return issues
 

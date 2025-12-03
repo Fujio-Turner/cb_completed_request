@@ -1,3 +1,6 @@
+### Version 3.29.3 (December 2, 2025)
+- **Fix: Parse JSON Visibility on Load** - Keep Parse JSON input section visible on initial page load to avoid confusing new users (closes #242)
+
 ### Version 3.29.2 (December 2, 2025)
 - **Enhancement: Raw Record Fullscreen Viewer** - Replaced Raw Record tab with one-click fullscreen JSON viewer in Every Query table (closes #240)
 - **Enhancement: Parse JSON Button Autohide** - Parse JSON button now auto-hides after hover timeout for cleaner UI (closes #241)
