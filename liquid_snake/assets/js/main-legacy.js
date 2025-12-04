@@ -23501,6 +23501,8 @@ LET bid = CONCAT("", s.bucket_id, ""),
                                 (text) => {
                                     // Store uploaded JSON in memory; do NOT populate textarea to keep DOM light
                                     window._uploadedCompletedJsonRaw = text || '';
+                                    // Store filename for tracking in AI requests
+                                    window._uploadedCompletedRequestsFile = file.name || null;
                                     if (completedName) completedName.textContent = file.name || '';
                                     // Auto-run parse on successful upload
                                     if (typeof parseJSON === 'function') {
@@ -23525,6 +23527,8 @@ LET bid = CONCAT("", s.bucket_id, ""),
                                 (text) => {
                                     // Store uploaded JSON in memory; do NOT populate textarea to keep DOM light
                                     window._uploadedIndexesJsonRaw = text || '';
+                                    // Store filename for tracking in AI requests
+                                    window._uploadedIndexesFile = file.name || null;
                                     // Parse immediately using in-memory data
                                     if (typeof parseIndexJSON === 'function') {
                                         try { parseIndexJSON(); } catch (e) { /* no-op */ }
@@ -25710,7 +25714,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     total_patterns: analysisData?.length || 0,
                     total_indexes: indexData?.length || 0,
                     current_timezone: currentTimezone || 'UTC'
-                }
+                },
+                // Include cluster name from input field
+                cluster_name: document.getElementById('ai-cluster-name')?.value?.trim() || null
             };
             
             Logger.debug(`[AI] Parse context gathered: ${context.stats.total_queries} queries, ${context.filters.exclude_system ? 'EXCLUDED' : 'INCLUDED'} system`);
@@ -27024,12 +27030,21 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 
                 Logger.info(`[AI] Dropdown populated: ${aiApis.length} standard + ${customAiApis.length} custom providers, ${hasUsableProvider ? 'HAS' : 'NO'} usable keys`);
                 
+                // Refresh jQuery UI selectmenu if available
+                if (typeof window.refreshAIProviderSelectMenu === 'function') {
+                    window.refreshAIProviderSelectMenu();
+                }
+                
                 // Trigger change event to update button state
                 dropdown.dispatchEvent(new Event('change'));
                 
             } catch (error) {
                 Logger.error('[AI] Error loading AI providers:', error);
                 dropdown.innerHTML = '<option value="">⚠️ Error loading providers</option>';
+                // Refresh selectmenu even on error
+                if (typeof window.refreshAIProviderSelectMenu === 'function') {
+                    window.refreshAIProviderSelectMenu();
+                }
             }
         }
 
@@ -27142,7 +27157,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (!overlay || !contextDiv || !responseDiv) return;
             
             // Build context HTML
-            const ctx = doc.parseJson || {};
+            const ctx = doc.parseContext || doc.parseJson || {};
             const meta = doc.metadata || {};
             
             // Prepare prompt display with "Show More" if long
@@ -27166,31 +27181,85 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 `;
             }
 
+            // Get options (check multiple locations)
+            const options = doc.options || doc.data?.options || {};
+            
             // Query Groups Limit
-            const qgLimit = doc.options?.query_group_limit ? `Top ${doc.options.query_group_limit}` : 'N/A';
+            const qgLimit = options.query_group_limit ? `Top ${options.query_group_limit}` : 'N/A';
+            
+            // Build Data to Analyze badges from selections (check multiple locations)
+            // Note: selections is saved inside metadata in app.py line 1005
+            const selections = doc.metadata?.selections || doc.selections || doc.data?.selections || {};
+            const selectionColors = {
+                dashboard: '#4CAF50',      // green
+                insights: '#FF9800',       // orange
+                timeline_charts: '#2196F3', // blue
+                query_groups: '#9C27B0',   // purple
+                flow_diagram: '#F44336',   // red
+                indexes: '#00BCD4'         // cyan
+            };
+            const selectionLabels = {
+                dashboard: 'Dashboard',
+                insights: 'Insights',
+                timeline_charts: 'Timeline',
+                query_groups: 'Query Groups',
+                flow_diagram: 'Index/Query Flow',
+                indexes: 'Indexes'
+            };
+            const dataToAnalyzeBadges = Object.keys(selectionLabels)
+                .filter(key => selections[key])
+                .map(key => `<span style="display: inline-flex; align-items: center; background: #f0f0f5; border: 1px solid #ddd; border-radius: 20px; padding: 4px 12px 4px 8px; margin: 3px 4px 3px 0; font-size: 12px; color: #333;">
+                    <span style="width: 10px; height: 10px; background: ${selectionColors[key]}; border-radius: 50%; margin-right: 6px;"></span>${selectionLabels[key]}</span>`)
+                .join('');
+            const dataToAnalyzeHtml = dataToAnalyzeBadges || '<span style="color: #888;">N/A</span>';
+            
+            // Get additional analysis options
+            const chartTrendsDepth = options.chart_trends_depth || 'N/A';
+            const stakeFocus = options.stake_focus;
+            const stakeFocusStr = stakeFocus?.enabled ? stakeFocus.datetime : 'None';
+            
+            // Get cluster name from multiple possible locations
+            const clusterName = doc.clusterName || doc.data?.clusterName || ctx.cluster_name || 'N/A';
             
             contextDiv.innerHTML = `
                 <div style="margin-bottom: 20px;">
-                    <div style="color: #ffc107; font-weight: bold; margin-bottom: 8px;">📅 Request Info</div>
+                    <div style="color: #ffc107; font-weight: bold; margin-bottom: 8px;">Request Info</div>
                     <div style="margin-left: 10px;">
                         <div>Date: ${new Date(doc.createdAt).toLocaleString()}</div>
+                        <div>Cluster: <strong>${clusterName}</strong></div>
                         <div>Provider: <span style="background: #000; color: #fff; padding: 2px 6px; border-radius: 4px;">${doc.provider}</span></div>
                         <div>Model: ${doc.model}</div>
-                        <div>Language: <strong>${doc.language || 'English'}</strong></div>
-                        <div>Query Groups: <strong>${qgLimit}</strong></div>
+                        <div>Obfuscated: <span style="color: ${meta.obfuscated ? '#28a745' : '#dc3545'}; font-weight: bold;">${meta.obfuscated ? 'Yes' : 'No'}</span></div>
                         <div>Status: <span style="color: ${doc.status === 'completed' ? '#28a745' : '#dc3545'}; font-weight: bold;">${doc.status}</span></div>
                     </div>
                 </div>
                 
                 <div style="margin-bottom: 15px;">
-                    <div style="color: #007bff; font-weight: bold; margin-bottom: 6px; font-size: 13px;">💬 Prompt</div>
+                    <div style="color: #007bff; font-weight: bold; margin-bottom: 6px; font-size: 13px;">Prompt</div>
                     <div style="margin-left: 10px; background: #f8f9fa; padding: 8px; border-radius: 4px; border-left: 3px solid #007bff; font-size: 12px; line-height: 1.5;">
                         ${promptHtml}
                     </div>
                 </div>
                 
                 <div style="margin-bottom: 15px;">
-                    <div style="color: #007bff; font-weight: bold; margin-bottom: 6px; font-size: 13px;">🔧 Filters Applied</div>
+                    <div style="color: #007bff; font-weight: bold; margin-bottom: 6px; font-size: 13px;">Data to Analyze</div>
+                    <div style="margin-left: 10px; display: flex; flex-wrap: wrap; align-items: center;">
+                        ${dataToAnalyzeHtml}
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <div style="color: #007bff; font-weight: bold; margin-bottom: 6px; font-size: 13px;">Analysis Options</div>
+                    <div style="margin-left: 10px;">
+                        <div>Language: <strong>${doc.language || 'English'}</strong></div>
+                        <div>Query Groups: <strong>${qgLimit}</strong></div>
+                        <div>Chart Trends: <strong>${chartTrendsDepth === 'high' ? 'High' : 'Low'}</strong></div>
+                        <div>Stake Focus: ${stakeFocusStr}</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <div style="color: #007bff; font-weight: bold; margin-bottom: 6px; font-size: 13px;">Filters Applied</div>
                     <div style="margin-left: 10px;">
                         <div>Timezone: ${ctx.filters?.timezone || 'N/A'}</div>
                         <div style="margin-top: 4px; margin-bottom: 4px;">
@@ -27208,20 +27277,19 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 </div>
                 
                 <div style="margin-bottom: 20px;">
-                    <div style="color: #ffc107; font-weight: bold; margin-bottom: 8px;">📂 Data Sources</div>
+                    <div style="color: #ffc107; font-weight: bold; margin-bottom: 8px;">Data Sources</div>
                     <div style="margin-left: 10px;">
-                        <div>Queries: ${ctx.data_sources?.completed_requests?.record_count || 0} (${ctx.data_sources?.completed_requests?.source || 'N/A'})</div>
-                        <div>Indexes: ${ctx.data_sources?.indexes?.record_count || 0} (${ctx.data_sources?.indexes?.source || 'N/A'})</div>
+                        <div>Queries: ${ctx.data_sources?.completed_requests?.record_count || 0} (${ctx.data_sources?.completed_requests?.filename || ctx.data_sources?.completed_requests?.source || 'N/A'})</div>
+                        <div>Indexes: ${ctx.data_sources?.indexes?.record_count || 0} (${ctx.data_sources?.indexes?.filename || ctx.data_sources?.indexes?.source || 'N/A'})</div>
                     </div>
                 </div>
                 
                 <div style="margin-bottom: 20px;">
-                    <div style="color: #ffc107; font-weight: bold; margin-bottom: 8px;">📊 Metrics</div>
+                    <div style="color: #ffc107; font-weight: bold; margin-bottom: 8px;">Metrics</div>
                     <div style="margin-left: 10px;">
                         <div>Payload Size: ${(meta.requestPayloadSize / 1024).toFixed(2)} KB</div>
                         <div>Response Size: ${(meta.responsePayloadSize / 1024).toFixed(2)} KB</div>
                         <div>AI Time: ${(meta.elapsed_ms / 1000).toFixed(2)}s</div>
-                        <div>Obfuscated: ${meta.obfuscated ? 'Yes' : 'No'}</div>
                     </div>
                 </div>
             `;
@@ -27640,7 +27708,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 const headers = container.querySelectorAll('h2');
                 let issuesSection = null;
                 headers.forEach(h2 => {
-                    if (h2.textContent.includes('Critical Issues')) {
+                    if (h2.textContent.includes('Critical Issues') || h2.textContent.includes('Insights Review')) {
                         issuesSection = h2.parentElement;
                     }
                 });
@@ -27652,7 +27720,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 const countMatch = headerText.match(/\((\d+)\)/);
                 const count = countMatch ? countMatch[1] : '';
                 
-                md += `\n### 🚨 Critical Issues (${count})\n\n`;
+                md += `\n### Insights Review (${count})\n\n`;
                 
                 // Extract summary stats if present (Total, Issues, Rating, Potential)
                 const summaryDiv = issuesSection.querySelector('div[style*="display: flex"][style*="gap"]');
@@ -27766,7 +27834,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 const headers = container.querySelectorAll('h2');
                 let recSection = null;
                 headers.forEach(h2 => {
-                    if (h2.textContent.includes('Recommendations')) {
+                    if (h2.textContent.includes('Recommendations') || h2.textContent.includes('Index Recommendations')) {
                         recSection = h2.parentElement;
                     }
                 });
@@ -27784,7 +27852,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 const countMatch = headerText.match(/\((\d+)\)/);
                 const count = countMatch ? countMatch[1] : cards.length;
                 
-                md += `\n### 💡 Recommendations (${count})\n\n---\n\n`;
+                md += `\n### Index Recommendations (${count})\n\n---\n\n`;
                 
                 Array.from(cards).forEach((card, idx) => {
                     // Extract title (h3) - remove leading number if present
@@ -28696,7 +28764,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 }
 
                 html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #6c757d;">
-                    <h2 style="color: #495057; margin: 0 0 12px 0; font-size: 22px; font-weight: 600; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">📋 Analysis Summary</h2>
+                    <h2 style="color: #495057; margin: 0 0 12px 0; font-size: 22px; font-weight: 600; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">Analysis Summary</h2>
                     <div style="font-size: 13px; line-height: 1.5; color: #333;">
                         ${content}
                     </div>
@@ -28732,8 +28800,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (data.chart_trends && data.chart_trends.insights && data.chart_trends.insights.length > 0) {
                 html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #17a2b8;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h2 style="color: #17a2b8; margin: 0 0 8px 0; font-size: 22px; font-weight: 600;">📈 Chart Trends & Analysis</h2>
-                        <button onclick="resetTimelineZoom()" style="background: #6c757d; color: white; border: none; padding: 4px 10px; font-size: 11px; border-radius: 3px; cursor: pointer;" title="Reset timeline to show all items">🔄 Reset Zoom</button>
+                        <h2 style="color: #17a2b8; margin: 0 0 8px 0; font-size: 22px; font-weight: 600;">Chart Trends & Analysis</h2>
+                        <button onclick="resetTimelineZoom()" style="background: #6c757d; color: white; border: none; padding: 4px 10px; font-size: 11px; border-radius: 3px; cursor: pointer;" title="Reset timeline to show all items">Reset Zoom</button>
                     </div>
                     <div id="ai-insights-timeline" style="height: 300px; border: 1px solid #dee2e6; border-radius: 4px; background: white;"></div>
                     
@@ -28742,7 +28810,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 
                 // Add sources if available
                 if (data.chart_trends.sources && data.chart_trends.sources.length > 0) {
-                     html += '<div style="font-size: 10px; color: #666; padding: 6px; background: #e9ecef; border-radius: 3px; margin-top: 10px;"><strong>📍 Sources:</strong> ' + data.chart_trends.sources.map(s => `<span style="display: inline-block; margin: 2px 4px; padding: 2px 6px; background: #fff; border: 1px solid #dee2e6; border-radius: 2px;">${s.evidence || s.location}</span>`).join('') + '</div>';
+                     html += '<div style="font-size: 10px; color: #666; padding: 6px; background: #e9ecef; border-radius: 3px; margin-top: 10px;"><strong>Sources:</strong> ' + data.chart_trends.sources.map(s => `<span style="display: inline-block; margin: 2px 4px; padding: 2px 6px; background: #fff; border: 1px solid #dee2e6; border-radius: 2px;">${s.evidence || s.location}</span>`).join('') + '</div>';
                 }
                 
                 html += `</div>`;
@@ -28755,14 +28823,14 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Fallback: Legacy HTML format (for backward compatibility)
             else if (data.chart_trends && data.chart_trends.timeline_analysis_html) {
                 html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #17a2b8;">
-                    <h2 style="color: #17a2b8; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">📈 Chart Trends & Analysis</h2>
+                    <h2 style="color: #17a2b8; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">Chart Trends & Analysis</h2>
                     <div style="font-size: 12px; line-height: 1.5; color: #333;">
                         ${data.chart_trends.timeline_analysis_html}
                     </div>`;
                 
                 // Add sources if available
                 if (data.chart_trends.sources && data.chart_trends.sources.length > 0) {
-                     html += '<div style="font-size: 10px; color: #666; padding: 6px; background: #e9ecef; border-radius: 3px; margin-top: 10px;"><strong>📍 Sources:</strong> ' + data.chart_trends.sources.map(s => `<span style="display: inline-block; margin: 2px 4px; padding: 2px 6px; background: #fff; border: 1px solid #dee2e6; border-radius: 2px;">${s.evidence || s.location}</span>`).join('') + '</div>';
+                     html += '<div style="font-size: 10px; color: #666; padding: 6px; background: #e9ecef; border-radius: 3px; margin-top: 10px;"><strong>Sources:</strong> ' + data.chart_trends.sources.map(s => `<span style="display: inline-block; margin: 2px 4px; padding: 2px 6px; background: #fff; border: 1px solid #dee2e6; border-radius: 2px;">${s.evidence || s.location}</span>`).join('') + '</div>';
                 }
                 
                 html += `</div>`;
@@ -28772,7 +28840,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Critical Issues - With Summary Table
             if (data.critical_issues && data.critical_issues.length > 0) {
                 html += `<div style="margin-bottom: 12px;">
-                    <h2 style="color: #dc3545; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">🚨 Critical Issues (${data.critical_issues.length})</h2>`;
+                    <h2 style="color: #dc3545; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">Insights Review (${data.critical_issues.length})</h2>`;
                 
                 // Summary - Compact (Moved here)
                 if (data.summary) {
@@ -28852,11 +28920,11 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 });
                 
                 html += `</div>
-                    <div style="font-size: 10px; color: #6c757d; margin-bottom: 12px; font-style: italic;">💡 Click any card to view full details below</div>`;
+                    <div style="font-size: 10px; color: #6c757d; margin-bottom: 12px; font-style: italic;">Click any card to view full details below</div>`;
                 
                 // Detailed Breakdown Section - Scrollable container with visual scroll indicator
                 html += `<div style="border-top: 2px solid #dee2e6; padding-top: 12px; margin-top: 8px;">
-                    <div style="font-size: 13px; color: #495057; margin-bottom: 10px; font-weight: 600;">📋 Detailed Issue Breakdown <span style="font-size: 10px; color: #999; font-weight: normal;">↕ scroll for more</span></div>
+                    <div style="font-size: 13px; color: #495057; margin-bottom: 10px; font-weight: 600;">Detailed Issue Breakdown <span style="font-size: 10px; color: #999; font-weight: normal;">↕ scroll for more</span></div>
                     <div id="issue-details-container" style="max-height: 400px; overflow-y: auto; padding: 8px; border: 2px dashed #dee2e6; border-radius: 6px; background: linear-gradient(to bottom, #fff 0%, #fff 90%, #f8f9fa 100%);">`;
                 
                 data.critical_issues.forEach((issue, idx) => {
@@ -28880,7 +28948,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         
                         <!-- Fix Section - Light Green -->
                         <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #4caf50;">
-                            <div style="font-size: 11px; color: #2e7d32; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600;">🔧 Suggested Fix</div>
+                            <div style="font-size: 11px; color: #2e7d32; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600;">Suggested Fix</div>
                             <div style="font-size: 13px; color: #333; line-height: 1.5;">${issue.recommendation || ''}</div>
                         </div>
                         
@@ -28889,7 +28957,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             <span style="color: #666; font-weight: normal;">Expected Impact:</span> ${issue.expected_impact || 'Performance improvement'}
                         </div>
                         
-                        ${issue.sources ? '<div style="font-size: 10px; color: #888; margin-top: 10px; padding-top: 8px; border-top: 1px solid #eee;"><strong>📍 Sources:</strong> ' + issue.sources.map(s => `<span style="margin-left: 6px;">${s.location}</span>`).join(' · ') + '</div>' : ''}
+                        ${issue.sources ? '<div style="font-size: 10px; color: #888; margin-top: 10px; padding-top: 8px; border-top: 1px solid #eee;"><strong>Sources:</strong> ' + issue.sources.map(s => `<span style="margin-left: 6px;">${s.location}</span>`).join(' · ') + '</div>' : ''}
                     </div>`;
                 });
                 
@@ -28899,7 +28967,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Recommendations - Side by side grid layout (alternating backgrounds)
             if (data.recommendations && data.recommendations.length > 0) {
                 html += `<div style="margin-bottom: 12px;">
-                    <h2 style="color: #495057; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">💡 Recommendations (${data.recommendations.length})</h2>
+                    <h2 style="color: #2e7d32; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">Index Recommendations (${data.recommendations.length})</h2>
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">`;
                 
                 data.recommendations.forEach((rec, idx) => {

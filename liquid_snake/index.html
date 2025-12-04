@@ -23,6 +23,76 @@
     <title>Query Analyzer v4.0.0-dev</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="assets/css/jquery-ui.min.css">
+    
+    <!-- Custom jQuery UI Widget Styling for AI Panel -->
+    <style>
+        /* AI Panel jQuery UI Checkbox/Radio styling */
+        #ai-analysis-panel .ui-checkboxradio-label {
+            font-size: 12px;
+            padding: 6px 14px 6px 10px;
+            border-radius: 16px;
+            border: 1px solid #d0d0d0;
+            background: #fff;
+            margin: 2px;
+        }
+        #ai-analysis-panel .ui-checkboxradio-label:hover {
+            background: #f0f0f5;
+            border-color: #bbb;
+        }
+        #ai-analysis-panel .ui-checkboxradio-checked {
+            background: #e8f4fd;
+            border-color: #2196f3;
+            color: #1976d2;
+        }
+        #ai-analysis-panel .ui-checkboxradio-icon {
+            width: 10px;
+            height: 10px;
+            margin-right: 5px;
+            border-radius: 50%;
+        }
+        #ai-analysis-panel .ui-icon-check {
+            background: #4CAF50;
+        }
+        #ai-analysis-panel .ui-state-active .ui-icon-check,
+        #ai-analysis-panel .ui-checkboxradio-checked .ui-icon-check {
+            background: #2196f3;
+        }
+        /* Radio button specific styles */
+        #ai-analysis-panel .ui-checkboxradio-radio-label .ui-icon-background {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+        #ai-analysis-panel .ui-checkboxradio-radio-label.ui-checkboxradio-checked .ui-icon-background {
+            background: #2196f3;
+        }
+        /* SelectMenu styling */
+        #ai-analysis-panel .ui-selectmenu-button {
+            width: 100% !important;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background: #fff;
+            font-size: 12px;
+        }
+        #ai-analysis-panel .ui-selectmenu-button:hover {
+            border-color: #2196f3;
+        }
+        .ui-selectmenu-menu .ui-menu {
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .ui-selectmenu-menu .ui-menu-item-wrapper {
+            padding: 6px 10px;
+        }
+        /* Disabled state */
+        #ai-analysis-panel .ui-checkboxradio-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
 
     <!-- Include Chart.js -->
     <script src="assets/js/chart.umd.js"></script> 
@@ -416,29 +486,25 @@
             <!-- Data Selection -->
             <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px;">
                 <h3 style="margin:0 0 8px 0; font-size: 14px;">Data to Analyze</h3>
-                <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 13px;">
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-dashboard" checked> Dashboard </label>
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-insights" checked> Insights </label>
-                    <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="ai-include-timeline" checked> Timeline </label>
-                    <label style="display: flex; align-items: center; gap: 6px;" title="⚠️ Large payload - may slow response"><input type="checkbox" id="ai-include-query-groups" checked> Query Groups <span style="color: #e65100; font-size: 10px;">⏱</span></label>
-                    <label style="display: flex; align-items: center; gap: 6px;" title="⚠️ Large payload - may slow response"><input type="checkbox" id="ai-include-flow-diagram" checked> Index/Query Flow <span style="color: #e65100; font-size: 10px;">⏱</span></label>
-                    <label style="display: flex; align-items: center; gap: 6px;" title="⚠️ Large payload - may slow response"><input type="checkbox" id="ai-include-indexes"> Indexes <span style="color: #999; font-size: 11px;">(if loaded)</span> <span style="color: #e65100; font-size: 10px;">⏱</span></label>                   
+                <div id="ai-data-selection-group" style="display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px;">
+                    <input type="checkbox" id="ai-include-dashboard" checked><label for="ai-include-dashboard">Dashboard</label>
+                    <input type="checkbox" id="ai-include-insights" checked><label for="ai-include-insights">Insights</label>
+                    <input type="checkbox" id="ai-include-timeline" checked><label for="ai-include-timeline">Timeline</label>
+                    <input type="checkbox" id="ai-include-query-groups" checked title="⚠️ Large payload - may slow response"><label for="ai-include-query-groups">Query Groups </label>
+                    <input type="checkbox" id="ai-include-flow-diagram" checked title="⚠️ Large payload - may slow response"><label for="ai-include-flow-diagram">Index/Query Flow </label>
+                    <input type="checkbox" id="ai-include-indexes" title="⚠️ Large payload - may slow response"><label for="ai-include-indexes">Indexes <span style="color: #999; font-size: 11px;">(if loaded)</span> </label>
                 </div>
             </div>
 
             <!-- Analysis Options -->
             <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px; position: relative;">
-                <div style="display: flex; align-items: center;">
-                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;">
-                        <input type="checkbox" id="ai-obfuscate-data" checked>
-                        <span>Obfuscate sensitive data (bucket names, collection names, values and SDK's user names)</span>
-                        <span id="obfuscation-toggle-link"
-                              style="font-size: 11px; color: #007bff; cursor: help; text-decoration: underline; margin-left: 4px;">
-                            (Hover/Click to see example)
-                        </span>
-                    </label>
-
-                   
+                <div id="ai-obfuscate-group" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="ai-obfuscate-data" checked>
+                    <label for="ai-obfuscate-data">Obfuscate</label> mask sensitive data (bucket names, collection names, values and cb user names)
+                    <span id="obfuscation-toggle-link"
+                          style="font-size: 11px; color: #007bff; cursor: help; text-decoration: underline; margin-left: 4px;">
+                        (Hover/Click to see example)
+                    </span>
                 </div>
                 
                 <!-- Obfuscation Example (Hidden by default) -->
@@ -464,40 +530,29 @@
                     
                     <!-- Timeline Options Box -->
                     <div style="flex: 1; min-width: 280px; padding: 12px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px;">
-                        <div style="font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">📊 Timeline</div>
+                        <div style="font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Timeline</div>
                         
                         <!-- Chart Trends -->
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;" title="Controls how many chart trend insights the AI generates.">
-                            <label style="font-size: 13px; color: #333; min-width: 90px;">Chart Trends:</label>
-                            <div style="display: flex; gap: 8px;">
-                                <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 3px;">
-                                    <input type="radio" name="ai-chart-trends-depth" value="low" checked> Low
-                                </label>
-                                <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 3px;">
-                                    <input type="radio" name="ai-chart-trends-depth" value="high"> High
-                                </label>
+                            <span style="font-size: 13px; color: #333; min-width: 90px;">Chart Trends:</span>
+                            <div id="ai-chart-trends-group" style="display: flex; gap: 4px;">
+                                <input type="radio" name="ai-chart-trends-depth" id="ai-chart-trends-low" value="low" checked><label for="ai-chart-trends-low">Low</label>
+                                <input type="radio" name="ai-chart-trends-depth" id="ai-chart-trends-high" value="high"><label for="ai-chart-trends-high">High</label>
                             </div>
                         </div>
                         
                         <!-- Timeline Data -->
                         <div id="ai-timeline-data-depth-container" style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;" title="'Basic' sends 7 key charts. 'Full' sends all 14 charts.">
-                            <label style="font-size: 13px; color: #333; min-width: 90px;">Data Depth:</label>
-                            <div style="display: flex; gap: 8px;">
-                                <label id="ai-timeline-data-basic-label" style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 3px;">
-                                    <input type="radio" name="ai-timeline-data-depth" value="basic" checked> Basic
-                                </label>
-                                <label id="ai-timeline-data-full-label" style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 3px;">
-                                    <input type="radio" name="ai-timeline-data-depth" value="full"> Full
-                                </label>
+                            <span style="font-size: 13px; color: #333; min-width: 90px;">Data Depth:</span>
+                            <div id="ai-timeline-depth-group" style="display: flex; gap: 4px;">
+                                <input type="radio" name="ai-timeline-data-depth" id="ai-timeline-data-basic" value="basic" checked><label for="ai-timeline-data-basic">Basic</label>
+                                <input type="radio" name="ai-timeline-data-depth" id="ai-timeline-data-full" value="full"><label for="ai-timeline-data-full">Full</label>
                             </div>
                         </div>
                         
                         <!-- Stake Focus -->
-                        <div style="display: flex; align-items: center; gap: 10px;" title="Double-click on Timeline chart to set a stake point.">
-                            <label style="display: flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer; min-width: 90px;">
-                                <input type="checkbox" id="ai-stake-focus-enabled" disabled>
-                                Stake Focus:
-                            </label>
+                        <div id="ai-stake-focus-group" style="display: flex; align-items: center; gap: 10px;" title="Double-click on Timeline chart to set a stake point.">
+                            <input type="checkbox" id="ai-stake-focus-enabled" disabled><label for="ai-stake-focus-enabled" style="min-width: 80px;">Stake Focus:</label>
                             <input type="text" id="ai-stake-datetime" readonly 
                                 style="flex: 1; padding: 3px 6px; font-size: 11px; font-family: monospace; background: #fff; border: 1px solid #ddd; border-radius: 3px; color: #666;"
                                 placeholder="Double-click Timeline chart">
@@ -506,23 +561,17 @@
                     
                     <!-- Query Groups Box -->
                     <div style="min-width: 200px; padding: 12px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px;">
-                        <div style="font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">📋 Query Groups</div>
-                        <div style="display: flex; flex-direction: column; gap: 6px;" title="Limit the number of Query Groups sent to AI (sorted by impact).">
-                            <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                <input type="radio" name="ai-qg-limit" value="3"> Top 3
-                            </label>
-                            <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                <input type="radio" name="ai-qg-limit" value="10" checked> Top 10
-                            </label>
-                            <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                <input type="radio" name="ai-qg-limit" value="25"> Top 25
-                            </label>
+                        <div style="font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Query Groups</div>
+                        <div id="ai-qg-limit-group" style="display: flex; flex-direction: column; gap: 4px;" title="Limit the number of Query Groups sent to AI (sorted by impact).">
+                            <input type="radio" name="ai-qg-limit" id="ai-qg-limit-3" value="3"><label for="ai-qg-limit-3">Top 3</label>
+                            <input type="radio" name="ai-qg-limit" id="ai-qg-limit-10" value="10" checked><label for="ai-qg-limit-10">Top 10</label>
+                            <input type="radio" name="ai-qg-limit" id="ai-qg-limit-25" value="25"><label for="ai-qg-limit-25">Top 25</label>
                         </div>
                     </div>
                     
                     <!-- Language Box -->
                     <div style="min-width: 180px; padding: 12px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px;">
-                        <div style="font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">🌐 Response Language</div>
+                        <div style="font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Response Language</div>
                         <select name="ai-language" id="ai-language" style="width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; background-color: white;">
                             <option value="EN">English</option>
                             <option value="ZH">中文 (Chinese)</option>
@@ -562,6 +611,56 @@
                         link.parentElement.parentElement.parentElement.addEventListener('mouseleave', () => example.style.display = 'none');
                     }
                 })();
+                
+                // Initialize jQuery UI widgets when DOM is ready
+                $(function() {
+                    // Data to Analyze checkboxes
+                    $('#ai-data-selection-group input[type="checkbox"]').checkboxradio({
+                        icon: false
+                    });
+                    
+                    // Obfuscate checkbox
+                    $('#ai-obfuscate-data').checkboxradio({
+                        icon: false
+                    });
+                    
+                    // Chart Trends radio buttons
+                    $('#ai-chart-trends-group input[type="radio"]').checkboxradio({
+                        icon: false
+                    });
+                    
+                    // Timeline Data Depth radio buttons
+                    $('#ai-timeline-depth-group input[type="radio"]').checkboxradio({
+                        icon: false
+                    });
+                    
+                    // Stake Focus checkbox
+                    $('#ai-stake-focus-enabled').checkboxradio({
+                        icon: false
+                    });
+                    
+                    // Query Groups Limit radio buttons
+                    $('#ai-qg-limit-group input[type="radio"]').checkboxradio({
+                        icon: false
+                    });
+                    
+                    // Language dropdown
+                    $('#ai-language').selectmenu({
+                        width: '100%'
+                    });
+                    
+                    // Provider dropdown (initialized later when options are loaded)
+                    // Expose a global function to refresh the selectmenu after dynamic population
+                    window.refreshAIProviderSelectMenu = function() {
+                        if ($('#ai-provider-select').data('ui-selectmenu')) {
+                            $('#ai-provider-select').selectmenu('refresh');
+                        } else {
+                            $('#ai-provider-select').selectmenu({
+                                width: '100%'
+                            });
+                        }
+                    };
+                });
             </script>
             </div>
 
@@ -576,7 +675,7 @@
             <!-- Analyze Button -->
             <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
                 <button id="ai-analyze-btn" onclick="analyzeWithAI()" class="btn-standard" style="background: #2196f3; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
-                    🚀 Analyze with AI
+                    Analyze with AI
                 </button>
 
                 <button id="ai-preview-btn" onclick="showAIPreview('json')" class="btn-standard" style="background: #6c757d; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
