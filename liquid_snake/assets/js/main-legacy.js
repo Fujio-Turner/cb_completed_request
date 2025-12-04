@@ -27317,6 +27317,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Add copy buttons to all code blocks (index-statement divs)
             addCopyButtonsToCodeBlocks(responseDiv);
             
+            // Render issue gauge charts
+            renderIssueGaugeCharts();
+            
             // Stats
             if (statsSpan) {
                 const tokens = aiResponse.usage?.total_tokens || 0;
@@ -27400,6 +27403,63 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (overlay) {
                 overlay.style.display = 'none';
             }
+        }
+        
+        /**
+         * Render donut gauge charts for critical issues
+         * Creates Chart.js doughnut charts that look like circular gauges
+         */
+        function renderIssueGaugeCharts() {
+            const gaugeCanvases = document.querySelectorAll('[id^="issue-gauge-"]');
+            
+            if (gaugeCanvases.length === 0) {
+                Logger.debug('[AI] No issue gauge canvases found');
+                return;
+            }
+            
+            Logger.debug(`[AI] Rendering ${gaugeCanvases.length} issue gauge charts`);
+            
+            gaugeCanvases.forEach(canvas => {
+                const percentage = parseInt(canvas.dataset.percentage) || 0;
+                const color = canvas.dataset.color || '#6c757d';
+                const ctx = canvas.getContext('2d');
+                
+                if (ctx && typeof Chart !== 'undefined') {
+                    // Destroy existing chart if any
+                    const existingChart = Chart.getChart(canvas);
+                    if (existingChart) {
+                        existingChart.destroy();
+                    }
+                    
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            datasets: [{
+                                data: [percentage, 100 - percentage],
+                                backgroundColor: [color, '#e9ecef'],
+                                borderWidth: 0,
+                                cutout: '70%'
+                            }]
+                        },
+                        options: {
+                            responsive: false,
+                            maintainAspectRatio: true,
+                            rotation: -90, // Start from top (12 o'clock)
+                            circumference: 360,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: false }
+                            },
+                            animation: {
+                                animateRotate: true,
+                                duration: 800
+                            }
+                        }
+                    });
+                }
+            });
+            
+            Logger.debug('[AI] ✅ Issue gauge charts rendered');
         }
         
         // Track panel state
@@ -27490,7 +27550,343 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 return md;
             };
             
-            // Helper to convert HTML to Markdown
+            // Helper to extract Critical Issues from new card grid structure
+            const extractCriticalIssues = (container) => {
+                let md = '';
+                
+                // Find the critical issues section by looking for h2 with "Critical Issues"
+                const headers = container.querySelectorAll('h2');
+                let issuesSection = null;
+                headers.forEach(h2 => {
+                    if (h2.textContent.includes('Critical Issues')) {
+                        issuesSection = h2.parentElement;
+                    }
+                });
+                
+                if (!issuesSection) return md;
+                
+                // Extract count from header
+                const headerText = issuesSection.querySelector('h2').textContent;
+                const countMatch = headerText.match(/\((\d+)\)/);
+                const count = countMatch ? countMatch[1] : '';
+                
+                md += `\n### 🚨 Critical Issues (${count})\n\n`;
+                
+                // Extract summary stats if present (Total, Issues, Rating, Potential)
+                const summaryDiv = issuesSection.querySelector('div[style*="display: flex"][style*="gap"]');
+                if (summaryDiv) {
+                    const statsText = summaryDiv.textContent.trim().replace(/\s+/g, ' ');
+                    // Parse stats like "Total: 52 queries Issues: 12 Rating: poor Potential: 85%"
+                    const totalMatch = statsText.match(/Total[:\s]+(\d+)/i);
+                    const issuesMatch = statsText.match(/Issues[:\s]+(\d+)/i);
+                    const ratingMatch = statsText.match(/Rating[:\s]+(\w+)/i);
+                    const potentialMatch = statsText.match(/Potential[:\s]+([^\s]+)/i);
+                    
+                    if (totalMatch) md += `Total: **${totalMatch[1]}** queries\n`;
+                    if (issuesMatch) md += `Issues: ${issuesMatch[1]}\n`;
+                    if (ratingMatch) md += `Rating: ${ratingMatch[1]}\n`;
+                    if (potentialMatch) md += `Potential: **${potentialMatch[1]}**\n`;
+                    md += '\n---\n\n';
+                }
+                
+                // Extract from detailed breakdown container
+                const detailsContainer = issuesSection.querySelector('#issue-details-container');
+                if (detailsContainer) {
+                    const details = detailsContainer.querySelectorAll('[id^="issue-detail-"]');
+                    details.forEach((detail, idx) => {
+                        // Extract priority badge (P1, P2, etc.)
+                        const prioritySpan = detail.querySelector('span[style*="border-radius: 4px"]');
+                        const priority = prioritySpan ? prioritySpan.textContent.trim() : '';
+                        
+                        // Extract title
+                        const titleEl = detail.querySelector('strong[style*="font-size: 15px"]');
+                        const title = titleEl ? titleEl.textContent.trim() : '';
+                        
+                        md += `**${idx + 1}. ${title}**\n\n`;
+                        
+                        // Extract description (may contain HTML with code blocks)
+                        const descDiv = detail.querySelector('div[style*="color: #555"][style*="line-height: 1.6"]');
+                        if (descDiv) {
+                            // Check for code blocks within description
+                            const codeBlocks = descDiv.querySelectorAll('pre, code, .index-statement');
+                            if (codeBlocks.length > 0) {
+                                // Process description with embedded code
+                                let descText = '';
+                                descDiv.childNodes.forEach(node => {
+                                    if (node.nodeType === Node.TEXT_NODE) {
+                                        descText += node.textContent;
+                                    } else if (node.nodeType === Node.ELEMENT_NODE) {
+                                        if (node.tagName === 'PRE' || node.tagName === 'CODE' || node.classList?.contains('index-statement')) {
+                                            descText += '\n```sql\n' + node.textContent.trim() + '\n```\n';
+                                        } else if (node.tagName === 'STRONG' || node.tagName === 'B') {
+                                            descText += '**' + node.textContent + '**';
+                                        } else {
+                                            descText += node.textContent;
+                                        }
+                                    }
+                                });
+                                md += descText.trim() + '\n\n';
+                            } else {
+                                md += descDiv.textContent.trim() + '\n\n';
+                            }
+                        }
+                        
+                        // Extract suggested fix (light green box)
+                        const fixBox = detail.querySelector('div[style*="background: #e8f5e9"]');
+                        if (fixBox) {
+                            const fixContent = fixBox.querySelector('div[style*="font-size: 13px"]');
+                            if (fixContent) {
+                                const fixText = fixContent.textContent.trim();
+                                // Check if fix contains SQL (CREATE INDEX, etc.)
+                                if (fixText.match(/CREATE\s+INDEX|DROP\s+INDEX|ALTER\s+INDEX|SELECT|INSERT|UPDATE|DELETE/i)) {
+                                    md += '**Fix:**\n```sql\n' + fixText + '\n```\n\n';
+                                } else {
+                                    md += '**Suggested Fix:** ' + fixText + '\n\n';
+                                }
+                            }
+                        }
+                        
+                        // Extract expected impact
+                        const impactDiv = detail.querySelector('div[style*="color: #28a745"]');
+                        if (impactDiv) {
+                            md += '**Impact:** ' + impactDiv.textContent.replace(/Expected Impact[:\s]*/i, '').trim() + '\n\n';
+                        }
+                        
+                        // Extract sources if present
+                        const sourcesDiv = detail.querySelector('div[style*="font-size: 10px"][style*="color: #888"]');
+                        if (sourcesDiv) {
+                            md += '**📍 Sources:** ' + sourcesDiv.textContent.replace('📍 Sources:', '').trim() + '\n\n';
+                        }
+                        
+                        // Add priority at end
+                        if (priority) {
+                            // Try to extract severity from border color
+                            const borderStyle = detail.getAttribute('style') || '';
+                            let severity = 'HIGH';
+                            if (borderStyle.includes('#dc3545')) severity = 'CRITICAL';
+                            else if (borderStyle.includes('#fd7e14')) severity = 'HIGH';
+                            else if (borderStyle.includes('#ffc107')) severity = 'MEDIUM';
+                            md += `**Priority:** ${priority}/10 ${severity}\n\n`;
+                        }
+                        
+                        md += '---\n\n';
+                    });
+                }
+                
+                return md;
+            };
+            
+            // Helper to extract Recommendations from new 2-column grid structure
+            const extractRecommendations = (container) => {
+                let md = '';
+                
+                // Find recommendations by looking for h2 with "Recommendations"
+                const headers = container.querySelectorAll('h2');
+                let recSection = null;
+                headers.forEach(h2 => {
+                    if (h2.textContent.includes('Recommendations')) {
+                        recSection = h2.parentElement;
+                    }
+                });
+                
+                if (!recSection) return md;
+                
+                const grid = recSection.querySelector('div[style*="grid-template-columns: repeat(2"]');
+                if (!grid) return md;
+                
+                const cards = grid.children;
+                if (cards.length === 0) return md;
+                
+                // Extract count from header
+                const headerText = recSection.querySelector('h2').textContent;
+                const countMatch = headerText.match(/\((\d+)\)/);
+                const count = countMatch ? countMatch[1] : cards.length;
+                
+                md += `\n### 💡 Recommendations (${count})\n\n---\n\n`;
+                
+                Array.from(cards).forEach((card, idx) => {
+                    // Extract title (h3) - remove leading number if present
+                    const titleEl = card.querySelector('h3');
+                    let title = titleEl ? titleEl.textContent.trim() : `Recommendation ${idx + 1}`;
+                    // Remove leading "1. ", "2. " etc. since we'll add our own
+                    title = title.replace(/^\d+\.\s*/, '');
+                    
+                    md += `**${idx + 1}. ${title}**\n\n`;
+                    
+                    // Extract rationale/description - need to parse HTML content properly
+                    const rationaleDiv = card.querySelector('div[style*="color: #555"][style*="line-height: 1.5"]');
+                    if (rationaleDiv) {
+                        // Get raw text and parse for structure
+                        let rationaleText = rationaleDiv.textContent.trim();
+                        
+                        // Remove all Copy button text artifacts
+                        rationaleText = rationaleText
+                            .replace(/Copy(?=CREATE|SELECT|INSERT|DELETE|UPDATE|#|idx_|\s*$)/gi, '\n')
+                            .replace(/CopyCopy/g, '\n')
+                            .replace(/\bCopy\b/g, '')
+                            .trim();
+                        
+                        // Parse structured content if present
+                        // Pattern: "Current Index...:#primarySuggested Index:CREATE INDEX..."
+                        const hasCurrentIndex = /Current Index[^:]*:/i.test(rationaleText);
+                        const hasSuggestedIndex = /Suggested Index[^:]*:/i.test(rationaleText);
+                        const hasReasoning = /Reasoning:/i.test(rationaleText);
+                        
+                        if (hasCurrentIndex || hasSuggestedIndex || hasReasoning) {
+                            // Split by known labels
+                            let parts = rationaleText;
+                            
+                            // Extract Current Index section
+                            const currentIndexMatch = parts.match(/Current Index[^:]*:\s*([^]*?)(?=Suggested Index|Reasoning:|$)/i);
+                            if (currentIndexMatch) {
+                                let currentIndexValue = currentIndexMatch[1].trim();
+                                // Clean up the value
+                                currentIndexValue = currentIndexValue.replace(/\s+/g, ' ').trim();
+                                if (currentIndexValue) {
+                                    md += '**Current Index:** `' + currentIndexValue + '`\n\n';
+                                }
+                            }
+                            
+                            // Extract Suggested Index section
+                            const suggestedIndexMatch = parts.match(/Suggested Index[^:]*:\s*([^]*?)(?=Reasoning:|See docs\.|$)/i);
+                            if (suggestedIndexMatch) {
+                                let suggestedIndexValue = suggestedIndexMatch[1].trim();
+                                // Check if it contains SQL
+                                if (suggestedIndexValue.match(/CREATE\s+INDEX|ALTER\s+INDEX/i)) {
+                                    // Clean up - extract just the CREATE INDEX statement
+                                    const sqlMatch = suggestedIndexValue.match(/(CREATE\s+INDEX[^;]+;?)/i);
+                                    if (sqlMatch) {
+                                        md += '**Suggested Index:**\n```sql\n' + sqlMatch[1].trim() + '\n```\n\n';
+                                    }
+                                }
+                            }
+                            
+                            // Extract Reasoning section
+                            const reasoningMatch = parts.match(/Reasoning:\s*([^]*?)(?=See docs\.|$)/i);
+                            if (reasoningMatch) {
+                                let reasoningValue = reasoningMatch[1].trim();
+                                if (reasoningValue) {
+                                    md += '**Reasoning:** ' + reasoningValue + '\n\n';
+                                }
+                            }
+                            
+                            // Extract doc links if present
+                            const docLinkMatch = parts.match(/See (docs\.couchbase\.com[^\s]+)/i);
+                            if (docLinkMatch) {
+                                md += '*See: ' + docLinkMatch[1] + '*\n\n';
+                            }
+                        } else {
+                            // No structured content, just output the cleaned text
+                            md += rationaleText.replace(/\s+/g, ' ').trim() + '\n\n';
+                        }
+                    }
+                    
+                    // Extract Current Index (yellow box) - these are in separate divs now
+                    const currentIndexBox = card.querySelector('div[style*="background: #fff9e6"]');
+                    if (currentIndexBox) {
+                        const labelDiv = currentIndexBox.querySelector('div[style*="text-transform: uppercase"]');
+                        const indexContent = currentIndexBox.querySelector('div[style*="font-family: monospace"]');
+                        if (indexContent) {
+                            const indexText = indexContent.textContent.trim().replace(/Copy$/, '').trim();
+                            md += '**Current Index:**\n```sql\n' + indexText + '\n```\n\n';
+                        }
+                    }
+                    
+                    // Extract Suggested Index (light green box)
+                    const suggestedIndexBox = card.querySelector('div[style*="background: #e8f5e9"]');
+                    if (suggestedIndexBox) {
+                        const labelDiv = suggestedIndexBox.querySelector('div[style*="text-transform: uppercase"]');
+                        const label = labelDiv ? labelDiv.textContent.trim() : '';
+                        const indexContent = suggestedIndexBox.querySelector('div[style*="font-family: monospace"]');
+                        const actionContent = suggestedIndexBox.querySelector('div[style*="font-size: 12px"][style*="line-height: 1.4"]');
+                        
+                        if (label.includes('Suggested Index') && indexContent) {
+                            const indexText = indexContent.textContent.trim().replace(/Copy$/, '').trim();
+                            md += '**Suggested Index:**\n```sql\n' + indexText + '\n```\n\n';
+                        } else if (label.includes('Suggested Action') && actionContent) {
+                            md += '**Suggested Action:** ' + actionContent.textContent.trim() + '\n\n';
+                        } else if (indexContent) {
+                            const indexText = indexContent.textContent.trim().replace(/Copy$/, '').trim();
+                            md += '**Suggested Index:**\n```sql\n' + indexText + '\n```\n\n';
+                        }
+                    }
+                    
+                    // Extract Steps if present (list items)
+                    const stepsOl = card.querySelector('ol');
+                    const stepsUl = card.querySelector('ul');
+                    if (stepsOl || stepsUl) {
+                        const stepsList = stepsOl || stepsUl;
+                        const items = stepsList.querySelectorAll('li');
+                        if (items.length > 0) {
+                            md += '**Steps:**\n';
+                            items.forEach(item => {
+                                md += '- ' + item.textContent.trim() + '\n';
+                            });
+                            md += '\n';
+                        }
+                    }
+                    
+                    // Extract Impact
+                    const impactDivs = card.querySelectorAll('div[style*="font-size: 12px"]');
+                    impactDivs.forEach(div => {
+                        if (div.textContent.includes('Impact:') && !div.closest('div[style*="background:"]')) {
+                            const impactSpan = div.querySelector('span[style*="color: #28a745"]');
+                            if (impactSpan) {
+                                md += '**Impact:** ' + impactSpan.textContent.trim() + '\n\n';
+                            }
+                        }
+                    });
+                    
+                    // Extract sources if present
+                    const sourcesDiv = card.querySelector('div[style*="font-size: 10px"][style*="color: #888"]');
+                    if (sourcesDiv) {
+                        md += '**📍 Sources:** ' + sourcesDiv.textContent.replace('📍 Sources:', '').trim() + '\n\n';
+                    }
+                    
+                    // Extract priority if present
+                    const priorityDivs = card.querySelectorAll('div[style*="font-weight: 600"]');
+                    priorityDivs.forEach(div => {
+                        if (div.textContent.includes('Priority') && !div.closest('h3')) {
+                            md += div.textContent.trim() + '\n\n';
+                        }
+                    });
+                    
+                    md += '---\n\n';
+                });
+                
+                return md;
+            };
+            
+            // Helper to extract Next Steps
+            const extractNextSteps = (container) => {
+                let md = '';
+                
+                // Find next steps section by looking for h2 with "Next Steps"
+                const headers = container.querySelectorAll('h2');
+                let nextStepsSection = null;
+                headers.forEach(h2 => {
+                    if (h2.textContent.includes('Next Steps')) {
+                        nextStepsSection = h2.parentElement;
+                    }
+                });
+                
+                if (!nextStepsSection) return md;
+                
+                const list = nextStepsSection.querySelector('ol');
+                if (!list) return md;
+                
+                md += '\n### 🎯 Next Steps\n\n';
+                
+                const items = list.querySelectorAll('li');
+                items.forEach((item, idx) => {
+                    md += `- ${item.textContent.trim()}\n`;
+                });
+                md += '\n';
+                
+                return md;
+            };
+            
+            // Helper to convert HTML to Markdown (for other sections)
             const htmlToMarkdown = (element) => {
                 let md = '';
                 
@@ -27500,6 +27896,25 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         md += node.textContent.trim().replace(/\s+/g, ' ') + ' ';
                     } else if (node.nodeType === Node.ELEMENT_NODE) {
                         const tagName = node.tagName.toLowerCase();
+                        
+                        // Skip critical issues section - handled by extractCriticalIssues
+                        if (node.id === 'critical-issues-grid' || node.id === 'issue-details-container') {
+                            return;
+                        }
+                        // Skip parent divs containing Critical Issues h2
+                        if (node.querySelector && node.querySelector('h2')?.textContent?.includes('Critical Issues')) {
+                            return;
+                        }
+                        
+                        // Skip recommendations grid - handled by extractRecommendations
+                        if (node.querySelector && node.querySelector('h2')?.textContent?.includes('Recommendations')) {
+                            return;
+                        }
+                        
+                        // Skip next steps section - handled by extractNextSteps
+                        if (node.querySelector && node.querySelector('h2')?.textContent?.includes('Next Steps')) {
+                            return;
+                        }
                         
                         // Handle the Chart Trends section - extract only the table, skip diagram
                         if (node.id === 'ai-insights-table') {
@@ -27547,8 +27962,25 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             return;
                         }
                         
+                        // Skip canvas elements (gauge charts)
+                        if (tagName === 'canvas') {
+                            return;
+                        }
+                        
+                        // Handle h2 headers (major sections)
+                        if (tagName === 'h2') {
+                            const headerText = node.textContent.trim();
+                            // Skip if already handled by specialized extractors or table handlers
+                            if (headerText.includes('Critical Issues') || 
+                                headerText.includes('Recommendations') || 
+                                headerText.includes('Next Steps') ||
+                                headerText.includes('Chart Trends')) {
+                                return;
+                            }
+                            md += '\n## ' + headerText + '\n\n';
+                        }
                         // Special handling for SQL code blocks (prioritize over generic div)
-                        if (tagName === 'pre' || (tagName === 'div' && node.classList.contains('index-statement'))) {
+                        else if (tagName === 'pre' || (tagName === 'div' && node.classList.contains('index-statement'))) {
                             // Remove "Copy" button text from code blocks
                             const clone = node.cloneNode(true);
                             const btn = clone.querySelector('button');
@@ -27570,6 +28002,13 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         }
                         // Generic containers
                         else if (tagName === 'div') {
+                            // Skip divs that are part of specialized sections
+                            if (node.closest('#critical-issues-grid') || 
+                                node.closest('#issue-details-container') ||
+                                node.closest('[style*="grid-template-columns: repeat(2"]')) {
+                                return;
+                            }
+                            
                             // Check if this div is a label+value pair (bold followed by content)
                             const firstChild = node.firstElementChild;
                             const hasLabelPattern = firstChild && (firstChild.tagName === 'STRONG' || firstChild.tagName === 'B');
@@ -27606,6 +28045,10 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             if (node.textContent.includes('Chart Trends & Analysis')) {
                                 return;
                             }
+                            // Skip headers for sections handled by specialized extractors
+                            if (node.textContent.includes('Detailed Issue Breakdown')) {
+                                return;
+                            }
                             // Add emoji for User Specific Request header
                             const headerText = node.textContent.trim();
                             if (headerText.match(/User Specific Requests?/i)) {
@@ -27636,11 +28079,28 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             };
             
             const contextMd = extractContextAsTable();
-            const responseMd = `## 🎯 AI Analysis Results\n\n${htmlToMarkdown(responseDiv)}`;
+            
+            // Build response markdown with specialized extractors for new structures
+            let responseMd = '## 🎯 AI Analysis Results\n\n';
+            
+            // Extract general content (Analysis Summary, Chart Trends, etc.)
+            responseMd += htmlToMarkdown(responseDiv);
+            
+            // Extract Critical Issues with new card grid format
+            responseMd += extractCriticalIssues(responseDiv);
+            
+            // Extract Recommendations with new 2-column grid format
+            responseMd += extractRecommendations(responseDiv);
+            
+            // Extract Next Steps
+            responseMd += extractNextSteps(responseDiv);
             
             const fullMd = `${contextMd}\n\n---\n\n${responseMd}`;
             
-            navigator.clipboard.writeText(fullMd).then(() => {
+            // Clean up multiple newlines and trim
+            const cleanedMd = fullMd.replace(/\n{4,}/g, '\n\n\n').trim();
+            
+            navigator.clipboard.writeText(cleanedMd).then(() => {
                 showToast('Analysis copied as Markdown!', 'success');
             }).catch(err => {
                 Logger.error('Failed to copy markdown:', err);
@@ -28154,7 +28614,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 }
 
                 html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #6c757d;">
-                    <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">📋 Analysis Summary</h4>
+                    <h2 style="color: #495057; margin: 0 0 12px 0; font-size: 22px; font-weight: 600; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">📋 Analysis Summary</h2>
                     <div style="font-size: 13px; line-height: 1.5; color: #333;">
                         ${content}
                     </div>
@@ -28190,7 +28650,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (data.chart_trends && data.chart_trends.insights && data.chart_trends.insights.length > 0) {
                 html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #17a2b8;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h4 style="color: #17a2b8; margin: 0; font-size: 15px;">📈 Chart Trends & Analysis</h4>
+                        <h2 style="color: #17a2b8; margin: 0 0 8px 0; font-size: 22px; font-weight: 600;">📈 Chart Trends & Analysis</h2>
                         <button onclick="resetTimelineZoom()" style="background: #6c757d; color: white; border: none; padding: 4px 10px; font-size: 11px; border-radius: 3px; cursor: pointer;" title="Reset timeline to show all items">🔄 Reset Zoom</button>
                     </div>
                     <div id="ai-insights-timeline" style="height: 300px; border: 1px solid #dee2e6; border-radius: 4px; background: white;"></div>
@@ -28213,7 +28673,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Fallback: Legacy HTML format (for backward compatibility)
             else if (data.chart_trends && data.chart_trends.timeline_analysis_html) {
                 html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #17a2b8;">
-                    <h4 style="color: #17a2b8; margin: 0 0 10px 0; font-size: 15px;">📈 Chart Trends & Analysis</h4>
+                    <h2 style="color: #17a2b8; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">📈 Chart Trends & Analysis</h2>
                     <div style="font-size: 12px; line-height: 1.5; color: #333;">
                         ${data.chart_trends.timeline_analysis_html}
                     </div>`;
@@ -28227,10 +28687,10 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             }
             
             
-            // Critical Issues - Compact
+            // Critical Issues - With Summary Table
             if (data.critical_issues && data.critical_issues.length > 0) {
                 html += `<div style="margin-bottom: 12px;">
-                    <h4 style="color: #dc3545; margin: 0 0 8px 0; font-size: 15px;">🚨 Critical Issues (${data.critical_issues.length})</h4>`;
+                    <h2 style="color: #dc3545; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">🚨 Critical Issues (${data.critical_issues.length})</h2>`;
                 
                 // Summary - Compact (Moved here)
                 if (data.summary) {
@@ -28244,59 +28704,174 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     </div>`;
                 }
                 
-                data.critical_issues.forEach((issue, idx) => {
+                // Card Grid Layout - Project Summary style
+                const totalQueries = data.summary?.total_queries_analyzed || 0;
+                
+                // Sort issues by priority (highest first)
+                const sortedIssues = [...data.critical_issues].sort((a, b) => {
+                    const pA = parseInt(a.priority_number || a.priority) || 0;
+                    const pB = parseInt(b.priority_number || b.priority) || 0;
+                    return pB - pA;
+                });
+                
+                html += `<div id="critical-issues-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 16px;">`;
+                
+                sortedIssues.forEach((issue, idx) => {
                     const priorityNum = issue.priority_number || issue.priority || '?';
+                    const severityColor = issue.severity === 'critical' ? '#dc3545' : 
+                                         issue.severity === 'high' ? '#fd7e14' : 
+                                         issue.severity === 'medium' ? '#ffc107' : '#6c757d';
+                    const bgColor = issue.severity === 'critical' ? '#fff5f5' : 
+                                   issue.severity === 'high' ? '#fffaf5' : 
+                                   issue.severity === 'medium' ? '#fffef5' : '#f8f9fa';
                     
-                    html += `<hr class="md-separator" style="border: none; border-top: 1px solid #eee; margin: 12px 0;">
-                    <div style="background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #dc3545; border: 1px solid #f8d7da;">
-                        <div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
-                            <div><strong style="font-size: 14px;">${idx + 1}. ${issue.title}</strong></div>
-                            <div style="display: flex; gap: 6px; align-items: center;">
-                                <span style="background: #000; color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold;">P${priorityNum}/10</span>
-                                <span class="severity-${issue.severity}" style="font-size: 10px;">${issue.severity.toUpperCase()}</span>
+                    const affectedQueries = issue.affected_queries || 0;
+                    const percentage = totalQueries > 0 ? Math.round((affectedQueries / totalQueries) * 100) : 0;
+                    
+                    html += `<div id="issue-card-${idx}" style="background: ${bgColor}; border-radius: 6px; border-left: 5px solid ${severityColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.08); overflow: hidden; cursor: pointer; transition: box-shadow 0.2s, transform 0.2s;" 
+                                 onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'; this.style.transform='translateY(-2px)';" 
+                                 onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)'; this.style.transform='translateY(0)';"
+                                 onclick="(function(){ var container = document.getElementById('issue-details-container'); var target = document.getElementById('issue-detail-${idx}'); if(container && target) { container.scrollTo({top: target.offsetTop - container.offsetTop, behavior: 'smooth'}); } })();">
+                        
+                        <!-- Card Header -->
+                        <div style="padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.06);">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="background: ${severityColor}; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">P${priorityNum}</span>
+                                <span style="font-weight: 600; font-size: 13px; color: #333; flex: 1;">${issue.title || ''}</span>
                             </div>
                         </div>
-                        <div style="margin-bottom: 6px; font-size: 12px; line-height: 1.4;">${issue.description_html || issue.description || ''}</div>
-                        <div style="font-size: 12px; margin-bottom: 6px; line-height: 1.6;">
-                            <div><strong>Affected:</strong> ${issue.affected_queries || 0} queries</div>
-                            <div><strong>Fix:</strong> ${issue.recommendation || ''}</div>
-                            <div><strong>Impact:</strong> ${issue.expected_impact || ''}</div>
+                        
+                        <!-- Card Body with Gauge -->
+                        <div style="padding: 10px 12px; display: flex; gap: 12px;">
+                            <!-- Donut Gauge -->
+                            <div style="flex-shrink: 0; width: 80px; height: 80px; position: relative;">
+                                <canvas id="issue-gauge-${idx}" width="80" height="80" 
+                                        data-percentage="${percentage}" 
+                                        data-color="${severityColor}"></canvas>
+                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                                    <div style="font-size: 18px; font-weight: bold; color: ${severityColor}; line-height: 1;">${percentage}%</div>
+                                    <div style="font-size: 8px; color: #666; text-transform: uppercase;">Affected</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div style="flex: 1; min-width: 0;">
+                                <!-- Affected count -->
+                                <div style="font-size: 11px; color: #666; margin-bottom: 6px;">
+                                    <strong style="color: #333;">${affectedQueries}</strong> of ${totalQueries} queries
+                                </div>
+                                
+                                <!-- Suggested Fix -->
+                                <div style="font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Suggested Fix</div>
+                                <div style="font-size: 11px; color: #495057; line-height: 1.4;">${(issue.recommendation || '').length > 100 ? (issue.recommendation || '').substring(0, 100) + '...' : (issue.recommendation || '')}</div>
+                            </div>
                         </div>
-                        ${issue.sources ? '<div style="font-size: 10px; color: #666; padding: 6px; background: #f8f9fa; border-radius: 3px; margin-top: 6px;"><strong>📍 Sources:</strong> ' + issue.sources.map(s => `<span style="display: inline-block; margin: 2px 4px; padding: 2px 6px; background: #e9ecef; border-radius: 2px;">${s.location}</span>`).join('') + '</div>' : ''}
-                        <div style="font-size: 11px; margin-top: 8px;"><strong>Priority:</strong> P${priorityNum}/10 ${issue.severity.toUpperCase()}</div>
                     </div>`;
                 });
                 
-                html += '</div>';
+                html += `</div>
+                    <div style="font-size: 10px; color: #6c757d; margin-bottom: 12px; font-style: italic;">💡 Click any card to view full details below</div>`;
+                
+                // Detailed Breakdown Section - Scrollable container
+                html += `<div style="border-top: 2px solid #dee2e6; padding-top: 12px; margin-top: 8px;">
+                    <div style="font-size: 13px; color: #495057; margin-bottom: 10px; font-weight: 600;">📋 Detailed Issue Breakdown</div>
+                    <div id="issue-details-container" style="max-height: 400px; overflow-y: auto; padding-right: 8px;">`;
+                
+                data.critical_issues.forEach((issue, idx) => {
+                    const priorityNum = issue.priority_number || issue.priority || '?';
+                    const severityColor = issue.severity === 'critical' ? '#dc3545' : 
+                                         issue.severity === 'high' ? '#fd7e14' : 
+                                         issue.severity === 'medium' ? '#ffc107' : '#6c757d';
+                    
+                    html += `<div id="issue-detail-${idx}" style="background: #fff; padding: 14px; border-radius: 6px; margin-bottom: 12px; border-left: 5px solid ${severityColor}; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                        
+                        <!-- Header -->
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                            <span style="background: ${severityColor}; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold;">P${priorityNum}</span>
+                            <strong style="font-size: 15px; color: #333;">${issue.title}</strong>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div style="font-size: 12px; color: #555; line-height: 1.6; margin-bottom: 12px;">
+                            ${issue.description_html || issue.description || ''}
+                        </div>
+                        
+                        <!-- Fix Section - Light Green -->
+                        <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #4caf50;">
+                            <div style="font-size: 11px; color: #2e7d32; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600;">🔧 Suggested Fix</div>
+                            <div style="font-size: 13px; color: #333; line-height: 1.5;">${issue.recommendation || ''}</div>
+                        </div>
+                        
+                        <!-- Impact - Simple text -->
+                        <div style="font-size: 12px; color: #28a745; font-weight: 500;">
+                            <span style="color: #666; font-weight: normal;">Expected Impact:</span> ${issue.expected_impact || 'Performance improvement'}
+                        </div>
+                        
+                        ${issue.sources ? '<div style="font-size: 10px; color: #888; margin-top: 10px; padding-top: 8px; border-top: 1px solid #eee;"><strong>📍 Sources:</strong> ' + issue.sources.map(s => `<span style="margin-left: 6px;">${s.location}</span>`).join(' · ') + '</div>' : ''}
+                    </div>`;
+                });
+                
+                html += '</div></div></div>';
             }
             
-            // Recommendations - Compact
+            // Recommendations - Side by side grid layout (alternating backgrounds)
             if (data.recommendations && data.recommendations.length > 0) {
                 html += `<div style="margin-bottom: 12px;">
-                    <h4 style="color: #28a745; margin: 0 0 8px 0; font-size: 15px;">💡 Recommendations (${data.recommendations.length})</h4>`;
+                    <h2 style="color: #495057; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">💡 Recommendations (${data.recommendations.length})</h2>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">`;
                 
                 data.recommendations.forEach((rec, idx) => {
-                    const priorityNum = rec.priority_number || rec.priority || '?';
-                    const priorityLabel = typeof priorityNum === 'number' ? `P${priorityNum}/10` : priorityNum;
+                    // Extract current and suggested index from recommendation text
+                    const recText = rec.recommendation_html || rec.recommendation || '';
+                    const rationale = rec.rationale_html || rec.rationale || '';
                     
-                    html += `<hr class="md-separator" style="border: none; border-top: 1px solid #eee; margin: 12px 0;">
-                    <div style="background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #28a745; border: 1px solid #d4edda;">
-                        <div style="margin-bottom: 6px; font-size: 13px;"><strong>${idx + 1}. ${rec.recommendation_html || rec.recommendation || ''}</strong></div>
-                        <div style="margin-bottom: 6px; font-size: 12px; line-height: 1.4;">${rec.rationale_html || rec.rationale || ''}</div>
-                        ${rec.implementation_steps ? '<div style="margin-bottom: 6px; font-size: 12px;"><strong>Steps:</strong><ol style="margin: 4px 0 0 18px; padding: 0;">' + rec.implementation_steps.map(s => `<li style="margin: 2px 0;">${s}</li>`).join('') + '</ol></div>' : ''}
-                        <div style="font-size: 12px;"><strong>Impact:</strong> ${rec.estimated_impact || ''}</div>
-                        ${rec.sources ? '<div style="font-size: 10px; color: #666; padding: 6px; background: #f8f9fa; border-radius: 3px; margin-top: 6px;"><strong>📍 Sources:</strong> ' + rec.sources.map(s => `${s.location}`).join(', ') + '</div>' : ''}
-                        <div style="font-size: 11px; margin-top: 8px;"><strong>Priority:</strong> ${priorityLabel} ${rec.priority ? rec.priority.toUpperCase() : ''}</div>
+                    // Alternating background: odd cards (0, 2, 4...) white, even cards (1, 3, 5...) light grey
+                    const isEvenColumn = idx % 2 === 1;
+                    const cardBg = isEvenColumn ? '#f8f9fa' : '#fff';
+                    
+                    html += `<div style="background: ${cardBg}; padding: 16px; border-radius: 6px; border: 1px solid #e9ecef; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                        
+                        <!-- Title - Bigger like h3 -->
+                        <h3 style="font-size: 15px; color: #333; margin: 0 0 12px 0; font-weight: 600; line-height: 1.4;">${idx + 1}. ${rec.title || recText.split('.')[0] || 'Recommendation'}</h3>
+                        
+                        <!-- Rationale -->
+                        <div style="font-size: 12px; color: #555; line-height: 1.5; margin-bottom: 12px;">${rationale}</div>
+                        
+                        <!-- Index Boxes - Current (yellow) and Suggested (light green) -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                            ${rec.current_index ? `
+                            <div style="background: #fff9e6; padding: 10px; border-radius: 6px; border-left: 3px solid #ffc107;">
+                                <div style="font-size: 10px; color: #856404; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600;">Current Index</div>
+                                <div style="font-size: 11px; color: #333; font-family: monospace; word-break: break-all;">${rec.current_index}</div>
+                            </div>` : ''}
+                            ${rec.suggested_index ? `
+                            <div style="background: #e8f5e9; padding: 10px; border-radius: 6px; border-left: 3px solid #4caf50; ${!rec.current_index ? 'grid-column: span 2;' : ''}">
+                                <div style="font-size: 10px; color: #2e7d32; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600;">Suggested Index</div>
+                                <div style="font-size: 11px; color: #333; font-family: monospace; word-break: break-all;">${rec.suggested_index}</div>
+                            </div>` : ''}
+                        </div>
+                        
+                        <!-- If no structured indexes, show full recommendation in light green box -->
+                        ${!rec.current_index && !rec.suggested_index ? `
+                        <div style="background: #e8f5e9; padding: 10px; border-radius: 6px; border-left: 3px solid #4caf50; margin-bottom: 12px;">
+                            <div style="font-size: 10px; color: #2e7d32; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600;">🔧 Suggested Action</div>
+                            <div style="font-size: 12px; color: #333; line-height: 1.4;">${recText}</div>
+                        </div>` : ''}
+                        
+                        <!-- Impact -->
+                        <div style="font-size: 12px;">
+                            <span style="color: #666;">Impact:</span> <span style="color: #28a745; font-weight: 500;">${rec.estimated_impact || 'Performance improvement'}</span>
+                        </div>
                     </div>`;
                 });
                 
-                html += '</div>';
+                html += '</div></div>';
             }
             
             // Next Steps - Compact
             if (data.next_steps && data.next_steps.length > 0) {
                 html += `<div style="background: #e7f3ff; padding: 10px 12px; border-radius: 4px; border-left: 3px solid #007bff;">
-                    <h4 style="color: #007bff; margin: 0 0 8px 0; font-size: 14px;">🎯 Next Steps</h4>
+                    <h2 style="color: #007bff; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">🎯 Next Steps</h2>
                     <ol style="margin: 0; padding-left: 18px; font-size: 12px;">
                         ${data.next_steps.map(step => `<li style="margin: 4px 0;">${step}</li>`).join('')}
                     </ol>
