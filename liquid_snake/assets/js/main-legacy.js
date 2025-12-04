@@ -27638,64 +27638,163 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         }
         
         function copyAIResponseAsMarkdown() {
+            Logger.info('[AI] Copy as Markdown button clicked');
+            
             const contextDiv = document.getElementById('ai-view-context');
             const responseDiv = document.getElementById('ai-view-response');
             
-            if (!contextDiv || !responseDiv) return;
+            if (!contextDiv || !responseDiv) {
+                Logger.error('[AI] Context or response div not found');
+                showToast('No analysis to copy', 'error');
+                return;
+            }
             
-            // Extract context data into structured format
+            Logger.debug('[AI] Found context and response divs, generating markdown...');
+            
+            // Extract context data into structured format by querying DOM structure
             const extractContextAsTable = () => {
-                const text = contextDiv.textContent || '';
-                
-                // Parse key-value pairs from context
-                const getValue = (label) => {
-                    const regex = new RegExp(label + '[:\\s]+([^\\n]+)', 'i');
-                    const match = text.match(regex);
-                    return match ? match[1].trim() : 'N/A';
+                // Helper to safely get text content from a DOM query
+                const getTextFromDiv = (container, labelText) => {
+                    const divs = container.querySelectorAll('div');
+                    for (const div of divs) {
+                        if (div.textContent.startsWith(labelText + ':')) {
+                            // Get the text after the colon, excluding nested elements
+                            const fullText = div.textContent.trim();
+                            return fullText.substring(labelText.length + 1).trim();
+                        }
+                    }
+                    return 'N/A';
                 };
                 
                 let md = '## 📋 Analysis Request Info\n\n';
+                
+                // Find Request Info section
+                const sections = contextDiv.querySelectorAll('div[style*="margin-bottom"]');
+                let requestInfoSection = null;
+                let promptSection = null;
+                let dataToAnalyzeSection = null;
+                let analysisOptionsSection = null;
+                let filtersSection = null;
+                let dataSourcesSection = null;
+                let metricsSection = null;
+                
+                sections.forEach(section => {
+                    const header = section.querySelector('div[style*="font-weight: bold"]');
+                    if (header) {
+                        const headerText = header.textContent.trim();
+                        if (headerText === 'Request Info') requestInfoSection = section;
+                        else if (headerText === 'Prompt') promptSection = section;
+                        else if (headerText === 'Data to Analyze') dataToAnalyzeSection = section;
+                        else if (headerText === 'Analysis Options') analysisOptionsSection = section;
+                        else if (headerText === 'Filters Applied') filtersSection = section;
+                        else if (headerText === 'Data Sources') dataSourcesSection = section;
+                        else if (headerText === 'Metrics') metricsSection = section;
+                    }
+                });
                 
                 // Request Info Table
                 md += '### Request Details\n\n';
                 md += '| Property | Value |\n';
                 md += '|----------|-------|\n';
-                md += `| **Date** | ${getValue('Date')} |\n`;
-                md += `| **Provider** | ${getValue('Provider')} |\n`;
-                md += `| **Model** | ${getValue('Model')} |\n`;
-                md += `| **Language** | ${getValue('Language')} |\n`;
-                md += `| **Query Groups** | ${getValue('Query Groups')} |\n`;
-                md += `| **Status** | ${getValue('Status')} |\n`;
+                if (requestInfoSection) {
+                    md += `| **Date** | ${getTextFromDiv(requestInfoSection, 'Date')} |\n`;
+                    md += `| **Cluster** | ${getTextFromDiv(requestInfoSection, 'Cluster')} |\n`;
+                    md += `| **Provider** | ${getTextFromDiv(requestInfoSection, 'Provider')} |\n`;
+                    md += `| **Model** | ${getTextFromDiv(requestInfoSection, 'Model')} |\n`;
+                    md += `| **Obfuscated** | ${getTextFromDiv(requestInfoSection, 'Obfuscated')} |\n`;
+                    md += `| **Status** | ${getTextFromDiv(requestInfoSection, 'Status')} |\n`;
+                }
                 md += '\n';
                 
                 // Prompt
-                const promptMatch = text.match(/Prompt\s*(.*?)(?=Filters Applied|Timezone|$)/is);
-                const prompt = promptMatch ? promptMatch[1].trim() : getValue('Prompt');
-                md += `### 💬 Prompt\n\n> ${prompt}\n\n`;
+                md += '### 💬 Prompt\n\n';
+                if (promptSection) {
+                    const promptContent = promptSection.querySelector('div[style*="background: #f8f9fa"]');
+                    const promptText = promptContent ? promptContent.textContent.trim() : 'N/A';
+                    // Clean up "Show More" button text if present
+                    const cleanedPrompt = promptText.replace(/Show More$|Show Less$/g, '').trim();
+                    md += `> ${cleanedPrompt}\n\n`;
+                } else {
+                    md += '> N/A\n\n';
+                }
+                
+                // Data to Analyze (extract from badges)
+                md += '### 📊 Data to Analyze\n\n';
+                if (dataToAnalyzeSection) {
+                    const badges = dataToAnalyzeSection.querySelectorAll('span[style*="border-radius: 20px"]');
+                    if (badges.length > 0) {
+                        const selectedItems = [];
+                        badges.forEach(badge => {
+                            // Extract text, ignoring the colored dot span
+                            const text = badge.textContent.trim();
+                            if (text && text !== 'N/A') {
+                                selectedItems.push(text);
+                            }
+                        });
+                        md += selectedItems.map(item => `- ${item}`).join('\n') + '\n\n';
+                    } else {
+                        md += 'N/A\n\n';
+                    }
+                } else {
+                    md += 'N/A\n\n';
+                }
+                
+                // Analysis Options Table
+                md += '### ⚙️ Analysis Options\n\n';
+                md += '| Option | Value |\n';
+                md += '|--------|-------|\n';
+                if (analysisOptionsSection) {
+                    md += `| **Language** | ${getTextFromDiv(analysisOptionsSection, 'Language')} |\n`;
+                    md += `| **Query Groups** | ${getTextFromDiv(analysisOptionsSection, 'Query Groups')} |\n`;
+                    md += `| **Chart Trends** | ${getTextFromDiv(analysisOptionsSection, 'Chart Trends')} |\n`;
+                    md += `| **Stake Focus** | ${getTextFromDiv(analysisOptionsSection, 'Stake Focus')} |\n`;
+                }
+                md += '\n';
                 
                 // Filters Table
                 md += '### 🔧 Filters Applied\n\n';
                 md += '| Filter | Value |\n';
                 md += '|--------|-------|\n';
-                md += `| **Timezone** | ${getValue('Timezone')} |\n`;
-                md += `| **Date From** | ${getValue('From')} |\n`;
-                md += `| **Date To** | ${getValue('To')} |\n`;
-                md += `| **SQL Filter** | ${getValue('SQL Filter')} |\n`;
-                md += `| **Time Filter** | ${getValue('Time Filter')} |\n`;
-                md += `| **Collection** | ${getValue('Collection')} |\n`;
-                md += `| **Exclude System** | ${getValue('Exclude System')} |\n`;
+                if (filtersSection) {
+                    md += `| **Timezone** | ${getTextFromDiv(filtersSection, 'Timezone')} |\n`;
+                    // Date range is nested, so handle specially - clean up non-breaking spaces
+                    const fromDiv = Array.from(filtersSection.querySelectorAll('div')).find(d => d.textContent.trim().startsWith('From:'));
+                    const toDiv = Array.from(filtersSection.querySelectorAll('div')).find(d => {
+                        const text = d.textContent.trim();
+                        return text.startsWith('To:') && !text.includes('Date');
+                    });
+                    // Clean values - replace non-breaking spaces and normalize whitespace
+                    const cleanValue = (val) => val.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+                    const fromValue = fromDiv ? cleanValue(fromDiv.textContent.replace('From:', '')) : 'N/A';
+                    const toValue = toDiv ? cleanValue(toDiv.textContent.replace('To:', '')) : 'N/A';
+                    md += `| **Date From** | ${fromValue} |\n`;
+                    md += `| **Date To** | ${toValue} |\n`;
+                    md += `| **SQL Filter** | ${getTextFromDiv(filtersSection, 'SQL Filter')} |\n`;
+                    md += `| **Time Filter** | ${getTextFromDiv(filtersSection, 'Time Filter')} |\n`;
+                    md += `| **Collection** | ${getTextFromDiv(filtersSection, 'Collection')} |\n`;
+                    md += `| **Exclude System** | ${getTextFromDiv(filtersSection, 'Exclude System')} |\n`;
+                }
+                md += '\n';
+                
+                // Data Sources Table
+                md += '### 📁 Data Sources\n\n';
+                md += '| Source | Value |\n';
+                md += '|--------|-------|\n';
+                if (dataSourcesSection) {
+                    md += `| **Queries** | ${getTextFromDiv(dataSourcesSection, 'Queries')} |\n`;
+                    md += `| **Indexes** | ${getTextFromDiv(dataSourcesSection, 'Indexes')} |\n`;
+                }
                 md += '\n';
                 
                 // Metrics Table
-                md += '### 📊 Metrics\n\n';
+                md += '### 📈 Metrics\n\n';
                 md += '| Metric | Value |\n';
                 md += '|--------|-------|\n';
-                md += `| **Queries** | ${getValue('Queries')} |\n`;
-                md += `| **Indexes** | ${getValue('Indexes')} |\n`;
-                md += `| **Payload Size** | ${getValue('Payload Size')} |\n`;
-                md += `| **Response Size** | ${getValue('Response Size')} |\n`;
-                md += `| **AI Time** | ${getValue('AI Time')} |\n`;
-                md += `| **Obfuscated** | ${getValue('Obfuscated')} |\n`;
+                if (metricsSection) {
+                    md += `| **Payload Size** | ${getTextFromDiv(metricsSection, 'Payload Size')} |\n`;
+                    md += `| **Response Size** | ${getTextFromDiv(metricsSection, 'Response Size')} |\n`;
+                    md += `| **AI Time** | ${getTextFromDiv(metricsSection, 'AI Time')} |\n`;
+                }
                 
                 return md;
             };
@@ -28051,8 +28150,11 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         if (node.id === 'critical-issues-grid' || node.id === 'issue-details-container') {
                             return;
                         }
-                        // Skip parent divs containing Critical Issues h2
-                        if (node.querySelector && node.querySelector('h2')?.textContent?.includes('Critical Issues')) {
+                        // Skip parent divs containing Critical Issues or Insights Review h2
+                        if (node.querySelector && (
+                            node.querySelector('h2')?.textContent?.includes('Critical Issues') ||
+                            node.querySelector('h2')?.textContent?.includes('Insights Review')
+                        )) {
                             return;
                         }
                         
@@ -28122,7 +28224,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             const headerText = node.textContent.trim();
                             // Skip if already handled by specialized extractors or table handlers
                             if (headerText.includes('Critical Issues') || 
+                                headerText.includes('Insights Review') ||
                                 headerText.includes('Recommendations') || 
+                                headerText.includes('Index Recommendations') ||
                                 headerText.includes('Next Steps') ||
                                 headerText.includes('Chart Trends')) {
                                 return;
@@ -28196,7 +28300,10 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                                 return;
                             }
                             // Skip headers for sections handled by specialized extractors
-                            if (node.textContent.includes('Detailed Issue Breakdown')) {
+                            if (node.textContent.includes('Detailed Issue Breakdown') ||
+                                node.textContent.includes('Insights Review') ||
+                                node.textContent.includes('Critical Issues') ||
+                                node.textContent.includes('Index Recommendations')) {
                                 return;
                             }
                             // Add emoji for User Specific Request header
@@ -28250,11 +28357,14 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Clean up multiple newlines and trim
             const cleanedMd = fullMd.replace(/\n{4,}/g, '\n\n\n').trim();
             
+            Logger.info(`[AI] Generated markdown: ${cleanedMd.length} characters`);
+            
             navigator.clipboard.writeText(cleanedMd).then(() => {
-                showToast('Analysis copied as Markdown!', 'success');
+                Logger.info('[AI] ✅ Markdown copied to clipboard successfully');
+                showToast('✅ Analysis copied as Markdown!', 'success', 5000);
             }).catch(err => {
-                Logger.error('Failed to copy markdown:', err);
-                showToast('Failed to copy as Markdown', 'error');
+                Logger.error('[AI] ❌ Failed to copy markdown:', err);
+                showToast('❌ Failed to copy as Markdown', 'error', 5000);
             });
         }
         
