@@ -27408,7 +27408,88 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         /**
          * Render donut gauge charts for critical issues
          * Creates Chart.js doughnut charts that look like circular gauges
+         * 
+         * Color Palette Design (visual hierarchy separation):
+         * - P-level badges: Cool blue/indigo spectrum (indicates priority ranking)
+         * - Donut gauges: Warm teal-to-red spectrum (indicates % affected - gauge severity)
+         * - Card borders: Neutral grey tones (frames without competing)
          */
+        
+        // Get color for P-level badge based on priority number (P10=highest, P1=lowest)
+        // Uses cool blue/indigo spectrum - distinct from gauge warm colors
+        function getPriorityBadgeColor(priorityNum) {
+            const p = parseInt(priorityNum) || 0;
+            if (p >= 10) return '#1a237e';     // Indigo 900 (P10 - most critical)
+            if (p >= 9) return '#283593';      // Indigo 800
+            if (p >= 8) return '#303f9f';      // Indigo 700
+            if (p >= 7) return '#3949ab';      // Indigo 600
+            if (p >= 6) return '#3f51b5';      // Indigo 500
+            if (p >= 5) return '#5c6bc0';      // Indigo 400
+            if (p >= 4) return '#7986cb';      // Indigo 300
+            if (p >= 3) return '#5e35b1';      // Deep Purple 600
+            if (p >= 2) return '#7e57c2';      // Deep Purple 400
+            return '#9575cd';                   // Deep Purple 300 (P1)
+        }
+        
+        // Get card border/accent color based on severity (neutral tones)
+        // Subtle accent colors that don't compete with gauge or badge
+        function getCardBorderColor(severity) {
+            switch(severity) {
+                case 'critical': return '#546e7a';  // Blue Grey 600
+                case 'high': return '#78909c';      // Blue Grey 400
+                case 'medium': return '#90a4ae';    // Blue Grey 300
+                default: return '#b0bec5';          // Blue Grey 200
+            }
+        }
+        
+        // Get card background color based on severity (very subtle tints)
+        function getCardBgColor(severity) {
+            switch(severity) {
+                case 'critical': return '#fafafa';  // Grey 50
+                case 'high': return '#fafafa';      // Grey 50
+                case 'medium': return '#fafafa';    // Grey 50
+                default: return '#fafafa';          // Grey 50
+            }
+        }
+        
+        // Get color for gauge based on percentage
+        // 0% = Grey, 1-9% = Green/Teal (low concern), 10-100% = Orange to Red (escalating concern)
+        function getGaugeColorByPercentage(percentage) {
+            // Clamp percentage to 0-100
+            const pct = Math.max(0, Math.min(100, percentage));
+            
+            // 0% = Grey (no issues)
+            if (pct === 0) return '#9E9E9E';      // Grey 500
+            
+            // 1-9% = Green to Teal spectrum (low concern)
+            if (pct <= 9) {
+                if (pct >= 7) return '#26a69a';   // Teal 400
+                if (pct >= 5) return '#4db6ac';   // Teal 300
+                if (pct >= 3) return '#66bb6a';   // Green 400
+                return '#81c784';                  // Green 300 (1-2%)
+            }
+            
+            // 10-100% = Orange to Red spectrum (escalating concern)
+            if (pct >= 95) return '#b71c1c';      // Red 900
+            if (pct >= 90) return '#c62828';      // Red 800
+            if (pct >= 85) return '#d32f2f';      // Red 700
+            if (pct >= 80) return '#e53935';      // Red 600
+            if (pct >= 75) return '#ef5350';      // Red 400
+            if (pct >= 70) return '#f4511e';      // Deep Orange 600
+            if (pct >= 65) return '#ff5722';      // Deep Orange 500
+            if (pct >= 60) return '#ff7043';      // Deep Orange 400
+            if (pct >= 55) return '#ff8a65';      // Deep Orange 300
+            if (pct >= 50) return '#ff9800';      // Orange 500
+            if (pct >= 45) return '#ffa726';      // Orange 400
+            if (pct >= 40) return '#ffb74d';      // Orange 300
+            if (pct >= 35) return '#ffca28';      // Amber 400
+            if (pct >= 30) return '#ffd54f';      // Amber 300
+            if (pct >= 25) return '#ffe082';      // Amber 200
+            if (pct >= 20) return '#ffcc80';      // Orange 200
+            if (pct >= 15) return '#ffab40';      // Orange A200
+            return '#ffa000';                      // Amber 700 (10-14%)
+        }
+        
         function renderIssueGaugeCharts() {
             const gaugeCanvases = document.querySelectorAll('[id^="issue-gauge-"]');
             
@@ -27421,7 +27502,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             gaugeCanvases.forEach(canvas => {
                 const percentage = parseInt(canvas.dataset.percentage) || 0;
-                const color = canvas.dataset.color || '#6c757d';
+                // Use percentage-based color instead of severity color
+                const color = getGaugeColorByPercentage(percentage);
                 const ctx = canvas.getContext('2d');
                 
                 if (ctx && typeof Chart !== 'undefined') {
@@ -28718,17 +28800,18 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 
                 sortedIssues.forEach((issue, idx) => {
                     const priorityNum = issue.priority_number || issue.priority || '?';
-                    const severityColor = issue.severity === 'critical' ? '#dc3545' : 
-                                         issue.severity === 'high' ? '#fd7e14' : 
-                                         issue.severity === 'medium' ? '#ffc107' : '#6c757d';
-                    const bgColor = issue.severity === 'critical' ? '#fff5f5' : 
-                                   issue.severity === 'high' ? '#fffaf5' : 
-                                   issue.severity === 'medium' ? '#fffef5' : '#f8f9fa';
+                    // Use new color palette functions for visual hierarchy separation
+                    const badgeColor = getPriorityBadgeColor(priorityNum);  // Indigo spectrum for P-level
+                    const borderColor = getCardBorderColor(issue.severity);  // Neutral blue-grey for borders
+                    const bgColor = getCardBgColor(issue.severity);          // Subtle neutral background
                     
                     const affectedQueries = issue.affected_queries || 0;
                     const percentage = totalQueries > 0 ? Math.round((affectedQueries / totalQueries) * 100) : 0;
                     
-                    html += `<div id="issue-card-${idx}" style="background: ${bgColor}; border-radius: 6px; border-left: 5px solid ${severityColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.08); overflow: hidden; cursor: pointer; transition: box-shadow 0.2s, transform 0.2s;" 
+                    // Use centralized function for gauge color (teal → red spectrum)
+                    const gaugeColor = getGaugeColorByPercentage(percentage);
+                    
+                    html += `<div id="issue-card-${idx}" style="background: ${bgColor}; border-radius: 6px; border-left: 5px solid ${borderColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.08); overflow: hidden; cursor: pointer; transition: box-shadow 0.2s, transform 0.2s;" 
                                  onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'; this.style.transform='translateY(-2px)';" 
                                  onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)'; this.style.transform='translateY(0)';"
                                  onclick="(function(){ var container = document.getElementById('issue-details-container'); var target = document.getElementById('issue-detail-${idx}'); if(container && target) { container.scrollTo({top: target.offsetTop - container.offsetTop, behavior: 'smooth'}); } })();">
@@ -28736,7 +28819,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         <!-- Card Header -->
                         <div style="padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.06);">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="background: ${severityColor}; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">P${priorityNum}</span>
+                                <span style="background: ${badgeColor}; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">P${priorityNum}</span>
                                 <span style="font-weight: 600; font-size: 13px; color: #333; flex: 1;">${issue.title || ''}</span>
                             </div>
                         </div>
@@ -28746,10 +28829,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             <!-- Donut Gauge -->
                             <div style="flex-shrink: 0; width: 80px; height: 80px; position: relative;">
                                 <canvas id="issue-gauge-${idx}" width="80" height="80" 
-                                        data-percentage="${percentage}" 
-                                        data-color="${severityColor}"></canvas>
+                                        data-percentage="${percentage}"></canvas>
                                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
-                                    <div style="font-size: 18px; font-weight: bold; color: ${severityColor}; line-height: 1;">${percentage}%</div>
+                                    <div style="font-size: 18px; font-weight: bold; color: ${gaugeColor}; line-height: 1;">${percentage}%</div>
                                     <div style="font-size: 8px; color: #666; text-transform: uppercase;">Affected</div>
                                 </div>
                             </div>
@@ -28772,22 +28854,22 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 html += `</div>
                     <div style="font-size: 10px; color: #6c757d; margin-bottom: 12px; font-style: italic;">💡 Click any card to view full details below</div>`;
                 
-                // Detailed Breakdown Section - Scrollable container
+                // Detailed Breakdown Section - Scrollable container with visual scroll indicator
                 html += `<div style="border-top: 2px solid #dee2e6; padding-top: 12px; margin-top: 8px;">
-                    <div style="font-size: 13px; color: #495057; margin-bottom: 10px; font-weight: 600;">📋 Detailed Issue Breakdown</div>
-                    <div id="issue-details-container" style="max-height: 400px; overflow-y: auto; padding-right: 8px;">`;
+                    <div style="font-size: 13px; color: #495057; margin-bottom: 10px; font-weight: 600;">📋 Detailed Issue Breakdown <span style="font-size: 10px; color: #999; font-weight: normal;">↕ scroll for more</span></div>
+                    <div id="issue-details-container" style="max-height: 400px; overflow-y: auto; padding: 8px; border: 2px dashed #dee2e6; border-radius: 6px; background: linear-gradient(to bottom, #fff 0%, #fff 90%, #f8f9fa 100%);">`;
                 
                 data.critical_issues.forEach((issue, idx) => {
                     const priorityNum = issue.priority_number || issue.priority || '?';
-                    const severityColor = issue.severity === 'critical' ? '#dc3545' : 
-                                         issue.severity === 'high' ? '#fd7e14' : 
-                                         issue.severity === 'medium' ? '#ffc107' : '#6c757d';
+                    // Use consistent color palette for detailed breakdown
+                    const badgeColor = getPriorityBadgeColor(priorityNum);  // Indigo spectrum
+                    const borderColor = getCardBorderColor(issue.severity);  // Neutral blue-grey
                     
-                    html += `<div id="issue-detail-${idx}" style="background: #fff; padding: 14px; border-radius: 6px; margin-bottom: 12px; border-left: 5px solid ${severityColor}; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                    html += `<div id="issue-detail-${idx}" style="background: #fff; padding: 14px; border-radius: 6px; margin-bottom: 12px; border-left: 5px solid ${borderColor}; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
                         
                         <!-- Header -->
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                            <span style="background: ${severityColor}; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold;">P${priorityNum}</span>
+                            <span style="background: ${badgeColor}; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold;">P${priorityNum}</span>
                             <strong style="font-size: 15px; color: #333;">${issue.title}</strong>
                         </div>
                         
