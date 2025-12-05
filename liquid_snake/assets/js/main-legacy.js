@@ -12271,7 +12271,7 @@ size: 12
             // Initialize ECharts
             const myChart = echarts.init(chartDiv);
             
-            // Render function
+            // Render function - using surface3D for wave-like visualization
             function renderChart() {
                 const useLogScale = document.getElementById('echarts-service-time-log-scale-toggle').checked;
                 
@@ -12281,118 +12281,94 @@ size: 12
                     visibleMetrics.add(cb.dataset.metric);
                 });
                 
-                // Get visible collections
-                const visibleCollections = new Set();
+                // Get visible collections (filter by index)
+                const visibleCollectionIndices = new Set();
                 document.querySelectorAll('#service-time-legend-items input[type="checkbox"]:checked').forEach(cb => {
-                    visibleCollections.add(cb.dataset.collection);
+                    const collIdx = data.collections.indexOf(cb.dataset.collection);
+                    if (collIdx >= 0) visibleCollectionIndices.add(collIdx);
                 });
 
-                // Create stacked 3D bars showing component time breakdown
-                const filteredSeries = [];
-                
-                // Component order (bottom to top): Auth, IndexScan, Fetch, Kernel
-                // Each creates a separate bar3D series with stack offsets
-                const componentLayers = [
-                    { name: 'Authorize ServTime', dataKey: 'authSum', color: 'rgba(54, 162, 235, 0.85)', base: 0 },
-                    { name: 'IndexScan ServTime', dataKey: 'indexSum', color: 'rgba(255, 206, 86, 0.85)', base: 1 },
-                    { name: 'Fetch ServTime', dataKey: 'fetchSum', color: 'rgba(153, 102, 255, 0.85)', base: 2 },
-                    { name: 'Avg Kernel Time', dataKey: 'kernSum', color: 'rgba(255, 0, 0, 0.85)', base: 3 }
+                // Metrics configuration with matching 2D chart colors
+                const metricsConfig = [
+                    { name: "Avg Elapsed Time", color: 'rgb(75, 192, 192)' },
+                    { name: "Avg Kernel Time", color: 'rgb(255, 0, 0)' },
+                    { name: "Authorize ServTime", color: 'rgb(54, 162, 235)' },
+                    { name: "IndexScan ServTime", color: 'rgb(255, 206, 86)' },
+                    { name: "Fetch ServTime", color: 'rgb(153, 102, 255)' }
                 ];
+
+                // Build surface data for each visible metric
+                const surfaceSeries = [];
                 
-                // Build stacked bar data: need to track cumulative height for each bar
-                const barDataByLayer = componentLayers.map(() => []);
-                const heightTracker = {}; // Track cumulative height per [time, collection]
-                
-                // Collect all data points with all component values
-                const allPoints = [];
-                data.timeBuckets.forEach((timestamp) => {
-                    data.collections.forEach((collection, collIdx) => {
-                        if (!visibleCollections.has(collection)) return;
+                metricsConfig.forEach((metricConfig, metricIdx) => {
+                    if (!visibleMetrics.has(metricConfig.name)) return;
+                    
+                    // Find matching series data
+                    const metricData = data.seriesData.find(s => s.name === metricConfig.name);
+                    if (!metricData) return;
+                    
+                    // Build a 2D grid of values: [timeIndex][collectionIndex] -> value
+                    const gridData = [];
+                    const numTimes = data.timeBuckets.length;
+                    const numColls = data.collections.length;
+                    
+                    // Initialize grid with zeros
+                    for (let t = 0; t < numTimes; t++) {
+                        gridData[t] = [];
+                        for (let c = 0; c < numColls; c++) {
+                            gridData[t][c] = 0;
+                        }
+                    }
+                    
+                    // Fill grid with actual values
+                    metricData.data.forEach(point => {
+                        const timeMs = point.value[0];
+                        const collIdx = point.value[1];
+                        const value = point.actualValue || 0;
                         
-                        const timeKey = timestamp.toISOString();
-                        const timeMs = timestamp.getTime();
-                        
-                        // Aggregate all metrics for this time+collection
-                        const point = {
-                            time: timeMs,
-                            collIdx: collIdx,
-                            authSum: 0,
-                            indexSum: 0,
-                            fetchSum: 0,
-                            kernSum: 0,
-                            elapsedSum: 0,
-                            count: 0
-                        };
-                        
-                        // Gather data from each metric's data
-                        data.seriesData.forEach(metric => {
-                            const metricPoint = metric.data.find(p => 
-                                p.value[0] === timeMs && p.collection === collection
-                            );
-                            if (metricPoint) {
-                                if (metric.name === 'Avg Elapsed Time') point.elapsedSum += metricPoint.actualValue;
-                                if (metric.name === 'Avg Kernel Time') point.kernSum += metricPoint.actualValue;
-                                if (metric.name === 'Authorize ServTime') point.authSum += metricPoint.actualValue;
-                                if (metric.name === 'IndexScan ServTime') point.indexSum += metricPoint.actualValue;
-                                if (metric.name === 'Fetch ServTime') point.fetchSum += metricPoint.actualValue;
-                                point.count = Math.max(point.count, metricPoint.count);
-                            }
-                        });
-                        
-                        if (point.count > 0) {
-                            allPoints.push(point);
+                        // Find time index
+                        const timeIdx = data.timeBuckets.findIndex(ts => ts.getTime() === timeMs);
+                        if (timeIdx >= 0 && collIdx >= 0 && collIdx < numColls) {
+                            gridData[timeIdx][collIdx] = useLogScale && value > 0 ? Math.log10(value + 1) : value;
                         }
                     });
-                });
-                
-                // Create stacked layers
-                componentLayers.forEach((layer, layerIdx) => {
-                    // Skip if metric is not visible
-                    if (!visibleMetrics.has(layer.name)) return;
                     
-                    const layerData = allPoints.map(point => {
-                        const key = `${point.time}_${point.collIdx}`;
-                        
-                        // Calculate cumulative base height (sum of all previous layers)
-                        let baseHeight = 0;
-                        for (let i = 0; i < layerIdx; i++) {
-                            const prevLayer = componentLayers[i];
-                            if (visibleMetrics.has(prevLayer.name)) {
-                                baseHeight += point[prevLayer.dataKey] || 0;
+                    // Create surface series with parametric equation
+                    surfaceSeries.push({
+                        type: 'surface',
+                        name: metricConfig.name,
+                        wireframe: {
+                            show: true,
+                            lineStyle: {
+                                color: metricConfig.color,
+                                opacity: 0.3,
+                                width: 0.5
                             }
-                        }
-                        
-                        const segmentHeight = point[layer.dataKey] || 0;
-                        
-                        // Store in heightTracker
-                        if (!heightTracker[key]) heightTracker[key] = 0;
-                        heightTracker[key] += segmentHeight;
-                        
-                        // Return [x, y, z, value] where z is the segment height, and we'll use stack
-                        return {
-                            value: [point.time, point.collIdx, baseHeight + segmentHeight],
-                            baseHeight: baseHeight,
-                            segmentHeight: segmentHeight,
-                            itemStyle: {
-                                color: layer.color
-                            }
-                        };
-                    }).filter(d => d.segmentHeight > 0);
-                    
-                    if (layerData.length === 0) return;
-                    
-                    filteredSeries.push({
-                        type: 'bar3D',
-                        name: layer.name,
-                        data: layerData,
-                        shading: 'color',
-                        stack: 'total',
-                        itemStyle: {
-                            opacity: 0.85
                         },
-                        emphasis: {
-                            itemStyle: {
-                                opacity: 1.0
+                        itemStyle: {
+                            color: metricConfig.color,
+                            opacity: 0.7
+                        },
+                        shading: 'color',
+                        parametric: true,
+                        parametricEquation: {
+                            u: { min: 0, max: numTimes - 1, step: 1 },
+                            v: { min: 0, max: numColls - 1, step: 1 },
+                            x: function(u, v) {
+                                return u;  // Time index
+                            },
+                            y: function(u, v) {
+                                return v;  // Collection index
+                            },
+                            z: function(u, v) {
+                                const tIdx = Math.round(u);
+                                const cIdx = Math.round(v);
+                                // Hide if collection not visible
+                                if (!visibleCollectionIndices.has(cIdx)) return 0;
+                                if (tIdx >= 0 && tIdx < numTimes && cIdx >= 0 && cIdx < numColls) {
+                                    return gridData[tIdx][cIdx];
+                                }
+                                return 0;
                             }
                         }
                     });
@@ -12400,50 +12376,85 @@ size: 12
 
                 const option = {
                     tooltip: {
+                        show: true,
                         formatter: function(params) {
-                            const d = params.data;
-                            if (!d.value) return '';
-                            const timestamp = new Date(d.value[0]);
-                            const timeStr = timestamp.toISOString().substring(0, 19).replace('T', ' ');
-                            const collectionIdx = d.value[1];
-                            const collection = data.collections[collectionIdx];
-                            const timeValue = d.value[2];
-                            return `<strong>${params.seriesName}</strong><br/>Collection: ${collection}<br/>Time: ${timeStr}<br/>Value: ${timeValue.toFixed(2)} ms`;
+                            if (!params.data) return '';
+                            const tIdx = Math.round(params.data[0]);
+                            const cIdx = Math.round(params.data[1]);
+                            const value = params.data[2];
+                            
+                            const timeStr = tIdx >= 0 && tIdx < data.timeBuckets.length 
+                                ? data.timeBuckets[tIdx].toISOString().substring(0, 19).replace('T', ' ')
+                                : 'N/A';
+                            const collection = cIdx >= 0 && cIdx < data.collections.length 
+                                ? data.collections[cIdx]
+                                : 'N/A';
+                            
+                            return `<strong>${params.seriesName}</strong><br/>Collection: ${collection}<br/>Time: ${timeStr}<br/>Value: ${value.toFixed(2)} ms`;
                         }
+                    },
+                    legend: {
+                        show: false  // Using custom legend on the right
                     },
                     grid3D: {
                         boxWidth: 200,
-                        boxHeight: Math.min(200, data.collections.length * 15),
-                        boxDepth: 200,
+                        boxHeight: 120,
+                        boxDepth: Math.min(200, data.collections.length * 12),
                         axisPointer: {
                             show: true,
                             lineStyle: { color: '#ffaa00', width: 2 }
                         },
                         viewControl: {
-                            alpha: 25,
+                            alpha: 30,
                             beta: 45,
-                            distance: 280,
+                            distance: 320,
                             minDistance: 100,
-                            maxDistance: 500
+                            maxDistance: 600
+                        },
+                        light: {
+                            main: { intensity: 1.2, shadow: true },
+                            ambient: { intensity: 0.4 }
                         }
                     },
-                    // Bar sizing for stacked bars
-                    barSize: [15, 15],
                     xAxis3D: {
-                        type: 'time',
-                        name: 'Request Time'
+                        type: 'value',
+                        name: 'Request Time',
+                        min: 0,
+                        max: data.timeBuckets.length - 1,
+                        axisLabel: {
+                            formatter: function(value) {
+                                const idx = Math.round(value);
+                                if (idx >= 0 && idx < data.timeBuckets.length && idx % Math.ceil(data.timeBuckets.length / 8) === 0) {
+                                    return data.timeBuckets[idx].toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                }
+                                return '';
+                            },
+                            fontSize: 9
+                        }
                     },
                     yAxis3D: {
-                        type: 'category',
+                        type: 'value',
                         name: 'Collection',
-                        data: data.collections
+                        min: 0,
+                        max: data.collections.length - 1,
+                        axisLabel: {
+                            formatter: function(value) {
+                                const idx = Math.round(value);
+                                if (idx >= 0 && idx < data.collections.length && idx % Math.ceil(data.collections.length / 6) === 0) {
+                                    const name = data.collections[idx];
+                                    return name.length > 15 ? name.substring(0, 15) + '...' : name;
+                                }
+                                return '';
+                            },
+                            fontSize: 9
+                        }
                     },
                     zAxis3D: {
-                        type: useLogScale ? 'log' : 'value',
-                        name: 'Time (ms)',
-                        min: useLogScale ? 0.001 : 0
+                        type: 'value',
+                        name: useLogScale ? 'Log Time (ms)' : 'Time (ms)',
+                        min: 0
                     },
-                    series: filteredSeries
+                    series: surfaceSeries
                 };
 
                 myChart.setOption(option, true);
@@ -14248,6 +14259,9 @@ size: 12
             currentTimeRange = { ...originalTimeRange };
             updateTimeRangeDisplay();
         }
+        
+        // Expose to window for onclick handlers
+        window.resetTimelineZoom = resetTimelineZoom;
 
         // Format date to datetime-local format
         function formatDateForInput(date) {
@@ -29511,9 +29525,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         window.setupTimelineTableSync = setupTimelineTableSync;
         
         /**
-         * Reset timeline zoom to show all items
+         * Reset AI Insights timeline zoom to show all items
          */
-        function resetTimelineZoom() {
+        function resetAIInsightsTimelineZoom() {
             if (window._aiInsightsTimeline) {
                 // Clear any selection
                 window._aiInsightsTimeline.setSelection([]);
@@ -29531,7 +29545,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             }
         }
         
-        window.resetTimelineZoom = resetTimelineZoom;
+        window.resetAIInsightsTimelineZoom = resetAIInsightsTimelineZoom;
 
         /**
          * Format AI analysis data as HTML
@@ -29624,7 +29638,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #17a2b8;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <h2 style="color: #17a2b8; margin: 0 0 8px 0; font-size: 22px; font-weight: 600;">Chart Trends & Analysis</h2>
-                        <button onclick="resetTimelineZoom()" style="background: #6c757d; color: white; border: none; padding: 4px 10px; font-size: 11px; border-radius: 3px; cursor: pointer;" title="Reset timeline to show all items">Reset Zoom</button>
+                        <button onclick="resetAIInsightsTimelineZoom()" style="background: #6c757d; color: white; border: none; padding: 4px 10px; font-size: 11px; border-radius: 3px; cursor: pointer;" title="Reset timeline to show all items">Reset Zoom</button>
                     </div>
                     <div id="ai-insights-timeline" style="height: 300px; border: 1px solid #dee2e6; border-radius: 4px; background: white;"></div>
                     
