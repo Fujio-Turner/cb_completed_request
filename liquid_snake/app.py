@@ -1355,30 +1355,29 @@ def get_ai_clusters():
         scope = bucket_config.get('analyzerScope', 'query')
         collection = bucket_config.get('analyzerCollection', 'analyzer')
         
-        # Query for recent distinct source clusters
-        # Using N1QL SEARCH function (requires FTS index) and prepared statement (adhoc=False)
+        # Query for recent distinct source clusters using CTE + FTS SEARCH function
+        search_term = f"{term.lower()}*" if term else "*"
+        ic(f"🔎 Searching clusters with SEARCH term: '{search_term}'")
+        
         query = f'''
-            SELECT RAW sourceCluster
-            FROM `{bucket}`.`{scope}`.`{collection}`
-            WHERE docType = "ai_analysis"
-              AND sourceCluster IS NOT MISSING
-              AND sourceCluster != ""
-              AND SEARCH(sourceCluster, $term)
-            GROUP BY sourceCluster
-            ORDER BY sourceCluster
+            WITH allCluster AS (
+                SELECT RAW sourceCluster
+                FROM `{bucket}`.`{scope}`.`{collection}`
+                WHERE docType = "ai_analysis"
+                  AND sourceCluster IS NOT MISSING
+                  AND sourceCluster != ""
+                GROUP BY sourceCluster
+            )
+            SELECT RAW allCluster 
+            FROM allCluster 
+            WHERE SEARCH(allCluster, {{"query": $term}})
+            ORDER BY allCluster
             LIMIT 10
         '''
         
-        # Add wildcard for prefix matching
-        search_term = f"{term}*" if term else "*"
-        ic(f"🔎 Searching clusters with SEARCH term: '{search_term}'")
-        
         result = cluster.query(
             query, 
-            QueryOptions(
-                adhoc=False, 
-                named_parameters={'term': search_term }
-            )
+            QueryOptions(adhoc=False, named_parameters={'term': search_term})
         )
         clusters = [row for row in result]
         
