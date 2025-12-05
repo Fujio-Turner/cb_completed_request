@@ -29866,7 +29866,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (data.recommendations && data.recommendations.length > 0) {
                 html += `<div style="margin-bottom: 12px;">
                     <h2 style="color: #2e7d32; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">Index Recommendations (${data.recommendations.length})</h2>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">`;
+                    <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start;">`;
                 
                 data.recommendations.forEach((rec, idx) => {
                     // Extract current and suggested index from recommendation text
@@ -29877,13 +29877,13 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     const isEvenColumn = idx % 2 === 1;
                     const cardBg = isEvenColumn ? '#f8f9fa' : '#fff';
                     
-                    html += `<div style="background: ${cardBg}; padding: 16px; border-radius: 6px; border: 1px solid #e9ecef; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                    html += `<div style="background: ${cardBg}; padding: 16px; border-radius: 6px; border: 1px solid #e9ecef; box-shadow: 0 1px 3px rgba(0,0,0,0.06); min-width: 0; overflow: hidden;">
                         
                         <!-- Title - Bigger like h3 -->
                         <h3 style="font-size: 15px; color: #333; margin: 0 0 12px 0; font-weight: 600; line-height: 1.4;">${idx + 1}. ${rec.title || recText.split('.')[0] || 'Recommendation'}</h3>
                         
-                        <!-- Rationale -->
-                        <div style="font-size: 12px; color: #555; line-height: 1.5; margin-bottom: 12px;">${rationale}</div>
+                        <!-- Rationale - sanitize nested divs -->
+                        <div style="font-size: 12px; color: #555; line-height: 1.5; margin-bottom: 12px; word-break: break-word; overflow-wrap: anywhere;">${rationale.replace(/<div class="index-statement"[^>]*>/g, '<div style="background: #f8f9fa; padding: 8px; border-radius: 4px; margin: 4px 0; font-family: monospace; font-size: 11px; overflow-x: auto; max-width: 100%;">').replace(/<pre>/g, '<pre style="margin: 4px 0; padding: 8px; background: #f8f9fa; border-radius: 4px; overflow-x: auto; max-width: 100%; white-space: pre-wrap; font-size: 10px;">')}</div>
                         
                         <!-- Index Boxes - Current (yellow) and Suggested (light green) -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
@@ -29928,7 +29928,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             
             // Remove any AI-generated copy buttons - we'll add our own consistently
-            html = html.replace(/<button[^>]*class="[^"]*copy-btn[^"]*"[^>]*>Copy<\/button>/gi, '');
+            html = html.replace(/<button[^>]*>Copy<\/button>/gi, '');
+            html = html.replace(/<button[^>]*class="[^"]*btn[^"]*"[^>]*>[^<]*<\/button>/gi, '');
             html = html.replace(/<br\s*\/?>\s*(?=<div class="index-statement")/gi, '');
             
             return html || '<div style="color: #999;">No formatted content available</div>';

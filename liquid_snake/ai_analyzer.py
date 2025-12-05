@@ -741,31 +741,91 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
                     'When suggesting a new or updated index, append "_v1" or "_v2" to the index name to indicate a versioned change (e.g. "idx_user_search_v1").',
                     'EXCEPTION: Primary indexes cannot be versioned (do not append _v1 to #primary or equivalent).',
                     'For replica changes, prefer ALTER INDEX syntax: ALTER INDEX index_name ON bucket WITH {"action": "replica_count", "num_replica": 1}.',
-                    'Always use strict JSON object syntax for WITH clauses (e.g. WITH {"num_replica": 1}).'
+                    'Always use strict JSON object syntax for WITH clauses (e.g. WITH {"num_replica": 1}).',
+                    'Always derive index keys from actual WHERE/ORDER BY fields in query patterns - NEVER use placeholders like "ALL predicates" or "equality fields".',
+                    'For covering indexes: include SELECT fields IN the index key list (e.g., (customer_id, status, total, items)) - there is NO COVERING keyword in N1QL CREATE INDEX syntax.',
+                    'If query uses JOIN, suggest indexes on join keys (e.g., ON KEYS field) combined with equality predicates from WHERE clause.',
+                    'Index should cover >=70% of avg_indexScan items from query_groups to be effective - prioritize high-impact patterns.',
+                    'For LIKE queries: if pattern has leading wildcard (LIKE "%value"), suggest FTS instead; if prefix-only (LIKE "value%"), GSI on that field works.',
+                    'PARTIAL INDEX OPTIMIZATION: If query has WHERE type/docType/tclass = "constant", put that condition in the INDEX WHERE clause, NOT in the index keys. Example: CREATE INDEX idx_v1 ON bucket(field1, field2) WHERE type = "order" -- smaller, faster index.'
                 ],
                 'couchbase_index_creation': [
                     {
                         'type': 'GSI',
                         'description': 'Global Secondary Index - standard B-tree index for equality, range, and ORDER BY queries',
-                        'docs_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createindex.html'
+                        'docs_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createindex.html',
+                        'syntax': 'CREATE INDEX idx_name_v1 ON `bucket`.`scope`.`collection`(field1 [ASC|DESC], field2) WHERE condition',
+                        'example_equality_range': 'CREATE INDEX idx_user_status_v1 ON `mydb`.`_default`.`users`(status, created_at DESC) WHERE type = "user"  -- type in WHERE clause, not in keys',
+                        'example_covering': 'CREATE INDEX idx_order_lookup_v1 ON `mydb`.`_default`.`orders`(customer_id, order_date, total, items) WHERE status = "active"  -- Include SELECT fields in index keys for covering'
                     },
                     {
                         'type': 'GSI_array',
                         'description': 'Array index using DISTINCT ARRAY or ALL ARRAY for querying array fields',
-                        'docs_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/indexing-arrays.html'
+                        'docs_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/indexing-arrays.html',
+                        'syntax': 'CREATE INDEX idx_name_v1 ON bucket(DISTINCT ARRAY elem FOR elem IN array_field END)',
+                        'example': 'CREATE INDEX idx_tags_v1 ON `mydb`.`_default`.`products`(DISTINCT ARRAY tag FOR tag IN tags END) WHERE type = "product"'
                     },
                     {
                         'type': 'FTS/Search',
-                        'description': 'Full-Text Search index for text search, fuzzy matching, and geo queries',
+                        'description': 'Full-Text Search index for SEARCH() queries, fuzzy matching, leading-wildcard LIKE, and geo queries',
                         'docs_url': 'https://docs.couchbase.com/server/current/search/search-index-params.html',
-                        'using_search_in_n1ql_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/searchfun.html'
+                        'using_search_in_n1ql_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/searchfun.html',
+                        'when_to_use': 'Use FTS when: (1) Query uses WHERE SEARCH(...), (2) LIKE has leading wildcard (LIKE "%term"), (3) fuzzy/typo-tolerant search needed',
+                        'IMPORTANT': 'FTS indexes are JSON definitions, NOT SQL++ CREATE INDEX. They are created via REST API or Couchbase UI.',
+                        'example_fts_json': {
+                            'name': 'fts_product_search',
+                            'type': 'fulltext-index',
+                            'sourceType': 'couchbase',
+                            'sourceName': 'bucket_name',
+                            'params': {
+                                'mapping': {
+                                    'types': {
+                                        'scope.collection': {
+                                            'properties': {
+                                                'description': {'enabled': True, 'type': 'text'},
+                                                'name': {'enabled': True, 'type': 'text'}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        'query_hint': 'To use FTS in N1QL: SELECT * FROM bucket WHERE SEARCH(bucket, {"query": {"match": "term"}, "index": "fts_index_name"})'
                     },
                     {
                         'type': 'Vector',
-                        'description': 'Vector index for similarity search on embeddings (AI/ML use cases)',
-                        'docs_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createvectorindex.html'
+                        'description': 'Vector index for similarity search on embeddings (AI/ML use cases) - Couchbase 8.x only',
+                        'docs_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createvectorindex.html',
+                        'IMPORTANT': 'INCLUDE clause is ONLY valid for Vector indexes. Do NOT use INCLUDE with regular GSI indexes - it will cause syntax errors.',
+                        'syntax': 'CREATE VECTOR INDEX idx_name ON bucket.scope.collection(embedding_field VECTOR) INCLUDE (field1, field2) WITH {"dimension": 128, "similarity": "L2"}',
+                        'example': 'CREATE VECTOR INDEX idx_product_embeddings_v1 ON products._default._default(embedding VECTOR) INCLUDE (name, category, price) WITH {"dimension": 768, "similarity": "L2_SQUARED"}',
+                        'when_to_use': 'Use Vector indexes for: (1) Semantic/similarity search, (2) AI/ML embedding lookups, (3) RAG applications. Requires Couchbase 8.x or higher.',
+                        'include_clause_note': 'INCLUDE is Vector-index-only. For regular GSI covering indexes, add all needed fields to the index key list instead.'
                     }
-                ]
+                ],
+                'index_gen_rules': {
+                    'description': 'Step-by-step rules for generating valid, executable N1QL index statements',
+                    'steps': [
+                        '1. Parse normalized_statement from query_groups to identify: (a) equality predicates (field = ?), (b) range predicates (field > ?, field < ?), (c) LIKE patterns, (d) ORDER BY fields',
+                        '2. Match query patterns to insights (e.g., "inefficient-index-scans" → add range keys to cover scan)',
+                        '3. Generate ONE GSI per bucket/collection, version with _v1 suffix',
+                        '4. For covering indexes: add SELECT fields to the index key list - there is NO COVERING keyword in Couchbase N1QL',
+                        '5. Test fit: index should reduce avg_indexScan by covering WHERE equality + range + ORDER BY fields'
+                    ],
+                    'common_fixes': {
+                        'primary_over_usage': 'Replace #primary with GSI on high-cardinality WHERE fields from the query pattern',
+                        'inefficient_like': 'If LIKE has leading % wildcard, recommend FTS index; else GSI on that specific field',
+                        'select_star': 'Recommend covering index with ONLY the needed SELECT fields to cut resultSize',
+                        'missing_covering': 'Add SELECT fields to index key list to avoid document fetches (no COVERING keyword exists)'
+                    },
+                    'invalid_patterns_to_avoid': [
+                        'NEVER use "ALL equality predicates" - specify actual field names like (customer_id, status)',
+                        'NEVER use "+ LIKE fields + Ancestors" - list exact fields from the query',
+                        'NEVER use COVERING keyword - it does NOT exist in Couchbase N1QL. Instead, add fields to the index key list.',
+                        'NEVER use INCLUDE clause with regular GSI indexes - INCLUDE is ONLY valid for CREATE VECTOR INDEX (Couchbase 8.x). For covering, add fields to the index key list.',
+                        'NEVER generate pseudo-code or descriptive text in CREATE INDEX statements'
+                    ]
+                }
             },
             'data': {},
             'options': options,
@@ -1385,7 +1445,17 @@ If the user provided a specific request or question in their prompt, you MUST an
 - **CRITICAL**: EXCEPTION: Primary indexes MUST NOT be versioned.
 - **CRITICAL**: Use ALTER INDEX with strict JSON syntax for replica changes: WITH {"action":"replica_count", "num_replica": 1}.
 - **CRITICAL**: If the user asks for charts or if a chart would help explain a point, include the "charts" array with valid Chart.js data structures. Use simple 'bar', 'pie', or 'line' types. Do not hallucinate data; use the provided metrics.
-- **CRITICAL**: When suggesting indexes, refer to the `couchbase_index_creation` array in the payload context for proper syntax. Use GSI for standard queries, GSI_array (DISTINCT ARRAY) for array fields, FTS/Search for text search, and Vector for embeddings. Always include the docs_url in your recommendation for user reference."""
+- **CRITICAL**: When suggesting indexes, refer to the `couchbase_index_creation` array in the payload context for proper syntax. Use GSI for standard queries, GSI_array (DISTINCT ARRAY) for array fields, FTS/Search for SEARCH() queries and leading-wildcard LIKE, and Vector for embeddings. Always include the docs_url in your recommendation for user reference.
+- **CRITICAL FTS vs GSI**: GSI indexes use SQL++ CREATE INDEX syntax. FTS (Full Text Search) indexes are JSON definitions created via REST API or Couchbase UI - NOT CREATE INDEX. When query uses WHERE SEARCH(...), recommend FTS index with JSON example. To hint an FTS index in a query, use the "index" parameter in SEARCH(): SEARCH(bucket, {"query":..., "index":"fts_index_name"}).
+- **CRITICAL INDEX SYNTAX RULES** (from `index_gen_rules` in context):
+  1. **ALWAYS use explicit field names** extracted from query patterns - NEVER use placeholders like "ALL equality predicates" or "LIKE fields"
+  2. **NO COVERING KEYWORD EXISTS** in Couchbase N1QL CREATE INDEX - to make a "covering index", include all needed fields IN the index key list itself
+  3. **Parse query patterns**: Extract field names from WHERE (equality: field = ?, range: field > ?), LIKE, ORDER BY, and SELECT clauses
+  4. **PARTIAL INDEX RULE**: When query has `WHERE type = "constant"` (or docType/tclass), put that in INDEX WHERE clause, NOT in key list. Smaller, faster index.
+  5. **Valid syntax**: `CREATE INDEX idx_v1 ON bucket(field1, field2) WHERE type = "order"` -- type in WHERE, other fields in keys
+  6. **INVALID - DO NOT USE**: `COVERING(...)` keyword does not exist in N1QL
+  7. **INVALID - DO NOT USE**: `INCLUDE(...)` clause is ONLY for CREATE VECTOR INDEX (Couchbase 8.x). Regular GSI does NOT support INCLUDE - add fields to index keys instead.
+  8. For obfuscated data: use the obfuscated token names directly (e.g., `x4k2m9`, `j7p3q1`) - they are consistent identifiers"""
 
     if language and language.lower() != 'english':
         prompt += f"\n\n**CRITICAL OUTPUT LANGUAGE REQUIREMENT**:\nYou MUST provide your analysis, explanations, and recommendations in {language}. The JSON keys must remain in English, but all string values (overview_html, descriptions, titles, etc.) must be in {language}."
