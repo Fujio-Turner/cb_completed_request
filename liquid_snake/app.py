@@ -1377,7 +1377,7 @@ def get_ai_clusters():
             query, 
             QueryOptions(
                 adhoc=False, 
-                named_parameters={'term': search_term}
+                named_parameters={'term': search_term }
             )
         )
         clusters = [row for row in result]

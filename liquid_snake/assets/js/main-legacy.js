@@ -26747,13 +26747,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     <td style="padding: 10px; border: 1px solid #dee2e6;">${providerBadge}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6;">${statusBadge}</td>
                     <td style="padding: 10px; border: 1px solid #dee2e6; text-align: center;">
-                        ${record.status === 'completed' ? `<button class="btn-standard" style="font-size: 11px; padding: 4px 8px;" onclick="viewAnalysis('${record.documentId}')">View</button>` : ''}
-                        <button class="btn-standard" style="font-size: 11px; padding: 4px 8px; margin-left: 4px; background-color: #dc3545; color: white; display: inline-flex; align-items: center; vertical-align: middle;" onclick="deleteAnalysis('${record.documentId}', this)" title="Delete Analysis">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="3 6 5 6 21 6"></polyline>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                        </button>
+                        ${record.status === 'completed' ? `<button class="btn-standard" style="font-size: 11px; padding: 4px 8px; display: inline-flex; align-items: center;" onclick="viewAnalysis('${record.documentId}')" title="View Analysis"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>` : ''}
+                        <button class="btn-standard" style="font-size: 11px; padding: 4px 8px; margin-left: 4px; background-color: #dc3545; color: white; display: inline-flex; align-items: center;" onclick="deleteAnalysis('${record.documentId}', this)" title="Delete Analysis"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                     </td>
                 `;
                 
@@ -27484,19 +27479,20 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
          */
         
         // Get color for P-level badge based on priority number (P10=highest, P1=lowest)
-        // Uses cool blue/indigo spectrum - distinct from gauge warm colors
+        // Uses distinct hue bands: Wine/Purple → Blue → Teal
+        // Designed to be clearly distinguishable and avoid donut warm colors
         function getPriorityBadgeColor(priorityNum) {
             const p = parseInt(priorityNum) || 0;
-            if (p >= 10) return '#1a237e';     // Indigo 900 (P10 - most critical)
-            if (p >= 9) return '#283593';      // Indigo 800
-            if (p >= 8) return '#303f9f';      // Indigo 700
-            if (p >= 7) return '#3949ab';      // Indigo 600
-            if (p >= 6) return '#3f51b5';      // Indigo 500
-            if (p >= 5) return '#5c6bc0';      // Indigo 400
-            if (p >= 4) return '#7986cb';      // Indigo 300
-            if (p >= 3) return '#5e35b1';      // Deep Purple 600
-            if (p >= 2) return '#7e57c2';      // Deep Purple 400
-            return '#9575cd';                   // Deep Purple 300 (P1)
+            if (p >= 10) return '#4a1942';     // Dark Wine/Maroon (P10 - most critical)
+            if (p >= 9) return '#5b2c6f';      // Deep Purple
+            if (p >= 8) return '#6c3483';      // Dark Violet
+            if (p >= 7) return '#7d3c98';      // Royal Purple
+            if (p >= 6) return '#1a5276';      // Navy Blue
+            if (p >= 5) return '#2471a3';      // Dark Blue
+            if (p >= 4) return '#2e86c1';      // Steel Blue
+            if (p >= 3) return '#148f77';      // Dark Teal
+            if (p >= 2) return '#17a589';      // Teal Green
+            return '#1abc9c';                   // Turquoise (P1)
         }
         
         // Get card border/accent color based on severity (neutral tones)
