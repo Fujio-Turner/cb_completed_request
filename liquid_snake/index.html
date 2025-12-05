@@ -601,14 +601,22 @@
                 (function() {
                     const link = document.getElementById('obfuscation-toggle-link');
                     const example = document.getElementById('obfuscation-example');
-                    if (link && example) {
+                    const container = document.querySelector('.background-f5.padding-15.margin-bottom-10');
+                    if (link && example && container) {
                         link.addEventListener('mouseenter', () => example.style.display = 'block');
                         link.addEventListener('click', (e) => {
                             e.preventDefault();
                             example.style.display = example.style.display === 'none' ? 'block' : 'none';
                         });
-                        // Hide when leaving the container to allow hovering the example itself
-                        link.parentElement.parentElement.parentElement.addEventListener('mouseleave', () => example.style.display = 'none');
+                        // Hide when leaving the container (includes both link and example)
+                        container.addEventListener('mouseleave', () => example.style.display = 'none');
+                        // Also hide when leaving the example div itself
+                        example.addEventListener('mouseleave', (e) => {
+                            // Only hide if not moving back to the container
+                            if (!container.contains(e.relatedTarget)) {
+                                example.style.display = 'none';
+                            }
+                        });
                     }
                 })();
                 
