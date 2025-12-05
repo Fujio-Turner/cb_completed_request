@@ -26939,6 +26939,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 store_results: true,  // Always save for tracking and auditing
                 query_group_limit: parseInt(document.querySelector('input[name="ai-qg-limit"]:checked')?.value || "10"),
                 chart_trends_depth: chartTrendsDepth,  // 'low' (5-6 insights) or 'high' (15+ insights)
+                timeline_data_depth: timelineDataDepth,  // 'basic' or 'full'
                 use_toon: document.getElementById('ai-send-toon')?.checked || false,
                 stake_focus: stakeFocusEnabled && stakeFocusDatetime ? {
                     enabled: true,
@@ -27941,6 +27942,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             // Get additional analysis options
             const chartTrendsDepth = options.chart_trends_depth || 'N/A';
+            const timelineDataDepth = options.timeline_data_depth || 'basic';
             const stakeFocus = options.stake_focus;
             const stakeFocusStr = stakeFocus?.enabled ? stakeFocus.datetime : 'None';
             
@@ -27980,6 +27982,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                         <div>Language: <strong>${doc.language || 'English'}</strong></div>
                         <div>Query Groups: <strong>${qgLimit}</strong></div>
                         <div>Chart Trends: <strong>${chartTrendsDepth === 'high' ? 'High' : 'Low'}</strong></div>
+                        <div>Data Depth: <strong>${timelineDataDepth === 'full' ? 'Full' : 'Basic'}</strong></div>
                         <div>Stake Focus: ${stakeFocusStr}</div>
                     </div>
                 </div>
@@ -29118,12 +29121,62 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     const existing = Chart.getChart(canvasId);
                     if (existing) existing.destroy();
                     
+                    const chartType = chart.type || 'bar';
+                    const isPieOrDoughnut = chartType === 'pie' || chartType === 'doughnut';
+                    const isBar = chartType === 'bar';
+                    
+                    // Calculate total for pie/doughnut charts
+                    let total = 0;
+                    if (isPieOrDoughnut && chart.data?.datasets?.[0]?.data) {
+                        total = chart.data.datasets[0].data.reduce((sum, val) => sum + (val || 0), 0);
+                    }
+                    
+                    // Build plugins array for data labels
+                    const chartPlugins = [];
+                    
+                    // Add bar value labels plugin
+                    if (isBar && typeof drawBarValueLabels === 'function') {
+                        chartPlugins.push({
+                            afterDatasetsDraw: function(chartInstance) {
+                                drawBarValueLabels(chartInstance, { font: 'bold 12px Arial' });
+                            }
+                        });
+                    }
+                    
+                    // Add pie/doughnut label plugin
+                    if (isPieOrDoughnut && typeof drawPieLabelsWithLeaders === 'function') {
+                        chartPlugins.push({
+                            afterDatasetsDraw: function(chartInstance) {
+                                drawPieLabelsWithLeaders(chartInstance, total, { insideThreshold: 10 });
+                            }
+                        });
+                    }
+                    
+                    // Build datalabels config for pie/doughnut
+                    const datalabelsConfig = isPieOrDoughnut ? {
+                        display: true,
+                        color: function(context) {
+                            return context.dataIndex <= 1 ? 'white' : '#6c757d';
+                        },
+                        font: {
+                            weight: 'bold',
+                            size: 12
+                        },
+                        formatter: function(value, context) {
+                            const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return percent + '%';
+                        }
+                    } : {
+                        display: false
+                    };
+                    
                     new Chart(canvas, {
-                        type: chart.type || 'bar',
+                        type: chartType,
                         data: chart.data,
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
+                            layout: isBar ? { padding: { top: 20 } } : {},
                             plugins: {
                                 legend: {
                                     display: true,
@@ -29135,12 +29188,20 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                                 },
                                 title: {
                                     display: false
-                                }
+                                },
+                                datalabels: datalabelsConfig
                             },
+                            scales: isBar ? {
+                                y: {
+                                    beginAtZero: true,
+                                    grace: '15%'
+                                }
+                            } : undefined,
                             ...chart.options
-                        }
+                        },
+                        plugins: chartPlugins
                     });
-                    Logger.debug(`[AI] Rendered chart ${chart.id}`);
+                    Logger.debug(`[AI] Rendered chart ${chart.id} (type: ${chartType})`);
                 } catch (e) {
                     Logger.error(`[AI] Error rendering chart ${chart.id}:`, e);
                     // Show error in canvas container
