@@ -1568,8 +1568,17 @@
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="enhanced-operations-chart"></canvas>
                 </div>
-                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="filter" data-position="timeline-4">
-                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="filter" data-position="timeline-4" style="position: relative;">
+                    <div class="chart-expand-btn" title="Expand chart" style="left: 5px;">⛶</div>
+                    
+                    <!-- 3D Button -->
+                    <button id="open-3d-filter-chart-btn" 
+                            style="position: absolute; top: 5px; left: 35px; width: 32px; height: 32px; 
+                                   background: #ff8c00; color: white; border: none; border-radius: 4px; 
+                                   cursor: pointer; font-weight: bold; font-size: 12px; z-index: 100; 
+                                   display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" 
+                            title="Open ECharts 3D Filter Operations">3D</button>
+                    
                     <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
                     <canvas id="filter-chart"></canvas>
                 </div>

@@ -5768,7 +5768,724 @@ function renderQueryGroupPhaseTimesChart(group) {
 
             // Attach double-click handler for vertical stake feature
             attachDoubleClickHandler(window.filterChart);
+
+            // Setup 3D button click handler (dev mode only)
+            const btn3D = document.getElementById('open-3d-filter-chart-btn');
+            if (btn3D) {
+                // Check if dev mode is enabled
+                const urlParams = new URLSearchParams(window.location.search);
+                const isDevMode = urlParams.get('dev') === 'true';
+                
+                // Remove old event listeners
+                const newBtn = btn3D.cloneNode(true);
+                btn3D.parentNode.replaceChild(newBtn, btn3D);
+                
+                // Show button only if we have data AND dev mode is enabled
+                newBtn.style.display = (requests && requests.length > 0 && isDevMode) ? 'block' : 'none';
+                
+                // Add click handler
+                newBtn.addEventListener('click', function() {
+                    // Always regenerate 3D data to respect current filters
+                    createECharts3DFilterOperations(requests, grouping);
+                    // Open fullscreen
+                    expandECharts3DFilterOperations();
+                });
+            }
         }
+
+
+        // ============================================================
+        // 3D CHART: createECharts3DFilterOperations
+        // ============================================================
+        function createECharts3DFilterOperations(requests, grouping) {
+            if (!requests || requests.length === 0) {
+                Logger.debug(TEXT_CONSTANTS.NO_DATA_AVAILABLE || "No data available");
+                return;
+            }
+
+            // Get all timeline buckets
+            const timeBuckets = getTimelineBucketsFromRequests(requests, grouping);
+            const timeGroups = {};
+
+            // Initialize time buckets with collection -> filter data
+            timeBuckets.forEach(ts => {
+                timeGroups[ts.toISOString()] = {};
+            });
+
+            // Group filter data by collection and time bucket
+            requests.forEach((request) => {
+                if (!request.requestTime || !request.plan) return;
+
+                const sql = request.statement || request.preparedText || "";
+                const collections = extractCollectionsFromSQL(sql);
+                
+                const requestDate = getChartDate(request.requestTime);
+                const timeKey = roundTimestamp(requestDate, grouping, requests);
+                const key = timeKey.toISOString();
+
+                // Find all Filter operators in the plan
+                const operators = getOperators(request.plan);
+                operators.forEach((operator) => {
+                    if (operator["#operator"] === "Filter") {
+                        const stats = operator["#stats"] || {};
+                        const itemsIn = stats["#itemsIn"];
+                        const itemsOut = stats["#itemsOut"];
+
+                        if (itemsIn !== undefined && itemsOut !== undefined) {
+                            collections.forEach(collection => {
+                                if (!timeGroups[key][collection]) {
+                                    timeGroups[key][collection] = {
+                                        filtersEqual: 0,
+                                        filtersNotEqual: 0,
+                                        queryCount: 0
+                                    };
+                                }
+                                
+                                if (itemsIn === itemsOut) {
+                                    timeGroups[key][collection].filtersEqual += itemsOut;
+                                } else {
+                                    timeGroups[key][collection].filtersNotEqual += itemsOut;
+                                }
+                                timeGroups[key][collection].queryCount++;
+                            });
+                        }
+                    }
+                });
+            });
+
+            // Get all unique collections and count total filter operations per collection
+            const collectionFilterCounts = {};
+            Object.values(timeGroups).forEach(group => {
+                Object.entries(group).forEach(([collection, filterData]) => {
+                    if (!collectionFilterCounts[collection]) {
+                        collectionFilterCounts[collection] = { equal: 0, notEqual: 0, queryCount: 0 };
+                    }
+                    collectionFilterCounts[collection].equal += filterData.filtersEqual;
+                    collectionFilterCounts[collection].notEqual += filterData.filtersNotEqual;
+                    collectionFilterCounts[collection].queryCount += filterData.queryCount;
+                });
+            });
+
+            // Sort collections by total filter count (ascending) - fewest in front, most in back
+            const allCollections = Object.keys(collectionFilterCounts).sort((a, b) => {
+                const aTotal = collectionFilterCounts[a].equal + collectionFilterCounts[a].notEqual;
+                const bTotal = collectionFilterCounts[b].equal + collectionFilterCounts[b].notEqual;
+                return aTotal - bTotal;
+            });
+
+            if (allCollections.length === 0) {
+                Logger.info('No filter data available for ECharts 3D chart');
+                return;
+            }
+
+            // Create a mapping of collection to index for y-axis
+            const collectionToIndex = {};
+            allCollections.forEach((collection, idx) => {
+                collectionToIndex[collection] = idx;
+            });
+
+            // Build data points for ECharts bar3D - stacked bar chart
+            const equalData = [];
+            const notEqualData = [];
+
+            timeBuckets.forEach((ts, timeIndex) => {
+                const key = ts.toISOString();
+                const formattedTime = ts.toLocaleString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+
+                Object.entries(timeGroups[key]).forEach(([collection, filterData]) => {
+                    const collectionIdx = collectionToIndex[collection];
+                    
+                    if (filterData.filtersEqual > 0) {
+                        equalData.push({
+                            value: [timeIndex, collectionIdx, filterData.filtersEqual],
+                            collection: collection,
+                            time: formattedTime,
+                            filterType: 'IN = OUT',
+                            actualCount: filterData.filtersEqual,
+                            queryCount: filterData.queryCount
+                        });
+                    }
+                    
+                    if (filterData.filtersNotEqual > 0) {
+                        notEqualData.push({
+                            value: [timeIndex, collectionIdx, filterData.filtersNotEqual],
+                            collection: collection,
+                            time: formattedTime,
+                            filterType: 'IN ≠ OUT',
+                            actualCount: filterData.filtersNotEqual,
+                            queryCount: filterData.queryCount
+                        });
+                    }
+                });
+            });
+
+            // Store data globally for fullscreen
+            window.echartsFilterData = {
+                equalData,
+                notEqualData,
+                timeBuckets,
+                allCollections,
+                collectionFilterCounts
+            };
+
+            Logger.info(`✅ ECharts 3D Filter Operations data prepared: ${equalData.length + notEqualData.length} data points, ${allCollections.length} collections`);
+        }
+
+
+        // ============================================================
+        // 3D CHART: expandECharts3DFilterOperations
+        // ============================================================
+        function expandECharts3DFilterOperations() {
+            const { equalData, notEqualData, timeBuckets, allCollections, collectionFilterCounts } = window.echartsFilterData;
+            if (!equalData && !notEqualData) return;
+
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'chart-fullscreen-overlay active';
+            overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = 'width: 95%; height: 95%; background: white; border-radius: 8px; padding: 20px; position: relative;';
+
+            // Create close button
+            const closeBtn = document.createElement('div');
+            closeBtn.className = 'chart-collapse-btn';
+            closeBtn.title = 'Collapse chart';
+            closeBtn.innerHTML = '✕';
+            closeBtn.onclick = () => {
+                document.body.removeChild(overlay);
+                document.body.style.overflow = '';
+            };
+
+            // Create fullscreen chart container
+            const fullscreenChartDiv = document.createElement('div');
+            fullscreenChartDiv.id = 'echarts-3d-filter-fullscreen';
+            fullscreenChartDiv.style.cssText = 'width: calc(100% - 420px); height: 100%;';
+
+            // Create controls and legend container
+            const controlsContainer = document.createElement('div');
+            controlsContainer.style.cssText = 'position: absolute; top: 50px; right: 20px; width: 400px; background: white; border: 1px solid #444; border-radius: 4px; padding: 10px; max-height: calc(100% - 60px); overflow-y: auto;';
+
+            // Add toggle controls
+            const togglesDiv = document.createElement('div');
+            togglesDiv.style.cssText = 'margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ddd;';
+            togglesDiv.innerHTML = `
+                <div style="margin-bottom: 8px;">
+                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold;">
+                        <input type="checkbox" id="echarts-filter-log-scale-toggle" style="margin-right: 8px;">
+                        Log Scale Z-Axis (Filter Count)
+                    </label>
+                </div>
+            `;
+            controlsContainer.appendChild(togglesDiv);
+
+            // Add Filter Type Legend Section
+            const filterTypeLegendHeader = document.createElement('div');
+            filterTypeLegendHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
+            filterTypeLegendHeader.innerHTML = `
+                <strong style="font-size: 14px;">Filter Types:</strong>
+                <div>
+                    <button id="echarts-filter-fs-show-all-types" style="padding: 4px 12px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; font-size: 11px;">Show All</button>
+                    <button id="echarts-filter-fs-hide-all-types" style="padding: 4px 12px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">Hide All</button>
+                </div>
+            `;
+            controlsContainer.appendChild(filterTypeLegendHeader);
+
+            // Calculate counts for each filter type
+            const equalTotal = equalData.reduce((sum, d) => sum + d.actualCount, 0);
+            const notEqualTotal = notEqualData.reduce((sum, d) => sum + d.actualCount, 0);
+
+            const filterTypeVisibilityState = {
+                equal: true,
+                notEqual: true
+            };
+
+            // Create filter type legend items
+            const filterTypeItemsGrid = document.createElement('div');
+            filterTypeItemsGrid.style.cssText = 'display: grid; grid-template-columns: 1fr; gap: 6px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ddd;';
+            filterTypeItemsGrid.id = 'echarts-filter-type-legend-items-grid';
+
+            // Equal filter type legend item
+            const equalLegendItem = document.createElement('div');
+            equalLegendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; border: 1px solid #e0e0e0;';
+            equalLegendItem.dataset.filterType = 'equal';
+            
+            const equalCheckbox = document.createElement('input');
+            equalCheckbox.type = 'checkbox';
+            equalCheckbox.checked = true;
+            equalCheckbox.id = 'echarts-filter-equal-checkbox';
+            equalCheckbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+            
+            const equalColorBox = document.createElement('span');
+            equalColorBox.style.cssText = 'display: inline-block; width: 16px; height: 16px; background: #007bff; margin-right: 8px; border: 1px solid #333; border-radius: 2px;';
+            
+            const equalLabel = document.createElement('span');
+            equalLabel.style.cssText = 'font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+            equalLabel.textContent = `IN = OUT (${equalTotal.toLocaleString()} total)`;
+            
+            equalLegendItem.appendChild(equalCheckbox);
+            equalLegendItem.appendChild(equalColorBox);
+            equalLegendItem.appendChild(equalLabel);
+            
+            equalLegendItem.onclick = (e) => {
+                if (e.target !== equalCheckbox) {
+                    equalCheckbox.checked = !equalCheckbox.checked;
+                }
+                filterTypeVisibilityState.equal = equalCheckbox.checked;
+                equalLegendItem.style.opacity = equalCheckbox.checked ? '1' : '0.3';
+                updateChart();
+            };
+            
+            filterTypeItemsGrid.appendChild(equalLegendItem);
+
+            // Not Equal filter type legend item
+            const notEqualLegendItem = document.createElement('div');
+            notEqualLegendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; border: 1px solid #e0e0e0;';
+            notEqualLegendItem.dataset.filterType = 'notEqual';
+            
+            const notEqualCheckbox = document.createElement('input');
+            notEqualCheckbox.type = 'checkbox';
+            notEqualCheckbox.checked = true;
+            notEqualCheckbox.id = 'echarts-filter-notequal-checkbox';
+            notEqualCheckbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+            
+            const notEqualColorBox = document.createElement('span');
+            notEqualColorBox.style.cssText = 'display: inline-block; width: 16px; height: 16px; background: #dc3545; margin-right: 8px; border: 1px solid #333; border-radius: 2px;';
+            
+            const notEqualLabel = document.createElement('span');
+            notEqualLabel.style.cssText = 'font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+            notEqualLabel.textContent = `IN ≠ OUT (${notEqualTotal.toLocaleString()} total)`;
+            
+            notEqualLegendItem.appendChild(notEqualCheckbox);
+            notEqualLegendItem.appendChild(notEqualColorBox);
+            notEqualLegendItem.appendChild(notEqualLabel);
+            
+            notEqualLegendItem.onclick = (e) => {
+                if (e.target !== notEqualCheckbox) {
+                    notEqualCheckbox.checked = !notEqualCheckbox.checked;
+                }
+                filterTypeVisibilityState.notEqual = notEqualCheckbox.checked;
+                notEqualLegendItem.style.opacity = notEqualCheckbox.checked ? '1' : '0.3';
+                updateChart();
+            };
+            
+            filterTypeItemsGrid.appendChild(notEqualLegendItem);
+            controlsContainer.appendChild(filterTypeItemsGrid);
+
+            // Add legend header for Collections
+            const legendHeader = document.createElement('div');
+            legendHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
+            legendHeader.innerHTML = `
+                <strong style="font-size: 14px;">Collections:</strong>
+                <div>
+                    <button id="echarts-filter-fs-show-all" style="padding: 4px 12px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; font-size: 11px;">Show All</button>
+                    <button id="echarts-filter-fs-hide-all" style="padding: 4px 12px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">Hide All</button>
+                </div>
+            `;
+            controlsContainer.appendChild(legendHeader);
+
+            // Add search input
+            const searchContainer = document.createElement('div');
+            searchContainer.style.cssText = 'margin-bottom: 10px;';
+            searchContainer.innerHTML = `
+                <input type="text" id="echarts-filter-legend-search" placeholder="Search collections..." style="width: 100%; font-size: 11px; padding: 6px 8px; border: 1px solid #dee2e6; border-radius: 3px; box-sizing: border-box;">
+            `;
+            controlsContainer.appendChild(searchContainer);
+
+            // Create legend items grid
+            const itemsGrid = document.createElement('div');
+            itemsGrid.style.cssText = 'display: grid; grid-template-columns: 1fr; gap: 6px;';
+            itemsGrid.id = 'echarts-filter-legend-items-grid';
+            
+            // Sort collections by count (descending) for legend display
+            const sortedCollections = [...allCollections].sort((a, b) => {
+                const aTotal = collectionFilterCounts[a].equal + collectionFilterCounts[a].notEqual;
+                const bTotal = collectionFilterCounts[b].equal + collectionFilterCounts[b].notEqual;
+                return bTotal - aTotal;
+            });
+
+            const visibilityState = {};
+            sortedCollections.forEach(collection => {
+                visibilityState[collection] = true;
+            });
+
+            sortedCollections.forEach(collection => {
+                const count = collectionFilterCounts[collection].equal + collectionFilterCounts[collection].notEqual;
+                const legendItem = document.createElement('div');
+                legendItem.style.cssText = 'display: flex; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; border: 1px solid #e0e0e0;';
+                legendItem.dataset.collection = collection;
+                
+                // Checkbox
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = true;
+                checkbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+                
+                // Collection name with count
+                const label = document.createElement('span');
+                label.style.cssText = 'font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+                label.textContent = `[${count.toLocaleString()}] ${collection}`;
+                
+                legendItem.appendChild(checkbox);
+                legendItem.appendChild(label);
+                
+                // Toggle visibility on click
+                legendItem.onclick = (e) => {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    visibilityState[collection] = checkbox.checked;
+                    legendItem.style.opacity = checkbox.checked ? '1' : '0.3';
+                    updateChart();
+                };
+                
+                itemsGrid.appendChild(legendItem);
+            });
+
+            controlsContainer.appendChild(itemsGrid);
+
+            // Assemble modal
+            modalContent.appendChild(closeBtn);
+            modalContent.appendChild(fullscreenChartDiv);
+            modalContent.appendChild(controlsContainer);
+            overlay.appendChild(modalContent);
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+
+            // Initialize fullscreen chart
+            const myChart = echarts.init(fullscreenChartDiv);
+            
+            // Create mapping of collection to index
+            const collectionToIndex = {};
+            allCollections.forEach((collection, idx) => {
+                collectionToIndex[collection] = idx;
+            });
+
+            function updateChart() {
+                const useLogScale = document.getElementById('echarts-filter-log-scale-toggle')?.checked || false;
+                
+                // Build lookup of blue and red bar heights for each position: key = "timeIndex,collectionIndex"
+                // Use raw actualCount values - the axis log scale handles the transformation
+                const blueHeights = {};
+                const redHeights = {};
+                
+                // Calculate blue bar heights (raw values)
+                equalData.filter(d => visibilityState[d.collection]).forEach(d => {
+                    const key = `${d.value[0]},${d.value[1]}`;
+                    blueHeights[key] = d.actualCount;
+                });
+                
+                // Calculate red bar heights (raw values)
+                notEqualData.filter(d => visibilityState[d.collection]).forEach(d => {
+                    const key = `${d.value[0]},${d.value[1]}`;
+                    redHeights[key] = d.actualCount;
+                });
+                
+                // For true stacking in bar3D, we need to create combined bars
+                // The stacked total bar (blue + red combined) shows the full height
+                // Then we overlay blue bars on top to "mask" the blue portion
+                
+                // Approach: Create stacked bars by rendering:
+                // 1. Red bars at full stacked height (blue + red) - these will be the "background"
+                // 2. Blue bars at their original height - these will overlay the bottom portion
+                
+                // This creates a visual stacking effect where blue is at bottom and red is on top
+                
+                // Create stacked red bars (at full combined height)
+                const filteredStackedData = filterTypeVisibilityState.notEqual 
+                    ? notEqualData.filter(d => visibilityState[d.collection]).map(d => {
+                        const key = `${d.value[0]},${d.value[1]}`;
+                        const blueHeight = filterTypeVisibilityState.equal ? (blueHeights[key] || 0) : 0;
+                        const redHeight = d.actualCount;
+                        return {
+                            ...d,
+                            value: [d.value[0], d.value[1], blueHeight + redHeight],
+                            stackedHeight: blueHeight + redHeight
+                        };
+                    })
+                    : [];
+                
+                // Create blue bars at their original height (these overlay the bottom)
+                const filteredEqualData = filterTypeVisibilityState.equal 
+                    ? equalData.filter(d => visibilityState[d.collection]).map(d => ({
+                        ...d,
+                        value: [d.value[0], d.value[1], d.actualCount]
+                    }))
+                    : [];
+                
+                // For positions with only blue (no red), add blue bars
+                // For positions with only red (no blue), add red bars at their height
+                const filteredNotEqualOnlyData = filterTypeVisibilityState.notEqual 
+                    ? notEqualData.filter(d => {
+                        const key = `${d.value[0]},${d.value[1]}`;
+                        return visibilityState[d.collection] && !blueHeights[key];
+                    }).map(d => ({
+                        ...d,
+                        value: [d.value[0], d.value[1], d.actualCount]
+                    }))
+                    : [];
+
+                const option = {
+                    title: {
+                        text: 'Filter Operations: Efficiency Analysis (IN vs OUT) by Collection',
+                        left: 'center',
+                        top: 10,
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    tooltip: {
+                        formatter: function(params) {
+                            const d = params.data;
+                            return `<strong>${d.filterType}</strong><br/>Collection: ${d.collection}<br/>Time: ${d.time}<br/>Filter Count: ${d.actualCount.toLocaleString()}<br/>Queries: ${d.queryCount.toLocaleString()}`;
+                        }
+                    },
+                    xAxis3D: {
+                        type: 'category',
+                        data: timeBuckets.map((ts, idx) => idx),
+                        name: 'Request Time',
+                        nameTextStyle: {
+                            fontSize: 14,
+                            fontWeight: 'bold'
+                        },
+                        axisLabel: {
+                            interval: Math.max(0, Math.ceil(timeBuckets.length / 10) - 1),
+                            formatter: function(value) {
+                                if (value >= 0 && value < timeBuckets.length) {
+                                    return timeBuckets[value].toLocaleString('en-US', { month: 'short', day: 'numeric' });
+                                }
+                                return '';
+                            },
+                            fontSize: 10
+                        }
+                    },
+                    yAxis3D: {
+                        type: 'category',
+                        data: allCollections,
+                        name: 'Collection',
+                        nameTextStyle: {
+                            fontSize: 14,
+                            fontWeight: 'bold'
+                        },
+                        axisLabel: {
+                            interval: Math.max(0, Math.ceil(allCollections.length / 10) - 1),
+                            fontSize: 10
+                        }
+                    },
+                    zAxis3D: {
+                        type: useLogScale ? 'log' : 'value',
+                        name: 'Filter Count',
+                        nameTextStyle: {
+                            fontSize: 14,
+                            fontWeight: 'bold'
+                        },
+                        min: useLogScale ? 0.001 : 0
+                    },
+                    grid3D: {
+                        boxWidth: 250,
+                        boxDepth: Math.min(250, allCollections.length * 7),
+                        boxHeight: 150,
+                        viewControl: {
+                            alpha: 22.9,
+                            beta: 44.6,
+                            distance: 453.0,
+                            minDistance: 100,
+                            maxDistance: 600
+                        },
+                        light: {
+                            main: {
+                                intensity: 1.2,
+                                shadow: true
+                            },
+                            ambient: {
+                                intensity: 0.3
+                            }
+                        }
+                    },
+                    series: [
+                        // Red stacked bars FIRST (rendered as background at full stacked height)
+                        // These show the combined blue+red height, with red color
+                        {
+                            type: 'bar3D',
+                            name: 'IN ≠ OUT (stacked)',
+                            data: filteredStackedData,
+                            barSize: 0.6,
+                            shading: 'lambert',
+                            itemStyle: {
+                                color: '#dc3545',
+                                opacity: 0.9
+                            },
+                            emphasis: {
+                                itemStyle: {
+                                    color: '#b02a37',
+                                    opacity: 1
+                                }
+                            },
+                            label: {
+                                show: false
+                            }
+                        },
+                        // Blue bars SECOND (overlay the bottom portion)
+                        // These cover the blue portion of the stacked bar
+                        {
+                            type: 'bar3D',
+                            name: 'IN = OUT',
+                            data: filteredEqualData,
+                            barSize: 0.6,
+                            shading: 'lambert',
+                            itemStyle: {
+                                color: '#007bff',
+                                opacity: 1.0
+                            },
+                            emphasis: {
+                                itemStyle: {
+                                    color: '#0056b3',
+                                    opacity: 1
+                                }
+                            },
+                            label: {
+                                show: false
+                            }
+                        },
+                        // Red-only bars (positions with no blue data)
+                        {
+                            type: 'bar3D',
+                            name: 'IN ≠ OUT (only)',
+                            data: filteredNotEqualOnlyData,
+                            barSize: 0.6,
+                            shading: 'lambert',
+                            itemStyle: {
+                                color: '#dc3545',
+                                opacity: 0.9
+                            },
+                            emphasis: {
+                                itemStyle: {
+                                    color: '#b02a37',
+                                    opacity: 1
+                                }
+                            },
+                            label: {
+                                show: false
+                            }
+                        }
+                    ]
+                };
+                
+                myChart.setOption(option);
+            }
+
+            // Initial chart render
+            updateChart();
+
+            // Add event listeners for controls
+            document.getElementById('echarts-filter-log-scale-toggle').addEventListener('change', updateChart);
+
+            // Filter type show/hide all buttons
+            document.getElementById('echarts-filter-fs-show-all-types').addEventListener('click', () => {
+                filterTypeVisibilityState.equal = true;
+                filterTypeVisibilityState.notEqual = true;
+                equalCheckbox.checked = true;
+                notEqualCheckbox.checked = true;
+                equalLegendItem.style.opacity = '1';
+                notEqualLegendItem.style.opacity = '1';
+                updateChart();
+            });
+
+            document.getElementById('echarts-filter-fs-hide-all-types').addEventListener('click', () => {
+                filterTypeVisibilityState.equal = false;
+                filterTypeVisibilityState.notEqual = false;
+                equalCheckbox.checked = false;
+                notEqualCheckbox.checked = false;
+                equalLegendItem.style.opacity = '0.3';
+                notEqualLegendItem.style.opacity = '0.3';
+                updateChart();
+            });
+
+            // Collection show/hide all buttons
+            document.getElementById('echarts-filter-fs-show-all').addEventListener('click', () => {
+                Object.keys(visibilityState).forEach(collection => {
+                    visibilityState[collection] = true;
+                    const item = itemsGrid.querySelector(`[data-collection="${collection}"]`);
+                    if (item) {
+                        item.querySelector('input').checked = true;
+                        item.style.opacity = '1';
+                    }
+                });
+                updateChart();
+            });
+
+            document.getElementById('echarts-filter-fs-hide-all').addEventListener('click', () => {
+                Object.keys(visibilityState).forEach(collection => {
+                    visibilityState[collection] = false;
+                    const item = itemsGrid.querySelector(`[data-collection="${collection}"]`);
+                    if (item) {
+                        item.querySelector('input').checked = false;
+                        item.style.opacity = '0.3';
+                    }
+                });
+                updateChart();
+            });
+
+            // Collection search filter
+            document.getElementById('echarts-filter-legend-search').addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const items = itemsGrid.querySelectorAll('[data-collection]');
+                items.forEach(item => {
+                    const collection = item.dataset.collection.toLowerCase();
+                    item.style.display = collection.includes(searchTerm) ? 'flex' : 'none';
+                });
+            });
+
+            // Add camera debug display if debug mode is enabled
+            const urlParams = new URLSearchParams(window.location.search);
+            const debugMode = urlParams.get('debug') === 'true' || urlParams.get('logLevel') === 'debug';
+
+            if (debugMode) {
+                const debugDiv = document.createElement('div');
+                debugDiv.id = 'camera-debug-filter';
+                debugDiv.style.cssText = 'position: absolute; top: 60px; left: 10px; background: rgba(0,0,0,0.9); color: #00ff00; padding: 12px; font-family: monospace; font-size: 13px; z-index: 10002; border-radius: 4px; border: 2px solid #00ff00; box-shadow: 0 0 10px rgba(0,255,0,0.5);';
+                debugDiv.innerHTML = '<strong style="color: #ffff00;">Camera Position:</strong><br/>Alpha: 22.9<br/>Beta: 44.6<br/>Distance: 453.0';
+                fullscreenChartDiv.appendChild(debugDiv);
+                
+                // Continuously poll camera position
+                const cameraUpdateInterval = setInterval(function() {
+                    try {
+                        const option = myChart.getOption();
+                        if (option && option.grid3D && option.grid3D[0] && option.grid3D[0].viewControl) {
+                            const vc = option.grid3D[0].viewControl;
+                            debugDiv.innerHTML = `
+                                <strong style="color: #ffff00;">Camera Position:</strong><br/>
+                                Alpha: ${vc.alpha.toFixed(1)}<br/>
+                                Beta: ${vc.beta.toFixed(1)}<br/>
+                                Distance: ${vc.distance.toFixed(1)}
+                            `;
+                        }
+                    } catch (e) {
+                        // Silently fail
+                    }
+                }, 100);
+                
+                // Clean up interval when modal closes
+                const originalOnClick = closeBtn.onclick;
+                closeBtn.onclick = () => {
+                    clearInterval(cameraUpdateInterval);
+                    originalOnClick();
+                };
+            }
+
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            });
+        }
+
 
         // Generate timeline chart showing kernel time vs execution time performance
         function generateTimelineChart(requests) {
