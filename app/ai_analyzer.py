@@ -60,6 +60,32 @@ ic.configureOutput(prefix='[ai_analyzer] ')
 configure_debug(DEBUG)
 
 # ============================================================================
+# PyInstaller Resource Path Helper
+# ============================================================================
+
+import sys
+import os
+
+def get_resource_path(filename: str) -> str:
+    """
+    Get the correct path for bundled resources in both dev and PyInstaller builds
+    
+    Args:
+        filename: Name of the resource file
+        
+    Returns:
+        Absolute path to the resource
+    """
+    if getattr(sys, 'frozen', False):
+        # Running as PyInstaller bundle
+        base_path = sys._MEIPASS
+    else:
+        # Running in development
+        base_path = os.path.dirname(__file__)
+    
+    return os.path.join(base_path, filename)
+
+# ============================================================================
 # Payload Reference Manager
 # ============================================================================
 
@@ -75,8 +101,7 @@ def get_payload_reference_template() -> Dict[str, Any]:
     Returns:
         Template dict with reference URLs and context
     """
-    import os
-    template_path = os.path.join(os.path.dirname(__file__), 'payload_reference.json.template')
+    template_path = get_resource_path('payload_reference.json.template')
     
     try:
         with open(template_path, 'r') as f:
@@ -326,8 +351,7 @@ def get_ai_models_template() -> Dict[str, Any]:
     Returns:
         Template dict with AI model configurations
     """
-    import os
-    template_path = os.path.join(os.path.dirname(__file__), 'ai_models_list.json.template')
+    template_path = get_resource_path('ai_models_list.json.template')
     
     try:
         with open(template_path, 'r') as f:

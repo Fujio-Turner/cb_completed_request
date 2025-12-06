@@ -54,7 +54,19 @@ except ImportError:
 ic.configureOutput(includeContext=True)
 
 PORT = int(os.environ.get('PORT', 5000))
-DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+
+# Handle PyInstaller bundled resources
+def get_resource_path():
+    """Get the correct resource path for both development and PyInstaller builds"""
+    if getattr(sys, 'frozen', False):
+        # Running as PyInstaller bundle
+        return sys._MEIPASS
+    else:
+        # Running in development
+        return os.path.dirname(os.path.abspath(__file__))
+
+DIRECTORY = get_resource_path()
+ic(f"📁 Resource directory: {DIRECTORY}")
 
 app = Flask(__name__, static_folder=DIRECTORY, static_url_path='')
 CORS(app)  # Enable CORS for all routes
@@ -2274,11 +2286,40 @@ def ai_api_call():
             'error': str(e)
         }), 500
 
+def open_browser():
+    """Open the browser after a short delay to ensure server is ready"""
+    import time
+    import webbrowser
+    time.sleep(1.5)
+    webbrowser.open(f"http://localhost:{PORT}/index.html")
+
 if __name__ == '__main__':
-    ic("🚀 Liquid Snake Server (Flask)")
-    ic(f"📡 Serving at http://localhost:{PORT}")
-    ic(f"📂 Directory: {DIRECTORY}")
-    ic(f"🌐 Open: http://localhost:{PORT}/index.html")
-    ic("🛑 Press Ctrl+C to stop")
-    
-    app.run(host='0.0.0.0', port=PORT, debug=True)
+    try:
+        ic("🚀 Liquid Snake Server (Flask)")
+        ic(f"📡 Serving at http://localhost:{PORT}")
+        ic(f"📂 Directory: {DIRECTORY}")
+        ic(f"🌐 Open: http://localhost:{PORT}/index.html")
+        
+        # Check if running as PyInstaller bundle
+        is_frozen = getattr(sys, 'frozen', False)
+        ic(f"🧊 Frozen (PyInstaller): {is_frozen}")
+        
+        # Auto-open browser for PyInstaller builds
+        if is_frozen:
+            ic("🌐 Auto-opening browser...")
+            browser_thread = threading.Thread(target=open_browser, daemon=True)
+            browser_thread.start()
+        else:
+            ic("🛑 Press Ctrl+C to stop")
+        
+        # Disable debug mode for frozen builds (avoids reloader issues)
+        app.run(host='0.0.0.0', port=PORT, debug=not is_frozen)
+        
+    except Exception as e:
+        ic(f"💥 FATAL ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        # Keep window open on crash so user can see error
+        if getattr(sys, 'frozen', False):
+            input("Press Enter to exit...")
+        raise

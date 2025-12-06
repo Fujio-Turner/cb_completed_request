@@ -71,6 +71,9 @@ jobs:
             --add-data "assets:assets" \
             --add-data "docs:docs" \
             --add-data "config.json:." \
+            --add-data "ai_analyzer.py:." \
+            --add-data "ai_models_list.json.template:." \
+            --add-data "payload_reference.json.template:." \
             --hidden-import flask \
             --hidden-import flask_cors \
             --hidden-import couchbase \
@@ -81,6 +84,7 @@ jobs:
             --hidden-import requests \
             --hidden-import openai \
             --hidden-import icecream \
+            --hidden-import webbrowser \
             app.py
             
       - name: Create DMG
@@ -131,6 +135,9 @@ jobs:
             --add-data "assets;assets" `
             --add-data "docs;docs" `
             --add-data "config.json;." `
+            --add-data "ai_analyzer.py;." `
+            --add-data "ai_models_list.json.template;." `
+            --add-data "payload_reference.json.template;." `
             --hidden-import flask `
             --hidden-import flask_cors `
             --hidden-import couchbase `
@@ -141,6 +148,7 @@ jobs:
             --hidden-import requests `
             --hidden-import openai `
             --hidden-import icecream `
+            --hidden-import webbrowser `
             app.py
             
       - name: Create ZIP
