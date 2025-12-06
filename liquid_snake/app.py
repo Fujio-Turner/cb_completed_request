@@ -148,6 +148,71 @@ def test_connection():
             'error': str(e)
         }), 500
 
+@app.route('/api/couchbase/check-indexes', methods=['POST'])
+def check_indexes():
+    """Check if required indexes exist for the analyzer"""
+    try:
+        data = request.json
+        cluster_config = data.get('config', {})
+        bucket_config = data.get('bucketConfig', {})
+        
+        cluster = get_couchbase_connection(cluster_config)
+        if not cluster:
+            return jsonify({'success': False, 'error': 'Not connected'}), 500
+        
+        # Extract bucket, scope, collection from config
+        bucket_name = bucket_config.get('bucket', 'cb_tools')
+        analyzer_scope = bucket_config.get('analyzerScope', 'query')
+        analyzer_collection = bucket_config.get('analyzerCollection', 'analyzer')
+        keyspace = f"`{bucket_name}`.`{analyzer_scope}`.`{analyzer_collection}`"
+        
+        # Required indexes for the analyzer (dynamic keyspace)
+        required_indexes = [
+            {
+                'name': 'analysis_old_table_v2',
+                'scope': analyzer_scope,
+                'collection': analyzer_collection,
+                'ddl': f'CREATE INDEX `analysis_old_table_v2` ON {keyspace}(`createdAt` DESC INCLUDE MISSING,`metadata`,`status`,`prompt`,`provider`,`sourceCluster`,(`parseJson`.`filters`)) WHERE (`docType` = "ai_analysis")'
+            }
+        ]
+        
+        # Query system:indexes to check which indexes exist
+        query = f"""
+            SELECT name, keyspace_id, bucket_id, scope_id 
+            FROM system:indexes 
+            WHERE bucket_id = '{bucket_name}'
+              AND scope_id = '{analyzer_scope}'
+        """
+        
+        result = cluster.query(query)
+        existing_indexes = {row.get('name'): row for row in result}
+        
+        missing_indexes = []
+        found_indexes = []
+        
+        for req_idx in required_indexes:
+            if req_idx['name'] in existing_indexes:
+                found_indexes.append(req_idx['name'])
+            else:
+                missing_indexes.append({
+                    'name': req_idx['name'],
+                    'ddl': req_idx['ddl']
+                })
+        
+        return jsonify({
+            'success': True,
+            'allIndexesExist': len(missing_indexes) == 0,
+            'foundIndexes': found_indexes,
+            'missingIndexes': missing_indexes
+        })
+        
+    except Exception as e:
+        ic(f"❌ Error checking indexes: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/couchbase/query', methods=['POST'])
 def execute_query():
     """Execute N1QL query"""

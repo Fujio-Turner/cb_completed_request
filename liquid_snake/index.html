@@ -404,14 +404,10 @@
                         </label>
                     </div>
                 </div>
-            </div>
+                </div>
 
-
-            <span id="filter-info" style="font-size: 12px; color: #6c757d;"></span>
-
-
-        </div>
-    </div>
+                </div>
+                </div>
 
     <!-- Tabs Container -->
     <div id="tabs" role="tabpanel" aria-label="Query analysis tabs">
@@ -498,9 +494,9 @@
 
             <!-- Analysis Options -->
             <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px; position: relative;">
-                <div id="ai-obfuscate-group" style="display: flex; align-items: center; gap: 8px;">
+                <div id="ai-obfuscate-group" style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
                     <input type="checkbox" id="ai-obfuscate-data" checked>
-                    <label for="ai-obfuscate-data">Obfuscate</label> mask sensitive data (bucket names, collection names, values and cb user names)
+                    <label for="ai-obfuscate-data">Obfuscate</label> masks sensitive data (bucket, scope, collection names, query values and CB user names)
                     <span id="obfuscation-toggle-link"
                           style="font-size: 11px; color: #007bff; cursor: help; text-decoration: underline; margin-left: 4px;">
                         (Hover/Click to see example)
@@ -553,8 +549,11 @@
                     
                     <!-- Query Groups Box -->
                     <div style="min-width: 200px; padding: 12px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px;">
-                        <div style="font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Query Groups</div>
-                        <div id="ai-qg-limit-group" style="display: flex; flex-direction: column; gap: 4px;" title="Limit the number of Query Groups sent to AI (sorted by impact).">
+                        <div style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Query Groups
+                            <span title="Sends the top N query patterns from the Query Groups tab to AI for analysis.&#10;Query groups are sorted by impact (slowest/most frequent queries first)." style="cursor: help; color: #888; font-size: 14px; text-transform: none;">ⓘ</span>
+                        </div>
+                        <div id="ai-qg-limit-group" style="display: flex; flex-direction: column; gap: 4px;">
                             <input type="radio" name="ai-qg-limit" id="ai-qg-limit-3" value="3"><label for="ai-qg-limit-3">Top 3</label>
                             <input type="radio" name="ai-qg-limit" id="ai-qg-limit-10" value="10" checked><label for="ai-qg-limit-10">Top 10</label>
                             <input type="radio" name="ai-qg-limit" id="ai-qg-limit-25" value="25"><label for="ai-qg-limit-25">Top 25</label>
@@ -674,7 +673,7 @@
 
             <!-- Analyze Button -->
             <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
-                <button id="ai-analyze-btn" onclick="analyzeWithAI()" class="btn-standard" style="background: #2196f3; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
+                <button id="ai-analyze-btn" onclick="analyzeWithAI()" class="btn-standard" style="background: linear-gradient(180deg, #4CAF50 0%, #43A047 100%); color: white; padding: 10px 20px; font-size: 14px; font-weight: bold; border: 1px solid #388E3C;">
                     Analyze with AI
                 </button>
 
@@ -682,7 +681,9 @@
                     Preview Payload
                 </button>
                 
-                <div id="ai-optimize-payload-group" style="display: flex; gap: 4px;">
+                <span style="color: #ccc; font-size: 18px; margin: 0 4px;">|</span>
+                
+                <div id="ai-optimize-payload-group" style="display: flex; gap: 4px; font-size: 13px;">
                     <input type="checkbox" id="ai-optimize-payload" checked><label for="ai-optimize-payload">Optimize Payload</label>
                 </div>
 
@@ -707,9 +708,14 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Pro Tip -->
+            <div style="font-size: 12px; color: #666; margin-top: 8px;">
+                <span class="badge-pro">PRO</span> Use SQL++ filter and/or Elapsed Time filter in Data &amp; Filters above to narrow stats and analysis to specific queries or time ranges
+            </div>
 
             <!-- AI Analysis History -->
-            <div style="margin-top: 30px;">
+            <div style="margin-top: 20px;">
                 <h3 style="margin: 0 0 12px 0;">Previous Analyses</h3>
                 <div style="overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
@@ -2229,12 +2235,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
                                 <label>
                                     <input type="checkbox" id="save-timezone" checked />
                                     Save timezone preference to Couchbase
-                                </label>
-                            </div>
-                            <div class="settings-row">
-                                <label>
-                                    <input type="checkbox" id="save-report-settings" checked />
-                                    Save report checkbox settings to Couchbase
                                 </label>
                             </div>
                         </div>

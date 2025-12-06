@@ -359,11 +359,10 @@ window.saveSettings = async function() {
         await saveConfig(config);
     }
     
-    // Save user preferences to Couchbase if checkboxes are enabled
+    // Save user preferences to Couchbase if checkbox is enabled
     const saveTimezone = document.getElementById('save-timezone')?.checked;
-    const saveReportSettings = document.getElementById('save-report-settings')?.checked;
     
-    if (saveTimezone || saveReportSettings) {
+    if (saveTimezone) {
         await saveCurrentPreferences();
     }
     
@@ -402,7 +401,6 @@ function showToast(message, type = 'info') {
  */
 async function saveCurrentPreferences() {
     const saveTimezone = document.getElementById('save-timezone')?.checked;
-    const saveReportSettings = document.getElementById('save-report-settings')?.checked;
     
     const preferences = {
         docType: 'config',
@@ -423,16 +421,6 @@ async function saveCurrentPreferences() {
     // Save timezone if enabled
     if (saveTimezone && typeof window.currentTimezone !== 'undefined') {
         preferences.timezone = window.currentTimezone;
-    }
-    
-    // Save report settings if enabled
-    if (saveReportSettings) {
-        // Get all report checkboxes
-        const reportCheckboxes = document.querySelectorAll('#report-maker input[type="checkbox"]');
-        preferences.reportSettings = {};
-        reportCheckboxes.forEach(cb => {
-            preferences.reportSettings[cb.id] = cb.checked;
-        });
     }
     
     // Load existing preferences to preserve values not in the form

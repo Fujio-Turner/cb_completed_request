@@ -14852,20 +14852,17 @@ size: 12
             return `over ${seconds} ${seconds === 1 ? 'second' : 'seconds'}`;
         }
 
-        // Update filter info display
+        // Update filter info display (queries-fixed-badge only)
         function updateFilterInfo(originalCount, filteredCount, requests = null) {
-            const filterInfo = document.getElementById("filter-info");
             const queriesBadge = document.getElementById("queries-fixed-badge");
             const timespan = requests ? calculateTimespan(requests) : "";
             const timespanText = timespan ? `, ${timespan}` : "";
             
             if (originalCount === filteredCount) {
                 const html = `Showing all <strong>${originalCount}</strong> queries${timespanText}`;
-                if (filterInfo) filterInfo.innerHTML = html;
                 if (queriesBadge) queriesBadge.innerHTML = html;
             } else {
                 const html = `Showing <strong>${filteredCount}</strong> of <strong>${originalCount}</strong> queries${timespanText}`;
-                if (filterInfo) filterInfo.innerHTML = html;
                 if (queriesBadge) queriesBadge.innerHTML = html;
             }
         }
