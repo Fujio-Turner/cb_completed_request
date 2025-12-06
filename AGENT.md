@@ -51,7 +51,12 @@ The Couchbase Query Analyzer is a tool for analyzing N1QL query performance from
 │   ├── docs/, img/
 │   └── *.html                  # Old HTML files
 │
-├── e2e/                        # Playwright E2E tests
+├── playwright/                 # Playwright E2E tests
+│   ├── playwright.config.js    # Playwright configuration
+│   └── e2e/                    # Test spec files
+│       ├── *.spec.js           # Static Edition tests
+│       └── server/             # Server Edition tests
+│
 ├── tests/                      # All tests (not shipped with release)
 │   ├── python/                 # Python unit tests for /app/
 │   │   ├── test_ai_analyzer.py # AI analyzer tests
@@ -64,15 +69,15 @@ The Couchbase Query Analyzer is a tool for analyzing N1QL query performance from
 ├── logs/                       # Release logs
 │
 ├── index.html                  # 🆕 Main entry (redirects or v4.0 landing)
+├── 404.html                    # Custom 404 page with Liquid Snake easter egg
 ├── analysis_hub.html           # Analysis documentation hub
 ├── getting_started.html        # Getting started guide
 ├── user_guide.html             # User documentation
 ├── sql_queries.html            # SQL query reference
 │
-├── Dockerfile                  # Docker build configuration
+├── Dockerfile                  # Docker build configuration (Static Edition)
 ├── wrangler.toml               # Cloudflare Workers config
 ├── package.json                # Node.js dependencies
-├── playwright.config.js        # Playwright test config
 ├── requirements.txt            # Root Python dependencies
 └── README.md                   # Project documentation
 ```
@@ -249,8 +254,8 @@ npm run test:e2e:report             # View last test report
 ```
 
 **Test Locations:**
-- Static Edition: `e2e/*.spec.js` (tests /en/index.html)
-- Server Edition: `e2e/server/*.spec.js` (tests Flask at localhost:5555)
+- Static Edition: `playwright/e2e/*.spec.js` (tests /en/index.html)
+- Server Edition: `playwright/e2e/server/*.spec.js` (tests Flask at localhost:5555)
 
 ### Python Unit Tests (Server Edition)
 ```bash

@@ -14,7 +14,7 @@ test.describe('Server Edition - AI Analyzer Tab', () => {
 
   test.beforeAll(() => {
     sampleData = fs.readFileSync(
-      path.join(__dirname, '../../sample/test_system_completed_requests.json'),
+      path.join(__dirname, '../../../sample/test_system_completed_requests.json'),
       'utf-8'
     );
   });
@@ -167,7 +167,7 @@ test.describe('Server Edition - AI Analyzer with Data', () => {
 
   test.beforeAll(() => {
     sampleData = fs.readFileSync(
-      path.join(__dirname, '../../sample/test_system_completed_requests.json'),
+      path.join(__dirname, '../../../sample/test_system_completed_requests.json'),
       'utf-8'
     );
   });

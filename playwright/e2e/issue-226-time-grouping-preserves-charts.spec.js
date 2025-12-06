@@ -19,7 +19,7 @@ test.describe('Issue #226: Time Grouping Preserves Dashboard and Analysis Charts
 
   test.beforeAll(() => {
     completedRequestsData = fs.readFileSync(
-      path.join(__dirname, '../sample/test_system_completed_requests.json'),
+      path.join(__dirname, '../../sample/test_system_completed_requests.json'),
       'utf-8'
     );
   });

@@ -4,15 +4,15 @@
   "private": true,
   "scripts": {
     "test": "jest",
-    "test:e2e": "playwright test",
-    "test:e2e:static": "playwright test --project=static-chromium --project=static-firefox --project=static-webkit",
-    "test:e2e:server": "playwright test --project=server-chromium --project=server-firefox --project=server-webkit",
-    "test:e2e:static:chromium": "playwright test --project=static-chromium",
-    "test:e2e:server:chromium": "playwright test --project=server-chromium",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed",
-    "test:e2e:debug": "playwright test --debug",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e": "cd playwright && npx playwright test",
+    "test:e2e:static": "cd playwright && npx playwright test --project=static-chromium --project=static-firefox --project=static-webkit",
+    "test:e2e:server": "cd playwright && npx playwright test --project=server-chromium --project=server-firefox --project=server-webkit",
+    "test:e2e:static:chromium": "cd playwright && npx playwright test --project=static-chromium",
+    "test:e2e:server:chromium": "cd playwright && npx playwright test --project=server-chromium",
+    "test:e2e:ui": "cd playwright && npx playwright test --ui",
+    "test:e2e:headed": "cd playwright && npx playwright test --headed",
+    "test:e2e:debug": "cd playwright && npx playwright test --debug",
+    "test:e2e:report": "cd playwright && npx playwright show-report"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

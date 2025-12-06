@@ -34,7 +34,7 @@ test.describe('Couchbase Query Analyzer - en/index.html', () => {
     test.setTimeout(30000); // 30s (reduced from 180s - using evaluate() instead of fill())
     
     const sampleData = fs.readFileSync(
-      path.join(__dirname, '../sample/test_system_completed_requests.json'),
+      path.join(__dirname, '../../sample/test_system_completed_requests.json'),
       'utf-8'
     );
 
@@ -95,7 +95,7 @@ test.describe('Couchbase Query Analyzer - en/index.html', () => {
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
     
     const sampleData = fs.readFileSync(
-      path.join(__dirname, '../sample/test_system_completed_requests.json'),
+      path.join(__dirname, '../../sample/test_system_completed_requests.json'),
       'utf-8'
     );
 
@@ -128,12 +128,12 @@ test.describe('Couchbase Query Analyzer - en/index.html', () => {
     test.setTimeout(30000); // 30s (reduced from 180s - using evaluate() instead of fill())
     
     const completedRequestsData = fs.readFileSync(
-      path.join(__dirname, '../sample/test_system_completed_requests.json'),
+      path.join(__dirname, '../../sample/test_system_completed_requests.json'),
       'utf-8'
     );
     
     const indexesData = fs.readFileSync(
-      path.join(__dirname, '../sample/test_system_indexes.json'),
+      path.join(__dirname, '../../sample/test_system_indexes.json'),
       'utf-8'
     );
 

@@ -58,7 +58,7 @@ test.describe('Server Edition - Core Functionality', () => {
     test.setTimeout(30000);
     
     const sampleData = fs.readFileSync(
-      path.join(__dirname, '../../sample/test_system_completed_requests.json'),
+      path.join(__dirname, '../../../sample/test_system_completed_requests.json'),
       'utf-8'
     );
 

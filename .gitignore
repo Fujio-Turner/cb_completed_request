@@ -36,7 +36,9 @@ yarn-error.log*
 # Playwright E2E Tests
 # ------------------------------------------------------------------------------
 playwright-report/
+playwright/playwright-report/
 test-results/
+playwright/test-results/
 .playwright/
 playwright/.cache/
 

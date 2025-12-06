@@ -7,8 +7,8 @@
 # Block Python tests
 /app/tests/*  /404.html  404
 
-# Block E2E test files
-/e2e/*  /404.html  404
+# Block Playwright test files
+/playwright/*  /404.html  404
 
 # Block root tests folder
 /tests/*  /404.html  404

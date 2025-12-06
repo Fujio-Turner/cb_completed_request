@@ -91,9 +91,9 @@ module.exports = defineConfig({
   ],
   
   webServer: [
-    // Static Edition: http-server on port 8080
+    // Static Edition: http-server on port 8080 (serve from project root)
     {
-      command: 'npx http-server -p 8080 --silent',
+      command: 'npx http-server .. -p 8080 --silent',
       port: 8080,
       reuseExistingServer: !process.env.CI,
       stdout: 'ignore',
@@ -102,7 +102,7 @@ module.exports = defineConfig({
     // Server Edition: Flask on port 5555
     // Note: Requires Python venv to be set up. See app/setup_venv.sh
     {
-      command: 'cd app && source venv/bin/activate && python app.py',
+      command: 'cd ../app && source venv/bin/activate && python app.py',
       port: 5555,
       reuseExistingServer: !process.env.CI,
       stdout: 'pipe',

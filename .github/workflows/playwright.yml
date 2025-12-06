@@ -34,7 +34,7 @@ jobs:
         if: always()
         with:
           name: playwright-report-static
-          path: playwright-report/
+          path: playwright/playwright-report/
           retention-days: 30
 
   # ==========================================================================
@@ -76,7 +76,7 @@ jobs:
         if: always()
         with:
           name: playwright-report-server
-          path: playwright-report/
+          path: playwright/playwright-report/
           retention-days: 30
 
   # ==========================================================================
