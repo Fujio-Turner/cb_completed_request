@@ -29621,13 +29621,22 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     chartSectionHtml = chartsHtml;
                 }
 
+                // Clean up and structure the HTML content
+                // 1. Add special class to User Specific Request headers for yellow styling
+                content = content.replace(/<h3([^>]*)>(User Specific Requests?)<\/h3>/gi, 
+                    '<h3$1 class="user-request-header">$2</h3>');
+                
+                // 2. Wrap loose text blocks after headers in paragraphs for better spacing
+                // Replace multiple <br> with paragraph breaks
+                content = content.replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '</p><p>');
+                
                 // Attempt to inject charts before "User Specific Request"
                 // We check for various headers: "User Specific Request", "User Specific Requests"
-                const userRequestHeaderRegex = /(User Specific Requests?|Specific Requests?)/i;
+                const userRequestHeaderRegex = /<h3[^>]*class="user-request-header"[^>]*>/i;
                 const match = content.match(userRequestHeaderRegex);
 
                 if (match && chartSectionHtml) {
-                    // Split content
+                    // Split content - inject charts before User Specific Request
                     const index = match.index;
                     const before = content.substring(0, index);
                     const after = content.substring(index);
@@ -29638,12 +29647,43 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     content += chartSectionHtml;
                 }
 
-                html += `<div style="background: #f8f9fa; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #6c757d;">
-                    <h2 style="color: #495057; margin: 0 0 12px 0; font-size: 22px; font-weight: 600; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">Analysis Summary</h2>
-                    <div style="font-size: 13px; line-height: 1.5; color: #333;">
+                html += `<div style="background: #f8f9fa; padding: 16px 20px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #6c757d;">
+                    <h2 style="color: #495057; margin: 0 0 16px 0; font-size: 22px; font-weight: 600; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">Analysis Summary</h2>
+                    <div class="analysis-summary-content" style="font-size: 14px; line-height: 1.7; color: #333;">
                         ${content}
                     </div>
-                </div>`;
+                </div>
+                <style>
+                    .analysis-summary-content h3 { 
+                        color: #2c3e50; 
+                        font-size: 16px; 
+                        font-weight: 600; 
+                        margin: 20px 0 12px 0; 
+                        padding: 8px 12px; 
+                        background: #e9ecef; 
+                        border-radius: 4px; 
+                        border-left: 3px solid #495057;
+                    }
+                    .analysis-summary-content h3:first-child { margin-top: 0; }
+                    .analysis-summary-content p { margin: 10px 0; }
+                    .analysis-summary-content ul, .analysis-summary-content ol { 
+                        margin: 10px 0; 
+                        padding-left: 24px; 
+                    }
+                    .analysis-summary-content li { 
+                        margin: 8px 0; 
+                        padding-left: 4px;
+                    }
+                    .analysis-summary-content b, .analysis-summary-content strong { 
+                        color: #1a1a1a; 
+                    }
+                    /* Special styling for User Specific Request section - yellow/warning style */
+                    .analysis-summary-content .user-request-header {
+                        background: #fff3cd !important;
+                        border-left: 3px solid #ffc107 !important;
+                        color: #856404 !important;
+                    }
+                </style>`;
             } else if (data.charts && Array.isArray(data.charts) && data.charts.length > 0) {
                 // Fallback if no summary but charts exist
                 const chartCount = Math.min(data.charts.length, 3);
