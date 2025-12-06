@@ -2288,12 +2288,275 @@ def ai_api_call():
             'error': str(e)
         }), 500
 
-def open_browser():
+def open_browser_at_port(port):
     """Open the browser after a short delay to ensure server is ready"""
     import time
     import webbrowser
     time.sleep(1.5)
-    webbrowser.open(f"http://localhost:{PORT}/index.html")
+    webbrowser.open(f"http://localhost:{port}/index.html")
+
+def open_browser():
+    """Open browser at default PORT"""
+    open_browser_at_port(PORT)
+
+# ============================================================================
+# Debug Logging to File
+# ============================================================================
+
+_log_file = None
+_log_enabled = False
+_log_dir = os.path.expanduser("~/Downloads/cb_query_analyzer_logs")
+
+def setup_file_logging(log_dir=None):
+    """Setup icecream to log to file"""
+    global _log_file, _log_enabled, _log_dir
+    from datetime import datetime
+    
+    if log_dir:
+        _log_dir = log_dir
+    
+    os.makedirs(_log_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_path = os.path.join(_log_dir, f"cb_query_analyzer_{timestamp}.log")
+    
+    _log_file = open(log_path, 'a', buffering=1)  # Line buffered
+    _log_enabled = True
+    
+    def log_to_file(s):
+        if _log_file and _log_enabled:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            _log_file.write(f"[{timestamp}] {s}\n")
+        print(s)  # Also print to console
+    
+    ic.configureOutput(outputFunction=log_to_file)
+    ic(f"📝 Logging to: {log_path}")
+    return log_path
+
+def stop_file_logging():
+    """Stop logging to file"""
+    global _log_file, _log_enabled
+    _log_enabled = False
+    if _log_file:
+        ic("📝 Stopping file logging")
+        _log_file.close()
+        _log_file = None
+    ic.configureOutput(outputFunction=lambda s: print(s))
+
+def run_with_menubar():
+    """Run Flask server with macOS menu bar icon for easy quit"""
+    import rumps
+    
+    class QueryAnalyzerApp(rumps.App):
+        def __init__(self, initial_port):
+            super(QueryAnalyzerApp, self).__init__(
+                "CB Query Analyzer",
+                title="🔧",  # Menu bar icon (wrench emoji)
+                quit_button=None  # We'll add custom quit
+            )
+            self.current_port = initial_port
+            self.flask_thread = None
+            self.flask_running = False
+            self.debug_enabled = False
+            self.log_path = None
+            
+            # Build menu
+            self.menu = [
+                rumps.MenuItem("Open in Browser", callback=self.open_browser),
+                None,  # Separator
+                rumps.MenuItem(f"Port: {self.current_port}", callback=None),
+                rumps.MenuItem("Change Port...", callback=self.change_port),
+                None,  # Separator
+                rumps.MenuItem("🔍 Debug Logging", callback=None),
+                rumps.MenuItem("   Enable Logging", callback=self.toggle_logging),
+                rumps.MenuItem("   Open Log Folder", callback=self.open_log_folder),
+                rumps.MenuItem("   Set Log Folder...", callback=self.set_log_folder),
+                None,  # Separator
+                rumps.MenuItem("Restart Server", callback=self.restart_server),
+                rumps.MenuItem("Quit", callback=self.quit_app),
+            ]
+            
+        def open_browser(self, _):
+            import webbrowser
+            webbrowser.open(f"http://localhost:{self.current_port}/index.html")
+        
+        def change_port(self, _):
+            response = rumps.Window(
+                message="Enter new port number:",
+                title="Change Port",
+                default_text=str(self.current_port),
+                ok="Change & Restart",
+                cancel="Cancel",
+                dimensions=(200, 24)
+            ).run()
+            
+            if response.clicked:
+                try:
+                    new_port = int(response.text.strip())
+                    if 1024 <= new_port <= 65535:
+                        old_port = self.current_port
+                        self.current_port = new_port
+                        self.menu["Port: " + str(old_port)].title = f"Port: {new_port}"
+                        ic(f"🔄 Port changed: {old_port} → {new_port}")
+                        self.restart_server(None)
+                    else:
+                        rumps.alert("Invalid Port", "Port must be between 1024 and 65535")
+                except ValueError:
+                    rumps.alert("Invalid Port", "Please enter a valid number")
+        
+        def toggle_logging(self, sender):
+            global _log_enabled
+            if _log_enabled:
+                stop_file_logging()
+                sender.title = "   Enable Logging"
+                self.title = "🔧"
+                rumps.notification(
+                    "CB Query Analyzer",
+                    "Debug Logging Disabled",
+                    "Logging stopped"
+                )
+            else:
+                self.log_path = setup_file_logging()
+                sender.title = "   ✓ Logging Enabled"
+                self.title = "🔧📝"  # Show logging indicator
+                rumps.notification(
+                    "CB Query Analyzer",
+                    "Debug Logging Enabled",
+                    f"Logs: {self.log_path}"
+                )
+        
+        def open_log_folder(self, _):
+            import subprocess
+            os.makedirs(_log_dir, exist_ok=True)
+            subprocess.run(["open", _log_dir])
+        
+        def set_log_folder(self, _):
+            global _log_dir
+            response = rumps.Window(
+                message="Enter log folder path:",
+                title="Set Log Folder",
+                default_text=_log_dir,
+                ok="Set",
+                cancel="Cancel",
+                dimensions=(400, 24)
+            ).run()
+            
+            if response.clicked:
+                new_dir = os.path.expanduser(response.text.strip())
+                if new_dir:
+                    _log_dir = new_dir
+                    ic(f"📁 Log folder set to: {_log_dir}")
+                    rumps.notification(
+                        "CB Query Analyzer",
+                        "Log Folder Updated",
+                        _log_dir
+                    )
+        
+        def restart_server(self, _):
+            ic(f"🔄 Restarting server on port {self.current_port}...")
+            rumps.notification(
+                "CB Query Analyzer",
+                "Restarting...",
+                f"Server restarting on port {self.current_port}"
+            )
+            # Note: Full restart requires app relaunch
+            # For now, just notify - actual restart would need subprocess
+            os._exit(0)  # Exit and let user relaunch
+            
+        def quit_app(self, _):
+            ic("👋 Shutting down via menu bar...")
+            stop_file_logging()
+            rumps.quit_application()
+            os._exit(0)
+    
+    # Start Flask in background thread
+    def run_flask():
+        app.run(host='0.0.0.0', port=PORT, debug=False, use_reloader=False)
+    
+    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+    
+    # Open browser after short delay
+    browser_thread = threading.Thread(target=lambda: open_browser_at_port(PORT), daemon=True)
+    browser_thread.start()
+    
+    # Run menu bar app (blocks until quit)
+    menu_app = QueryAnalyzerApp(PORT)
+    menu_app.run()
+
+def run_with_systray_windows():
+    """Run Flask server with Windows system tray icon"""
+    try:
+        import pystray
+        from PIL import Image, ImageDraw
+        
+        current_port = PORT
+        logging_enabled = False
+        
+        # Create a simple icon (blue circle with CB text)
+        def create_icon():
+            img = Image.new('RGB', (64, 64), color=(0, 122, 204))
+            draw = ImageDraw.Draw(img)
+            draw.text((12, 20), "CB", fill='white')
+            return img
+        
+        def on_quit(icon, item):
+            ic("👋 Shutting down via system tray...")
+            stop_file_logging()
+            icon.stop()
+            os._exit(0)
+            
+        def on_open(icon, item):
+            import webbrowser
+            webbrowser.open(f"http://localhost:{current_port}/index.html")
+        
+        def on_toggle_logging(icon, item):
+            nonlocal logging_enabled
+            if logging_enabled:
+                stop_file_logging()
+                logging_enabled = False
+            else:
+                setup_file_logging()
+                logging_enabled = True
+        
+        def on_open_logs(icon, item):
+            import subprocess
+            os.makedirs(_log_dir, exist_ok=True)
+            subprocess.run(["explorer", _log_dir])
+        
+        def get_logging_text(item):
+            return "✓ Logging Enabled" if logging_enabled else "Enable Logging"
+        
+        # Start Flask in background thread
+        def run_flask():
+            app.run(host='0.0.0.0', port=PORT, debug=False, use_reloader=False)
+        
+        flask_thread = threading.Thread(target=run_flask, daemon=True)
+        flask_thread.start()
+        
+        # Open browser
+        browser_thread = threading.Thread(target=open_browser, daemon=True)
+        browser_thread.start()
+        
+        # Create system tray icon
+        icon = pystray.Icon(
+            "QueryAnalyzer",
+            create_icon(),
+            "CB Query Analyzer",
+            menu=pystray.Menu(
+                pystray.MenuItem("Open in Browser", on_open),
+                pystray.MenuItem(f"Port: {current_port}", None, enabled=False),
+                pystray.Menu.SEPARATOR,
+                pystray.MenuItem(get_logging_text, on_toggle_logging),
+                pystray.MenuItem("Open Log Folder", on_open_logs),
+                pystray.Menu.SEPARATOR,
+                pystray.MenuItem("Quit", on_quit),
+            )
+        )
+        icon.run()
+        
+    except ImportError:
+        ic("⚠️ pystray not available, running without system tray")
+        app.run(host='0.0.0.0', port=PORT, debug=False)
 
 if __name__ == '__main__':
     try:
@@ -2306,16 +2569,28 @@ if __name__ == '__main__':
         is_frozen = getattr(sys, 'frozen', False)
         ic(f"🧊 Frozen (PyInstaller): {is_frozen}")
         
-        # Auto-open browser for PyInstaller builds
         if is_frozen:
-            ic("🌐 Auto-opening browser...")
-            browser_thread = threading.Thread(target=open_browser, daemon=True)
-            browser_thread.start()
+            # Running as packaged app - use menu bar/system tray
+            if sys.platform == 'darwin':
+                try:
+                    import rumps
+                    ic("🍎 Starting with macOS menu bar...")
+                    run_with_menubar()
+                except ImportError:
+                    ic("⚠️ rumps not available, running without menu bar")
+                    browser_thread = threading.Thread(target=open_browser, daemon=True)
+                    browser_thread.start()
+                    app.run(host='0.0.0.0', port=PORT, debug=False)
+            elif sys.platform == 'win32':
+                ic("🪟 Starting with Windows system tray...")
+                run_with_systray_windows()
+            else:
+                browser_thread = threading.Thread(target=open_browser, daemon=True)
+                browser_thread.start()
+                app.run(host='0.0.0.0', port=PORT, debug=False)
         else:
             ic("🛑 Press Ctrl+C to stop")
-        
-        # Disable debug mode for frozen builds (avoids reloader issues)
-        app.run(host='0.0.0.0', port=PORT, debug=not is_frozen)
+            app.run(host='0.0.0.0', port=PORT, debug=True)
         
     except Exception as e:
         ic(f"💥 FATAL ERROR: {e}")

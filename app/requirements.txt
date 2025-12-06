@@ -23,3 +23,10 @@ json-toon-converter>=0.1.0
 
 # Optional: For enhanced error handling and logging
 python-dotenv>=1.0.0
+
+# macOS menu bar integration (for app quit functionality)
+rumps>=0.4.0; sys_platform == 'darwin'
+
+# Windows system tray integration
+pystray>=0.19.0; sys_platform == 'win32'
+Pillow>=10.0.0; sys_platform == 'win32'

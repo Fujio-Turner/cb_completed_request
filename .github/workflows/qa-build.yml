@@ -67,6 +67,7 @@ jobs:
           pyinstaller --name QueryAnalyzer \
             --onefile \
             --windowed \
+            --icon "assets/img/QueryAnalyzer.icns" \
             --add-data "index.html:." \
             --add-data "assets:assets" \
             --add-data "docs:docs" \
@@ -85,6 +86,7 @@ jobs:
             --hidden-import openai \
             --hidden-import icecream \
             --hidden-import webbrowser \
+            --hidden-import rumps \
             app.py
             
       - name: Create DMG
@@ -131,6 +133,7 @@ jobs:
           pyinstaller --name QueryAnalyzer `
             --onefile `
             --windowed `
+            --icon "assets/img/app_icon.ico" `
             --add-data "index.html;." `
             --add-data "assets;assets" `
             --add-data "docs;docs" `
@@ -149,6 +152,8 @@ jobs:
             --hidden-import openai `
             --hidden-import icecream `
             --hidden-import webbrowser `
+            --hidden-import pystray `
+            --hidden-import PIL `
             app.py
             
       - name: Create ZIP
