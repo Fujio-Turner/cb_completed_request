@@ -60,6 +60,257 @@ ic.configureOutput(prefix='[ai_analyzer] ')
 configure_debug(DEBUG)
 
 # ============================================================================
+# Payload Reference Manager
+# ============================================================================
+
+# In-memory cache for payload references (loaded from Couchbase)
+_payload_reference_cache: Optional[Dict[str, Any]] = None
+_payload_reference_cache_time: float = 0
+PAYLOAD_REFERENCE_CACHE_TTL = 300  # 5 minutes
+
+def get_payload_reference_template() -> Dict[str, Any]:
+    """
+    Load payload_reference.json.template as fallback/seed data
+    
+    Returns:
+        Template dict with reference URLs and context
+    """
+    import os
+    template_path = os.path.join(os.path.dirname(__file__), 'payload_reference.json.template')
+    
+    try:
+        with open(template_path, 'r') as f:
+            template = json.load(f)
+            ic(f"📄 Loaded payload_reference.json.template")
+            return template
+    except FileNotFoundError:
+        ic(f"⚠️ Template file not found: {template_path}")
+        return {}
+    except json.JSONDecodeError as e:
+        ic(f"❌ Invalid JSON in template: {e}")
+        return {}
+
+def load_payload_reference(cluster, bucket_name: str = None) -> Dict[str, Any]:
+    """
+    Load payload_reference document from Couchbase bucket._default._default
+    Auto-seeds from template if document doesn't exist, is empty, or is malformed
+    
+    Args:
+        cluster: Couchbase cluster connection
+        bucket_name: Bucket name (uses 'cb_tools' if not specified)
+        
+    Returns:
+        Payload reference dict with URLs and context
+    """
+    global _payload_reference_cache, _payload_reference_cache_time
+    
+    # Import Couchbase exceptions for proper handling
+    try:
+        from couchbase.exceptions import (
+            DocumentNotFoundException,
+            TimeoutException,
+            CouchbaseException
+        )
+    except ImportError:
+        # If imports fail, use generic Exception
+        DocumentNotFoundException = Exception
+        TimeoutException = Exception
+        CouchbaseException = Exception
+    
+    # Check cache first
+    if _payload_reference_cache and (time.time() - _payload_reference_cache_time) < PAYLOAD_REFERENCE_CACHE_TTL:
+        ic("📦 Using cached payload_reference")
+        return _payload_reference_cache
+    
+    bucket_name = bucket_name or 'cb_tools'
+    doc_key = 'payload_reference'
+    
+    try:
+        bucket = cluster.bucket(bucket_name)
+        collection = bucket.scope('_default').collection('_default')
+        
+        result = collection.get(doc_key)
+        payload_ref = result.content_as[dict]
+        
+        # Validate document is not empty or malformed (must have key fields)
+        if not payload_ref or not payload_ref.get('couchbase_index_creation'):
+            ic("⚠️ payload_reference document is empty or malformed, re-seeding from template")
+            raise ValueError("Document empty or missing required fields")
+        
+        # Update cache
+        _payload_reference_cache = payload_ref
+        _payload_reference_cache_time = time.time()
+        
+        ic(f"✅ Loaded payload_reference from Couchbase {bucket_name}._default._default")
+        return payload_ref
+        
+    except DocumentNotFoundException:
+        # Document doesn't exist - auto-seed from template
+        ic(f"📄 payload_reference not found in {bucket_name}._default._default, auto-seeding from template")
+        return _auto_seed_payload_reference(cluster, bucket_name)
+        
+    except TimeoutException as e:
+        ic(f"⏰ Timeout loading payload_reference: {e}")
+        ic("📄 Falling back to template file (not seeding due to timeout)")
+        return _fallback_to_template()
+        
+    except ValueError as e:
+        # Empty or malformed document - re-seed from template
+        ic(f"⚠️ Invalid payload_reference: {e}")
+        return _auto_seed_payload_reference(cluster, bucket_name)
+        
+    except CouchbaseException as e:
+        ic(f"❌ Couchbase error loading payload_reference: {e}")
+        ic("📄 Falling back to template file")
+        return _fallback_to_template()
+        
+    except Exception as e:
+        ic(f"💥 Unexpected error loading payload_reference: {e}")
+        ic("📄 Falling back to template file")
+        return _fallback_to_template()
+
+
+def _auto_seed_payload_reference(cluster, bucket_name: str) -> Dict[str, Any]:
+    """
+    Auto-seed payload_reference from template and return it
+    Called when document is missing, empty, or malformed
+    """
+    global _payload_reference_cache, _payload_reference_cache_time
+    
+    template = get_payload_reference_template()
+    
+    if not template:
+        ic("❌ Template file missing or invalid, using empty defaults")
+        return {}
+    
+    try:
+        bucket = cluster.bucket(bucket_name)
+        collection = bucket.scope('_default').collection('_default')
+        
+        # Add metadata
+        template['_seededAt'] = datetime.utcnow().isoformat() + 'Z'
+        template['_autoSeeded'] = True
+        template['_lastUpdated'] = datetime.utcnow().isoformat() + 'Z'
+        
+        collection.upsert('payload_reference', template)
+        
+        # Update cache
+        _payload_reference_cache = template
+        _payload_reference_cache_time = time.time()
+        
+        ic(f"🌱 Auto-seeded payload_reference to {bucket_name}._default._default")
+        return template
+        
+    except Exception as e:
+        ic(f"❌ Failed to auto-seed payload_reference: {e}")
+        ic("📄 Using template without saving to Couchbase")
+        
+        # Still cache and return template even if save failed
+        _payload_reference_cache = template
+        _payload_reference_cache_time = time.time()
+        return template
+
+
+def _fallback_to_template() -> Dict[str, Any]:
+    """
+    Fallback to template file without attempting to seed
+    Used when Couchbase has connectivity issues
+    """
+    global _payload_reference_cache, _payload_reference_cache_time
+    
+    template = get_payload_reference_template()
+    _payload_reference_cache = template
+    _payload_reference_cache_time = time.time()
+    return template
+
+def save_payload_reference(cluster, payload_ref: Dict[str, Any], bucket_name: str = None) -> bool:
+    """
+    Save/update payload_reference document to Couchbase bucket._default._default
+    
+    Args:
+        cluster: Couchbase cluster connection
+        payload_ref: Payload reference dict to save
+        bucket_name: Bucket name (uses 'cb_tools' if not specified)
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    global _payload_reference_cache, _payload_reference_cache_time
+    
+    bucket_name = bucket_name or 'cb_tools'
+    doc_key = 'payload_reference'
+    
+    # Add metadata
+    payload_ref['_lastUpdated'] = datetime.utcnow().isoformat() + 'Z'
+    
+    try:
+        bucket = cluster.bucket(bucket_name)
+        collection = bucket.scope('_default').collection('_default')
+        
+        collection.upsert(doc_key, payload_ref)
+        
+        # Invalidate cache
+        _payload_reference_cache = payload_ref
+        _payload_reference_cache_time = time.time()
+        
+        ic(f"✅ Saved payload_reference to Couchbase {bucket_name}._default._default")
+        return True
+        
+    except Exception as e:
+        ic(f"❌ Failed to save payload_reference: {e}")
+        return False
+
+def seed_payload_reference(cluster, bucket_name: str = None, force: bool = False) -> Dict[str, Any]:
+    """
+    Seed payload_reference document from template if it doesn't exist
+    
+    Args:
+        cluster: Couchbase cluster connection
+        bucket_name: Bucket name (uses 'cb_tools' if not specified)
+        force: If True, overwrite existing document with template
+        
+    Returns:
+        The payload_reference document (existing or newly seeded)
+    """
+    bucket_name = bucket_name or 'cb_tools'
+    doc_key = 'payload_reference'
+    
+    try:
+        bucket = cluster.bucket(bucket_name)
+        collection = bucket.scope('_default').collection('_default')
+        
+        if not force:
+            # Check if document exists
+            try:
+                result = collection.get(doc_key)
+                ic(f"ℹ️ payload_reference already exists in {bucket_name}._default._default")
+                return result.content_as[dict]
+            except Exception:
+                pass  # Document doesn't exist, proceed to seed
+        
+        # Load template and save to Couchbase
+        template = get_payload_reference_template()
+        if template:
+            template['_seededAt'] = datetime.utcnow().isoformat() + 'Z'
+            collection.upsert(doc_key, template)
+            ic(f"🌱 Seeded payload_reference to {bucket_name}._default._default")
+            return template
+        else:
+            ic("❌ Cannot seed: template file not found or invalid")
+            return {}
+            
+    except Exception as e:
+        ic(f"❌ Failed to seed payload_reference: {e}")
+        return {}
+
+def invalidate_payload_reference_cache():
+    """Clear the in-memory cache to force reload from Couchbase"""
+    global _payload_reference_cache, _payload_reference_cache_time
+    _payload_reference_cache = None
+    _payload_reference_cache_time = 0
+    ic("🗑️ Invalidated payload_reference cache")
+
+# ============================================================================
 # AI HTTP Client
 # ============================================================================
 
@@ -643,7 +894,9 @@ class AIPayloadBuilder:
                                 user_prompt: str,
                                 selections: Dict[str, bool],
                                 options: Dict[str, Any],
-                                extra_instructions: str = "") -> Dict[str, Any]:
+                                extra_instructions: str = "",
+                                cluster=None,
+                                bucket_name: str = None) -> Dict[str, Any]:
         """
         Build AI payload directly from raw data (no session cache)
         
@@ -653,6 +906,8 @@ class AIPayloadBuilder:
             selections: Which data sections to include
             options: Options like obfuscation
             extra_instructions: System instructions (language, charts) to append
+            cluster: Optional Couchbase cluster for loading dynamic payload references
+            bucket_name: Optional bucket name for payload_reference (default: cb_tools)
             
         Returns:
             Complete payload dict
@@ -710,12 +965,41 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
                 ]
             }
 
+        # Load dynamic payload reference (from Couchbase or template fallback)
+        payload_ref = {}
+        if cluster:
+            payload_ref = load_payload_reference(cluster, bucket_name)
+        else:
+            # No cluster provided, use template as fallback
+            payload_ref = get_payload_reference_template()
+        
+        # Extract dynamic references or use defaults
+        couchbase_index_creation = payload_ref.get('couchbase_index_creation', [])
+        index_gen_rules = payload_ref.get('index_gen_rules', {})
+        context_notes = payload_ref.get('context_notes', [])
+        additional_refs = payload_ref.get('additional_references', {})
+        
+        # Build best_practices with context_notes included
+        best_practices = [
+            'When suggesting a new or updated index, append "_v1" or "_v2" to the index name to indicate a versioned change (e.g. "idx_user_search_v1").',
+            'EXCEPTION: Primary indexes cannot be versioned (do not append _v1 to #primary or equivalent).',
+            'For replica changes, prefer ALTER INDEX syntax: ALTER INDEX index_name ON bucket WITH {"action": "replica_count", "num_replica": 1}.',
+            'Always use strict JSON object syntax for WITH clauses (e.g. WITH {"num_replica": 1}).',
+            'Always derive index keys from actual WHERE/ORDER BY fields in query patterns - NEVER use placeholders like "ALL predicates" or "equality fields".',
+            'For covering indexes: include SELECT fields IN the index key list (e.g., (customer_id, status, total, items)) - there is NO COVERING keyword in N1QL CREATE INDEX syntax.',
+            'If query uses JOIN, suggest indexes on join keys (e.g., ON KEYS field) combined with equality predicates from WHERE clause.',
+            'Index should cover >=70% of avg_indexScan items from query_groups to be effective - prioritize high-impact patterns.',
+            'For LIKE queries: if pattern has leading wildcard (LIKE "%value"), suggest FTS instead; if prefix-only (LIKE "value%"), GSI on that field works.',
+        ]
+        # Add context_notes from payload_reference
+        best_practices.extend(context_notes)
+
         payload = {
             'prompt': full_prompt,
             'context': {
                 'tool': 'Couchbase Query Analyzer',
                 'purpose': 'This tool analyzes N1QL query performance from system:completed_requests',
-                'reference_docs': 'For general best practices, stats definitions, and optimization strategies, refer to: https://cb.fuj.io/analysis_hub',
+                'reference_docs': f"For general best practices, stats definitions, and optimization strategies, refer to: {additional_refs.get('analysis_hub', 'https://cb.fuj.io/analysis_hub')}",
                 'data_source': 'Queries extracted from: SELECT *, meta().plan FROM system:completed_requests',
                 'chart_trends_depth': chart_trends_depth,  # 'low' (5-6 insights) or 'high' (15-20 insights)
                 'stake_focus': stake_focus_context,
@@ -737,95 +1021,10 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
                     'High resultCount with LIMIT suggests index overfetch',
                     'What high kernTime means: kernTime is time spent waiting to be scheduled on CPU. If it dominates ServiceTime and/or Execution Time (e.g., ~99%), the node is CPU-bound and the query spends most of its life paused, not doing useful work. Look for high request.active.count, cpu.user.percent, or gc.pause.percent. Actions: reduce concurrency, add query nodes, or separate services.'
                 ],
-                'best_practices': [
-                    'When suggesting a new or updated index, append "_v1" or "_v2" to the index name to indicate a versioned change (e.g. "idx_user_search_v1").',
-                    'EXCEPTION: Primary indexes cannot be versioned (do not append _v1 to #primary or equivalent).',
-                    'For replica changes, prefer ALTER INDEX syntax: ALTER INDEX index_name ON bucket WITH {"action": "replica_count", "num_replica": 1}.',
-                    'Always use strict JSON object syntax for WITH clauses (e.g. WITH {"num_replica": 1}).',
-                    'Always derive index keys from actual WHERE/ORDER BY fields in query patterns - NEVER use placeholders like "ALL predicates" or "equality fields".',
-                    'For covering indexes: include SELECT fields IN the index key list (e.g., (customer_id, status, total, items)) - there is NO COVERING keyword in N1QL CREATE INDEX syntax.',
-                    'If query uses JOIN, suggest indexes on join keys (e.g., ON KEYS field) combined with equality predicates from WHERE clause.',
-                    'Index should cover >=70% of avg_indexScan items from query_groups to be effective - prioritize high-impact patterns.',
-                    'For LIKE queries: if pattern has leading wildcard (LIKE "%value"), suggest FTS instead; if prefix-only (LIKE "value%"), GSI on that field works.',
-                    'PARTIAL INDEX OPTIMIZATION: If query has WHERE type/docType/tclass = "constant", put that condition in the INDEX WHERE clause, NOT in the index keys. Example: CREATE INDEX idx_v1 ON bucket(field1, field2) WHERE type = "order" -- smaller, faster index.'
-                ],
-                'couchbase_index_creation': [
-                    {
-                        'type': 'GSI',
-                        'description': 'Global Secondary Index - standard B-tree index for equality, range, and ORDER BY queries',
-                        'docs_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createindex.html',
-                        'syntax': 'CREATE INDEX idx_name_v1 ON `bucket`.`scope`.`collection`(field1 [ASC|DESC], field2) WHERE condition',
-                        'example_equality_range': 'CREATE INDEX idx_user_status_v1 ON `mydb`.`_default`.`users`(status, created_at DESC) WHERE type = "user"  -- type in WHERE clause, not in keys',
-                        'example_covering': 'CREATE INDEX idx_order_lookup_v1 ON `mydb`.`_default`.`orders`(customer_id, order_date, total, items) WHERE status = "active"  -- Include SELECT fields in index keys for covering'
-                    },
-                    {
-                        'type': 'GSI_array',
-                        'description': 'Array index using DISTINCT ARRAY or ALL ARRAY for querying array fields',
-                        'docs_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/indexing-arrays.html',
-                        'syntax': 'CREATE INDEX idx_name_v1 ON bucket(DISTINCT ARRAY elem FOR elem IN array_field END)',
-                        'example': 'CREATE INDEX idx_tags_v1 ON `mydb`.`_default`.`products`(DISTINCT ARRAY tag FOR tag IN tags END) WHERE type = "product"'
-                    },
-                    {
-                        'type': 'FTS/Search',
-                        'description': 'Full-Text Search index for SEARCH() queries, fuzzy matching, leading-wildcard LIKE, and geo queries',
-                        'docs_url': 'https://docs.couchbase.com/server/current/search/search-index-params.html',
-                        'using_search_in_n1ql_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/searchfun.html',
-                        'when_to_use': 'Use FTS when: (1) Query uses WHERE SEARCH(...), (2) LIKE has leading wildcard (LIKE "%term"), (3) fuzzy/typo-tolerant search needed',
-                        'IMPORTANT': 'FTS indexes are JSON definitions, NOT SQL++ CREATE INDEX. They are created via REST API or Couchbase UI.',
-                        'example_fts_json': {
-                            'name': 'fts_product_search',
-                            'type': 'fulltext-index',
-                            'sourceType': 'couchbase',
-                            'sourceName': 'bucket_name',
-                            'params': {
-                                'mapping': {
-                                    'types': {
-                                        'scope.collection': {
-                                            'properties': {
-                                                'description': {'enabled': True, 'type': 'text'},
-                                                'name': {'enabled': True, 'type': 'text'}
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        'query_hint': 'To use FTS in N1QL: SELECT * FROM bucket WHERE SEARCH(bucket, {"query": {"match": "term"}, "index": "fts_index_name"})'
-                    },
-                    {
-                        'type': 'Vector',
-                        'description': 'Vector index for similarity search on embeddings (AI/ML use cases) - Couchbase 8.x only',
-                        'docs_url': 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createvectorindex.html',
-                        'IMPORTANT': 'INCLUDE clause is ONLY valid for Vector indexes. Do NOT use INCLUDE with regular GSI indexes - it will cause syntax errors.',
-                        'syntax': 'CREATE VECTOR INDEX idx_name ON bucket.scope.collection(embedding_field VECTOR) INCLUDE (field1, field2) WITH {"dimension": 128, "similarity": "L2"}',
-                        'example': 'CREATE VECTOR INDEX idx_product_embeddings_v1 ON products._default._default(embedding VECTOR) INCLUDE (name, category, price) WITH {"dimension": 768, "similarity": "L2_SQUARED"}',
-                        'when_to_use': 'Use Vector indexes for: (1) Semantic/similarity search, (2) AI/ML embedding lookups, (3) RAG applications. Requires Couchbase 8.x or higher.',
-                        'include_clause_note': 'INCLUDE is Vector-index-only. For regular GSI covering indexes, add all needed fields to the index key list instead.'
-                    }
-                ],
-                'index_gen_rules': {
-                    'description': 'Step-by-step rules for generating valid, executable N1QL index statements',
-                    'steps': [
-                        '1. Parse normalized_statement from query_groups to identify: (a) equality predicates (field = ?), (b) range predicates (field > ?, field < ?), (c) LIKE patterns, (d) ORDER BY fields',
-                        '2. Match query patterns to insights (e.g., "inefficient-index-scans" → add range keys to cover scan)',
-                        '3. Generate ONE GSI per bucket/collection, version with _v1 suffix',
-                        '4. For covering indexes: add SELECT fields to the index key list - there is NO COVERING keyword in Couchbase N1QL',
-                        '5. Test fit: index should reduce avg_indexScan by covering WHERE equality + range + ORDER BY fields'
-                    ],
-                    'common_fixes': {
-                        'primary_over_usage': 'Replace #primary with GSI on high-cardinality WHERE fields from the query pattern',
-                        'inefficient_like': 'If LIKE has leading % wildcard, recommend FTS index; else GSI on that specific field',
-                        'select_star': 'Recommend covering index with ONLY the needed SELECT fields to cut resultSize',
-                        'missing_covering': 'Add SELECT fields to index key list to avoid document fetches (no COVERING keyword exists)'
-                    },
-                    'invalid_patterns_to_avoid': [
-                        'NEVER use "ALL equality predicates" - specify actual field names like (customer_id, status)',
-                        'NEVER use "+ LIKE fields + Ancestors" - list exact fields from the query',
-                        'NEVER use COVERING keyword - it does NOT exist in Couchbase N1QL. Instead, add fields to the index key list.',
-                        'NEVER use INCLUDE clause with regular GSI indexes - INCLUDE is ONLY valid for CREATE VECTOR INDEX (Couchbase 8.x). For covering, add fields to the index key list.',
-                        'NEVER generate pseudo-code or descriptive text in CREATE INDEX statements'
-                    ]
-                }
+                'best_practices': best_practices,
+                'couchbase_index_creation': couchbase_index_creation,
+                'index_gen_rules': index_gen_rules,
+                'additional_references': additional_refs
             },
             'data': {},
             'options': options,

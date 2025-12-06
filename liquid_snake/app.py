@@ -932,13 +932,15 @@ def analyze_with_ai():
                 'error': 'API key is required'
             }), 400
         
-        # Build AI payload from raw data
+        # Build AI payload from raw data (with dynamic payload references from Couchbase)
         ai_payload_data = ai_analyzer.payload_builder.build_payload_from_data(
             raw_data=raw_data,
             user_prompt=prompt,
             selections=selections,
             options=options,
-            extra_instructions=extra_instructions
+            extra_instructions=extra_instructions,
+            cluster=cluster if cluster else None,
+            bucket_name=cb_config.get('bucketConfig', {}).get('bucket', 'cb_tools') if cb_config else None
         )
         
         # Extract mapping table if obfuscated (for de-obfuscation later)
@@ -1248,6 +1250,250 @@ def get_ai_cache_stats():
         return jsonify({
             'success': True,
             'stats': stats
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ============================================================================
+# Payload Reference Management Endpoints
+# ============================================================================
+
+@app.route('/api/ai/payload-reference', methods=['GET'])
+def get_payload_reference():
+    """
+    Get the current payload_reference template (from file, not Couchbase)
+    Used for viewing/editing the template before seeding
+    
+    Response:
+    {
+        "success": true,
+        "payload_reference": {...},
+        "source": "template"
+    }
+    """
+    try:
+        template = ai_analyzer.get_payload_reference_template()
+        return jsonify({
+            'success': True,
+            'payload_reference': template,
+            'source': 'template'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/payload-reference/load', methods=['POST'])
+def load_payload_reference_endpoint():
+    """
+    Load payload_reference from Couchbase bucket._default._default
+    Falls back to template if not found
+    
+    Request body:
+    {
+        "config": {...},
+        "bucketConfig": {"bucket": "cb_tools"}
+    }
+    
+    Response:
+    {
+        "success": true,
+        "payload_reference": {...},
+        "source": "couchbase" | "template"
+    }
+    """
+    try:
+        data = request.json
+        cluster_config = data.get('config', {})
+        bucket_config = data.get('bucketConfig', {})
+        bucket_name = bucket_config.get('bucket', 'cb_tools')
+        
+        cluster = get_couchbase_connection(cluster_config)
+        if not cluster:
+            # No cluster, return template
+            template = ai_analyzer.get_payload_reference_template()
+            return jsonify({
+                'success': True,
+                'payload_reference': template,
+                'source': 'template',
+                'note': 'Not connected to Couchbase, using template file'
+            })
+        
+        # Try to load from Couchbase
+        payload_ref = ai_analyzer.load_payload_reference(cluster, bucket_name)
+        
+        # Determine source
+        source = 'couchbase' if payload_ref.get('_seededAt') or payload_ref.get('_lastUpdated') else 'template'
+        
+        return jsonify({
+            'success': True,
+            'payload_reference': payload_ref,
+            'source': source
+        })
+        
+    except Exception as e:
+        ic(f"❌ Error loading payload_reference: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/payload-reference/seed', methods=['POST'])
+def seed_payload_reference_endpoint():
+    """
+    Seed payload_reference document to Couchbase from template
+    Creates the document in bucket._default._default with key "payload_reference"
+    
+    Request body:
+    {
+        "config": {...},
+        "bucketConfig": {"bucket": "cb_tools"},
+        "force": false  // Set to true to overwrite existing
+    }
+    
+    Response:
+    {
+        "success": true,
+        "payload_reference": {...},
+        "action": "created" | "exists" | "overwritten"
+    }
+    """
+    try:
+        data = request.json
+        cluster_config = data.get('config', {})
+        bucket_config = data.get('bucketConfig', {})
+        bucket_name = bucket_config.get('bucket', 'cb_tools')
+        force = data.get('force', False)
+        
+        cluster = get_couchbase_connection(cluster_config)
+        if not cluster:
+            return jsonify({
+                'success': False,
+                'error': 'Not connected to Couchbase'
+            }), 500
+        
+        # Check if document exists first
+        doc_exists = False
+        try:
+            bucket = cluster.bucket(bucket_name)
+            collection = bucket.scope('_default').collection('_default')
+            collection.get('payload_reference')
+            doc_exists = True
+        except DocumentNotFoundException:
+            pass
+        
+        # Seed the document
+        payload_ref = ai_analyzer.seed_payload_reference(cluster, bucket_name, force=force)
+        
+        if not payload_ref:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to seed payload_reference - template file may be missing or invalid'
+            }), 500
+        
+        # Determine action taken
+        if force and doc_exists:
+            action = 'overwritten'
+        elif doc_exists:
+            action = 'exists'
+        else:
+            action = 'created'
+        
+        ic(f"🌱 Payload reference seeded: {action}")
+        
+        return jsonify({
+            'success': True,
+            'payload_reference': payload_ref,
+            'action': action
+        })
+        
+    except Exception as e:
+        ic(f"❌ Error seeding payload_reference: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/payload-reference/save', methods=['POST'])
+def save_payload_reference_endpoint():
+    """
+    Save/update payload_reference document to Couchbase
+    Allows editing the reference URLs and context without modifying template file
+    
+    Request body:
+    {
+        "config": {...},
+        "bucketConfig": {"bucket": "cb_tools"},
+        "payload_reference": {...}  // The updated payload reference
+    }
+    
+    Response:
+    {
+        "success": true,
+        "message": "Saved successfully"
+    }
+    """
+    try:
+        data = request.json
+        cluster_config = data.get('config', {})
+        bucket_config = data.get('bucketConfig', {})
+        bucket_name = bucket_config.get('bucket', 'cb_tools')
+        payload_ref = data.get('payload_reference', {})
+        
+        if not payload_ref:
+            return jsonify({
+                'success': False,
+                'error': 'No payload_reference data provided'
+            }), 400
+        
+        cluster = get_couchbase_connection(cluster_config)
+        if not cluster:
+            return jsonify({
+                'success': False,
+                'error': 'Not connected to Couchbase'
+            }), 500
+        
+        success = ai_analyzer.save_payload_reference(cluster, payload_ref, bucket_name)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Payload reference saved successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to save payload_reference'
+            }), 500
+        
+    except Exception as e:
+        ic(f"❌ Error saving payload_reference: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/payload-reference/invalidate-cache', methods=['POST'])
+def invalidate_payload_reference_cache_endpoint():
+    """
+    Invalidate the in-memory payload_reference cache
+    Forces reload from Couchbase on next AI analysis
+    
+    Response:
+    {
+        "success": true,
+        "message": "Cache invalidated"
+    }
+    """
+    try:
+        ai_analyzer.invalidate_payload_reference_cache()
+        return jsonify({
+            'success': True,
+            'message': 'Payload reference cache invalidated'
         })
     except Exception as e:
         return jsonify({
