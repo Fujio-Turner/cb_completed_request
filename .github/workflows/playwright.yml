@@ -1,27 +1,126 @@
 name: Playwright Tests
+
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+
 jobs:
-  test:
-    timeout-minutes: 60
+  # ==========================================================================
+  # Static Edition Tests (v3.x) - /en/index.html
+  # ==========================================================================
+  test-static:
+    name: Static Edition E2E Tests
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: lts/*
-    - name: Install dependencies
-      run: npm ci
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
-    - name: Run Playwright tests
-      run: npm run test:e2e
-    - uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: playwright-report
-        path: playwright-report/
-        retention-days: 30
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+        
+      - name: Run Static Edition tests
+        run: npm run test:e2e:static
+        
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-static
+          path: playwright/playwright-report/
+          retention-days: 30
+
+  # ==========================================================================
+  # Server Edition Tests (v4.x) - /app/ Flask server
+  # ==========================================================================
+  test-server:
+    name: Server Edition E2E Tests
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install Node dependencies
+        run: npm ci
+        
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+        
+      - name: Set up Python virtual environment
+        working-directory: ./app
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Run Server Edition tests
+        run: npm run test:e2e:server
+        
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-server
+          path: playwright/playwright-report/
+          retention-days: 30
+
+  # ==========================================================================
+  # Jest Unit Tests
+  # ==========================================================================
+  test-jest:
+    name: Jest Unit Tests
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run Jest tests
+        run: npm test
+
+  # ==========================================================================
+  # Python Unit Tests
+  # ==========================================================================
+  test-python:
+    name: Python Unit Tests
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        working-directory: ./app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+          
+      - name: Run Python tests
+        working-directory: ./app
+        run: |
+          pytest ../tests/python/ -v --tb=short

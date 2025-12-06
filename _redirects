@@ -1,0 +1,59 @@
+# Cloudflare Pages Redirects Configuration
+# Block access to server-side and development files
+
+# Block Flask app directory (return 404)
+/app/*  /404.html  404
+
+# Block Python tests
+/app/tests/*  /404.html  404
+
+# Block Playwright test files
+/playwright/*  /404.html  404
+
+# Block root tests folder
+/tests/*  /404.html  404
+
+# Block node_modules
+/node_modules/*  /404.html  404
+
+# Block Python utility scripts
+/python/*  /404.html  404
+
+# Block archived old files
+/old_pre_4_0/*  /404.html  404
+
+# Block log files
+/logs/*  /404.html  404
+
+# Block Playwright artifacts
+/playwright-report/*  /404.html  404
+/test-results/*  /404.html  404
+
+# Block pytest cache
+/.pytest_cache/*  /404.html  404
+
+# Block venv folders
+/.venv/*  /404.html  404
+/venv/*  /404.html  404
+
+# Block configuration files
+/jest.config.js  /404.html  404
+/playwright.config.js  /404.html  404
+/package.json  /404.html  404
+/package-lock.json  /404.html  404
+/requirements.txt  /404.html  404
+/Dockerfile  /404.html  404
+/wrangler.toml  /404.html  404
+
+# Block settings folder (internal docs)
+/settings/*  /404.html  404
+
+# Redirect old liquid_snake paths (backward compatibility)
+/liquid_snake/*  /app/:splat  301
+/liquid_snake_public/*  /:splat  301
+
+# Main page redirect
+/  /index.html  200
+
+# Custom 404 page for all unmatched routes
+/*  /404.html  404

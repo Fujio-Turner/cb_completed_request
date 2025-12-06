@@ -1,0 +1,2637 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+    Couchbase Query Analyzer
+    Version: 4.0.0-dev
+    Last Updated: 2025-11-06
+    
+    🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
+    This guide covers all HTML elements, JavaScript variables, and documentation files that need updating.
+    Load and do what the AGENT.md file before working on this file.
+
+    Use semantic versioning: MAJOR.MINOR.PATCH
+    - MAJOR: Breaking changes or complete rewrites
+    - MINOR: New features, significant enhancements  
+    - PATCH: Bug fixes, small improvements
+    
+-->
+<!-- 🐍 "Not yet, Snake! It's not over yet!" - Liquid Snake -->
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="version" content="4.0.0-dev" />
+    <meta name="last-updated" content="2025-11-06" />
+    <title>Query Analyzer v4.0.0-dev</title>
+    <!-- Include jQuery UI CSS -->
+    <link rel="stylesheet" href="assets/css/jquery-ui.min.css">
+    
+    <!-- Custom jQuery UI Widget Styling for AI Panel -->
+    <style>
+        /* AI Panel jQuery UI Checkbox/Radio styling */
+        #ai-analysis-panel .ui-checkboxradio-label {
+            font-size: 12px;
+            padding: 6px 14px 6px 10px;
+            border-radius: 16px;
+            border: 1px solid #d0d0d0;
+            background: #fff;
+            margin: 2px;
+        }
+        #ai-analysis-panel .ui-checkboxradio-label:hover {
+            background: #f0f0f5;
+            border-color: #bbb;
+        }
+        #ai-analysis-panel .ui-checkboxradio-checked {
+            background: #e8f4fd;
+            border-color: #2196f3;
+            color: #1976d2;
+        }
+        #ai-analysis-panel .ui-checkboxradio-icon {
+            width: 10px;
+            height: 10px;
+            margin-right: 5px;
+            border-radius: 50%;
+        }
+        #ai-analysis-panel .ui-icon-check {
+            background: #4CAF50;
+        }
+        #ai-analysis-panel .ui-state-active .ui-icon-check,
+        #ai-analysis-panel .ui-checkboxradio-checked .ui-icon-check {
+            background: #2196f3;
+        }
+        /* Radio button specific styles */
+        #ai-analysis-panel .ui-checkboxradio-radio-label .ui-icon-background {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+        #ai-analysis-panel .ui-checkboxradio-radio-label.ui-checkboxradio-checked .ui-icon-background {
+            background: #2196f3;
+        }
+        /* SelectMenu styling */
+        #ai-analysis-panel .ui-selectmenu-button {
+            width: 100% !important;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background: #fff;
+            font-size: 12px;
+        }
+        #ai-analysis-panel .ui-selectmenu-button:hover {
+            border-color: #2196f3;
+        }
+        .ui-selectmenu-menu .ui-menu {
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .ui-selectmenu-menu .ui-menu-item-wrapper {
+            padding: 6px 10px;
+        }
+        /* Disabled state */
+        #ai-analysis-panel .ui-checkboxradio-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+
+    <!-- Include Chart.js -->
+    <script src="assets/js/chart.umd.js"></script> 
+    
+    <!-- Include Chart.js datetime adapter -->
+    <script src="assets/js/chartjs-adapter-date-fns.bundle.min.js"></script>
+      
+    <!-- Include Chart.js zoom plugin -->
+    <script src="assets/js/chartjs-plugin-zoom.min.js"></script>
+    
+    <!-- Include Chart.js annotation plugin -->
+    <script src="assets/js/chartjs-plugin-annotation.min.js"></script>
+    
+    <!-- Include Hammer.js for touch/gesture support -->
+    <script src="assets/js/hammer.min.js"></script>
+    
+    <!-- Include DOMPurify for security -->
+    <script src="assets/js/purify.min.js"></script>
+
+    <!-- Include ECharts for 3D visualization -->
+    <script src="assets/js/echarts.min.js"></script>
+    <script src="assets/js/echarts-gl.min.js"></script>
+
+    <!-- Include vis.js Timeline for AI Insights Timeline -->
+    <script src="assets/js/vis-timeline-graph2d.min.js"></script>
+    <link href="assets/css/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+
+    <!-- Include Panzoom, jQuery, and jQuery UI -->
+    <script src="assets/js/panzoom.min.js"></script>
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/js/sha256.min.js"></script>
+    
+    
+    <script src="assets/js/jquery-ui.min.js"></script>
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="assets/css/main.css?v=231.2">
+
+    <!-- External JavaScript - ES6 Modules -->
+    <script type="module" src="assets/js/main.js"></script>
+    <script type="module" src="assets/js/charts.js"></script>
+    <script type="module" src="assets/js/tables.js"></script>
+    <script type="module" src="assets/js/flow-diagram-v2.js"></script>
+    <script type="module" src="assets/js/insights.js"></script>
+    <script type="module" src="assets/js/modals.js"></script>
+    <script type="module" src="assets/js/parsers.js"></script>
+    <script type="module" src="assets/js/report.js"></script>
+    <script type="module" src="assets/js/utils.js"></script>
+    
+    <!-- Couchbase Integration (Issue #231) -->
+    <script type="module" src="assets/js/couchbase-connector.js"></script>
+    <script type="module" src="assets/js/settings.js"></script>
+    
+    <!-- Legacy app code (temporary - will be modularized) -->
+    <script src="assets/js/main-legacy.js?v=debug_force_v1" defer></script>
+
+</head>
+
+<body>
+    <!-- Version info -->
+    <div class="version-info" title="Couchbase Query Analyzer Version">
+        v4.0.0-dev
+    </div>
+
+    <!-- Settings button (top-right) - Issue #231 -->
+    <button id="settings-btn" class="settings-btn" onclick="openSettingsModal()" title="Cluster Connection Settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+    </button>
+
+    <!-- Connection status indicator (next to settings) - Issue #231 -->
+    <div id="connection-status" class="connection-status" title="Couchbase Connection Status">
+        <span class="status-dot status-disconnected"></span>
+        <span class="status-text">Disconnected</span>
+    </div>
+
+    <!-- Bug report link (bottom-right) -->
+    <a id="bug-report-link" class="bug-report-link" href="https://github.com/Fujio-Turner/cb_completed_request/issues" target="_blank" rel="noopener noreferrer">Report a Bug Click Here</a>
+    
+    <!-- Floating unstake button (left center) - Issue #148 - Only visible on Timeline tab -->
+    <button id="floating-unstake-btn" onclick="removeVerticalStake()" style="display: none;">
+        Remove Stake
+    </button>
+    
+
+ 
+     <!-- Input Section (outside tabs) -->
+    <div id="input-section">
+        <div class="input-grid">
+            <div class="input-source-grid">
+                <div class="source-section" aria-labelledby="completed-section-title">
+                    <div id="completed-section-title" class="section-title"></div>
+                    <div class="input-source-row">
+                        <div class="upload-box">
+                            <button type="button" id="upload-completed-btn" class="btn-standard" title="Upload JSON for completed_requests"></button>
+                            <input type="file" id="completed-requests-file" accept=".json,application/json" style="display:none" aria-label="Upload Completed Requests JSON file" />
+                            <div id="completed-file-name" class="file-name"></div>
+                        </div>
+                        <div class="or-divider"><span id="or-label-1">OR</span></div>
+                        <div class="textarea-box">
+                            <textarea id="json-input"
+                                placeholder="Paste your JSON output from: SELECT * , meta().plan FROM system:completed_requests LIMIT 2000;"
+                                aria-label="JSON input field for Couchbase query data" role="textbox"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="source-section" aria-labelledby="indexes-section-title">
+                    <div id="indexes-section-title" class="section-title"></div>
+                    <div class="input-source-row">
+                        <div class="upload-box">
+                            <button type="button" id="upload-indexes-btn" class="btn-standard" title="Upload JSON for indexes"></button>
+                            <input type="file" id="indexes-file" accept=".json,application/json" style="display:none" aria-label="Upload Indexes JSON file" />
+                            <div id="indexes-file-name" class="file-name"></div>
+                        </div>
+                        <div class="or-divider"><span id="or-label-2">OR</span></div>
+                        <div class="textarea-box">
+                            <textarea id="indexJsonInput"
+                                placeholder="Click the 'Indexes' tab below to get the SQL query to run. Paste the results here..."
+                                aria-label="Index JSON input field" role="textbox"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="source-section" aria-labelledby="schema-section-title" id="schema-input-section" style="display: none;">
+                    <div id="schema-section-title" class="section-title">Schema Inference JSON (INFER output)</div>
+                    <div class="input-source-row">
+                        <div class="upload-box">
+                            <button type="button" id="upload-schema-btn" class="btn-standard" title="Upload JSON for schema inference">Upload .json</button>
+                            <input type="file" id="schema-file" accept=".json,application/json" style="display:none" aria-label="Upload Schema Inference JSON file" />
+                            <div id="schema-file-name" class="file-name"></div>
+                        </div>
+                        <div class="or-divider"><span id="or-label-3">OR</span></div>
+                        <div class="textarea-box">
+                            <textarea id="schemaJsonInput"
+                                placeholder="Paste INFER query results here (e.g., INFER bucket.scope.collection WITH {&quot;num_sample_values&quot;:0};)"
+                                aria-label="Schema Inference JSON input field" role="textbox"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin: 10px 0; display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
+            <!-- Parse Button and Progress (Left Side) -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button id="parse-json-btn" onclick="parseJSON()" aria-label="Parse and analyze JSON data" tabindex="0"
+                    role="button">
+                    Analyze
+                </button>
+                <div id="progress-container">
+                    <div class="progress-background">
+                        <div id="progress-bar" class="progress-bar-fill"></div>
+                        <span id="progress-text" class="progress-text">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtering Controls Group -->
+            <div
+                style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; background: #f8f9fa; padding: 8px 12px; border-radius: 6px; border: 1px solid #dee2e6; max-width: 1320px; flex: 0 1 auto;">
+                <div class="preset-stack margin-left-0">
+                    <label for="time-range-select" class="preset-label">Presets</label>
+                    <select id="time-range-select" onchange="setTimeRange(this.value)" title="Quickly set From/To date range" aria-describedby="preset-help"
+                        style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px;">
+                        <option value="original">Original (full data)</option>
+                        <option value="1week">Last 1 Week</option>
+                        <option value="1day">Last 1 Day</option>
+                        <option value="1hour">Last 1 Hour</option>
+                    </select>
+                    <div id="preset-help" class="preset-help">Sets From/To automatically</div>
+                </div>
+
+                <div class="date-range-stack" style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <label for="start-date" style="font-size: 12px; color: #6c757d; flex-shrink: 0;">From:</label>
+                        <input type="datetime-local" id="start-date" step="1" title="Start date/time for filtering"
+                            style="font-size: 11px; padding: 2px 4px; flex: 1; min-width: 0; max-width: 83%;" />
+                        <span id="date-picker-timezone-label" style="font-size: 10px; color: #999; font-style: italic; white-space: nowrap; flex-shrink: 0; min-width: 50px;"></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <label for="end-date" style="font-size: 12px; color: #6c757d; flex-shrink: 0;">To:</label>
+                        <input type="datetime-local" id="end-date" step="1" title="End date/time for filtering"
+                            style="font-size: 11px; padding: 2px 4px; flex: 1; min-width: 0; max-width: 83%;" />
+                        <span style="font-size: 10px; white-space: nowrap; flex-shrink: 0; min-width: 50px;">&nbsp;</span>
+                    </div>
+                </div>
+
+                <div class="filter-stack" style="margin-left: 15px; display: grid; grid-template-columns: 200px 200px auto; align-items: start; column-gap: 12px; row-gap: 6px;">
+                    <!-- Row 1: SQL++ Filter, Elapsed Time Filter, Timezone -->
+                    <div style="display: flex; flex-direction: column; padding: 6px 8px;">
+                        <label for="sql-statement-filter" class="filter-label">SQL++ Statement Filter</label>
+                        <input type="text" id="sql-statement-filter" placeholder="e.g., FROM bucket WHERE type = 'order'"
+                            title="Enter part of a SQL++ statement to filter results (contains match)"
+                            style="width: 100%; font-size: 11px; padding: 4px 6px;" />
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; padding: 6px 8px;">
+                        <label for="elapsed-time-filter" class="filter-label">Elapsed Time Filter</label>
+                        <input type="text" id="elapsed-time-filter" placeholder="e.g., >500ms, >=1s, 100-500ms, 0.5s-2s"
+                            title="Filter by elapsedTime; supports >, >=, <, <=, = or ranges like 100-500ms"
+                            style="width: 100%; max-width: 100%; font-size: 11px; padding: 4px 6px;" />
+                    </div>
+
+                    <div class="filter-stack" style="margin-top: 0; margin-bottom: 0; padding: 6px 8px;">
+                        <label for="timezone-selector" class="filter-label" id="timezone-selector-label">
+                        </label>
+                        <select id="timezone-selector" 
+                                style="width: 100%; max-width: 100%; font-size: 11px; padding: 2px 4px;"
+                                title="Select timezone for displaying query timestamps"
+                                onchange="handleTimezoneChange()">
+                            <option value="" disabled selected>Auto-detect from data...</option>
+                            <option value="UTC">UTC (Coordinated Universal Time)</option>
+                            <optgroup label="Americas">
+                                <option value="America/New_York">America/New_York (EST/EDT)</option>
+                                <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+                                <option value="America/Denver">America/Denver (MST/MDT)</option>
+                                <option value="America/Phoenix">America/Phoenix (MST)</option>
+                                <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+                                <option value="America/Anchorage">America/Anchorage (AKST/AKDT)</option>
+                                <option value="America/Honolulu">America/Honolulu (HST)</option>
+                                <option value="America/Toronto">America/Toronto (EST/EDT)</option>
+                                <option value="America/Vancouver">America/Vancouver (PST/PDT)</option>
+                                <option value="America/Mexico_City">America/Mexico_City (CST/CDT)</option>
+                                <option value="America/Sao_Paulo">America/Sao_Paulo (BRT/BRST)</option>
+                                <option value="America/Buenos_Aires">America/Buenos_Aires (ART)</option>
+                                <option value="America/Santiago">America/Santiago (CLT/CLST)</option>
+                                <option value="America/Bogota">America/Bogota (COT)</option>
+                                <option value="America/Lima">America/Lima (PET)</option>
+                            </optgroup>
+                            <optgroup label="Europe">
+                                <option value="Europe/London">Europe/London (GMT/BST)</option>
+                                <option value="Europe/Dublin">Europe/Dublin (GMT/IST)</option>
+                                <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+                                <option value="Europe/Berlin">Europe/Berlin (CET/CEST)</option>
+                                <option value="Europe/Amsterdam">Europe/Amsterdam (CET/CEST)</option>
+                                <option value="Europe/Brussels">Europe/Brussels (CET/CEST)</option>
+                                <option value="Europe/Madrid">Europe/Madrid (CET/CEST)</option>
+                                <option value="Europe/Rome">Europe/Rome (CET/CEST)</option>
+                                <option value="Europe/Zurich">Europe/Zurich (CET/CEST)</option>
+                                <option value="Europe/Stockholm">Europe/Stockholm (CET/CEST)</option>
+                                <option value="Europe/Warsaw">Europe/Warsaw (CET/CEST)</option>
+                                <option value="Europe/Athens">Europe/Athens (EET/EEST)</option>
+                                <option value="Europe/Istanbul">Europe/Istanbul (TRT)</option>
+                                <option value="Europe/Moscow">Europe/Moscow (MSK)</option>
+                            </optgroup>
+                            <optgroup label="Asia">
+                                <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+                                <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                                <option value="Asia/Bangkok">Asia/Bangkok (ICT)</option>
+                                <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
+                                <option value="Asia/Hong_Kong">Asia/Hong_Kong (HKT)</option>
+                                <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
+                                <option value="Asia/Taipei">Asia/Taipei (CST)</option>
+                                <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+                                <option value="Asia/Seoul">Asia/Seoul (KST)</option>
+                                <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
+                                <option value="Asia/Manila">Asia/Manila (PST)</option>
+                                <option value="Asia/Karachi">Asia/Karachi (PKT)</option>
+                                <option value="Asia/Dhaka">Asia/Dhaka (BST)</option>
+                                <option value="Asia/Riyadh">Asia/Riyadh (AST)</option>
+                                <option value="Asia/Tel_Aviv">Asia/Tel_Aviv (IST/IDT)</option>
+                            </optgroup>
+                            <optgroup label="Australia & Pacific">
+                                <option value="Australia/Sydney">Australia/Sydney (AEDT/AEST)</option>
+                                <option value="Australia/Melbourne">Australia/Melbourne (AEDT/AEST)</option>
+                                <option value="Australia/Brisbane">Australia/Brisbane (AEST)</option>
+                                <option value="Australia/Perth">Australia/Perth (AWST)</option>
+                                <option value="Australia/Adelaide">Australia/Adelaide (ACDT/ACST)</option>
+                                <option value="Pacific/Auckland">Pacific/Auckland (NZDT/NZST)</option>
+                                <option value="Pacific/Fiji">Pacific/Fiji (FJT/FJST)</option>
+                                <option value="Pacific/Guam">Pacific/Guam (ChST)</option>
+                            </optgroup>
+                            <optgroup label="Africa">
+                                <option value="Africa/Cairo">Africa/Cairo (EET)</option>
+                                <option value="Africa/Johannesburg">Africa/Johannesburg (SAST)</option>
+                                <option value="Africa/Lagos">Africa/Lagos (WAT)</option>
+                                <option value="Africa/Nairobi">Africa/Nairobi (EAT)</option>
+                                <option value="Africa/Casablanca">Africa/Casablanca (WET/WEST)</option>
+                            </optgroup>
+                        </select>
+                        <span id="timezone-info" class="filter-help"></span>
+                    </div>
+
+                    <!-- Row 2: Collection Filter (positioned under SQL++ Statement Filter) -->
+                    <div style="display: flex; flex-direction: column; padding: 6px 8px;">
+                        <label for="collection-filter" class="filter-label">Collection Filter</label>
+                        <select id="collection-filter"
+                            title="Filter by collection (bucket.scope.collection)"
+                            style="width: 100%; font-size: 11px; padding: 4px 6px;">
+                            <option value="">(All)</option>
+                        </select>
+                    </div>
+
+                    <!-- Empty cell for grid alignment -->
+                    <div></div>
+
+                    <!-- Exclude System checkbox (row 2, aligned with Collection Filter) -->
+                    <div style="display: flex; align-items: flex-end; padding: 6px 8px;">
+                        <label class="label-flex" style="margin: 0; display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" id="exclude-system-queries" checked
+                                title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
+                                aria-label="Exclude system queries from analysis" />
+                            <span class="checkbox-label-text"
+                                title="Excludes INFER, ADVISE, CREATE, ALTER INDEX statements and queries from system: keyspaces"
+                                style="font-size: 12px;">
+                                Exclude System
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                </div>
+
+                </div>
+                </div>
+
+    <!-- Tabs Container -->
+    <div id="tabs" role="tabpanel" aria-label="Query analysis tabs">
+        <!-- Tab Headers -->
+        <ul role="tablist" aria-label="Analysis views">
+            <li role="tab">
+                <a href="#ai-analyzer" aria-controls="ai-analyzer" tabindex="0">AI Analyzer <span
+                        class="dev-badge">Dev</span></a>
+            </li>
+            <li role="tab">
+                <a href="#dashboard" aria-controls="dashboard" tabindex="0">Dashboard</a>
+            </li>
+            <li role="tab">
+                <a href="#insights" aria-controls="insights" tabindex="0">Insights <span
+                        id="insights-badge" class="insights-badge" style="display:none;">0</span></a>
+            </li>
+            <li role="tab">
+                <a href="#timeline" aria-controls="timeline" tabindex="0">Timeline</a>
+            </li>
+            <li role="tab">
+                <a href="#analysis" aria-controls="analysis" tabindex="0">Query Groups</a>
+            </li>
+            <li role="tab">
+                <a href="#every-query" aria-controls="every-query" tabindex="0">Every Query</a>
+            </li>
+            <li role="tab">
+                <a href="#index-query-flow" aria-controls="index-query-flow" tabindex="0">Index/Query Flow</a>
+            </li>
+            <li role="tab">
+                <a href="#indexes" aria-controls="indexes" tabindex="0">Indexes</a>
+            </li>
+            <li role="tab" id="schema-inference-tab" style="display: none;">
+                <a href="#schema-inference" aria-controls="schema-inference" tabindex="0">Schema Inference</a>
+            </li>
+            <li role="tab">
+                <a href="#reports-history" aria-controls="reports-history" tabindex="0">Reports / History</a>
+            </li>
+        </ul>
+
+        <!-- AI Analyzer Tab Content -->
+        <div id="ai-analyzer" data-report-section="ai-analyzer" style="padding: 20px;">
+            <!-- Top Grid: Source and Provider -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
+                <!-- Analysis Source -->
+                <div class="background-f5 padding-15 border-radius-5 border-1-ddd">
+                    <h3 style="margin:0 0 8px 0; font-size: 14px;">Analysis Source</h3>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <label style="font-weight: 600; min-width: 100px; font-size: 13px;">Cluster Name:<span style="color: red;">*</span></label>
+                        <input type="text" id="ai-cluster-name" placeholder="Ex: QA East Cloud" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; flex: 1; font-size: 13px;" />
+                    </div>
+                    <div style="margin-top: 4px; color: #666; font-size: 11px;">
+                        Identify the source cluster for this analysis (Required).
+                    </div>
+                </div>
+
+                <!-- AI Service Selection -->
+                <div class="background-f5 padding-15 border-radius-5 border-1-ddd">
+                    <h3 style="margin:0 0 8px 0; font-size: 14px;">AI Service Provider</h3>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <label style="font-weight: 600; min-width: 100px; font-size: 13px;">Provider:</label>
+                        <select id="ai-provider-select" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; flex: 1; font-size: 13px;">
+                            <option value="">-- Loading... --</option>
+                        </select>
+                    </div>
+                    <div style="margin-top: 4px; color: #666; font-size: 11px;">
+                        (Configure API keys in Settings)
+                    </div>
+                    <div id="ai-provider-warning"></div>
+                </div>
+            </div>
+
+            <!-- Data Selection -->
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px;">
+                <h3 style="margin:0 0 8px 0; font-size: 14px;">Data to Analyze</h3>
+                <div id="ai-data-selection-group" style="display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px;">
+                    <input type="checkbox" id="ai-include-dashboard" checked><label for="ai-include-dashboard">Dashboard</label>
+                    <input type="checkbox" id="ai-include-insights" checked><label for="ai-include-insights">Insights</label>
+                    <input type="checkbox" id="ai-include-timeline" checked><label for="ai-include-timeline">Timeline</label>
+                    <input type="checkbox" id="ai-include-query-groups" checked title="⚠️ Large payload - may slow response"><label for="ai-include-query-groups">Query Groups </label>
+                    <input type="checkbox" id="ai-include-flow-diagram" checked title="⚠️ Large payload - may slow response"><label for="ai-include-flow-diagram">Index/Query Flow </label>
+                    <input type="checkbox" id="ai-include-indexes" title="⚠️ Large payload - may slow response"><label for="ai-include-indexes">Indexes <span style="color: #999; font-size: 11px;">(if loaded)</span> </label>
+                </div>
+            </div>
+
+            <!-- Analysis Options -->
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px; position: relative;">
+                <div id="ai-obfuscate-group" style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                    <input type="checkbox" id="ai-obfuscate-data" checked>
+                    <label for="ai-obfuscate-data">Obfuscate</label> masks sensitive data (bucket, scope, collection names, query values and CB user names)
+                    <span id="obfuscation-toggle-link"
+                          style="font-size: 11px; color: #007bff; cursor: help; text-decoration: underline; margin-left: 4px;">
+                        (Hover/Click to see example)
+                    </span>
+                </div>
+                
+                <!-- Obfuscation Example (Hidden by default) -->
+                <div id="obfuscation-example" style="display: none; margin-top: 10px; padding: 12px; background: #fff; border: 1px solid #999; border-radius: 4px; font-size: 11px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: absolute; z-index: 100; width: calc(100% - 30px);">
+                    <div style="margin-bottom: 8px;">
+                        <strong style="color: #28a745;">✓ Before (Original):</strong>
+                        <pre style="margin: 4px 0 0 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #28a745; font-family: 'Courier New', monospace; overflow-x: auto; white-space: pre; color: #333; font-weight: 500;">SELECT <span style="background:#fff9c4; padding: 0 2px; border-radius: 2px;">fName</span>, <span style="background:#e1f5fe; padding: 0 2px; border-radius: 2px;">lName</span> FROM bucket.scope.collection WHERE id = <span style="background:#fce4ec; padding: 0 2px; border-radius: 2px;">"1234"</span></pre>
+                    </div>
+                    <div>
+                        <strong style="color: #2196f3;">🔒 After (Obfuscated):</strong>
+                        <pre style="margin: 4px 0 0 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #2196f3; font-family: 'Courier New', monospace; overflow-x: auto; white-space: pre; color: #333; font-weight: 500;">SELECT `<span style="background:#fff9c4; padding: 0 2px; border-radius: 2px;">21t4hs</span>`, `<span style="background:#e1f5fe; padding: 0 2px; border-radius: 2px;">oaurchn</span>` FROM `acuoa`.`orcenth`.`8aouenth` WHERE `racousth` = "<span style="background:#fce4ec; padding: 0 2px; border-radius: 2px;">stousth</span>"</pre>
+                    </div>
+                    <div style="margin-top: 12px; padding: 10px; background: #f0f7ff; border: 1px solid #cce5ff; border-radius: 4px; color: #004085; display: flex; align-items: center; gap: 8px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <span>
+                            <strong>Preview Payload</strong> - Inspect the data payload to be sent to the AI API.
+                        </span>
+                    </div> 
+                </div>
+
+                 <!-- Options Grid - Organized by Tab -->
+                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0; display: flex; gap: 20px; flex-wrap: wrap;">
+                    
+                    <!-- Timeline Options Box -->
+                    <div style="flex: 1; min-width: 280px; padding: 12px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px;">
+                        <div style="font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Timeline</div>
+                        
+                        <!-- Timeline Data -->
+                        <div id="ai-timeline-data-depth-container" style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <span style="font-size: 13px; color: #333; min-width: 90px;">Data Depth:</span>
+                            <div id="ai-timeline-depth-group" style="display: flex; gap: 4px;">
+                                <input type="radio" name="ai-timeline-data-depth" id="ai-timeline-data-basic" value="basic" checked><label for="ai-timeline-data-basic">Basic</label>
+                                <input type="radio" name="ai-timeline-data-depth" id="ai-timeline-data-full" value="full"><label for="ai-timeline-data-full">Full</label>
+                            </div>
+                            <span title="Basic: Sends 7 key timeline charts (Request Count, Duration, Memory, CPU, etc.)&#10;Full: Sends all 14 charts including Kernel Time, Result Count, Index Scan, Fetch stats" style="cursor: help; color: #888; font-size: 14px;">ⓘ</span>
+                        </div>
+                        
+                        <!-- Stake Focus -->
+                        <div id="ai-stake-focus-group" style="display: flex; align-items: center; gap: 10px;" title="Double-click on Timeline chart to set a stake point.">
+                            <input type="checkbox" id="ai-stake-focus-enabled" disabled><label for="ai-stake-focus-enabled" style="min-width: 80px;">Stake Focus:</label>
+                            <input type="text" id="ai-stake-datetime" readonly 
+                                style="flex: 1; padding: 3px 6px; font-size: 11px; font-family: monospace; background: #fff; border: 1px solid #ddd; border-radius: 3px; color: #666;"
+                                placeholder="Double-click Timeline chart">
+                        </div>
+                    </div>
+                    
+                    <!-- Query Groups Box -->
+                    <div style="min-width: 200px; padding: 12px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px;">
+                        <div style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Query Groups
+                            <span title="Sends the top N query patterns from the Query Groups tab to AI for analysis.&#10;Query groups are sorted by impact (slowest/most frequent queries first)." style="cursor: help; color: #888; font-size: 14px; text-transform: none;">ⓘ</span>
+                        </div>
+                        <div id="ai-qg-limit-group" style="display: flex; flex-direction: column; gap: 4px;">
+                            <input type="radio" name="ai-qg-limit" id="ai-qg-limit-3" value="3"><label for="ai-qg-limit-3">Top 3</label>
+                            <input type="radio" name="ai-qg-limit" id="ai-qg-limit-10" value="10" checked><label for="ai-qg-limit-10">Top 10</label>
+                            <input type="radio" name="ai-qg-limit" id="ai-qg-limit-25" value="25"><label for="ai-qg-limit-25">Top 25</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Language Box -->
+                    <div style="min-width: 180px; padding: 12px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px;">
+                        <div style="font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Response Language</div>
+                        <select name="ai-language" id="ai-language" style="width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; background-color: white;">
+                            <option value="EN">English</option>
+                            <option value="ZH">中文 (Chinese)</option>
+                            <option value="HI">हिन्दी (Hindi)</option>
+                            <option value="ES">Español (Spanish)</option>
+                            <option value="JA">日本語 (Japanese)</option>
+                            <option value="RU">Русский (Russian)</option>
+                            <option value="PT">Português (Portuguese)</option>
+                            <option value="KO">한국어 (Korean)</option>
+                            <option value="PL">Polski (Polish)</option>
+                            <option value="DE">Deutsch (German)</option>
+                            <option value="FR">Français (French)</option>
+                            <option value="TR">Türkçe (Turkish)</option>
+                            <option value="IT">Italiano (Italian)</option>
+                            <option value="AR">العربية (Arabic)</option>
+                            <option value="NL">Nederlands (Dutch)</option>
+                            <option value="RO">Română (Romanian)</option>
+                            <option value="BN">বাংলা (Bengali)</option>
+                            <option value="TH">ภาษาไทย (Thai)</option>
+                            <option value="TL">Tagalog (Filipino)</option>
+                        </select>
+                    </div>
+                 </div>
+
+            <script>
+                // Inline script for hover/click behavior
+                (function() {
+                    const link = document.getElementById('obfuscation-toggle-link');
+                    const example = document.getElementById('obfuscation-example');
+                    const container = document.querySelector('.background-f5.padding-15.margin-bottom-10');
+                    if (link && example && container) {
+                        link.addEventListener('mouseenter', () => example.style.display = 'block');
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            example.style.display = example.style.display === 'none' ? 'block' : 'none';
+                        });
+                        // Hide when leaving the container (includes both link and example)
+                        container.addEventListener('mouseleave', () => example.style.display = 'none');
+                        // Also hide when leaving the example div itself
+                        example.addEventListener('mouseleave', (e) => {
+                            // Only hide if not moving back to the container
+                            if (!container.contains(e.relatedTarget)) {
+                                example.style.display = 'none';
+                            }
+                        });
+                    }
+                })();
+                
+                // Initialize jQuery UI widgets when DOM is ready
+                $(function() {
+                    // Data to Analyze checkboxes
+                    $('#ai-data-selection-group input[type="checkbox"]').checkboxradio({
+                        icon: false
+                    });
+                    
+                    // Obfuscate checkbox
+                    $('#ai-obfuscate-data').checkboxradio({
+                        icon: false
+                    });
+                    
+                    // Timeline Data Depth radio buttons
+                    $('#ai-timeline-depth-group input[type="radio"]').checkboxradio({
+                        icon: false
+                    });
+                    
+                    // Stake Focus checkbox
+                    $('#ai-stake-focus-enabled').checkboxradio({
+                        icon: false
+                    });
+                    
+                    // Query Groups Limit radio buttons
+                    $('#ai-qg-limit-group input[type="radio"]').checkboxradio({
+                        icon: false
+                    });
+                    
+                    // Optimize AI Payload checkbox
+                    $('#ai-optimize-payload').checkboxradio({
+                        icon: false
+                    });
+                    
+                    // Language dropdown
+                    $('#ai-language').selectmenu({
+                        width: '100%'
+                    });
+                    
+                    // Provider dropdown (initialized later when options are loaded)
+                    // Expose a global function to refresh the selectmenu after dynamic population
+                    window.refreshAIProviderSelectMenu = function() {
+                        if ($('#ai-provider-select').data('ui-selectmenu')) {
+                            $('#ai-provider-select').selectmenu('refresh');
+                        } else {
+                            $('#ai-provider-select').selectmenu({
+                                width: '100%'
+                            });
+                        }
+                    };
+                });
+            </script>
+            </div>
+
+            <!-- User Prompt -->
+            <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd" style="padding: 10px 15px;">
+                <h3 style="margin:0 0 8px 0; font-size: 14px;">Custom Analysis Prompt</h3>
+                <textarea id="ai-user-prompt" 
+                    placeholder="Example: 'Identify patterns in slow queries and suggest specific index optimizations.'"
+                    style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 12px; resize: vertical; height: 60px; min-height: 40px;"></textarea>
+            </div>
+
+            <!-- Analyze Button -->
+            <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                <button id="ai-analyze-btn" onclick="analyzeWithAI()" class="btn-standard" style="background: linear-gradient(180deg, #4CAF50 0%, #43A047 100%); color: white; padding: 10px 20px; font-size: 14px; font-weight: bold; border: 1px solid #388E3C;">
+                    Analyze with AI
+                </button>
+
+                <button id="ai-preview-btn" onclick="showAIPreview()" class="btn-standard" style="background: #6c757d; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
+                    Preview Payload
+                </button>
+                
+                <span style="color: #ccc; font-size: 18px; margin: 0 4px;">|</span>
+                
+                <div id="ai-optimize-payload-group" style="display: flex; gap: 4px; font-size: 13px;">
+                    <input type="checkbox" id="ai-optimize-payload" checked><label for="ai-optimize-payload">Optimize Payload</label>
+                </div>
+
+                <!-- Progress Bar (Hidden by default) -->
+                <div id="ai-progress-bar" class="progress-steps-container" style="display: none;">
+                    <div class="progress-line"><div class="progress-line-fill"></div></div>
+                    <div class="progress-step active" id="step-1">
+                        <div class="step-circle">1</div>
+                        <div class="step-label">Sent to AI</div>
+                    </div>
+                    <div class="progress-step" id="step-2">
+                        <div class="step-circle">2</div>
+                        <div class="step-label">AI Processing</div>
+                    </div>
+                    <div class="progress-step" id="step-3">
+                        <div class="step-circle">3</div>
+                        <div class="step-label">Received/Saved</div>
+                    </div>
+                    <div class="progress-step" id="step-4">
+                        <div class="step-circle">4</div>
+                        <div class="step-label">Done</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pro Tip -->
+            <div style="font-size: 12px; color: #666; margin-top: 8px;">
+                <span class="badge-pro">PRO</span> Use SQL++ filter and/or Elapsed Time filter in Data &amp; Filters above to narrow stats and analysis to specific queries or time ranges
+            </div>
+
+            <!-- AI Analysis History -->
+            <div style="margin-top: 20px;">
+                <h3 style="margin: 0 0 12px 0;">Previous Analyses</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                            <tr>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Request Date</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Source Cluster</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Prompt</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Filters</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Obfuscated</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Provider</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Status</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ai-history-list">
+                            <!-- AI history items will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="ai-history-pagination" style="margin-top: 10px; text-align: center; background-color: #f5f5f5; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6;"></div>
+            </div>
+        </div>
+        <!-- Dashboard Tab Content -->
+        <div id="dashboard" data-report-section="dashboard">
+            <div class="dashboard-grid">
+                <!-- Elapsed Time Distribution Bar Chart -->
+                <div class="chart-container height-300 draggable-chart" data-chart-id="elapsed-time" data-position="dashboard-1">
+                    <h3 class="chart-title fixed-height">
+                        Query Duration Distribution
+                    </h3>
+                    <div class="height-250-relative">
+                        <canvas id="elapsed-time-chart"></canvas>
+                    </div>
+                </div>
+                <!-- Primary Index(es) Scan Used Chart -->
+                <div class="chart-container height-300 draggable-chart" data-chart-id="primary-scan" data-position="dashboard-2">
+                    <h3 class="chart-title fixed-height">Index Type Usage</h3>
+                    <div class="chart-flex-container">
+                        <div class="flex-1 position-relative">
+                            <canvas id="primary-scan-chart"></canvas>
+                        </div>
+                        <div id="primary-scan-warning" class="warning-box">
+                            <div class="warning-title">⚠️ WARNING ⚠️</div>
+                            <div class="warning-text">
+                                Primary index scans in production can cause full bucket scans
+                                leading to
+                                <span class="warning-text-highlight">severe performance issues</span>
+                            </div>
+                            <div class="warning-link-container">
+                                <a href="https://www.couchbase.com/blog/primary-uses-for-couchbase-primary-index/"
+                                    target="_blank" class="warning-link">
+                                    📖 Learn More
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Query Pattern Analysis Row -->
+            <div class="pattern-analysis-grid with-margin-top-20">
+                <!-- Query Pattern Features Bar Chart -->
+                <div class="chart-container draggable-chart" data-chart-id="query-pattern" data-position="dashboard-3">
+                    <h3 class="chart-title fixed-height">Query Pattern Features</h3>
+                    <div class="height-350-relative">
+                        <button id="open-3d-pattern-chart-btn" style="position: absolute; top: -40px; left: 0px; width: 32px; height: 32px; background: #ff8c00; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; z-index: 100; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Open 3D Pattern-Collection Chart">3D</button>
+                        <canvas id="query-pattern-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pie Charts Row -->
+            <div class="grid-3-col gap-20 with-margin-top-20">
+                <!-- Statement Type Pie Chart -->
+                <div class="chart-card">
+                    <h3 class="chart-card-header">Statement Type</h3>
+                    <div class="chart-card-content">
+                        <canvas id="statement-type-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Query State Pie Chart -->
+                <div class="chart-card">
+                    <h3 class="chart-card-header">Query State</h3>
+                    <div class="chart-card-content">
+                        <canvas id="state-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Scan Consistency Pie Chart -->
+                <div class="chart-card">
+                    <h3 class="chart-card-header">Index Scan Consistency</h3>
+                    <div class="chart-card-content">
+                        <canvas id="scan-consistency-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Tables Row -->
+            <div class="dashboard-tables-grid with-margin-top-20">
+                <!-- User Query Count Table -->
+                <div class="table-container">
+                    <h3 class="chart-title">Users by Query Count</h3>
+                    <div class="table-scroll">
+                        <table id="user-count-table" class="table-full">
+                            <thead class="sticky-header">
+                                <tr>
+                                    <th class="width-80px">Count</th>
+                                    <th>User</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-count-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Index Usage Count Table -->
+                <div class="table-container">
+                    <h3 class="chart-title">Index Usage Count</h3>
+                    <div class="table-subheader">
+                        Note: #primary count shows total operations, not unique queries
+                    </div>
+                    <div class="table-scroll">
+                        <table id="index-count-table" class="table-full">
+                            <thead class="sticky-header">
+                                <tr>
+                                    <th class="padding-8 text-align-center border-bottom width-80px">
+                                        Count
+                                    </th>
+                                    <th class="padding-8 text-align-center border-bottom">
+                                        Index Name
+                                    </th>
+                                    <th class="padding-8 text-align-center border-bottom">
+                                        Bucket.Scope.Collection
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="index-count-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights Tab Content -->
+        <div id="insights" data-report-section="insights">
+
+            <div style="background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+
+
+
+                <!-- Indexes Category -->
+                <div id="index-issues" class="insight-category">
+                    <h3 class="category-title collapsed" onclick="toggleCategory('index-issues')">🔍 Index Performance Issues</h3>
+                    <div class="insight-category-content collapsed" id="index-issues-content">
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('inefficient-index-scans')"><span class="insight-indicator" id="inefficient-index-scans-indicator"></span>Inefficient
+                                Index Scans</h4>
+                            <div class="insight-content collapsed" id="inefficient-index-scans-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="inefficient-index-scans-count">0 queries</span> (<span class="highlight-number" id="inefficient-index-scans-percent">0%</span>)
+                                    scan an average of <span class="highlight-number" id="avg-scan-count">0</span> index
+                                    entries but returned back an avg <span class="highlight-number"
+                                        id="avg-result-count">0</span> records per query or a selectivity of <span
+                                        class="highlight-number" id="avg-selectivity">0%</span> (excluding aggregate
+                                    functions like COUNT(), AVG(), MIN(), MAX(), and mutation statements (MERGE, DELETE, INSERT, UPDATE, UPSERT).
+                                </p>
+
+                                   <button id="toggle-sample-queries-btn" onclick="toggleSampleQueries()" class="btn-standard">
+                                       <span id="sample-queries-btn-text">Show Sample Queries</span>
+                                   </button>
+                                   <div id="sample-queries-container" style="display: none; margin-top: 10px;">
+                                       <table class="sample-queries-table">
+                                           <thead>
+                                               <tr>
+                                                   <th>Request Date</th>
+                                                   <th>Statement (unique)</th>
+                                                   
+                                               </tr>
+                                           </thead>
+                                           <tbody id="sample-queries-tbody">
+                                           </tbody>
+                                       </table>
+                                   </div> 
+
+                                <div class="learn-more-section">
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Consider creating more selective indexes to reduce scan overhead <a
+                                            href="https://cb.fuj.io/analysis_hub.html#what-is-index"
+                                            class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('slow-index-scan-times')"><span class="insight-indicator" id="slow-index-scan-times-indicator"></span>Slow Index Scan
+                                Times</h4>
+                            <div class="insight-content collapsed" id="slow-index-scan-times-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="total-indexes-count">0</span> total indexes:
+                                </p>
+                                <div class="index-breakdown">
+                                    <div class="index-breakdown-item">
+                                        <span class="highlight-number" id="slow-indexes-2-10s">0</span> indexes with an
+                                        avg scan time between 2-10 seconds
+                                    </div>
+                                    <div class="index-breakdown-item">
+                                        <span class="highlight-number" id="slow-indexes-10s-plus">0</span> indexes with
+                                        an avg scan time of 10+ seconds
+                                    </div>
+                                    <div class="index-breakdown-item">
+                                        <span class="highlight-number" id="slow-primary-indexes">0</span> #primary
+                                        indexes with an avg scan time of 2+ seconds
+                                    </div>
+                                    To see identified index(es) go to the "Index/Query Flow" tab.
+                                </div>
+                                <div class="learn-more-section">
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Check kernel time on index nodes - high kernel time may indicate resource
+                                        contention <a href="https://cb.fuj.io/analysis_hub.html#system-node-impact"
+                                            class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Index returning millions of records? Create more selective compound indexes <a
+                                            href="https://cb.fuj.io/analysis_hub.html#walk-strategy"
+                                            class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('primary-index-over-usage')"><span class="insight-indicator" id="primary-index-over-usage-indicator"></span>Primary Index
+                                Over-Usage</h4>
+                            <div class="insight-content collapsed" id="primary-index-over-usage-content">
+                                <p class="insight-description">
+                                    Primary indexes on avg are scanning <span class="highlight-number"
+                                        id="primary-avg-items-scanned">0</span> items with an avg scan time of <span
+                                        class="highlight-number" id="primary-avg-scan-time">0ms</span>. These could
+                                    benefit from secondary indexes.
+                                </p>
+                                <div class="learn-more-section">
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Review your indexing strategy - create selective secondary indexes <a
+                                            href="https://cb.fuj.io/analysis_hub.html#index-memory"
+                                            class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">⚠️</span>
+                                        Avoid primary indexes in production—use targeted secondary indexes instead <a
+                                            href="https://cb.fuj.io/analysis_hub.html#primary-index-drawbacks"
+                                            class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('pagination-index-overfetch')"><span class="insight-indicator" id="pagination-index-overfetch-indicator"></span>ORDER BY / LIMIT / OFFSET Index Over-Scan</h4>
+                            <div class="insight-content collapsed" id="pagination-index-overfetch-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="pagination-overfetch-count">0 queries</span> (<span class="highlight-number" id="pagination-overfetch-percent">0%</span>) with `ORDER BY` + `LIMIT ` + `OFFSET ` scanned an Avg of <span id="pagination-overfetch-avg-items">0</span> items from the index(es).
+                                </p>
+
+                                <button id="toggle-pagination-index-overfetch-sample-queries-btn" onclick="toggleInsightSampleQueries('pagination-index-overfetch')" class="btn-standard">
+                                    <span id="pagination-index-overfetch-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="pagination-index-overfetch-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pagination-index-overfetch-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="learn-more-section">
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Consider an index that satisfies the ORDER BY to only scan needed rows/items
+                                        <a href="https://cb.fuj.io/analysis_hub.html#what-is-index" class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resources Category -->
+                <div id="resource-issues" class="insight-category">
+                    <h3 class="category-title collapsed" onclick="toggleCategory('resource-issues')">⚡ Resource Utilization Issues
+                    </h3>
+                    <div class="insight-category-content collapsed" id="resource-issues-content">
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('high-kernel-time-queries')"><span class="insight-indicator" id="high-kernel-time-queries-indicator"></span>High Kernel
+                                Time in Queries</h4>
+                            <div class="insight-content collapsed" id="high-kernel-time-queries-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="high-kernel-time-queries-count">0 queries</span> (<span class="highlight-number" id="high-kernel-time-queries-percent">0%</span>)
+                                    whose average percentage of sum of their <b>core execTime</b> 
+                                    <span class="help-icon" title="Sum of all execTime minus Stream's execTime">ⓘ</span> / kernTime
+                                    is <span class="highlight-number" id="avg-core-kernel-ratio">0%</span>.
+                                </p>
+
+                                <button id="toggle-high-kernel-time-queries-sample-queries-btn" onclick="toggleInsightSampleQueries('high-kernel-time-queries')" class="btn-standard">
+                                    <span id="high-kernel-time-queries-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="high-kernel-time-queries-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody id="high-kernel-time-queries-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="insight-note" style="background:#f0f9ff; border-left:4px solid #3b82f6; padding:10px 12px; border-radius:6px; margin:10px 0; color:#1e3a8a;">
+                                    <strong>What high kernTime means:</strong> kernTime is time spent waiting to be scheduled on CPU. If it dominates ServiceTime and/or Execution Time (e.g., ~99%), the node is CPU-bound and the query spends most of its life paused, not doing useful work. Look for high request.active.count, cpu.user.percent, or gc.pause.percent. Actions: reduce concurrency, add query nodes, or separate services.
+                                </div>
+
+                                <div class="learn-more-section">
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Is the Query Service co-located with other services? <a
+                                            href="https://cb.fuj.io/analysis_hub.html#system-node-impact"
+                                            class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('high-memory-usage')"><span class="insight-indicator" id="high-memory-usage-indicator"></span>High Memory Usage
+                                Detected</h4>
+                            <div class="insight-content collapsed" id="high-memory-usage-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="high-memory-count">0 queries</span> (<span class="highlight-number" id="high-memory-percent">0%</span>) are using avg
+                                    <span class="highlight-number" id="avg-memory-usage">0GB</span> of memory each,
+                                    indicating potential memory optimization opportunities.
+                                </p>
+
+                                <button id="toggle-high-memory-usage-sample-queries-btn" onclick="toggleInsightSampleQueries('high-memory-usage')" class="btn-standard">
+                                    <span id="high-memory-usage-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="high-memory-usage-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody id="high-memory-usage-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="learn-more-section">
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Consider increasing query memory limits or optimizing queries <a
+                                            href="https://cb.fuj.io/analysis_hub.html#crawl-strategy"
+                                            class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('slow-parse-plan-times')"><span class="insight-indicator" id="slow-parse-plan-times-indicator"></span>Slow Parse/Plan Times</h4>
+                            <div class="insight-content collapsed" id="slow-parse-plan-times-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="slow-parse-plan-count">0 queries</span> (<span class="highlight-number" id="slow-parse-plan-percent">0%</span>) have parse or plan times greater than 1ms with avg parse: <span class="highlight-number" id="avg-parse-time">0ms</span> and avg plan: <span class="highlight-number" id="avg-plan-time">0ms</span>, which may indicate high CPU utilization or kernel time wait issues.
+                                </p>
+
+                                <button id="toggle-slow-parse-plan-times-sample-queries-btn" onclick="toggleInsightSampleQueries('slow-parse-plan-times')" class="btn-standard">
+                                    <span id="slow-parse-plan-times-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="slow-parse-plan-times-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody id="slow-parse-plan-times-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="learn-more-section">
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Check CPU utilization and consider reducing query concurrency <a
+                                            href="https://cb.fuj.io/analysis_hub.html#slow-parse-plan"
+                                            class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('slow-use-key-queries')"><span class="insight-indicator" id="slow-use-key-queries-indicator"></span>Slow USE KEY
+                                Queries</h4>
+                            <div class="insight-content collapsed" id="slow-use-key-queries-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="slow-use-keys-count">0 USE KEY queries</span> (<span class="highlight-number" id="slow-use-keys-percent">0%</span>)
+                                    with avg query time of <span class="highlight-number"
+                                        id="avg-use-keys-time">0ms</span>, suggesting potential KV service bottlenecks.
+                                </p>
+
+                                <button id="toggle-slow-use-key-queries-sample-queries-btn" onclick="toggleInsightSampleQueries('slow-use-key-queries')" class="btn-standard">
+                                    <span id="slow-use-key-queries-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="slow-use-key-queries-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody id="slow-use-key-queries-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="learn-more-section">
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Is the Data Service and/or Query Service co-located with other services? <a
+                                            href="https://cb.fuj.io/analysis_hub.html#system-node-impact"
+                                            class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Query Patterns Category -->
+                <div id="pattern-analysis" class="insight-category">
+                    <h3 class="category-title collapsed" onclick="toggleCategory('pattern-analysis')">🔄 Query Pattern Analysis
+                    </h3>
+                    <div class="insight-category-content collapsed" id="pattern-analysis-content">
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('missing-where-clauses')"><span class="insight-indicator" id="missing-where-clauses-indicator"></span>Missing WHERE
+                                Clauses</h4>
+                            <div class="insight-content collapsed" id="missing-where-clauses-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="missing-where-count">0 queries</span> (<span
+                                        class="highlight-number" id="missing-where-percent">0%</span>) lack WHERE
+                                    clauses, potentially scanning entire collections unnecessarily. <em>possibly a query with `USE KEYS()`</em>
+                                </p>
+
+                                <button id="toggle-missing-where-clauses-sample-queries-btn" onclick="toggleInsightSampleQueries('missing-where-clauses')" class="btn-standard">
+                                    <span id="missing-where-clauses-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="missing-where-clauses-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody id="missing-where-clauses-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('complex-join-operations')"><span class="insight-indicator" id="complex-join-operations-indicator"></span>Complex JOIN
+                                Operations</h4>
+                            <div class="insight-content collapsed" id="complex-join-operations-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="complex-join-count">0 queries</span> (<span class="highlight-number" id="complex-join-percent">0%</span>) with JOIN operations detected, with <span class="highlight-number" id="complex-join-flagged-count">0</span> (<span class="highlight-number" id="complex-join-flagged-percent">0%</span>) flagged as complex. Average JOIN phase time: <span class="highlight-number" id="complex-join-avg-time">0s</span>.
+                                </p>
+
+                                <button id="toggle-complex-join-operations-sample-queries-btn" onclick="toggleInsightSampleQueries('complex-join-operations')" class="btn-standard">
+                                    <span id="complex-join-operations-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="complex-join-operations-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 140px;">Request Date</th>
+                                                <th style="width: 100px;">Flags</th>
+                                                <th style="width: 100px;">JOIN Time</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="complex-join-operations-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                    
+                                    <!-- Flag Legend -->
+                                    <div style="margin-top: 10px; padding: 10px 12px; background: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107;">
+                                        <strong style="font-size: 12px; color: #856404;">Flag Legend:</strong>
+                                        <ul style="margin: 8px 0 4px 0; padding-left: 20px; font-size: 11px; color: #856404; line-height: 1.6;">
+                                            <li><strong style="color: #dc3545;">🔴 Critical:</strong> 
+                                                <span style="font-weight: bold;">A</span> = Primary Scan, 
+                                                <span style="font-weight: bold;">B</span> = Cartesian Product, 
+                                                <span style="font-weight: bold;">D</span> = Severe Explosion (10x+)
+                                            </li>
+                                            <li><strong style="color: #fd7e14;">🟡 High:</strong> 
+                                                <span style="font-weight: bold;">C</span> = Data Explosion (2x-10x), 
+                                                <span style="font-weight: bold;">E</span> = Slow JOIN (≥2s), 
+                                                <span style="font-weight: bold;">F</span> = High Doc Count (≥100K), 
+                                                <span style="font-weight: bold;">H</span> = JOIN Time Dominant (≥30%)
+                                            </li>
+                                            <li><strong style="color: #ffc107;">🟠 Medium:</strong> 
+                                                <span style="font-weight: bold;">G</span> = Multiple JOINs (4+)
+                                            </li>
+                                        </ul>
+                                        <em style="font-size: 10px; color: #856404;">💡 Hover over flags in the table above for detailed metrics</em>
+                                        <br>
+                                        <em style="font-size: 10px; color: #856404;">ℹ️ JOIN Time shows "N/A" when Couchbase doesn't report a separate join phase (query may be optimized)</em>
+                                    </div>
+                                </div>
+
+                                <div class="learn-more-section">
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Review JOIN optimization strategies and flag meanings <a
+                                            href="https://cb.fuj.io/analysis_hub.html#complex-joins"
+                                            class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('inefficient-like-operations')"><span class="insight-indicator" id="inefficient-like-operations-indicator"></span>Inefficient
+                                LIKE Operations</h4>
+                            <div class="insight-content collapsed" id="inefficient-like-operations-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="inefficient-like-count">0 queries</span> (<span class="highlight-number" id="inefficient-like-percent">0%</span>) use LIKE
+                                    operations with leading wildcards (<code>%text</code>), preventing index usage and
+                                    causing full scans.
+                                </p>
+
+                                <button id="toggle-inefficient-like-operations-sample-queries-btn" onclick="toggleInsightSampleQueries('inefficient-like-operations')" class="btn-standard">
+                                    <span id="inefficient-like-operations-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="inefficient-like-operations-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody id="inefficient-like-operations-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('select-star-usage')"><span class="insight-indicator" id="select-star-usage-indicator"></span>SELECT * Usage</h4>
+                            <div class="insight-content collapsed" id="select-star-usage-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="select-star-count">0 queries</span> (<span class="highlight-number" id="select-star-percent">0%</span>) use SELECT * which returns entire documents and can increase network I/O and memory. Prefer selecting only needed fields.
+                                </p>
+
+                                <button id="toggle-select-star-usage-sample-queries-btn" onclick="toggleInsightSampleQueries('select-star-usage')" class="btn-standard">
+                                    <span id="select-star-usage-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="select-star-usage-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody id="select-star-usage-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Category -->
+                <div id="performance-opportunities" class="insight-category">
+                    <h3 class="category-title collapsed" onclick="toggleCategory('performance-opportunities')">🚀 Performance
+                        Optimization Opportunities</h3>
+                    <div class="insight-category-content collapsed" id="performance-opportunities-content">
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('large-payload-streaming')"><span class="insight-indicator" id="large-payload-streaming-indicator"></span>Large Payload
+                                Streaming</h4>
+                            <div class="insight-content collapsed" id="large-payload-streaming-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="large-payload-count">0 queries</span> (<span class="highlight-number" id="large-payload-percent">0%</span>) with avg
+                                    size: <span class="highlight-number" id="avg-payload-size">0MB</span> with <span
+                                        class="highlight-number" id="avg-stream-ratio">0%</span> of the time of the
+                                    query was streaming data out to the application.
+                                </p>
+
+                                <button id="toggle-large-payload-streaming-sample-queries-btn" onclick="toggleInsightSampleQueries('large-payload-streaming')" class="btn-standard">
+                                    <span id="large-payload-streaming-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="large-payload-streaming-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="large-payload-streaming-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="learn-more-section">
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Consider implementing pagination for large result sets <a
+                                            href="https://cb.fuj.io/analysis_hub.html#run-strategy"
+                                            class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('large-result-set-queries')"><span class="insight-indicator" id="large-result-set-queries-indicator"></span>Large Result
+                                Set Queries</h4>
+                            <div class="insight-content collapsed" id="large-result-set-queries-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="large-results-count">0 queries</span> (<span class="highlight-number" id="large-results-percent">0%</span>) return
+                                    result sets with avg size of <span class="highlight-number"
+                                        id="avg-large-result-size">0MB</span>, which can consume significant memory and
+                                    network resources.
+                                </p>
+
+                                <button id="toggle-large-result-set-queries-sample-queries-btn" onclick="toggleInsightSampleQueries('large-result-set-queries')" class="btn-standard">
+                                    <span id="large-result-set-queries-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="large-result-set-queries-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Request Date</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="large-result-set-queries-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="learn-more-section">
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Large result sets can impact performance and resource usage <a
+                                            href="https://cb.fuj.io/analysis_hub.html#run-strategy"
+                                            class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('timeout-prone-queries')"><span class="insight-indicator" id="timeout-prone-queries-indicator"></span>Timeout-Prone
+                                Queries</h4>
+                            <div class="insight-content collapsed" id="timeout-prone-queries-content">
+
+                            </div>
+                        </div>
+
+                        <div class="insight-item">
+                            <h4 class="insight-title collapsed" onclick="toggleInsight('concurrent-query-conflicts')"><span class="insight-indicator" id="concurrent-query-conflicts-indicator"></span>Concurrent
+                                Query Conflicts</h4>
+                            <div class="insight-content collapsed" id="concurrent-query-conflicts-content">
+                                <p class="insight-description">
+                                    <span class="highlight-number" id="concurrent-conflicts-count">0 queries</span> (<span class="highlight-number" id="concurrent-conflicts-percent">0%</span>) show evidence of resource contention with service-level performance degradation.
+                                </p>
+
+                                <!-- Service Pressure Summary -->
+                                <div id="concurrent-conflicts-summary" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; display: none;">
+                                    <p style="margin: 0; font-size: 13px; color: #495057;">
+                                        📊 <strong>Service Pressure Analysis:</strong><br>
+                                        <span id="concurrent-conflicts-services-summary"></span>
+                                    </p>
+                                </div>
+
+                                <button id="toggle-concurrent-query-conflicts-sample-queries-btn" onclick="toggleInsightSampleQueries('concurrent-query-conflicts')" class="btn-standard">
+                                    <span id="concurrent-query-conflicts-sample-queries-btn-text">Show Sample Queries</span>
+                                </button>
+                                <div id="concurrent-query-conflicts-sample-queries-container" style="display: none; margin-top: 10px;">
+                                    <!-- Flag Breakdown Section -->
+                                    <div id="concurrent-conflicts-flag-breakdown" style="margin-bottom: 15px; padding: 12px; background: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107;">
+                                        <strong style="font-size: 12px; color: #856404;">🔍 Service Pressure Breakdown:</strong>
+                                        <div id="concurrent-conflicts-flag-grid" style="margin-top: 10px;">
+                                            <!-- Flag items will be dynamically inserted here -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Sample Queries Table -->
+                                    <table class="sample-queries-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 140px;">Request Date</th>
+                                                <th style="width: 100px;">Flags</th>
+                                                <th style="width: 90px;">Parse+Plan</th>
+                                                <th style="width: 90px;">Fetch/Doc</th>
+                                                <th style="width: 110px;">Scan Rate</th>
+                                                <th style="width: 80px;">Kern%</th>
+                                                <th>Statement (unique)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="concurrent-query-conflicts-sample-queries-tbody">
+                                        </tbody>
+                                    </table>
+                                    
+                                    <!-- Flag Legend -->
+                                    <div style="margin-top: 10px; padding: 10px 12px; background: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107;">
+                                        <strong style="font-size: 12px; color: #856404;">Flag Legend:</strong>
+                                        <ul style="margin: 8px 0 4px 0; padding-left: 20px; font-size: 11px; color: #856404; line-height: 1.6;">
+                                            <li><strong style="color: #dc3545;">🔴 Critical:</strong> 
+                                                <span style="font-weight: bold;">B</span> = Parse+Plan >10ms (Query Service critically overloaded), 
+                                                <span style="font-weight: bold;">D</span> = Fetch >10ms/doc (KV critically slow), 
+                                                <span style="font-weight: bold;">F</span> = Scan <1K/sec (Index critically slow), 
+                                                <span style="font-weight: bold;">H</span> = System-Wide (multiple services under pressure)
+                                            </li>
+                                            <li><strong style="color: #fd7e14;">🟡 High:</strong> 
+                                                <span style="font-weight: bold;">A</span> = Parse+Plan >1ms (Query Service pressure), 
+                                                <span style="font-weight: bold;">C</span> = Fetch >5ms/doc (KV pressure), 
+                                                <span style="font-weight: bold;">E</span> = Scan <5K/sec (Index slow), 
+                                                <span style="font-weight: bold;">G</span> = Kernel >30% (CPU contention)
+                                            </li>
+                                        </ul>
+                                        <em style="font-size: 10px; color: #856404;">💡 Hover over flags in the table above for detailed metrics</em>
+                                    </div>
+                                </div>
+
+                                <div class="learn-more-section">
+                                    <div class="learn-more-item">
+                                        <span class="learn-more-icon">💡</span>
+                                        Review service pressure indicators and optimization strategies <a
+                                            href="https://cb.fuj.io/analysis_hub.html#concurrent-conflicts"
+                                            class="insight-link" target="_blank" rel="noopener noreferrer">Learn more</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline Tab Content -->
+        <div id="timeline" data-report-section="timeline">
+            <div id="timeline-controls" class="margin-bottom-10">
+                <span>
+                    <label style="font-weight: bold; margin-right: 8px; color: #495057;">Time Grouping:</label>
+                    <select id="time-grouping-select" onchange="changeTimeGrouping()"
+                        style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px;">
+                        <option value="optimizer">By Optimizer (...)</option>
+                        <option value="day">By Day</option>
+                        <option value="hour">By Hour</option>
+                        <option value="5min">By 5 Minutes</option>
+                        <option value="minute">By Minute</option>
+                        <option value="second">By Second</option>
+                    </select>
+                </span>
+                <span class="color-666 font-size-12 margin-left-20">
+                    Click and drag to zoom
+                </span>
+                <button id="reset-zoom-btn" onclick="resetTimelineZoom()"
+                    class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray">
+                    Reset Zoom
+                </button>
+                <button id="use-time-range-btn" onclick="useCurrentTimeRange()"
+                    class="margin-left-20 cursor-pointer border-none border-radius-3 btn-gray">
+                    Use Charts Current X-Axis Date Range
+                </button>
+                <div class="margin-left-20"
+                    style="display: inline-block; background: #f8f9fa; padding: 6px 10px; border-radius: 4px; border: 1px solid #dee2e6;">
+                    <label style="font-weight: bold; margin-right: 8px; color: #495057;">Y-Axis Scale:</label>
+                    <label><input type="radio" name="yScale" value="linear" checked onchange="changeYAxisScale()" />
+                        Linear</label>
+                    <label class="margin-left-10"><input type="radio" name="yScale" value="logarithmic"
+                            onchange="changeYAxisScale()" />
+                        Logarithmic</label>
+                </div>
+            </div>
+
+            <!-- Row 1: Collection Queries with Custom Legend -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="collection-queries" data-position="timeline-0">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="collection-queries-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container" id="collection-queries-legend-container" style="overflow-y: auto; background-color: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <!-- Custom legend will be populated here -->
+                </div>
+            </div>
+
+            <!-- Row 2: Duration Buckets & Query Types -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="duration-buckets" data-position="timeline-1">
+                    <div class="chart-expand-btn" title="Expand chart" style="left: 5px;">⛶</div>
+                    <button id="open-3d-timeline-chart-btn" style="position: absolute; top: 5px; left: 35px; width: 32px; height: 32px; background: #ff8c00; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; z-index: 100; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Open ECharts 3D Timeline">3D</button>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="duration-buckets-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="query-types" data-position="timeline-2">
+                    <div class="chart-expand-btn" title="Expand chart" style="left: 5px;">⛶</div>
+                    <button id="open-3d-query-types-chart-btn" style="position: absolute; top: 5px; left: 35px; width: 32px; height: 32px; background: #ff8c00; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; z-index: 100; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Open ECharts 3D Query Types">3D</button>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="query-types-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 3: Enhanced Database Operations & Filter Operations -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="enhanced-operations" data-position="timeline-3">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="enhanced-operations-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="filter" data-position="timeline-4" style="position: relative;">
+                    <div class="chart-expand-btn" title="Expand chart" style="left: 5px;">⛶</div>
+                    
+                    <!-- 3D Button -->
+                    <button id="open-3d-filter-chart-btn" 
+                            style="position: absolute; top: 5px; left: 35px; width: 32px; height: 32px; 
+                                   background: #ff8c00; color: white; border: none; border-radius: 4px; 
+                                   cursor: pointer; font-weight: bold; font-size: 12px; z-index: 100; 
+                                   display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" 
+                            title="Open ECharts 3D Filter Operations">3D</button>
+                    
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="filter-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 4: Result Count & Result Size -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="result-count" data-position="timeline-5">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="result-count-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="result-size" data-position="timeline-6">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="result-size-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 5: Index Scan Throughput & Doc Fetch Throughput -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="index-scan-throughput" data-position="timeline-7">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="index-scan-throughput-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="doc-fetch-throughput" data-position="timeline-8">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="doc-fetch-throughput-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 6: Query Performance Timeline KernTime & Document Size Distribution -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="timeline" data-position="timeline-9">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="timeline-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="doc-size-bubble" data-position="timeline-10" style="position: relative;">
+                    <div class="chart-expand-btn" title="Expand chart" style="left: 5px;">⛶</div>
+                    
+                    <!-- 3D Button -->
+                    <button id="open-3d-avg-doc-size-chart-btn" 
+                            style="position: absolute; top: 5px; left: 35px; width: 32px; height: 32px; 
+                                   background: #ff8c00; color: white; border: none; border-radius: 4px; 
+                                   cursor: pointer; font-weight: bold; font-size: 12px; z-index: 100; 
+                                   display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" 
+                            title="Open ECharts 3D Avg Doc Size">3D</button>
+                    
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="doc-size-bubble-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 7: CPU/Kernel/Elapsed Time & Memory -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="cpu-time" data-position="timeline-11">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="cpu-time-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="memory" data-position="timeline-12">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="memory-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 8: ExecTime vs Elapsed & Service Time Analysis -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-elapsed" data-position="timeline-13">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="exec-vs-elapsed-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="service-time-analysis" data-position="timeline-14" style="position: relative;">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    
+                    <!-- 3D Button -->
+                    <button id="open-3d-service-time-btn" 
+                            style="position: absolute; top: 5px; left: 35px; width: 32px; height: 32px; 
+                                   background: #ff8c00; color: white; border: none; border-radius: 4px; 
+                                   cursor: pointer; font-weight: bold; font-size: 12px; z-index: 100; 
+                                   display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" 
+                            title="Open ECharts 3D Service Time">3D</button>
+                    
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="service-time-analysis-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 9: ExecTime vs Kernel & ExecTime vs ServiceTime -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-kernel" data-position="timeline-15">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="exec-vs-kernel-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="exec-vs-serv" data-position="timeline-15b">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="exec-vs-serv-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 9: Parse Duration & Plan Duration -->
+            <div class="display-flex gap-20 margin-bottom-20">
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="parse-duration" data-position="timeline-16">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="parse-duration-chart"></canvas>
+                </div>
+                <div class="flex-1-height-400 chart-container draggable-chart" data-chart-id="plan-duration" data-position="timeline-17">
+                    <div class="chart-expand-btn" title="Expand chart">⛶</div>
+                    <div class="chart-drag-handle" title="Drag to reposition">⋮⋮</div>
+                    <canvas id="plan-duration-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Tab Content -->
+        <div id="analysis" data-report-section="analysis">
+            <!--
+        <div id="charts-placeholder">
+          *Future charts and visualizations will be displayed here.
+          <canvas id="analysis-chart" width="10" height="10"></canvas>
+        </div>
+      -->
+            <!-- Query Group Phase Times Chart -->
+            <div id="analysis-phase-times-section" class="margin-bottom-20">
+                <div class="chart-container" style="height:340px;">
+                    <div style="height: auto;">
+                        <div id="query-group-phase-times-note" style="font-size: 12px; color: #495057; font-weight: 600; margin-bottom: 6px;"></div>
+                        <canvas id="query-group-phase-times-chart" style="width:100%;height:900px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div id="analysis-table-section">
+                <!-- Search Controls for Analysis Table -->
+                <div id="analysis-search-controls"
+                    class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                    <div class="gap-15 display-flex-center display-flex-wrap">
+                        <div>
+                            <label for="analysis-statement-search" class="font-bold-margin-right">Search
+                                Statement:</label>
+                            <input type="text" id="analysis-statement-search"
+                                placeholder="Search in SQL++ statements..." class="form-input" />
+                        </div>
+                        <div>
+                            <label for="analysis-username-search" class="font-bold-margin-right">Search
+                                Username:</label>
+                            <input type="text" id="analysis-username-search" placeholder="Search usernames..."
+                                class="form-input-small" />
+                        </div>
+                        <button id="analysis-clear-search" class="cursor-pointer border-none border-radius-3 btn-gray">
+                            Clear All
+                        </button>
+                        <div id="analysis-search-results-info" class="color-666 font-bold"></div>
+                    </div>
+                </div>
+                <div id="analysis-table-container">
+                    <table id="analysis-table">
+                        <thead id="analysis-table-header"></thead>
+                        <tbody id="analysis-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Every Query Tab Content -->
+        <div id="every-query" data-report-section="every-query">
+            <div id="flow-diagram-section">
+                <div id="flow-diagram"></div>
+            </div>
+            <div id="table-section">
+                <!-- Search Controls -->
+                <div id="search-controls"
+                    class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                    <div class="gap-15 display-flex-center display-flex-wrap">
+                        <div>
+                            <label for="statement-search" class="font-bold-margin-right">Search Statement:</label>
+                            <input type="text" id="statement-search" placeholder="Search in SQL++ statements..."
+                                class="form-input" />
+                        </div>
+                        <div>
+                            <label for="username-search" class="font-bold-margin-right">Search Username:</label>
+                            <input type="text" id="username-search" placeholder="Search usernames..."
+                                class="form-input-small" />
+                        </div>
+                        <button id="clear-search" class="cursor-pointer border-none border-radius-3 btn-gray">
+                            Clear All
+                        </button>
+                        <div id="search-results-info" class="color-666 font-bold"></div>
+                    </div>
+                </div>
+                <div id="table-container">
+                    <table id="query-table">
+                        <thead id="table-header"></thead>
+                        <tbody id="table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Index/Query Flow Tab Content -->
+        <div id="index-query-flow" data-report-section="index-query-flow">
+            <div class="height-100 position-relative background-f8 border-radius-8 overflow-hidden">
+                <!-- Summary counts above the flow chart -->
+                <div id="flow-summary"
+                    class="position-relative z-index-3 background-white padding-10-20 border-bottom">
+                    <div style="display: flex; justify-content: space-between; gap: 30px; align-items: flex-start;">
+                        <!-- LEFT: Indexes count -->
+                        <div style="flex: 0 0 auto; text-align: left;">
+                            <div class="font-bold color-333" style="margin-bottom: 8px;">
+                                Indexes
+                            </div>
+                            <div style="font-size: 24px; font-weight: bold; color: #2563eb;">
+                                <span id="index-count">0</span>
+                            </div>
+                            <div style="font-size: 11px; color: #666;">
+                                Scanned
+                            </div>
+                        </div>
+                        
+                        <!-- CENTER: Filters -->
+                        <div style="flex: 1; display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-start;">
+                            <div>
+                                <label for="bucket-filter-dropdown" class="margin-bottom-5 font-bold-block">Bucket ()*</label>
+                                <select id="bucket-filter-dropdown" class="width-100 padding-8 border-radius-4" style="border: 1px solid #ccc">
+                                    <option value="All">All</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="scope-filter-dropdown" class="margin-bottom-5 font-bold-block">Scope ()*</label>
+                                <select id="scope-filter-dropdown" class="width-100 padding-8 border-radius-4" style="border: 1px solid #ccc">
+                                    <option value="All">All</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="collection-filter-dropdown" class="margin-bottom-5 font-bold-block">Collection ()*</label>
+                                <select id="collection-filter-dropdown" class="width-100 padding-8 border-radius-4" style="border: 1px solid #ccc">
+                                    <option value="All">All</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="index-filter-dropdown" class="margin-bottom-5 font-bold-block">Index Name []*²</label>
+                                <select id="index-filter-dropdown" class="width-100 padding-8 border-radius-4" style="border: 1px solid #ccc">
+                                    <option value="All">All</option>
+                                </select>
+                            </div>
+                            <div style="font-size: 10px; color: #666; align-self: flex-end; margin-left: 10px;">
+                                *: # of unique indexes per filter<br>**: # of times index has been scanned
+                            </div>
+                        </div>
+                        
+                        <!-- RIGHT: Queries counter & Debug Button -->
+                        <div style="flex: 0 0 auto; text-align: right; padding-left: 30px; border-left: 1px solid #ddd;">
+                            <div class="font-bold color-333" style="margin-bottom: 8px;">
+                                Queries
+                            </div>
+                            <div style="font-size: 24px; font-weight: bold; color: #2563eb;">
+                                <span id="query-count">0</span>
+                            </div>
+                            <div style="font-size: 11px; color: #666;">
+                                Executed
+                            </div>
+                            <!-- Debug: Open Mermaid Live button (shown when ?debug=true) -->
+                            <button id="debug-mermaid-btn" 
+                                    onclick="openMermaidLive()" 
+                                    style="display: none; margin-top: 10px; padding: 6px 12px; background: #ff6b35; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;"
+                                    title="Open cached Mermaid diagram in mermaid.live for debugging">
+                                🐛 View Mermaid
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="flow-canvas" class="width-100 calc-height-minus-50 position-relative overflow-auto">
+                    <svg id="flow-svg"
+                        class="width-100 height-100 position-absolute top-0 left-0 pointer-events-none z-index-1"></svg>
+                    <div id="flow-elements" class="position-relative z-index-2 padding-20"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Indexes Tab Content -->
+        <div id="indexes" data-report-section="indexes">
+            <!-- Filter Controls -->
+            <div class="margin-bottom-20 padding-15 background-f8 border-radius-6">
+                <!-- First row: Search, Bucket, Scope, Collection, Sort -->
+                <div class="gap-15 margin-bottom-15" style="display: grid; grid-template-columns: repeat(5, 1fr)">
+                    <div>
+                        <label for="indexSearch" class="margin-bottom-5 font-bold-block">Search:</label>
+                        <input type="text" id="indexSearch" placeholder="Search indexes..."
+                            class="width-90 padding-8 border-radius-4 font-size-14" style="border: 1px solid #ccc" />
+                    </div>
+                    <div>
+                        <label for="bucketFilter" class="margin-bottom-5 font-bold-block">Bucket:</label>
+                        <select id="bucketFilter" class="width-100 padding-8 border-radius-4"
+                            style="border: 1px solid #ccc">
+                            <option value="(ALL)">(ALL)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="scopeFilter" class="margin-bottom-5 font-bold-block">Scope:</label>
+                        <select id="scopeFilter" class="width-100 padding-8 border-radius-4"
+                            style="border: 1px solid #ccc">
+                            <option value="(ALL)">(ALL)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="collectionFilter" class="margin-bottom-5 font-bold-block">Collection:</label>
+                        <select id="collectionFilter" class="width-100 padding-8 border-radius-4"
+                            style="border: 1px solid #ccc">
+                            <option value="(ALL)">(ALL)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="sortBy" class="margin-bottom-5 font-bold-block">Sort By:</label>
+                        <select id="sortBy" class="width-100 padding-8 border-radius-4" style="border: 1px solid #ccc">
+                            <option value="Name">Name</option>
+                            <option value="Bucket">Bucket</option>
+                            <option value="LastScanned">Last Scanned</option>
+                            <option value="OldestScanned">Oldest Scanned</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Panel -->
+            <div id="indexStats" style="
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 6px;
+            font-size: 13px;
+          ">
+                <div style="
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 15px;
+            ">
+                    <div>
+                        <strong>Total Indexes:</strong> <span id="stat-indexes">0</span>
+                    </div>
+                    <div>
+                        <strong>Buckets:</strong> <span id="stat-buckets">0</span>
+                    </div>
+                    <div><strong>Scopes:</strong> <span id="stat-scopes">0</span></div>
+                    <div>
+                        <strong>Collections:</strong> <span id="stat-collections">0</span>
+                    </div>
+                </div>
+                <div style="
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+                margin-top: 8px;
+                ">
+                    <div style="display: flex; align-items: center; gap: 8px">
+                        <span><strong>Primary Indexes:</strong>
+                            <span id="stat-primary">0</span></span>
+                        <label style="
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                  font-size: 11px;
+                ">
+                            <input type="checkbox" id="filter-primary" style="margin: 0" />
+                            Primary Only
+                        </label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px">
+                        <span><strong>Used/Total Indexes:</strong>
+                            <span id="stat-used-total">0/0</span></span>
+                        <label style="
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                  font-size: 11px;
+                ">
+                            <input type="checkbox" id="filter-used" style="margin: 0" />
+                            Used Only
+                        </label>
+                    </div>
+                    </div>
+                    <div style="
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 15px;
+                    margin-top: 8px;
+                    ">
+                    <div style="display: flex; align-items: center; gap: 8px">
+                        <span><strong>Without/With Replica:</strong>
+                            <span id="stat-replica-info">0/0</span></span>
+                        <label style="
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                  font-size: 11px;
+                ">
+                            <input type="checkbox" id="filter-no-replica" style="margin: 0" />
+                            No Replicas Only
+                        </label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px">
+                        <span><strong>Index Type:</strong></span>
+                        <label style="display:flex; align-items:center; gap:4px; font-size:11px;">
+                            <input type="radio" name="indexTypeFilter" value="all" id="filter-type-all" checked style="margin:0" />
+                            All Indexes
+                        </label>
+                        <label style="display:flex; align-items:center; gap:4px; font-size:11px;">
+                            <input type="radio" name="indexTypeFilter" value="gsi" id="filter-type-gsi" style="margin:0" />
+                            GSI Only
+                        </label>
+                        <label style="display:flex; align-items:center; gap:4px; font-size:11px;">
+                            <input type="radio" name="indexTypeFilter" value="fts" id="filter-type-fts" style="margin:0" />
+                            FTS Only
+                        </label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px">
+                        <span><strong>Never Scanned Indexes:</strong>
+                            <span id="stat-never-scanned">0</span></span>
+                        <label style="
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                  font-size: 11px;
+                ">
+                            <input type="checkbox" id="filter-never-scanned" style="margin: 0" />
+                            Never Scanned Only
+                        </label>
+                    </div>
+                </div>
+                <div style="
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 15px;
+              margin-top: 8px;
+            ">
+                    <div style="display: flex; align-items: center; gap: 8px">
+                        <span><strong>Sync Gateway Indexes:</strong>
+                            <span id="stat-mobile-indexes">0</span></span>
+                        <label style="
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                  font-size: 11px;
+                ">
+                            <input type="checkbox" id="filter-exclude-mobile" style="margin: 0" />
+                            Exclude Mobile Indexes
+                        </label>
+                    </div>
+                    <div></div>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div id="indexResults" class="background-white padding-15" style="
+            overflow-y: auto;
+            height: calc(100% - 120px);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+          ">
+                <div class="text-align-center" style="margin-top: 30px">
+                    <h4 style="color: #495057; margin-bottom: 20px">
+                        No Index Data Loaded
+                    </h4>
+                    <p class="color-666" style="margin-bottom: 20px">
+                        To analyze indexes, run this query in your Couchbase Query
+                        Workbench and paste the results in the second textarea above:
+                    </p>
+                    <div style="display: flex; justify-content: center;">
+                        <div class="sql-query-box" style="text-align: left; max-width: fit-content;">
+                            <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">
+                                Copy Query
+                            </button>
+                            <pre>SELECT 
+    s.name,
+    s.id,
+    s.metadata,
+    s.state,
+    s.num_replica,
+    s.`using` AS indexType,
+    CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
+FROM system:indexes AS s
+LET bid = CONCAT("", s.bucket_id, ""),
+    sid = CONCAT("", s.scope_id, ""),
+    kid = CONCAT("", s.keyspace_id, ""),
+    k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
+    ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
+    w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
+    p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;</pre>
+                        </div>
+                    </div>
+                    <p style="color: #666; font-size: 13px; margin-top: 15px">
+                        <strong>Steps:</strong><br />
+                        1. Copy the query above<br />
+                        2. Run it in Couchbase Query Workbench<br />
+                        3. Copy the JSON results<br />
+                        4. Paste into the second textarea ,on the right, at the top<br />
+                        5. Click "Analyze" again
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Schema Inference Tab Content -->
+        <div id="schema-inference" data-report-section="schema-inference" style="padding: 15px; height: 100%; display: flex; flex-direction: column;">
+            <div style="display: flex; gap: 15px; flex: 1; min-height: 0;">
+                <!-- Left Panel: Tree View -->
+                <div style="flex: 0 0 400px; background: white; border: 1px solid #ddd; border-radius: 4px; padding: 15px; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 8px;">
+                        <h3 style="margin: 0; color: #333; font-size: 16px;">Schema Tree</h3>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="expandAllSchemaTree()" class="btn-standard" style="padding: 4px 10px; font-size: 11px;" title="Expand all folders">
+                                ▼ Expand All
+                            </button>
+                            <button onclick="collapseAllSchemaTree()" class="btn-standard" style="padding: 4px 10px; font-size: 11px;" title="Collapse all folders">
+                                ▶ Collapse All
+                            </button>
+                        </div>
+                    </div>
+                    <div id="schema-tree-container"></div>
+                </div>
+                
+                <!-- Right Panel: Details -->
+                <div style="flex: 1; background: white; border: 1px solid #ddd; border-radius: 4px; padding: 15px; overflow-y: auto;">
+                    <div id="schema-detail-panel">
+                        <p style="color: #6c757d; text-align: center; margin-top: 50px;">Select a schema from the tree to view details</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports / History Tab Content -->
+        <div id="reports-history" data-report-section="reports-history" style="padding: 20px;">
+
+
+            <!-- Report Maker Section -->
+            <div class="insight-category" id="report-maker-section">
+                <h3 class="category-title" onclick="toggleCategory('report-maker-section')">Report Maker</h3>
+                <div class="insight-category-content" id="report-maker-section-content">
+                    <div style="padding: 15px;">
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
+                            <button id="btn-preview-report" class="btn-standard" style="background:#0d6efd;color:#fff"></button>
+                            <button id="btn-print-report" class="btn-standard"></button>
+                            <button id="btn-exit-report" class="btn-standard"></button>
+                        </div>
+                        <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                            <h3 id="rm-select-sections-title" style="margin:0 0 8px 0;"></h3>
+                            <div id="report-sections" style="display:flex; gap: 16px; flex-wrap: wrap;">
+                                <label><input type="checkbox" data-section="dashboard" checked> Dashboard</label>
+                                <label><input type="checkbox" data-section="insights" checked> Insights</label>
+                                <label><input type="checkbox" data-section="timeline" checked> Timeline</label>
+                                <label><input type="checkbox" data-section="analysis" checked> Query Groups</label>
+                                <label><input type="checkbox" data-section="every-query"> Every Query</label>
+                                <label><input type="checkbox" data-section="index-query-flow"> Index/Query Flow</label>
+                                <label><input type="checkbox" data-section="indexes"> Indexes</label>
+                            </div>
+                        </div>
+                        <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                            <h3 id="rm-select-timeline-title" style="margin:0 0 8px 0;"></h3>
+                            <div id="report-timeline-charts" style="display:flex; gap: 16px; flex-wrap: wrap;"></div>
+                        </div>
+                        <div class="background-f5 padding-15 margin-bottom-10 border-radius-5 border-1-ddd">
+                            <h3 id="rm-options-title" style="margin:0 0 8px 0;"></h3>
+                            <label style="margin-right:16px;"><input type="checkbox" id="opt-include-header" checked> <span id="rm-opt-include-header"></span></label>
+                            <label style="margin-right:16px;"><input type="checkbox" id="opt-include-filters" checked> <span id="rm-opt-include-filters"></span></label>
+                            <label style="margin-right:16px;"><input type="checkbox" id="opt-flatten-tables" checked> <span id="rm-opt-flatten-tables"></span></label>
+                            <label style="margin-right:16px;"><input type="checkbox" id="opt-charts-as-images" checked> <span id="rm-opt-charts-as-images"></span></label>
+                        </div>
+                        <div class="report-tip" style="margin-top:8px; margin-bottom:12px;">
+                            <div class="tip-text" style="font-size:16px; font-weight:700; color:#343a40;"><span class="badge-pro">PRO</span> Use SQL++ filter and/or Elapsed Time filter in Data & Filters above to narrow stats and analysis to specific queries or time ranges before generating your report.</div>
+                            <div style="margin-top:16px; padding:12px; background:#f8f9fa; border-radius:8px; border:2px dashed #007acc; max-width:450px;">
+                                <div style="font-size:12px; font-weight:600; color:#007acc; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Example</div>
+                                <img src="https://cb.fuj.io/img/sql_string_filter_and_exclude_system_example.png" alt="Report Maker filters and exclude system example" style="max-width:75%; height:75px; border:2px solid #007acc; border-radius:6px; box-shadow:0 4px 12px rgba(0,122,204,0.15); display:block;" loading="lazy">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+     <!-- Modals (outside tabs) -->
+    <div id="plan-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">×</span>
+            <div id="plan-modal-body"></div>
+        </div>
+    </div>
+    <div id="operator-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">×</span>
+            <div id="operator-modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Settings Modal (Issue #231) -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content settings-modal-content">
+            <span class="close">×</span>
+            <h2>Settings</h2>
+            <div id="settings-modal-body">
+                <!-- Settings Tabs -->
+                <div id="settings-tabs">
+                    <ul class="settings-tab-list">
+                        <li><a href="#settings-tab-storage">Save Data To CB</a></li>
+                        <li><a href="#settings-tab-ai-api">Users' AI API</a></li>
+                        <li><a href="#settings-tab-ai-admin">AI Admin</a></li>
+                    </ul>
+                    
+                    <!-- Tab 1: Save Data To CB -->
+                    <div id="settings-tab-storage">
+                        <p style="color: #666; font-size: 0.9em; margin: 0 0 20px 0; padding: 10px; background: #f0f9ff; border-left: 3px solid #3b82f6; border-radius: 4px;">
+                            <strong>Note:</strong> This cluster is used to <em>store</em> your Query Analyzer preferences and settings. 
+                            It is <strong>not</strong> the cluster you're analyzing queries from (paste query data in the main input boxes).
+                        </p>
+                        
+                        <div class="settings-section">
+                            <h3>Storage Cluster Connection</h3>
+                            <div id="cluster-list"></div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h3>Bucket Configuration</h3>
+                            <div class="settings-row">
+                                <label>Bucket Name:</label>
+                                <input type="text" id="bucket-name" value="cb_tools" />
+                            </div>
+                            <div class="settings-row">
+                                <label>Analyzer Keyspace:</label>
+                                <code id="analyzer-keyspace">cb_tools.query.analyzer</code>
+                            </div>
+                            <div class="settings-row">
+                                <label>Preferences Keyspace:</label>
+                                <code id="preferences-keyspace">cb_tools._default._default</code>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h3>User Preferences</h3>
+                            <div class="settings-row">
+                                <label>
+                                    <input type="checkbox" id="save-timezone" checked />
+                                    Save timezone preference to Couchbase
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tab 2: Users' AI API -->
+                    <div id="settings-tab-ai-api">
+                        <div class="settings-section">
+                            <h3>AI API Configuration</h3>
+                            <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                                Configure your AI API keys for future AI-powered features. The <strong>first provider in the list is the default</strong>.
+                            </p>
+                            
+                            <!-- AI providers will be dynamically rendered here -->
+                            <div id="ai-providers-container"></div>
+                            
+                            <!-- Custom AI API Section -->
+                            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px dashed #ccc;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <h3 style="margin: 0;">Custom AI APIs</h3>
+                                    <button class="btn-standard" onclick="openCustomAIModal()" style="background: #28a745; color: white;">
+                                        + Add Custom API
+                                    </button>
+                                </div>
+                                <p style="color: #666; font-size: 0.9em; margin: 10px 0;">
+                                    Add custom AI API endpoints (local LLMs, alternative providers, etc.)
+                                </p>
+                                <div id="custom-ai-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tab 3: AI Admin -->
+                    <div id="settings-tab-ai-admin">
+                        <div class="settings-section">
+                            <h3>AI Configuration Management</h3>
+                            <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                                Manage AI reference documents stored in Couchbase. These documents control the reference URLs and available AI models.
+                            </p>
+                            
+                            <!-- Payload Reference Section -->
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e0e0e0;">
+                                <h4 style="margin: 0 0 10px 0; color: #333;">📄 Payload Reference</h4>
+                                <p style="color: #666; font-size: 0.85em; margin-bottom: 12px;">
+                                    Contains reference URLs for Couchbase documentation, index creation syntax, and optimization guides used in AI analysis.
+                                </p>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <button class="btn-standard" onclick="seedPayloadReference()" style="background: #28a745; color: white;">
+                                        🌱 Seed to Couchbase
+                                    </button>
+                                    <button class="btn-standard" onclick="seedPayloadReference(true)" style="background: #fd7e14; color: white;">
+                                        🔄 Force Refresh
+                                    </button>
+                                    <button class="btn-standard" onclick="viewPayloadReference()">
+                                        👁️ View Current
+                                    </button>
+                                </div>
+                                <div id="payload-ref-status" style="margin-top: 10px; font-size: 0.85em;"></div>
+                            </div>
+                            
+                            <!-- AI Models List Section -->
+                            <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #b8daff;">
+                                <h4 style="margin: 0 0 10px 0; color: #333;">🤖 AI Models List</h4>
+                                <p style="color: #666; font-size: 0.85em; margin-bottom: 12px;">
+                                    Contains available AI models with context windows, token limits, and pricing. Update when providers release new models.
+                                </p>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <button class="btn-standard" onclick="seedAIModels()" style="background: #28a745; color: white;">
+                                        🌱 Seed to Couchbase
+                                    </button>
+                                    <button class="btn-standard" onclick="seedAIModels(true)" style="background: #fd7e14; color: white;">
+                                        🔄 Force Refresh
+                                    </button>
+                                    <button class="btn-standard" onclick="viewAIModels()">
+                                        👁️ View Current
+                                    </button>
+                                    <button class="btn-standard" onclick="openAddModelModal()" style="background: #17a2b8; color: white;">
+                                        ➕ Add New Model
+                                    </button>
+                                </div>
+                                <div id="ai-models-status" style="margin-top: 10px; font-size: 0.85em;"></div>
+                            </div>
+                            
+                            <!-- Quick Add Model Form -->
+                            <div id="add-model-section" style="display: none; background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffc107;">
+                                <h4 style="margin: 0 0 15px 0; color: #333;">➕ Quick Add Model</h4>
+                                <div class="settings-row">
+                                    <label>Provider:</label>
+                                    <select id="new-model-provider" style="width: 200px;">
+                                        <option value="openai">OpenAI</option>
+                                        <option value="claude">Anthropic Claude</option>
+                                        <option value="grok">xAI Grok</option>
+                                    </select>
+                                </div>
+                                <div class="settings-row">
+                                    <label>Model ID:</label>
+                                    <input type="text" id="new-model-id" placeholder="e.g., gpt-5-turbo" style="width: 300px;" />
+                                </div>
+                                <div class="settings-row">
+                                    <label>Display Name:</label>
+                                    <input type="text" id="new-model-name" placeholder="e.g., GPT-5 Turbo (Fastest)" style="width: 300px;" />
+                                </div>
+                                <div class="settings-row">
+                                    <label>Context Window:</label>
+                                    <input type="number" id="new-model-context" placeholder="128000" style="width: 150px;" />
+                                    <span style="color: #666; margin-left: 5px;">tokens</span>
+                                </div>
+                                <div class="settings-row">
+                                    <label>Max Output Tokens:</label>
+                                    <input type="number" id="new-model-output" placeholder="16384" style="width: 150px;" />
+                                </div>
+                                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                    <button class="btn-standard" onclick="saveNewModel()" style="background: #28a745; color: white;">
+                                        💾 Save Model
+                                    </button>
+                                    <button class="btn-standard" onclick="closeAddModelModal()">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Cache Management -->
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                <h4 style="margin: 0 0 10px 0; color: #333;">🗑️ Cache Management</h4>
+                                <p style="color: #666; font-size: 0.85em; margin-bottom: 12px;">
+                                    Clear cached data to force reload from Couchbase on next use.
+                                </p>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="btn-standard" onclick="invalidateAllCaches()">
+                                        Clear All Caches
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-actions">
+                    <button class="btn-standard" onclick="testConnection()">Test Connection</button>
+                    <button class="btn-standard" onclick="saveSettings()">Save Settings</button>
+                    <button class="btn-standard" onclick="closeSettingsModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom AI API Modal -->
+    <div id="custom-ai-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <span class="close" onclick="closeCustomAIModal()">&times;</span>
+            <h2 id="custom-ai-modal-title">Add Custom AI API</h2>
+            
+            <div style="padding: 20px;">
+                <!-- Basic Info -->
+                <div class="settings-section">
+                    <h3>Basic Configuration</h3>
+                    <div class="settings-row">
+                        <label>API Name: <span style="color: red;">*</span></label>
+                        <input type="text" id="custom-ai-name" placeholder="e.g., My Local LLM, Ollama, etc." style="width: 300px;" />
+                    </div>
+                    <div class="settings-row">
+                        <label>API URL: <span style="color: red;">*</span></label>
+                        <input type="text" id="custom-ai-url" placeholder="https://api.example.com/v1/chat/completions" style="width: 400px;" />
+                    </div>
+                    <div class="settings-row">
+                        <label>Model Name:</label>
+                        <input type="text" id="custom-ai-model" placeholder="e.g., llama3, mistral-7b" style="width: 300px;" />
+                    </div>
+                </div>
+                
+                <!-- Authentication -->
+                <div class="settings-section">
+                    <h3>Authentication</h3>
+                    <div class="settings-row">
+                        <label>Auth Type:</label>
+                        <select id="custom-ai-auth-type" onchange="updateCustomAIAuthFields()" style="width: 200px;">
+                            <option value="none">None</option>
+                            <option value="bearer">Bearer Token</option>
+                            <option value="api-key-header">API Key (Header)</option>
+                            <option value="basic">Basic Auth</option>
+                            <option value="digest">Digest Auth</option>
+                        </select>
+                    </div>
+                    <div id="custom-ai-auth-fields" style="margin-top: 10px;"></div>
+                </div>
+                
+                <!-- Custom Headers -->
+                <div class="settings-section">
+                    <h3>Custom Headers</h3>
+                    <p style="color: #666; font-size: 0.85em; margin-bottom: 10px;">
+                        Add any additional headers required by your API.
+                    </p>
+                    <div id="custom-ai-headers-list"></div>
+                    <button class="btn-standard" onclick="addCustomAIHeader()" style="margin-top: 8px; font-size: 12px;">
+                        + Add Header
+                    </button>
+                </div>
+                
+                <!-- Request Template -->
+                <div class="settings-section">
+                    <h3>Request Body Template</h3>
+                    <p style="color: #666; font-size: 0.85em; margin-bottom: 10px;">
+                        Define the JSON request body. Use <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">{{PAYLOAD}}</code> where the analysis data should be inserted.
+                        Use <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">{{MODEL}}</code> for the model name.
+                    </p>
+                    <textarea id="custom-ai-request-template" 
+                              style="width: 100%; height: 200px; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;"
+                              placeholder='{
+  "model": "{{MODEL}}",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a Couchbase query performance analyst."
+    },
+    {
+      "role": "user", 
+      "content": "Analyze this data: {{PAYLOAD}}"
+    }
+  ],
+  "max_tokens": 4096
+}'></textarea>
+                </div>
+                
+                <!-- Response Mapping -->
+                <div class="settings-section">
+                    <h3>Response Mapping</h3>
+                    <p style="color: #666; font-size: 0.85em; margin-bottom: 10px;">
+                        Specify the JSON path to extract the AI response text from the API response.
+                    </p>
+                    <div class="settings-row">
+                        <label>Response Path:</label>
+                        <input type="text" id="custom-ai-response-path" 
+                               placeholder="e.g., choices[0].message.content or content[0].text" 
+                               style="width: 350px;" />
+                    </div>
+                    <div style="margin-top: 10px; background: #f8f9fa; padding: 12px; border-radius: 4px; font-size: 0.85em;">
+                        <strong>Common Response Paths:</strong><br>
+                        <code>choices[0].message.content</code> - OpenAI/Grok format<br>
+                        <code>content[0].text</code> - Anthropic/Claude format<br>
+                        <code>response</code> - Simple text response<br>
+                        <code>message.content</code> - Ollama format
+                    </div>
+                </div>
+                
+                <!-- cURL Preview -->
+                <div class="settings-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0;">cURL Preview</h3>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-standard" onclick="generateCurlPreview()" style="font-size: 12px; padding: 6px 12px;">
+                                Generate cURL
+                            </button>
+                            <button class="btn-standard" onclick="copyCurlPreview()" style="font-size: 12px; padding: 6px 12px;">
+                                Copy
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="custom-ai-curl-preview" 
+                              readonly 
+                              style="width: 100%; height: 150px; font-family: monospace; font-size: 11px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: #1e1e1e; color: #d4d4d4; margin-top: 10px; resize: vertical;"
+                              placeholder="Click 'Generate cURL' to preview the request as a cURL command..."></textarea>
+                </div>
+                
+                <!-- Actions -->
+                <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; align-items: center;">
+                    <span id="custom-ai-test-status" style="font-size: 12px; margin-right: 10px;"></span>
+                    <button id="custom-ai-test-btn" class="btn-standard" onclick="testCustomAIConfig()" style="background: #17a2b8; color: white;">
+                        🧪 Test Configuration
+                    </button>
+                    <button class="btn-standard" onclick="saveCustomAI()" style="background: #28a745; color: white;">
+                        Save Custom API
+                    </button>
+                    <button class="btn-standard" onclick="closeCustomAIModal()">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Chart Overlay (Issue #139) -->
+    <div id="chart-fullscreen-overlay" class="chart-fullscreen-overlay">
+        <div class="chart-fullscreen-content">
+            <button class="chart-reset-zoom-btn" title="Reset zoom">Reset Zoom</button>
+            <div class="chart-collapse-btn" title="Collapse chart">✕</div>
+            <canvas id="fullscreen-chart-canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- AI JSON Preview Overlay -->
+    <div id="ai-preview-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; overflow: hidden;">
+        <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; padding: 20px;">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 style="color: white; margin: 0; font-size: 24px;">AI Analysis Preview - JSON Payload</h2>
+                <button onclick="closeAIPreview()" style="background: #dc3545; color: white; border: none; padding: 10px 20px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 4px;">
+                    Close
+                </button>
+            </div>
+            
+            <!-- Info Bar -->
+            <div style="background: #fff3cd; padding: 12px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #ffc107;">
+                <strong style="color: #856404;">This is the exact JSON that will be sent to your AI provider.</strong>
+                <span style="color: #856404; margin-left: 8px;">Review the data below before sending for analysis.</span>
+            </div>
+            
+            <!-- JSON Content -->
+            <div style="flex: 1; background: #1e1e1e; border: 2px solid #444; border-radius: 8px; overflow-y: auto; padding: 20px; font-family: 'Courier New', monospace; min-height: 0;">
+                <pre id="ai-preview-json" style="color: #d4d4d4; margin: 0; white-space: pre-wrap; word-wrap: break-word; font-size: 13px; line-height: 1.6;"></pre>
+            </div>
+            
+            <!-- Footer Actions -->
+            <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <button onclick="copyAIPreviewJSON()" class="btn-standard" style="background: #28a745; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
+                    Copy to Clipboard
+                </button>
+                <div style="color: #aaa; font-size: 13px;">
+                    <span id="ai-preview-size"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Raw Record Fullscreen Overlay -->
+    <div id="raw-record-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10001; overflow: hidden;">
+        <div style="position: relative; width: 95%; height: 95%; margin: 2.5%; background: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); display: flex; flex-direction: column;">
+            <!-- Header -->
+            <div style="background: #f5f5f5; padding: 15px 20px; border-bottom: 1px solid #ddd; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; font-size: 18px; color: #333;">Raw Record - Complete JSON</h2>
+                    <span id="raw-record-overlay-info" style="color: #666; font-size: 12px; margin-top: 4px; display: inline-block;"></span>
+                </div>
+                <button onclick="closeRawRecordOverlay()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 4px;">
+                    ✕ Close
+                </button>
+            </div>
+            
+            <!-- JSON Content Container -->
+            <div style="flex: 1; padding: 15px; overflow-y: auto; position: relative; background: white;">
+                <button id="copy-raw-record-overlay-btn" 
+                        class="btn-standard" 
+                        onclick="copyRawRecordOverlayJSON()"
+                        style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; font-size: 12px; z-index: 10;"
+                        title="Copy entire JSON record to clipboard">
+                    Copy JSON
+                </button>
+                <pre id="raw-record-overlay-json" style="white-space: pre-wrap; word-break: break-word; margin: 0; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6; color: #333;"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Analysis View Overlay -->
+    <div id="ai-view-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 10000; overflow: hidden;">
+        <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; padding: 15px;">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                <h2 style="color: #333; margin: 0; font-size: 20px;">AI Analysis Results</h2>
+                <button onclick="closeAIView()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 4px;">
+                    ✕ Close
+                </button>
+            </div>
+            
+            <!-- Content Grid -->
+            <div id="ai-view-content-grid" style="display: flex; gap: 12px; flex: 1; min-height: 0;">
+                <!-- Left: Context/Inputs (Collapsible) -->
+                <div id="ai-view-left-panel" style="width: 0; min-width: 0; overflow: hidden; transition: width 0.3s ease, min-width 0.3s ease, padding 0.3s ease; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div style="width: 250px; padding: 15px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+                        <h3 style="color: #007bff; margin: 0 0 12px 0; font-size: 16px; border-bottom: 2px solid #007bff; padding-bottom: 6px;">Analysis Context</h3>
+                        <div id="ai-view-context" style="color: #333; font-size: 12px; line-height: 1.6;"></div>
+                    </div>
+                </div>
+                
+                <!-- Toggle Button -->
+                <button id="ai-view-toggle-btn" onclick="toggleAIViewPanel()" style="align-self: flex-start; background: #007bff; color: white; border: none; padding: 8px 6px; font-size: 14px; cursor: pointer; border-radius: 4px; margin-top: 10px; display: flex; align-items: center; gap: 4px;" title="Show Context Panel">
+                    <span id="ai-view-toggle-arrow" style="display: inline-block; transition: transform 0.3s ease;">▶</span>
+                </button>
+                
+                <!-- Right: AI Response -->
+                <div style="flex: 1; background: white; border: 1px solid #ddd; border-radius: 6px; overflow-y: auto; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <h3 style="color: #28a745; margin: 0 0 12px 0; font-size: 16px; border-bottom: 2px solid #28a745; padding-bottom: 6px;">AI Recommendations</h3>
+                    <div id="ai-view-response" style="color: #333; font-size: 13px; line-height: 1.5;"></div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 20px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <button onclick="copyAIResponseAsMarkdown()" class="btn-standard" style="background: #28a745; color: white; padding: 8px 16px; font-size: 13px; font-weight: bold;">
+                   Copy Analysis as Markdown
+                </button>
+                <div style="color: #666; font-size: 12px;">
+                    <span id="ai-view-stats"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

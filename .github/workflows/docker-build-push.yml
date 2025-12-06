@@ -1,15 +1,21 @@
-name: Build and Push Docker Image
+name: Build and Push Docker Images
 
 on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - main
 
 jobs:
-  build-and-push:
+  # ==========================================================================
+  # Static Edition (v3.x) - Nginx serving static files
+  # ==========================================================================
+  build-static:
+    name: Static Edition (Nginx)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -28,24 +34,69 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
+      - name: Extract metadata (Static)
+        id: meta-static
         uses: docker/metadata-action@v5
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer
           tags: |
-            type=ref,event=pr
-            type=sha,prefix=dev-,enable={{is_not_default_branch}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=pr,suffix=-static
+            type=raw,value=static-latest,enable={{is_default_branch}}
             type=raw,value=3.29.3,enable={{is_default_branch}}
             type=raw,value=v3.29.3,enable={{is_default_branch}}
 
-      - name: Build and push Docker image
+      - name: Build and push Static Edition
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-static.outputs.tags }}
+          labels: ${{ steps.meta-static.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+
+  # ==========================================================================
+  # Server Edition (v4.x) - Flask with Couchbase & AI
+  # ==========================================================================
+  build-server:
+    name: Server Edition (Flask)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata (Server)
+        id: meta-server
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer
+          tags: |
+            type=ref,event=pr,suffix=-server
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=server-latest,enable={{is_default_branch}}
+            type=raw,value=4.0.0,enable={{is_default_branch}}
+            type=raw,value=v4.0.0,enable={{is_default_branch}}
+            type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/v4') }}
+
+      - name: Build and push Server Edition
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./app/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-server.outputs.tags }}
+          labels: ${{ steps.meta-server.outputs.labels }}
           platforms: linux/amd64,linux/arm64

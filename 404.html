@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found | Couchbase Query Analyzer</title>
+    <meta name="robots" content="noindex, nofollow">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+        }
+        
+        .error-code {
+            font-size: 8rem;
+            font-weight: 900;
+            color: #e94560;
+            text-shadow: 0 0 40px rgba(233, 69, 96, 0.5);
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+        
+        .liquid-snake-img {
+            width: 200px;
+            height: auto;
+            margin: 20px auto;
+            filter: drop-shadow(0 0 20px rgba(233, 69, 96, 0.4));
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .quote {
+            font-size: 2.5rem;
+            font-style: italic;
+            font-weight: 700;
+            color: #e94560;
+            margin: 30px 0;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+            position: relative;
+        }
+        
+        .quote::before,
+        .quote::after {
+            content: '"';
+            font-size: 4rem;
+            color: #e94560;
+            opacity: 0.5;
+            position: absolute;
+        }
+        
+        .quote::before {
+            top: -20px;
+            left: -30px;
+        }
+        
+        .quote::after {
+            bottom: -40px;
+            right: -30px;
+        }
+        
+        .attribution {
+            font-size: 1.2rem;
+            color: #a0a0a0;
+            margin-bottom: 30px;
+        }
+        
+        .message {
+            font-size: 1.1rem;
+            color: #c0c0c0;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .home-link {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #e94560 0%, #c23a51 100%);
+            color: #fff;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(233, 69, 96, 0.4);
+        }
+        
+        .home-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(233, 69, 96, 0.6);
+        }
+        
+        .snake-emoji {
+            font-size: 1.5rem;
+            margin-left: 8px;
+        }
+        
+        footer {
+            position: fixed;
+            bottom: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        footer a {
+            color: #888;
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            color: #e94560;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="error-code">404</div>
+        
+        <img src="assets/img/Liquid_Snake.png" alt="Liquid Snake" class="liquid-snake-img">
+        
+        <div class="quote">I'm YOU. I'm your shadow!</div>
+        <div class="attribution">— Liquid Snake</div>
+        
+        <p class="message">
+            The page you're looking for has gone into hiding...<br>
+            But don't worry, the mission continues.
+        </p>
+        
+        <a href="https://cb.fuj.io/" class="home-link">
+            Return to Base <span class="snake-emoji">🐍</span>
+        </a>
+    </div>
+    
+    <footer>
+        <a href="https://github.com/Fujio-Turner/cb_completed_request">Couchbase Query Analyzer</a> &copy; 2025 <a href="https://fuj.io">fuj.io</a>
+    </footer>
+</body>
+</html>
