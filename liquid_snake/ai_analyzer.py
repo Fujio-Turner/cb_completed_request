@@ -311,6 +311,298 @@ def invalidate_payload_reference_cache():
     ic("🗑️ Invalidated payload_reference cache")
 
 # ============================================================================
+# AI Models List Manager
+# ============================================================================
+
+# In-memory cache for AI models list (loaded from Couchbase)
+_ai_models_cache: Optional[Dict[str, Any]] = None
+_ai_models_cache_time: float = 0
+AI_MODELS_CACHE_TTL = 300  # 5 minutes
+
+def get_ai_models_template() -> Dict[str, Any]:
+    """
+    Load ai_models_list.json.template as fallback/seed data
+    
+    Returns:
+        Template dict with AI model configurations
+    """
+    import os
+    template_path = os.path.join(os.path.dirname(__file__), 'ai_models_list.json.template')
+    
+    try:
+        with open(template_path, 'r') as f:
+            template = json.load(f)
+            ic(f"📄 Loaded ai_models_list.json.template")
+            return template
+    except FileNotFoundError:
+        ic(f"⚠️ Template file not found: {template_path}")
+        return {}
+    except json.JSONDecodeError as e:
+        ic(f"❌ Invalid JSON in template: {e}")
+        return {}
+
+def load_ai_models_list(cluster, bucket_name: str = None) -> Dict[str, Any]:
+    """
+    Load ai_models_list document from Couchbase bucket._default._default
+    Auto-seeds from template if document doesn't exist, is empty, or is malformed
+    
+    Args:
+        cluster: Couchbase cluster connection
+        bucket_name: Bucket name (uses 'cb_tools' if not specified)
+        
+    Returns:
+        AI models list dict with provider configurations
+    """
+    global _ai_models_cache, _ai_models_cache_time
+    
+    # Import Couchbase exceptions for proper handling
+    try:
+        from couchbase.exceptions import (
+            DocumentNotFoundException,
+            TimeoutException,
+            CouchbaseException
+        )
+    except ImportError:
+        DocumentNotFoundException = Exception
+        TimeoutException = Exception
+        CouchbaseException = Exception
+    
+    # Check cache first
+    if _ai_models_cache and (time.time() - _ai_models_cache_time) < AI_MODELS_CACHE_TTL:
+        ic("📦 Using cached ai_models_list")
+        return _ai_models_cache
+    
+    bucket_name = bucket_name or 'cb_tools'
+    doc_key = 'ai_models_list'
+    
+    try:
+        bucket = cluster.bucket(bucket_name)
+        collection = bucket.scope('_default').collection('_default')
+        
+        result = collection.get(doc_key)
+        models_list = result.content_as[dict]
+        
+        # Validate document has required structure
+        if not models_list or not models_list.get('providers'):
+            ic("⚠️ ai_models_list document is empty or malformed, re-seeding from template")
+            raise ValueError("Document empty or missing required fields")
+        
+        # Update cache
+        _ai_models_cache = models_list
+        _ai_models_cache_time = time.time()
+        
+        ic(f"✅ Loaded ai_models_list from Couchbase {bucket_name}._default._default")
+        return models_list
+        
+    except DocumentNotFoundException:
+        ic(f"📄 ai_models_list not found in {bucket_name}._default._default, auto-seeding from template")
+        return _auto_seed_ai_models(cluster, bucket_name)
+        
+    except TimeoutException as e:
+        ic(f"⏰ Timeout loading ai_models_list: {e}")
+        ic("📄 Falling back to template file")
+        return _fallback_to_ai_models_template()
+        
+    except ValueError as e:
+        ic(f"⚠️ Invalid ai_models_list: {e}")
+        return _auto_seed_ai_models(cluster, bucket_name)
+        
+    except CouchbaseException as e:
+        ic(f"❌ Couchbase error loading ai_models_list: {e}")
+        return _fallback_to_ai_models_template()
+        
+    except Exception as e:
+        ic(f"💥 Unexpected error loading ai_models_list: {e}")
+        return _fallback_to_ai_models_template()
+
+
+def _auto_seed_ai_models(cluster, bucket_name: str) -> Dict[str, Any]:
+    """
+    Auto-seed ai_models_list from template and return it
+    """
+    global _ai_models_cache, _ai_models_cache_time
+    
+    template = get_ai_models_template()
+    
+    if not template:
+        ic("❌ Template file missing or invalid, using empty defaults")
+        return {}
+    
+    try:
+        bucket = cluster.bucket(bucket_name)
+        collection = bucket.scope('_default').collection('_default')
+        
+        # Add metadata
+        template['_seededAt'] = datetime.utcnow().isoformat() + 'Z'
+        template['_autoSeeded'] = True
+        template['_lastUpdated'] = datetime.utcnow().isoformat() + 'Z'
+        
+        collection.upsert('ai_models_list', template)
+        
+        # Update cache
+        _ai_models_cache = template
+        _ai_models_cache_time = time.time()
+        
+        ic(f"🌱 Auto-seeded ai_models_list to {bucket_name}._default._default")
+        return template
+        
+    except Exception as e:
+        ic(f"❌ Failed to auto-seed ai_models_list: {e}")
+        _ai_models_cache = template
+        _ai_models_cache_time = time.time()
+        return template
+
+
+def _fallback_to_ai_models_template() -> Dict[str, Any]:
+    """Fallback to template file without attempting to seed"""
+    global _ai_models_cache, _ai_models_cache_time
+    
+    template = get_ai_models_template()
+    _ai_models_cache = template
+    _ai_models_cache_time = time.time()
+    return template
+
+
+def save_ai_models_list(cluster, models_list: Dict[str, Any], bucket_name: str = None) -> bool:
+    """
+    Save/update ai_models_list document to Couchbase
+    
+    Args:
+        cluster: Couchbase cluster connection
+        models_list: AI models list dict to save
+        bucket_name: Bucket name (uses 'cb_tools' if not specified)
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    global _ai_models_cache, _ai_models_cache_time
+    
+    bucket_name = bucket_name or 'cb_tools'
+    doc_key = 'ai_models_list'
+    
+    models_list['_lastUpdated'] = datetime.utcnow().isoformat() + 'Z'
+    
+    try:
+        bucket = cluster.bucket(bucket_name)
+        collection = bucket.scope('_default').collection('_default')
+        
+        collection.upsert(doc_key, models_list)
+        
+        _ai_models_cache = models_list
+        _ai_models_cache_time = time.time()
+        
+        ic(f"✅ Saved ai_models_list to Couchbase {bucket_name}._default._default")
+        return True
+        
+    except Exception as e:
+        ic(f"❌ Failed to save ai_models_list: {e}")
+        return False
+
+
+def seed_ai_models_list(cluster, bucket_name: str = None, force: bool = False) -> Dict[str, Any]:
+    """
+    Seed ai_models_list document from template if it doesn't exist
+    
+    Args:
+        cluster: Couchbase cluster connection
+        bucket_name: Bucket name (uses 'cb_tools' if not specified)
+        force: If True, overwrite existing document with template
+        
+    Returns:
+        The ai_models_list document (existing or newly seeded)
+    """
+    bucket_name = bucket_name or 'cb_tools'
+    doc_key = 'ai_models_list'
+    
+    try:
+        bucket = cluster.bucket(bucket_name)
+        collection = bucket.scope('_default').collection('_default')
+        
+        if not force:
+            try:
+                result = collection.get(doc_key)
+                ic(f"ℹ️ ai_models_list already exists in {bucket_name}._default._default")
+                return result.content_as[dict]
+            except Exception:
+                pass
+        
+        template = get_ai_models_template()
+        if template:
+            template['_seededAt'] = datetime.utcnow().isoformat() + 'Z'
+            collection.upsert(doc_key, template)
+            ic(f"🌱 Seeded ai_models_list to {bucket_name}._default._default")
+            return template
+        else:
+            ic("❌ Cannot seed: template file not found or invalid")
+            return {}
+            
+    except Exception as e:
+        ic(f"❌ Failed to seed ai_models_list: {e}")
+        return {}
+
+
+def invalidate_ai_models_cache():
+    """Clear the in-memory cache to force reload from Couchbase"""
+    global _ai_models_cache, _ai_models_cache_time
+    _ai_models_cache = None
+    _ai_models_cache_time = 0
+    ic("🗑️ Invalidated ai_models_list cache")
+
+
+def get_models_for_provider(cluster, provider_id: str, bucket_name: str = None) -> List[Dict[str, Any]]:
+    """
+    Get models list for a specific provider
+    
+    Args:
+        cluster: Couchbase cluster connection
+        provider_id: Provider ID ('openai', 'claude', 'grok')
+        bucket_name: Bucket name
+        
+    Returns:
+        List of model configurations for the provider
+    """
+    models_list = load_ai_models_list(cluster, bucket_name)
+    providers = models_list.get('providers', {})
+    provider = providers.get(provider_id, {})
+    return provider.get('models', [])
+
+
+def get_active_models_for_provider(cluster, provider_id: str, bucket_name: str = None) -> List[Dict[str, Any]]:
+    """
+    Get only active (non-legacy, non-retired) models for a provider
+    
+    Args:
+        cluster: Couchbase cluster connection
+        provider_id: Provider ID
+        bucket_name: Bucket name
+        
+    Returns:
+        List of active model configurations
+    """
+    all_models = get_models_for_provider(cluster, provider_id, bucket_name)
+    return [m for m in all_models if m.get('status') == 'active']
+
+
+def get_model_info(cluster, provider_id: str, model_id: str, bucket_name: str = None) -> Optional[Dict[str, Any]]:
+    """
+    Get detailed info for a specific model
+    
+    Args:
+        cluster: Couchbase cluster connection
+        provider_id: Provider ID
+        model_id: Model ID
+        bucket_name: Bucket name
+        
+    Returns:
+        Model configuration dict or None if not found
+    """
+    models = get_models_for_provider(cluster, provider_id, bucket_name)
+    for model in models:
+        if model.get('id') == model_id:
+            return model
+    return None
+
+# ============================================================================
 # AI HTTP Client
 # ============================================================================
 

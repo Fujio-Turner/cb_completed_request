@@ -150,6 +150,12 @@ function renderAiProviders() {
                 <label>API URL ${provider.id !== 'custom' ? '(optional)' : ''}:</label>
                 <input type="text" id="${provider.id}-api-url" placeholder="${provider.defaultUrl}" style="width: 300px;" />
             </div>
+            <div class="settings-row" style="margin-top: 10px;">
+                <button class="btn-standard" onclick="testBuiltInProvider('${provider.id}')" id="${provider.id}-test-btn" style="background: #17a2b8; color: white; font-size: 12px; padding: 6px 14px;">
+                    🧪 Test API
+                </button>
+                <span id="${provider.id}-test-status" style="margin-left: 10px; font-size: 12px;"></span>
+            </div>
         `;
         
         container.appendChild(providerDiv);
@@ -1053,67 +1059,173 @@ window.deleteCustomAI = async function(apiId) {
 };
 
 /**
+ * Test a built-in AI provider (OpenAI, Claude, Grok)
+ */
+window.testBuiltInProvider = async function(providerId) {
+    const modelSelect = document.getElementById(`${providerId}-model`);
+    const apiKeyInput = document.getElementById(`${providerId}-api-key`);
+    const apiUrlInput = document.getElementById(`${providerId}-api-url`);
+    const testBtn = document.getElementById(`${providerId}-test-btn`);
+    const statusSpan = document.getElementById(`${providerId}-test-status`);
+    
+    const model = modelSelect?.value || '';
+    const apiKey = apiKeyInput?.value?.trim() || '';
+    const apiUrl = apiUrlInput?.value?.trim() || '';
+    
+    if (!apiKey) {
+        showToast(`Please enter an API key for ${providerId.toUpperCase()} first`, 'error');
+        statusSpan.innerHTML = '<span style="color: #dc3545;">❌ Missing API key</span>';
+        return;
+    }
+    
+    // Update UI for loading state
+    testBtn.disabled = true;
+    testBtn.innerHTML = '⏳ Testing...';
+    statusSpan.innerHTML = '<span style="color: #6c757d;">Testing connection...</span>';
+    
+    Logger.info(`Testing ${providerId} API with model: ${model}`);
+    
+    try {
+        const response = await fetch('/api/ai/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                provider: providerId,
+                model: model,
+                apiKey: apiKey,
+                apiUrl: apiUrl
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            Logger.info(`${providerId} API test successful:`, result);
+            statusSpan.innerHTML = `<span style="color: #28a745;">✅ Success (${result.elapsed_ms}ms)</span>`;
+            showToast(`${providerId.toUpperCase()} API test successful! Response in ${result.elapsed_ms}ms`, 'success');
+        } else {
+            Logger.error(`${providerId} API test failed:`, result);
+            statusSpan.innerHTML = `<span style="color: #dc3545;">❌ Failed: ${result.error?.substring(0, 50) || 'Unknown error'}</span>`;
+            showToast(`${providerId.toUpperCase()} API test failed: ${result.error}`, 'error');
+        }
+    } catch (error) {
+        Logger.error(`${providerId} API test error:`, error);
+        statusSpan.innerHTML = `<span style="color: #dc3545;">❌ Error: ${error.message}</span>`;
+        showToast(`Test failed: ${error.message}`, 'error');
+    } finally {
+        testBtn.disabled = false;
+        testBtn.innerHTML = '🧪 Test API';
+    }
+};
+
+/**
  * Test custom AI configuration
+ * Makes a real API call through the backend to verify configuration works
  */
 window.testCustomAIConfig = async function() {
+    const name = document.getElementById('custom-ai-name')?.value?.trim() || 'Custom API';
     const url = document.getElementById('custom-ai-url')?.value?.trim();
+    const model = document.getElementById('custom-ai-model')?.value?.trim() || 'default';
     const authType = document.getElementById('custom-ai-auth-type')?.value;
+    const requestTemplate = document.getElementById('custom-ai-request-template')?.value?.trim();
+    const responsePath = document.getElementById('custom-ai-response-path')?.value?.trim();
     
     if (!url) {
         showToast('Please enter an API URL first', 'error');
         return;
     }
     
-    showToast('Testing connection...', 'info');
-    
-    // Build headers
-    const headers = {
-        'Content-Type': 'application/json'
+    // Build custom config object
+    const customConfig = {
+        name: name,
+        url: url,
+        model: model,
+        authType: authType,
+        requestTemplate: requestTemplate || '',
+        responsePath: responsePath || 'choices[0].message.content',
+        customHeaders: getCustomHeaders(),
+        isCustom: true
     };
     
-    // Add auth headers
+    // Add auth-specific fields
     if (authType === 'bearer') {
-        const token = document.getElementById('custom-ai-bearer-token')?.value;
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
+        customConfig.bearerToken = document.getElementById('custom-ai-bearer-token')?.value || '';
     } else if (authType === 'api-key-header') {
-        const headerName = document.getElementById('custom-ai-api-key-header-name')?.value || 'X-API-Key';
-        const headerValue = document.getElementById('custom-ai-api-key-header-value')?.value;
-        if (headerValue) {
-            headers[headerName] = headerValue;
-        }
+        customConfig.apiKeyHeaderName = document.getElementById('custom-ai-api-key-header-name')?.value || 'X-API-Key';
+        customConfig.apiKeyHeaderValue = document.getElementById('custom-ai-api-key-header-value')?.value || '';
     } else if (authType === 'basic') {
-        const username = document.getElementById('custom-ai-basic-username')?.value;
-        const password = document.getElementById('custom-ai-basic-password')?.value;
-        if (username && password) {
-            headers['Authorization'] = 'Basic ' + btoa(`${username}:${password}`);
-        }
+        customConfig.basicUsername = document.getElementById('custom-ai-basic-username')?.value || '';
+        customConfig.basicPassword = document.getElementById('custom-ai-basic-password')?.value || '';
+    } else if (authType === 'digest') {
+        customConfig.digestUsername = document.getElementById('custom-ai-digest-username')?.value || '';
+        customConfig.digestPassword = document.getElementById('custom-ai-digest-password')?.value || '';
     }
     
-    // Add custom headers
-    getCustomHeaders().forEach(h => {
-        headers[h.name] = h.value;
-    });
+    // Get UI elements
+    const testBtn = document.getElementById('custom-ai-test-btn');
+    const statusSpan = document.getElementById('custom-ai-test-status');
+    
+    if (testBtn) {
+        testBtn.disabled = true;
+        testBtn.innerHTML = '⏳ Testing...';
+    }
+    if (statusSpan) {
+        statusSpan.innerHTML = '<span style="color: #6c757d;">Testing connection...</span>';
+    }
+    
+    showToast('Testing custom API configuration...', 'info');
+    Logger.info('Testing custom AI configuration:', { name, url, model, authType });
     
     try {
-        // Just test if the endpoint is reachable
-        const response = await fetch(url, {
-            method: 'OPTIONS',
-            headers: headers
+        const response = await fetch('/api/ai/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                provider: 'custom',
+                customConfig: customConfig
+            })
         });
         
-        showToast(`Connection test: ${response.ok ? 'Success' : 'Endpoint responded with status ' + response.status}`, response.ok ? 'success' : 'warning');
+        const result = await response.json();
+        
+        if (result.success) {
+            Logger.info('Custom API test successful:', result);
+            if (statusSpan) {
+                statusSpan.innerHTML = `<span style="color: #28a745;">✅ Success (${result.elapsed_ms}ms)</span>`;
+            }
+            showToast(`✅ API test successful! Response in ${result.elapsed_ms}ms`, 'success');
+            
+            // Show response preview
+            if (result.model_response) {
+                const preview = result.model_response.substring(0, 200);
+                Logger.debug('AI Response preview:', preview);
+            }
+        } else {
+            Logger.error('Custom API test failed:', result);
+            let errorMsg = result.error || 'Unknown error';
+            if (result.status_code) {
+                errorMsg = `HTTP ${result.status_code}: ${errorMsg}`;
+            }
+            if (statusSpan) {
+                statusSpan.innerHTML = `<span style="color: #dc3545;">❌ ${errorMsg.substring(0, 50)}</span>`;
+            }
+            showToast(`❌ API test failed: ${errorMsg}`, 'error');
+            
+            // Show more details for debugging
+            if (result.raw_response) {
+                Logger.debug('Raw API response:', result.raw_response);
+            }
+        }
     } catch (error) {
-        // CORS might block OPTIONS, try a simple HEAD request
-        try {
-            const response = await fetch(url, {
-                method: 'HEAD',
-                headers: headers
-            });
-            showToast(`Connection test: ${response.ok ? 'Success' : 'Endpoint responded'}`, 'success');
-        } catch (e) {
-            showToast(`Connection test failed: ${error.message}. Note: CORS restrictions may prevent browser-based testing.`, 'warning');
+        Logger.error('Custom API test error:', error);
+        if (statusSpan) {
+            statusSpan.innerHTML = `<span style="color: #dc3545;">❌ ${error.message}</span>`;
+        }
+        showToast(`Test failed: ${error.message}. Make sure the Flask server is running on port 5555.`, 'error');
+    } finally {
+        if (testBtn) {
+            testBtn.disabled = false;
+            testBtn.innerHTML = '🧪 Test Configuration';
         }
     }
 };
@@ -1231,3 +1343,347 @@ window.copyCurlPreview = function() {
 // Export functions to window for onclick handlers
 window.openSettingsModal = openSettingsModal;
 window.closeSettingsModal = closeSettingsModal;
+
+// ============================================
+// AI Admin Functions
+// ============================================
+
+/**
+ * Get current cluster config for API calls
+ */
+async function getClusterConfigForAPI() {
+    const config = await loadConfig();
+    return {
+        config: {
+            url: config.cluster?.url || 'http://localhost:8091',
+            username: config.cluster?.username || '',
+            password: config.cluster?.password || ''
+        },
+        bucketConfig: {
+            bucket: config.bucketConfig?.bucket || 'cb_tools'
+        }
+    };
+}
+
+/**
+ * Seed payload reference to Couchbase
+ */
+window.seedPayloadReference = async function(force = false) {
+    const statusEl = document.getElementById('payload-ref-status');
+    statusEl.innerHTML = '<span style="color: #666;">⏳ Seeding...</span>';
+    
+    try {
+        const clusterConfig = await getClusterConfigForAPI();
+        
+        const response = await fetch('/api/ai/payload-reference/seed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...clusterConfig,
+                force: force
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const actionText = result.action === 'created' ? '✅ Created' : 
+                              result.action === 'overwritten' ? '🔄 Refreshed' : 
+                              'ℹ️ Already exists';
+            statusEl.innerHTML = `<span style="color: #28a745;">${actionText} in cb_tools._default._default</span>`;
+            showToast(`Payload reference ${result.action}`, 'success');
+        } else {
+            statusEl.innerHTML = `<span style="color: #dc3545;">❌ ${result.error}</span>`;
+            showToast(result.error, 'error');
+        }
+    } catch (error) {
+        statusEl.innerHTML = `<span style="color: #dc3545;">❌ ${error.message}</span>`;
+        showToast('Failed to seed: ' + error.message, 'error');
+    }
+};
+
+/**
+ * View current payload reference
+ */
+window.viewPayloadReference = async function() {
+    const statusEl = document.getElementById('payload-ref-status');
+    statusEl.innerHTML = '<span style="color: #666;">⏳ Loading...</span>';
+    
+    try {
+        const clusterConfig = await getClusterConfigForAPI();
+        
+        const response = await fetch('/api/ai/payload-reference/load', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(clusterConfig)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            statusEl.innerHTML = `<span style="color: #28a745;">✅ Loaded from ${result.source}</span>`;
+            
+            // Show in a modal or alert
+            const jsonStr = JSON.stringify(result.payload_reference, null, 2);
+            showJsonViewerModal('Payload Reference', jsonStr, result.source);
+        } else {
+            statusEl.innerHTML = `<span style="color: #dc3545;">❌ ${result.error}</span>`;
+        }
+    } catch (error) {
+        statusEl.innerHTML = `<span style="color: #dc3545;">❌ ${error.message}</span>`;
+    }
+};
+
+/**
+ * Seed AI models list to Couchbase
+ */
+window.seedAIModels = async function(force = false) {
+    const statusEl = document.getElementById('ai-models-status');
+    statusEl.innerHTML = '<span style="color: #666;">⏳ Seeding...</span>';
+    
+    try {
+        const clusterConfig = await getClusterConfigForAPI();
+        
+        const response = await fetch('/api/ai/models/seed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...clusterConfig,
+                force: force
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const actionText = result.action === 'created' ? '✅ Created' : 
+                              result.action === 'overwritten' ? '🔄 Refreshed' : 
+                              'ℹ️ Already exists';
+            const modelCount = Object.values(result.models?.providers || {})
+                .reduce((sum, p) => sum + (p.models?.length || 0), 0);
+            statusEl.innerHTML = `<span style="color: #28a745;">${actionText} (${modelCount} models)</span>`;
+            showToast(`AI models list ${result.action}`, 'success');
+        } else {
+            statusEl.innerHTML = `<span style="color: #dc3545;">❌ ${result.error}</span>`;
+            showToast(result.error, 'error');
+        }
+    } catch (error) {
+        statusEl.innerHTML = `<span style="color: #dc3545;">❌ ${error.message}</span>`;
+        showToast('Failed to seed: ' + error.message, 'error');
+    }
+};
+
+/**
+ * View current AI models list
+ */
+window.viewAIModels = async function() {
+    const statusEl = document.getElementById('ai-models-status');
+    statusEl.innerHTML = '<span style="color: #666;">⏳ Loading...</span>';
+    
+    try {
+        const clusterConfig = await getClusterConfigForAPI();
+        
+        const response = await fetch('/api/ai/models/load', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(clusterConfig)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const modelCount = Object.values(result.models?.providers || {})
+                .reduce((sum, p) => sum + (p.models?.length || 0), 0);
+            statusEl.innerHTML = `<span style="color: #28a745;">✅ Loaded ${modelCount} models from ${result.source}</span>`;
+            
+            const jsonStr = JSON.stringify(result.models, null, 2);
+            showJsonViewerModal('AI Models List', jsonStr, result.source);
+        } else {
+            statusEl.innerHTML = `<span style="color: #dc3545;">❌ ${result.error}</span>`;
+        }
+    } catch (error) {
+        statusEl.innerHTML = `<span style="color: #dc3545;">❌ ${error.message}</span>`;
+    }
+};
+
+/**
+ * Open add model form
+ */
+window.openAddModelModal = function() {
+    const section = document.getElementById('add-model-section');
+    if (section) {
+        section.style.display = 'block';
+        document.getElementById('new-model-id').value = '';
+        document.getElementById('new-model-name').value = '';
+        document.getElementById('new-model-context').value = '';
+        document.getElementById('new-model-output').value = '';
+    }
+};
+
+/**
+ * Close add model form
+ */
+window.closeAddModelModal = function() {
+    const section = document.getElementById('add-model-section');
+    if (section) {
+        section.style.display = 'none';
+    }
+};
+
+/**
+ * Save new model to AI models list
+ */
+window.saveNewModel = async function() {
+    const provider = document.getElementById('new-model-provider').value;
+    const modelId = document.getElementById('new-model-id').value.trim();
+    const modelName = document.getElementById('new-model-name').value.trim();
+    const contextWindow = parseInt(document.getElementById('new-model-context').value) || 128000;
+    const maxOutput = parseInt(document.getElementById('new-model-output').value) || 16384;
+    
+    if (!modelId || !modelName) {
+        showToast('Model ID and Name are required', 'error');
+        return;
+    }
+    
+    try {
+        const clusterConfig = await getClusterConfigForAPI();
+        
+        // Load current models
+        const loadResponse = await fetch('/api/ai/models/load', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(clusterConfig)
+        });
+        
+        const loadResult = await loadResponse.json();
+        if (!loadResult.success) {
+            showToast('Failed to load current models: ' + loadResult.error, 'error');
+            return;
+        }
+        
+        const modelsList = loadResult.models;
+        
+        // Add new model to provider
+        if (!modelsList.providers[provider]) {
+            showToast('Provider not found', 'error');
+            return;
+        }
+        
+        const newModel = {
+            id: modelId,
+            name: modelName,
+            contextWindow: contextWindow,
+            maxOutputTokens: maxOutput,
+            tokensPerMinute: null,
+            inputPricePerMillion: null,
+            outputPricePerMillion: null,
+            supportsVision: false,
+            supportsTools: true,
+            supportsJson: true,
+            status: 'active',
+            releaseDate: new Date().toISOString().split('T')[0],
+            notes: 'Added manually via UI'
+        };
+        
+        // Check if model already exists
+        const existingIndex = modelsList.providers[provider].models.findIndex(m => m.id === modelId);
+        if (existingIndex >= 0) {
+            modelsList.providers[provider].models[existingIndex] = newModel;
+            showToast('Model updated', 'success');
+        } else {
+            // Add to beginning of list
+            modelsList.providers[provider].models.unshift(newModel);
+            showToast('Model added', 'success');
+        }
+        
+        // Save updated list
+        const saveResponse = await fetch('/api/ai/models/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...clusterConfig,
+                models: modelsList
+            })
+        });
+        
+        const saveResult = await saveResponse.json();
+        if (saveResult.success) {
+            closeAddModelModal();
+            document.getElementById('ai-models-status').innerHTML = 
+                `<span style="color: #28a745;">✅ Added ${modelId} to ${provider}</span>`;
+        } else {
+            showToast('Failed to save: ' + saveResult.error, 'error');
+        }
+        
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+};
+
+/**
+ * Invalidate all caches
+ */
+window.invalidateAllCaches = async function() {
+    try {
+        // Invalidate payload reference cache
+        await fetch('/api/ai/payload-reference/invalidate-cache', { method: 'POST' });
+        
+        // Invalidate AI models cache
+        await fetch('/api/ai/models/invalidate-cache', { method: 'POST' });
+        
+        showToast('All caches invalidated', 'success');
+        
+        document.getElementById('payload-ref-status').innerHTML = 
+            '<span style="color: #666;">Cache cleared</span>';
+        document.getElementById('ai-models-status').innerHTML = 
+            '<span style="color: #666;">Cache cleared</span>';
+            
+    } catch (error) {
+        showToast('Failed to invalidate caches: ' + error.message, 'error');
+    }
+};
+
+/**
+ * Show JSON viewer modal
+ */
+function showJsonViewerModal(title, jsonStr, source) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('json-viewer-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'json-viewer-modal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
+                <span class="close" onclick="document.getElementById('json-viewer-modal').style.display='none'">&times;</span>
+                <h2 id="json-viewer-title">JSON Viewer</h2>
+                <p id="json-viewer-source" style="color: #666; font-size: 0.9em; margin-bottom: 10px;"></p>
+                <div style="flex: 1; overflow: auto; background: #f8f9fa; border-radius: 4px; padding: 15px;">
+                    <pre id="json-viewer-content" style="margin: 0; white-space: pre-wrap; font-family: monospace; font-size: 12px;"></pre>
+                </div>
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button class="btn-standard" onclick="copyJsonViewer()">📋 Copy JSON</button>
+                    <button class="btn-standard" onclick="document.getElementById('json-viewer-modal').style.display='none'">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    document.getElementById('json-viewer-title').textContent = title;
+    document.getElementById('json-viewer-source').textContent = `Source: ${source}`;
+    document.getElementById('json-viewer-content').textContent = jsonStr;
+    modal.style.display = 'block';
+}
+
+/**
+ * Copy JSON from viewer
+ */
+window.copyJsonViewer = function() {
+    const content = document.getElementById('json-viewer-content')?.textContent;
+    if (content) {
+        navigator.clipboard.writeText(content).then(() => {
+            showToast('JSON copied to clipboard', 'success');
+        });
+    }
+};

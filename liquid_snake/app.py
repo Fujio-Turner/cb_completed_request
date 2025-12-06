@@ -1501,6 +1501,440 @@ def invalidate_payload_reference_cache_endpoint():
             'error': str(e)
         }), 500
 
+# ============================================================================
+# AI Models List Management Endpoints
+# ============================================================================
+
+@app.route('/api/ai/models', methods=['GET'])
+def get_ai_models_template_endpoint():
+    """
+    Get the current ai_models_list template (from file, not Couchbase)
+    
+    Response:
+    {
+        "success": true,
+        "models": {...},
+        "source": "template"
+    }
+    """
+    try:
+        template = ai_analyzer.get_ai_models_template()
+        return jsonify({
+            'success': True,
+            'models': template,
+            'source': 'template'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/models/load', methods=['POST'])
+def load_ai_models_endpoint():
+    """
+    Load ai_models_list from Couchbase bucket._default._default
+    Falls back to template and auto-seeds if not found
+    
+    Request body:
+    {
+        "config": {...},
+        "bucketConfig": {"bucket": "cb_tools"}
+    }
+    
+    Response:
+    {
+        "success": true,
+        "models": {...},
+        "source": "couchbase" | "template"
+    }
+    """
+    try:
+        data = request.json
+        cluster_config = data.get('config', {})
+        bucket_config = data.get('bucketConfig', {})
+        bucket_name = bucket_config.get('bucket', 'cb_tools')
+        
+        cluster = get_couchbase_connection(cluster_config)
+        if not cluster:
+            template = ai_analyzer.get_ai_models_template()
+            return jsonify({
+                'success': True,
+                'models': template,
+                'source': 'template',
+                'note': 'Not connected to Couchbase, using template file'
+            })
+        
+        models_list = ai_analyzer.load_ai_models_list(cluster, bucket_name)
+        source = 'couchbase' if models_list.get('_seededAt') or models_list.get('_lastUpdated') else 'template'
+        
+        return jsonify({
+            'success': True,
+            'models': models_list,
+            'source': source
+        })
+        
+    except Exception as e:
+        ic(f"❌ Error loading ai_models_list: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/models/seed', methods=['POST'])
+def seed_ai_models_endpoint():
+    """
+    Seed ai_models_list document to Couchbase from template
+    
+    Request body:
+    {
+        "config": {...},
+        "bucketConfig": {"bucket": "cb_tools"},
+        "force": false
+    }
+    
+    Response:
+    {
+        "success": true,
+        "models": {...},
+        "action": "created" | "exists" | "overwritten"
+    }
+    """
+    try:
+        data = request.json
+        cluster_config = data.get('config', {})
+        bucket_config = data.get('bucketConfig', {})
+        bucket_name = bucket_config.get('bucket', 'cb_tools')
+        force = data.get('force', False)
+        
+        cluster = get_couchbase_connection(cluster_config)
+        if not cluster:
+            return jsonify({
+                'success': False,
+                'error': 'Not connected to Couchbase'
+            }), 500
+        
+        # Check if document exists first
+        doc_exists = False
+        try:
+            bucket = cluster.bucket(bucket_name)
+            collection = bucket.scope('_default').collection('_default')
+            collection.get('ai_models_list')
+            doc_exists = True
+        except DocumentNotFoundException:
+            pass
+        
+        models_list = ai_analyzer.seed_ai_models_list(cluster, bucket_name, force=force)
+        
+        if not models_list:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to seed ai_models_list - template file may be missing'
+            }), 500
+        
+        if force and doc_exists:
+            action = 'overwritten'
+        elif doc_exists:
+            action = 'exists'
+        else:
+            action = 'created'
+        
+        ic(f"🌱 AI models list seeded: {action}")
+        
+        return jsonify({
+            'success': True,
+            'models': models_list,
+            'action': action
+        })
+        
+    except Exception as e:
+        ic(f"❌ Error seeding ai_models_list: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/models/save', methods=['POST'])
+def save_ai_models_endpoint():
+    """
+    Save/update ai_models_list document to Couchbase
+    
+    Request body:
+    {
+        "config": {...},
+        "bucketConfig": {"bucket": "cb_tools"},
+        "models": {...}
+    }
+    
+    Response:
+    {
+        "success": true,
+        "message": "Saved successfully"
+    }
+    """
+    try:
+        data = request.json
+        cluster_config = data.get('config', {})
+        bucket_config = data.get('bucketConfig', {})
+        bucket_name = bucket_config.get('bucket', 'cb_tools')
+        models_list = data.get('models', {})
+        
+        if not models_list:
+            return jsonify({
+                'success': False,
+                'error': 'No models data provided'
+            }), 400
+        
+        cluster = get_couchbase_connection(cluster_config)
+        if not cluster:
+            return jsonify({
+                'success': False,
+                'error': 'Not connected to Couchbase'
+            }), 500
+        
+        success = ai_analyzer.save_ai_models_list(cluster, models_list, bucket_name)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'AI models list saved successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to save ai_models_list'
+            }), 500
+        
+    except Exception as e:
+        ic(f"❌ Error saving ai_models_list: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/models/provider/<provider_id>', methods=['POST'])
+def get_provider_models_endpoint(provider_id):
+    """
+    Get models for a specific provider
+    
+    Request body:
+    {
+        "config": {...},
+        "bucketConfig": {"bucket": "cb_tools"},
+        "activeOnly": true
+    }
+    
+    Response:
+    {
+        "success": true,
+        "provider": "openai",
+        "models": [...]
+    }
+    """
+    try:
+        data = request.json
+        cluster_config = data.get('config', {})
+        bucket_config = data.get('bucketConfig', {})
+        bucket_name = bucket_config.get('bucket', 'cb_tools')
+        active_only = data.get('activeOnly', False)
+        
+        cluster = get_couchbase_connection(cluster_config)
+        if not cluster:
+            # Fall back to template
+            template = ai_analyzer.get_ai_models_template()
+            providers = template.get('providers', {})
+            provider = providers.get(provider_id, {})
+            models = provider.get('models', [])
+            if active_only:
+                models = [m for m in models if m.get('status') == 'active']
+            return jsonify({
+                'success': True,
+                'provider': provider_id,
+                'models': models,
+                'source': 'template'
+            })
+        
+        if active_only:
+            models = ai_analyzer.get_active_models_for_provider(cluster, provider_id, bucket_name)
+        else:
+            models = ai_analyzer.get_models_for_provider(cluster, provider_id, bucket_name)
+        
+        return jsonify({
+            'success': True,
+            'provider': provider_id,
+            'models': models
+        })
+        
+    except Exception as e:
+        ic(f"❌ Error getting provider models: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/models/invalidate-cache', methods=['POST'])
+def invalidate_ai_models_cache_endpoint():
+    """
+    Invalidate the in-memory ai_models_list cache
+    
+    Response:
+    {
+        "success": true,
+        "message": "Cache invalidated"
+    }
+    """
+    try:
+        ai_analyzer.invalidate_ai_models_cache()
+        return jsonify({
+            'success': True,
+            'message': 'AI models cache invalidated'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ============================================================================
+# AI API Test Endpoint
+# ============================================================================
+
+@app.route('/api/ai/test', methods=['POST'])
+def test_ai_api():
+    """
+    Test AI API configuration with a simple prompt.
+    Makes a real API call to verify credentials and configuration work.
+    
+    Request body:
+    {
+        "provider": "openai" | "claude" | "grok" | "custom",
+        "model": "gpt-4o",
+        "apiKey": "sk-...",
+        "apiUrl": "https://api.openai.com/v1",
+        "customConfig": {...}  // For custom providers only
+    }
+    
+    Response:
+    {
+        "success": true,
+        "message": "API test successful",
+        "elapsed_ms": 1234,
+        "model_response": "Hello! I'm working correctly."
+    }
+    """
+    try:
+        import json
+        
+        data = request.json
+        provider = data.get('provider', '')
+        model = data.get('model', '')
+        api_key = data.get('apiKey', '')
+        api_url = data.get('apiUrl', '')
+        custom_config = data.get('customConfig')
+        
+        ic("🧪 Testing AI API configuration")
+        ic(f"  Provider: {provider}")
+        ic(f"  Model: {model}")
+        ic(f"  API URL: {api_url}")
+        ic(f"  Custom: {bool(custom_config)}")
+        
+        # Simple test prompt
+        test_prompt = "Respond with exactly this JSON: {\"status\": \"ok\", \"message\": \"API connection successful\"}"
+        test_payload = {"data": {"test": True}}
+        
+        if custom_config and custom_config.get('isCustom'):
+            # Test custom AI provider
+            ic("🔧 Testing custom AI provider")
+            result = ai_analyzer.call_custom_ai_provider(
+                custom_config=custom_config,
+                prompt=test_prompt,
+                payload_data=test_payload,
+                language='English'
+            )
+        else:
+            # Test built-in provider
+            if not api_key:
+                return jsonify({
+                    'success': False,
+                    'error': 'API key is required'
+                }), 400
+            
+            # Set default URLs if not provided
+            if not api_url:
+                if provider == 'openai':
+                    api_url = 'https://api.openai.com/v1'
+                elif provider == 'claude':
+                    api_url = 'https://api.anthropic.com'
+                elif provider == 'grok':
+                    api_url = 'https://api.x.ai/v1'
+            
+            # Set default models if not provided
+            if not model:
+                if provider == 'openai':
+                    model = 'gpt-4o-mini'
+                elif provider == 'claude':
+                    model = 'claude-3-5-haiku-20241022'
+                elif provider == 'grok':
+                    model = 'grok-3-mini'
+            
+            # Determine endpoint
+            endpoint = '/chat/completions'
+            if provider == 'claude':
+                endpoint = '/v1/messages'
+            
+            result = ai_analyzer.call_ai_provider(
+                provider=provider,
+                model=model,
+                api_key=api_key,
+                api_url=api_url,
+                endpoint=endpoint,
+                prompt=test_prompt,
+                payload_data=test_payload,
+                language='English'
+            )
+        
+        if result.get('success'):
+            # Extract the AI response text
+            response_text = ""
+            response_data = result.get('data', {})
+            
+            if 'choices' in response_data and len(response_data['choices']) > 0:
+                # OpenAI/Grok format
+                response_text = response_data['choices'][0].get('message', {}).get('content', '')
+            elif 'content' in response_data and isinstance(response_data['content'], list):
+                # Anthropic format
+                if len(response_data['content']) > 0:
+                    response_text = response_data['content'][0].get('text', '')
+            
+            ic(f"✅ API test successful! Response: {response_text[:100]}...")
+            
+            return jsonify({
+                'success': True,
+                'message': 'API test successful',
+                'elapsed_ms': result.get('elapsed_ms', 0),
+                'model_response': response_text[:500],  # Truncate for safety
+                'provider': provider,
+                'model': model
+            })
+        else:
+            ic(f"❌ API test failed: {result.get('error')}")
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Unknown error'),
+                'elapsed_ms': result.get('elapsed_ms', 0),
+                'status_code': result.get('status_code'),
+                'raw_response': result.get('raw_response', '')[:500]  # Truncate
+            }), 400
+            
+    except Exception as e:
+        ic(f"💥 API test error: {str(e)}")
+        import traceback
+        ic(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/ai/history', methods=['POST'])
 def get_ai_analysis_history():
     """

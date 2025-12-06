@@ -2200,6 +2200,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     <ul class="settings-tab-list">
                         <li><a href="#settings-tab-storage">Save Data To CB</a></li>
                         <li><a href="#settings-tab-ai-api">Users' AI API</a></li>
+                        <li><a href="#settings-tab-ai-admin">AI Admin</a></li>
                     </ul>
                     
                     <!-- Tab 1: Save Data To CB -->
@@ -2270,6 +2271,110 @@ LET bid = CONCAT("", s.bucket_id, ""),
                                     Add custom AI API endpoints (local LLMs, alternative providers, etc.)
                                 </p>
                                 <div id="custom-ai-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tab 3: AI Admin -->
+                    <div id="settings-tab-ai-admin">
+                        <div class="settings-section">
+                            <h3>AI Configuration Management</h3>
+                            <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                                Manage AI reference documents stored in Couchbase. These documents control the reference URLs and available AI models.
+                            </p>
+                            
+                            <!-- Payload Reference Section -->
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e0e0e0;">
+                                <h4 style="margin: 0 0 10px 0; color: #333;">📄 Payload Reference</h4>
+                                <p style="color: #666; font-size: 0.85em; margin-bottom: 12px;">
+                                    Contains reference URLs for Couchbase documentation, index creation syntax, and optimization guides used in AI analysis.
+                                </p>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <button class="btn-standard" onclick="seedPayloadReference()" style="background: #28a745; color: white;">
+                                        🌱 Seed to Couchbase
+                                    </button>
+                                    <button class="btn-standard" onclick="seedPayloadReference(true)" style="background: #fd7e14; color: white;">
+                                        🔄 Force Refresh
+                                    </button>
+                                    <button class="btn-standard" onclick="viewPayloadReference()">
+                                        👁️ View Current
+                                    </button>
+                                </div>
+                                <div id="payload-ref-status" style="margin-top: 10px; font-size: 0.85em;"></div>
+                            </div>
+                            
+                            <!-- AI Models List Section -->
+                            <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #b8daff;">
+                                <h4 style="margin: 0 0 10px 0; color: #333;">🤖 AI Models List</h4>
+                                <p style="color: #666; font-size: 0.85em; margin-bottom: 12px;">
+                                    Contains available AI models with context windows, token limits, and pricing. Update when providers release new models.
+                                </p>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <button class="btn-standard" onclick="seedAIModels()" style="background: #28a745; color: white;">
+                                        🌱 Seed to Couchbase
+                                    </button>
+                                    <button class="btn-standard" onclick="seedAIModels(true)" style="background: #fd7e14; color: white;">
+                                        🔄 Force Refresh
+                                    </button>
+                                    <button class="btn-standard" onclick="viewAIModels()">
+                                        👁️ View Current
+                                    </button>
+                                    <button class="btn-standard" onclick="openAddModelModal()" style="background: #17a2b8; color: white;">
+                                        ➕ Add New Model
+                                    </button>
+                                </div>
+                                <div id="ai-models-status" style="margin-top: 10px; font-size: 0.85em;"></div>
+                            </div>
+                            
+                            <!-- Quick Add Model Form -->
+                            <div id="add-model-section" style="display: none; background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffc107;">
+                                <h4 style="margin: 0 0 15px 0; color: #333;">➕ Quick Add Model</h4>
+                                <div class="settings-row">
+                                    <label>Provider:</label>
+                                    <select id="new-model-provider" style="width: 200px;">
+                                        <option value="openai">OpenAI</option>
+                                        <option value="claude">Anthropic Claude</option>
+                                        <option value="grok">xAI Grok</option>
+                                    </select>
+                                </div>
+                                <div class="settings-row">
+                                    <label>Model ID:</label>
+                                    <input type="text" id="new-model-id" placeholder="e.g., gpt-5-turbo" style="width: 300px;" />
+                                </div>
+                                <div class="settings-row">
+                                    <label>Display Name:</label>
+                                    <input type="text" id="new-model-name" placeholder="e.g., GPT-5 Turbo (Fastest)" style="width: 300px;" />
+                                </div>
+                                <div class="settings-row">
+                                    <label>Context Window:</label>
+                                    <input type="number" id="new-model-context" placeholder="128000" style="width: 150px;" />
+                                    <span style="color: #666; margin-left: 5px;">tokens</span>
+                                </div>
+                                <div class="settings-row">
+                                    <label>Max Output Tokens:</label>
+                                    <input type="number" id="new-model-output" placeholder="16384" style="width: 150px;" />
+                                </div>
+                                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                    <button class="btn-standard" onclick="saveNewModel()" style="background: #28a745; color: white;">
+                                        💾 Save Model
+                                    </button>
+                                    <button class="btn-standard" onclick="closeAddModelModal()">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Cache Management -->
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                <h4 style="margin: 0 0 10px 0; color: #333;">🗑️ Cache Management</h4>
+                                <p style="color: #666; font-size: 0.85em; margin-bottom: 12px;">
+                                    Clear cached data to force reload from Couchbase on next use.
+                                </p>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="btn-standard" onclick="invalidateAllCaches()">
+                                        Clear All Caches
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2402,9 +2507,10 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 </div>
                 
                 <!-- Actions -->
-                <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
-                    <button class="btn-standard" onclick="testCustomAIConfig()" style="background: #17a2b8; color: white;">
-                        Test Configuration
+                <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; align-items: center;">
+                    <span id="custom-ai-test-status" style="font-size: 12px; margin-right: 10px;"></span>
+                    <button id="custom-ai-test-btn" class="btn-standard" onclick="testCustomAIConfig()" style="background: #17a2b8; color: white;">
+                        🧪 Test Configuration
                     </button>
                     <button class="btn-standard" onclick="saveCustomAI()" style="background: #28a745; color: white;">
                         Save Custom API
