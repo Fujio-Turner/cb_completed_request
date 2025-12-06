@@ -28190,20 +28190,20 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
          */
         
         // Get color for P-level badge based on priority number (P10=highest, P1=lowest)
-        // Uses distinct hue bands: Wine/Purple → Blue → Teal
-        // Designed to be clearly distinguishable and avoid donut warm colors
+        // Uses distinct hue bands: Dark Red/Maroon → Purple → Blue → Light Blue
+        // High contrast between adjacent priorities
         function getPriorityBadgeColor(priorityNum) {
             const p = parseInt(priorityNum) || 0;
-            if (p >= 10) return '#4a1942';     // Dark Wine/Maroon (P10 - most critical)
-            if (p >= 9) return '#5b2c6f';      // Deep Purple
-            if (p >= 8) return '#6c3483';      // Dark Violet
-            if (p >= 7) return '#7d3c98';      // Royal Purple
-            if (p >= 6) return '#1a5276';      // Navy Blue
-            if (p >= 5) return '#2471a3';      // Dark Blue
-            if (p >= 4) return '#2e86c1';      // Steel Blue
-            if (p >= 3) return '#148f77';      // Dark Teal
-            if (p >= 2) return '#17a589';      // Teal Green
-            return '#1abc9c';                   // Turquoise (P1)
+            if (p >= 10) return '#7b1fa2';     // Deep Purple (P10 - most critical)
+            if (p >= 9) return '#8e24aa';      // Purple
+            if (p >= 8) return '#5e35b1';      // Deep Indigo
+            if (p >= 7) return '#3949ab';      // Indigo
+            if (p >= 6) return '#1e88e5';      // Blue
+            if (p >= 5) return '#0277bd';      // Light Blue Dark
+            if (p >= 4) return '#00838f';      // Cyan Dark
+            if (p >= 3) return '#00897b';      // Teal
+            if (p >= 2) return '#43a047';      // Green
+            return '#7cb342';                   // Light Green (P1)
         }
         
         // Get card border/accent color based on severity (neutral tones)
@@ -29798,9 +29798,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     <div style="font-size: 10px; color: #6c757d; margin-bottom: 12px; font-style: italic;">Click any card to view full details below</div>`;
                 
                 // Detailed Breakdown Section - Scrollable container with visual scroll indicator
-                html += `<div style="border-top: 2px solid #dee2e6; padding-top: 12px; margin-top: 8px;">
+                html += `<div style="border-top: 3px solid #adb5bd; padding-top: 16px; margin-top: 12px;">
                     <div style="font-size: 13px; color: #495057; margin-bottom: 10px; font-weight: 600;">Detailed Issue Breakdown <span style="font-size: 10px; color: #999; font-weight: normal;">↕ scroll for more</span></div>
-                    <div id="issue-details-container" style="max-height: 400px; overflow-y: auto; padding: 8px; border: 2px dashed #dee2e6; border-radius: 6px; background: linear-gradient(to bottom, #fff 0%, #fff 90%, #f8f9fa 100%);">`;
+                    <div id="issue-details-container" style="max-height: 400px; overflow-y: auto; padding: 8px; border: 3px dashed #adb5bd; border-radius: 6px; background: linear-gradient(to bottom, #fff 0%, #fff 90%, #f8f9fa 100%);">`;
                 
                 data.critical_issues.forEach((issue, idx) => {
                     const priorityNum = issue.priority_number || issue.priority || '?';
@@ -29841,8 +29841,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             // Recommendations - Side by side grid layout (alternating backgrounds)
             if (data.recommendations && data.recommendations.length > 0) {
-                html += `<div style="margin-bottom: 12px;">
-                    <h2 style="color: #2e7d32; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">Index Recommendations (${data.recommendations.length})</h2>
+                html += `<div style="margin-bottom: 12px; margin-top: 24px; padding-top: 20px; border-top: 3px solid #dee2e6;">
+                    <h2 style="color: #1565c0; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">Index Recommendations (${data.recommendations.length})</h2>
                     <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start;">`;
                 
                 data.recommendations.forEach((rec, idx) => {
@@ -29876,16 +29876,16 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             </div>` : ''}
                         </div>
                         
-                        <!-- If no structured indexes, show full recommendation in light green box -->
+                        <!-- If no structured indexes, show full recommendation in light blue box -->
                         ${!rec.current_index && !rec.suggested_index ? `
-                        <div style="background: #e8f5e9; padding: 10px; border-radius: 6px; border-left: 3px solid #4caf50; margin-bottom: 12px;">
-                            <div style="font-size: 10px; color: #2e7d32; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600;">🔧 Suggested Action</div>
+                        <div style="background: #e3f2fd; padding: 10px; border-radius: 6px; border-left: 3px solid #1976d2; margin-bottom: 12px;">
+                            <div style="font-size: 10px; color: #1565c0; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600;">🔧 Suggested Action</div>
                             <div style="font-size: 12px; color: #333; line-height: 1.4;">${recText}</div>
                         </div>` : ''}
                         
                         <!-- Impact -->
                         <div style="font-size: 12px;">
-                            <span style="color: #666;">Impact:</span> <span style="color: #28a745; font-weight: 500;">${rec.estimated_impact || 'Performance improvement'}</span>
+                            <span style="color: #666;">Impact:</span> <span style="color: #1976d2; font-weight: 500;">${rec.estimated_impact || 'Performance improvement'}</span>
                         </div>
                     </div>`;
                 });
@@ -29895,12 +29895,12 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             // Next Steps - Compact
             if (data.next_steps && data.next_steps.length > 0) {
-                html += `<div style="background: #e7f3ff; padding: 10px 12px; border-radius: 4px; border-left: 3px solid #007bff;">
+                html += `<div style="margin-top: 24px; padding-top: 20px; border-top: 3px solid #dee2e6;"><div style="background: #e7f3ff; padding: 10px 12px; border-radius: 4px; border-left: 3px solid #007bff;">
                     <h2 style="color: #007bff; margin: 0 0 12px 0; font-size: 22px; font-weight: 600;">🎯 Next Steps</h2>
                     <ol style="margin: 0; padding-left: 18px; font-size: 12px;">
                         ${data.next_steps.map(step => `<li style="margin: 4px 0;">${step}</li>`).join('')}
                     </ol>
-                </div>`;
+                </div></div>`;
             }
             
             
