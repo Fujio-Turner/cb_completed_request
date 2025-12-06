@@ -1,0 +1,223 @@
+name: QA Build (Pre-Release)
+
+# Triggers when code is pushed to QA branch
+# Creates test builds for manual testing before production release
+
+on:
+  push:
+    branches:
+      - QA
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 4.0.1-rc1)'
+        required: true
+        default: '4.0.0-rc1'
+
+jobs:
+  # ==========================================================================
+  # Get Version Info
+  # ==========================================================================
+  version:
+    name: Determine Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      tag: ${{ steps.version.outputs.TAG }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            # Auto-generate version from date + short SHA
+            VERSION="4.0.0-qa.$(date +%Y%m%d).${GITHUB_SHA::7}"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "TAG=v$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Building QA version: $VERSION"
+
+  # ==========================================================================
+  # Build macOS App
+  # ==========================================================================
+  build-macos:
+    name: Build macOS App
+    needs: version
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        working-directory: ./app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+          
+      - name: Build with PyInstaller
+        working-directory: ./app
+        run: |
+          pyinstaller --name QueryAnalyzer \
+            --onefile \
+            --windowed \
+            --add-data "index.html:." \
+            --add-data "assets:assets" \
+            --add-data "docs:docs" \
+            --add-data "config.json:." \
+            --hidden-import flask \
+            --hidden-import flask_cors \
+            --hidden-import couchbase \
+            --hidden-import couchbase.cluster \
+            --hidden-import couchbase.auth \
+            --hidden-import couchbase.options \
+            --hidden-import couchbase.exceptions \
+            --hidden-import requests \
+            --hidden-import openai \
+            --hidden-import icecream \
+            app.py
+            
+      - name: Create DMG
+        working-directory: ./app
+        run: |
+          mkdir -p dist/dmg
+          cp -R dist/QueryAnalyzer.app dist/dmg/ 2>/dev/null || cp dist/QueryAnalyzer dist/dmg/
+          hdiutil create -volname "QueryAnalyzer-QA" \
+            -srcfolder dist/dmg \
+            -ov -format UDZO \
+            dist/QueryAnalyzer-${{ needs.version.outputs.version }}-macos.dmg
+            
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QueryAnalyzer-${{ needs.version.outputs.version }}-macos
+          path: app/dist/QueryAnalyzer-${{ needs.version.outputs.version }}-macos.dmg
+          retention-days: 14
+
+  # ==========================================================================
+  # Build Windows Executable
+  # ==========================================================================
+  build-windows:
+    name: Build Windows Executable
+    needs: version
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        working-directory: ./app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+          
+      - name: Build with PyInstaller
+        working-directory: ./app
+        run: |
+          pyinstaller --name QueryAnalyzer `
+            --onefile `
+            --windowed `
+            --add-data "index.html;." `
+            --add-data "assets;assets" `
+            --add-data "docs;docs" `
+            --add-data "config.json;." `
+            --hidden-import flask `
+            --hidden-import flask_cors `
+            --hidden-import couchbase `
+            --hidden-import couchbase.cluster `
+            --hidden-import couchbase.auth `
+            --hidden-import couchbase.options `
+            --hidden-import couchbase.exceptions `
+            --hidden-import requests `
+            --hidden-import openai `
+            --hidden-import icecream `
+            app.py
+            
+      - name: Create ZIP
+        working-directory: ./app
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist\QueryAnalyzer.exe" -DestinationPath "dist\QueryAnalyzer-${{ needs.version.outputs.version }}-windows.zip"
+          
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QueryAnalyzer-${{ needs.version.outputs.version }}-windows
+          path: app/dist/QueryAnalyzer-${{ needs.version.outputs.version }}-windows.zip
+          retention-days: 14
+
+  # ==========================================================================
+  # Create Pre-Release with all artifacts
+  # ==========================================================================
+  create-prerelease:
+    name: Create Pre-Release
+    needs: [version, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: QueryAnalyzer-${{ needs.version.outputs.version }}-macos
+          path: ./artifacts
+          
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: QueryAnalyzer-${{ needs.version.outputs.version }}-windows
+          path: ./artifacts
+          
+      - name: List artifacts
+        run: ls -la ./artifacts/
+          
+      - name: Create Pre-Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          name: "🧪 QA Build - ${{ needs.version.outputs.version }}"
+          body: |
+            ## 🧪 QA Test Build - ${{ needs.version.outputs.version }}
+            
+            **⚠️ This is a pre-release for testing purposes only.**
+            
+            ### Downloads
+            
+            | Platform | File |
+            |----------|------|
+            | macOS | `QueryAnalyzer-${{ needs.version.outputs.version }}-macos.dmg` |
+            | Windows | `QueryAnalyzer-${{ needs.version.outputs.version }}-windows.zip` |
+            
+            ### Testing Checklist
+            
+            - [ ] macOS: App launches correctly
+            - [ ] macOS: Can connect to Couchbase
+            - [ ] macOS: AI analysis works
+            - [ ] Windows: App launches correctly
+            - [ ] Windows: Can connect to Couchbase
+            - [ ] Windows: AI analysis works
+            
+            ---
+            
+            **Branch**: `QA`  
+            **Commit**: ${{ github.sha }}  
+            **Workflow**: ${{ github.run_id }}
+            
+            If testing passes, merge QA → main and create a production release tag.
+          draft: false
+          prerelease: true
+          files: |
+            ./artifacts/QueryAnalyzer-${{ needs.version.outputs.version }}-macos.dmg
+            ./artifacts/QueryAnalyzer-${{ needs.version.outputs.version }}-windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
