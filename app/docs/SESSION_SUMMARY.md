@@ -30,7 +30,7 @@
 ### 2. Infrastructure Created
 
 ✅ **Python Web Server** (`app.py`)
-- Runs on http://localhost:5000
+- Runs on http://localhost:8888
 - Proper MIME types for ES6 modules
 - CORS headers for development
 

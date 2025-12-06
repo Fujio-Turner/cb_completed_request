@@ -430,7 +430,7 @@ cd liquid_snake
 ./start.sh
 
 # Open test page
-open http://localhost:5000/test_grok.html
+open http://localhost:8888/test_grok.html
 ```
 
 ### Manual Testing

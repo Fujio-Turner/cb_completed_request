@@ -67,7 +67,7 @@ Implemented comprehensive AI integration system with support for **OpenAI**, **C
 - `test_grok.html` - Interactive Grok testing
 - `test_ai_client.html` - Generic AI client testing
 
-**Access at:** http://localhost:5000/test_{provider}.html
+**Access at:** http://localhost:8888/test_{provider}.html
 
 ### 📚 Documentation
 
@@ -145,7 +145,7 @@ cd img/ai-logos && ./download-logos.sh
 ./start.sh
 ```
 
-**Access at:** http://localhost:5000
+**Access at:** http://localhost:8888
 
 ---
 

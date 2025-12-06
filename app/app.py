@@ -53,7 +53,9 @@ except ImportError:
 # Configure icecream
 ic.configureOutput(includeContext=True)
 
-PORT = int(os.environ.get('PORT', 5000))
+# Use port 8888 by default (port 5000 is used by macOS AirPlay Receiver)
+# Playwright tests use PORT=5555
+PORT = int(os.environ.get('PORT', 8888))
 
 # Handle PyInstaller bundled resources
 def get_resource_path():

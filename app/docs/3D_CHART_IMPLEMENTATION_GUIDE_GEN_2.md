@@ -505,7 +505,7 @@ const isDevMode = urlParams.get('dev') === 'true';
 newBtn.style.display = (requests && requests.length > 0 && isDevMode) ? 'block' : 'none';
 ```
 
-**To test:** `http://localhost:5000/?dev=true`
+**To test:** `http://localhost:8888/?dev=true`
 
 ---
 

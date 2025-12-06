@@ -62,15 +62,15 @@ python3 app.py
 You should see:
 ```
 🚀 Liquid Snake Server
-📡 Serving at http://localhost:5000
+📡 Serving at http://localhost:8888
 📂 Directory: /path/to/liquid_snake
-🌐 Open: http://localhost:5000/index.html
+🌐 Open: http://localhost:8888/index.html
 🛑 Press Ctrl+C to stop
 ```
 
 ### 6. Open in Browser
 
-Navigate to: http://localhost:5000/index.html
+Navigate to: http://localhost:8888/index.html
 
 ### 7. Deactivate Virtual Environment (When Done)
 
@@ -161,16 +161,19 @@ pip install --upgrade couchbase
 4. Check bucket exists: `cb_tools`
 5. Check collections exist: `cb_tools.query.analyzer` and `cb_tools._default._default`
 
-**Problem**: Port 5000 already in use
+**Problem**: Port 8888 already in use
 ```bash
-# Find process using port 5000
-lsof -ti:5000
+# Find process using port 8888
+lsof -ti:8888
 
 # Kill the process
-kill -9 $(lsof -ti:5000)
+kill -9 $(lsof -ti:8888)
 
-# Or change PORT in app.py
+# Or use a different port
+PORT=9000 python app.py
 ```
+
+> **Note**: We use port 8888 instead of 5000 because macOS AirPlay Receiver uses port 5000. Playwright tests use port 5555.
 
 ## Development Workflow
 
