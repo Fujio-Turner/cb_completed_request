@@ -1,0 +1,221 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # ==========================================================================
+  # Create GitHub Release
+  # ==========================================================================
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Determine release type
+        id: release_type
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          if [[ "$VERSION" == 4.* ]]; then
+            echo "EDITION=Server Edition" >> $GITHUB_OUTPUT
+            echo "PRERELEASE=false" >> $GITHUB_OUTPUT
+          elif [[ "$VERSION" == 3.* ]]; then
+            echo "EDITION=Static Edition" >> $GITHUB_OUTPUT
+            echo "PRERELEASE=false" >> $GITHUB_OUTPUT
+          else
+            echo "EDITION=Development" >> $GITHUB_OUTPUT
+            echo "PRERELEASE=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.TAG }}
+          name: "Couchbase Query Analyzer ${{ steps.version.outputs.TAG }}"
+          body: |
+            ## Couchbase Query Analyzer ${{ steps.version.outputs.VERSION }} - ${{ steps.release_type.outputs.EDITION }}
+            
+            ### Downloads
+            
+            | Platform | Download |
+            |----------|----------|
+            | Docker | `docker pull ${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:${{ steps.version.outputs.VERSION }}` |
+            | macOS | See assets below |
+            | Windows | See assets below |
+            
+            ### What's New
+            
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+            
+            ---
+            
+            **Full Changelog**: https://github.com/${{ github.repository }}/compare/...v${{ steps.version.outputs.VERSION }}
+          draft: false
+          prerelease: ${{ steps.release_type.outputs.PRERELEASE }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ==========================================================================
+  # Build macOS App
+  # ==========================================================================
+  build-macos:
+    name: Build macOS App
+    needs: create-release
+    if: startsWith(github.ref, 'refs/tags/v4')
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        working-directory: ./app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+          
+      - name: Build with PyInstaller
+        working-directory: ./app
+        run: |
+          pyinstaller --name QueryAnalyzer \
+            --onefile \
+            --windowed \
+            --add-data "index.html:." \
+            --add-data "assets:assets" \
+            --add-data "docs:docs" \
+            --hidden-import flask \
+            --hidden-import flask_cors \
+            --hidden-import couchbase \
+            --hidden-import requests \
+            --hidden-import openai \
+            --hidden-import icecream \
+            app.py
+            
+      - name: Create DMG
+        working-directory: ./app
+        run: |
+          mkdir -p dist/dmg
+          cp -R dist/QueryAnalyzer.app dist/dmg/ 2>/dev/null || cp dist/QueryAnalyzer dist/dmg/
+          hdiutil create -volname "QueryAnalyzer" \
+            -srcfolder dist/dmg \
+            -ov -format UDZO \
+            dist/QueryAnalyzer-${{ needs.create-release.outputs.version }}-macos.dmg
+            
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: app/dist/QueryAnalyzer-${{ needs.create-release.outputs.version }}-macos.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ==========================================================================
+  # Build Windows Executable
+  # ==========================================================================
+  build-windows:
+    name: Build Windows Executable
+    needs: create-release
+    if: startsWith(github.ref, 'refs/tags/v4')
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        working-directory: ./app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+          
+      - name: Build with PyInstaller
+        working-directory: ./app
+        run: |
+          pyinstaller --name QueryAnalyzer `
+            --onefile `
+            --windowed `
+            --add-data "index.html;." `
+            --add-data "assets;assets" `
+            --add-data "docs;docs" `
+            --hidden-import flask `
+            --hidden-import flask_cors `
+            --hidden-import couchbase `
+            --hidden-import requests `
+            --hidden-import openai `
+            --hidden-import icecream `
+            app.py
+            
+      - name: Create ZIP
+        working-directory: ./app
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist\QueryAnalyzer.exe" -DestinationPath "dist\QueryAnalyzer-${{ needs.create-release.outputs.version }}-windows.zip"
+          
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: app/dist/QueryAnalyzer-${{ needs.create-release.outputs.version }}-windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ==========================================================================
+  # Build and Push Docker Images
+  # ==========================================================================
+  build-docker:
+    name: Build Docker Images
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Determine Dockerfile
+        id: dockerfile
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          if [[ "$VERSION" == 4.* ]]; then
+            echo "FILE=./app/Dockerfile" >> $GITHUB_OUTPUT
+            echo "TAGS=${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:$VERSION,${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:latest" >> $GITHUB_OUTPUT
+          else
+            echo "FILE=./Dockerfile" >> $GITHUB_OUTPUT
+            echo "TAGS=${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:$VERSION,${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:static-latest" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ steps.dockerfile.outputs.FILE }}
+          push: true
+          tags: ${{ steps.dockerfile.outputs.TAGS }}
+          platforms: linux/amd64,linux/arm64

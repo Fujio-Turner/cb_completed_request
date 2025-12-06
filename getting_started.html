@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="4.0.0-dev" />
-    <meta name="last-updated" content="2025-11-29" />
+    <meta name="version" content="4.0.0" />
+    <meta name="last-updated" content="2025-12-06" />
     <title>Getting Started - Couchbase Query Analyzer v4.0.0</title>
     <meta name="description" content="Step-by-step guide to set up the Couchbase Query Analyzer with AI-powered insights. Connect to Couchbase and configure OpenAI or xAI Grok.">
     <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
@@ -178,6 +178,24 @@
             color: #007acc;
             font-weight: 600;
         }
+
+        /* Edition badge */
+        .edition-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+        .edition-badge.server {
+            background: #007acc;
+            color: white;
+        }
+        .edition-badge.static {
+            background: #6c757d;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -238,53 +256,74 @@
         <main class="content">
         <section id="step-1">
             <h2>1. Get the Tool</h2>
-            <p>You can run the tool using Docker or by downloading an executable.</p>
+            <p>Choose between the <strong>Server Edition</strong> (with AI analysis) or the simple <strong>Static Edition</strong> (browser-only).</p>
 
             <div class="tabs-container">
                 <div class="tab-buttons">
                     <button class="tab-btn active" onclick="switchTab('docker', event)">🐳 Docker</button>
                     <button class="tab-btn" onclick="switchTab('macos', event)">🍎 macOS</button>
                     <button class="tab-btn" onclick="switchTab('windows', event)">🪟 Windows</button>
+                    <button class="tab-btn" onclick="switchTab('static', event)">🌐 Browser Only</button>
                 </div>
 
                 <div id="tab-docker" class="tab-content active">
                     <div class="icon-row">
                         <span class="icon-wrapper"><img src="assets/img/docker_hub_logo_round.png" alt="Docker"></span>
                         <a href="https://hub.docker.com/r/fujioturner/couchbase-query-analyzer/tags" target="_blank">Pull from Docker Hub</a>
+                        <span class="edition-badge server">Server Edition v4.0.0</span>
                     </div>
-<pre>docker pull fujioturner/couchbase-query-analyzer:latest
-docker run -p 5000:5000 fujioturner/couchbase-query-analyzer:latest</pre>
-                    <p style="margin-top:8px;color:#666;font-size:0.9em"><em>After running, open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></em></p>
+<pre># Server Edition (with AI analysis, Couchbase integration)
+docker pull fujioturner/couchbase-query-analyzer:4.0.0
+docker run -p 5555:5555 fujioturner/couchbase-query-analyzer:4.0.0
+
+# Or use 'latest' tag (always points to Server Edition)
+docker run -p 5555:5555 fujioturner/couchbase-query-analyzer:latest</pre>
+                    <p style="margin-top:8px;color:#666;font-size:0.9em"><em>After running, open <a href="http://localhost:5555" target="_blank">http://localhost:5555</a></em></p>
                 </div>
 
                 <div id="tab-macos" class="tab-content">
                     <div class="icon-row">
                         <span class="icon-wrapper"><img src="assets/img/macOS_logo.png" alt="macOS"></span>
                         <a href="https://github.com/Fujio-Turner/cb_completed_request/releases" target="_blank">Download for macOS</a>
+                        <span class="edition-badge server">Server Edition v4.0.0</span>
                     </div>
                     <ol class="steps-list">
-                        <li>Download <code>cb_query_analyzer_macos</code>, make executable: <code>chmod +x</code>, then run.</li>
-                        <li><em>Security warning? Go to System Settings > Privacy & Security to allow.</em></li>
+                        <li>Download <code>QueryAnalyzer-4.0.0-macos.dmg</code> from <a href="https://github.com/Fujio-Turner/cb_completed_request/releases" target="_blank">GitHub Releases</a></li>
+                        <li>Open the DMG and drag <strong>QueryAnalyzer.app</strong> to Applications</li>
+                        <li>Double-click to run. <em>Security warning? Go to System Settings → Privacy & Security → Allow.</em></li>
                     </ol>
-                    <p style="margin-top:6px;color:#666;font-size:0.9em"><em>Open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></em></p>
+                    <p style="margin-top:6px;color:#666;font-size:0.9em"><em>The app will open <a href="http://localhost:5555" target="_blank">http://localhost:5555</a> automatically</em></p>
                 </div>
 
                 <div id="tab-windows" class="tab-content">
                     <div class="icon-row">
                         <span class="icon-wrapper"><img src="assets/img/ms_windows_logo.png" alt="Windows"></span>
                         <a href="https://github.com/Fujio-Turner/cb_completed_request/releases" target="_blank">Download for Windows</a>
+                        <span class="edition-badge server">Server Edition v4.0.0</span>
                     </div>
                     <ol class="steps-list">
-                        <li>Download <code>cb_query_analyzer.exe</code> and double-click to run.</li>
+                        <li>Download <code>QueryAnalyzer-4.0.0-windows.zip</code> from <a href="https://github.com/Fujio-Turner/cb_completed_request/releases" target="_blank">GitHub Releases</a></li>
+                        <li>Extract and double-click <code>QueryAnalyzer.exe</code> to run</li>
                         <li><em>"Windows protected your PC"? Click "More info" → "Run anyway".</em></li>
                     </ol>
-                    <p style="margin-top:6px;color:#666;font-size:0.9em"><em>Open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></em></p>
+                    <p style="margin-top:6px;color:#666;font-size:0.9em"><em>The app will open <a href="http://localhost:5555" target="_blank">http://localhost:5555</a> automatically</em></p>
+                </div>
+
+                <div id="tab-static" class="tab-content">
+                    <div class="icon-row">
+                        <span class="icon-wrapper">🌐</span>
+                        <strong>Browser Only - No Installation</strong>
+                        <span class="edition-badge static">Static Edition v3.29.3</span>
+                    </div>
+                    <p style="margin:8px 0">Just open in your browser - no server, no installation required:</p>
+                    <p style="margin:12px 0"><a href="https://cb.fuj.io/en/" target="_blank" style="font-size:1.2em;font-weight:600;background:#28a745;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">→ Open cb.fuj.io/en/</a></p>
+                    <p style="margin-top:12px;color:#666;font-size:0.85em"><strong>Note:</strong> The Static Edition does not include AI analysis, Couchbase integration, or settings persistence. For those features, use the Server Edition above.</p>
                 </div>
             </div>
         </section>
 
         <section id="step-2">
-            <h2>2. Connect to Couchbase</h2>
+            <h2>2. Connect to Couchbase <span style="font-size:0.7em;color:#666">(Server Edition only)</span></h2>
             <p style="margin-bottom:8px">Connect to a Couchbase cluster to save analysis data and preferences.</p>
 
             <div class="tabs-container">
@@ -323,27 +362,31 @@ docker run -p 5000:5000 fujioturner/couchbase-query-analyzer:latest</pre>
         </section>
 
         <section id="step-3">
-            <h2>3. Configure the Tool</h2>
+            <h2>3. Configure the Tool <span style="font-size:0.7em;color:#666">(Server Edition only)</span></h2>
             <p style="margin-bottom:8px">Once running and your Couchbase user is ready:</p>
             <ol class="steps-list">
-                <li>Open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></li>
+                <li>Open <a href="http://localhost:5555" target="_blank">http://localhost:5555</a></li>
                 <li>Click <strong>Settings</strong> icon (Upper Right Corner) <img src="assets/img/setting_socket.png" alt="Settings icon" class="icon-zoom" style="height:20px;vertical-align:middle"> → enter Cluster URL, Username, Password <img src="assets/img/setting_page.png" alt="Settings page - click to enlarge" class="screenshot-preview" style="height:40px;vertical-align:middle;margin-left:8px"></li>
                 <li>Click <strong>Test Connection</strong> → <strong>Save Settings</strong></li>
             </ol>
         </section>
 
         <section id="step-4">
-            <h2>4. Setup AI Analysis</h2>
-            <p style="margin-bottom:8px">Get an API Key from xAI Grok or OpenAI for AI-powered query analysis.</p>
+            <h2>4. Setup AI Analysis <span style="font-size:0.7em;color:#666">(Server Edition only)</span></h2>
+            <p style="margin-bottom:8px">Get an API Key from xAI Grok, Anthropic Claude, or OpenAI for AI-powered query analysis.</p>
 
             <table class="ai-table" style="font-size:0.9em">
                 <thead>
                     <tr>
-                        <th style="width:50%;padding:8px">
+                        <th style="width:33%;padding:8px">
                             <img src="assets/img/x_ai_logo.png" alt="xAI" style="height:20px;vertical-align:middle;margin-right:6px">
-                            Grok x.ai <em>(recommended)</em>
+                            Grok x.ai
                         </th>
-                        <th style="width:50%;padding:8px">
+                        <th style="width:33%;padding:8px">
+                            <img src="assets/img/anthropic_logo.png" alt="Anthropic" style="height:20px;vertical-align:middle;margin-right:6px">
+                            Claude
+                        </th>
+                        <th style="width:33%;padding:8px">
                             <img src="assets/img/openAid_logo.png" alt="OpenAI" style="height:20px;vertical-align:middle;margin-right:6px">
                             OpenAI
                         </th>
@@ -352,10 +395,11 @@ docker run -p 5000:5000 fujioturner/couchbase-query-analyzer:latest</pre>
                 <tbody>
                     <tr>
                         <td style="padding:8px"><a href="https://accounts.x.ai/sign-in?redirect=docs" target="_blank">Sign Up</a> → <a href="https://console.x.ai/" target="_blank">Get API Key</a></td>
+                        <td style="padding:8px"><a href="https://console.anthropic.com/" target="_blank">Sign Up</a> → <a href="https://console.anthropic.com/settings/keys" target="_blank">Get API Key</a></td>
                         <td style="padding:8px"><a href="https://platform.openai.com/signup" target="_blank">Sign Up</a> → <a href="https://platform.openai.com/api-keys" target="_blank">Get API Key</a></td>
                     </tr>
                     <tr>
-                        <td colspan="2" style="padding:8px">In Settings Icon <img src="assets/img/setting_socket.png" alt="Settings icon" class="icon-zoom" style="height:18px;vertical-align:middle">, select provider tab, paste API Key, click <strong>Save</strong>. <img src="assets/img/setting_ai_api_page.png" alt="AI API settings - click to enlarge" class="screenshot-preview" style="height:40px;vertical-align:middle;margin-left:8px"></td>
+                        <td colspan="3" style="padding:8px">In Settings Icon <img src="assets/img/setting_socket.png" alt="Settings icon" class="icon-zoom" style="height:18px;vertical-align:middle">, select <strong>"Users' AI API"</strong> tab, paste API Key, click <strong>Save</strong>. <img src="assets/img/setting_ai_api_page.png" alt="AI API settings - click to enlarge" class="screenshot-preview" style="height:40px;vertical-align:middle;margin-left:8px"></td>
                     </tr>
                 </tbody>
             </table>
@@ -369,7 +413,7 @@ docker run -p 5000:5000 fujioturner/couchbase-query-analyzer:latest</pre>
     </main>
     </div><!-- end layout -->
 
-    <div class="version-info">Couchbase Query Analyzer v4.0.0-dev</div>
+    <div class="version-info">Couchbase Query Analyzer v4.0.0</div>
 
     <script src="assets/js/main.js"></script>
     <script>

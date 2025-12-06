@@ -1,0 +1,52 @@
+# Cloudflare Pages Headers Configuration
+# Block/restrict access to server-side and development files
+
+# Block server-side Flask application
+/app/*
+  X-Robots-Tag: noindex, nofollow
+  X-Content-Type-Options: nosniff
+
+# Block Python tests
+/app/tests/*
+  X-Robots-Tag: noindex, nofollow
+
+# Block E2E tests
+/e2e/*
+  X-Robots-Tag: noindex, nofollow
+
+# Block root tests folder
+/tests/*
+  X-Robots-Tag: noindex, nofollow
+
+# Block node_modules
+/node_modules/*
+  X-Robots-Tag: noindex, nofollow
+
+# Block Python scripts
+/python/*
+  X-Robots-Tag: noindex, nofollow
+
+# Block archived old files
+/old_pre_4_0/*
+  X-Robots-Tag: noindex, nofollow
+
+# Block log files
+/logs/*
+  X-Robots-Tag: noindex, nofollow
+
+# Block Playwright artifacts
+/playwright-report/*
+  X-Robots-Tag: noindex, nofollow
+
+/test-results/*
+  X-Robots-Tag: noindex, nofollow
+
+# Block configuration files
+/settings/*
+  X-Robots-Tag: noindex, nofollow
+
+# Security headers for all public pages
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

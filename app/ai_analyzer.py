@@ -19,7 +19,7 @@ import json
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from typing import Dict, Any, Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from icecream import ic
 
 # Try to import OpenAI SDK
@@ -188,9 +188,9 @@ def _auto_seed_payload_reference(cluster, bucket_name: str) -> Dict[str, Any]:
         collection = bucket.scope('_default').collection('_default')
         
         # Add metadata
-        template['_seededAt'] = datetime.utcnow().isoformat() + 'Z'
+        template['_seededAt'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         template['_autoSeeded'] = True
-        template['_lastUpdated'] = datetime.utcnow().isoformat() + 'Z'
+        template['_lastUpdated'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         
         collection.upsert('payload_reference', template)
         
@@ -241,7 +241,7 @@ def save_payload_reference(cluster, payload_ref: Dict[str, Any], bucket_name: st
     doc_key = 'payload_reference'
     
     # Add metadata
-    payload_ref['_lastUpdated'] = datetime.utcnow().isoformat() + 'Z'
+    payload_ref['_lastUpdated'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
     
     try:
         bucket = cluster.bucket(bucket_name)
@@ -291,7 +291,7 @@ def seed_payload_reference(cluster, bucket_name: str = None, force: bool = False
         # Load template and save to Couchbase
         template = get_payload_reference_template()
         if template:
-            template['_seededAt'] = datetime.utcnow().isoformat() + 'Z'
+            template['_seededAt'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
             collection.upsert(doc_key, template)
             ic(f"🌱 Seeded payload_reference to {bucket_name}._default._default")
             return template
@@ -433,9 +433,9 @@ def _auto_seed_ai_models(cluster, bucket_name: str) -> Dict[str, Any]:
         collection = bucket.scope('_default').collection('_default')
         
         # Add metadata
-        template['_seededAt'] = datetime.utcnow().isoformat() + 'Z'
+        template['_seededAt'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         template['_autoSeeded'] = True
-        template['_lastUpdated'] = datetime.utcnow().isoformat() + 'Z'
+        template['_lastUpdated'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         
         collection.upsert('ai_models_list', template)
         
@@ -480,7 +480,7 @@ def save_ai_models_list(cluster, models_list: Dict[str, Any], bucket_name: str =
     bucket_name = bucket_name or 'cb_tools'
     doc_key = 'ai_models_list'
     
-    models_list['_lastUpdated'] = datetime.utcnow().isoformat() + 'Z'
+    models_list['_lastUpdated'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
     
     try:
         bucket = cluster.bucket(bucket_name)
@@ -528,7 +528,7 @@ def seed_ai_models_list(cluster, bucket_name: str = None, force: bool = False) -
         
         template = get_ai_models_template()
         if template:
-            template['_seededAt'] = datetime.utcnow().isoformat() + 'Z'
+            template['_seededAt'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
             collection.upsert(doc_key, template)
             ic(f"🌱 Seeded ai_models_list to {bucket_name}._default._default")
             return template
@@ -1308,7 +1308,7 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
             'data': {},
             'options': options,
             'metadata': {
-                'timestamp': datetime.utcnow().isoformat() + 'Z',
+                'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 'analyzer_version': raw_data.get('version', 'unknown'),
                 'total_queries_in_dataset': len(raw_data.get('everyQueryData', []))
             }
@@ -1571,7 +1571,7 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
             'data': {},
             'options': options,
             'metadata': {
-                'timestamp': datetime.utcnow().isoformat() + 'Z',
+                'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 'session_id': session_id,
                 'analyzer_version': cached_data.get('version', 'unknown')
             }

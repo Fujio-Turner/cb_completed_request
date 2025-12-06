@@ -1,13 +1,15 @@
-# General
+# ==============================================================================
+# Couchbase Query Analyzer - .gitignore
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# macOS
+# ------------------------------------------------------------------------------
 .DS_Store
 .AppleDouble
 .LSOverride
 Icon[]
-
-# Thumbnails
 ._*
-
-# Files that might appear in the root of a volume
 .DocumentRevisions-V100
 .fseventsd
 .Spotlight-V100
@@ -15,49 +17,112 @@ Icon[]
 .Trashes
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
-
-# Directories potentially created on remote AFP share
 .AppleDB
 .AppleDesktop
 Network Trash Folder
 Temporary Items
 .apdisk
 
-# Node.js dependencies
+# ------------------------------------------------------------------------------
+# Node.js / npm
+# ------------------------------------------------------------------------------
 node_modules/
 package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Playwright test artifacts
+# ------------------------------------------------------------------------------
+# Playwright E2E Tests
+# ------------------------------------------------------------------------------
 playwright-report/
 test-results/
 .playwright/
+playwright/.cache/
 
-# Python cache
+# ------------------------------------------------------------------------------
+# Python
+# ------------------------------------------------------------------------------
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+app/venv/
+.pytest_cache/
+
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
+*.py[cod]
+*$py.class
 *.so
+
+# Distribution / packaging
 *.egg
 *.egg-info/
 dist/
 build/
+eggs/
+parts/
+var/
+wheels/
+*.manifest
+*.spec
 
-# IDEs and editors
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+app/.env
+
+# PyInstaller
+*.manifest
+*.spec
+
+# ------------------------------------------------------------------------------
+# Server Edition Configuration (contains credentials)
+# ------------------------------------------------------------------------------
+app/config.json
+config.json
+
+# ------------------------------------------------------------------------------
+# IDEs and Editors
+# ------------------------------------------------------------------------------
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.sublime-workspace
+*.sublime-project
 
-# Temporary files
+# ------------------------------------------------------------------------------
+# Temporary / Log files
+# ------------------------------------------------------------------------------
 *.tmp
 *.bak
 *.log
-# Python virtual environment (Issue #231)
-liquid_snake/venv/
-liquid_snake/.env
+logs/*.log
 
-# Couchbase config with credentials (Issue #231)
-liquid_snake/config.json
+# ------------------------------------------------------------------------------
+# Build artifacts
+# ------------------------------------------------------------------------------
+*.dmg
+*.exe
+*.zip
+*.tar.gz
+
+# ------------------------------------------------------------------------------
+# Test coverage
+# ------------------------------------------------------------------------------
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/

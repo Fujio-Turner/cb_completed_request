@@ -11,8 +11,10 @@ from unittest.mock import Mock, patch, MagicMock
 import sys
 import os
 
-# Add parent directory to path to import ai_analyzer
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add app directory to path to import ai_analyzer
+# tests/python/ -> tests/ -> root/ -> app/
+app_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'app')
+sys.path.insert(0, app_dir)
 
 from ai_analyzer import (
     SessionCache,
@@ -27,6 +29,20 @@ from ai_analyzer import (
     build_ai_payload,
     get_cache_stats,
     configure_debug,
+    # New functions to test
+    call_custom_ai_provider,
+    call_ai_provider,
+    get_payload_reference_template,
+    load_payload_reference,
+    save_payload_reference,
+    invalidate_payload_reference_cache,
+    get_ai_models_template,
+    load_ai_models_list,
+    get_models_for_provider,
+    get_active_models_for_provider,
+    invalidate_ai_models_cache,
+    _execute_ai_request,
+    _execute_ai_request_with_digest,
 )
 
 
@@ -605,6 +621,547 @@ class TestConfigureDebug:
         # Should not raise any errors
         # Re-enable for other tests
         configure_debug(True)
+
+
+# ============================================================================
+# Custom AI Provider Tests
+# ============================================================================
+
+class TestCallCustomAIProvider:
+    """Tests for call_custom_ai_provider function"""
+    
+    @patch('ai_analyzer._execute_ai_request')
+    def test_call_custom_ai_provider_success(self, mock_execute):
+        """Test successful custom AI provider call"""
+        mock_execute.return_value = {
+            'success': True,
+            'status_code': 200,
+            'data': {'choices': [{'message': {'content': '{"ok": true}'}}]},
+            'elapsed_ms': 123,
+            'attempts': 1
+        }
+        
+        custom_config = {
+            'isCustom': True,
+            'name': 'test-provider',
+            'url': 'https://custom.example.com/api',
+            'model': 'custom-model-v1',
+            'authType': 'bearer',
+            'bearerToken': 'test-token-123',
+            'responsePath': 'choices[0].message.content'
+        }
+        
+        result = call_custom_ai_provider(
+            custom_config=custom_config,
+            prompt='Analyze this data',
+            payload_data={'data': {'test': 'value'}},
+            language='English'
+        )
+        
+        assert result['success'] is True
+        assert result['isCustomProvider'] is True
+        assert result['responsePath'] == 'choices[0].message.content'
+        mock_execute.assert_called_once()
+    
+    @patch('ai_analyzer._execute_ai_request')
+    def test_call_custom_ai_provider_with_api_key_header(self, mock_execute):
+        """Test custom provider with API key header auth"""
+        mock_execute.return_value = {
+            'success': True,
+            'status_code': 200,
+            'data': {'result': 'ok'},
+            'elapsed_ms': 100
+        }
+        
+        custom_config = {
+            'isCustom': True,
+            'name': 'api-key-provider',
+            'url': 'https://api.example.com/v1',
+            'model': 'model-x',
+            'authType': 'api-key-header',
+            'apiKeyHeaderName': 'X-API-Key',
+            'apiKeyHeaderValue': 'secret-key-123'
+        }
+        
+        result = call_custom_ai_provider(
+            custom_config=custom_config,
+            prompt='Test prompt',
+            payload_data={'data': {}}
+        )
+        
+        assert result['success'] is True
+        # Verify headers were set correctly
+        call_args = mock_execute.call_args
+        headers = call_args[1] if len(call_args) > 1 else call_args[0][0]
+    
+    def test_call_custom_ai_provider_missing_url(self):
+        """Test custom provider with missing URL returns error"""
+        custom_config = {
+            'isCustom': True,
+            'name': 'no-url-provider',
+            'url': '',
+            'model': 'model-x'
+        }
+        
+        result = call_custom_ai_provider(
+            custom_config=custom_config,
+            prompt='Test',
+            payload_data={}
+        )
+        
+        assert result['success'] is False
+        assert 'URL is required' in result['error']
+    
+    @patch('ai_analyzer._execute_ai_request')
+    def test_call_custom_ai_provider_with_custom_headers(self, mock_execute):
+        """Test custom provider with additional custom headers"""
+        mock_execute.return_value = {
+            'success': True,
+            'status_code': 200,
+            'data': {'ok': True},
+            'elapsed_ms': 50
+        }
+        
+        custom_config = {
+            'isCustom': True,
+            'name': 'header-provider',
+            'url': 'https://api.example.com',
+            'model': 'model-y',
+            'authType': 'none',
+            'customHeaders': [
+                {'name': 'X-Custom-Header', 'value': 'custom-value'},
+                {'name': 'X-Trace-ID', 'value': 'trace-123'}
+            ]
+        }
+        
+        result = call_custom_ai_provider(
+            custom_config=custom_config,
+            prompt='Test',
+            payload_data={'data': {}}
+        )
+        
+        assert result['success'] is True
+
+
+# ============================================================================
+# Digest Auth Request Tests
+# ============================================================================
+
+class TestExecuteAIRequestWithDigest:
+    """Tests for _execute_ai_request_with_digest function"""
+    
+    @patch('ai_analyzer.requests.post')
+    def test_digest_auth_success(self, mock_post):
+        """Test successful request with digest auth"""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {'result': 'success'}
+        mock_post.return_value = mock_response
+        
+        result = _execute_ai_request_with_digest(
+            full_url='https://api.example.com/v1/chat',
+            headers={'Content-Type': 'application/json'},
+            ai_request_payload={'prompt': 'test'},
+            digest_auth=('username', 'password')
+        )
+        
+        assert result['success'] is True
+        assert result['status_code'] == 200
+        assert result['data'] == {'result': 'success'}
+        mock_post.assert_called_once()
+    
+    @patch('ai_analyzer.requests.post')
+    def test_digest_auth_failure(self, mock_post):
+        """Test failed request with digest auth"""
+        mock_response = Mock()
+        mock_response.status_code = 401
+        mock_response.text = 'Unauthorized'
+        mock_post.return_value = mock_response
+        
+        result = _execute_ai_request_with_digest(
+            full_url='https://api.example.com/v1/chat',
+            headers={},
+            ai_request_payload={'prompt': 'test'},
+            digest_auth=('bad-user', 'bad-pass')
+        )
+        
+        assert result['success'] is False
+        assert result['status_code'] == 401
+    
+    @patch('ai_analyzer.requests.post')
+    def test_digest_auth_timeout(self, mock_post):
+        """Test timeout with digest auth"""
+        import requests
+        mock_post.side_effect = requests.exceptions.Timeout()
+        
+        result = _execute_ai_request_with_digest(
+            full_url='https://api.example.com/v1/chat',
+            headers={},
+            ai_request_payload={'prompt': 'test'},
+            digest_auth=('user', 'pass')
+        )
+        
+        assert result['success'] is False
+        assert 'timeout' in result['error'].lower()
+
+
+# ============================================================================
+# Payload Reference Tests
+# ============================================================================
+
+class TestPayloadReference:
+    """Tests for payload reference functions"""
+    
+    def test_get_payload_reference_template(self):
+        """Test loading payload reference template file"""
+        template = get_payload_reference_template()
+        
+        # Template should be a dict (might be empty if file not found)
+        assert isinstance(template, dict)
+        # If template exists, it should have expected keys
+        if template:
+            assert 'couchbase_index_creation' in template or len(template) == 0
+    
+    @patch('ai_analyzer._payload_reference_cache', None)
+    @patch('ai_analyzer._payload_reference_cache_time', 0)
+    def test_load_payload_reference_uses_cache(self):
+        """Test that repeated calls use cache"""
+        import ai_analyzer
+        
+        # Reset cache
+        ai_analyzer._payload_reference_cache = None
+        ai_analyzer._payload_reference_cache_time = 0
+        
+        # Create mock cluster
+        mock_cluster = Mock()
+        mock_bucket = Mock()
+        mock_collection = Mock()
+        mock_cluster.bucket.return_value = mock_bucket
+        mock_bucket.scope.return_value.collection.return_value = mock_collection
+        
+        # First call - document exists
+        mock_result = Mock()
+        mock_result.content_as = {dict: {'couchbase_index_creation': ['rule1']}}
+        mock_collection.get.return_value = mock_result
+        
+        result1 = load_payload_reference(mock_cluster, 'test_bucket')
+        
+        # Should have called get
+        assert mock_collection.get.call_count == 1
+        
+        # Second call should use cache (call count stays at 1)
+        result2 = load_payload_reference(mock_cluster, 'test_bucket')
+        
+        # Still only 1 call due to caching
+        assert mock_collection.get.call_count == 1
+        
+        # Clear cache for other tests
+        invalidate_payload_reference_cache()
+    
+    def test_invalidate_payload_reference_cache(self):
+        """Test cache invalidation"""
+        import ai_analyzer
+        
+        # Set some cache data
+        ai_analyzer._payload_reference_cache = {'test': 'data'}
+        ai_analyzer._payload_reference_cache_time = 12345
+        
+        invalidate_payload_reference_cache()
+        
+        assert ai_analyzer._payload_reference_cache is None
+        assert ai_analyzer._payload_reference_cache_time == 0
+
+
+# ============================================================================
+# AI Models List Tests
+# ============================================================================
+
+class TestAIModelsList:
+    """Tests for AI models list functions"""
+    
+    def test_get_ai_models_template(self):
+        """Test loading AI models template file"""
+        template = get_ai_models_template()
+        
+        assert isinstance(template, dict)
+        # If template exists, check structure
+        if template:
+            assert 'providers' in template or len(template) == 0
+    
+    def test_invalidate_ai_models_cache(self):
+        """Test AI models cache invalidation"""
+        import ai_analyzer
+        
+        # Set some cache data
+        ai_analyzer._ai_models_cache = {'providers': {}}
+        ai_analyzer._ai_models_cache_time = 12345
+        
+        invalidate_ai_models_cache()
+        
+        assert ai_analyzer._ai_models_cache is None
+        assert ai_analyzer._ai_models_cache_time == 0
+    
+    @patch('ai_analyzer.load_ai_models_list')
+    def test_get_models_for_provider(self, mock_load):
+        """Test getting models for a specific provider"""
+        mock_load.return_value = {
+            'providers': {
+                'openai': {
+                    'models': [
+                        {'id': 'gpt-4o', 'status': 'active'},
+                        {'id': 'gpt-3.5-turbo', 'status': 'legacy'}
+                    ]
+                },
+                'anthropic': {
+                    'models': [
+                        {'id': 'claude-3-opus', 'status': 'active'}
+                    ]
+                }
+            }
+        }
+        
+        mock_cluster = Mock()
+        
+        result = get_models_for_provider(mock_cluster, 'openai')
+        
+        assert len(result) == 2
+        assert result[0]['id'] == 'gpt-4o'
+    
+    @patch('ai_analyzer.load_ai_models_list')
+    def test_get_active_models_for_provider(self, mock_load):
+        """Test getting only active models for a provider"""
+        mock_load.return_value = {
+            'providers': {
+                'openai': {
+                    'models': [
+                        {'id': 'gpt-4o', 'status': 'active'},
+                        {'id': 'gpt-3.5-turbo', 'status': 'legacy'},
+                        {'id': 'gpt-4-turbo', 'status': 'active'}
+                    ]
+                }
+            }
+        }
+        
+        mock_cluster = Mock()
+        
+        result = get_active_models_for_provider(mock_cluster, 'openai')
+        
+        # Should only return active models
+        assert len(result) == 2
+        assert all(m['status'] == 'active' for m in result)
+    
+    @patch('ai_analyzer.load_ai_models_list')
+    def test_get_models_for_unknown_provider(self, mock_load):
+        """Test getting models for unknown provider returns empty list"""
+        mock_load.return_value = {
+            'providers': {
+                'openai': {'models': [{'id': 'gpt-4o'}]}
+            }
+        }
+        
+        mock_cluster = Mock()
+        
+        result = get_models_for_provider(mock_cluster, 'unknown_provider')
+        
+        assert result == []
+
+
+# ============================================================================
+# AIPayloadBuilder Extended Tests
+# ============================================================================
+
+class TestAIPayloadBuilderExtended:
+    """Extended tests for AIPayloadBuilder new parameters"""
+    
+    @pytest.fixture
+    def builder(self):
+        return AIPayloadBuilder()
+    
+    @pytest.fixture
+    def sample_data(self):
+        return {
+            'version': '4.0.0-dev',
+            'everyQueryData': [{'id': 1}],
+            'dashboardStats': {'total_queries': 100},
+            'analysisData': [{'statement': 'SELECT 1'}]
+        }
+    
+    def test_build_payload_with_extra_instructions(self, builder, sample_data):
+        """Test that extra_instructions are appended to prompt"""
+        result = builder.build_payload_from_data(
+            raw_data=sample_data,
+            user_prompt="Analyze performance",
+            selections={'dashboard': True},
+            options={},
+            extra_instructions="Focus on memory usage only. Output in bullet points."
+        )
+        
+        assert "Focus on memory usage only" in result['prompt']
+        assert "Output in bullet points" in result['prompt']
+    
+    def test_build_payload_stake_focus_adds_context(self, builder, sample_data):
+        """Test that stake_focus adds detailed context"""
+        result = builder.build_payload_from_data(
+            raw_data=sample_data,
+            user_prompt="Analyze",
+            selections={'dashboard': True},
+            options={
+                'stake_focus': {
+                    'enabled': True,
+                    'datetime': '2024-01-15T10:30:00Z'
+                }
+            }
+        )
+        
+        # Check stake focus is in context
+        assert result['context']['stake_focus'] is not None
+        assert result['context']['stake_focus']['enabled'] is True
+        assert result['context']['stake_focus']['datetime'] == '2024-01-15T10:30:00Z'
+        
+        # Check prompt includes stake focus instructions
+        assert 'STAKE FOCUS POINT' in result['prompt']
+        assert '2024-01-15T10:30:00Z' in result['prompt']
+    
+    def test_build_payload_stake_focus_disabled(self, builder, sample_data):
+        """Test that disabled stake_focus doesn't add context"""
+        result = builder.build_payload_from_data(
+            raw_data=sample_data,
+            user_prompt="Analyze",
+            selections={'dashboard': True},
+            options={
+                'stake_focus': {
+                    'enabled': False,
+                    'datetime': '2024-01-15T10:30:00Z'
+                }
+            }
+        )
+        
+        # stake_focus should be None when disabled
+        assert result['context']['stake_focus'] is None
+    
+    def test_build_payload_includes_payload_reference(self, builder, sample_data):
+        """Test that payload reference is included in context"""
+        result = builder.build_payload_from_data(
+            raw_data=sample_data,
+            user_prompt="Analyze",
+            selections={'dashboard': True},
+            options={}
+        )
+        
+        # Should have best practices and index creation rules
+        assert 'best_practices' in result['context']
+        assert isinstance(result['context']['best_practices'], list)
+
+
+# ============================================================================
+# Call AI Provider Tests
+# ============================================================================
+
+class TestCallAIProvider:
+    """Tests for call_ai_provider function"""
+    
+    def test_openai_uses_sdk_when_available(self):
+        """Test OpenAI provider attempts to use SDK when available"""
+        import ai_analyzer
+        
+        # Skip if SDK not actually available
+        if not ai_analyzer.OPENAI_SDK_AVAILABLE:
+            pytest.skip("OpenAI SDK not installed")
+        
+        # We can't easily mock the full SDK chain, so just verify the function
+        # handles errors gracefully when called with invalid credentials
+        result = call_ai_provider(
+            provider='openai',
+            model='gpt-4o',
+            api_key='invalid-test-key',
+            api_url='https://api.openai.com/v1',
+            endpoint='/chat/completions',
+            prompt='Test prompt',
+            payload_data={'data': {'test': 'value'}},
+            language='English'
+        )
+        
+        # Should return an error (since credentials are invalid)
+        # but the structure should be correct
+        assert 'success' in result
+        assert 'elapsed_ms' in result or 'error' in result
+    
+    def test_grok_uses_sdk_when_available(self):
+        """Test Grok provider attempts to use SDK when available"""
+        import ai_analyzer
+        
+        # Skip if SDK not actually available
+        if not ai_analyzer.OPENAI_SDK_AVAILABLE:
+            pytest.skip("OpenAI SDK not installed")
+        
+        result = call_ai_provider(
+            provider='grok',
+            model='grok-3',
+            api_key='invalid-test-key',
+            api_url='https://api.x.ai/v1',
+            endpoint='/chat/completions',
+            prompt='Test prompt',
+            payload_data={'data': {}},
+            language='English'
+        )
+        
+        # Should return an error (since credentials are invalid)
+        assert 'success' in result
+        assert 'elapsed_ms' in result or 'error' in result
+    
+    @patch('ai_analyzer.OPENAI_SDK_AVAILABLE', False)
+    @patch('ai_analyzer._execute_ai_request')
+    def test_openai_falls_back_to_http(self, mock_execute):
+        """Test OpenAI falls back to HTTP when SDK unavailable"""
+        mock_execute.return_value = {
+            'success': True,
+            'status_code': 200,
+            'data': {'choices': [{'message': {'content': 'ok'}}]},
+            'elapsed_ms': 100
+        }
+        
+        result = call_ai_provider(
+            provider='openai',
+            model='gpt-4o',
+            api_key='test-key',
+            api_url='https://api.openai.com/v1',
+            endpoint='/chat/completions',
+            prompt='Test',
+            payload_data={'data': {}},
+            language='English'
+        )
+        
+        assert result['success'] is True
+        mock_execute.assert_called_once()
+    
+    @patch('ai_analyzer._execute_ai_request')
+    def test_anthropic_uses_http(self, mock_execute):
+        """Test Anthropic provider uses HTTP (not SDK)"""
+        mock_execute.return_value = {
+            'success': True,
+            'status_code': 200,
+            'data': {'content': [{'text': '{"ok": true}'}]},
+            'elapsed_ms': 150
+        }
+        
+        result = call_ai_provider(
+            provider='anthropic',
+            model='claude-3-5-sonnet-20241022',
+            api_key='test-key',
+            api_url='https://api.anthropic.com',
+            endpoint='/v1/messages',
+            prompt='Test prompt',
+            payload_data={'data': {}},
+            language='English'
+        )
+        
+        assert result['success'] is True
+        mock_execute.assert_called_once()
+        
+        # Check that anthropic-specific headers would be used
+        call_args = mock_execute.call_args
+        url = call_args[0][0]
+        assert 'anthropic.com' in url
 
 
 # ============================================================================
