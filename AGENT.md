@@ -92,7 +92,7 @@ The Couchbase Query Analyzer is a tool for analyzing N1QL query performance from
 docker build -t couchbase-query-analyzer:4.0.0 .
 
 # Run
-docker run -p 5555:5555 -v ./config:/app/config couchbase-query-analyzer:4.0.0
+docker run -p 5000:5000 -v ./config:/app/config couchbase-query-analyzer:4.0.0
 ```
 
 ### 2. macOS Application
@@ -197,8 +197,8 @@ No installation needed - just open `/en/index.html` in browser.
 
 #### Option A: Docker
 ```bash
-docker run -p 5555:5555 couchbase-query-analyzer:4.0.0
-# Open http://localhost:5555
+docker run -p 5000:5000 couchbase-query-analyzer:4.0.0
+# Open http://localhost:5000
 ```
 
 #### Option B: Local Development
@@ -208,7 +208,7 @@ cd app
 source venv/bin/activate
 pip install -r requirements.txt
 python app.py
-# Open http://localhost:5555
+# Open http://localhost:5000
 ```
 
 #### Option C: Standalone Executables

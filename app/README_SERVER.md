@@ -62,15 +62,15 @@ python3 app.py
 You should see:
 ```
 🚀 Liquid Snake Server
-📡 Serving at http://localhost:5555
+📡 Serving at http://localhost:5000
 📂 Directory: /path/to/liquid_snake
-🌐 Open: http://localhost:5555/index.html
+🌐 Open: http://localhost:5000/index.html
 🛑 Press Ctrl+C to stop
 ```
 
 ### 6. Open in Browser
 
-Navigate to: http://localhost:5555/index.html
+Navigate to: http://localhost:5000/index.html
 
 ### 7. Deactivate Virtual Environment (When Done)
 
@@ -161,13 +161,13 @@ pip install --upgrade couchbase
 4. Check bucket exists: `cb_tools`
 5. Check collections exist: `cb_tools.query.analyzer` and `cb_tools._default._default`
 
-**Problem**: Port 5555 already in use
+**Problem**: Port 5000 already in use
 ```bash
-# Find process using port 5555
-lsof -ti:5555
+# Find process using port 5000
+lsof -ti:5000
 
 # Kill the process
-kill -9 $(lsof -ti:5555)
+kill -9 $(lsof -ti:5000)
 
 # Or change PORT in app.py
 ```

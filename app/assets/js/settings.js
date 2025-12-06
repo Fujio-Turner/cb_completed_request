@@ -1209,7 +1209,7 @@ window.testCustomAIConfig = async function() {
         if (statusSpan) {
             statusSpan.innerHTML = `<span style="color: #dc3545;">❌ ${error.message}</span>`;
         }
-        showToast(`Test failed: ${error.message}. Make sure the Flask server is running on port 5555.`, 'error');
+        showToast(`Test failed: ${error.message}. Make sure the Flask server is running on port 5000.`, 'error');
     } finally {
         if (testBtn) {
             testBtn.disabled = false;

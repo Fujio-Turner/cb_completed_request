@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Flask HTTP server for Liquid Snake with ES6 modules
-Runs on http://localhost:5555
+Runs on http://localhost:5000
 
 Includes Couchbase REST API endpoints for Issue #231:
 - POST /api/couchbase/test - Test connection
@@ -53,7 +53,7 @@ except ImportError:
 # Configure icecream
 ic.configureOutput(includeContext=True)
 
-PORT = 5555
+PORT = int(os.environ.get('PORT', 5000))
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__, static_folder=DIRECTORY, static_url_path='')

@@ -144,7 +144,7 @@ Refactor the Couchbase Query Analyzer from a monolithic single-file application 
 **File:** `liquid_snake/app.py`
 
 **Features:**
-- Runs on http://localhost:5555
+- Runs on http://localhost:5000
 - Serves files with correct MIME types for ES6 modules
 - Adds CORS headers
 - Disables caching for development
@@ -166,7 +166,7 @@ python3 app.py
 - ✅ TEXT_CONSTANTS (existence and values)
 - ✅ Redact mode ON/OFF behavior
 
-**URL:** http://localhost:5555/test_base.html
+**URL:** http://localhost:5000/test_base.html
 
 **Status:** ✅ All tests passing
 
@@ -526,8 +526,8 @@ index.html
 
 ### Development Server
 - Start: `cd liquid_snake && python3 app.py`
-- URL: http://localhost:5555/index.html
-- Test Suite: http://localhost:5555/test_base.html
+- URL: http://localhost:5000/index.html
+- Test Suite: http://localhost:5000/test_base.html
 
 ---
 

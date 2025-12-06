@@ -103,7 +103,7 @@
 ### 1. Docker Image
 ```bash
 docker build -t couchbase-query-analyzer:4.0.0 .
-docker run -p 5555:5555 couchbase-query-analyzer:4.0.0
+docker run -p 5000:5000 couchbase-query-analyzer:4.0.0
 ```
 
 ### 2. macOS Application
@@ -144,7 +144,7 @@ Archived files that are no longer actively maintained:
 cd app
 source venv/bin/activate
 python app.py
-# Open http://localhost:5555
+# Open http://localhost:5000
 ```
 
 ### Run Tests

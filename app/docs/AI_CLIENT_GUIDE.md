@@ -296,14 +296,14 @@ cd liquid_snake
 python3 app.py
 
 # Open in browser
-open http://localhost:5555/test_ai_client.html
+open http://localhost:5000/test_ai_client.html
 ```
 
 ### Manual Testing
 
 ```bash
 # Test OpenAI endpoint
-curl -X POST http://localhost:5555/api/ai/call \
+curl -X POST http://localhost:5000/api/ai/call \
   -H "Content-Type: application/json" \
   -d '{
     "provider": "openai",

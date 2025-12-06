@@ -16,7 +16,7 @@ source venv/bin/activate
 pip install -q -r requirements.txt
 
 # Run Flask app
-echo "🌐 Starting Flask server on http://localhost:5555"
+echo "🌐 Starting Flask server on http://localhost:5000"
 echo "🛑 Press Ctrl+C to stop"
 echo ""
 

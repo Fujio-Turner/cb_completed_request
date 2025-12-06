@@ -299,7 +299,7 @@ cp config.json.template config.json
 python3 app.py
 
 # 6. Open browser
-# http://localhost:5555/index.html
+# http://localhost:5000/index.html
 ```
 
 ### Couchbase Setup (SQL)
@@ -564,7 +564,7 @@ git checkout HEAD~1 liquid_snake/app.py
 
 ### Debug Mode
 ```
-http://localhost:5555/index.html?debug=true
+http://localhost:5000/index.html?debug=true
 ```
 
 View detailed logs in browser console for troubleshooting.

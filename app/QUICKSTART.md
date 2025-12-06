@@ -20,7 +20,7 @@ source venv/bin/activate
 # Start server
 python3 app.py
 
-# Open browser to http://localhost:5555/index.html
+# Open browser to http://localhost:5000/index.html
 
 # When done (Ctrl+C to stop server)
 deactivate

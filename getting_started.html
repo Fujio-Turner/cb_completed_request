@@ -274,11 +274,11 @@
                     </div>
 <pre># Server Edition (with AI analysis, Couchbase integration)
 docker pull fujioturner/couchbase-query-analyzer:4.0.0
-docker run -p 5555:5555 fujioturner/couchbase-query-analyzer:4.0.0
+docker run -p 5000:5000 fujioturner/couchbase-query-analyzer:4.0.0
 
 # Or use 'latest' tag (always points to Server Edition)
-docker run -p 5555:5555 fujioturner/couchbase-query-analyzer:latest</pre>
-                    <p style="margin-top:8px;color:#666;font-size:0.9em"><em>After running, open <a href="http://localhost:5555" target="_blank">http://localhost:5555</a></em></p>
+docker run -p 5000:5000 fujioturner/couchbase-query-analyzer:latest</pre>
+                    <p style="margin-top:8px;color:#666;font-size:0.9em"><em>After running, open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></em></p>
                 </div>
 
                 <div id="tab-macos" class="tab-content">
@@ -292,7 +292,7 @@ docker run -p 5555:5555 fujioturner/couchbase-query-analyzer:latest</pre>
                         <li>Open the DMG and drag <strong>QueryAnalyzer.app</strong> to Applications</li>
                         <li>Double-click to run. <em>Security warning? Go to System Settings → Privacy & Security → Allow.</em></li>
                     </ol>
-                    <p style="margin-top:6px;color:#666;font-size:0.9em"><em>The app will open <a href="http://localhost:5555" target="_blank">http://localhost:5555</a> automatically</em></p>
+                    <p style="margin-top:6px;color:#666;font-size:0.9em"><em>The app will open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a> automatically</em></p>
                 </div>
 
                 <div id="tab-windows" class="tab-content">
@@ -306,7 +306,7 @@ docker run -p 5555:5555 fujioturner/couchbase-query-analyzer:latest</pre>
                         <li>Extract and double-click <code>QueryAnalyzer.exe</code> to run</li>
                         <li><em>"Windows protected your PC"? Click "More info" → "Run anyway".</em></li>
                     </ol>
-                    <p style="margin-top:6px;color:#666;font-size:0.9em"><em>The app will open <a href="http://localhost:5555" target="_blank">http://localhost:5555</a> automatically</em></p>
+                    <p style="margin-top:6px;color:#666;font-size:0.9em"><em>The app will open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a> automatically</em></p>
                 </div>
 
                 <div id="tab-static" class="tab-content">
@@ -365,7 +365,7 @@ docker run -p 5555:5555 fujioturner/couchbase-query-analyzer:latest</pre>
             <h2>3. Configure the Tool <span style="font-size:0.7em;color:#666">(Server Edition only)</span></h2>
             <p style="margin-bottom:8px">Once running and your Couchbase user is ready:</p>
             <ol class="steps-list">
-                <li>Open <a href="http://localhost:5555" target="_blank">http://localhost:5555</a></li>
+                <li>Open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></li>
                 <li>Click <strong>Settings</strong> icon (Upper Right Corner) <img src="assets/img/setting_socket.png" alt="Settings icon" class="icon-zoom" style="height:20px;vertical-align:middle"> → enter Cluster URL, Username, Password <img src="assets/img/setting_page.png" alt="Settings page - click to enlarge" class="screenshot-preview" style="height:40px;vertical-align:middle;margin-left:8px"></li>
                 <li>Click <strong>Test Connection</strong> → <strong>Save Settings</strong></li>
             </ol>

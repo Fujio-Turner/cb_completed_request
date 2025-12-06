@@ -99,10 +99,10 @@ module.exports = defineConfig({
       stdout: 'ignore',
       stderr: 'pipe',
     },
-    // Server Edition: Flask on port 5555
+    // Server Edition: Flask on port 5555 (separate from dev server on 5000)
     // Note: Requires Python venv to be set up. See app/setup_venv.sh
     {
-      command: 'cd ../app && source venv/bin/activate && python app.py',
+      command: 'cd ../app && source venv/bin/activate && PORT=5555 python app.py',
       port: 5555,
       reuseExistingServer: !process.env.CI,
       stdout: 'pipe',

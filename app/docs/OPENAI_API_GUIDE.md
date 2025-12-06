@@ -498,7 +498,7 @@ cd liquid_snake
 ./start.sh
 
 # Open test page
-open http://localhost:5555/test_openai.html
+open http://localhost:5000/test_openai.html
 ```
 
 ### Manual Test

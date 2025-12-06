@@ -566,7 +566,7 @@ cd liquid_snake
 ./start.sh
 
 # Open test page
-open http://localhost:5555/test_claude.html
+open http://localhost:5000/test_claude.html
 ```
 
 ### Manual Test
