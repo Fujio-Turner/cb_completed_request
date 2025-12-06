@@ -35,7 +35,7 @@
             background: white;
             border: 2px solid #007acc;
             border-radius: 10px;
-            padding: 12px 20px;
+            padding: 20px 30px;
             margin: 12px 0;
             box-shadow: 0 4px 14px rgba(0,0,0,0.06);
         }
@@ -43,57 +43,71 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
+            gap: 20px;
+            flex-wrap: nowrap;
         }
         .evolution-item {
+            position: relative;
             text-align: center;
         }
-        .evolution-item.version-label {
-            font-size: 1.4em;
-            font-weight: 700;
-            color: #333;
+        .version-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4em;
+            font-weight: 900;
+            color: rgba(0, 0, 0, 0.35);
+            pointer-events: none;
+            z-index: 1;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.9);
         }
-        .evolution-item.version-label.new-version {
-            color: #ff8c00;
+        .version-label.new-version {
+            color: rgba(255, 140, 0, 0.5);
         }
         .evolution-item img.screenshot {
-            max-width: 200px;
+            height: 200px;
+            max-width: 340px;
+            object-fit: cover;
+            object-position: top left;
             border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
         }
         .evolution-operator {
-            font-size: 1.8em;
-            font-weight: 300;
+            font-size: 2.5em;
+            font-weight: 700;
             color: #007acc;
+            padding: 0 8px;
         }
         .ai-logos-box {
             background: white;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
-            padding: 10px 15px;
+            padding: 15px 20px;
             text-align: center;
-        }
-        .ai-logos-box .ai-label {
-            font-size: 1.1em;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 6px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-sizing: border-box;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
         }
         .ai-logos-box .logos-row {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }
         .ai-logos-box img.ai-logo {
-            height: 24px;
+            height: 45px;
             width: auto;
         }
         .ai-logos-box .ai-subtext {
-            font-size: 0.8em;
+            font-size: 0.85em;
             color: #666;
-            margin-top: 4px;
+            margin-top: 8px;
+            line-height: 1.3;
         }
 
         /* Step description */
@@ -106,6 +120,9 @@
         /* Tabs override: dashed border for this page */
         .tab-content {
             border: 2px dashed #007acc;
+        }
+        .tabs-container {
+            margin-top: 5px;
         }
 
         /* Feature Matrix Tooltip */
@@ -177,9 +194,15 @@
             border-bottom: none;
         }
 
+        @media (max-width: 900px) {
+            .ai-evolution-content { flex-wrap: wrap; }
+            .evolution-item img.screenshot { height: 150px; }
+            .ai-logos-box { height: 150px; }
+        }
         @media (max-width: 600px) {
             .ai-evolution-content { flex-direction: column; }
-            .evolution-item img.screenshot { max-width: 90%; }
+            .evolution-item img.screenshot { height: auto; max-width: 90%; }
+            .ai-logos-box { height: auto; }
         }
     </style>
 </head>
@@ -206,12 +229,11 @@
             <div class="evolution-operator">+</div>
             <div class="evolution-item">
                 <div class="ai-logos-box">
-                    <div class="ai-label">AI</div>
                     <div class="logos-row">
                         <img src="assets/img/x_ai_logo.png" alt="xAI Grok" class="ai-logo">
                         <img src="assets/img/openAid_logo.png" alt="OpenAI" class="ai-logo">
                     </div>
-                    <div class="ai-subtext">Custom AI API</div>
+                    <div class="ai-subtext">Custom<br>AI API</div>
                 </div>
             </div>
             <div class="evolution-operator">=</div>
@@ -224,8 +246,8 @@
 
     <main>
         <section style="margin-bottom:10px">
-            <h2 style="margin-bottom:8px">Why Are My Queries Slow?</h2>
-            <p style="margin:0 0 8px">Slow Couchbase queries can stem from unoptimized N1QL/SQL++ statements, missing indexes, or inefficient data scans. This tool helps you:</p>
+            <h2 style="margin-top:15px;margin-bottom:8px">Why Are My Queries Slow?</h2>
+            <p style="margin:0 0 8px">Slow queries often result from unoptimized N1QL/SQL++, missing indexes, or inefficient scans. This tool helps:</p>
             <ul style="margin:0;padding-left:20px">
                 <li>Identify bottlenecks with detailed query analysis and <b>Insights</b>.</li>
                 <li>Visualize query performance with timelines and metrics.</li>
@@ -234,8 +256,8 @@
         </section>
 
         <section>
-            <h2>Get Started</h2>
-            <span class="feature-matrix-trigger">4.x vs 3.x Features
+            <h2 style="display:inline-block;margin-top:15px;margin-bottom:5px;margin-right:15px">Get Started</h2>
+            <span class="feature-matrix-trigger" style="vertical-align:middle">4.x vs 3.x Features
                 <div class="feature-matrix-popup">
                     <table class="feature-matrix-table">
                         <tr>

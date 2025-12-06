@@ -303,16 +303,6 @@ docker run -p 5000:5000 fujioturner/couchbase-query-analyzer:latest</pre>
                     <ol class="steps-list">
                         <li><strong>Create Bucket:</strong> <code>cb_tools</code> (256 MB)</li>
                         <li><strong>Create Scope/Collection:</strong> <code>query.analyzer</code></li>
-                        <li><strong>Create Index:</strong>
-                            <div class="sql-query-box">
-                                <pre>CREATE INDEX `analysis_old_table_v2` 
-ON `cb_tools`.`query`.`analyzer`(
-    `createdAt` DESC INCLUDE MISSING, `metadata`, `status`,
-    `prompt`, `provider`, `sourceCluster`, `parseJson`.`filters`
-) WHERE (`docType` = "ai_analysis")</pre>
-                                <button class="sql-copy-btn">Copy</button>
-                            </div>
-                        </li>
                         <li><strong>Create User:</strong> <a href="https://docs.couchbase.com/cloud/clusters/manage-database-users.html" target="_blank">Database Credential</a> with Read/Write on <code>cb_tools</code></li>
                         <li><strong>Whitelist IP:</strong> <a href="https://docs.couchbase.com/cloud/get-started/connect.html#prerequisites" target="_blank">Add IP to Allowed List</a></li>
                     </ol>
@@ -326,16 +316,6 @@ ON `cb_tools`.`query`.`analyzer`(
                     <ol class="steps-list">
                         <li><strong>Create Bucket:</strong> <code>cb_tools</code> (256 MB)</li>
                         <li><strong>Create Scope/Collection:</strong> <code>query.analyzer</code></li>
-                        <li><strong>Create Index:</strong>
-                            <div class="sql-query-box">
-                                <pre>CREATE INDEX `analysis_old_table_v2` 
-ON `cb_tools`.`query`.`analyzer`(
-    `createdAt` DESC INCLUDE MISSING, `metadata`, `status`,
-    `prompt`, `provider`, `sourceCluster`, `parseJson`.`filters`
-) WHERE (`docType` = "ai_analysis")</pre>
-                                <button class="sql-copy-btn">Copy</button>
-                            </div>
-                        </li>
                         <li><strong>Create User:</strong> <a href="https://docs.couchbase.com/server/current/manage/manage-security/manage-users-and-roles.html#add-a-user" target="_blank">SDK User</a> with Data Reader/Writer on <code>cb_tools</code></li>
                     </ol>
                 </div>
