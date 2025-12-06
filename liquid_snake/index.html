@@ -532,22 +532,14 @@
                     <div style="flex: 1; min-width: 280px; padding: 12px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px;">
                         <div style="font-weight: 600; font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Timeline</div>
                         
-                        <!-- Chart Trends -->
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;" title="Controls how many chart trend insights the AI generates.">
-                            <span style="font-size: 13px; color: #333; min-width: 90px;">Chart Trends:</span>
-                            <div id="ai-chart-trends-group" style="display: flex; gap: 4px;">
-                                <input type="radio" name="ai-chart-trends-depth" id="ai-chart-trends-low" value="low" checked><label for="ai-chart-trends-low">Low</label>
-                                <input type="radio" name="ai-chart-trends-depth" id="ai-chart-trends-high" value="high"><label for="ai-chart-trends-high">High</label>
-                            </div>
-                        </div>
-                        
                         <!-- Timeline Data -->
-                        <div id="ai-timeline-data-depth-container" style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;" title="'Basic' sends 7 key charts. 'Full' sends all 14 charts.">
+                        <div id="ai-timeline-data-depth-container" style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                             <span style="font-size: 13px; color: #333; min-width: 90px;">Data Depth:</span>
                             <div id="ai-timeline-depth-group" style="display: flex; gap: 4px;">
                                 <input type="radio" name="ai-timeline-data-depth" id="ai-timeline-data-basic" value="basic" checked><label for="ai-timeline-data-basic">Basic</label>
                                 <input type="radio" name="ai-timeline-data-depth" id="ai-timeline-data-full" value="full"><label for="ai-timeline-data-full">Full</label>
                             </div>
+                            <span title="Basic: Sends 7 key timeline charts (Request Count, Duration, Memory, CPU, etc.)&#10;Full: Sends all 14 charts including Kernel Time, Result Count, Index Scan, Fetch stats" style="cursor: help; color: #888; font-size: 14px;">ⓘ</span>
                         </div>
                         
                         <!-- Stake Focus -->
@@ -632,11 +624,6 @@
                         icon: false
                     });
                     
-                    // Chart Trends radio buttons
-                    $('#ai-chart-trends-group input[type="radio"]').checkboxradio({
-                        icon: false
-                    });
-                    
                     // Timeline Data Depth radio buttons
                     $('#ai-timeline-depth-group input[type="radio"]').checkboxradio({
                         icon: false
@@ -649,6 +636,11 @@
                     
                     // Query Groups Limit radio buttons
                     $('#ai-qg-limit-group input[type="radio"]').checkboxradio({
+                        icon: false
+                    });
+                    
+                    // Optimize AI Payload checkbox
+                    $('#ai-optimize-payload').checkboxradio({
                         icon: false
                     });
                     
@@ -686,13 +678,13 @@
                     Analyze with AI
                 </button>
 
-                <button id="ai-preview-btn" onclick="showAIPreview('json')" class="btn-standard" style="background: #6c757d; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
+                <button id="ai-preview-btn" onclick="showAIPreview()" class="btn-standard" style="background: #6c757d; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold;">
                     Preview Payload
                 </button>
-                <!-- TOON Preview (Dev Mode Only) -->
-                <button id="ai-preview-toon-btn" onclick="showAIPreview('toon')" class="btn-standard" style="background: #495057; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold; display: none;">
-                    Preview TOON
-                </button>
+                
+                <div id="ai-optimize-payload-group" style="display: flex; gap: 4px;">
+                    <input type="checkbox" id="ai-optimize-payload" checked><label for="ai-optimize-payload">Optimize Payload</label>
+                </div>
 
                 <!-- Progress Bar (Hidden by default) -->
                 <div id="ai-progress-bar" class="progress-steps-container" style="display: none;">

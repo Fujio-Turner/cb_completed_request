@@ -26483,7 +26483,9 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
          * Show AI preview overlay with JSON/TOON data that will be sent to AI
          * Sends actual data to Flask for processing
          */
-        async function showAIPreview(format = 'json') {
+        async function showAIPreview() {
+            // Determine format based on Optimize AI Payload checkbox
+            const format = document.getElementById('ai-optimize-payload')?.checked ? 'toon' : 'json';
             Logger.debug(`[AI] 👁️ showAIPreview(${format}) called`);
             
             const overlay = document.getElementById('ai-preview-overlay');
@@ -26528,7 +26530,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 obfuscated: document.getElementById('ai-obfuscate-data')?.checked || false,
                 store_results: true,  // Always save for tracking and auditing
                 query_group_limit: parseInt(document.querySelector('input[name="ai-qg-limit"]:checked')?.value || "10"),
-                use_toon: document.getElementById('ai-send-toon')?.checked || false,
+                use_toon: document.getElementById('ai-optimize-payload')?.checked || false,
                 stake_focus: stakeFocusEnabled && stakeFocusDatetime ? {
                     enabled: true,
                     datetime: stakeFocusDatetime
@@ -26787,26 +26789,6 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 updateTimelineDataDepthState();
             }
             
-            // Show/Hide TOON Preview button based on Dev Mode
-            if (isDevMode()) {
-                const toonBtn = document.getElementById('ai-preview-toon-btn');
-                if (toonBtn) toonBtn.style.display = 'inline-block';
-                
-                // Add TOON checkbox option below Analyze button if in dev mode
-                const analyzeBtn = document.getElementById('ai-analyze-btn');
-                if (analyzeBtn && !document.getElementById('ai-send-toon')) {
-                    const buttonContainer = analyzeBtn.parentElement;
-                    const toonOption = document.createElement('div');
-                    toonOption.style.cssText = 'margin-top: 8px;';
-                    toonOption.innerHTML = `
-                        <label style="display: flex; align-items: center; gap: 6px; color: #6610f2; font-weight: bold; font-size: 13px;">
-                            <input type="checkbox" id="ai-send-toon"> 📦 Send as TOON (Experimental)
-                        </label>
-                        <div style="font-size: 11px; color: #666; margin-left: 22px;">Use optimized TOON format to reduce payload size</div>
-                    `;
-                    buttonContainer.insertAdjacentElement('afterend', toonOption);
-                }
-            }
         });
 
         /**
@@ -26931,16 +26913,14 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Get stake focus if enabled
             const stakeFocusEnabled = document.getElementById('ai-stake-focus-enabled')?.checked || false;
             const stakeFocusDatetime = document.getElementById('ai-stake-datetime')?.value || null;
-            const chartTrendsDepth = document.querySelector('input[name="ai-chart-trends-depth"]:checked')?.value || 'low';
             const timelineDataDepth = document.querySelector('input[name="ai-timeline-data-depth"]:checked')?.value || 'basic';
             
             const options = {
                 obfuscated: document.getElementById('ai-obfuscate-data')?.checked || false,
                 store_results: true,  // Always save for tracking and auditing
                 query_group_limit: parseInt(document.querySelector('input[name="ai-qg-limit"]:checked')?.value || "10"),
-                chart_trends_depth: chartTrendsDepth,  // 'low' (5-6 insights) or 'high' (15+ insights)
                 timeline_data_depth: timelineDataDepth,  // 'basic' or 'full'
-                use_toon: document.getElementById('ai-send-toon')?.checked || false,
+                use_toon: document.getElementById('ai-optimize-payload')?.checked || false,
                 stake_focus: stakeFocusEnabled && stakeFocusDatetime ? {
                     enabled: true,
                     datetime: stakeFocusDatetime
@@ -26950,7 +26930,6 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (options.stake_focus) {
                 Logger.debug(`[AI] 📍 Stake focus enabled at: ${options.stake_focus.datetime}`);
             }
-            Logger.debug(`[AI] 📊 Chart trends depth: ${chartTrendsDepth}`);
             
             // Store stake_focus globally for timeline rendering when response arrives
             window._lastStakeFocus = options.stake_focus;
@@ -27941,7 +27920,6 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             const dataToAnalyzeHtml = dataToAnalyzeBadges || '<span style="color: #888;">N/A</span>';
             
             // Get additional analysis options
-            const chartTrendsDepth = options.chart_trends_depth || 'N/A';
             const timelineDataDepth = options.timeline_data_depth || 'basic';
             const stakeFocus = options.stake_focus;
             const stakeFocusStr = stakeFocus?.enabled ? stakeFocus.datetime : 'None';
@@ -27981,7 +27959,6 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     <div style="margin-left: 10px;">
                         <div>Language: <strong>${doc.language || 'English'}</strong></div>
                         <div>Query Groups: <strong>${qgLimit}</strong></div>
-                        <div>Chart Trends: <strong>${chartTrendsDepth === 'high' ? 'High' : 'Low'}</strong></div>
                         <div>Data Depth: <strong>${timelineDataDepth === 'full' ? 'Full' : 'Basic'}</strong></div>
                         <div>Stake Focus: ${stakeFocusStr}</div>
                     </div>
@@ -28476,7 +28453,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 if (analysisOptionsSection) {
                     md += `| **Language** | ${getTextFromDiv(analysisOptionsSection, 'Language')} |\n`;
                     md += `| **Query Groups** | ${getTextFromDiv(analysisOptionsSection, 'Query Groups')} |\n`;
-                    md += `| **Chart Trends** | ${getTextFromDiv(analysisOptionsSection, 'Chart Trends')} |\n`;
+                    md += `| **Data Depth** | ${getTextFromDiv(analysisOptionsSection, 'Data Depth')} |\n`;
                     md += `| **Stake Focus** | ${getTextFromDiv(analysisOptionsSection, 'Stake Focus')} |\n`;
                 }
                 md += '\n';

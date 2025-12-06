@@ -1211,18 +1211,6 @@ class AIPayloadBuilder:
         if extra_instructions:
             full_prompt += f"\n\n{extra_instructions}"
         
-        # Add chart trends depth instructions
-        chart_trends_depth = options.get('chart_trends_depth', 'low')
-        if chart_trends_depth == 'high':
-            full_prompt += """
-
-**📊 CHART TRENDS DEPTH: HIGH**
-You MUST provide comprehensive chart_trends analysis with 15-20 insights covering the ENTIRE timeline range.
-- Analyze ALL significant events across the full date range, not just the beginning
-- Distribute insights evenly across early, middle, and late portions of the timeline
-- Include insights from ALL chart types: Request Count, Memory Usage, Duration, CPU Time, Index Scan, Fetch Throughput
-- If a stake point is set, ensure at least 3-5 insights are specifically around that timestamp"""
-        
         # Add stake focus instructions if enabled
         stake_focus = options.get('stake_focus')
         if stake_focus and stake_focus.get('enabled') and stake_focus.get('datetime'):
@@ -1233,7 +1221,7 @@ You MUST provide comprehensive chart_trends analysis with 15-20 insights coverin
 The user has marked a specific time point on the Timeline charts for focused analysis: **{stake_datetime}**
 
 This "stake" indicates the user observed something significant at this exact moment and wants you to:
-1. **MUST include chart_trends insights around {stake_datetime}** - At least 3-5 insights within ±30 minutes of this timestamp
+1. **Analyze activity around {stake_datetime}** - Look for patterns within ±30 minutes of this timestamp
 2. **Identify what happened at or around {stake_datetime}** - Look for anomalies, spikes, or pattern changes in the Timeline data
 3. **Analyze queries executing at this time** - Check requestTime values close to this timestamp for slow queries, errors, or unusual patterns
 4. **Look for correlations** - Examine if metrics like memory, CPU time, kernel time, result size, or index scans show unusual values around this time
@@ -1293,7 +1281,6 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
                 'purpose': 'This tool analyzes N1QL query performance from system:completed_requests',
                 'reference_docs': f"For general best practices, stats definitions, and optimization strategies, refer to: {additional_refs.get('analysis_hub', 'https://cb.fuj.io/analysis_hub')}",
                 'data_source': 'Queries extracted from: SELECT *, meta().plan FROM system:completed_requests',
-                'chart_trends_depth': chart_trends_depth,  # 'low' (5-6 insights) or 'high' (15-20 insights)
                 'stake_focus': stake_focus_context,
                 'tabs_explained': {
                     'Dashboard': 'High-level metrics and charts showing query distribution, index usage, and performance patterns',
@@ -1931,7 +1918,7 @@ If the user provided a specific request or question in their prompt, you MUST an
 - Include ALL sections even if empty (use [] or {} for empty sections)
 - Be specific and actionable in recommendations
 - Focus on performance improvements and best practices
-- **CRITICAL**: Chart Trends insights MUST use ISO 8601 format (YYYY-MM-DDTHH:MM:SS) for start/end times. Group by chart category (Request Count, Memory Usage, Duration, CPU Time, Index Scan, Fetch Throughput). Keep titles short (max 50 chars) - full details go in content field.
+- **CRITICAL**: chart_trends insights MUST use ISO 8601 format (YYYY-MM-DDTHH:MM:SS) for start/end times. Group by chart category (Request Count, Memory Usage, Duration, CPU Time, Index Scan, Fetch Throughput). Keep titles short (max 50 chars) - full details go in content field.
 - **CRITICAL**: All suggested index names MUST end with '_v1', '_v2', etc. (e.g. 'idx_users_v1').
 - **CRITICAL**: EXCEPTION: Primary indexes MUST NOT be versioned.
 - **CRITICAL**: Use ALTER INDEX with strict JSON syntax for replica changes: WITH {"action":"replica_count", "num_replica": 1}.
