@@ -26808,8 +26808,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     btn.disabled = false;
                     btn.innerHTML = originalBtnContent;
                     btn.onclick = () => analyzeWithAI();
-                    btn.style.backgroundColor = '';
-                    btn.style.borderColor = '';
+                    btn.style.background = 'linear-gradient(180deg, #4CAF50 0%, #43A047 100%)';
+                    btn.style.borderColor = '#388E3C';
                 }
                 // Hide progress bar
                 const progressBar = document.getElementById('ai-progress-bar');
@@ -27086,8 +27086,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             btn.disabled = false;
                             btn.innerHTML = '❌ Cancel Analysis';
                             btn.onclick = () => cancelAIAnalysis(docId);
-                            btn.style.backgroundColor = '#dc3545'; 
-                            btn.style.borderColor = '#dc3545';
+                            btn.style.background = 'linear-gradient(180deg, #dc3545 0%, #c82333 100%)'; 
+                            btn.style.borderColor = '#bd2130';
                         }
                         
                         // Immediately show in history table as "Pending"
@@ -27110,8 +27110,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                                     btn.disabled = false;
                                     btn.innerHTML = originalBtnContent;
                                     btn.onclick = () => analyzeWithAI();
-                                    btn.style.backgroundColor = ''; 
-                                    btn.style.borderColor = '';
+                                    btn.style.background = 'linear-gradient(180deg, #4CAF50 0%, #43A047 100%)'; 
+                                    btn.style.borderColor = '#388E3C';
                                 }
                                 if (progressBar) {
                                     setTimeout(() => { progressBar.style.display = 'none'; }, 3000);
