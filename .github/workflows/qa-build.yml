@@ -59,41 +59,111 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pyinstaller
+          pip install pyinstaller rumps
+          
+      - name: Create PyInstaller spec
+        working-directory: ./app
+        run: |
+          cat > QueryAnalyzer.spec << 'SPEC_EOF'
+          # -*- mode: python ; coding: utf-8 -*-
+          
+          block_cipher = None
+          
+          a = Analysis(
+              ['app.py'],
+              pathex=[],
+              binaries=[],
+              datas=[
+                  ('index.html', '.'),
+                  ('assets', 'assets'),
+                  ('docs', 'docs'),
+                  ('config.json', '.'),
+                  ('ai_analyzer.py', '.'),
+                  ('ai_models_list.json.template', '.'),
+                  ('payload_reference.json.template', '.'),
+              ],
+              hiddenimports=[
+                  'flask',
+                  'flask_cors',
+                  'couchbase',
+                  'couchbase.cluster',
+                  'couchbase.auth',
+                  'couchbase.options',
+                  'couchbase.exceptions',
+                  'requests',
+                  'openai',
+                  'icecream',
+                  'webbrowser',
+                  'rumps',
+              ],
+              hookspath=[],
+              hooksconfig={},
+              runtime_hooks=[],
+              excludes=[],
+              win_no_prefer_redirects=False,
+              win_private_assemblies=False,
+              cipher=block_cipher,
+              noarchive=False,
+          )
+          
+          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+          
+          exe = EXE(
+              pyz,
+              a.scripts,
+              [],
+              exclude_binaries=True,
+              name='QueryAnalyzer',
+              debug=False,
+              bootloader_ignore_signals=False,
+              strip=False,
+              upx=True,
+              console=False,
+              disable_windowed_traceback=False,
+              argv_emulation=False,
+              target_arch=None,
+              codesign_identity=None,
+              entitlements_file=None,
+          )
+          
+          coll = COLLECT(
+              exe,
+              a.binaries,
+              a.zipfiles,
+              a.datas,
+              strip=False,
+              upx=True,
+              upx_exclude=[],
+              name='QueryAnalyzer',
+          )
+          
+          app = BUNDLE(
+              coll,
+              name='QueryAnalyzer.app',
+              icon='assets/img/QueryAnalyzer.icns',
+              bundle_identifier='io.fuj.cb.queryanalyzer',
+              info_plist={
+                  'CFBundleName': 'CB Query Analyzer',
+                  'CFBundleDisplayName': 'CB Query Analyzer',
+                  'CFBundleShortVersionString': '4.0.0',
+                  'CFBundleVersion': '4.0.0',
+                  'NSHighResolutionCapable': True,
+                  'LSBackgroundOnly': False,
+                  'LSUIElement': False,
+              },
+          )
+          SPEC_EOF
           
       - name: Build with PyInstaller
         working-directory: ./app
         run: |
-          pyinstaller --name QueryAnalyzer \
-            --onefile \
-            --windowed \
-            --icon "assets/img/QueryAnalyzer.icns" \
-            --add-data "index.html:." \
-            --add-data "assets:assets" \
-            --add-data "docs:docs" \
-            --add-data "config.json:." \
-            --add-data "ai_analyzer.py:." \
-            --add-data "ai_models_list.json.template:." \
-            --add-data "payload_reference.json.template:." \
-            --hidden-import flask \
-            --hidden-import flask_cors \
-            --hidden-import couchbase \
-            --hidden-import couchbase.cluster \
-            --hidden-import couchbase.auth \
-            --hidden-import couchbase.options \
-            --hidden-import couchbase.exceptions \
-            --hidden-import requests \
-            --hidden-import openai \
-            --hidden-import icecream \
-            --hidden-import webbrowser \
-            --hidden-import rumps \
-            app.py
+          pyinstaller QueryAnalyzer.spec --clean --noconfirm
             
       - name: Create DMG
         working-directory: ./app
         run: |
           mkdir -p dist/dmg
-          cp -R dist/QueryAnalyzer.app dist/dmg/ 2>/dev/null || cp dist/QueryAnalyzer dist/dmg/
+          cp -R dist/QueryAnalyzer.app dist/dmg/
           hdiutil create -volname "QueryAnalyzer-QA" \
             -srcfolder dist/dmg \
             -ov -format UDZO \
