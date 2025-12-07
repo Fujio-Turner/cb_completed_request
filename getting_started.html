@@ -256,7 +256,7 @@
         <main class="content">
         <section id="step-1">
             <h2>1. Get the Tool</h2>
-            <p>Choose between the <strong>Server Edition</strong> (with AI analysis) or the simple <strong>Static Edition</strong> (browser-only).</p>
+            <p>Choose between the <strong>New Desktop App</strong> (with AI analysis) or the simple <strong>Classic Static HTML</strong> (browser-only).</p>
 
             <div class="tabs-container">
                 <div class="tab-buttons">
@@ -270,60 +270,60 @@
                     <div class="icon-row">
                         <span class="icon-wrapper"><img src="assets/img/docker_hub_logo_round.png" alt="Docker"></span>
                         <a href="https://hub.docker.com/r/fujioturner/couchbase-query-analyzer/tags" target="_blank">Pull from Docker Hub</a>
-                        <span class="edition-badge server">Server Edition v4.0.0</span>
+                        <span class="edition-badge server">New Desktop App v4.0.0</span>
                     </div>
-<pre># Server Edition (with AI analysis, Couchbase integration)
+<pre># New Desktop App (with AI analysis, Couchbase integration)
 docker pull fujioturner/couchbase-query-analyzer:4.0.0
-docker run -p 5000:5000 fujioturner/couchbase-query-analyzer:4.0.0
+docker run -p 8888:8888 fujioturner/couchbase-query-analyzer:4.0.0
 
-# Or use 'latest' tag (always points to Server Edition)
-docker run -p 5000:5000 fujioturner/couchbase-query-analyzer:latest</pre>
-                    <p style="margin-top:8px;color:#666;font-size:0.9em"><em>After running, open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></em></p>
+# Or use 'latest' tag (always points to New Desktop App)
+docker run -p 8888:8888 fujioturner/couchbase-query-analyzer:latest</pre>
+                    <p style="margin-top:8px;color:#666;font-size:0.9em"><em>After running, open <a href="http://localhost:8888" target="_blank">http://localhost:8888</a></em></p>
                 </div>
 
                 <div id="tab-macos" class="tab-content">
                     <div class="icon-row">
                         <span class="icon-wrapper"><img src="assets/img/macOS_logo.png" alt="macOS"></span>
                         <a href="https://github.com/Fujio-Turner/cb_completed_request/releases" target="_blank">Download for macOS</a>
-                        <span class="edition-badge server">Server Edition v4.0.0</span>
+                        <span class="edition-badge server">New Desktop App v4.0.0</span>
                     </div>
                     <ol class="steps-list">
                         <li>Download <code>QueryAnalyzer-4.0.0-macos.dmg</code> from <a href="https://github.com/Fujio-Turner/cb_completed_request/releases" target="_blank">GitHub Releases</a></li>
                         <li>Open the DMG and drag <strong>QueryAnalyzer.app</strong> to Applications</li>
                         <li>Double-click to run. <em>Security warning? Go to System Settings → Privacy & Security → Allow.</em></li>
                     </ol>
-                    <p style="margin-top:6px;color:#666;font-size:0.9em"><em>The app will open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a> automatically</em></p>
+                    <p style="margin-top:6px;color:#666;font-size:0.9em"><em>The app will open <a href="http://localhost:8888" target="_blank">http://localhost:8888</a> automatically</em></p>
                 </div>
 
                 <div id="tab-windows" class="tab-content">
                     <div class="icon-row">
                         <span class="icon-wrapper"><img src="assets/img/ms_windows_logo.png" alt="Windows"></span>
                         <a href="https://github.com/Fujio-Turner/cb_completed_request/releases" target="_blank">Download for Windows</a>
-                        <span class="edition-badge server">Server Edition v4.0.0</span>
+                        <span class="edition-badge server">New Desktop App v4.0.0</span>
                     </div>
                     <ol class="steps-list">
                         <li>Download <code>QueryAnalyzer-4.0.0-windows.zip</code> from <a href="https://github.com/Fujio-Turner/cb_completed_request/releases" target="_blank">GitHub Releases</a></li>
                         <li>Extract and double-click <code>QueryAnalyzer.exe</code> to run</li>
                         <li><em>"Windows protected your PC"? Click "More info" → "Run anyway".</em></li>
                     </ol>
-                    <p style="margin-top:6px;color:#666;font-size:0.9em"><em>The app will open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a> automatically</em></p>
+                    <p style="margin-top:6px;color:#666;font-size:0.9em"><em>The app will open <a href="http://localhost:8888" target="_blank">http://localhost:8888</a> automatically</em></p>
                 </div>
 
                 <div id="tab-static" class="tab-content">
                     <div class="icon-row">
                         <span class="icon-wrapper">🌐</span>
                         <strong>Browser Only - No Installation</strong>
-                        <span class="edition-badge static">Static Edition v3.29.3</span>
+                        <span class="edition-badge static">Classic Static HTML v3.29.3</span>
                     </div>
                     <p style="margin:8px 0">Just open in your browser - no server, no installation required:</p>
                     <p style="margin:12px 0"><a href="https://cb.fuj.io/en/" target="_blank" style="font-size:1.2em;font-weight:600;background:#28a745;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">→ Open cb.fuj.io/en/</a></p>
-                    <p style="margin-top:12px;color:#666;font-size:0.85em"><strong>Note:</strong> The Static Edition does not include AI analysis, Couchbase integration, or settings persistence. For those features, use the Server Edition above.</p>
+                    <p style="margin-top:12px;color:#666;font-size:0.85em"><strong>Note:</strong> The Classic Static HTML does not include AI analysis, Couchbase integration, or settings persistence. For those features, use the New Desktop App above.</p>
                 </div>
             </div>
         </section>
 
         <section id="step-2">
-            <h2>2. Connect to Couchbase <span style="font-size:0.7em;color:#666">(Server Edition only)</span></h2>
+            <h2>2. Connect to Couchbase <span style="font-size:0.7em;color:#666">(New Desktop App only)</span></h2>
             <p style="margin-bottom:8px">Connect to a Couchbase cluster to save analysis data and preferences.</p>
 
             <div class="tabs-container">
@@ -362,17 +362,17 @@ docker run -p 5000:5000 fujioturner/couchbase-query-analyzer:latest</pre>
         </section>
 
         <section id="step-3">
-            <h2>3. Configure the Tool <span style="font-size:0.7em;color:#666">(Server Edition only)</span></h2>
+            <h2>3. Configure the Tool <span style="font-size:0.7em;color:#666">(New Desktop App only)</span></h2>
             <p style="margin-bottom:8px">Once running and your Couchbase user is ready:</p>
             <ol class="steps-list">
-                <li>Open <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></li>
+                <li>Open <a href="http://localhost:8888" target="_blank">http://localhost:8888</a></li>
                 <li>Click <strong>Settings</strong> icon (Upper Right Corner) <img src="assets/img/setting_socket.png" alt="Settings icon" class="icon-zoom" style="height:20px;vertical-align:middle"> → enter Cluster URL, Username, Password <img src="assets/img/setting_page.png" alt="Settings page - click to enlarge" class="screenshot-preview" style="height:40px;vertical-align:middle;margin-left:8px"></li>
                 <li>Click <strong>Test Connection</strong> → <strong>Save Settings</strong></li>
             </ol>
         </section>
 
         <section id="step-4">
-            <h2>4. Setup AI Analysis <span style="font-size:0.7em;color:#666">(Server Edition only)</span></h2>
+            <h2>4. Setup AI Analysis <span style="font-size:0.7em;color:#666">(New Desktop App only)</span></h2>
             <p style="margin-bottom:8px">Get an API Key from xAI Grok, Anthropic Claude, or OpenAI for AI-powered query analysis.</p>
 
             <table class="ai-table" style="font-size:0.9em">

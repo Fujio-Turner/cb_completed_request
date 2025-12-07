@@ -1,5 +1,5 @@
 {
-  "_docType": "payload_reference",
+  "docType": "payload_reference",
   "_version": "1.0.0",
   "_description": "Reference URLs and context for AI payload generation. Store in Couchbase bucket._default._default with key 'payload_reference'. Update URLs here when documentation changes.",
   "_lastUpdated": "2025-12-05",

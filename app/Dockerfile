@@ -2,8 +2,8 @@
 # Flask-based web server with Couchbase integration and AI analysis
 #
 # Build:   docker build -t couchbase-query-analyzer:4.0.0 -f app/Dockerfile .
-# Run:     docker run -p 5000:5000 couchbase-query-analyzer:4.0.0
-# Access:  http://localhost:5000
+# Run:     docker run -p 8888:8888 couchbase-query-analyzer:4.0.0
+# Access:  http://localhost:8888
 
 FROM python:3.11-slim
 
@@ -35,7 +35,7 @@ COPY app/ .
 RUN mkdir -p /app/config
 
 # Expose Flask port
-EXPOSE 5000
+EXPOSE 8888
 
 # Set environment variables
 ENV FLASK_APP=app.py
@@ -44,7 +44,7 @@ ENV PYTHONUNBUFFERED=1
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8888/')" || exit 1
 
 # Run Flask server
 CMD ["python", "app.py"]

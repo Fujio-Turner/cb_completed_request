@@ -1,5 +1,5 @@
 {
-  "_docType": "ai_models_list",
+  "docType": "ai_models_list",
   "_version": "1.0.0",
   "_description": "AI model configurations with token limits, context windows, and metadata. Store in Couchbase bucket._default._default with key 'ai_models_list'. Update when models are added/retired.",
   "_lastUpdated": "2025-12-05",
