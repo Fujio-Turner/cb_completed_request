@@ -1,32 +1,25 @@
 # Couchbase Query Analyzer - Python Server Dependencies
 # Install with: pip install -r requirements.txt
 
-# Flask web framework
+# Core web framework
 flask>=3.0.0
 flask-cors>=4.0.0
 
-# Couchbase Python SDK (Issue #231)
+# Couchbase SDK
 couchbase>=4.1.0
 
-# HTTP client for AI API calls
+# HTTP and AI clients
 requests>=2.31.0
 urllib3>=2.0.0
-
-# OpenAI SDK
 openai>=1.0.0
 
-# Enhanced logging
+# Utilities
 icecream>=2.1.3
-
-# TOON Converter (Token Object Oriented Notation)
 json-toon-converter>=0.1.0
-
-# Optional: For enhanced error handling and logging
 python-dotenv>=1.0.0
+platformdirs>=4.0.0
 
-# macOS menu bar integration (for app quit functionality)
+# Platform-specific
 rumps>=0.4.0; sys_platform == 'darwin'
-
-# Windows system tray integration
 pystray>=0.19.0; sys_platform == 'win32'
 Pillow>=10.0.0; sys_platform == 'win32'

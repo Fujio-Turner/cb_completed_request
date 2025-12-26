@@ -1,0 +1,35 @@
+{
+  "couchbase": {
+    "connectionString": "couchbases://localhost",
+    "username": "",
+    "password": ""
+  },
+  "aiApis": [
+    {
+      "id": "grok",
+      "name": "Grok",
+      "apiUrl": "https://api.x.ai/v1",
+      "model": "grok-beta",
+      "apiKey": ""
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "apiUrl": "https://api.openai.com/v1",
+      "model": "gpt-4o-mini",
+      "apiKey": ""
+    },
+    {
+      "id": "anthropic",
+      "name": "Anthropic Claude",
+      "apiUrl": "https://api.anthropic.com/v1",
+      "model": "claude-3-5-sonnet-20240620",
+      "apiKey": ""
+    }
+  ],
+  "theme": "light",
+  "debug": false,
+  "autoSave": true,
+  "docType": "config",
+  "updatedAt": "2025-12-24T00:00:00.000Z"
+}
