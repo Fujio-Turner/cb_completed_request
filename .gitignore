@@ -1,4 +1,136 @@
-app/config.json
+# ==============================================================================
+# Couchbase Query Analyzer - .gitignore
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# macOS
+# ------------------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon[]
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# ------------------------------------------------------------------------------
+# Node.js / npm
+# ------------------------------------------------------------------------------
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ------------------------------------------------------------------------------
+# Playwright E2E Tests
+# ------------------------------------------------------------------------------
+playwright-report/
+playwright/playwright-report/
+test-results/
+playwright/test-results/
+.playwright/
+playwright/.cache/
+
+# ------------------------------------------------------------------------------
+# Python
+# ------------------------------------------------------------------------------
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
 app/venv/
+.pytest_cache/
+
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+wheels/
+*.manifest
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+app/.env
+
+# ------------------------------------------------------------------------------
+# Server Edition Configuration (contains credentials)
+# ------------------------------------------------------------------------------
+app/config.json
+config.json
+app/ai_models_list.json
+app/payload_reference.json
+
+# ------------------------------------------------------------------------------
+# IDEs and Editors
+# ------------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+
+# ------------------------------------------------------------------------------
+# Temporary / Log files
+# ------------------------------------------------------------------------------
+*.tmp
+*.bak
+*.log
+logs/*.log
+
+# ------------------------------------------------------------------------------
+# Build artifacts
+# ------------------------------------------------------------------------------
+*.dmg
+*.exe
+*.zip
+*.tar.gz
+
+# ------------------------------------------------------------------------------
+# Test coverage
+# ------------------------------------------------------------------------------
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# ------------------------------------------------------------------------------
+# Apollo per-project state (graph, cblite database, embeddings,
+# annotations, web captures). These directories can grow to many MB
+# (the cblite database in particular) and are recreated locally on
+# demand — keep them out of the repo.
+# ------------------------------------------------------------------------------
+_apollo/
+_apollo_web/
