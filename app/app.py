@@ -35,20 +35,28 @@ import sys
 ic(sys.executable)
 
 # Import TOON converter
+# toon-python lives in a private GitLab repo (not on PyPI). When unavailable
+# the app gracefully falls back to JSON for AI payloads. Set SKIP_TOON_INSTALL=1
+# to suppress the runtime pip-install fallback (e.g. inside containers where
+# the package cannot be fetched anyway).
 try:
     import toon_python
     TOON_AVAILABLE = True
 except ImportError:
-    ic("⚠️ toon-python not installed, attempting runtime install...")
-    try:
-        import subprocess
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "toon-python"])
-        import toon_python
-        TOON_AVAILABLE = True
-        ic("✅ toon-python installed successfully at runtime")
-    except Exception as e:
+    if os.environ.get('SKIP_TOON_INSTALL', '').lower() in ('1', 'true', 'yes'):
         TOON_AVAILABLE = False
-        ic(f"❌ Runtime install failed: {e}")
+        ic("ℹ️ toon-python not installed (SKIP_TOON_INSTALL set); using JSON fallback")
+    else:
+        ic("⚠️ toon-python not installed, attempting runtime install...")
+        try:
+            import subprocess
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "toon-python"])
+            import toon_python
+            TOON_AVAILABLE = True
+            ic("✅ toon-python installed successfully at runtime")
+        except Exception as e:
+            TOON_AVAILABLE = False
+            ic(f"❌ Runtime install failed: {e}")
 
 # Configure icecream
 ic.configureOutput(includeContext=True)
@@ -2590,7 +2598,11 @@ if __name__ == '__main__':
                 app.run(host='0.0.0.0', port=PORT, debug=False)
         else:
             ic("🛑 Press Ctrl+C to stop")
-            app.run(host='0.0.0.0', port=PORT, debug=True)
+            # Honor FLASK_DEBUG env var (default: enabled for local dev).
+            # Containers/production should set FLASK_DEBUG=0 to disable
+            # the auto-reloader and debugger.
+            debug_mode = os.environ.get('FLASK_DEBUG', '1').lower() in ('1', 'true', 'yes')
+            app.run(host='0.0.0.0', port=PORT, debug=debug_mode)
         
     except Exception as e:
         ic(f"💥 FATAL ERROR: {e}")

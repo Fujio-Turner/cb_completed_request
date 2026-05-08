@@ -77,24 +77,24 @@
 
 ---
 
-## Remaining TODO
+## Remaining TODO ✅ COMPLETED
 
-### GitHub Actions (Not Yet Created)
-- [ ] `.github/workflows/build-docker.yml` - Build Docker image
-- [ ] `.github/workflows/build-macos.yml` - Build macOS .app
-- [ ] `.github/workflows/build-windows.yml` - Build Windows .exe
-- [ ] `.github/workflows/release.yml` - Create release with all artifacts
+### GitHub Actions ✅
+- [x] `.github/workflows/docker-build-push.yml` - Build Docker image
+- [x] `.github/workflows/build-macos.yml` - Build macOS .app
+- [x] `.github/workflows/build-windows.yml` - Build Windows .exe
+- [x] `.github/workflows/release.yml` - Create release with all artifacts
 
-### Cloudflare Configuration
-- [ ] Create `_headers` file to restrict `/app/*`, `/tests/*`, `/e2e/*`
-- [ ] Create `_redirects` file to block server-side paths
-- [ ] Test that `/en/index.html` remains accessible
+### Cloudflare Configuration ✅
+- [x] Created `_headers` file to restrict `/app/*`, `/tests/*`, `/e2e/*`
+- [x] Created `_redirects` file to block server-side paths
+- [x] Verified `/en/index.html` remains accessible
 
-### Distribution Builds
-- [ ] Create PyInstaller spec file for macOS
-- [ ] Create PyInstaller spec file for Windows
-- [ ] Test Docker build locally
-- [ ] Set up code signing (optional)
+### Distribution Builds ✅
+- [x] Created PyInstaller spec file for macOS (`app/build_mac.spec`)
+- [x] Created PyInstaller spec file for Windows (`app/build_win.spec`)
+- [x] Tested Docker build locally
+- [x] Set up code signing (optional)
 
 ---
 

@@ -1,0 +1,47 @@
+# Couchbase Query Analyzer - Server Edition v4.0.0
+#
+# Usage:
+#   docker compose up --build       # build & start
+#   docker compose up -d            # detached
+#   docker compose down             # stop & remove
+#
+# Access: http://localhost:8888
+#
+# Notes:
+# - The Flask server expects to talk to a Couchbase cluster you configure
+#   from the UI (Settings → Couchbase Connection). Connection details are
+#   persisted to ./app/config.json on the host via the bind mount below.
+# - If your Couchbase runs on the host machine, use host.docker.internal
+#   (Mac/Windows) instead of localhost in the connection URL.
+
+services:
+  analyzer:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    image: couchbase-query-analyzer:4.0.0
+    container_name: cb-query-analyzer
+    ports:
+      - "8888:8888"
+    environment:
+      PORT: "8888"
+      FLASK_ENV: production
+      FLASK_DEBUG: "0"
+      PYTHONUNBUFFERED: "1"
+      # Skip runtime install of toon-python (private GitLab pkg, not on PyPI).
+      # App falls back to JSON for AI payloads.
+      SKIP_TOON_INSTALL: "1"
+      # Gunicorn tuning — override here if needed
+      GUNICORN_WORKERS: "2"
+      GUNICORN_THREADS: "4"
+      GUNICORN_TIMEOUT: "120"
+    volumes:
+      # Persist runtime config (Couchbase creds, AI provider keys, etc.)
+      - ./app/config.json:/app/config.json
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8888/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s

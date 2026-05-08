@@ -26,6 +26,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY app/requirements.txt .
 
 # Install Python dependencies
+# Note: toon-python is intentionally NOT installed in the container.
+# It lives in a private GitLab repo and is an optional payload-encoding
+# optimization. app.py sets TOON_AVAILABLE=False and falls back to JSON.
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
@@ -40,11 +43,20 @@ EXPOSE 8888
 # Set environment variables
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
+ENV FLASK_DEBUG=0
 ENV PYTHONUNBUFFERED=1
+# Skip the runtime "pip install toon-python" attempt (private GitLab pkg, not on PyPI).
+# App falls back to JSON for AI payloads — no functional loss.
+ENV SKIP_TOON_INSTALL=1
+# Gunicorn tuning (override at runtime if needed)
+ENV GUNICORN_WORKERS=2
+ENV GUNICORN_THREADS=4
+ENV GUNICORN_TIMEOUT=120
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8888/')" || exit 1
 
-# Run Flask server
-CMD ["python", "app.py"]
+# Run with gunicorn (production WSGI server) instead of Flask's dev server.
+# Uses sh -c so env vars expand at container start.
+CMD ["sh", "-c", "exec gunicorn --bind 0.0.0.0:8888 --workers ${GUNICORN_WORKERS} --threads ${GUNICORN_THREADS} --timeout ${GUNICORN_TIMEOUT} --access-logfile - --error-logfile - app:app"]
