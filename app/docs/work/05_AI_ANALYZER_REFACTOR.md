@@ -1,5 +1,7 @@
 # 05 — `ai_analyzer.py` Refactor
 
+**Status:** ✅ COMPLETE
+
 `app/ai_analyzer.py` is the AI session manager. It does three CB-Server-touching things today:
 
 1. Persists a record of every AI run into `cb_tools.<cluster_name>.analysis::{document_id}`.

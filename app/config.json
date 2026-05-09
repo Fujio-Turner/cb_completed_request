@@ -1,4 +1,7 @@
 {
+  "server": {
+    "port": 8080
+  },
   "cluster": {
     "name": "My Couchbase Cluster",
     "url": "http://localhost:8091",

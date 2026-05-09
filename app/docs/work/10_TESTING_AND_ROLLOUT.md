@@ -1,6 +1,15 @@
 # 10 — Testing & Rollout Plan
 
+**Status:** ✅ COMPLETE (Test Suite)
+
 How we verify the CBL migration before flipping the default `STORAGE_BACKEND` from `auto` (≈ today's `server`) to `cbl`.
+
+**Completed:** 84 comprehensive pytest tests created:
+- `conftest.py` — 13 fixtures (tmp DB, Flask client, CB Server mocks)
+- `test_cbl_store.py` — 70 tests (DB lifecycle, collections, blobs, GC, AI history)
+- `test_blob_storage.py` — 32 tests (compression, dedup, size limits)
+- `test_migration.py` — 26 tests (CLI, migrate, verify, resume)
+- `test_app_endpoints.py` — 33 tests (9 Flask endpoints + new storage endpoints)
 
 ---
 

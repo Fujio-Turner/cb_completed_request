@@ -1,47 +1,50 @@
-# Couchbase Query Analyzer - Server Edition v4.0.0
+# Couchbase Query Analyzer - Server Edition v5.0.0 (CBL)
 #
 # Usage:
 #   docker compose up --build       # build & start
 #   docker compose up -d            # detached
 #   docker compose down             # stop & remove
 #
-# Access: http://localhost:8888
+# Access: http://localhost:8080  (override with HOST_PORT=xxxx PORT=xxxx)
+#
+# Port configuration (in priority order):
+#   1. HOST_PORT  — host-side port (what you type in the browser).      Default: 8080
+#   2. PORT       — container-side port gunicorn binds to.              Default: 8080
+#   3. config.json `server.port` (loaded by app.py at startup, only used
+#      when PORT env var is not set).
+#
+# We default to 8080 because port 5000 is hijacked by macOS AirPlay
+# Receiver / Control Center and is a common conflict source.
 #
 # Notes:
-# - The Flask server expects to talk to a Couchbase cluster you configure
-#   from the UI (Settings → Couchbase Connection). Connection details are
-#   persisted to ./app/config.json on the host via the bind mount below.
-# - If your Couchbase runs on the host machine, use host.docker.internal
-#   (Mac/Windows) instead of localhost in the connection URL.
+# - Server Edition v5.0.0 uses embedded Couchbase Lite (no external DB needed).
+# - The Flask server uses STORAGE_BACKEND=cbl by default.
+# - User preferences and analyzer data stored in CBL at /app/data/cb_tools_db.cblite2/
+# - gunicorn -w 1 is REQUIRED — CBL is single-writer.
 
 services:
-  analyzer:
-    build:
-      context: .
-      dockerfile: app/Dockerfile
-    image: couchbase-query-analyzer:4.0.0
-    container_name: cb-query-analyzer
+  query-analyzer:
+    build: .
+    image: couchbase-query-analyzer:5.0.0
+    container_name: cb-query-analyzer-cbl
     ports:
-      - "8888:8888"
+      - "${HOST_PORT:-8080}:${PORT:-8080}"
     environment:
-      PORT: "8888"
-      FLASK_ENV: production
-      FLASK_DEBUG: "0"
+      STORAGE_BACKEND: cbl
+      CBL_DB_DIR: /app/data
+      CBL_DB_NAME: cb_tools_db
+      PORT: "${PORT:-8080}"
       PYTHONUNBUFFERED: "1"
-      # Skip runtime install of toon-python (private GitLab pkg, not on PyPI).
-      # App falls back to JSON for AI payloads.
-      SKIP_TOON_INSTALL: "1"
-      # Gunicorn tuning — override here if needed
-      GUNICORN_WORKERS: "2"
-      GUNICORN_THREADS: "4"
-      GUNICORN_TIMEOUT: "120"
     volumes:
-      # Persist runtime config (Couchbase creds, AI provider keys, etc.)
-      - ./app/config.json:/app/config.json
+      - cbl-data:/app/data           # CBL database persists here
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8888/')"]
+      test: ["CMD-SHELL", "python -c \"import os,urllib.request,sys; sys.exit(0 if urllib.request.urlopen(f'http://localhost:{os.environ.get(\\\"PORT\\\",\\\"8080\\\")}/api/storage/info').status==200 else 1)\""]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
-      start_period: 5s
+      start_period: 10s
+
+volumes:
+  cbl-data:
+    driver: local

@@ -1,5 +1,7 @@
 # 04 — `blob_storage.py` Refactor
 
+**Status:** ✅ COMPLETE
+
 The current `app/blob_storage.py` is built around Couchbase Server's K/V + XATTR model:
 
 - gzip-compress data

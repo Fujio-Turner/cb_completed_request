@@ -2197,46 +2197,107 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 <!-- Settings Tabs -->
                 <div id="settings-tabs">
                     <ul class="settings-tab-list">
-                        <li><a href="#settings-tab-storage">Save Data To CB</a></li>
+                        <li><a href="#settings-tab-storage">App Data Storage</a></li>
                         <li><a href="#settings-tab-ai-api">Users' AI API</a></li>
                         <li><a href="#settings-tab-ai-admin">AI Admin</a></li>
                     </ul>
                     
-                    <!-- Tab 1: Save Data To CB -->
+                    <!-- Tab 1: App Data Storage (Couchbase Lite, embedded) -->
                     <div id="settings-tab-storage">
-                        <p style="color: #666; font-size: 0.9em; margin: 0 0 20px 0; padding: 10px; background: #f0f9ff; border-left: 3px solid #3b82f6; border-radius: 4px;">
-                            <strong>Note:</strong> This cluster is used to <em>store</em> your Query Analyzer preferences and settings. 
-                            It is <strong>not</strong> the cluster you're analyzing queries from (paste query data in the main input boxes).
-                        </p>
-                        
-                        <div class="settings-section">
-                            <h3>Storage Cluster Connection</h3>
-                            <div id="cluster-list"></div>
+                        <!-- Server-edition (CBL) view -->
+                        <div id="storage-cbl-view">
+                            <p style="color: #666; font-size: 0.9em; margin: 0 0 20px 0; padding: 10px; background: #f0f9ff; border-left: 3px solid #3b82f6; border-radius: 4px;">
+                                <strong>Note:</strong> Server Edition v5.0.0 stores your Query Analyzer preferences,
+                                saved analyses, and AI history in an <strong>embedded Couchbase Lite</strong> database
+                                that lives inside this app — no external Couchbase Server or Capella cluster is required
+                                for app data.
+                                <br><br>
+                                The cluster you connect to from the main page is only used as the <em>source</em> of
+                                <code>system:completed_requests</code> data to analyze.
+                            </p>
+
+                            <div class="settings-section">
+                                <h3>Embedded Database</h3>
+                                <div class="settings-row">
+                                    <label>Backend:</label>
+                                    <code id="cbl-backend">—</code>
+                                </div>
+                                <div class="settings-row">
+                                    <label>Database Path:</label>
+                                    <code id="cbl-db-path" style="word-break: break-all;">—</code>
+                                </div>
+                                <div class="settings-row">
+                                    <label>Database Size:</label>
+                                    <code id="cbl-db-size">—</code>
+                                </div>
+                            </div>
+
+                            <div class="settings-section">
+                                <h3>Collections</h3>
+                                <table id="cbl-collections-table" style="width: auto; border-collapse: collapse;">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: left; padding: 4px 12px 4px 0;">Collection</th>
+                                            <th style="text-align: right; padding: 4px 0;">Documents</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cbl-collections-body">
+                                        <tr><td colspan="2" style="color:#888;">Loading…</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="settings-section">
+                                <h3>Maintenance</h3>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <button class="btn-standard" onclick="cblRefreshInfo()">🔄 Refresh</button>
+                                    <button class="btn-standard" onclick="cblCompact()">🧹 Compact</button>
+                                    <button class="btn-standard" onclick="cblExport()">📦 Export Backup</button>
+                                    <button class="btn-standard" onclick="document.getElementById('cbl-import-file').click()">📥 Import Backup</button>
+                                    <input type="file" id="cbl-import-file" accept=".tar.gz,.tgz,.gz" style="display:none" onchange="cblImport(this.files[0])" />
+                                </div>
+                                <div id="cbl-maintenance-status" style="margin-top: 10px; font-size: 0.85em; color: #555;"></div>
+                            </div>
+
+                            <div class="settings-section">
+                                <h3>User Preferences</h3>
+                                <div class="settings-row">
+                                    <label>
+                                        <input type="checkbox" id="save-timezone" checked />
+                                        Save timezone preference to embedded database
+                                    </label>
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div class="settings-section">
-                            <h3>Bucket Configuration</h3>
-                            <div class="settings-row">
-                                <label>Bucket Name:</label>
-                                <input type="text" id="bucket-name" value="cb_tools" />
+
+                        <!-- Legacy Couchbase-Server / Capella view (only shown when STORAGE_BACKEND != cbl) -->
+                        <div id="storage-server-view" style="display:none">
+                            <p style="color: #666; font-size: 0.9em; margin: 0 0 20px 0; padding: 10px; background: #fff8e1; border-left: 3px solid #f59e0b; border-radius: 4px;">
+                                <strong>Note:</strong> This cluster is used to <em>store</em> your Query Analyzer
+                                preferences and settings in an external Couchbase Server / Capella cluster.
+                                It is <strong>not</strong> the cluster you're analyzing queries from
+                                (paste query data in the main input boxes).
+                            </p>
+
+                            <div class="settings-section">
+                                <h3>Storage Cluster Connection</h3>
+                                <div id="cluster-list"></div>
                             </div>
-                            <div class="settings-row">
-                                <label>Analyzer Keyspace:</label>
-                                <code id="analyzer-keyspace">cb_tools.query.analyzer</code>
-                            </div>
-                            <div class="settings-row">
-                                <label>Preferences Keyspace:</label>
-                                <code id="preferences-keyspace">cb_tools._default._default</code>
-                            </div>
-                        </div>
-                        
-                        <div class="settings-section">
-                            <h3>User Preferences</h3>
-                            <div class="settings-row">
-                                <label>
-                                    <input type="checkbox" id="save-timezone" checked />
-                                    Save timezone preference to Couchbase
-                                </label>
+
+                            <div class="settings-section">
+                                <h3>Bucket Configuration</h3>
+                                <div class="settings-row">
+                                    <label>Bucket Name:</label>
+                                    <input type="text" id="bucket-name" value="cb_tools" />
+                                </div>
+                                <div class="settings-row">
+                                    <label>Analyzer Keyspace:</label>
+                                    <code id="analyzer-keyspace">cb_tools.query.analyzer</code>
+                                </div>
+                                <div class="settings-row">
+                                    <label>Preferences Keyspace:</label>
+                                    <code id="preferences-keyspace">cb_tools._default._default</code>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -1,5 +1,7 @@
 # 03 — `app.py` Endpoint Refactor
 
+**Status:** ✅ COMPLETE
+
 This file maps every existing endpoint that talks to **Couchbase Server's `cb_tools` bucket** to a **`CBLStore`** call. Endpoints that talk to the user's *production* cluster (the read-only N1QL on `system:completed_requests`) **do not change**.
 
 The `couchbase` Python SDK is **still required** — it stays the only way we hit the user's production cluster.
@@ -223,3 +225,111 @@ After v5.1.0 (one release after the v5.0.0 CBL cutover):
 - The legacy CB-Server branches in #4–8, #11, #13–18, #20–24, #27, #28 are deleted.
 - The `couchbase` SDK in `requirements.txt` stays — it's still used for the user's *production* cluster (#1, #2, #3, #26, #30).
 - `setup_couchbase.sql` is no longer relevant for app data; we move it under `docs/legacy/` and rewrite the README accordingly. (Tracked as a deliverable in [`12_RELEASE_PROCESS_COMPLIANCE.md §9`](./12_RELEASE_PROCESS_COMPLIANCE.md).)
+
+---
+
+## 5. Post-review fixes (2026-05-09)
+
+The first pass of [`app.py`](../../../app.py) had three blocking bugs and one
+design deviation. All have been fixed:
+
+### 5.1 `backend()` now resolves correctly
+
+The first version returned the raw `STORAGE_BACKEND` env value, which defaults
+to `"auto"` in [`cbl_store.py`](../../../cbl_store.py) — so every `if backend()
+== "cbl"` was always False. The legacy keyword was also `"couchbase"` but the
+override branches compared to `"server"`. Fixed:
+
+```python
+from cbl_store import storage_backend  # resolves auto → cbl/server
+
+def backend() -> str:
+    if not CBL_AVAILABLE:
+        return "server"
+    return storage_backend()
+```
+
+### 5.2 Method names aligned with `CBLStore`
+
+`app.py` was calling `store.save_analysis`, `store.load_analysis`,
+`store.query`, `store.maintenance`, `store.export`, `store.import_from` — none
+of which existed. Either the method was added to `CBLStore` or the call site
+was renamed. See [`02_CBL_STORE_MODULE.md §9`](./02_CBL_STORE_MODULE.md) for
+the new method list.
+
+### 5.3 Production-cluster routes restored
+
+`/api/couchbase/test`, `/api/couchbase/check-indexes`, and
+`/api/couchbase/query` are no longer overridden — they hit the user's
+production Couchbase Server cluster as the design specified (⛔ rows in the
+table above). The CBL `/api/storage/info`, `/api/storage/maintenance`,
+`/api/storage/export`, `/api/storage/import` endpoints exist instead for
+inspecting / managing the embedded database.
+
+### 5.4 Implementation strategy: build on top of `app_base.py`
+
+Rather than re-implementing all 30+ v4.x endpoints with dual branches inline,
+[`app.py`](../../../app.py) now imports the original Flask app from
+[`app_base.py`](../../../app_base.py) (preserved verbatim from v4.0.0) and
+**overrides only the CBL-eligible routes**:
+
+```python
+from app_base import app, get_couchbase_connection, DIRECTORY
+
+def _override_route(rule, view_func, methods=None):
+    """Swap the view function for an existing rule, preserving its endpoint."""
+    matching = [
+        r for r in app.url_map.iter_rules()
+        if r.rule == rule and (set(methods) & (r.methods or set()))
+    ]
+    for r in matching:
+        app.view_functions[r.endpoint] = view_func
+
+_override_route('/api/couchbase/save-analyzer', save_analyzer, ['POST'])
+# ... etc for the 14 routes that need CBL routing
+```
+
+This keeps the diff small, leaves the production-cluster endpoints untouched
+by definition, and avoids fragile mutation of Werkzeug's `url_map._rules`.
+
+### 5.5 New endpoints added in this pass
+
+| # | Endpoint | Status |
+|---|---|---|
+| 6 | `POST /api/couchbase/delete-analyzer` | ✅ added (CBL + server fallback) |
+| 13 | `POST /api/ai/status/<doc_id>` | ✅ added (CBL only — server returns 501 here, legacy CB path still in `app_base.py` until removed in v5.1) |
+| 14 | `GET /api/ai/stats` | ✅ added (CBL N1QL aggregate) |
+| 15 | `GET /api/ai/payload-reference` | ✅ added |
+| 16 | `POST /api/ai/payload-reference/load` | ✅ added |
+| 17 | `POST /api/ai/payload-reference/seed` | ✅ added |
+| 18 | `POST /api/ai/payload-reference/save` | ✅ added |
+| 20 | `GET /api/ai/models` | ✅ added |
+| 21 | `POST /api/ai/models/load` | ✅ added |
+| 22 | `POST /api/ai/models/seed` | ✅ added |
+| 23 | `POST /api/ai/models/save` | ✅ added |
+| 27 | `POST /api/ai/history` | ✅ added |
+| 28 | `POST /api/ai/clusters` | ✅ added |
+| 31 | `GET /api/storage/info` 🆕 | ✅ added |
+| 32 | `POST /api/storage/maintenance` 🆕 | ✅ added |
+| 33 | `GET /api/storage/export` 🆕 | ✅ added |
+| 34 | `POST /api/storage/import` 🆕 | ✅ added |
+
+### 5.6 Hidden showstopper: `app/__init__.py` shadowing
+
+`/app/__init__.py` made `/app/` a Python package, which shadowed the new
+[`app.py`](../../../app.py) at the project root. `gunicorn app:app` (per
+[`Dockerfile`](../../../Dockerfile)) would have imported the *directory*
+package instead of the new module and crashed with `ImportError`. The file has
+been deleted; nothing else inside `/app/` was modified.
+
+### 5.7 Verification
+
+```
+$ pytest tests/python/
+12 passed, 97 skipped
+```
+
+37 routes registered, 18 CBL-routed/new. Smoke test confirms:
+- `STORAGE_BACKEND=auto` (no bindings) → `backend() == "server"`
+- `STORAGE_BACKEND=cbl` (no bindings) → clear `RuntimeError`
+- `/api/couchbase/test` and `/api/couchbase/query` reach the production cluster path (not overridden).

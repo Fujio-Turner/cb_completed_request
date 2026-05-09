@@ -1,6 +1,10 @@
 # 01 — CBL Data Model
 
+**Status:** ✅ COMPLETE
+
 This file freezes the on-disk Couchbase Lite layout so every other doc (`cbl_store.py`, endpoint refactor, migration tool) can refer back to it.
+
+**Completed:** `cbl_store.py` module created at project root with full CBLStore class API, fallback flags, singleton database handler, and all collection/blob operations.
 
 The model is intentionally a near-1:1 mapping of the existing Couchbase Server layout (`cb_tools` bucket, `query.analyzer` collection, etc.) so we can move endpoints one at a time, and so the data migration script (Doc 09) is a straight document copy.
 

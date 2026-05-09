@@ -1,5 +1,7 @@
 # 08 — Packaging: Windows `.exe` / `.msi`
 
+**Status:** ✅ COMPLETE
+
 The Windows story is almost identical to macOS — the only differences are:
 
 - The C library is `cblite.dll` (plus its dependencies) instead of `libcblite.dylib`.
@@ -343,3 +345,14 @@ jobs:
 ## 11. Summary for the user's question (Windows specific)
 
 `cblite.dll` is a normal Windows DLL. PyInstaller drops it next to `Couchbase Query Analyzer.exe` and Python `dlopen`s it via the CFFI bindings. There is no service, no Couchbase Server install, no broker process — the running `.exe` *is* the database engine. The user clicks the Start menu shortcut, the systray icon appears, the browser opens, done.
+
+---
+
+## Post-review fix (2026-05-09)
+
+The spec file lives at the **project root** as [`build_win.spec`](../../../build_win.spec) (was inside `/app/` in the first pass). Changes:
+
+- `project_root = Path(__file__).parent` (was `parent.parent` when the spec was nested under `/app/`).
+- `APP_VERSION = '5.0.0'` (was `4.0.0`).
+- `CBL_WINDOWS_DLL` is overridable via the env var of the same name; default is `<project_root>\vendor\windows\cblite.dll`.
+- Build invocation: `pyinstaller build_win.spec --clean` from the project root.

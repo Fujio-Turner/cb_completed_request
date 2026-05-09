@@ -23,7 +23,7 @@ const AI_PROVIDERS = [
     { 
         id: 'openai', 
         name: 'OpenAI', 
-        logo: 'img/ai-logos/openai.png', 
+        logo: 'img/ai-logos/openai.svg', 
         keyPlaceholder: 'sk-...', 
         defaultUrl: 'https://api.openai.com/v1',
         models: [
@@ -54,7 +54,7 @@ const AI_PROVIDERS = [
     { 
         id: 'claude', 
         name: 'Anthropic Claude', 
-        logo: 'img/ai-logos/anthropic.png', 
+        logo: 'img/ai-logos/anthropic.svg', 
         keyPlaceholder: 'sk-ant-...', 
         defaultUrl: 'https://api.anthropic.com',
         models: [
@@ -73,7 +73,7 @@ const AI_PROVIDERS = [
     { 
         id: 'grok', 
         name: 'xAI Grok', 
-        logo: 'img/ai-logos/grok.png', 
+        logo: 'img/ai-logos/grok.svg', 
         keyPlaceholder: 'xai-...', 
         defaultUrl: 'https://api.x.ai/v1',
         models: [
@@ -212,8 +212,171 @@ export function openSettingsModal() {
         modal.style.display = 'block';
         renderClusterList();
         renderAiProviders();
+        // Detect storage backend (CBL vs external Couchbase Server) and
+        // toggle the App Data Storage tab accordingly.
+        loadStorageBackendView();
     }
 }
+
+/**
+ * Detect storage backend via /api/storage/info and show the appropriate
+ * App Data Storage view (embedded CBL vs legacy external Couchbase Server).
+ */
+async function loadStorageBackendView() {
+    const cblView = document.getElementById('storage-cbl-view');
+    const serverView = document.getElementById('storage-server-view');
+    // Note: cblView/serverView only exist once the settings modal markup is
+    // present. We still want to update the connection-status badge on initial
+    // page load when those elements aren't rendered yet, so don't bail early.
+
+    try {
+        const res = await fetch('/api/storage/info');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (data && data.success && data.backend === 'cbl') {
+            if (cblView && serverView) {
+                cblView.style.display = '';
+                serverView.style.display = 'none';
+                renderCblStorageInfo(data);
+            }
+            // CBL is an embedded local store — once we've confirmed it's up
+            // we don't need to poll. Mark the badge "connected" and stop.
+            updateConnectionStatus('connected', 'Couchbase Lite');
+        } else if (cblView && serverView) {
+            cblView.style.display = 'none';
+            serverView.style.display = '';
+        }
+    } catch (err) {
+        // /api/storage/info returns 400 when backend != cbl. In any failure
+        // case fall back to the legacy external-cluster view.
+        Logger.warn('Storage info unavailable, falling back to server view:', err);
+        if (cblView && serverView) {
+            cblView.style.display = 'none';
+            serverView.style.display = '';
+        }
+    }
+}
+
+// Detect CBL backend once on page load so the connection-status badge reflects
+// reality without the user having to open the settings modal. CBL is local —
+// no need for a periodic ping; one check at startup is enough.
+document.addEventListener('DOMContentLoaded', () => {
+    loadStorageBackendView().catch(err => {
+        Logger.debug('Initial storage backend detection failed:', err);
+    });
+});
+
+function formatBytes(n) {
+    if (n == null) return '—';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let v = n, i = 0;
+    while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+    return `${v.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
+function renderCblStorageInfo(data) {
+    const stats = (data && data.stats) || {};
+    const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+    };
+    setText('cbl-backend', data.backend || 'cbl');
+    setText('cbl-db-path', stats.db_path || '—');
+    setText('cbl-db-size', formatBytes(stats.db_size_bytes));
+
+    const tbody = document.getElementById('cbl-collections-body');
+    if (tbody) {
+        const colls = stats.collections || {};
+        const rows = Object.keys(colls).sort().map(name =>
+            `<tr>
+                <td style="padding: 4px 12px 4px 0;"><code>${name}</code></td>
+                <td style="padding: 4px 0; text-align: right;">${colls[name]}</td>
+            </tr>`
+        ).join('');
+        tbody.innerHTML = rows || '<tr><td colspan="2" style="color:#888;">No collections</td></tr>';
+    }
+}
+
+function setCblStatus(msg, isError) {
+    const el = document.getElementById('cbl-maintenance-status');
+    if (el) {
+        el.textContent = msg || '';
+        el.style.color = isError ? '#c00' : '#555';
+    }
+}
+
+window.cblRefreshInfo = async function () {
+    setCblStatus('Refreshing…', false);
+    await loadStorageBackendView();
+    setCblStatus('Refreshed.', false);
+};
+
+window.cblCompact = async function () {
+    setCblStatus('Compacting…', false);
+    try {
+        const res = await fetch('/api/storage/maintenance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ operation: 'compact' }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || `HTTP ${res.status}`);
+        setCblStatus('✅ Compaction complete.', false);
+        await loadStorageBackendView();
+    } catch (err) {
+        setCblStatus(`❌ Compaction failed: ${err.message}`, true);
+    }
+};
+
+window.cblExport = async function () {
+    setCblStatus('Exporting backup…', false);
+    try {
+        const res = await fetch('/api/storage/export');
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || `HTTP ${res.status}`);
+        }
+        const blob = await res.blob();
+        const cd = res.headers.get('Content-Disposition') || '';
+        const m = cd.match(/filename="?([^";]+)"?/i);
+        const filename = (m && m[1]) || `cb_tools_db_backup_${Date.now()}.tar.gz`;
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        setCblStatus(`✅ Downloaded ${filename}.`, false);
+    } catch (err) {
+        setCblStatus(`❌ Export failed: ${err.message}`, true);
+    }
+};
+
+window.cblImport = async function (file) {
+    if (!file) return;
+    if (!confirm(`Import backup "${file.name}"? This will overwrite the current embedded database.`)) {
+        return;
+    }
+    setCblStatus(`Importing ${file.name}…`, false);
+    try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await fetch('/api/storage/import', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || `HTTP ${res.status}`);
+        setCblStatus('✅ Import complete.', false);
+        await loadStorageBackendView();
+    } catch (err) {
+        setCblStatus(`❌ Import failed: ${err.message}`, true);
+    } finally {
+        const input = document.getElementById('cbl-import-file');
+        if (input) input.value = '';
+    }
+};
 
 /**
  * Close settings modal

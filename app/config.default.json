@@ -1,4 +1,7 @@
 {
+  "server": {
+    "port": 8080
+  },
   "couchbase": {
     "connectionString": "couchbases://localhost",
     "username": "",

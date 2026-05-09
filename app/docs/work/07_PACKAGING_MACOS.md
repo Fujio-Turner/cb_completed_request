@@ -1,5 +1,7 @@
 # 07 — Packaging: macOS `.app` / `.dmg`
 
+**Status:** ✅ COMPLETE
+
 This is the doc that answers the user's question:
 
 > "I can understand how to have couchbase lite used and running in a docker container but for Mac and Windows .exe how would couchbase lite work there?"
@@ -372,3 +374,14 @@ A separate workflow boots a fresh macOS VM, downloads the released `.dmg`, mount
 | Service to install? | None | None |
 
 The only difference is **how the dylib gets into the bundle** (apt-installed in the image vs vendored at build time) and **where the data file ends up** (Docker volume vs user library directory).
+
+---
+
+## Post-review fix (2026-05-09)
+
+The spec file lives at the **project root** as [`build_mac.spec`](../../../build_mac.spec) (was inside `/app/` in the first pass). Changes:
+
+- `project_root = Path(__file__).parent` (was `parent.parent` when the spec was nested under `/app/`).
+- `APP_VERSION = '5.0.0'` (was `4.0.0`).
+- `CBL_MACOS_DYLIB` is overridable via the env var of the same name; default is `<project_root>/vendor/macos/libcblite.3.dylib`.
+- Build invocation: `pyinstaller build_mac.spec --clean` from the project root.

@@ -1,6 +1,8 @@
 # 02 — `cbl_store.py` Module Design
 
-A single new module at `app/cbl_store.py` that wraps every CBL operation. Every other change in this plan imports from here.
+**Status:** ✅ COMPLETE (post-review fixes 2026-05-09 — see end of file)
+
+A single new module at the project root [`cbl_store.py`](../../../cbl_store.py) that wraps every CBL operation. Every other change in this plan imports from here.
 
 Pattern is taken directly from PouchPipes' [`cbl_store.py`](https://github.com/Fujio-Turner/PouchPipes/blob/main/docs/CBL_STORE.md) and adapted for the analyzer's data model.
 
@@ -329,3 +331,33 @@ pytest ../tests/python/test_cbl_store.py -v
 ```
 
 These tests **only** run when `USE_CBL` is true; otherwise they are skipped via `pytestmark = pytest.mark.skipif(not USE_CBL, reason="CBL bindings missing")`.
+
+---
+
+## 9. Post-review fixes (2026-05-09)
+
+The first pass of [`cbl_store.py`](../../../cbl_store.py) used CFFI stubs that
+returned `{}` / `[]` regardless of the underlying database state and was
+missing several public methods that [`app.py`](../../../app.py) called. The
+file has been rewritten with real CFFI implementations:
+
+| Helper | Implementation |
+|---|---|
+| `_doc_to_dict(doc_ref)` | `decodeFleeceDict(lib.CBLDocument_Properties(doc_ref))` (zero-copy, recursive). Falls back to `lib.CBLDocument_CreateJSON` + `json.loads` on error. |
+| `_coll_get_doc` | `lib.CBLCollection_GetDocument` + `_doc_to_dict`; releases the doc ref on exit. |
+| `_coll_save_dict` | `MutableDocument(doc_id).setProperties(data); doc._prepareToSave(); lib.CBLCollection_SaveDocumentWithConcurrencyControl(...)`; retries with `LastWriteWins=0` on conflict. |
+| `_coll_delete_doc` | `lib.CBLCollection_DeleteDocumentWithConcurrencyControl`. |
+| `_n1ql(db, sql, params)` | `Query(db, sql, N1QLLanguage)` + `q.setParameters(dict)` + iterate `q.execute()` and call `row.asDictionary()` per row (safe before next `_Next`). |
+| `_get_coll(db, name)` | Caches the raw `CBLCollection*` per scope+collection; creates the collection on first call if missing. |
+| `explain(sql)` | `lib.CBLQuery_Explain(q._ref)` → `sliceResultToString`. |
+
+New / fixed public methods on `CBLStore`:
+
+- `query(sql, params)` — generic SQL++ executor used by `/api/couchbase/query`'s CBL branch (currently routed only when explicitly opted-in; the production-cluster path stays the default).
+- `save_analysis` / `load_analysis` — aliases for `save_analyzer` / `load_analyzer` so the existing `app.py` call sites keep working.
+- `maintenance(operation)` — dispatches `compact` / `reindex` / `optimize` / `integrity_check` / `gc_blobs` by name.
+- `export()` — packs the live `.cblite2` directory into a `.tar.gz` under the OS temp dir; returns the path so the Flask handler can stream it.
+- `import_from(file_obj)` — accepts a Werkzeug `FileStorage` or any file-like object, validates the tar, closes the live DB, replaces the data dir (with a path-traversal check), and reopens.
+- `list_clusters()` — `SELECT DISTINCT cluster_name FROM cb_tools.ai_history` for the `/api/ai/clusters` endpoint.
+
+Backend selector: `storage_backend()` (function, not raw env value) resolves `auto`→`cbl`/`server`. `STORAGE_BACKEND=cbl` raises a clear `RuntimeError` if the bindings are missing instead of silently falling back.

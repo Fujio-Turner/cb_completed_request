@@ -17,9 +17,11 @@ openai>=1.0.0
 
 # Utilities
 icecream>=2.1.3
-# toon-python is NOT on PyPI; install separately from GitLab:
-#   pip install 'toon-python @ git+https://gitlab.com/KanTakahiro/toon-python.git'
-# (The Dockerfile installs it for you. app.py also has a runtime fallback.)
+# TOON encoder. The original `toon_python` lives in a private GitLab repo and
+# is not publicly installable. We use the public `python-toon` package (module
+# name `toon`); a `toon_python.py` shim in /app re-exports its API under the
+# `toon_python` name so existing `import toon_python` call sites keep working.
+python-toon>=0.1.0
 python-dotenv>=1.0.0
 platformdirs>=4.0.0
 

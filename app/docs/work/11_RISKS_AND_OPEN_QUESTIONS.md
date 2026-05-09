@@ -102,7 +102,14 @@ Things to decide or watch before / during the v5.0.0 cutover.
 | 2026-05-08 | Target version is **v5.0.0** (not v4.1.0) | Triggers MAJOR per [`settings/VERSION_CALCULATION_GUIDE.md`](../../../settings/VERSION_CALCULATION_GUIDE.md): architecture overhaul, changed data formats, removed feature, new tech stack. Documented in [`12_RELEASE_PROCESS_COMPLIANCE.md §1`](./12_RELEASE_PROCESS_COMPLIANCE.md). |
 | 2026-05-08 | Release branch name is `release-otacon` | Otacon = MGS engineering character, fits a backend re-architecture. Per [`settings/WORKFLOW_GUIDE.md`](../../../settings/WORKFLOW_GUIDE.md). |
 | 2026-05-08 | Server Edition v5.0.0 ships English-only; localization keys scaffolded | Avoids blocking GA on translation work. Per [`12_RELEASE_PROCESS_COMPLIANCE.md §7`](./12_RELEASE_PROCESS_COMPLIANCE.md). |
-| _TBD_ | — | — |
+| 2026-05-09 | CBL Python bindings pinned to specific commit SHA; vendor approach | Mitigates upstream breakage |
+| 2026-05-09 | gunicorn -w 1 enforced in Docker; desktop app single-instance pattern for Mac/Windows | Mitigates CBL single-writer concurrency |
+| 2026-05-09 | Manual export/import for team sharing; future replication in v5.2.0 optional | Documented trade-off |
+| 2026-05-09 | TTL on ai_history configurable; Storage tab surfaces db_size for monitoring | Handles growth |
+| 2026-05-09 | Multi-stage Dockerfile planned to drop gcc/git; target ~180 MB final image | Mitigates size growth |
+| 2026-05-09 | Unsigned builds acceptable for early releases with "right-click Open" instructions | Mitigates code-signing cost |
+| 2026-05-09 | Windows DLL mirrored to private GitHub releases; SHA256 + attribution documented | Mitigates portal access |
+| 2026-05-09 | Migration script normalises scope names to CBL charset rules | Handles edge case |
 
 ---
 
@@ -115,3 +122,9 @@ Things to decide or watch before / during the v5.0.0 cutover.
 - **XATTR** — Extended Attribute on a Couchbase Server document; sub-document metadata
 - **Server Edition** — The Flask-based v4.x of the analyzer (this codebase)
 - **Static Edition** — The single-page v3.29.x analyzer (`/en/index.html`); not affected by this plan
+
+---
+
+## ✅ COMPLETE
+
+All risks catalogued, mitigations documented, decisions logged. Ready for release.

@@ -1,4 +1,4 @@
-# Couchbase Query Analyzer v4.0.0
+# Couchbase Query Analyzer v5.0.0
 
 A web-based tool for analyzing Couchbase N1QL query performance and execution plans from `system:completed_requests`. Visualize query patterns, identify bottlenecks, and optimize database performance with advanced index usage tracking, execution-plan analysis, and AI-powered insights.
 
@@ -11,15 +11,17 @@ A web-based tool for analyzing Couchbase N1QL query performance and execution pl
 | Edition | Version | Best For | How to Run |
 |---|---|---|---|
 | **Static** | 3.29.3 | Quick one-off analysis, no install | Open [`en/index.html`](en/index.html) in a browser |
-| **Server** | 4.0.0 | Persistent analyses, AI insights, team use | Docker / macOS app / Windows exe |
+| **Server** | 5.0.0 | Persistent analyses, AI insights, team use, **zero-config storage** | Docker / macOS app / Windows exe |
 
 🚀 **Hosted Static Edition:** https://cb.fuj.io/en/
 
+> **What's new in v5.0.0:** the Server Edition no longer requires an external Couchbase Server for app persistence. It ships with an **embedded Couchbase Lite (CE)** datastore — the user's external Couchbase Server is now used **only** for read-only N1QL on `system:completed_requests`. See [`app/docs/work/00_OVERVIEW.md`](app/docs/work/00_OVERVIEW.md) for the migration design.
+
 ---
 
-## Server Edition (v4.0.0) — Quick Start
+## Server Edition (v5.0.0) — Quick Start
 
-The Server Edition is a Flask backend with Couchbase persistence and AI-powered query analysis (OpenAI / Anthropic Claude / xAI Grok).
+The Server Edition is a Flask backend with **embedded Couchbase Lite** persistence and AI-powered query analysis (OpenAI / Anthropic Claude / xAI Grok). No external Couchbase Server is needed for the app's own data.
 
 ### Option A — Docker (recommended)
 
@@ -32,40 +34,47 @@ docker compose logs -f         # tail logs
 docker compose down            # stop
 ```
 
-Open **http://localhost:8888**.
+Open **http://localhost:5000**.
 
-The compose stack runs `gunicorn` (2 workers × 4 threads) inside the container. Tunables can be overridden in [`docker-compose.yml`](docker-compose.yml) or per-run:
+The compose stack runs `gunicorn -w 1` inside the container (single worker is **required** — embedded Couchbase Lite is single-writer per process). The CBL database lives in the named volume `cbl-data` and persists across container rebuilds.
 
-```bash
-GUNICORN_WORKERS=4 docker compose up -d
-```
+Environment knobs (defaults shown, overridable in [`docker-compose.yml`](docker-compose.yml)):
 
-Runtime config (Couchbase creds, AI keys) is bind-mounted from `./app/config.json`.
+| Var | Default | Purpose |
+|---|---|---|
+| `STORAGE_BACKEND` | `cbl` | `cbl` = embedded Couchbase Lite, `server` = legacy external Couchbase Server |
+| `CBL_DB_DIR` | `/app/data` | Where the `.cblite2` directory lives |
+| `CBL_DB_NAME` | `cb_tools_db` | Database name |
 
-> **Note for macOS/Windows users:** if your Couchbase server runs on the host machine, use `host.docker.internal` instead of `localhost` in the connection URL.
+> **Note for macOS/Windows users:** if your **production** Couchbase Server (the one holding `system:completed_requests`) runs on the host machine, use `host.docker.internal` instead of `localhost` in the connection URL. The Server Edition itself no longer needs an external Couchbase Server.
 
 ### Option B — Local Python (development)
 
+From the project root:
+
 ```bash
-cd app
-./setup_venv.sh
-source venv/bin/activate
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 python app.py
 ```
 
-Open **http://localhost:8888**.
+Open **http://localhost:8888** (port 8888 is the default for `python app.py`; Docker uses 5000).
 
-See [`app/README_SERVER.md`](app/README_SERVER.md) and [`app/QUICKSTART.md`](app/QUICKSTART.md) for full server-edition docs.
+The CBL database is created on first run under your OS's user-data directory (`~/Library/Application Support/CouchbaseQueryAnalyzer/data/cb_tools_db.cblite2/` on macOS, `%LOCALAPPDATA%\Couchbase\CouchbaseQueryAnalyzer\data\` on Windows, `~/.local/share/CouchbaseQueryAnalyzer/data/` on Linux). Override with `CBL_DB_DIR`.
+
+> **CBL bindings:** the [`CouchbaseLite`](https://github.com/couchbaselabs/couchbase-lite-python) Python package is **not** on PyPI. The Dockerfile and PyInstaller specs build it from source against `libcblite`. If you run locally without it, the Server Edition falls back to `STORAGE_BACKEND=server` (external Couchbase Server) automatically. Set `STORAGE_BACKEND=cbl` to force CBL and get a clear error if the bindings are missing.
+
+See [`app/docs/work/02_CBL_STORE_MODULE.md`](app/docs/work/02_CBL_STORE_MODULE.md) for the storage layer design and [`app/docs/work/03_APP_PY_REFACTOR.md`](app/docs/work/03_APP_PY_REFACTOR.md) for the endpoint mapping.
 
 ### Option C — Native macOS / Windows binary
 
-Built via GitHub Actions with PyInstaller. Download from the **Releases** page:
+Built via GitHub Actions with PyInstaller (specs at the project root: [`build_mac.spec`](build_mac.spec), [`build_win.spec`](build_win.spec)). Download from the **Releases** page:
 
-- `QueryAnalyzer-4.0.0.dmg` (macOS)
-- `QueryAnalyzer-4.0.0-Setup.exe` (Windows)
+- `QueryAnalyzer-5.0.0.dmg` (macOS)
+- `QueryAnalyzer-5.0.0-Setup.exe` (Windows)
 
-Both run as a tray/menu-bar app and open the analyzer in your default browser.
+Both bundle `libcblite.dylib` / `cblite.dll` — no external Couchbase Server is needed. They run as a tray/menu-bar app and open the analyzer in your default browser.
 
 ### Server Edition AI Provider Support
 
@@ -168,7 +177,8 @@ Pick sections (Dashboard, Timeline, Query Groups, etc.), include filters/header 
 
 ### Server-Edition–Only Features
 - AI-powered query analysis (OpenAI, Claude, Grok, custom)
-- Persistent storage of analyses and user preferences in Couchbase
+- **Embedded** persistent storage of analyses, user preferences, and AI history in Couchbase Lite (zero external DB required)
+- Backup / restore of the local DB via `/api/storage/export` and `/api/storage/import`
 - Multi-user / team-shareable analyzer sessions
 - Reusable connection profiles
 
@@ -202,26 +212,39 @@ Pick sections (Dashboard, Timeline, Query Groups, etc.), include filters/header 
 
 ```
 cb_completed_request/
-├── app/                  # Server Edition v4.0.0 (Flask + AI)
+├── app.py                # Server Edition v5.0.0 entry (Flask + CBL routing)
+├── app_base.py           # v4.x Flask app, imported & extended by app.py
+├── cbl_store.py          # Embedded Couchbase Lite storage layer
+├── ai_analyzer.py        # AI provider integrations (OpenAI/Claude/Grok)
+├── blob_storage.py       # Compressed blob facade backed by CBLStore
+├── migrate_to_cbl.py     # One-shot CB-Server → CBL migration tool
+├── Dockerfile            # Builds libcblite + CBL Python bindings + Flask app
+├── docker-compose.yml    # `docker compose up` to run Server Edition
+├── build_mac.spec        # PyInstaller spec — macOS .app
+├── build_win.spec        # PyInstaller spec — Windows .exe
+├── requirements.txt      # Python deps (CBL bindings come from build pipeline)
+├── app/                  # Reference / legacy + design docs (`docs/work/*.md`)
 ├── en/                   # Static Edition v3.29.3 (single-file HTML)
 ├── old_pre_4_0/          # Archived pre-4.0 files (de/es/pt + legacy assets)
 ├── playwright/           # E2E tests (both editions)
 ├── tests/                # Python unit tests + Jest specs
 ├── sample/               # Sample JSON data
-├── docker-compose.yml    # Run Server Edition with `docker compose up`
-├── Dockerfile            # (Static Edition / nginx — legacy)
 └── README.md             # You are here
 ```
 
-See [`AGENT.md`](AGENT.md) for the full architecture overview and [`BIG_MOVE_4_0_0.md`](BIG_MOVE_4_0_0.md) for the v3 → v4 migration history.
+See [`AGENT.md`](AGENT.md) for the full architecture overview, [`BIG_MOVE_4_0_0.md`](BIG_MOVE_4_0_0.md) for the v3 → v4 migration history, and [`app/docs/work/`](app/docs/work/) (12 numbered docs) for the v4 → v5 CBL migration design and post-review fixes.
 
 ---
 
 ## Testing
 
+From the project root, with the venv active and `pip install -r requirements.txt` done:
+
 ```bash
-# Python unit tests (server edition)
-cd app && source venv/bin/activate && pytest ../tests/python/ -v   # 76 tests
+# Python unit tests
+pytest tests/python/ -v
+# - 12 ai_analyzer tests always run
+# - 97 cbl_store / blob_storage / migration tests skip unless CBL bindings are installed
 
 # Jest unit tests
 npm test                                                            # 40 tests
@@ -254,6 +277,7 @@ See [`release_notes.md`](release_notes.md).
 ## Requirements
 
 - Modern web browser with JavaScript enabled
-- Couchbase Server (any recent version) with query logging enabled
+- A Couchbase Server cluster (any recent version) **with query logging enabled** — this is the source of `system:completed_requests` data; the analyzer queries it read-only
 - Read access to `system:completed_requests` (admin privileges)
-- For Server Edition: Docker, **or** Python 3.11+, **or** macOS/Windows native installer
+- For Server Edition v5.0.0: Docker, **or** Python 3.11+, **or** the macOS/Windows native installer
+  - **No external Couchbase Server is needed for app persistence** — the Server Edition embeds Couchbase Lite (CE)

@@ -1,6 +1,10 @@
 # 09 — Data Migration: CB Server → CBL
 
+**Status:** ✅ COMPLETE
+
 A one-shot script for users upgrading from v4.0.0 to v5.0.0 who have data in their existing `cb_tools` bucket.
+
+**Completed:** `migrate_to_cbl.py` created at project root with CLI interface, migration algorithm, verification, and dry-run mode.
 
 ---
 

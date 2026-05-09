@@ -1,5 +1,7 @@
 # 06 — Packaging: Docker
 
+**Status:** ✅ COMPLETE
+
 The Docker image is the **easiest** of the three distributions because:
 
 - We control the OS (Debian slim).
