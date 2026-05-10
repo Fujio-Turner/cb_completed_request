@@ -279,18 +279,22 @@ npm test -- --watch                 # Watch mode
 | Edition | Version | Location |
 |---------|---------|----------|
 | Static | 3.29.3 | `/en/index.html` |
-| Server | 4.0.0 | `/app/` |
+| Server | 4.0.0-Beta | `/app/` |
 
 ### Version Update Locations (Server Edition)
-- `app/index.html`: `<title>`, `<meta name="version">`, `APP_VERSION`
-- `app/app.py`: User-Agent header
-- `AGENT.md`: This file header
-- `README.md`: Release notes
+- `app/app.py`: `__version__` constant (single source of truth — startup banner reads from this)
+- `app/index.html`: HTML comment, `<meta name="version">`, `<title>`, footer `.version-info` badge
+- `app/build_mac.spec` and `app/build_win.spec`: `APP_VERSION`
+- `app/docs/openapi.yaml`: `info.version`
+- `index.html` (root): `<meta name="version">`, `<title>`, OG tags
+- `README.md`: editions table + prose
+- `release_notes.md`: new section at the top
+- `AGENT.md`: this file's "Current Versions" table
 
 ### Workflow Order for Updates
-1. **After Release** → Follow `settings/POST_RELEASE_GUIDE.md`
-2. **Before Release** → Follow `settings/RELEASE_GUIDE.md`
-3. **Update Version** → Follow `settings/VERSION_UPDATE_GUIDE.md`
+1. **Cutting a release** → Follow [`app/guides/RELEASE.md`](app/guides/RELEASE.md) (the **canonical** release checklist; supersedes `settings/RELEASE_GUIDE.md`)
+2. **After Release** → Follow `settings/POST_RELEASE_GUIDE.md`
+3. **Detailed version-bump locations** → see `settings/VERSION_UPDATE_GUIDE.md` and `app/guides/RELEASE.md §2`
 
 ---
 
@@ -298,20 +302,43 @@ npm test -- --watch                 # Watch mode
 
 ### Flask Endpoints (`app/app.py`)
 
+> **Source of truth:** [`app/docs/openapi.yaml`](app/docs/openapi.yaml).
+> Human-readable reference: [`app/docs/API.md`](app/docs/API.md).
+> Live interactive explorer: **http://localhost:8888/api-docs/**.
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/` | GET | Serve index.html |
-| `/api/couchbase/test` | POST | Test Couchbase connection |
-| `/api/couchbase/query` | POST | Execute N1QL query |
-| `/api/couchbase/save-analyzer` | POST | Save analyzer data |
-| `/api/couchbase/load-analyzer/<id>` | POST | Load analyzer data |
-| `/api/couchbase/save-preferences` | POST | Save user preferences |
-| `/api/couchbase/load-preferences/<id>` | POST | Load user preferences |
-| `/api/ai/analyze` | POST | Run AI analysis |
-| `/api/ai/preview` | POST | Preview AI payload |
-| `/api/ai/test` | POST | Test AI API connection |
-| `/api/ai/history` | POST | Get analysis history |
-| `/api/ai/models/<provider>` | POST | Get AI models list |
+| `/` | GET | Serve `app/index.html` |
+| `/openapi.yaml` | GET | Download the OpenAPI 3.1 spec |
+| `/api-docs/` | GET | Vendored Swagger UI (no CDN) |
+| `/api/version` | GET | Return `__version__` and backend |
+| `/api/couchbase/save-analyzer` | POST | Save analyzer report to CBL |
+| `/api/couchbase/load-analyzer/<id>` | POST | Load analyzer report from CBL |
+| `/api/couchbase/delete-analyzer` | POST | Delete a saved report |
+| `/api/couchbase/save-preferences` | POST | Save per-user UI preferences |
+| `/api/couchbase/load-preferences/<id>` | POST | Load per-user UI preferences |
+| `/api/ai/analyze` | POST | Kick off AI analysis (returns `document_id`) |
+| `/api/ai/status/<document_id>` | POST | Poll AI analysis status |
+| `/api/ai/cancel` | POST | Cancel a running AI analysis |
+| `/api/ai/preview` | POST | Preview AI payload (no provider call) |
+| `/api/ai/test` | POST | Test AI provider connection |
+| `/api/ai/history` | POST | Paginated AI history |
+| `/api/ai/clusters` | POST | Distinct cluster names in AI history |
+| `/api/ai/stats` | GET | Aggregate AI usage stats |
+| `/api/ai/payload-reference` | GET | Read payload-reference doc |
+| `/api/ai/payload-reference/{load,seed,save,invalidate-cache}` | POST | Manage payload-reference doc |
+| `/api/ai/models` | GET | Read AI provider/model registry |
+| `/api/ai/models/{load,seed,save,invalidate-cache}` | POST | Manage AI models registry |
+| `/api/ai/{cache,debug,call}` | POST | Session cache, debug toggle, generic AI proxy |
+| `/api/storage/info` | GET | Embedded CBL info (path, size, doc counts) |
+| `/api/storage/maintenance` | POST | Run `compact / reindex / optimize / integrity / gc_blobs` |
+| `/api/storage/export` | GET | Stream `tar.gz` backup of CBL |
+| `/api/storage/import` | POST | Replace CBL from uploaded backup |
+
+> **Removed in v4.0.0-Beta** (do not re-add): `POST /api/couchbase/test`,
+> `POST /api/couchbase/check-indexes`, `POST /api/couchbase/query`. The
+> Couchbase Server SDK has been removed; source data arrives via JSON
+> upload only. See [`app/docs/work/00_OVERVIEW.md §8`](app/docs/work/00_OVERVIEW.md).
 
 ### AI Provider Support
 - **OpenAI**: GPT-4o, GPT-4o-mini, o3, o4-mini
@@ -392,15 +419,41 @@ const displayTime = convertedDate.toISOString().replace('T', ' ').substring(0, 2
 
 ## Documentation Files
 
+### Server Edition guides — `/app/guides/` 🆕
+
+These are the **canonical** guides for working on the Server Edition. Read
+the relevant one before touching the area it covers.
+
+| File | When to read it |
+|------|-----------------|
+| [`app/guides/RELEASE.md`](app/guides/RELEASE.md) | Cutting any new release. 11-step checklist + Best Practices. **Supersedes `settings/RELEASE_GUIDE.md` for the Server Edition.** |
+| [`app/guides/API_OPENAPI.md`](app/guides/API_OPENAPI.md) | Adding, updating, deleting, or documenting any `/api/*` endpoint. Defines the error envelope, tag taxonomy, and the openapi.yaml + API.md update flow. |
+| [`app/guides/HTML_APP.md`](app/guides/HTML_APP.md) | Editing [`app/index.html`](app/index.html) or anything under [`app/assets/`](app/assets/). Documents the no-build-step / no-CDN / vendored-jQuery+Chart.js stack. |
+| [`app/guides/HTML_WEBSITE.md`](app/guides/HTML_WEBSITE.md) | Editing the public cb.fuj.io pages at the repo root (`index.html`, `getting_started.html`, `user_guide.html`, etc.) and `/en/index.html`. Covers Cloudflare Pages constraints. |
+
+### API spec & reference — `/app/docs/`
+
 | File | Description |
 |------|-------------|
-| `README.md` | Project overview and quick start |
-| `app/README_SERVER.md` | Server edition documentation |
-| `app/QUICKSTART.md` | Quick start for server edition |
-| `settings/RELEASE_GUIDE.md` | Release process |
-| `settings/VERSION_UPDATE_GUIDE.md` | Version update checklist |
-| `settings/LOCALIZATION_GUIDE.md` | Translation guidelines |
-| `BIG_MOVE_4_0_0.md` | Migration documentation |
+| [`app/docs/openapi.yaml`](app/docs/openapi.yaml) | **Source of truth** OpenAPI 3.1 spec — every endpoint, every schema, every error response |
+| [`app/docs/API.md`](app/docs/API.md) | Markdown quick reference derived from the spec |
+| [`app/docs/work/`](app/docs/work/) | Migration / refactor design docs (CB Server → CBL, packaging, etc.) |
+
+### General project docs
+
+| File | Description |
+|------|-------------|
+| [`README.md`](README.md) | Project overview and quick start |
+| [`release_notes.md`](release_notes.md) | Per-version changelog (Static + Server Editions) |
+| [`app/README_SERVER.md`](app/README_SERVER.md) | Server edition documentation |
+| [`app/QUICKSTART.md`](app/QUICKSTART.md) | Quick start for server edition |
+| [`getting_started.md`](getting_started.md) / [`getting_started.html`](getting_started.html) | Public-facing onboarding (cb.fuj.io) |
+| [`settings/RELEASE_GUIDE.md`](settings/RELEASE_GUIDE.md) | Legacy release process (use `app/guides/RELEASE.md` instead for Server Edition) |
+| [`settings/VERSION_UPDATE_GUIDE.md`](settings/VERSION_UPDATE_GUIDE.md) | Detailed version-bump locations (still useful) |
+| [`settings/POST_RELEASE_GUIDE.md`](settings/POST_RELEASE_GUIDE.md) | Post-release housekeeping |
+| [`settings/LOCALIZATION_GUIDE.md`](settings/LOCALIZATION_GUIDE.md) | Translation guidelines |
+| [`settings/BRANCHING_STRATEGY.md`](settings/BRANCHING_STRATEGY.md) | `feature → liquid → QA → main` workflow |
+| [`BIG_MOVE_4_0_0.md`](BIG_MOVE_4_0_0.md) | v4.0.0 migration documentation |
 
 ---
 
