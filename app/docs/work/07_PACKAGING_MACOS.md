@@ -43,8 +43,8 @@ The longer answer is below.
 │   4. CBL opens cb_tools_db.cblite2/ at:                  │
 │      ~/Library/Application Support/                      │
 │         CouchbaseQueryAnalyzer/data/                     │
-│   5. Flask listens on 127.0.0.1:5000                     │
-│   6. The user's browser opens http://localhost:5000      │
+│   5. Flask listens on 127.0.0.1:8888                     │
+│   6. The user's browser opens http://localhost:8888      │
 ╰──────────────────────────────────────────────────────────╯
 ```
 
@@ -197,9 +197,9 @@ app = BUNDLE(
     name='Couchbase Query Analyzer.app',
     icon='assets/img/app_icon.icns',
     bundle_identifier='io.couchbase.queryanalyzer',
-    version='5.0.0',
+    version='4.0.0-beta',
     info_plist={
-        'CFBundleShortVersionString': '5.0.0',
+        'CFBundleShortVersionString': '4.0.0-beta',
         'NSHighResolutionCapable': True,
         'LSMinimumSystemVersion': '11.0',
     },
@@ -273,13 +273,13 @@ xcrun stapler staple "dist/Couchbase Query Analyzer.app"
 brew install create-dmg
 
 create-dmg \
-    --volname "Couchbase Query Analyzer 5.0.0" \
+    --volname "Couchbase Query Analyzer 4.0.0-beta" \
     --background "build/macos/dmg-bg.png" \
     --window-size 600 400 \
     --icon-size 96 \
     --icon "Couchbase Query Analyzer.app" 150 200 \
     --app-drop-link 450 200 \
-    "dist/CouchbaseQueryAnalyzer-5.0.0.dmg" \
+    "dist/CouchbaseQueryAnalyzer-4.0.0-beta.dmg" \
     "dist/Couchbase Query Analyzer.app"
 ```
 
@@ -358,7 +358,7 @@ jobs:
 
 ## 10. Smoke test on a clean machine
 
-A separate workflow boots a fresh macOS VM, downloads the released `.dmg`, mounts it, copies the `.app` into `/Applications`, launches it headlessly, and curls `http://127.0.0.1:5000/api/storage/info`. The response must include `"backend": "cbl"`.
+A separate workflow boots a fresh macOS VM, downloads the released `.dmg`, mounts it, copies the `.app` into `/Applications`, launches it headlessly, and curls `http://127.0.0.1:8888/api/storage/info`. The response must include `"backend": "cbl"`.
 
 ---
 
@@ -379,9 +379,13 @@ The only difference is **how the dylib gets into the bundle** (apt-installed in 
 
 ## Post-review fix (2026-05-09)
 
-The spec file lives at the **project root** as [`build_mac.spec`](../../../build_mac.spec) (was inside `/app/` in the first pass). Changes:
+The spec file lives inside the Server Edition root at [`app/build_mac.spec`](../../build_mac.spec). PyInstaller is invoked **from inside `/app/`**, so the spec resolves its base directory to `/app/` itself:
 
-- `project_root = Path(__file__).parent` (was `parent.parent` when the spec was nested under `/app/`).
-- `APP_VERSION = '5.0.0'` (was `4.0.0`).
-- `CBL_MACOS_DYLIB` is overridable via the env var of the same name; default is `<project_root>/vendor/macos/libcblite.3.dylib`.
-- Build invocation: `pyinstaller build_mac.spec --clean` from the project root.
+- `project_root = Path(__file__).parent` resolves to `/app/` (the spec lives in `/app/`, so no `parent.parent` walk is needed).
+- `APP_VERSION = '4.0.0-beta'` (was `4.0.0`).
+- `CBL_MACOS_DYLIB` is overridable via the env var of the same name; default is `<project_root>/vendor/macos/libcblite.3.dylib` — i.e. [`app/vendor/macos/libcblite.3.dylib`](../../vendor/macos/libcblite.3.dylib).
+- Build invocation (run from inside `/app/`):
+
+  ```sh
+  pyinstaller build_mac.spec --clean
+  ```

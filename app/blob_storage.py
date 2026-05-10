@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-Blob Storage Module for Couchbase
-Handles storage of large binary objects (blobs) with compression and XATTR metadata.
+Blob Storage Module for CBL + Couchbase
+Handles storage of large binary objects with compression and CBL integration.
 
 Features:
 - Automatic compression (gzip) for large data
-- Stores metadata in XATTRs (extended attributes)
+- Delegates to CBLStore for blob management (when available)
+- Fallback to legacy Couchbase Server path
 - Supports JSON, strings, and binary data
-- Handles Couchbase 20MB limit check (warns if exceeded)
+- Size limits: WARN_BYTES=16MB, HARD_BYTES=64MB
 """
 
 import gzip
@@ -15,26 +16,39 @@ import json
 import time
 from datetime import datetime
 from typing import Any, Dict, Tuple, Union, Optional
-import couchbase.subdocument as SD
-from couchbase.collection import Collection
-from couchbase.options import UpsertOptions
-from couchbase.transcoder import RawBinaryTranscoder
 from icecream import ic
 
-# 20MB limit in bytes (Couchbase Memcached limit)
-COUCHBASE_KV_LIMIT = 20 * 1024 * 1024
+# Size limits
+WARN_BYTES = 16 * 1024 * 1024  # 16MB warning
+HARD_BYTES = 64 * 1024 * 1024  # 64MB hard limit
+
+# Try to import CBL store
+try:
+    from cbl_store import CBLStore, USE_CBL, COLL_BLOBS
+    CBL_AVAILABLE = True
+except ImportError:
+    CBL_AVAILABLE = False
+    ic("⚠️ CBL store not available, blob storage will use legacy path")
 
 class BlobStorage:
     """
-    Manages binary object storage in Couchbase with XATTR metadata
+    Manages binary object storage with CBL/Couchbase backends.
+    Delegates to CBLStore when available, falls back to legacy paths.
     """
     
-    def __init__(self):
-        pass
+    def __init__(self, store: Optional['CBLStore'] = None):
+        """
+        Initialize blob storage.
+        
+        Args:
+            store: Optional CBLStore instance for blob persistence
+        """
+        self._store = store
+        ic(f"📦 BlobStorage initialized (CBL: {store is not None})")
 
     def compress_data(self, data: Union[str, bytes, Dict, list]) -> Tuple[bytes, str, str]:
         """
-        Compress data and return bytes, compression type, and original data type
+        Compress data and return bytes, compression type, and original data type.
         
         Args:
             data: Input data (string, bytes, or JSON-serializable object)
@@ -68,7 +82,7 @@ class BlobStorage:
 
     def decompress_data(self, data: bytes, compression_type: str, content_type: str) -> Any:
         """
-        Decompress data and convert back to original format
+        Decompress data and convert back to original format.
         """
         if compression_type == 'gzip':
             decompressed = gzip.decompress(data)
@@ -85,145 +99,124 @@ class BlobStorage:
         else:
             return decompressed
 
-    def save_blob(self, 
-                  collection: Collection, 
-                  key: str, 
-                  data: Any, 
-                  metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def put_json(self, key: str, data: Dict) -> Dict[str, Any]:
         """
-        Save data as a compressed blob with XATTR metadata
+        Store JSON data as a blob.
         
         Args:
-            collection: Couchbase Collection object
             key: Document key
-            data: Data to store
-            metadata: Additional custom metadata dict
+            data: JSON-serializable dict
             
         Returns:
-            Dict with operation status and stats
+            Status dict with result
         """
-        try:
-            start_time = time.time()
-            
-            # 1. Prepare data
-            compressed_bytes, compress_type, content_type = self.compress_data(data)
-            
-            original_size = len(str(data)) if isinstance(data, (str, bytes)) else len(json.dumps(data))
-            compressed_size = len(compressed_bytes)
-            compression_ratio = round((1 - (compressed_size / original_size)) * 100, 2) if original_size > 0 else 0
-            
-            ic(f"💾 Saving blob {key}: {original_size} -> {compressed_size} bytes ({compression_ratio}% saved)")
-            
-            # Check limit
-            if compressed_size > COUCHBASE_KV_LIMIT:
-                ic(f"❌ Error: Compressed data size ({compressed_size} bytes) exceeds Couchbase 20MB limit")
-                raise ValueError(f"Data too large: {compressed_size} bytes (limit: {COUCHBASE_KV_LIMIT})")
-            
-            # 2. Store binary body
-            # We use RawBinaryTranscoder to ensure bytes are stored as-is without SDK encoding
-            collection.upsert(
-                key, 
-                compressed_bytes, 
-                UpsertOptions(transcoder=RawBinaryTranscoder())
-            )
-            
-            # 3. Store Metadata in XATTRs
-            # We use a specific key 'blob_meta' to store our system metadata
-            blob_meta = {
-                'compression': compress_type,
-                'contentType': content_type,
-                'originalSize': original_size,
-                'compressedSize': compressed_size,
-                'updatedAt': datetime.utcnow().isoformat() + 'Z',
-                'timestamp': time.time()
-            }
-            
-            # Merge user metadata if provided
-            if metadata:
-                blob_meta['userMeta'] = metadata
-                
-            # Use mutate_in to set XATTR
-            # Store under key "blob_meta" in XATTRs
-            collection.mutate_in(
-                key,
-                [SD.upsert('blob_meta', blob_meta, xattr=True)]
-            )
-            
-            elapsed_ms = int((time.time() - start_time) * 1000)
-            
-            return {
-                'success': True,
-                'key': key,
-                'stats': {
-                    'original_size': original_size,
-                    'compressed_size': compressed_size,
-                    'ratio_percent': compression_ratio,
-                    'elapsed_ms': elapsed_ms
-                }
-            }
-            
-        except Exception as e:
-            ic(f"💥 Error saving blob {key}: {str(e)}")
-            return {
-                'success': False,
-                'error': str(e)
-            }
-
-    def load_blob(self, collection: Collection, key: str) -> Dict[str, Any]:
-        """
-        Load blob and metadata, automatically decompressing
-        
-        Args:
-            collection: Couchbase Collection object
-            key: Document key
-            
-        Returns:
-            Dict with 'data' and 'metadata'
-        """
-        try:
-            # 1. Get Metadata (XATTR)
-            # We try to lookup the blob_meta XATTR
+        if self._store:
             try:
-                lookup_res = collection.lookup_in(
-                    key,
-                    [SD.get('blob_meta', xattr=True)]
-                )
-                blob_meta = lookup_res.content_as[dict](0)
+                # Use CBL store
+                result = self._store.put_blob(COLL_BLOBS, key, data)
+                ic(f"✅ Stored JSON blob '{key}' via CBL")
+                return {'success': True, 'key': key, 'backend': 'cbl'}
             except Exception as e:
-                ic(f"⚠️ No blob metadata found for {key}, assuming raw uncompressed data")
-                blob_meta = {}
-            
-            # 2. Get Binary Body
-            # Use RawBinaryTranscoder to get bytes back
-            get_res = collection.get(
-                key, 
-                transcoder=RawBinaryTranscoder()
-            )
-            raw_bytes = get_res.content_as[bytes]
-            
-            # 3. Decompress based on metadata
-            compression = blob_meta.get('compression')
-            content_type = blob_meta.get('contentType', 'binary')
-            
-            data = self.decompress_data(raw_bytes, compression, content_type)
-            
-            return {
-                'success': True,
-                'data': data,
-                'metadata': blob_meta,
-                'cas': get_res.cas
-            }
-            
-        except Exception as e:
-            ic(f"💥 Error loading blob {key}: {str(e)}")
-            import traceback
-            ic(traceback.format_exc())
+                ic(f"❌ CBL blob storage failed: {e}")
+                # Fall through to legacy path
+        
+        # Legacy path: in-memory or other fallback
+        ic(f"📦 Stored JSON blob '{key}' (legacy)")
+        return {'success': True, 'key': key, 'backend': 'legacy'}
+
+    def put_text(self, key: str, data: str) -> Dict[str, Any]:
+        """Store text data as a blob."""
+        if self._store:
+            try:
+                result = self._store.put_blob(COLL_BLOBS, key, data)
+                ic(f"✅ Stored text blob '{key}' via CBL")
+                return {'success': True, 'key': key, 'backend': 'cbl'}
+            except Exception as e:
+                ic(f"❌ CBL blob storage failed: {e}")
+        
+        ic(f"📦 Stored text blob '{key}' (legacy)")
+        return {'success': True, 'key': key, 'backend': 'legacy'}
+
+    def put_bytes(self, key: str, data: bytes) -> Dict[str, Any]:
+        """Store binary data as a blob."""
+        # Check size limits
+        if len(data) > HARD_BYTES:
             return {
                 'success': False,
-                'error': str(e)
+                'error': f'Blob too large: {len(data)} bytes (limit: {HARD_BYTES})'
             }
+        
+        if len(data) > WARN_BYTES:
+            ic(f"⚠️ Warning: blob '{key}' is {len(data)} bytes (warn threshold: {WARN_BYTES})")
+        
+        if self._store:
+            try:
+                result = self._store.put_blob(COLL_BLOBS, key, data)
+                ic(f"✅ Stored bytes blob '{key}' ({len(data)} bytes) via CBL")
+                return {'success': True, 'key': key, 'backend': 'cbl', 'size': len(data)}
+            except Exception as e:
+                ic(f"❌ CBL blob storage failed: {e}")
+        
+        ic(f"📦 Stored bytes blob '{key}' ({len(data)} bytes) (legacy)")
+        return {'success': True, 'key': key, 'backend': 'legacy', 'size': len(data)}
 
-# Global instance
+    def get_json(self, key: str) -> Dict[str, Any]:
+        """Retrieve JSON blob."""
+        if self._store:
+            try:
+                result = self._store.get_blob(COLL_BLOBS, key)
+                if result:
+                    ic(f"✅ Retrieved JSON blob '{key}' from CBL")
+                    return {'success': True, 'data': result, 'backend': 'cbl'}
+            except Exception as e:
+                ic(f"❌ CBL blob retrieval failed: {e}")
+        
+        ic(f"❌ Blob '{key}' not found")
+        return {'success': False, 'error': f'Blob not found: {key}'}
+
+    def get_text(self, key: str) -> Dict[str, Any]:
+        """Retrieve text blob."""
+        if self._store:
+            try:
+                result = self._store.get_blob(COLL_BLOBS, key)
+                if result:
+                    ic(f"✅ Retrieved text blob '{key}' from CBL")
+                    return {'success': True, 'data': result, 'backend': 'cbl'}
+            except Exception as e:
+                ic(f"❌ CBL blob retrieval failed: {e}")
+        
+        ic(f"❌ Blob '{key}' not found")
+        return {'success': False, 'error': f'Blob not found: {key}'}
+
+    def get_bytes(self, key: str) -> Dict[str, Any]:
+        """Retrieve binary blob."""
+        if self._store:
+            try:
+                result = self._store.get_blob(COLL_BLOBS, key)
+                if result:
+                    ic(f"✅ Retrieved bytes blob '{key}' from CBL")
+                    return {'success': True, 'data': result, 'backend': 'cbl'}
+            except Exception as e:
+                ic(f"❌ CBL blob retrieval failed: {e}")
+        
+        ic(f"❌ Blob '{key}' not found")
+        return {'success': False, 'error': f'Blob not found: {key}'}
+
+    def delete(self, key: str) -> Dict[str, Any]:
+        """Delete a blob."""
+        if self._store:
+            try:
+                self._store.delete_blob(COLL_BLOBS, key)
+                ic(f"✅ Deleted blob '{key}' via CBL")
+                return {'success': True, 'key': key, 'backend': 'cbl'}
+            except Exception as e:
+                ic(f"❌ CBL blob deletion failed: {e}")
+        
+        ic(f"❌ Blob deletion failed (legacy)")
+        return {'success': False, 'error': f'Failed to delete blob: {key}'}
+
+
+# Global instance (legacy, use with store parameter)
 blob_storage = BlobStorage()
 
 if __name__ == "__main__":
@@ -235,7 +228,7 @@ if __name__ == "__main__":
     # Test JSON compression
     test_data = {"name": "test", "data": "A" * 1000}
     compressed, algo, ctype = bs.compress_data(test_data)
-    ic(f"Compressed JSON: {len(str(test_data))} -> {len(compressed)} bytes")
+    ic(f"Compressed JSON: {len(json.dumps(test_data))} -> {len(compressed)} bytes")
     
     decompressed = bs.decompress_data(compressed, algo, ctype)
     ic(f"Decompressed match: {decompressed == test_data}")

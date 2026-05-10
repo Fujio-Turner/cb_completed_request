@@ -2,9 +2,9 @@
 
 **Status:** ✅ COMPLETE
 
-A one-shot script for users upgrading from v4.0.0 to v5.0.0 who have data in their existing `cb_tools` bucket.
+A one-shot script for users upgrading from v4.0.0 to v4.0.0-beta who have data in their existing `cb_tools` bucket.
 
-**Completed:** `migrate_to_cbl.py` created at project root with CLI interface, migration algorithm, verification, and dry-run mode.
+**Completed:** [`app/migrate_to_cbl.py`](../../migrate_to_cbl.py) created inside the Server Edition root (`/app/`) with CLI interface, migration algorithm, verification, and dry-run mode. All invocations below run **from inside `/app/`** (after `cd app && source venv/bin/activate`).
 
 ---
 
@@ -25,8 +25,9 @@ A one-shot script for users upgrading from v4.0.0 to v5.0.0 who have data in the
 ## 2. CLI
 
 ```sh
-# Inside the running app (Docker, .app, or .exe)
-python -m migrate_to_cbl \
+# Run from inside /app/ (the Server Edition root):
+source venv/bin/activate
+python migrate_to_cbl.py \
     --cb-url couchbases://cb.example.com \
     --cb-user Administrator \
     --cb-pass 'secret' \
@@ -176,7 +177,7 @@ docker run --rm \
     -e LEGACY_CB_URL=... \
     -e LEGACY_CB_USER=... \
     -e LEGACY_CB_PASS=... \
-    couchbase-query-analyzer:5.0.0 \
+    couchbase-query-analyzer:4.0.0-beta \
     python -m migrate_to_cbl \
         --cb-url   "$LEGACY_CB_URL" \
         --cb-user  "$LEGACY_CB_USER" \
@@ -197,7 +198,7 @@ The same script ships inside the `.app` / `.exe` bundle. The user opens the syst
 A new top-level page `docs/MIGRATION_4_0_to_5_0.md` walks users through:
 
 1. Backup their CB Server bucket (`cbbackupmgr`).
-2. Install v5.0.0 alongside the existing v4.0.0 (different port).
+2. Install v4.0.0-beta alongside the existing v4.0.0 (different port).
 3. Run the migration script.
 4. Verify the new instance works.
 5. Stop v4.0.0 and switch traffic.

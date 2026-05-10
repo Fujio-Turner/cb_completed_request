@@ -1,6 +1,6 @@
 # 11 — Risks & Open Questions
 
-Things to decide or watch before / during the v5.0.0 cutover.
+Things to decide or watch before / during the v4.0.0-beta cutover.
 
 ---
 
@@ -18,17 +18,17 @@ Things to decide or watch before / during the v5.0.0 cutover.
 - Docker: enforced via `gunicorn -w 1`.
 - Mac/Windows: enforced because the desktop app spawns one Flask process per launch.
 - **Risk:** if a user double-launches the `.app` / `.exe`, the second one will fail to open the DB.
-- Mitigation: at startup, try to bind `127.0.0.1:5000`; if already bound, just open the browser to the existing instance instead of starting a second Flask. (Standard "single-instance" pattern; the macOS/Windows tray code already half-does this.)
+- Mitigation: at startup, try to bind `127.0.0.1:8888`; if already bound, just open the browser to the existing instance instead of starting a second Flask. (Standard "single-instance" pattern; the macOS/Windows tray code already half-does this.)
 
 ### 1.3 No replication / no team sharing
 
 - v4.0.0 with CB Server lets a team share saved analyzer reports.
-- v5.0.0 with embedded CBL is single-user.
+- v4.0.0-beta with embedded CBL is single-user.
 - **Risk:** users who relied on shared reports lose that.
 - Mitigation:
   - Document this as a deliberate trade-off.
   - Provide manual export/import (per [`03_APP_PY_REFACTOR.md §3.6/3.7`](./03_APP_PY_REFACTOR.md)).
-  - **Future:** add CBL replication to a Sync Gateway as an optional EE feature in v5.2.0.
+  - **Future:** add CBL replication to a Sync Gateway as an optional EE feature in a future release.
 
 ### 1.4 Database size growth
 
@@ -65,11 +65,11 @@ Things to decide or watch before / during the v5.0.0 cutover.
 - Our CI can't `curl` it directly.
 - Mitigation: mirror the zip into a private GitHub releases page; CI fetches via PAT. Document the mirror's SHA256 + license attribution in `app/vendor/windows/SOURCES.md`.
 
-### 1.9 No CBL ARM64 Windows targeting in v5.0.0
+### 1.9 No CBL ARM64 Windows targeting in v4.0.0-beta
 
 - We're shipping x86_64 only.
 - ARM64 Windows users (Surface Pro X, Snapdragon laptops) would have to use the x86_64 build under emulation.
-- Acceptable for now. Tracked for v5.1.0.
+- Acceptable for now. Tracked for a future release.
 
 ### 1.10 Migration script edge cases
 
@@ -82,16 +82,16 @@ Things to decide or watch before / during the v5.0.0 cutover.
 
 | # | Question | Owner | Decision needed by |
 |---|---|---|---|
-| Q1 | Do we keep the `couchbase` Python SDK at all, or split prod-cluster query path into a separate microservice in v5.1.0? | Architect | Pre-Beta |
+| Q1 | Do we keep the `couchbase` Python SDK at all, or split prod-cluster query path into a separate microservice in a future release? | Architect | Pre-Beta |
 | Q2 | Encryption-at-rest for CBL? CBL CE supports `encryption_key` on `DatabaseConfiguration` but the key needs to live somewhere. | Security | Pre-GA |
 | Q3 | Auto-export schedule (daily vs hourly vs off)? Affects disk use. | UX | Pre-GA |
-| Q4 | Bundle a "shared sync to Capella" option in v5.2.0? Brings back team sharing. | Product | Post-GA |
-| Q5 | Should we use CBL native Blob API for >16 MB payloads even in v5.0.0, or wait? | Backend | Pre-Beta |
+| Q4 | Bundle a "shared sync to Capella" option in a future release? Brings back team sharing. | Product | Post-GA |
+| Q5 | Should we use CBL native Blob API for >16 MB payloads even in v4.0.0-beta, or wait? | Backend | Pre-Beta |
 | Q6 | Default CBL DB location on macOS — `~/Library/Application Support` (current plan) vs `~/Documents`? | UX | Pre-Beta |
 | Q7 | Does the GitLab `toon-python` runtime install still make sense if we're now shipping a fat .app? Pre-bundle it? | Backend | Pre-Beta |
 | Q8 | `STORAGE_BACKEND=auto` semantics — error vs silent fallback if CBL bindings missing? | Backend | Pre-Alpha |
 | Q9 | Can we drop `setup_couchbase.sql` from the shipped artifact entirely once on CBL, or move it to docs? | Docs | Pre-GA |
-| Q10 | Should the migration script run **automatically** on first 5.0.0 launch if it detects v4.0.0 config, or always require explicit invocation? | UX | Pre-Beta |
+| Q10 | Should the migration script run **automatically** on first 4.0.0-beta launch if it detects v4.0.0 config, or always require explicit invocation? | UX | Pre-Beta |
 
 ---
 
@@ -99,12 +99,12 @@ Things to decide or watch before / during the v5.0.0 cutover.
 
 | Date | Decision | Rationale |
 |---|---|---|
-| 2026-05-08 | Target version is **v5.0.0** (not v4.1.0) | Triggers MAJOR per [`settings/VERSION_CALCULATION_GUIDE.md`](../../../settings/VERSION_CALCULATION_GUIDE.md): architecture overhaul, changed data formats, removed feature, new tech stack. Documented in [`12_RELEASE_PROCESS_COMPLIANCE.md §1`](./12_RELEASE_PROCESS_COMPLIANCE.md). |
+| 2026-05-08 | Target version is **v4.0.0-beta** (drafts originally pitched a full MAJOR or a MINOR bump) | Original drafts argued the change set triggers MAJOR per [`settings/VERSION_CALCULATION_GUIDE.md`](../../../settings/VERSION_CALCULATION_GUIDE.md) (architecture overhaul, changed data formats, removed feature, new tech stack). The shipping target was reset to **v4.0.0-beta** so the migration ships as a labelled beta on top of the v4 line. Documented in [`12_RELEASE_PROCESS_COMPLIANCE.md §1`](./12_RELEASE_PROCESS_COMPLIANCE.md). |
 | 2026-05-08 | Release branch name is `release-otacon` | Otacon = MGS engineering character, fits a backend re-architecture. Per [`settings/WORKFLOW_GUIDE.md`](../../../settings/WORKFLOW_GUIDE.md). |
-| 2026-05-08 | Server Edition v5.0.0 ships English-only; localization keys scaffolded | Avoids blocking GA on translation work. Per [`12_RELEASE_PROCESS_COMPLIANCE.md §7`](./12_RELEASE_PROCESS_COMPLIANCE.md). |
+| 2026-05-08 | Server Edition v4.0.0-beta ships English-only; localization keys scaffolded | Avoids blocking GA on translation work. Per [`12_RELEASE_PROCESS_COMPLIANCE.md §7`](./12_RELEASE_PROCESS_COMPLIANCE.md). |
 | 2026-05-09 | CBL Python bindings pinned to specific commit SHA; vendor approach | Mitigates upstream breakage |
 | 2026-05-09 | gunicorn -w 1 enforced in Docker; desktop app single-instance pattern for Mac/Windows | Mitigates CBL single-writer concurrency |
-| 2026-05-09 | Manual export/import for team sharing; future replication in v5.2.0 optional | Documented trade-off |
+| 2026-05-09 | Manual export/import for team sharing; future replication in a future release optional | Documented trade-off |
 | 2026-05-09 | TTL on ai_history configurable; Storage tab surfaces db_size for monitoring | Handles growth |
 | 2026-05-09 | Multi-stage Dockerfile planned to drop gcc/git; target ~180 MB final image | Mitigates size growth |
 | 2026-05-09 | Unsigned builds acceptable for early releases with "right-click Open" instructions | Mitigates code-signing cost |

@@ -10,9 +10,15 @@ The Docker image is the **easiest** of the three distributions because:
 
 This doc is a near-direct port of [PouchPipes' `Dockerfile`](https://github.com/Fujio-Turner/PouchPipes/blob/main/docs/CBL_STORE.md#step-1-dockerfile--add-cbl-c--python-bindings).
 
+> **Working directory:** [`app/Dockerfile`](../../Dockerfile) and the new
+> [`app/docker-compose.yml`](../../docker-compose.yml) both live inside `/app/`
+> (the Server Edition root). All `docker build` / `docker compose` commands in
+> this doc are run **from inside `/app/`** — there are no Docker artefacts
+> outside `/app/`.
+
 ---
 
-## 1. New `Dockerfile`
+## 1. `Dockerfile` (lives at [`app/Dockerfile`](../../Dockerfile))
 
 ```dockerfile
 # syntax=docker/dockerfile:1.7
@@ -28,7 +34,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Required by RELEASE_WORK_CHECK.py — verifies LABEL version=
-LABEL version="5.0.0"
+LABEL version="4.0.0-beta"
 LABEL maintainer="Couchbase Query Analyzer"
 
 # ---- 1. System dependencies for CBL-C and the CFFI build ----
@@ -70,8 +76,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN mkdir -p /app/data
 
-EXPOSE 5000
-CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:5000", "app:app"]
+EXPOSE 8888
+CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:8888", "app:app"]
 ```
 
 Notes:
@@ -82,15 +88,17 @@ Notes:
 
 ---
 
-## 2. `docker-compose.yml`
+## 2. `docker-compose.yml` (new file at [`app/docker-compose.yml`](../../docker-compose.yml))
+
+Run with `cd app && docker compose up`:
 
 ```yaml
 services:
   query-analyzer:
     build: .
-    image: couchbase-query-analyzer:5.0.0
+    image: couchbase-query-analyzer:4.0.0-beta
     ports:
-      - "5000:5000"
+      - "8888:8888"
     environment:
       STORAGE_BACKEND: cbl
       CBL_DB_DIR: /app/data
@@ -109,11 +117,21 @@ The volume holds `cb_tools_db.cblite2/` so app data survives container rebuilds.
 
 ## 3. Multi-arch build (CI)
 
+Run from inside `/app/` (the build context is the `/app/` directory):
+
 ```sh
+cd app
 docker buildx build \
     --platform linux/amd64,linux/arm64 \
-    -t ghcr.io/fujio-turner/couchbase-query-analyzer:5.0.0 \
+    -t ghcr.io/fujio-turner/couchbase-query-analyzer:4.0.0-beta \
     --push .
+```
+
+A single-arch local build is just:
+
+```sh
+cd app
+docker build -t couchbase-query-analyzer:4.0.0-beta .
 ```
 
 GitHub Actions matrix:
@@ -131,7 +149,7 @@ The `dpkg --print-architecture` branch in the Dockerfile already handles both at
 
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD curl -fsS http://localhost:5000/api/storage/info || exit 1
+    CMD curl -fsS http://localhost:8888/api/storage/info || exit 1
 ```
 
 `/api/storage/info` (new endpoint from Doc 03 #31) confirms the DB is open and queryable.
@@ -141,7 +159,7 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
 ## 5. Verifying inside the container
 
 ```sh
-docker run --rm couchbase-query-analyzer:5.0.0 \
+docker run --rm couchbase-query-analyzer:4.0.0-beta \
     python -c "from cbl_store import CBLStore; s=CBLStore(); print(s.stats())"
 ```
 
@@ -163,7 +181,7 @@ docker run --rm \
     -e LEGACY_CB_URL=couchbase://prod \
     -e LEGACY_CB_USER=Administrator \
     -e LEGACY_CB_PASS=... \
-    couchbase-query-analyzer:5.0.0 \
+    couchbase-query-analyzer:4.0.0-beta \
     python -m migrate_to_cbl
 ```
 

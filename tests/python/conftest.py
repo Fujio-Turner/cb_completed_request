@@ -13,8 +13,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Add /app/ to path for imports (post-v5 consolidation:
+# app.py, cbl_store.py, blob_storage.py, ai_analyzer.py, app_base.py
+# all live in <project_root>/app/).
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "app"))
 
 
 @pytest.fixture(autouse=True)

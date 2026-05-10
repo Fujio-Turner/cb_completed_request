@@ -7,6 +7,7 @@ Architecture:
 - In-memory session cache with TTL expiry
 - Multi-provider support (OpenAI, Anthropic, Grok)
 - Data obfuscation for privacy
+- CBL storage integration for analysis persistence
 - Automatic garbage collection
 """
 
@@ -21,6 +22,15 @@ from urllib3.util.retry import Retry
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta, timezone
 from icecream import ic
+
+# Try to import CBL storage
+try:
+    from cbl_store import CBLStore
+    from blob_storage import BlobStorage
+    CBL_AVAILABLE = True
+except ImportError:
+    CBL_AVAILABLE = False
+    ic("⚠️ CBL storage not available, analysis history will not be persisted")
 
 # Try to import OpenAI SDK
 try:
@@ -1199,11 +1209,21 @@ class DataObfuscator:
 
 class AIPayloadBuilder:
     """
-    Build AI analysis payload from cached query data
+    Build AI analysis payload from cached query data.
+    Supports CBL storage for analysis history persistence.
     """
     
-    def __init__(self):
-        ic("🔨 AIPayloadBuilder initialized")
+    def __init__(self, store: Optional['CBLStore'] = None, blobs: Optional['BlobStorage'] = None):
+        """
+        Initialize payload builder.
+        
+        Args:
+            store: Optional CBLStore instance for persisting analysis runs
+            blobs: Optional BlobStorage instance for storing large payloads
+        """
+        self._store = store
+        self._blobs = blobs
+        ic(f"🔨 AIPayloadBuilder initialized (CBL: {store is not None})")
     
     def build_payload_from_data(self,
                                 raw_data: Dict[str, Any],
@@ -1563,6 +1583,102 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
         
         ic(f"✅ Payload built from raw data, size={len(str(payload))} bytes")
         return payload
+    
+    def _persist_run(self, prompt: str, response: str, metadata: Dict[str, Any] = None) -> bool:
+        """
+        Persist AI analysis run to CBL storage (if available).
+        
+        Args:
+            prompt: The prompt sent to AI
+            response: The response from AI
+            metadata: Optional metadata (provider, model, tokens, etc.)
+            
+        Returns:
+            True if persisted, False if not available or failed
+        """
+        if not self._store:
+            ic("ℹ️ CBL store not available, analysis run not persisted (legacy path)")
+            return False
+        
+        try:
+            # Blob-ify large prompt/response if blobs available
+            doc_id = f"ai_run_{int(time.time()*1000)}"
+            
+            # Create document with metadata
+            doc = {
+                'docType': 'ai_analysis',
+                'createdAt': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+                'metadata': metadata or {},
+                'prompt': prompt if not self._blobs else f"<blob:{doc_id}:prompt>",
+                'response': response if not self._blobs else f"<blob:{doc_id}:response>"
+            }
+            
+            # Store large payloads as blobs
+            if self._blobs:
+                self._blobs.put_text(f"{doc_id}:prompt", prompt)
+                self._blobs.put_text(f"{doc_id}:response", response)
+            
+            # Store analysis document
+            self._store.add_ai_history(doc_id, doc)
+            
+            ic(f"✅ AI analysis run persisted to CBL: {doc_id}")
+            return True
+            
+        except Exception as e:
+            ic(f"❌ Failed to persist AI run: {e}")
+            return False
+    
+    def _load_payload_reference(self, cluster=None, bucket_name: str = None) -> Dict[str, Any]:
+        """
+        Load payload reference from CBL store or Couchbase (fallback).
+        
+        Args:
+            cluster: Optional Couchbase cluster for fallback
+            bucket_name: Optional bucket name
+            
+        Returns:
+            Payload reference dict
+        """
+        if self._store:
+            try:
+                result = self._store.get_payload_reference()
+                if result:
+                    ic("✅ Loaded payload_reference from CBL")
+                    return result
+            except Exception as e:
+                ic(f"⚠️ Failed to load from CBL: {e}")
+        
+        # Fallback to Couchbase Server or template
+        if cluster:
+            return load_payload_reference(cluster, bucket_name)
+        else:
+            return get_payload_reference_template()
+    
+    def _load_models_list(self, cluster=None, bucket_name: str = None) -> Dict[str, Any]:
+        """
+        Load AI models list from CBL store or Couchbase (fallback).
+        
+        Args:
+            cluster: Optional Couchbase cluster for fallback
+            bucket_name: Optional bucket name
+            
+        Returns:
+            AI models list dict
+        """
+        if self._store:
+            try:
+                result = self._store.get_ai_models_list()
+                if result:
+                    ic("✅ Loaded ai_models_list from CBL")
+                    return result
+            except Exception as e:
+                ic(f"⚠️ Failed to load from CBL: {e}")
+        
+        # Fallback to Couchbase Server or template
+        if cluster:
+            return load_ai_models_list(cluster, bucket_name)
+        else:
+            return get_ai_models_template()
     
     def build_payload(self, 
                      session_id: str,

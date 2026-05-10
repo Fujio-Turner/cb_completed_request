@@ -35,7 +35,7 @@ if backend() == "cbl":
 return _server_save_analyzer(...)   # original code, untouched
 ```
 
-This keeps the diff reviewable and lets us delete the `_server_*` paths in v5.1.0.
+This keeps the diff reviewable and lets us delete the `_server_*` paths in a future release.
 
 ---
 
@@ -130,7 +130,7 @@ def save_analyzer():
     return jsonify({"success": True, "backend": "server"})
 ```
 
-Note that the request body **stops requiring** `config` / `bucketConfig` when `backend()=="cbl"`; the frontend can drop those fields after v5.0.0 ships, but for compatibility we keep accepting them.
+Note that the request body **stops requiring** `config` / `bucketConfig` when `backend()=="cbl"`; the frontend can drop those fields after v4.0.0-beta ships, but for compatibility we keep accepting them.
 
 ### 3.2 `ai/history` (#27)
 
@@ -220,7 +220,7 @@ These changes happen in `assets/js/` (separate ticket); they are not blocking fo
 
 ## 5. Dropped endpoints / behaviour
 
-After v5.1.0 (one release after the v5.0.0 CBL cutover):
+After a future release (one release after the v4.0.0-beta CBL cutover):
 
 - The legacy CB-Server branches in #4–8, #11, #13–18, #20–24, #27, #28 are deleted.
 - The `couchbase` SDK in `requirements.txt` stays — it's still used for the user's *production* cluster (#1, #2, #3, #26, #30).
@@ -230,13 +230,13 @@ After v5.1.0 (one release after the v5.0.0 CBL cutover):
 
 ## 5. Post-review fixes (2026-05-09)
 
-The first pass of [`app.py`](../../../app.py) had three blocking bugs and one
+The first pass of [`app/app.py`](../../app.py) had three blocking bugs and one
 design deviation. All have been fixed:
 
 ### 5.1 `backend()` now resolves correctly
 
 The first version returned the raw `STORAGE_BACKEND` env value, which defaults
-to `"auto"` in [`cbl_store.py`](../../../cbl_store.py) — so every `if backend()
+to `"auto"` in [`app/cbl_store.py`](../../cbl_store.py) — so every `if backend()
 == "cbl"` was always False. The legacy keyword was also `"couchbase"` but the
 override branches compared to `"server"`. Fixed:
 
@@ -269,8 +269,8 @@ inspecting / managing the embedded database.
 ### 5.4 Implementation strategy: build on top of `app_base.py`
 
 Rather than re-implementing all 30+ v4.x endpoints with dual branches inline,
-[`app.py`](../../../app.py) now imports the original Flask app from
-[`app_base.py`](../../../app_base.py) (preserved verbatim from v4.0.0) and
+[`app/app.py`](../../app.py) now imports the original Flask app from
+[`app/app_base.py`](../../app_base.py) (preserved verbatim from v4.0.0) and
 **overrides only the CBL-eligible routes**:
 
 ```python
@@ -314,18 +314,10 @@ by definition, and avoids fragile mutation of Werkzeug's `url_map._rules`.
 | 33 | `GET /api/storage/export` 🆕 | ✅ added |
 | 34 | `POST /api/storage/import` 🆕 | ✅ added |
 
-### 5.6 Hidden showstopper: `app/__init__.py` shadowing
-
-`/app/__init__.py` made `/app/` a Python package, which shadowed the new
-[`app.py`](../../../app.py) at the project root. `gunicorn app:app` (per
-[`Dockerfile`](../../../Dockerfile)) would have imported the *directory*
-package instead of the new module and crashed with `ImportError`. The file has
-been deleted; nothing else inside `/app/` was modified.
-
-### 5.7 Verification
+### 5.6 Verification
 
 ```
-$ pytest tests/python/
+$ cd app && source venv/bin/activate && pytest ../tests/python/
 12 passed, 97 skipped
 ```
 

@@ -19,7 +19,7 @@ The Windows story is almost identical to macOS — the only differences are:
 │  ├── cblite.dll                     ← CBL library   │
 │  ├── python312.dll                                  │
 │  ├── _PyCBL.cp312-win_amd64.pyd     ← CFFI bindings │
-│  ├── CouchbaseLite\__init__.py …                    │
+│  ├── CouchbaseLite\ (Python package)                │
 │  ├── app.py, ai_analyzer.py, cbl_store.py           │
 │  ├── assets\                                        │
 │  └── *.json.template                                │
@@ -31,7 +31,7 @@ The Windows story is almost identical to macOS — the only differences are:
 │   4. CBL opens cb_tools_db.cblite2 at:              │
 │      %LOCALAPPDATA%\Couchbase\                      │
 │         CouchbaseQueryAnalyzer\data\                │
-│   5. Flask listens on 127.0.0.1:5000                │
+│   5. Flask listens on 127.0.0.1:8888                │
 │   6. The systray icon (pystray) opens browser       │
 ╰─────────────────────────────────────────────────────╯
 ```
@@ -72,7 +72,7 @@ The CI workflow uses option 1 (private mirror).
 
 ### ARM64 Windows
 
-CBL 3.2.1 ships an ARM64 Windows build too. We **do not** target it for v5.0.0 (current users are overwhelmingly x64). Tracked in [`11_RISKS_AND_OPEN_QUESTIONS.md`](./11_RISKS_AND_OPEN_QUESTIONS.md).
+CBL 3.2.1 ships an ARM64 Windows build too. We **do not** target it for v4.0.0-beta (current users are overwhelmingly x64). Tracked in [`11_RISKS_AND_OPEN_QUESTIONS.md`](./11_RISKS_AND_OPEN_QUESTIONS.md).
 
 ---
 
@@ -211,7 +211,7 @@ The `os.add_dll_directory` call is the **critical line** for Windows — without
 
 ### 5.2 `version_info.txt`
 
-A standard Win32 `VS_VERSION_INFO` resource block so right-click → Properties shows `5.0.0.0`, vendor, copyright, etc.
+A standard Win32 `VS_VERSION_INFO` resource block so right-click → Properties shows `4.0.0.0-beta`, vendor, copyright, etc.
 
 ---
 
@@ -242,7 +242,7 @@ WiX Toolset v4:
 ```xml
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package Name="Couchbase Query Analyzer" Manufacturer="Couchbase"
-           Version="5.0.0.0" UpgradeCode="...">
+           Version="4.0.0.0-beta" UpgradeCode="...">
     <MediaTemplate EmbedCab="yes"/>
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLDIR" Name="Couchbase Query Analyzer">
@@ -350,9 +350,13 @@ jobs:
 
 ## Post-review fix (2026-05-09)
 
-The spec file lives at the **project root** as [`build_win.spec`](../../../build_win.spec) (was inside `/app/` in the first pass). Changes:
+The spec file lives inside the Server Edition root at [`app/build_win.spec`](../../build_win.spec). PyInstaller is invoked **from inside `/app/`**, so the spec resolves its base directory to `/app/` itself:
 
-- `project_root = Path(__file__).parent` (was `parent.parent` when the spec was nested under `/app/`).
-- `APP_VERSION = '5.0.0'` (was `4.0.0`).
-- `CBL_WINDOWS_DLL` is overridable via the env var of the same name; default is `<project_root>\vendor\windows\cblite.dll`.
-- Build invocation: `pyinstaller build_win.spec --clean` from the project root.
+- `project_root = Path(__file__).parent` resolves to `/app/` (the spec lives in `/app/`, so no `parent.parent` walk is needed).
+- `APP_VERSION = '4.0.0-beta'` (was `4.0.0`).
+- `CBL_WINDOWS_DLL` is overridable via the env var of the same name; default is `<project_root>\vendor\windows\cblite.dll` — i.e. [`app/vendor/windows/cblite.dll`](../../vendor/windows/cblite.dll).
+- Build invocation (run from inside `/app/`):
+
+  ```powershell
+  pyinstaller build_win.spec --clean
+  ```

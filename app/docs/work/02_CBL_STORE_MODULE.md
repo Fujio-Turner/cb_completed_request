@@ -2,7 +2,7 @@
 
 **Status:** ✅ COMPLETE (post-review fixes 2026-05-09 — see end of file)
 
-A single new module at the project root [`cbl_store.py`](../../../cbl_store.py) that wraps every CBL operation. Every other change in this plan imports from here.
+A single new module inside `/app/` at [`app/cbl_store.py`](../../cbl_store.py) that wraps every CBL operation. Every other change in this plan imports from here.
 
 Pattern is taken directly from PouchPipes' [`cbl_store.py`](https://github.com/Fujio-Turner/PouchPipes/blob/main/docs/CBL_STORE.md) and adapted for the analyzer's data model.
 
@@ -306,7 +306,7 @@ def storage_backend() -> str:
     return "cbl" if USE_CBL else "server"
 ```
 
-This lets us ship v5.0.0 with **`auto`** as the default and merge the migration in stages — Doc 03 wraps every CB Server endpoint with an `if storage_backend() == 'cbl': ...`.
+This lets us ship v4.0.0-beta with **`auto`** as the default and merge the migration in stages — Doc 03 wraps every CB Server endpoint with an `if storage_backend() == 'cbl': ...`.
 
 ---
 
@@ -336,9 +336,9 @@ These tests **only** run when `USE_CBL` is true; otherwise they are skipped via 
 
 ## 9. Post-review fixes (2026-05-09)
 
-The first pass of [`cbl_store.py`](../../../cbl_store.py) used CFFI stubs that
+The first pass of [`app/cbl_store.py`](../../cbl_store.py) used CFFI stubs that
 returned `{}` / `[]` regardless of the underlying database state and was
-missing several public methods that [`app.py`](../../../app.py) called. The
+missing several public methods that [`app/app.py`](../../app.py) called. The
 file has been rewritten with real CFFI implementations:
 
 | Helper | Implementation |

@@ -2,7 +2,7 @@
 <html lang="en">
 <!--
     Couchbase Query Analyzer
-    Version: 4.0.0-dev
+    Version: 4.0.0-beta
     Last Updated: 2025-11-06
     
     🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
@@ -19,9 +19,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="4.0.0-dev" />
+    <meta name="version" content="4.0.0-beta" />
     <meta name="last-updated" content="2025-11-06" />
-    <title>Query Analyzer v4.0.0-dev</title>
+    <title>Query Analyzer v4.0.0-beta</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="assets/css/jquery-ui.min.css">
     
@@ -155,21 +155,21 @@
 <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v4.0.0-dev
+        v4.0.0-beta
     </div>
 
     <!-- Settings button (top-right) - Issue #231 -->
-    <button id="settings-btn" class="settings-btn" onclick="openSettingsModal()" title="Cluster Connection Settings">
+    <button id="settings-btn" class="settings-btn" onclick="openSettingsModal()" title="Embedded Database Settings">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
             <circle cx="12" cy="12" r="3"></circle>
         </svg>
     </button>
 
-    <!-- Connection status indicator (next to settings) - Issue #231 -->
-    <div id="connection-status" class="connection-status" title="Couchbase Connection Status">
-        <span class="status-dot status-disconnected"></span>
-        <span class="status-text">Disconnected</span>
+    <!-- Storage backend indicator (next to settings) - Issue #231 / v4.0.0-beta CBL migration -->
+    <div id="connection-status" class="connection-status" title="Embedded Couchbase Lite database">
+        <span class="status-dot status-connected"></span>
+        <span class="status-text">Couchbase Lite</span>
     </div>
 
     <!-- Bug report link (bottom-right) -->
@@ -2202,12 +2202,11 @@ LET bid = CONCAT("", s.bucket_id, ""),
                         <li><a href="#settings-tab-ai-admin">AI Admin</a></li>
                     </ul>
                     
-                    <!-- Tab 1: App Data Storage (Couchbase Lite, embedded) -->
+                    <!-- Tab 1: App Data Storage (Couchbase Lite, embedded — v4.0.0-beta is CBL-only) -->
                     <div id="settings-tab-storage">
-                        <!-- Server-edition (CBL) view -->
                         <div id="storage-cbl-view">
                             <p style="color: #666; font-size: 0.9em; margin: 0 0 20px 0; padding: 10px; background: #f0f9ff; border-left: 3px solid #3b82f6; border-radius: 4px;">
-                                <strong>Note:</strong> Server Edition v5.0.0 stores your Query Analyzer preferences,
+                                <strong>Note:</strong> Server Edition v4.0.0-beta stores your Query Analyzer preferences,
                                 saved analyses, and AI history in an <strong>embedded Couchbase Lite</strong> database
                                 that lives inside this app — no external Couchbase Server or Capella cluster is required
                                 for app data.
@@ -2266,37 +2265,6 @@ LET bid = CONCAT("", s.bucket_id, ""),
                                         <input type="checkbox" id="save-timezone" checked />
                                         Save timezone preference to embedded database
                                     </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Legacy Couchbase-Server / Capella view (only shown when STORAGE_BACKEND != cbl) -->
-                        <div id="storage-server-view" style="display:none">
-                            <p style="color: #666; font-size: 0.9em; margin: 0 0 20px 0; padding: 10px; background: #fff8e1; border-left: 3px solid #f59e0b; border-radius: 4px;">
-                                <strong>Note:</strong> This cluster is used to <em>store</em> your Query Analyzer
-                                preferences and settings in an external Couchbase Server / Capella cluster.
-                                It is <strong>not</strong> the cluster you're analyzing queries from
-                                (paste query data in the main input boxes).
-                            </p>
-
-                            <div class="settings-section">
-                                <h3>Storage Cluster Connection</h3>
-                                <div id="cluster-list"></div>
-                            </div>
-
-                            <div class="settings-section">
-                                <h3>Bucket Configuration</h3>
-                                <div class="settings-row">
-                                    <label>Bucket Name:</label>
-                                    <input type="text" id="bucket-name" value="cb_tools" />
-                                </div>
-                                <div class="settings-row">
-                                    <label>Analyzer Keyspace:</label>
-                                    <code id="analyzer-keyspace">cb_tools.query.analyzer</code>
-                                </div>
-                                <div class="settings-row">
-                                    <label>Preferences Keyspace:</label>
-                                    <code id="preferences-keyspace">cb_tools._default._default</code>
                                 </div>
                             </div>
                         </div>

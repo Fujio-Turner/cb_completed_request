@@ -11615,7 +11615,7 @@ function renderQueryGroupPhaseTimesChart(group) {
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = "4.0.0-dev";
+        const APP_VERSION = "4.0.0-beta";
 const LAST_UPDATED = "2025-11-06";
 
         // Timezone management - initialize early to avoid undefined errors

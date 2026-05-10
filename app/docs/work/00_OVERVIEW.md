@@ -1,10 +1,10 @@
 # Couchbase Server → Couchbase Lite Migration — Overview
 
 **Status:** ✅ COMPLETE (All 12 docs done) — Post-review fixes applied (see §7 below)
-**Target version:** **v5.0.0** — MAJOR bump per [`settings/VERSION_CALCULATION_GUIDE.md`](../../../settings/VERSION_CALCULATION_GUIDE.md) (architecture overhaul + changed data formats + removed major feature). See [`12_RELEASE_PROCESS_COMPLIANCE.md §1`](./12_RELEASE_PROCESS_COMPLIANCE.md).
+**Target version:** **v4.0.0-beta** — pre-release of v4.0.0 (Server Edition). See [`12_RELEASE_PROCESS_COMPLIANCE.md §1`](./12_RELEASE_PROCESS_COMPLIANCE.md) and [`settings/VERSION_CALCULATION_GUIDE.md`](../../../settings/VERSION_CALCULATION_GUIDE.md).
 **Release branch:** `release-otacon` (per [`settings/BRANCHING_STRATEGY.md`](../../../settings/BRANCHING_STRATEGY.md))
 **Owners:** Backend / Packaging
-**Working directory:** **Project root** (not `/app/`) — all changes apply to the v4.x codebase migrated to root.
+**Working directory:** **`/app/`** — all new and changed files (Python modules, `Dockerfile`, `docker-compose.yml`, PyInstaller specs, `vendor/` libcblite binaries) live under `/app/`. The repo root is reserved for the Static Edition (`/en/index.html`) and the cb.fuj.io site content; nothing in this migration belongs there.
 **Reference implementations:**
 
 - Fujio-Turner/PouchPipes — [`docs/CBL_DATABASE.md`](https://github.com/Fujio-Turner/PouchPipes/blob/main/docs/CBL_DATABASE.md)
@@ -69,7 +69,7 @@ BEFORE (v4.0.0):
 │  Couchbase Server         │
 ╰───────────────────────────╯
 
-AFTER (v5.0.0):
+AFTER (v4.0.0-beta):
 ╭─────────────────────────────────────────╮
 │  Flask app.py                           │
 │  (Docker/.app/.exe)                     │
@@ -116,33 +116,38 @@ AFTER (v5.0.0):
 
 All work happens on per-issue branches off `release-otacon`, fast-forwarded into `liquid`, then promoted via `liquid` → `QA` → `main` per [`settings/BRANCHING_STRATEGY.md`](../../../settings/BRANCHING_STRATEGY.md). See [`12_RELEASE_PROCESS_COMPLIANCE.md §2`](./12_RELEASE_PROCESS_COMPLIANCE.md) for the per-issue branch table.
 
-1. **Doc 01 + 02** — Lock data model, build `cbl_store.py` with `USE_CBL` fallback.
-2. **Doc 06** — Get CBL working in the Linux Docker image first (easiest).
+1. **Doc 01 + 02** — Lock data model, build `app/cbl_store.py` with `USE_CBL` fallback.
+2. **Doc 06** — Get CBL working in the Linux Docker image first (easiest); `docker compose up` runs from `/app/`.
 3. **Doc 03 + 04 + 05** — Migrate endpoints behind a `STORAGE_BACKEND=cbl|server` flag.
-4. **Doc 09** — Ship a one-shot migration script (`python -m app.migrate_to_cbl`).
-5. **Doc 07 + 08** — Bundle `libcblite` into PyInstaller for Mac and Windows.
+4. **Doc 09** — Ship a one-shot migration script (`python migrate_to_cbl.py` from `/app/`).
+5. **Doc 07 + 08** — Bundle `libcblite` into PyInstaller for Mac and Windows; PyInstaller is invoked from `/app/` against `/app/build_mac.spec` and `/app/build_win.spec`.
 6. **Doc 10** — End-to-end tests on all three distributions, then flip default to `cbl`.
-7. **Doc 12** — Run [`settings/RELEASE_GUIDE.md`](../../../settings/RELEASE_GUIDE.md) sequence; tag `v5.0.0` from `main`.
-8. Remove the `STORAGE_BACKEND=server` path in v5.1.0.
+7. **Doc 12** — Run [`settings/RELEASE_GUIDE.md`](../../../settings/RELEASE_GUIDE.md) sequence; tag `v4.0.0-beta` from `main`.
+8. Remove the `STORAGE_BACKEND=server` path in a future release.
 
 ## 7. Post-review fixes (2026-05-09)
 
 A code review of the initial implementation found several blocking bugs that
-prevented the CBL path from working end-to-end. All have been fixed at the
-project root:
+prevented the CBL path from working end-to-end. All fixes land **inside `/app/`**:
 
 | Fix | File(s) | Notes |
 |---|---|---|
-| Implemented missing `CBLStore` methods | [`cbl_store.py`](../../../cbl_store.py) | `query`, `save_analysis`/`load_analysis`, `maintenance`, `export`, `import_from`, `list_clusters` |
-| Replaced CFFI stubs with real implementations | [`cbl_store.py`](../../../cbl_store.py) | `_doc_to_dict` via `decodeFleeceDict`; `_n1ql` via `Query`/`N1QLLanguage`; collection cache; explain via `lib.CBLQuery_Explain` |
-| `backend()` now resolves `auto`→`cbl`/`server` | [`app.py`](../../../app.py) | Was returning the raw env value; legacy keyword aligned to `"server"` (was `"couchbase"`) |
-| `requirements.txt` complete | [`requirements.txt`](../../../requirements.txt) | Added `platformdirs`, `cffi`, `gunicorn`; CBL bindings still come from build pipeline |
-| Reverted prod-cluster routes | [`app.py`](../../../app.py) | `/api/couchbase/test`, `/check-indexes`, `/query` no longer route to CBL — they hit the user's production cluster as designed |
-| Added missing endpoints | [`app.py`](../../../app.py) | `delete-analyzer`, `ai/status`, `ai/history`, `ai/clusters`, `ai/stats`, `payload-reference` family, `models` family |
-| `_override_route()` helper | [`app.py`](../../../app.py) | Cleanly swaps view functions in `app.view_functions` instead of mutating Werkzeug url_map internals |
-| Moved PyInstaller specs | [`build_mac.spec`](../../../build_mac.spec), [`build_win.spec`](../../../build_win.spec) | From `/app/` to project root; `project_root = Path(__file__).parent`; `APP_VERSION = '5.0.0'`; libcblite paths env-overridable |
-| Removed `app/__init__.py` | (deleted) | Was making `/app/` a Python package and shadowing the new root `app.py`; `gunicorn app:app` would have imported the wrong module |
+| Implemented missing `CBLStore` methods | [`app/cbl_store.py`](../../cbl_store.py) | `query`, `save_analysis`/`load_analysis`, `maintenance`, `export`, `import_from`, `list_clusters` |
+| Replaced CFFI stubs with real implementations | [`app/cbl_store.py`](../../cbl_store.py) | `_doc_to_dict` via `decodeFleeceDict`; `_n1ql` via `Query`/`N1QLLanguage`; collection cache; explain via `lib.CBLQuery_Explain` |
+| `backend()` now resolves `auto`→`cbl`/`server` | [`app/app.py`](../../app.py) | Was returning the raw env value; legacy keyword aligned to `"server"` (was `"couchbase"`) |
+| `requirements.txt` complete | [`app/requirements.txt`](../../requirements.txt) | Added `platformdirs`, `cffi`, `gunicorn`; CBL bindings still come from build pipeline |
+| Reverted prod-cluster routes | [`app/app.py`](../../app.py) | `/api/couchbase/test`, `/check-indexes`, `/query` no longer route to CBL — they hit the user's production cluster as designed |
+| Added missing endpoints | [`app/app.py`](../../app.py) | `delete-analyzer`, `ai/status`, `ai/history`, `ai/clusters`, `ai/stats`, `payload-reference` family, `models` family |
+| `_override_route()` helper | [`app/app.py`](../../app.py) | Cleanly swaps view functions in `app.view_functions` instead of mutating Werkzeug url_map internals |
+| PyInstaller specs live in `/app/` | [`app/build_mac.spec`](../../build_mac.spec), [`app/build_win.spec`](../../build_win.spec) | `project_root = Path(__file__).parent` (i.e. `/app/`); `APP_VERSION = '4.0.0-beta'`; libcblite paths env-overridable; PyInstaller is invoked from `/app/` |
 
 **Verification:** `pytest tests/python/` → 12 passed, 97 skipped (CBL bindings
 not installed locally). 37 routes registered, 18 CBL-routed/new. Production-
 cluster routes confirmed unchanged.
+
+> **Scope note (2026-05-09):** an earlier draft of this plan staged the CBL
+> migration at the **repo root** and even deleted `app/__init__.py` so that
+> `gunicorn app:app` would resolve to a root-level `app.py`. That pivot is
+> reverted. The shipping code lives in `/app/` exactly as it does in v4.0.0
+> today, and `gunicorn app:app` is run **from inside `/app/`** against
+> [`app/app.py`](../../app.py).

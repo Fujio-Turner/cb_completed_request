@@ -183,4 +183,4 @@ doc["payload"] = b   # CBL stores as separate file under .cblite2/blobs/
 
 This avoids the base64 inflation and the in-memory string materialization, but requires CFFI helpers because the Python wrapper is incomplete.
 
-This is **out of scope for v5.0.0** — revisit if metrics show big-blob complaints.
+This is **out of scope for v4.0.0-beta** — revisit if metrics show big-blob complaints.

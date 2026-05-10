@@ -24,7 +24,9 @@
 
 services:
   query-analyzer:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: couchbase-query-analyzer:5.0.0
     container_name: cb-query-analyzer-cbl
     ports:

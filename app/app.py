@@ -1,2630 +1,807 @@
 #!/usr/bin/env python3
 """
-Flask HTTP server for Liquid Snake with ES6 modules
-Runs on http://localhost:5000
+Flask HTTP server for Couchbase Query Analyzer v5.0.0
 
-Includes Couchbase REST API endpoints for Issue #231:
-- POST /api/couchbase/test - Test connection
-- POST /api/couchbase/query - Execute N1QL query
-- POST /api/couchbase/save-analyzer - Save analyzer data
-- GET /api/couchbase/load-analyzer/<requestId> - Load analyzer data
-- POST /api/couchbase/save-preferences - Save user preferences
-- GET /api/couchbase/load-preferences/<userId> - Load user preferences
+Embedded Couchbase Lite (CE) replaces the external Couchbase Server cb_tools
+bucket for all *app* persistence. The user's external Couchbase Server is
+still used for read-only N1QL on system:completed_requests.
+
+Architecture:
+- ``app_base.py`` provides the original v4.x Flask app with every endpoint
+  wired to an external Couchbase Server cb_tools bucket. We import that app
+  as the foundation so we don't duplicate code.
+- This module ("app.py") **overrides** the endpoints that used to write/read
+  cb_tools so that, when ``STORAGE_BACKEND`` resolves to ``cbl``, they go
+  through ``CBLStore`` instead. Endpoints that talk to the user's PRODUCTION
+  cluster (``/api/couchbase/test``, ``/api/couchbase/check-indexes``,
+  ``/api/couchbase/query``) are intentionally **not** overridden — they keep
+  hitting the user's external Couchbase Server cluster regardless of backend.
+- New ``/api/storage/*`` endpoints expose CBL-only maintenance, info, export,
+  import.
+
+See app/docs/work/03_APP_PY_REFACTOR.md for the endpoint mapping.
 """
 
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
 import os
-import time
-from icecream import ic
-from couchbase.cluster import Cluster
-from couchbase.options import ClusterOptions, QueryOptions
-import couchbase.subdocument as SD
-from couchbase.auth import PasswordAuthenticator
-from couchbase.exceptions import (
-    DocumentExistsException,
-    DocumentNotFoundException,
-    TimeoutException, 
-    CouchbaseException,
-    PathNotFoundException
-)
-
-# Import AI Analyzer module
-import ai_analyzer
 import sys
-ic(sys.executable)
+import time
+import json
+from typing import Optional
+from icecream import ic
 
-# Import TOON converter
-# toon-python lives in a private GitLab repo (not on PyPI). When unavailable
-# the app gracefully falls back to JSON for AI payloads. Set SKIP_TOON_INSTALL=1
-# to suppress the runtime pip-install fallback (e.g. inside containers where
-# the package cannot be fetched anyway).
+from flask import jsonify, request, send_file, send_from_directory
+
+# Import the base app (registers all the v4.x Couchbase Server endpoints).
+# We then override only the ones that need CBL routing.
+from app_base import app, get_couchbase_connection, DIRECTORY  # noqa: F401
+
+import ai_analyzer
+import blob_storage
+
+# Try to import CBL store
 try:
-    import toon_python
-    TOON_AVAILABLE = True
-except ImportError:
-    if os.environ.get('SKIP_TOON_INSTALL', '').lower() in ('1', 'true', 'yes'):
-        TOON_AVAILABLE = False
-        ic("ℹ️ toon-python not installed (SKIP_TOON_INSTALL set); using JSON fallback")
-    else:
-        # The original `toon_python` lives in a private GitLab repo and is not
-        # publicly installable. The functional public equivalent is the
-        # `python-toon` PyPI package, which exposes its API as `import toon`.
-        # Install it and alias `toon` -> `toon_python` so the rest of the file
-        # can keep using `toon_python` unchanged.
-        ic("⚠️ toon-python not installed, attempting runtime install of python-toon...")
-        try:
-            import subprocess
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "python-toon"])
-            import toon as _toon_pkg
-            sys.modules['toon_python'] = _toon_pkg
-            sys.modules['toon_python.encoder'] = _toon_pkg.encoder
-            sys.modules['toon_python.decoder'] = _toon_pkg.decoder
-            import toon_python  # noqa: F401  (now resolves via the alias above)
-            TOON_AVAILABLE = True
-            ic("✅ python-toon installed and aliased as toon_python at runtime")
-        except Exception as e:
-            TOON_AVAILABLE = False
-            ic(f"❌ Runtime install failed: {e}")
+    from cbl_store import CBLStore, USE_CBL, storage_backend
+    CBL_AVAILABLE = True
+except ImportError as e:
+    CBL_AVAILABLE = False
+    USE_CBL = False
+    ic(f"⚠️ CBL store not available: {e}")
 
-# Configure icecream
-ic.configureOutput(includeContext=True)
+    def storage_backend() -> str:  # type: ignore[no-redef]
+        return "server"
 
-# Use port 8888 by default (port 5000 is used by macOS AirPlay Receiver)
-# Playwright tests use PORT=5555
-PORT = int(os.environ.get('PORT', 8888))
-
-# Handle PyInstaller bundled resources
-def get_resource_path():
-    """Get the correct resource path for both development and PyInstaller builds"""
-    if getattr(sys, 'frozen', False):
-        # Running as PyInstaller bundle
-        return sys._MEIPASS
-    else:
-        # Running in development
-        return os.path.dirname(os.path.abspath(__file__))
-
-DIRECTORY = get_resource_path()
-ic(f"📁 Resource directory: {DIRECTORY}")
-
-app = Flask(__name__, static_folder=DIRECTORY, static_url_path='')
-CORS(app)  # Enable CORS for all routes
-
-# Couchbase connection cache
-_cluster = None
-_config = None
-
-def get_couchbase_connection(config):
-    """Get or create Couchbase cluster connection"""
-    global _cluster, _config
-    
-    # Validate credentials before attempting connection
-    if not config.get('username') or not config.get('password'):
-        ic("⚠️ Missing credentials - username or password is empty")
-        return None
-    
-    # If config changed or no connection, create new one
-    if _config != config or _cluster is None:
-        if _cluster:
-            try:
-                _cluster.close()
-            except:
-                pass
-        
-        try:
-            # Parse URL to extract hostname/IP (strip protocol and port since Couchbase SDK uses its own ports)
-            url_cleaned = config['url'].replace('http://', '').replace('https://', '')
-            hostname = url_cleaned.split(':')[0]  # Get hostname/IP only
-            connection_string = f"couchbase://{hostname}"
-            
-            ic(f"🔌 Connecting to Couchbase: {connection_string}", config['username'])
-            
-            _cluster = Cluster(
-                connection_string,
-                ClusterOptions(PasswordAuthenticator(config['username'], config['password']))
-            )
-            
-            # Wait for cluster to be ready (this will raise exception if auth fails)
-            from datetime import timedelta
-            _cluster.wait_until_ready(timedelta(seconds=10))
-            
-            _config = config
-            ic("✅ Cluster connection established successfully")
-            return _cluster
-        except Exception as e:
-            ic("❌ Failed to connect to Couchbase", connection_string, e)
-            return None
-    
-    return _cluster
-
-# Static file serving
-@app.route('/')
-def index():
-    return send_from_directory(DIRECTORY, 'index.html')
-
-@app.route('/<path:path>')
-def serve_static(path):
-    return send_from_directory(DIRECTORY, path)
-
-# API Routes
-@app.route('/api/couchbase/test', methods=['POST'])
-def test_connection():
-    """Test Couchbase connection"""
-    try:
-        data = request.json
-        ic(data)  # Log input
-        cluster_config = data.get('config', {})
-        cluster = get_couchbase_connection(cluster_config)
-        
-        if cluster:
-            # Try to ping the cluster
-            bucket_name = data.get('bucketConfig', {}).get('bucket', 'cb_tools')
-            bucket = cluster.bucket(bucket_name)
-            bucket.ping()
-            
-            response = {
-                'success': True,
-                'message': f'Connected to Couchbase cluster at {cluster_config["url"]}'
-            }
-            ic(response)  # Log output
-            return jsonify(response)
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to connect'
-            }), 500
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/couchbase/check-indexes', methods=['POST'])
-def check_indexes():
-    """Check if required indexes exist for the analyzer"""
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        # Extract bucket, scope, collection from config
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        analyzer_scope = bucket_config.get('analyzerScope', 'query')
-        analyzer_collection = bucket_config.get('analyzerCollection', 'analyzer')
-        keyspace = f"`{bucket_name}`.`{analyzer_scope}`.`{analyzer_collection}`"
-        
-        # Required indexes for the analyzer (dynamic keyspace)
-        required_indexes = [
-            {
-                'name': 'analysis_old_table_v2',
-                'scope': analyzer_scope,
-                'collection': analyzer_collection,
-                'ddl': f'CREATE INDEX `analysis_old_table_v2` ON {keyspace}(`createdAt` DESC INCLUDE MISSING,`metadata`,`status`,`prompt`,`provider`,`sourceCluster`,(`parseJson`.`filters`)) WHERE (`docType` = "ai_analysis")'
-            }
-        ]
-        
-        # Query system:indexes to check which indexes exist
-        query = f"""
-            SELECT name, keyspace_id, bucket_id, scope_id 
-            FROM system:indexes 
-            WHERE bucket_id = '{bucket_name}'
-              AND scope_id = '{analyzer_scope}'
-        """
-        
-        result = cluster.query(query)
-        existing_indexes = {row.get('name'): row for row in result}
-        
-        missing_indexes = []
-        found_indexes = []
-        
-        for req_idx in required_indexes:
-            if req_idx['name'] in existing_indexes:
-                found_indexes.append(req_idx['name'])
-            else:
-                missing_indexes.append({
-                    'name': req_idx['name'],
-                    'ddl': req_idx['ddl']
-                })
-        
-        return jsonify({
-            'success': True,
-            'allIndexesExist': len(missing_indexes) == 0,
-            'foundIndexes': found_indexes,
-            'missingIndexes': missing_indexes
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error checking indexes: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/couchbase/query', methods=['POST'])
-def execute_query():
-    """Execute N1QL query"""
-    try:
-        data = request.json
-        ic(data)  # Log input
-        cluster_config = data.get('config', {})
-        query = data.get('query', '')
-        params = data.get('params', {})
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        # Execute query
-        result = cluster.query(query, **params)
-        rows = [row for row in result]
-        
-        response = {
-            'success': True,
-            'results': rows
-        }
-        ic(response)  # Log output
-        return jsonify(response)
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/couchbase/save-analyzer', methods=['POST'])
-def save_analyzer_data():
-    """Save query analyzer data"""
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        request_id = data.get('requestId')
-        analyzer_data = data.get('data', {})
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        bucket = cluster.bucket(bucket_config['bucket'])
-        collection = bucket.scope(bucket_config['analyzerScope']).collection(bucket_config['analyzerCollection'])
-        
-        # Upsert document
-        result = collection.upsert(request_id, analyzer_data)
-        
-        return jsonify({
-            'success': True,
-            'cas': result.cas
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/couchbase/load-analyzer/<request_id>', methods=['POST'])
-def load_analyzer_data(request_id):
-    """Load query analyzer data"""
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        bucket = cluster.bucket(bucket_config['bucket'])
-        collection = bucket.scope(bucket_config['analyzerScope']).collection(bucket_config['analyzerCollection'])
-        
-        # Get document
-        result = collection.get(request_id)
-        
-        return jsonify({
-            'success': True,
-            'data': result.content_as[dict]
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/couchbase/delete-analyzer', methods=['POST'])
-def delete_analyzer_data():
-    """Delete query analyzer data"""
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        request_id = data.get('requestId')
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        bucket = cluster.bucket(bucket_config['bucket'])
-        collection = bucket.scope(bucket_config['analyzerScope']).collection(bucket_config['analyzerCollection'])
-        
-        # Delete document
-        collection.remove(request_id)
-        
-        return jsonify({
-            'success': True
-        })
-    except DocumentNotFoundException:
-        return jsonify({
-            'success': False,
-            'error': 'Document not found'
-        }), 404
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/couchbase/save-preferences', methods=['POST'])
-def save_user_preferences():
-    """Save user preferences using K/V upsert with automatic backup"""
-    try:
-        import hashlib
-        import json
-        from datetime import timedelta
-        from couchbase.options import UpsertOptions
-        
-        data = request.json
-        ic(data)  # Log input
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        user_id = data.get('userId')  # Should be 'user_config'
-        preferences = data.get('preferences', {})
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        bucket = cluster.bucket(bucket_config['bucket'])
-        collection = bucket.scope(bucket_config['preferencesScope']).collection(bucket_config['preferencesCollection'])
-        
-        # K/V UPSERT main document
-        result = collection.upsert(user_id, preferences)
-        
-        # Create backup with MD5 hash and 7-day TTL
-        try:
-            # Generate MD5 hash of JSON
-            json_str = json.dumps(preferences, sort_keys=True)
-            hash_md5 = hashlib.md5(json_str.encode()).hexdigest()
-            backup_id = f"{user_id}::{hash_md5}"
-            
-            # Add backup metadata
-            backup_doc = {
-                **preferences,
-                '_backup_metadata': {
-                    'original_doc_id': user_id,
-                    'backup_timestamp': preferences.get('updatedAt'),
-                    'hash': hash_md5
-                }
-            }
-            
-            # Upsert backup with 7-day TTL (604800 seconds)
-            collection.upsert(
-                backup_id, 
-                backup_doc,
-                UpsertOptions(expiry=timedelta(days=7))
-            )
-            
-            ic(f"✅ Backup saved: {backup_id} (expires in 7 days)")
-        except Exception as backup_error:
-            ic(f"⚠️ Backup failed (non-critical): {backup_error}")
-            # Don't fail the main save if backup fails
-        
-        response = {
-            'success': True,
-            'cas': result.cas
-        }
-        ic(user_id, result.cas, response)  # Log output
-        return jsonify(response)
-    except Exception as e:
-        ic("❌ Error saving preferences", e)
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/couchbase/load-preferences/<user_id>', methods=['POST'])
-def load_user_preferences(user_id):
-    """Load user preferences using K/V get"""
-    try:
-        data = request.json
-        ic(user_id, data)  # Log input
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        bucket = cluster.bucket(bucket_config['bucket'])
-        collection = bucket.scope(bucket_config['preferencesScope']).collection(bucket_config['preferencesCollection'])
-        
-        # K/V GET operation (no query needed!)
-        result = collection.get(user_id)
-        content = result.content_as[dict]
-        
-        response = {
-            'success': True,
-            'data': content,
-            'cas': result.cas
-        }
-        ic(user_id, result.cas, response)  # Log output
-        return jsonify(response)
-    except DocumentNotFoundException:
-        response = {
-            'success': True,
-            'data': {
-                'docType': 'config'
-            },
-            'cas': None,
-            'firstTime': True
-        }
-        ic(user_id, "NOT_FOUND", response)  # Log output (first time user)
-        return jsonify(response)
-    except Exception as e:
-        ic("❌ Error loading preferences", e)
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
 
 # ============================================================================
-# AI Analyzer Endpoints
+# Server config (port + future server-side options)
 # ============================================================================
 
-@app.route('/api/ai/cache', methods=['POST'])
-def cache_analyzer_data_endpoint():
+def _load_server_config() -> dict:
     """
-    Cache analyzer data for AI analysis
-    
-    Request body:
-    {
-        "data": {
-            "everyQueryData": [...],
-            "analysisData": [...],
-            "version": "4.0.0-dev",
-            ...
-        }
-    }
-    
-    Response:
-    {
-        "success": true,
-        "session_id": "abc123..."
-    }
-    """
-    try:
-        data = request.json
-        ic("💾 Caching analyzer data")
-        
-        analyzer_data = data.get('data', {})
-        
-        if not analyzer_data:
-            return jsonify({
-                'success': False,
-                'error': 'No data provided'
-            }), 400
-        
-        # Cache the data and get session ID
-        session_id = ai_analyzer.cache_analyzer_data(analyzer_data)
-        
-        ic(f"✅ Data cached with session_id: {session_id}")
-        
-        return jsonify({
-            'success': True,
-            'session_id': session_id
-        })
-        
-    except Exception as e:
-        ic("💥 Error caching data", str(e))
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    Load server-side config from the first existing JSON file in:
+      1. $APP_CONFIG_FILE
+      2. ./config.json         (sibling of app.py)
+      3. ./config.default.json (sibling of app.py)
 
-@app.route('/api/ai/preview', methods=['POST'])
-def preview_ai_payload():
-    """
-    Preview AI payload without sending to provider
-    Accepts raw data, processes it, returns formatted JSON for preview
-    
-    Request body:
-    {
-        "data": {
-            "everyQueryData": [...],
-            "analysisData": [...],
-            ...
-        },
-        "prompt": "Analyze slow queries",
-        "selections": {
-            "dashboard": true,
-            "insights": true,
-            "query_groups": true,
-            "indexes": false,
-            "flow_diagram": false,
-            "timeline_charts": false
-        },
-        "options": {
-            "obfuscated": true,
-            "store_results": false
-        }
-    }
-    
-    Response:
-    {
-        "success": true,
-        "payload": {...},
-        "size_bytes": 12345,
-        "size_kb": 12.05
-    }
-    """
-    global TOON_AVAILABLE
-    try:
-        request_data = request.json
-        ic("👁️ Preview AI payload request received")
-        
-        # Extract request parameters
-        raw_data = request_data.get('data', {})
-        prompt = request_data.get('prompt', 'Analyze query performance')
-        extra_instructions = request_data.get('extra_instructions', '')
-        selections = request_data.get('selections', {})
-        options = request_data.get('options', {})
-        output_format = request_data.get('format', 'json')
-        
-        if not raw_data:
-            return jsonify({
-                'success': False,
-                'error': 'No data provided'
-            }), 400
-        
-        ic(f"📊 Data size: {len(str(raw_data))} bytes")
-        ic(f"🎯 Selections: {selections}")
-        ic(f"📝 Format: {output_format}")
-        ic(f"📦 TOON Available: {TOON_AVAILABLE}")
-        
-        # Build payload from raw data (no caching)
-        payload = ai_analyzer.payload_builder.build_payload_from_data(
-            raw_data=raw_data,
-            user_prompt=prompt,
-            selections=selections,
-            options=options,
-            extra_instructions=extra_instructions
-        )
-        
-        # Get System Prompt for visibility
-        system_prompt = ai_analyzer.get_ai_system_prompt(request_data.get('language', 'English'))
-        
-        # Extract mapping table if obfuscated (don't send to AI, but return to client)
-        obfuscation_mapping = payload.pop('_obfuscation_mapping', None)
-        
-        # Convert to requested format
-        import json
-        
-        # Try dynamic install if not available and requested.
-        # `toon-python` does NOT exist on PyPI (it's a private GitLab pkg).
-        # The functional public equivalent is `python-toon` (module name `toon`),
-        # which we install and alias as `toon_python` to keep call sites unchanged.
-        if output_format == 'toon' and not TOON_AVAILABLE:
-            ic("⚠️ TOON not loaded, attempting lazy install of python-toon...")
-            try:
-                import subprocess
-                import sys
-                subprocess.check_call([sys.executable, "-m", "pip", "install", "python-toon"])
-                import toon as _toon_pkg
-                sys.modules['toon_python'] = _toon_pkg
-                sys.modules['toon_python.encoder'] = _toon_pkg.encoder
-                sys.modules['toon_python.decoder'] = _toon_pkg.decoder
-                import toon_python
-                TOON_AVAILABLE = True
-                # Inject into global scope
-                globals()['toon_python'] = toon_python
-                ic("✅ python-toon installed and aliased as toon_python lazily")
-            except Exception as e:
-                ic(f"❌ Lazy install failed: {e}")
+    Only the top-level `server` key is consumed here (e.g. `server.port`).
+    Everything else in config.json is consumed by the frontend.
 
-        if output_format == 'toon' and TOON_AVAILABLE:
-            try:
-                # Retrieve module safely (handles both global and local import cases)
-                import sys
-                mod_toon = sys.modules.get('toon_python')
-                if not mod_toon:
-                    import toon_python as mod_toon
-
-                # Use toon_python.encode directly
-                if hasattr(mod_toon, 'encode'):
-                    payload_str = mod_toon.encode(payload)
-                elif hasattr(mod_toon, 'dumps'):
-                    payload_str = mod_toon.dumps(payload)
-                else:
-                    from toon_python.encoder import encode
-                    payload_str = encode(payload)
-                    
-                ic("✅ Converted payload to TOON")
-            except Exception as e:
-                ic(f"❌ TOON conversion failed: {e}")
-                payload_str = json.dumps(payload, indent=2)
-                output_format = 'json (fallback)'
-        else:
-            payload_str = json.dumps(payload, indent=2)
-            
-        size_bytes = len(payload_str.encode('utf-8'))
-        
-        ic(f"✅ Payload preview ready, size={size_bytes} bytes")
-        
-        response_data = {
-            'success': True,
-            'payload': payload,
-            'payload_text': payload_str,  # Renamed from payload_json to be generic
-            'system_prompt': system_prompt, # Include system prompt for visibility
-            'format': output_format,
-            'size_bytes': size_bytes,
-            'size_kb': round(size_bytes / 1024, 2)
-        }
-        
-        # Include mapping table if obfuscated
-        if obfuscation_mapping:
-            response_data['obfuscation_mapping'] = obfuscation_mapping
-            response_data['mapping_count'] = len(obfuscation_mapping)
-            ic(f"🔑 Obfuscation mapping: {len(obfuscation_mapping)} tokens")
-        
-        return jsonify(response_data)
-        
-    except Exception as e:
-        ic("💥 Error previewing payload", str(e))
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-import threading
-import re
-
-def _extract_by_path(data: dict, path: str):
+    Errors loading the file are logged and ignored; defaults apply.
     """
-    Extract value from nested dict/list using a path string.
-    Supports paths like: 'choices[0].message.content', 'content[0].text', 'response'
-    
-    Args:
-        data: The dictionary to extract from
-        path: Dot-separated path with optional array indices
-        
-    Returns:
-        The extracted value or None if not found
+    candidates = []
+    env_path = os.environ.get('APP_CONFIG_FILE')
+    if env_path:
+        candidates.append(env_path)
+    here = os.path.dirname(os.path.abspath(__file__))
+    candidates.extend([
+        os.path.join(here, 'config.json'),
+        os.path.join(here, 'config.default.json'),
+    ])
+    for path in candidates:
+        if not path or not os.path.isfile(path):
+            continue
+        try:
+            with open(path, 'r') as f:
+                data = json.load(f)
+            ic(f"⚙️  Loaded server config from {path}")
+            return data if isinstance(data, dict) else {}
+        except Exception as e:
+            ic(f"⚠️  Failed to read {path}: {e}")
+    return {}
+
+
+def get_server_port(default: int = 8080) -> int:
     """
-    if not data or not path:
+    Resolve the HTTP listen port. Priority:
+      1. $PORT env var (set by Docker / start scripts)
+      2. config.json `server.port`
+      3. `default` (8080)
+
+    Note: When running in Docker the gunicorn CMD reads $PORT directly via
+    shell expansion, so this helper is mainly used by the __main__ block
+    and is also exposed for tests.
+    """
+    env = os.environ.get('PORT')
+    if env:
+        try:
+            return int(env)
+        except ValueError:
+            ic(f"⚠️  Ignoring invalid PORT={env!r}; falling back to config.json")
+    cfg = _load_server_config().get('server') or {}
+    val = cfg.get('port')
+    if isinstance(val, int) and val > 0:
+        return val
+    if isinstance(val, str) and val.isdigit():
+        return int(val)
+    return default
+
+
+# ============================================================================
+# Backend helpers
+# ============================================================================
+
+_cbl_store: Optional["CBLStore"] = None
+_cbl_blobs: Optional[blob_storage.BlobStorage] = None
+
+
+def storage() -> Optional["CBLStore"]:
+    """Return the singleton CBLStore (creates it on first call)."""
+    global _cbl_store
+    if not CBL_AVAILABLE:
         return None
-    
-    try:
-        # Split path into parts, handling array indices
-        # e.g., "choices[0].message.content" -> ["choices", "[0]", "message", "content"]
-        parts = re.split(r'\.|\[', path)
-        current = data
-        
-        for part in parts:
-            if not part:
-                continue
-            
-            # Handle array index (closes with ])
-            if part.endswith(']'):
-                index = int(part[:-1])
-                if isinstance(current, list) and len(current) > index:
-                    current = current[index]
-                else:
-                    return None
-            else:
-                # Handle dict key
-                if isinstance(current, dict) and part in current:
-                    current = current[part]
-                else:
-                    return None
-        
-        return current
-    except (KeyError, IndexError, TypeError, ValueError):
+    if _cbl_store is None:
+        _cbl_store = CBLStore()
+        ic("✅ CBL storage initialized")
+    return _cbl_store
+
+
+def get_blobs() -> Optional[blob_storage.BlobStorage]:
+    """Return the singleton blob storage facade backed by CBLStore."""
+    global _cbl_blobs
+    if not CBL_AVAILABLE:
         return None
+    if _cbl_blobs is None:
+        _cbl_blobs = blob_storage.BlobStorage(storage())
+        ic("✅ Blob storage initialized")
+    return _cbl_blobs
 
 
-def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prompt, ai_payload_data, cb_config, initial_doc, obfuscation_mapping, language=None, custom_config=None):
-    """Background thread to process AI request and update Couchbase document"""
+def backend() -> str:
+    """Return the active storage backend: 'cbl' or 'server'."""
+    if not CBL_AVAILABLE:
+        return "server"
+    return storage_backend()
+
+
+# ============================================================================
+# Route override helper
+# ============================================================================
+
+def _override_route(rule: str, view_func, methods=None):
+    """
+    Replace the view function bound to an existing Flask route.
+
+    Rather than manipulating url_map internals (which is fragile across
+    Flask/Werkzeug versions), this finds the existing rule for ``rule`` and
+    swaps its endpoint's handler in ``app.view_functions``. The URL rule
+    itself stays registered with its original endpoint name.
+    """
+    methods = methods or ['POST']
+    methods_set = set(m.upper() for m in methods)
+
+    matching = [
+        r for r in app.url_map.iter_rules()
+        if r.rule == rule and (methods_set & (r.methods or set()))
+    ]
+    if not matching:
+        # No existing route — register fresh under a CBL-prefixed endpoint.
+        endpoint = f"cbl_{view_func.__name__}"
+        app.add_url_rule(rule, endpoint=endpoint, view_func=view_func, methods=methods)
+        return
+
+    for r in matching:
+        # Replace the handler under the original endpoint name so all
+        # internal references (url_for, _rules_by_endpoint, etc.) stay valid.
+        app.view_functions[r.endpoint] = view_func
+
+
+# ============================================================================
+# CBL-routed endpoint overrides
+# ============================================================================
+
+# ── 4: save-analyzer ────────────────────────────────────────────────────────
+def save_analyzer():
+    """Save analyzer report. CBL when STORAGE_BACKEND=cbl, else CB Server."""
     try:
-        import json
-        from datetime import datetime
-        
-        ic(f"🧵 Starting background AI task for doc {doc_id}")
-        
-        # Check if this is a custom AI provider
-        if custom_config and custom_config.get('isCustom'):
-            ic(f"🔧 Using custom AI provider: {custom_config.get('name')}")
-            result = ai_analyzer.call_custom_ai_provider(
-                custom_config=custom_config,
-                prompt=prompt,
-                payload_data=ai_payload_data,
-                language=language
-            )
-        else:
-            # Call standard AI provider using ai_analyzer module
-            result = ai_analyzer.call_ai_provider(
-                provider=provider,
-                model=model or ('gpt-4o' if provider == 'openai' else 'claude-3-5-sonnet-20241022'),
-                api_key=api_key,
-                api_url=api_url,
-                endpoint=endpoint,
-                prompt=prompt,
-                payload_data=ai_payload_data,
-                language=language
-            )
-        
-        ic(f"📥 AI response received for {doc_id}", result.get('success'))
-        
-        # Get Couchbase connection
-        cluster = get_couchbase_connection(cb_config['cluster'])
+        data = request.json or {}
+        request_id = data.get('requestId')
+        # Frontend may send analyzerData or data
+        analyzer_data = data.get('analyzerData') or data.get('data') or {}
+        name = data.get('name') or 'Untitled'
+
+        if backend() == "cbl":
+            store = storage()
+            if not store:
+                return jsonify({'success': False, 'error': 'CBL not available'}), 500
+            store.save_analyzer(request_id, name, analyzer_data)
+            return jsonify({'success': True, 'requestId': request_id, 'backend': 'cbl'})
+
+        # Fallback: external Couchbase Server (legacy v4.x path)
+        cluster = get_couchbase_connection(data.get('config', {}))
         if not cluster:
-            ic(f"❌ Failed to connect to Couchbase for background update of {doc_id}")
-            return
+            return jsonify({'success': False, 'error': 'Not connected'}), 500
+        bucket_config = data.get('bucketConfig', {})
+        bucket = cluster.bucket(bucket_config['bucket'])
+        coll = bucket.scope(
+            bucket_config.get('analyzerScope', 'query')
+        ).collection(bucket_config.get('analyzerCollection', 'analyzer'))
+        analyzer_data['createdAt'] = time.time()
+        coll.upsert(request_id, analyzer_data)
+        return jsonify({'success': True, 'requestId': request_id, 'backend': 'server'})
 
-        bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
-        collection = bucket.scope(cb_config['bucketConfig']['analyzerScope']).collection(
-            cb_config['bucketConfig']['analyzerCollection']
-        )
-        
-        if result['success']:
-            analysis_data = result['data']
-            
-            # Parse JSON content from AI response if it's a string
-            try:
-                if 'choices' in analysis_data and len(analysis_data['choices']) > 0:
-                    # OpenAI/Grok format
-                    content = analysis_data['choices'][0].get('message', {}).get('content', '')
-                    if isinstance(content, str) and content.strip().startswith('{'):
-                        # Parse JSON string to object
-                        parsed_content = json.loads(content)
-                        analysis_data['choices'][0]['message']['content_parsed'] = parsed_content
-                        ic("✅ Parsed OpenAI/Grok AI response JSON content to object")
-                elif 'content' in analysis_data and isinstance(analysis_data['content'], list):
-                    # Anthropic/Claude format: content[0].text
-                    if len(analysis_data['content']) > 0 and 'text' in analysis_data['content'][0]:
-                        content = analysis_data['content'][0].get('text', '')
-                        # Extract JSON from potential markdown code blocks or preamble
-                        json_start = content.find('{')
-                        json_end = content.rfind('}')
-                        if json_start != -1 and json_end != -1:
-                            json_content = content[json_start:json_end + 1]
-                            parsed_content = json.loads(json_content)
-                            analysis_data['content_parsed'] = parsed_content
-                            ic("✅ Parsed Anthropic/Claude AI response JSON content to object")
-                elif result.get('isCustomProvider') and result.get('responsePath'):
-                    # Custom AI provider - use configured response path
-                    response_path = result.get('responsePath')
-                    ic(f"🔧 Parsing custom AI response using path: {response_path}")
-                    
-                    # Parse the response path to extract content
-                    content = _extract_by_path(analysis_data, response_path)
-                    if content and isinstance(content, str):
-                        json_start = content.find('{')
-                        json_end = content.rfind('}')
-                        if json_start != -1 and json_end != -1:
-                            json_content = content[json_start:json_end + 1]
-                            parsed_content = json.loads(json_content)
-                            analysis_data['content_parsed'] = parsed_content
-                            ic("✅ Parsed custom AI response JSON content to object")
-            except Exception as e:
-                ic(f"⚠️ Could not parse AI content as JSON: {str(e)}")
-            
-            # De-obfuscate AI response if we have mapping
-            if obfuscation_mapping:
-                ic("🔓 De-obfuscating AI response")
-                obfuscator = ai_analyzer.DataObfuscator()
-                
-                # Convert analysis to JSON string, de-obfuscate, convert back
-                analysis_json = json.dumps(analysis_data)
-                deobfuscated_json = obfuscator.deobfuscate_text(analysis_json, obfuscation_mapping)
-                analysis_data = json.loads(deobfuscated_json)
-                
-                ic(f"✅ De-obfuscation complete, restored {len(obfuscation_mapping)} tokens")
-            
-            # Update Couchbase doc with success results
-            try:
-                response_size = len(json.dumps(analysis_data).encode('utf-8'))
-                
-                # Get current doc to preserve fields
-                current_doc = collection.get(doc_id).content_as[dict]
-                
-                # Check if cancelled
-                if current_doc.get('status') == 'cancelled':
-                    ic(f"🛑 Task was cancelled, aborting update for {doc_id}")
-                    return
-                
-                current_doc.update({
-                    'completedAt': datetime.utcnow().isoformat() + 'Z',
-                    'status': 'completed',
-                    'aiResponse': analysis_data,
-                    'metadata': {
-                        **current_doc.get('metadata', {}),
-                        'elapsed_ms': result.get('elapsed_ms'),
-                        'responsePayloadSize': response_size
-                    }
-                })
-                
-                collection.upsert(doc_id, current_doc)
-                ic(f"✅ Updated doc {doc_id} with success results")
-            except Exception as e:
-                ic(f"⚠️ Failed to update doc with results: {str(e)}")
-                
-        else:
-            # Update Couchbase doc with failure
-            try:
-                # Get current doc
-                current_doc = collection.get(doc_id).content_as[dict]
-                
-                current_doc.update({
-                    'status': 'failed',
-                    'failedAt': datetime.utcnow().isoformat() + 'Z',
-                    'error': {
-                        'message': result.get('error'),
-                        'raw_response': result.get('raw_response'),
-                        'status_code': result.get('status_code'),
-                        'elapsed_ms': result.get('elapsed_ms'),
-                        'attempts': result.get('attempts', 1)
-                    }
-                })
-                
-                collection.upsert(doc_id, current_doc)
-                ic(f"✅ Updated doc {doc_id} with failure status")
-            except Exception as e:
-                ic(f"⚠️ Failed to update doc with error: {str(e)}")
-                
     except Exception as e:
-        import traceback
-        ic(f"💥 Unhandled error in background task for {doc_id}", str(e))
-        ic(traceback.format_exc())
+        ic("❌ save_analyzer", e)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/ai/analyze', methods=['POST'])
-def analyze_with_ai():
-    """
-    Analyze query data with AI provider
-    Accepts raw data, processes it, sends to AI, returns analysis
-    
-    Request body:
-    {
-        "prompt": "Analyze slow queries",
-        "provider": "openai",
-        "model": "gpt-4o",
-        "apiKey": "sk-...",
-        "apiUrl": "https://api.openai.com/v1",
-        "endpoint": "/chat/completions",
-        "selections": {
-            "dashboard": true,
-            "insights": true,
-            "query_groups": true,
-            "indexes": false,
-            "flow_diagram": false,
-            "timeline_charts": false
-        },
-        "options": {
-            "obfuscated": true,
-            "store_results": false
-        }
-    }
-    
-    Response:
-    {
-        "success": true,
-        "analysis": {...},
-        "elapsed_ms": 1234,
-        "tokens_used": 5000
-    }
-    """
+
+# ── 5: load-analyzer ────────────────────────────────────────────────────────
+def load_analyzer(request_id):
     try:
-        import json
-        
-        request_data = request.json
-        ic("=" * 80)
-        ic("🤖 AI Analysis request received")
-        ic("=" * 80)
-        
-        # Extract parameters
-        raw_data = request_data.get('data', {})
-        prompt = request_data.get('prompt', 'Analyze query performance')
-        extra_instructions = request_data.get('extra_instructions', '')
-        language = request_data.get('language', 'English')
-        provider = request_data.get('provider', 'grok')
-        selections = request_data.get('selections', {})
-        options = request_data.get('options', {})
-        cb_config = request_data.get('couchbaseConfig', {})
-        custom_config = request_data.get('customConfig')  # Custom AI provider config
-        
-        ic("📋 Request parameters:")
-        ic(f"  Provider: {provider}")
-        ic(f"  Language: {language}")
-        ic(f"  Prompt length: {len(prompt)} chars")
-        ic(f"  Selections: {selections}")
-        ic(f"  Options: {options}")
-        ic(f"  Custom config: {bool(custom_config)}")
-        
-        # Check if this is a custom AI provider
-        if custom_config and custom_config.get('isCustom'):
-            ic("🔧 Using custom AI provider from request")
-            api_key = None  # Custom providers use their own auth
-            api_url = custom_config.get('url')
-            model = custom_config.get('model')
-            endpoint = ''  # Custom providers use full URL
-            
-            ic(f"✅ Custom provider: {custom_config.get('name')}")
-            ic(f"  API URL: {api_url}")
-            ic(f"  Model: {model}")
-        else:
-            # Load API credentials from user::config in Couchbase (SECURE)
-            ic("🔑 Loading AI API credentials from Couchbase user::config")
-            
-            if not cb_config or not cb_config.get('cluster'):
-                return jsonify({
-                    'success': False,
-                    'error': 'Couchbase configuration required'
-                }), 400
-            
-            cluster = get_couchbase_connection(cb_config['cluster'])
-            if not cluster:
-                return jsonify({
-                    'success': False,
-                    'error': 'Failed to connect to Couchbase'
-                }), 500
-            
-            # Load user::config document
-            bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
-            prefs_collection = bucket.scope(cb_config['bucketConfig']['preferencesScope']).collection(
-                cb_config['bucketConfig']['preferencesCollection']
-            )
-            
-            user_prefs = prefs_collection.get('user_config').content_as[dict]
-            ai_apis = user_prefs.get('aiApis', [])
-            
-            # Find the requested provider
-            api_config = next((api for api in ai_apis if api['id'] == provider), None)
-            
-            if not api_config:
-                ic(f"❌ Provider '{provider}' not found in user::config")
-                return jsonify({
-                    'success': False,
-                    'error': f'Provider {provider} not configured'
-                }), 400
-            
-            api_key = api_config.get('apiKey')
-            api_url = api_config.get('apiUrl')
-            model = api_config.get('model')
-            
-            # Set endpoint based on provider
-            if provider in ['anthropic', 'claude']:
-                endpoint = '/v1/messages'
-            else:
-                endpoint = '/chat/completions'
-            
-            ic(f"✅ Loaded credentials for provider: {provider}")
-            ic(f"  API URL: {api_url}")
-            ic(f"  Model: {model}")
-            ic(f"  Has API Key: {bool(api_key)}")
-            
-            if not api_key:
-                ic(f"❌ No API key configured for provider: {provider}")
-                return jsonify({
-                    'success': False,
-                    'error': f'No API key configured for {provider}. Please add in Settings.'
-                }), 400
-        
-        # Validation
-        if not raw_data:
-            return jsonify({
-                'success': False,
-                'error': 'No data provided'
-            }), 400
-        
-        # Check if this is just a save operation (no AI call)
-        save_only = (api_key == 'placeholder' or not api_url)
-        
-        if not save_only and not api_key:
-            return jsonify({
-                'success': False,
-                'error': 'API key is required'
-            }), 400
-        
-        # Build AI payload from raw data (with dynamic payload references from Couchbase)
-        ai_payload_data = ai_analyzer.payload_builder.build_payload_from_data(
-            raw_data=raw_data,
-            user_prompt=prompt,
-            selections=selections,
-            options=options,
-            extra_instructions=extra_instructions,
-            cluster=cluster if cluster else None,
-            bucket_name=cb_config.get('bucketConfig', {}).get('bucket', 'cb_tools') if cb_config else None
-        )
-        
-        # Extract mapping table if obfuscated (for de-obfuscation later)
-        obfuscation_mapping = ai_payload_data.pop('_obfuscation_mapping', None)
-        
-        ic(f"📊 Payload built: {len(str(ai_payload_data))} bytes")
-        if obfuscation_mapping:
-            ic(f"🔑 Obfuscation mapping: {len(obfuscation_mapping)} tokens")
-        
-        # Convert to TOON format if requested and available
-        use_toon = options.get('use_toon', False)
-        ai_request_payload = ai_payload_data # default to JSON object
-        
-        if use_toon and TOON_AVAILABLE:
-            try:
-                # Retrieve module safely
-                import sys
-                mod_toon = sys.modules.get('toon_python')
-                if not mod_toon:
-                    import toon_python as mod_toon
+        if backend() == "cbl":
+            store = storage()
+            if not store:
+                return jsonify({'success': False, 'error': 'CBL not available'}), 500
+            doc = store.load_analyzer(request_id)
+            if not doc:
+                return jsonify({'success': False, 'error': 'Not found'}), 404
+            return jsonify({'success': True, 'data': doc, 'backend': 'cbl'})
 
-                # Use toon_python.encode directly
-                if hasattr(mod_toon, 'encode'):
-                    ai_request_payload = mod_toon.encode(ai_payload_data)
-                elif hasattr(mod_toon, 'dumps'):
-                    ai_request_payload = mod_toon.dumps(ai_payload_data)
-                else:
-                    from toon_python.encoder import encode
-                    ai_request_payload = encode(ai_payload_data)
-                    
-                ic("✅ Converted payload to TOON for AI request")
-                ic(f"TOON Size: {len(ai_request_payload)} bytes vs JSON: {len(json.dumps(ai_payload_data))} bytes")
-            except Exception as e:
-                ic(f"❌ TOON conversion failed for request: {e}")
-                # Fallback to JSON object (ai_payload_data is already dict)
-        
-        # Save initial request to Couchbase if requested (before AI call)
-        saved_doc_id = None
-        if options.get('store_results', False):
-            try:
-                import uuid
-                from datetime import datetime
-                
-                doc_id = f"ai_analysis_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
-                # Calculate payload size based on format used
-                payload_content = ai_request_payload if isinstance(ai_request_payload, str) else json.dumps(ai_request_payload)
-                payload_size = len(payload_content.encode('utf-8'))
-                
-                initial_doc = {
-                    'docType': 'ai_analysis',
-                    'createdAt': datetime.utcnow().isoformat() + 'Z',
-                    'status': 'pending',
-                    'provider': provider,
-                    'model': model,
-                    'prompt': prompt,
-                    'language': language,
-                    'options': options,
-                    'sourceCluster': raw_data.get('clusterName', 'Unknown Cluster'),
-                    'payload': ai_payload_data, # Always store JSON structure for readability/compatibility
-                    'parseJson': request_data.get('parseContext', {}),
-                    'sentToApiAs': 'toon' if use_toon and TOON_AVAILABLE else 'json',
-                    'metadata': {
-                        'obfuscated': obfuscation_mapping is not None,
-                        'selections': selections,
-                        'total_queries': len(raw_data.get('everyQueryData', [])),
-                        'requestPayloadSize': payload_size
-                    }
-                }
-                
-                cluster = get_couchbase_connection(cb_config['cluster'])
-                if cluster:
-                    bucket_name = cb_config['bucketConfig']['bucket']
-                    scope_name = cb_config['bucketConfig']['analyzerScope']
-                    collection_name = cb_config['bucketConfig']['analyzerCollection']
-                    
-                    bucket = cluster.bucket(bucket_name)
-                    collection = bucket.scope(scope_name).collection(collection_name)
-                    collection.upsert(doc_id, initial_doc)
-                    saved_doc_id = doc_id
-                    
-                    ic(f"✅ Saved initial request: {doc_id} (status: pending)")
-            except Exception as e:
-                ic(f"⚠️ Failed to save initial request: {str(e)}")
-        
-        # If save_only mode (no real AI call), create placeholder response and save
-        if save_only:
-            ic("💾 Save-only mode: Skipping AI call, saving payload with placeholder response")
-            
-            analysis_data = {
-                'summary': {
-                    'note': 'Placeholder - AI call not executed',
-                    'total_queries_analyzed': len(raw_data.get('everyQueryData', [])),
-                    'saved_without_ai_call': True
-                }
-            }
-            
-            # Wait, we still need to save this placeholder data if doc exists
-            if saved_doc_id:
-                try:
-                    cluster = get_couchbase_connection(cb_config['cluster'])
-                    if cluster:
-                        bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
-                        collection = bucket.scope(cb_config['bucketConfig']['analyzerScope']).collection(
-                            cb_config['bucketConfig']['analyzerCollection']
-                        )
-                        
-                        import uuid
-                        from datetime import datetime
-                        
-                        current_doc = collection.get(saved_doc_id).content_as[dict]
-                        current_doc.update({
-                            'completedAt': datetime.utcnow().isoformat() + 'Z',
-                            'status': 'completed',
-                            'aiResponse': analysis_data
-                        })
-                        collection.upsert(saved_doc_id, current_doc)
-                        ic(f"✅ Updated placeholder doc {saved_doc_id}")
-                except Exception as e:
-                    ic(f"⚠️ Failed to update placeholder doc: {str(e)}")
-
+        data = request.json or {}
+        cluster = get_couchbase_connection(data.get('config', {}))
+        if not cluster:
+            return jsonify({'success': False, 'error': 'Not connected'}), 500
+        bucket_config = data.get('bucketConfig', {})
+        bucket = cluster.bucket(bucket_config['bucket'])
+        coll = bucket.scope(
+            bucket_config.get('analyzerScope', 'query')
+        ).collection(bucket_config.get('analyzerCollection', 'analyzer'))
+        try:
+            result = coll.get(request_id)
             return jsonify({
                 'success': True,
-                'data': analysis_data,
-                'elapsed_ms': 0,
-                'document_id': saved_doc_id,
-                'status': 'completed'
+                'data': result.content_as[dict],
+                'backend': 'server',
             })
-        else:
-            # Launch background task for real AI call
-            if saved_doc_id:
-                ic(f"🚀 Launching background AI task for {saved_doc_id}")
-                thread = threading.Thread(target=background_ai_task, args=(
-                    saved_doc_id, provider, model, api_key, api_url, endpoint, prompt, 
-                    ai_payload_data, cb_config, initial_doc, obfuscation_mapping, language, custom_config
-                ))
-                thread.start()
-                
+        except Exception:
+            return jsonify({'success': False, 'error': 'Not found'}), 404
+
+    except Exception as e:
+        ic("❌ load_analyzer", e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ── 6: delete-analyzer ──────────────────────────────────────────────────────
+def delete_analyzer():
+    try:
+        data = request.json or {}
+        request_id = data.get('requestId')
+
+        if backend() == "cbl":
+            store = storage()
+            if not store:
+                return jsonify({'success': False, 'error': 'CBL not available'}), 500
+            ok = store.delete_analyzer(request_id)
+            if not ok:
+                return jsonify({'success': False, 'error': 'Not found'}), 404
+            return jsonify({'success': True, 'backend': 'cbl'})
+
+        cluster = get_couchbase_connection(data.get('config', {}))
+        if not cluster:
+            return jsonify({'success': False, 'error': 'Not connected'}), 500
+        bucket_config = data.get('bucketConfig', {})
+        bucket = cluster.bucket(bucket_config['bucket'])
+        coll = bucket.scope(
+            bucket_config.get('analyzerScope', 'query')
+        ).collection(bucket_config.get('analyzerCollection', 'analyzer'))
+        try:
+            coll.remove(request_id)
+            return jsonify({'success': True, 'backend': 'server'})
+        except Exception:
+            return jsonify({'success': False, 'error': 'Not found'}), 404
+
+    except Exception as e:
+        ic("❌ delete_analyzer", e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ── 7: save-preferences ─────────────────────────────────────────────────────
+def save_preferences():
+    try:
+        data = request.json or {}
+        user_id = data.get('userId')
+        prefs = data.get('preferences', {})
+
+        if backend() == "cbl":
+            store = storage()
+            if not store:
+                return jsonify({'success': False, 'error': 'CBL not available'}), 500
+            store.save_preferences(user_id, prefs)
+            return jsonify({'success': True, 'userId': user_id, 'backend': 'cbl'})
+
+        cluster = get_couchbase_connection(data.get('config', {}))
+        if not cluster:
+            return jsonify({'success': False, 'error': 'Not connected'}), 500
+        bucket_config = data.get('bucketConfig', {})
+        bucket = cluster.bucket(bucket_config['bucket'])
+        coll = bucket.scope(
+            bucket_config.get('preferencesScope', '_default')
+        ).collection(bucket_config.get('preferencesCollection', '_default'))
+        prefs['updatedAt'] = time.time()
+        result = coll.upsert(user_id, prefs)
+        return jsonify({
+            'success': True,
+            'userId': user_id,
+            'cas': getattr(result, 'cas', None),
+            'backend': 'server',
+        })
+
+    except Exception as e:
+        ic("❌ save_preferences", e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ── 8: load-preferences ─────────────────────────────────────────────────────
+def load_preferences(user_id):
+    try:
+        if backend() == "cbl":
+            store = storage()
+            if not store:
+                return jsonify({'success': False, 'error': 'CBL not available'}), 500
+            prefs = store.load_preferences(user_id)
+            if prefs is None:
+                # First-time user: empty config
                 return jsonify({
                     'success': True,
-                    'status': 'submitted',
-                    'document_id': saved_doc_id,
-                    'message': 'Analysis job submitted for background processing'
+                    'data': {'docType': 'config'},
+                    'firstTime': True,
+                    'backend': 'cbl',
                 })
-            else:
-                # Fallback for no storage (synchronous, discouraged)
-                ic("⚠️ Storage disabled, running synchronously (may timeout)")
-                
-                if custom_config and custom_config.get('isCustom'):
-                    result = ai_analyzer.call_custom_ai_provider(
-                        custom_config=custom_config,
-                        prompt=prompt,
-                        payload_data=ai_payload_data,
-                        language=language
-                    )
-                else:
-                    result = ai_analyzer.call_ai_provider(
-                        provider=provider,
-                        model=model or ('gpt-4o' if provider == 'openai' else 'claude-3-5-sonnet-20241022'),
-                        api_key=api_key,
-                        api_url=api_url,
-                        endpoint=endpoint,
-                        prompt=prompt,
-                        payload_data=ai_payload_data,
-                        language=language
-                    )
-                
-                return jsonify({
-                    'success': result.get('success'),
-                    'analysis': result.get('data'),
-                    'elapsed_ms': result.get('elapsed_ms'),
-                    'error': result.get('error')
-                })
+            return jsonify({'success': True, 'data': prefs, 'backend': 'cbl'})
+
+        data = request.json or {}
+        cluster = get_couchbase_connection(data.get('config', {}))
+        if not cluster:
+            return jsonify({'success': False, 'error': 'Not connected'}), 500
+        bucket_config = data.get('bucketConfig', {})
+        bucket = cluster.bucket(bucket_config['bucket'])
+        coll = bucket.scope(
+            bucket_config.get('preferencesScope', '_default')
+        ).collection(bucket_config.get('preferencesCollection', '_default'))
+        try:
+            result = coll.get(user_id)
+            return jsonify({
+                'success': True,
+                'data': result.content_as[dict],
+                'cas': getattr(result, 'cas', None),
+                'backend': 'server',
+            })
+        except Exception:
+            return jsonify({
+                'success': True,
+                'data': {'docType': 'config'},
+                'firstTime': True,
+                'backend': 'server',
+            })
 
     except Exception as e:
-        import traceback
-        ic("💥 Error in AI analysis", str(e))
-        ic(traceback.format_exc())
+        ic("❌ load_preferences", e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ── 13: ai/status — poll AI analysis status from analyzer collection ────────
+def ai_status(document_id):
+    if backend() != "cbl":
+        # Legacy CB-Server path stays in app_base; we don't override.
+        # But since we registered an override here, also delegate to it on
+        # server backend for consistency: just return a not-implemented marker.
         return jsonify({
             'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }), 500
+            'error': 'ai_status with server backend handled by app_base',
+        }), 501
+    store = storage()
+    if not store:
+        return jsonify({'success': False, 'error': 'CBL not available'}), 500
 
-@app.route('/api/ai/cancel', methods=['POST'])
-def cancel_ai_analysis():
-    """Cancel a running AI analysis"""
+    # AI analysis docs are written by background_ai_task via store.save_analyzer
+    # into COLL_ANALYZER, not COLL_AI_HISTORY. Read from there.
+    doc = store.load_analyzer(document_id)
+    ic(f"🔎 [ai_status] load_analyzer({document_id}) → {bool(doc)}; "
+       f"keys={list(doc.keys()) if doc else None}")
+    if not doc:
+        return jsonify({'success': False, 'status': 'not_found'}), 404
+
+    status = doc.get('status', 'unknown')
+    response = {
+        'success': True,
+        'status': status,
+        'document_id': document_id,
+        'backend': 'cbl',
+    }
+    if status == 'completed':
+        response['elapsed_ms'] = (doc.get('metadata') or {}).get('elapsed_ms', 0)
+    elif status == 'failed':
+        response['error'] = doc.get('error') or {'message': 'Unknown error'}
+    return jsonify(response)
+
+
+# ── 27: ai/history — list AI runs (optionally per-cluster) ──────────────────
+def ai_history():
+    try:
+        data = request.json or {}
+        cluster_name = data.get('clusterName') or data.get('cluster')
+        limit = int(data.get('limit', 50))
+        offset = int(data.get('offset', 0))
+
+        if backend() == "cbl":
+            store = storage()
+            if not store:
+                return jsonify({'success': False, 'error': 'CBL not available'}), 500
+
+            # AI analyses are stored in COLL_ANALYZER (via save_analyzer) with
+            # docType='ai_analysis' inside the blob. Scan and project the
+            # fields the frontend needs.
+            listing = store.list_analyzers(limit=limit * 4 + 10, offset=offset)
+            shells = listing.get('rows', []) if isinstance(listing, dict) else []
+            rows = []
+            for shell in shells:
+                doc_id = shell.get('id')
+                if not doc_id:
+                    continue
+                blob = store.load_analyzer(doc_id)
+                if not blob or blob.get('docType') != 'ai_analysis':
+                    continue
+                if cluster_name and blob.get('sourceCluster') != cluster_name:
+                    continue
+                rows.append({
+                    'documentId': doc_id,
+                    'createdAt': blob.get('createdAt'),
+                    'provider': blob.get('provider'),
+                    'status': blob.get('status'),
+                    'prompt': blob.get('prompt'),
+                    'sourceCluster': blob.get('sourceCluster'),
+                    'metadata': blob.get('metadata'),
+                    'filters': (blob.get('parseJson') or {}).get('filters'),
+                })
+                if len(rows) >= limit:
+                    break
+            return jsonify({
+                'success': True,
+                'backend': 'cbl',
+                'results': rows,
+                'count': len(rows),
+                'limit': limit,
+                'offset': offset,
+            })
+
+        # Server backend: not re-implemented here; defer to legacy.
+        return jsonify({
+            'success': False,
+            'error': 'ai_history with server backend handled by app_base',
+        }), 501
+
+    except Exception as e:
+        ic("❌ ai_history", e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ── ai/cancel — cancel a running AI analysis (CBL-aware) ────────────────────
+def ai_cancel():
     try:
         from datetime import datetime
-        
-        data = request.json
+        data = request.json or {}
         doc_id = data.get('document_id')
-        cb_config = data.get('config')
-        bucket_config = data.get('bucketConfig')
-        
-        if not doc_id or not cb_config:
-            return jsonify({'success': False, 'error': 'Missing document_id or config'}), 400
-            
-        cluster = get_couchbase_connection(cb_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-            
-        bucket = cluster.bucket(bucket_config['bucket'])
-        collection = bucket.scope(bucket_config['analyzerScope']).collection(
-            bucket_config['analyzerCollection']
-        )
-        
-        # Update status to cancelled
-        try:
-            current_doc = collection.get(doc_id).content_as[dict]
-            # Allow cancelling pending, submitted, or even processing states
-            if current_doc.get('status') in ['pending', 'submitted', 'processing']:
-                current_doc['status'] = 'cancelled'
-                current_doc['cancelledAt'] = datetime.utcnow().isoformat() + 'Z'
-                collection.upsert(doc_id, current_doc)
-                ic(f"🚫 Cancelled analysis: {doc_id}")
-                return jsonify({'success': True, 'status': 'cancelled'})
-            else:
-                return jsonify({'success': False, 'error': f'Cannot cancel status: {current_doc.get("status")}'})
-        except DocumentNotFoundException:
-            return jsonify({'success': False, 'error': 'Document not found'}), 404
-            
-    except Exception as e:
-        ic(f"❌ Error cancelling analysis: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        if not doc_id:
+            return jsonify({'success': False, 'error': 'Missing document_id'}), 400
 
-@app.route('/api/ai/status/<document_id>', methods=['POST'])
-def check_ai_status(document_id):
-    """
-    Check status of AI analysis document
-    Request body: {"config": {...}, "bucketConfig": {...}}
-    """
-    try:
-        data = request.json
-        cb_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        
-        cluster = get_couchbase_connection(cb_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-            
-        bucket = cluster.bucket(bucket_config.get('bucket'))
-        collection = bucket.scope(bucket_config.get('analyzerScope')).collection(
-            bucket_config.get('analyzerCollection')
-        )
-        
-        # Use Sub-Document API to fetch only status and minimal metadata
-        try:
-            # Lookup status, error, and metadata.elapsed_ms
-            # Path "status" -> index 0
-            # Path "error" -> index 1
-            # Path "metadata.elapsed_ms" -> index 2
-            result = collection.lookup_in(document_id, [
-                SD.get("status"),
-                SD.get("error"),
-                SD.get("metadata.elapsed_ms")
-            ])
-            
-            status = result.content_as[str](0)
-            
-            response = {
-                'success': True,
-                'status': status,
-                'document_id': document_id
-            }
-            
-            if status == 'completed':
-                # We don't need the full analysis for polling check
-                try:
-                    response['elapsed_ms'] = result.content_as[int](2)
-                except:
-                    response['elapsed_ms'] = 0
-            elif status == 'failed':
-                try:
-                    response['error'] = result.content_as[dict](1)
-                except:
-                    response['error'] = {'message': 'Unknown error'}
-                    
-            return jsonify(response)
-            
-        except PathNotFoundException:
-            # Status field might not exist yet? Should unlikely happen if doc exists
-            return jsonify({'success': True, 'status': 'unknown', 'document_id': document_id})
-            
-    except DocumentNotFoundException:
-        return jsonify({'success': False, 'status': 'not_found'}), 404
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/ai/stats', methods=['GET'])
-def get_ai_cache_stats():
-    """
-    Get AI cache statistics
-    
-    Response:
-    {
-        "success": true,
-        "stats": {
-            "total_sessions": 5,
-            "total_size_bytes": 123456,
-            "total_size_kb": 120.56,
-            "ttl_seconds": 1800
-        }
-    }
-    """
-    try:
-        stats = ai_analyzer.get_cache_stats()
-        return jsonify({
-            'success': True,
-            'stats': stats
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-# ============================================================================
-# Payload Reference Management Endpoints
-# ============================================================================
-
-@app.route('/api/ai/payload-reference', methods=['GET'])
-def get_payload_reference():
-    """
-    Get the current payload_reference template (from file, not Couchbase)
-    Used for viewing/editing the template before seeding
-    
-    Response:
-    {
-        "success": true,
-        "payload_reference": {...},
-        "source": "template"
-    }
-    """
-    try:
-        template = ai_analyzer.get_payload_reference_template()
-        return jsonify({
-            'success': True,
-            'payload_reference': template,
-            'source': 'template'
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/payload-reference/load', methods=['POST'])
-def load_payload_reference_endpoint():
-    """
-    Load payload_reference from Couchbase bucket._default._default
-    Falls back to template if not found
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {"bucket": "cb_tools"}
-    }
-    
-    Response:
-    {
-        "success": true,
-        "payload_reference": {...},
-        "source": "couchbase" | "template"
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            # No cluster, return template
-            template = ai_analyzer.get_payload_reference_template()
-            return jsonify({
-                'success': True,
-                'payload_reference': template,
-                'source': 'template',
-                'note': 'Not connected to Couchbase, using template file'
-            })
-        
-        # Try to load from Couchbase
-        payload_ref = ai_analyzer.load_payload_reference(cluster, bucket_name)
-        
-        # Determine source
-        source = 'couchbase' if payload_ref.get('_seededAt') or payload_ref.get('_lastUpdated') else 'template'
-        
-        return jsonify({
-            'success': True,
-            'payload_reference': payload_ref,
-            'source': source
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error loading payload_reference: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/payload-reference/seed', methods=['POST'])
-def seed_payload_reference_endpoint():
-    """
-    Seed payload_reference document to Couchbase from template
-    Creates the document in bucket._default._default with key "payload_reference"
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {"bucket": "cb_tools"},
-        "force": false  // Set to true to overwrite existing
-    }
-    
-    Response:
-    {
-        "success": true,
-        "payload_reference": {...},
-        "action": "created" | "exists" | "overwritten"
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        force = data.get('force', False)
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({
-                'success': False,
-                'error': 'Not connected to Couchbase'
-            }), 500
-        
-        # Check if document exists first
-        doc_exists = False
-        try:
-            bucket = cluster.bucket(bucket_name)
-            collection = bucket.scope('_default').collection('_default')
-            collection.get('payload_reference')
-            doc_exists = True
-        except DocumentNotFoundException:
-            pass
-        
-        # Seed the document
-        payload_ref = ai_analyzer.seed_payload_reference(cluster, bucket_name, force=force)
-        
-        if not payload_ref:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to seed payload_reference - template file may be missing or invalid'
-            }), 500
-        
-        # Determine action taken
-        if force and doc_exists:
-            action = 'overwritten'
-        elif doc_exists:
-            action = 'exists'
-        else:
-            action = 'created'
-        
-        ic(f"🌱 Payload reference seeded: {action}")
-        
-        return jsonify({
-            'success': True,
-            'payload_reference': payload_ref,
-            'action': action
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error seeding payload_reference: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/payload-reference/save', methods=['POST'])
-def save_payload_reference_endpoint():
-    """
-    Save/update payload_reference document to Couchbase
-    Allows editing the reference URLs and context without modifying template file
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {"bucket": "cb_tools"},
-        "payload_reference": {...}  // The updated payload reference
-    }
-    
-    Response:
-    {
-        "success": true,
-        "message": "Saved successfully"
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        payload_ref = data.get('payload_reference', {})
-        
-        if not payload_ref:
-            return jsonify({
-                'success': False,
-                'error': 'No payload_reference data provided'
-            }), 400
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({
-                'success': False,
-                'error': 'Not connected to Couchbase'
-            }), 500
-        
-        success = ai_analyzer.save_payload_reference(cluster, payload_ref, bucket_name)
-        
-        if success:
-            return jsonify({
-                'success': True,
-                'message': 'Payload reference saved successfully'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to save payload_reference'
-            }), 500
-        
-    except Exception as e:
-        ic(f"❌ Error saving payload_reference: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/payload-reference/invalidate-cache', methods=['POST'])
-def invalidate_payload_reference_cache_endpoint():
-    """
-    Invalidate the in-memory payload_reference cache
-    Forces reload from Couchbase on next AI analysis
-    
-    Response:
-    {
-        "success": true,
-        "message": "Cache invalidated"
-    }
-    """
-    try:
-        ai_analyzer.invalidate_payload_reference_cache()
-        return jsonify({
-            'success': True,
-            'message': 'Payload reference cache invalidated'
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-# ============================================================================
-# AI Models List Management Endpoints
-# ============================================================================
-
-@app.route('/api/ai/models', methods=['GET'])
-def get_ai_models_template_endpoint():
-    """
-    Get the current ai_models_list template (from file, not Couchbase)
-    
-    Response:
-    {
-        "success": true,
-        "models": {...},
-        "source": "template"
-    }
-    """
-    try:
-        template = ai_analyzer.get_ai_models_template()
-        return jsonify({
-            'success': True,
-            'models': template,
-            'source': 'template'
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/models/load', methods=['POST'])
-def load_ai_models_endpoint():
-    """
-    Load ai_models_list from Couchbase bucket._default._default
-    Falls back to template and auto-seeds if not found
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {"bucket": "cb_tools"}
-    }
-    
-    Response:
-    {
-        "success": true,
-        "models": {...},
-        "source": "couchbase" | "template"
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            template = ai_analyzer.get_ai_models_template()
-            return jsonify({
-                'success': True,
-                'models': template,
-                'source': 'template',
-                'note': 'Not connected to Couchbase, using template file'
-            })
-        
-        models_list = ai_analyzer.load_ai_models_list(cluster, bucket_name)
-        source = 'couchbase' if models_list.get('_seededAt') or models_list.get('_lastUpdated') else 'template'
-        
-        return jsonify({
-            'success': True,
-            'models': models_list,
-            'source': source
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error loading ai_models_list: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/models/seed', methods=['POST'])
-def seed_ai_models_endpoint():
-    """
-    Seed ai_models_list document to Couchbase from template
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {"bucket": "cb_tools"},
-        "force": false
-    }
-    
-    Response:
-    {
-        "success": true,
-        "models": {...},
-        "action": "created" | "exists" | "overwritten"
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        force = data.get('force', False)
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({
-                'success': False,
-                'error': 'Not connected to Couchbase'
-            }), 500
-        
-        # Check if document exists first
-        doc_exists = False
-        try:
-            bucket = cluster.bucket(bucket_name)
-            collection = bucket.scope('_default').collection('_default')
-            collection.get('ai_models_list')
-            doc_exists = True
-        except DocumentNotFoundException:
-            pass
-        
-        models_list = ai_analyzer.seed_ai_models_list(cluster, bucket_name, force=force)
-        
-        if not models_list:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to seed ai_models_list - template file may be missing'
-            }), 500
-        
-        if force and doc_exists:
-            action = 'overwritten'
-        elif doc_exists:
-            action = 'exists'
-        else:
-            action = 'created'
-        
-        ic(f"🌱 AI models list seeded: {action}")
-        
-        return jsonify({
-            'success': True,
-            'models': models_list,
-            'action': action
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error seeding ai_models_list: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/models/save', methods=['POST'])
-def save_ai_models_endpoint():
-    """
-    Save/update ai_models_list document to Couchbase
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {"bucket": "cb_tools"},
-        "models": {...}
-    }
-    
-    Response:
-    {
-        "success": true,
-        "message": "Saved successfully"
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        models_list = data.get('models', {})
-        
-        if not models_list:
-            return jsonify({
-                'success': False,
-                'error': 'No models data provided'
-            }), 400
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({
-                'success': False,
-                'error': 'Not connected to Couchbase'
-            }), 500
-        
-        success = ai_analyzer.save_ai_models_list(cluster, models_list, bucket_name)
-        
-        if success:
-            return jsonify({
-                'success': True,
-                'message': 'AI models list saved successfully'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to save ai_models_list'
-            }), 500
-        
-    except Exception as e:
-        ic(f"❌ Error saving ai_models_list: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/models/provider/<provider_id>', methods=['POST'])
-def get_provider_models_endpoint(provider_id):
-    """
-    Get models for a specific provider
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {"bucket": "cb_tools"},
-        "activeOnly": true
-    }
-    
-    Response:
-    {
-        "success": true,
-        "provider": "openai",
-        "models": [...]
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        active_only = data.get('activeOnly', False)
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            # Fall back to template
-            template = ai_analyzer.get_ai_models_template()
-            providers = template.get('providers', {})
-            provider = providers.get(provider_id, {})
-            models = provider.get('models', [])
-            if active_only:
-                models = [m for m in models if m.get('status') == 'active']
-            return jsonify({
-                'success': True,
-                'provider': provider_id,
-                'models': models,
-                'source': 'template'
-            })
-        
-        if active_only:
-            models = ai_analyzer.get_active_models_for_provider(cluster, provider_id, bucket_name)
-        else:
-            models = ai_analyzer.get_models_for_provider(cluster, provider_id, bucket_name)
-        
-        return jsonify({
-            'success': True,
-            'provider': provider_id,
-            'models': models
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error getting provider models: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/models/invalidate-cache', methods=['POST'])
-def invalidate_ai_models_cache_endpoint():
-    """
-    Invalidate the in-memory ai_models_list cache
-    
-    Response:
-    {
-        "success": true,
-        "message": "Cache invalidated"
-    }
-    """
-    try:
-        ai_analyzer.invalidate_ai_models_cache()
-        return jsonify({
-            'success': True,
-            'message': 'AI models cache invalidated'
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-# ============================================================================
-# AI API Test Endpoint
-# ============================================================================
-
-@app.route('/api/ai/test', methods=['POST'])
-def test_ai_api():
-    """
-    Test AI API configuration with a simple prompt.
-    Makes a real API call to verify credentials and configuration work.
-    
-    Request body:
-    {
-        "provider": "openai" | "claude" | "grok" | "custom",
-        "model": "gpt-4o",
-        "apiKey": "sk-...",
-        "apiUrl": "https://api.openai.com/v1",
-        "customConfig": {...}  // For custom providers only
-    }
-    
-    Response:
-    {
-        "success": true,
-        "message": "API test successful",
-        "elapsed_ms": 1234,
-        "model_response": "Hello! I'm working correctly."
-    }
-    """
-    try:
-        import json
-        
-        data = request.json
-        provider = data.get('provider', '')
-        model = data.get('model', '')
-        api_key = data.get('apiKey', '')
-        api_url = data.get('apiUrl', '')
-        custom_config = data.get('customConfig')
-        
-        ic("🧪 Testing AI API configuration")
-        ic(f"  Provider: {provider}")
-        ic(f"  Model: {model}")
-        ic(f"  API URL: {api_url}")
-        ic(f"  Custom: {bool(custom_config)}")
-        
-        # Simple test prompt
-        test_prompt = "Respond with exactly this JSON: {\"status\": \"ok\", \"message\": \"API connection successful\"}"
-        test_payload = {"data": {"test": True}}
-        
-        if custom_config and custom_config.get('isCustom'):
-            # Test custom AI provider
-            ic("🔧 Testing custom AI provider")
-            result = ai_analyzer.call_custom_ai_provider(
-                custom_config=custom_config,
-                prompt=test_prompt,
-                payload_data=test_payload,
-                language='English'
-            )
-        else:
-            # Test built-in provider
-            if not api_key:
+        if backend() == "cbl":
+            store = storage()
+            if not store:
+                return jsonify({'success': False, 'error': 'CBL not available'}), 500
+            doc = store.load_analyzer(doc_id)
+            if not doc:
+                return jsonify({'success': False, 'error': 'Document not found'}), 404
+            current_status = doc.get('status')
+            if current_status not in ('pending', 'submitted', 'processing'):
                 return jsonify({
                     'success': False,
-                    'error': 'API key is required'
-                }), 400
-            
-            # Set default URLs if not provided
-            if not api_url:
-                if provider == 'openai':
-                    api_url = 'https://api.openai.com/v1'
-                elif provider == 'claude':
-                    api_url = 'https://api.anthropic.com'
-                elif provider == 'grok':
-                    api_url = 'https://api.x.ai/v1'
-            
-            # Set default models if not provided
-            if not model:
-                if provider == 'openai':
-                    model = 'gpt-4o-mini'
-                elif provider == 'claude':
-                    model = 'claude-3-5-haiku-20241022'
-                elif provider == 'grok':
-                    model = 'grok-3-mini'
-            
-            # Determine endpoint
-            endpoint = '/chat/completions'
-            if provider == 'claude':
-                endpoint = '/v1/messages'
-            
-            result = ai_analyzer.call_ai_provider(
-                provider=provider,
-                model=model,
-                api_key=api_key,
-                api_url=api_url,
-                endpoint=endpoint,
-                prompt=test_prompt,
-                payload_data=test_payload,
-                language='English'
-            )
-        
-        if result.get('success'):
-            # Extract the AI response text
-            response_text = ""
-            response_data = result.get('data', {})
-            
-            if 'choices' in response_data and len(response_data['choices']) > 0:
-                # OpenAI/Grok format
-                response_text = response_data['choices'][0].get('message', {}).get('content', '')
-            elif 'content' in response_data and isinstance(response_data['content'], list):
-                # Anthropic format
-                if len(response_data['content']) > 0:
-                    response_text = response_data['content'][0].get('text', '')
-            
-            ic(f"✅ API test successful! Response: {response_text[:100]}...")
-            
+                    'error': f'Cannot cancel status: {current_status}',
+                })
+            doc['status'] = 'cancelled'
+            doc['cancelledAt'] = datetime.utcnow().isoformat() + 'Z'
+            store.save_analyzer(doc_id, doc.get('prompt') or 'AI Analysis', doc)
+            ic(f"🚫 [cbl] Cancelled analysis: {doc_id}")
+            return jsonify({'success': True, 'status': 'cancelled', 'backend': 'cbl'})
+
+        # Server backend: defer to legacy app_base implementation.
+        return jsonify({
+            'success': False,
+            'error': 'ai_cancel with server backend handled by app_base',
+        }), 501
+    except Exception as e:
+        ic("❌ ai_cancel", e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ── 28: ai/clusters — list distinct sourceCluster from analyzer collection ──
+def ai_clusters():
+    try:
+        if backend() == "cbl":
+            store = storage()
+            if not store:
+                return jsonify({'success': False, 'error': 'CBL not available'}), 500
+
+            data = request.json or {}
+            term = (data.get('term') or '').lower()
+
+            listing = store.list_analyzers(limit=500, offset=0)
+            shells = listing.get('rows', []) if isinstance(listing, dict) else []
+            seen = []
+            for shell in shells:
+                doc_id = shell.get('id')
+                if not doc_id:
+                    continue
+                blob = store.load_analyzer(doc_id)
+                if not blob or blob.get('docType') != 'ai_analysis':
+                    continue
+                src = blob.get('sourceCluster')
+                if not src:
+                    continue
+                if term and term not in src.lower():
+                    continue
+                if src not in seen:
+                    seen.append(src)
+                if len(seen) >= 10:
+                    break
+            seen.sort()
             return jsonify({
                 'success': True,
-                'message': 'API test successful',
-                'elapsed_ms': result.get('elapsed_ms', 0),
-                'model_response': response_text[:500],  # Truncate for safety
-                'provider': provider,
-                'model': model
+                'results': seen,
+                'clusters': seen,
+                'backend': 'cbl',
             })
-        else:
-            ic(f"❌ API test failed: {result.get('error')}")
-            return jsonify({
-                'success': False,
-                'error': result.get('error', 'Unknown error'),
-                'elapsed_ms': result.get('elapsed_ms', 0),
-                'status_code': result.get('status_code'),
-                'raw_response': result.get('raw_response', '')[:500]  # Truncate
-            }), 400
-            
-    except Exception as e:
-        ic(f"💥 API test error: {str(e)}")
-        import traceback
-        ic(traceback.format_exc())
         return jsonify({
             'success': False,
-            'error': str(e)
-        }), 500
+            'error': 'ai_clusters with server backend handled by app_base',
+        }), 501
+    except Exception as e:
+        ic("❌ ai_clusters", e)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/ai/history', methods=['POST'])
-def get_ai_analysis_history():
-    """
-    Get AI analysis history from Couchbase
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {...},
-        "limit": 10,
-        "offset": 0
-    }
-    
-    Response:
-    {
-        "success": true,
-        "results": [...],
-        "count": 10
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        limit = data.get('limit', 10)
-        offset = data.get('offset', 0)
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        # Build N1QL query
-        bucket = bucket_config.get('bucket', 'cb_tools')
-        scope = bucket_config.get('analyzerScope', 'query')
-        collection = bucket_config.get('analyzerCollection', 'analyzer')
-        
-        query = f'''
-            SELECT `createdAt`,
-                   `provider`,
-                   `status`,
-                   `prompt`,
-                   `sourceCluster`,
-                   `metadata`,
-                   `parseJson`.`filters`,
-                   META().id as documentId
-            FROM `{bucket}`.`{scope}`.`{collection}`
-            WHERE docType = "ai_analysis"
-            ORDER BY `createdAt` DESC
-            LIMIT $limit
-            OFFSET $offset
-        '''
-        
-        ic(f"📋 Fetching AI analysis history: limit={limit}, offset={offset}")
-        
-        # Execute query
-        result = cluster.query(query, limit=limit, offset=offset)
-        rows = [row for row in result]
-        
-        ic(f"✅ Retrieved {len(rows)} analysis records")
-        
-        return jsonify({
-            'success': True,
-            'results': rows,
-            'count': len(rows)
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error fetching analysis history: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
 
-@app.route('/api/ai/clusters', methods=['POST'])
-def get_ai_clusters():
-    """
-    Get unique source cluster names for autocomplete
-    Uses index: analysis_old_table_v1
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {...},
-        "term": "qa" (optional)
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        term = data.get('term', '')
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        bucket = bucket_config.get('bucket', 'cb_tools')
-        scope = bucket_config.get('analyzerScope', 'query')
-        collection = bucket_config.get('analyzerCollection', 'analyzer')
-        
-        # Query for recent distinct source clusters using CTE + FTS SEARCH function
-        search_term = f"{term.lower()}*" if term else "*"
-        ic(f"🔎 Searching clusters with SEARCH term: '{search_term}'")
-        
-        query = f'''
-            WITH allCluster AS (
-                SELECT RAW sourceCluster
-                FROM `{bucket}`.`{scope}`.`{collection}`
-                WHERE docType = "ai_analysis"
-                  AND sourceCluster IS NOT MISSING
-                  AND sourceCluster != ""
-                GROUP BY sourceCluster
-            )
-            SELECT RAW allCluster 
-            FROM allCluster 
-            WHERE SEARCH(allCluster, {{"query": $term}})
-            ORDER BY allCluster
-            LIMIT 10
-        '''
-        
-        result = cluster.query(
-            query, 
-            QueryOptions(adhoc=False, named_parameters={'term': search_term})
-        )
-        clusters = [row for row in result]
-        
-        return jsonify({
-            'success': True,
-            'results': clusters
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error fetching clusters: {str(e)}")
+# ── 14: ai/stats — aggregate over ai_history ────────────────────────────────
+def ai_stats():
+    if backend() != "cbl":
         return jsonify({
             'success': False,
-            'error': str(e)
-        }), 500
+            'error': 'ai_stats with server backend handled by app_base',
+        }), 501
+    store = storage()
+    if not store:
+        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+    rows = store.query(
+        "SELECT provider, COUNT(*) AS runs, "
+        "SUM(tokens_in) AS tokens_in, SUM(tokens_out) AS tokens_out "
+        "FROM cb_tools.ai_history "
+        "WHERE type = 'ai_history' "
+        "GROUP BY provider"
+    )
+    return jsonify({'success': True, 'rows': rows, 'backend': 'cbl'})
 
-@app.route('/api/ai/debug', methods=['POST'])
-def set_ai_debug():
-    """
-    Enable or disable AI analyzer debug logging
-    
-    Request body:
-    {
-        "enabled": true
-    }
-    
-    Response:
-    {
-        "success": true,
-        "debug_enabled": true
-    }
-    """
-    try:
-        data = request.json
-        enabled = data.get('enabled', True)
-        
-        ai_analyzer.configure_debug(enabled)
-        
-        return jsonify({
-            'success': True,
-            'debug_enabled': enabled
-        })
-    except Exception as e:
+
+# ── 15-18: payload-reference ─────────────────────────────────────────────────
+def payload_reference_get():
+    if backend() != "cbl":
         return jsonify({
             'success': False,
-            'error': str(e)
-        }), 500
+            'error': 'payload_reference with server backend handled by app_base',
+        }), 501
+    store = storage()
+    if not store:
+        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+    data = store.get_payload_reference()
+    if data is None:
+        return jsonify({'success': False, 'error': 'Not found'}), 404
+    return jsonify({'success': True, 'data': data, 'backend': 'cbl'})
+
+
+def payload_reference_load():
+    return payload_reference_get()
+
+
+def payload_reference_seed():
+    if backend() != "cbl":
+        return jsonify({
+            'success': False,
+            'error': 'payload_reference seed handled by app_base for server',
+        }), 501
+    store = storage()
+    if not store:
+        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+    template = os.path.join(DIRECTORY, 'payload_reference.json.template')
+    ok = store.seed_from_template('payload_reference', template)
+    return jsonify({'success': ok, 'backend': 'cbl'})
+
+
+def payload_reference_save():
+    if backend() != "cbl":
+        return jsonify({
+            'success': False,
+            'error': 'payload_reference save handled by app_base for server',
+        }), 501
+    data = request.json or {}
+    body = data.get('data', data)
+    store = storage()
+    if not store:
+        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+    store.save_payload_reference(body)
+    return jsonify({'success': True, 'backend': 'cbl'})
+
+
+# ── 20-23: models ────────────────────────────────────────────────────────────
+def models_get():
+    if backend() != "cbl":
+        return jsonify({
+            'success': False,
+            'error': 'models with server backend handled by app_base',
+        }), 501
+    store = storage()
+    if not store:
+        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+    data = store.get_models_list()
+    if data is None:
+        return jsonify({'success': False, 'error': 'Not found'}), 404
+    return jsonify({'success': True, 'data': data, 'backend': 'cbl'})
+
+
+def models_load():
+    return models_get()
+
+
+def models_seed():
+    if backend() != "cbl":
+        return jsonify({
+            'success': False,
+            'error': 'models seed handled by app_base for server',
+        }), 501
+    store = storage()
+    if not store:
+        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+    template = os.path.join(DIRECTORY, 'ai_models_list.json.template')
+    ok = store.seed_from_template('models_list', template)
+    return jsonify({'success': ok, 'backend': 'cbl'})
+
+
+def models_save():
+    if backend() != "cbl":
+        return jsonify({
+            'success': False,
+            'error': 'models save handled by app_base for server',
+        }), 501
+    data = request.json or {}
+    body = data.get('data', data)
+    store = storage()
+    if not store:
+        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+    store.save_models_list(body)
+    return jsonify({'success': True, 'backend': 'cbl'})
+
 
 # ============================================================================
-# Legacy AI API Call Endpoint
+# Storage admin (CBL-only) — new endpoints
 # ============================================================================
 
-@app.route('/api/ai/call', methods=['POST'])
-def ai_api_call():
-    """
-    Proxy endpoint for AI API calls
-    Accepts configuration and forwards request to AI provider
-    
-    Request body:
-    {
-        "provider": "openai",
-        "model": "gpt-4o",
-        "apiKey": "sk-...",
-        "apiUrl": "https://api.openai.com/v1",
-        "endpoint": "/chat/completions",  // optional, appended to apiUrl
-        "method": "POST",  // optional, defaults to POST
-        "headers": {},  // optional custom headers
-        "payload": {},  // request payload
-        "timeout": 30,  // optional timeout in seconds
-        "maxRetries": 3  // optional max retry attempts
-    }
-    """
-    try:
-        data = request.json
-        ic("🎯 AI API Call Request", data.get('provider'), data.get('model'))
-        
-        # Extract parameters
-        provider = data.get('provider', 'unknown')
-        model = data.get('model')
-        api_key = data.get('apiKey')
-        api_url = data.get('apiUrl', '')
-        endpoint = data.get('endpoint', '')
-        method = data.get('method', 'POST')
-        custom_headers = data.get('headers', {})
-        payload = data.get('payload', {})
-        timeout = data.get('timeout', 30)
-        max_retries = data.get('maxRetries', 3)
-        
-        # Validation
-        if not api_key:
-            return jsonify({
-                'success': False,
-                'error': 'API key is required'
-            }), 400
-        
-        if not api_url:
-            return jsonify({
-                'success': False,
-                'error': 'API URL is required'
-            }), 400
-        
-        # Build full URL
-        full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
-        ic("🌐 Full URL", full_url)
-        
-        # Prepare headers
-        headers = {
-            'Authorization': f'Bearer {api_key}',
-            **custom_headers
-        }
-        
-        # Some providers use different auth header formats
-        if provider == 'anthropic':
-            headers['x-api-key'] = api_key
-            headers['anthropic-version'] = '2023-06-01'
-            del headers['Authorization']  # Claude doesn't use Bearer
-        elif provider == 'cohere':
-            headers['Authorization'] = f'Bearer {api_key}'  # Cohere uses Bearer
-        
-        # Add model to payload if not already present
-        if model and 'model' not in payload:
-            payload['model'] = model
-        
-        ic("📋 Final Headers", {k: v[:20] + '...' if len(str(v)) > 20 else v for k, v in headers.items()})
-        ic("📋 Final Payload", payload)
-        
-        # Create custom HTTP client with request-specific settings
-        custom_client = ai_analyzer.AIHttpClient(
-            max_retries=max_retries,
-            backoff_factor=0.5,
-            timeout=timeout
-        )
-        
-        # Make the API call
-        result = custom_client.call_api(
-            method=method,
-            url=full_url,
-            headers=headers,
-            json_data=payload
-        )
-        
-        ic("📨 API Call Result", result.get('success'), result.get('elapsed_ms'))
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        ic("💥 Error in AI API call endpoint", str(e))
+def storage_info():
+    if backend() != "cbl":
         return jsonify({
             'success': False,
-            'error': str(e)
-        }), 500
+            'error': 'Storage info only available for CBL backend',
+        }), 400
+    store = storage()
+    if not store:
+        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+    return jsonify({'success': True, 'stats': store.stats(), 'backend': 'cbl'})
 
-def open_browser_at_port(port):
-    """Open the browser after a short delay to ensure server is ready"""
-    import time
-    import webbrowser
-    time.sleep(1.5)
-    webbrowser.open(f"http://localhost:{port}/index.html")
 
-def open_browser():
-    """Open browser at default PORT"""
-    open_browser_at_port(PORT)
+def storage_maintenance():
+    if backend() != "cbl":
+        return jsonify({
+            'success': False,
+            'error': 'Maintenance only available for CBL backend',
+        }), 400
+    store = storage()
+    if not store:
+        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+    op = (request.json or {}).get('operation', 'compact')
+    return jsonify({'success': True, 'result': store.maintenance(op), 'backend': 'cbl'})
+
+
+def storage_export():
+    if backend() != "cbl":
+        return jsonify({
+            'success': False,
+            'error': 'Export only available for CBL backend',
+        }), 400
+    store = storage()
+    if not store:
+        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+    path = store.export()
+    return send_file(
+        path,
+        as_attachment=True,
+        download_name=os.path.basename(path),
+        mimetype='application/gzip',
+    )
+
+
+def storage_import():
+    if backend() != "cbl":
+        return jsonify({
+            'success': False,
+            'error': 'Import only available for CBL backend',
+        }), 400
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file provided'}), 400
+    store = storage()
+    if not store:
+        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+    result = store.import_from(request.files['file'])
+    return jsonify({'success': True, 'result': result, 'backend': 'cbl'})
+
 
 # ============================================================================
-# Debug Logging to File
+# Wire overrides into the imported app
 # ============================================================================
 
-_log_file = None
-_log_enabled = False
-_log_dir = os.path.expanduser("~/Downloads/cb_query_analyzer_logs")
+# 4-8: data persistence (cb_tools bucket → CBL collections)
+_override_route('/api/couchbase/save-analyzer', save_analyzer, methods=['POST'])
+_override_route('/api/couchbase/load-analyzer/<request_id>', load_analyzer, methods=['POST'])
+_override_route('/api/couchbase/delete-analyzer', delete_analyzer, methods=['POST'])
+_override_route('/api/couchbase/save-preferences', save_preferences, methods=['POST'])
+_override_route('/api/couchbase/load-preferences/<user_id>', load_preferences, methods=['POST'])
 
-def setup_file_logging(log_dir=None):
-    """Setup icecream to log to file"""
-    global _log_file, _log_enabled, _log_dir
-    from datetime import datetime
-    
-    if log_dir:
-        _log_dir = log_dir
-    
-    os.makedirs(_log_dir, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_path = os.path.join(_log_dir, f"cb_query_analyzer_{timestamp}.log")
-    
-    _log_file = open(log_path, 'a', buffering=1)  # Line buffered
-    _log_enabled = True
-    
-    def log_to_file(s):
-        if _log_file and _log_enabled:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            _log_file.write(f"[{timestamp}] {s}\n")
-        print(s)  # Also print to console
-    
-    ic.configureOutput(outputFunction=log_to_file)
-    ic(f"📝 Logging to: {log_path}")
-    return log_path
+# 13, 14, 27, 28: AI history / stats / clusters
+_override_route('/api/ai/status/<document_id>', ai_status, methods=['POST'])
+_override_route('/api/ai/history', ai_history, methods=['POST'])
+_override_route('/api/ai/clusters', ai_clusters, methods=['POST'])
+_override_route('/api/ai/stats', ai_stats, methods=['GET'])
+_override_route('/api/ai/cancel', ai_cancel, methods=['POST'])
 
-def stop_file_logging():
-    """Stop logging to file"""
-    global _log_file, _log_enabled
-    _log_enabled = False
-    if _log_file:
-        ic("📝 Stopping file logging")
-        _log_file.close()
-        _log_file = None
-    ic.configureOutput(outputFunction=lambda s: print(s))
+# 15-18: payload-reference family
+_override_route('/api/ai/payload-reference', payload_reference_get, methods=['GET'])
+_override_route('/api/ai/payload-reference/load', payload_reference_load, methods=['POST'])
+_override_route('/api/ai/payload-reference/seed', payload_reference_seed, methods=['POST'])
+_override_route('/api/ai/payload-reference/save', payload_reference_save, methods=['POST'])
 
-def run_with_menubar():
-    """Run Flask server with macOS menu bar icon for easy quit"""
-    import rumps
-    
-    class QueryAnalyzerApp(rumps.App):
-        def __init__(self, initial_port):
-            super(QueryAnalyzerApp, self).__init__(
-                "CB Query Analyzer",
-                title="🔧",  # Menu bar icon (wrench emoji)
-                quit_button=None  # We'll add custom quit
-            )
-            self.current_port = initial_port
-            self.flask_thread = None
-            self.flask_running = False
-            self.debug_enabled = False
-            self.log_path = None
-            
-            # Build menu
-            self.menu = [
-                rumps.MenuItem("Open in Browser", callback=self.open_browser),
-                None,  # Separator
-                rumps.MenuItem(f"Port: {self.current_port}", callback=None),
-                rumps.MenuItem("Change Port...", callback=self.change_port),
-                None,  # Separator
-                rumps.MenuItem("🔍 Debug Logging", callback=None),
-                rumps.MenuItem("   Enable Logging", callback=self.toggle_logging),
-                rumps.MenuItem("   Open Log Folder", callback=self.open_log_folder),
-                rumps.MenuItem("   Set Log Folder...", callback=self.set_log_folder),
-                None,  # Separator
-                rumps.MenuItem("Restart Server", callback=self.restart_server),
-                rumps.MenuItem("Quit", callback=self.quit_app),
-            ]
-            
-        def open_browser(self, _):
-            import webbrowser
-            webbrowser.open(f"http://localhost:{self.current_port}/index.html")
-        
-        def change_port(self, _):
-            response = rumps.Window(
-                message="Enter new port number:",
-                title="Change Port",
-                default_text=str(self.current_port),
-                ok="Change & Restart",
-                cancel="Cancel",
-                dimensions=(200, 24)
-            ).run()
-            
-            if response.clicked:
-                try:
-                    new_port = int(response.text.strip())
-                    if 1024 <= new_port <= 65535:
-                        old_port = self.current_port
-                        self.current_port = new_port
-                        self.menu["Port: " + str(old_port)].title = f"Port: {new_port}"
-                        ic(f"🔄 Port changed: {old_port} → {new_port}")
-                        self.restart_server(None)
-                    else:
-                        rumps.alert("Invalid Port", "Port must be between 1024 and 65535")
-                except ValueError:
-                    rumps.alert("Invalid Port", "Please enter a valid number")
-        
-        def toggle_logging(self, sender):
-            global _log_enabled
-            if _log_enabled:
-                stop_file_logging()
-                sender.title = "   Enable Logging"
-                self.title = "🔧"
-                rumps.notification(
-                    "CB Query Analyzer",
-                    "Debug Logging Disabled",
-                    "Logging stopped"
-                )
-            else:
-                self.log_path = setup_file_logging()
-                sender.title = "   ✓ Logging Enabled"
-                self.title = "🔧📝"  # Show logging indicator
-                rumps.notification(
-                    "CB Query Analyzer",
-                    "Debug Logging Enabled",
-                    f"Logs: {self.log_path}"
-                )
-        
-        def open_log_folder(self, _):
-            import subprocess
-            os.makedirs(_log_dir, exist_ok=True)
-            subprocess.run(["open", _log_dir])
-        
-        def set_log_folder(self, _):
-            global _log_dir
-            response = rumps.Window(
-                message="Enter log folder path:",
-                title="Set Log Folder",
-                default_text=_log_dir,
-                ok="Set",
-                cancel="Cancel",
-                dimensions=(400, 24)
-            ).run()
-            
-            if response.clicked:
-                new_dir = os.path.expanduser(response.text.strip())
-                if new_dir:
-                    _log_dir = new_dir
-                    ic(f"📁 Log folder set to: {_log_dir}")
-                    rumps.notification(
-                        "CB Query Analyzer",
-                        "Log Folder Updated",
-                        _log_dir
-                    )
-        
-        def restart_server(self, _):
-            ic(f"🔄 Restarting server on port {self.current_port}...")
-            rumps.notification(
-                "CB Query Analyzer",
-                "Restarting...",
-                f"Server restarting on port {self.current_port}"
-            )
-            # Note: Full restart requires app relaunch
-            # For now, just notify - actual restart would need subprocess
-            os._exit(0)  # Exit and let user relaunch
-            
-        def quit_app(self, _):
-            ic("👋 Shutting down via menu bar...")
-            stop_file_logging()
-            rumps.quit_application()
-            os._exit(0)
-    
-    # Start Flask in background thread
-    def run_flask():
-        app.run(host='0.0.0.0', port=PORT, debug=False, use_reloader=False)
-    
-    flask_thread = threading.Thread(target=run_flask, daemon=True)
-    flask_thread.start()
-    
-    # Open browser after short delay
-    browser_thread = threading.Thread(target=lambda: open_browser_at_port(PORT), daemon=True)
-    browser_thread.start()
-    
-    # Run menu bar app (blocks until quit)
-    menu_app = QueryAnalyzerApp(PORT)
-    menu_app.run()
+# 20-23: models family
+_override_route('/api/ai/models', models_get, methods=['GET'])
+_override_route('/api/ai/models/load', models_load, methods=['POST'])
+_override_route('/api/ai/models/seed', models_seed, methods=['POST'])
+_override_route('/api/ai/models/save', models_save, methods=['POST'])
 
-def run_with_systray_windows():
-    """Run Flask server with Windows system tray icon"""
-    try:
-        import pystray
-        from PIL import Image, ImageDraw
-        
-        current_port = PORT
-        logging_enabled = False
-        
-        # Create a simple icon (blue circle with CB text)
-        def create_icon():
-            img = Image.new('RGB', (64, 64), color=(0, 122, 204))
-            draw = ImageDraw.Draw(img)
-            draw.text((12, 20), "CB", fill='white')
-            return img
-        
-        def on_quit(icon, item):
-            ic("👋 Shutting down via system tray...")
-            stop_file_logging()
-            icon.stop()
-            os._exit(0)
-            
-        def on_open(icon, item):
-            import webbrowser
-            webbrowser.open(f"http://localhost:{current_port}/index.html")
-        
-        def on_toggle_logging(icon, item):
-            nonlocal logging_enabled
-            if logging_enabled:
-                stop_file_logging()
-                logging_enabled = False
-            else:
-                setup_file_logging()
-                logging_enabled = True
-        
-        def on_open_logs(icon, item):
-            import subprocess
-            os.makedirs(_log_dir, exist_ok=True)
-            subprocess.run(["explorer", _log_dir])
-        
-        def get_logging_text(item):
-            return "✓ Logging Enabled" if logging_enabled else "Enable Logging"
-        
-        # Start Flask in background thread
-        def run_flask():
-            app.run(host='0.0.0.0', port=PORT, debug=False, use_reloader=False)
-        
-        flask_thread = threading.Thread(target=run_flask, daemon=True)
-        flask_thread.start()
-        
-        # Open browser
-        browser_thread = threading.Thread(target=open_browser, daemon=True)
-        browser_thread.start()
-        
-        # Create system tray icon
-        icon = pystray.Icon(
-            "QueryAnalyzer",
-            create_icon(),
-            "CB Query Analyzer",
-            menu=pystray.Menu(
-                pystray.MenuItem("Open in Browser", on_open),
-                pystray.MenuItem(f"Port: {current_port}", None, enabled=False),
-                pystray.Menu.SEPARATOR,
-                pystray.MenuItem(get_logging_text, on_toggle_logging),
-                pystray.MenuItem("Open Log Folder", on_open_logs),
-                pystray.Menu.SEPARATOR,
-                pystray.MenuItem("Quit", on_quit),
-            )
-        )
-        icon.run()
-        
-    except ImportError:
-        ic("⚠️ pystray not available, running without system tray")
-        app.run(host='0.0.0.0', port=PORT, debug=False)
+# Server Edition v5.0.0: the analyzer index.html lives directly at
+# DIRECTORY/index.html (/app/index.html in the container), so app_base's
+# default `/` route already serves it. No override needed.
+
+# 31-34: storage admin (NEW endpoints, no override needed; just add)
+app.add_url_rule(
+    '/api/storage/info', endpoint='cbl_storage_info',
+    view_func=storage_info, methods=['GET']
+)
+app.add_url_rule(
+    '/api/storage/maintenance', endpoint='cbl_storage_maintenance',
+    view_func=storage_maintenance, methods=['POST']
+)
+app.add_url_rule(
+    '/api/storage/export', endpoint='cbl_storage_export',
+    view_func=storage_export, methods=['GET']
+)
+app.add_url_rule(
+    '/api/storage/import', endpoint='cbl_storage_import',
+    view_func=storage_import, methods=['POST']
+)
+
+
+# ============================================================================
+# Server startup
+# ============================================================================
 
 if __name__ == '__main__':
-    try:
-        ic("🚀 Liquid Snake Server (Flask)")
-        ic(f"📡 Serving at http://localhost:{PORT}")
-        ic(f"📂 Directory: {DIRECTORY}")
-        ic(f"🌐 Open: http://localhost:{PORT}/index.html")
-        
-        # Check if running as PyInstaller bundle
-        is_frozen = getattr(sys, 'frozen', False)
-        ic(f"🧊 Frozen (PyInstaller): {is_frozen}")
-        
-        if is_frozen:
-            # Running as packaged app - use menu bar/system tray
-            if sys.platform == 'darwin':
-                try:
-                    import rumps
-                    ic("🍎 Starting with macOS menu bar...")
-                    run_with_menubar()
-                except ImportError:
-                    ic("⚠️ rumps not available, running without menu bar")
-                    browser_thread = threading.Thread(target=open_browser, daemon=True)
-                    browser_thread.start()
-                    app.run(host='0.0.0.0', port=PORT, debug=False)
-            elif sys.platform == 'win32':
-                ic("🪟 Starting with Windows system tray...")
-                run_with_systray_windows()
-            else:
-                browser_thread = threading.Thread(target=open_browser, daemon=True)
-                browser_thread.start()
-                app.run(host='0.0.0.0', port=PORT, debug=False)
-        else:
-            ic("🛑 Press Ctrl+C to stop")
-            # Honor FLASK_DEBUG env var (default: enabled for local dev).
-            # Containers/production should set FLASK_DEBUG=0 to disable
-            # the auto-reloader and debugger.
-            debug_mode = os.environ.get('FLASK_DEBUG', '1').lower() in ('1', 'true', 'yes')
-            app.run(host='0.0.0.0', port=PORT, debug=debug_mode)
-        
-    except Exception as e:
-        ic(f"💥 FATAL ERROR: {e}")
-        import traceback
-        traceback.print_exc()
-        # Keep window open on crash so user can see error
-        if getattr(sys, 'frozen', False):
-            input("Press Enter to exit...")
-        raise
+    PORT = get_server_port(default=8080)
+    ic("🚀 Starting Couchbase Query Analyzer v5.0.0")
+    ic(f"📊 Backend: {backend()}")
+    ic(f"🔌 Listening on http://localhost:{PORT}")
+    app.run(
+        host='0.0.0.0',
+        port=PORT,
+        debug=False,
+        use_reloader=False,
+    )

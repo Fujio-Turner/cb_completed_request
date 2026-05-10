@@ -204,68 +204,45 @@ window.makeDefaultProvider = function(providerId) {
 
 /**
  * Open settings modal
+ *
+ * v4.0.0-beta is CBL-only — there is no longer a legacy external-Couchbase
+ * Server view to switch to. We always render the embedded-CBL view.
  */
 export function openSettingsModal() {
     Logger.info('Opening settings modal');
     const modal = document.getElementById('settings-modal');
     if (modal) {
         modal.style.display = 'block';
-        renderClusterList();
         renderAiProviders();
-        // Detect storage backend (CBL vs external Couchbase Server) and
-        // toggle the App Data Storage tab accordingly.
-        loadStorageBackendView();
+        loadCblStorageInfo();
     }
 }
 
 /**
- * Detect storage backend via /api/storage/info and show the appropriate
- * App Data Storage view (embedded CBL vs legacy external Couchbase Server).
+ * Fetch /api/storage/info and populate the embedded-CBL details
+ * (path, size, collection counts) inside the App Data Storage tab.
+ *
+ * The backend pill in the header is hardcoded to "Couchbase Lite"
+ * since v4.0.0-beta has no other storage option. If /api/storage/info
+ * is unreachable we just leave the detail rows blank instead of
+ * pretending we're disconnected.
  */
-async function loadStorageBackendView() {
-    const cblView = document.getElementById('storage-cbl-view');
-    const serverView = document.getElementById('storage-server-view');
-    // Note: cblView/serverView only exist once the settings modal markup is
-    // present. We still want to update the connection-status badge on initial
-    // page load when those elements aren't rendered yet, so don't bail early.
-
+async function loadCblStorageInfo() {
+    if (!document.getElementById('storage-cbl-view')) return;
     try {
         const res = await fetch('/api/storage/info');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-
-        if (data && data.success && data.backend === 'cbl') {
-            if (cblView && serverView) {
-                cblView.style.display = '';
-                serverView.style.display = 'none';
-                renderCblStorageInfo(data);
-            }
-            // CBL is an embedded local store — once we've confirmed it's up
-            // we don't need to poll. Mark the badge "connected" and stop.
-            updateConnectionStatus('connected', 'Couchbase Lite');
-        } else if (cblView && serverView) {
-            cblView.style.display = 'none';
-            serverView.style.display = '';
+        if (data && data.success) {
+            renderCblStorageInfo(data);
         }
     } catch (err) {
-        // /api/storage/info returns 400 when backend != cbl. In any failure
-        // case fall back to the legacy external-cluster view.
-        Logger.warn('Storage info unavailable, falling back to server view:', err);
-        if (cblView && serverView) {
-            cblView.style.display = 'none';
-            serverView.style.display = '';
-        }
+        Logger.debug('CBL storage info unavailable:', err);
     }
 }
 
-// Detect CBL backend once on page load so the connection-status badge reflects
-// reality without the user having to open the settings modal. CBL is local —
-// no need for a periodic ping; one check at startup is enough.
-document.addEventListener('DOMContentLoaded', () => {
-    loadStorageBackendView().catch(err => {
-        Logger.debug('Initial storage backend detection failed:', err);
-    });
-});
+// The header status pill is hardcoded "Couchbase Lite" in index.html for
+// v4.0.0-beta. No periodic poll is needed — CBL is in-process.
 
 function formatBytes(n) {
     if (n == null) return '—';

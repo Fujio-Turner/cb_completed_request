@@ -79,7 +79,7 @@ def _persist_run(self, document_id, cluster_name, provider, model,
         )
         return
 
-    # ---- legacy CB-Server path (deleted in v5.1.0) ----
+    # ---- legacy CB-Server path (deleted in a future release) ----
     coll = self._cluster.bucket(self._bucket["bucket"]) \
                         .scope(cluster_name).collection("analysis")
     coll.upsert(document_id, {...})

@@ -6,7 +6,7 @@
     <meta name="version" content="4.0.0" />
     <meta name="last-updated" content="2025-12-06" />
     <title>Getting Started - Couchbase Query Analyzer v4.0.0</title>
-    <meta name="description" content="Step-by-step guide to set up the Couchbase Query Analyzer with AI-powered insights. Connect to Couchbase and configure OpenAI or xAI Grok.">
+    <meta name="description" content="Step-by-step guide to set up the Couchbase Query Analyzer with AI-powered insights. Install the local app and configure OpenAI, Anthropic Claude, or xAI Grok.">
     <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
     <link rel="stylesheet" href="assets/css/main.css">
     <style>
@@ -228,25 +228,11 @@
                         <a href="#step-2" class="step-circle">2</a>
                         <div class="step-line"></div>
                     </div>
-                    <span class="step-label">Connect to Couchbase</span>
+                    <span class="step-label">Setup AI</span>
                 </div>
                 <div class="progress-step" data-step="3">
                     <div class="step-indicator">
-                        <a href="#step-3" class="step-circle">3</a>
-                        <div class="step-line"></div>
-                    </div>
-                    <span class="step-label">Configure Tool</span>
-                </div>
-                <div class="progress-step" data-step="4">
-                    <div class="step-indicator">
-                        <a href="#step-4" class="step-circle">4</a>
-                        <div class="step-line"></div>
-                    </div>
-                    <span class="step-label">Setup AI</span>
-                </div>
-                <div class="progress-step" data-step="5">
-                    <div class="step-indicator">
-                        <a href="#step-5" class="step-circle">✓</a>
+                        <a href="#step-3" class="step-circle">✓</a>
                     </div>
                     <span class="step-label">Ready!</span>
                 </div>
@@ -323,56 +309,13 @@ docker run -p 8888:8888 fujioturner/couchbase-query-analyzer:latest</pre>
         </section>
 
         <section id="step-2">
-            <h2>2. Connect to Couchbase <span style="font-size:0.7em;color:#666">(New Desktop App only)</span></h2>
-            <p style="margin-bottom:8px">Connect to a Couchbase cluster to save analysis data and preferences.</p>
+            <h2>2. Setup AI Analysis <span style="font-size:0.7em;color:#666">(New Desktop App only)</span></h2>
 
-            <div class="tabs-container">
-                <div class="tab-buttons">
-                    <button class="tab-btn active" onclick="switchTab('capella', event)">☁️ Capella</button>
-                    <button class="tab-btn" onclick="switchTab('selfhosted', event)">🖥️ Self-Hosted</button>
-                </div>
-
-                <div id="tab-capella" class="tab-content active">
-                    <div class="icon-row">
-                        <span class="icon-wrapper"><img src="assets/img/couchbase_capella_logo.png" alt="Capella"></span>
-                        <a href="https://cloud.couchbase.com/sign-up" target="_blank">Free Tier</a>
-                        <span style="color:#999;margin:0 6px;">or</span>
-                        <a href="https://cloud.couchbase.com/sign-in" target="_blank">Sign In</a>
-                    </div>
-                    <ol class="steps-list">
-                        <li><strong>Create Bucket:</strong> <code>cb_tools</code> (256 MB)</li>
-                        <li><strong>Create Scope/Collection:</strong> <code>query.analyzer</code></li>
-                        <li><strong>Create User:</strong> <a href="https://docs.couchbase.com/cloud/clusters/manage-database-users.html" target="_blank">Database Credential</a> with Read/Write on <code>cb_tools</code></li>
-                        <li><strong>Whitelist IP:</strong> <a href="https://docs.couchbase.com/cloud/get-started/connect.html#prerequisites" target="_blank">Add IP to Allowed List</a></li>
-                    </ol>
-                </div>
-
-                <div id="tab-selfhosted" class="tab-content">
-                    <div class="icon-row">
-                        <span class="icon-wrapper"><img src="assets/img/couchbase_logo.png" alt="Couchbase"></span>
-                        <span><strong>Localhost</strong> or <strong>Remote Cluster</strong></span>
-                    </div>
-                    <ol class="steps-list">
-                        <li><strong>Create Bucket:</strong> <code>cb_tools</code> (256 MB)</li>
-                        <li><strong>Create Scope/Collection:</strong> <code>query.analyzer</code></li>
-                        <li><strong>Create User:</strong> <a href="https://docs.couchbase.com/server/current/manage/manage-security/manage-users-and-roles.html#add-a-user" target="_blank">SDK User</a> with Data Reader/Writer on <code>cb_tools</code></li>
-                    </ol>
-                </div>
+            <div class="callout" style="background:#e8f4fd;border-left:4px solid #007acc;padding:10px 14px;margin:0 0 14px;border-radius:4px;font-size:0.92em">
+                <strong>📦 No Couchbase setup required.</strong>
+                Starting in <strong>v4.0.0</strong>, the New Desktop App stores all analysis data, preferences, and AI history locally using embedded <strong>Couchbase Lite</strong>. No <code>cb_tools</code> bucket, no scope, no separate credential setup. <em>(If you later want the app to pull queries directly from your cluster's <code>system:completed_requests</code>, you can add cluster credentials anytime under Settings.)</em>
             </div>
-        </section>
 
-        <section id="step-3">
-            <h2>3. Configure the Tool <span style="font-size:0.7em;color:#666">(New Desktop App only)</span></h2>
-            <p style="margin-bottom:8px">Once running and your Couchbase user is ready:</p>
-            <ol class="steps-list">
-                <li>Open <a href="http://localhost:8888" target="_blank">http://localhost:8888</a></li>
-                <li>Click <strong>Settings</strong> icon (Upper Right Corner) <img src="assets/img/setting_socket.png" alt="Settings icon" class="icon-zoom" style="height:20px;vertical-align:middle"> → enter Cluster URL, Username, Password <img src="assets/img/setting_page.png" alt="Settings page - click to enlarge" class="screenshot-preview" style="height:40px;vertical-align:middle;margin-left:8px"></li>
-                <li>Click <strong>Test Connection</strong> → <strong>Save Settings</strong></li>
-            </ol>
-        </section>
-
-        <section id="step-4">
-            <h2>4. Setup AI Analysis <span style="font-size:0.7em;color:#666">(New Desktop App only)</span></h2>
             <p style="margin-bottom:8px">Get an API Key from xAI Grok, Anthropic Claude, or OpenAI for AI-powered query analysis.</p>
 
             <table class="ai-table" style="font-size:0.9em">
@@ -405,7 +348,7 @@ docker run -p 8888:8888 fujioturner/couchbase-query-analyzer:latest</pre>
             </table>
         </section>
         <h2>Ready</h2>
-        <div id="step-5" class="success-box" style="padding:20px 24px;margin:20px 0;text-align:center">
+        <div id="step-3" class="success-box" style="padding:20px 24px;margin:20px 0;text-align:center">
             <h3 style="margin:0 0 10px">🎉 Ready to Analyze!</h3>
             <p style="margin:0 0 15px">You can now perform AI-powered analysis of your slow queries.</p>
             <a href="user_guide.html" class="cta-button" style="display:inline-block;background:#007acc;color:white;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:1.1em">Start Analyzing → User Guide</a>
@@ -420,7 +363,7 @@ docker run -p 8888:8888 fujioturner/couchbase-query-analyzer:latest</pre>
         // Progress stepper scroll spy
         document.addEventListener('DOMContentLoaded', () => {
             const steps = document.querySelectorAll('.progress-step');
-            const sections = ['step-1', 'step-2', 'step-3', 'step-4', 'step-5'].map(id => document.getElementById(id));
+            const sections = ['step-1', 'step-2', 'step-3'].map(id => document.getElementById(id));
             
             const updateProgress = () => {
                 const scrollY = window.scrollY;

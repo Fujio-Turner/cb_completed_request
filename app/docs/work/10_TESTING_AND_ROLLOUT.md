@@ -109,15 +109,15 @@ Three GitHub Actions jobs that **download the released artifact**, install it, h
 
 | Job | Runner | Artifact |
 |---|---|---|
-| `smoke-docker` | `ubuntu-latest` | `ghcr.io/.../couchbase-query-analyzer:5.0.0-rc` |
-| `smoke-macos`  | `macos-14`      | `CouchbaseQueryAnalyzer-5.0.0-rc.dmg` |
-| `smoke-windows` | `windows-2022` | `CouchbaseQueryAnalyzer-5.0.0-rc.msi` |
+| `smoke-docker` | `ubuntu-latest` | `ghcr.io/.../couchbase-query-analyzer:4.0.0-beta-rc` |
+| `smoke-macos`  | `macos-14`      | `CouchbaseQueryAnalyzer-4.0.0-beta-rc.dmg` |
+| `smoke-windows` | `windows-2022` | `CouchbaseQueryAnalyzer-4.0.0-beta-rc.msi` |
 
 Each job:
 
 1. Installs the artifact.
 2. Launches the app.
-3. Polls `http://127.0.0.1:5000/api/storage/info` for 30 s.
+3. Polls `http://127.0.0.1:8888/api/storage/info` for 30 s.
 4. Asserts the JSON response.
 5. Posts a test analyzer doc, reloads, asserts.
 6. Tears down.
@@ -140,9 +140,9 @@ Run nightly against the Docker image. Failures alert on Slack.
 
 ## 7. Backwards-compat tests
 
-For one release (v5.0.x), tests run **twice**: once with `STORAGE_BACKEND=cbl` and once with `STORAGE_BACKEND=server` (using a docker-compose CB Server fixture). Failures in either path block the release.
+For one release (v4.0.x-beta), tests run **twice**: once with `STORAGE_BACKEND=cbl` and once with `STORAGE_BACKEND=server` (using a docker-compose CB Server fixture). Failures in either path block the release.
 
-In v5.1.0 we drop the `server` matrix entry and the legacy code paths.
+In a future release we drop the `server` matrix entry and the legacy code paths.
 
 ---
 
@@ -153,12 +153,12 @@ Aligned with the [`settings/BRANCHING_STRATEGY.md`](../../../settings/BRANCHING_
 | Phase | Branch | Tag | Default backend | What's shipped |
 |---|---|---|---|---|
 | **Dev** | `release-otacon` (per-issue branches merge in) | — | `auto` | nothing public |
-| **Alpha** | `QA` | `v5.0.0-alpha.N` (pre-release on GitHub via `qa-build.yml`) | `auto` | CBL + server both work; opt-in via env var |
-| **Beta** | `QA` | `v5.0.0-beta.N` | `cbl` | CBL is default; flag flip lets you go back |
-| **GA** | `main` | `v5.0.0` | `cbl` | CBL is default; legacy still selectable |
-| **Sunset** | `main` | `v5.1.0` | `cbl` | Legacy CB-Server-app-data path **deleted** |
+| **Alpha** | `QA` | `v4.0.0-beta-alpha.N` (pre-release on GitHub via `qa-build.yml`) | `auto` | CBL + server both work; opt-in via env var |
+| **Beta** | `QA` | `v4.0.0-beta-beta.N` | `cbl` | CBL is default; flag flip lets you go back |
+| **GA** | `main` | `v4.0.0-beta` | `cbl` | CBL is default; legacy still selectable |
+| **Sunset** | `main` | `a future release` | `cbl` | Legacy CB-Server-app-data path **deleted** |
 
-The `qa-build.yml` workflow on the `QA` branch produces the `.dmg` and `.exe` pre-release artefacts for Alpha and Beta. The GA tag `v5.0.0` on `main` triggers `release.yml` which builds and publishes the Docker images plus the desktop installers per [`settings/RELEASE_GUIDE.md`](../../../settings/RELEASE_GUIDE.md).
+The `qa-build.yml` workflow on the `QA` branch produces the `.dmg` and `.exe` pre-release artefacts for Alpha and Beta. The GA tag `v4.0.0-beta` on `main` triggers `release.yml` which builds and publishes the Docker images plus the desktop installers per [`settings/RELEASE_GUIDE.md`](../../../settings/RELEASE_GUIDE.md).
 
 Before promoting `release-otacon` → `QA` for the **Alpha** phase, the full [`settings/PRE_RELEASE_GUIDE.md`](../../../settings/PRE_RELEASE_GUIDE.md) checklist is run. Before merging `QA` → `main` for **GA**, the full [`settings/RELEASE_GUIDE.md`](../../../settings/RELEASE_GUIDE.md) sequence runs. See [`12_RELEASE_PROCESS_COMPLIANCE.md §3`](./12_RELEASE_PROCESS_COMPLIANCE.md) for the step-by-step diagram.
 
@@ -178,7 +178,7 @@ Before promoting `release-otacon` → `QA` for the **Alpha** phase, the full [`s
 
 - 2 weeks of beta with no P0/P1 bugs.
 - Documentation updated per [`12_RELEASE_PROCESS_COMPLIANCE.md §9`](./12_RELEASE_PROCESS_COMPLIANCE.md): README.md, app/README_SERVER.md, app/QUICKSTART.md, docs/MIGRATION_4_0_to_5_0.md.
-- AGENT.md header bumped to v5.0.0 + new architecture summary.
+- AGENT.md header bumped to v4.0.0-beta + new architecture summary.
 - All version-string locations updated per [`settings/VERSION_UPDATE_GUIDE.md`](../../../settings/VERSION_UPDATE_GUIDE.md) (verified by `python3 settings/RELEASE_WORK_CHECK.py`).
 
 ---
@@ -191,7 +191,7 @@ The Flask `/api/storage/info` response includes `cbl_version`, `db_size_bytes`, 
 
 ## 10. Rollback plan
 
-If a critical bug surfaces in 5.0.0 GA:
+If a critical bug surfaces in 4.0.0-beta GA:
 
 1. Users set `STORAGE_BACKEND=server` env var (and re-supply CB Server creds in Settings).
 2. App falls back to v4.0.0 behavior on next restart.
@@ -203,4 +203,4 @@ If the bug **corrupts** the CBL database (worst case):
 2. Restore the auto-export tarball (Settings → Storage → "Last auto-export 2 hours ago").
 3. Restart.
 
-The auto-export job is a daily `tar` of the `.cblite2` directory into `<CBL_DB_DIR>/backups/` keeping the last 7 days. ~~Implementation~~ to be added in v5.0.1.
+The auto-export job is a daily `tar` of the `.cblite2` directory into `<CBL_DB_DIR>/backups/` keeping the last 7 days. ~~Implementation~~ to be added in a future patch release.
