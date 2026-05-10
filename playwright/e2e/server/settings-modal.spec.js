@@ -38,14 +38,18 @@ test.describe('Server Edition - Settings Modal', () => {
     await expect(aiApiTab).toBeVisible({ timeout: 5000 });
   });
 
-  test('should have bucket configuration fields', async ({ page }) => {
+  test('should have embedded Couchbase Lite info fields on Storage tab', async ({ page }) => {
     const settingsBtn = page.locator('#settings-btn');
     await settingsBtn.click();
     await page.waitForTimeout(500);
-    
-    // Look for bucket name input
-    const bucketInput = page.locator('#bucket-name');
-    await expect(bucketInput).toBeVisible({ timeout: 5000 });
+
+    // v4.0.0-beta: Server Edition no longer takes a bucket name. App data is
+    // stored in an embedded Couchbase Lite database. The Storage tab shows
+    // backend/path/size + a collections table instead of bucket inputs.
+    await expect(page.locator('#cbl-backend')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#cbl-db-path')).toBeVisible();
+    await expect(page.locator('#cbl-db-size')).toBeVisible();
+    await expect(page.locator('#cbl-collections-table')).toBeVisible();
   });
 
   test('should have AI API configuration tab', async ({ page }) => {

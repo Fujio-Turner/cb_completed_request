@@ -45,13 +45,14 @@ test.describe('Server Edition - Core Functionality', () => {
     await expect(settingsBtn).toBeVisible();
   });
 
-  test('should have connection status indicator', async ({ page }) => {
+  test('should have storage backend indicator', async ({ page }) => {
     const connectionStatus = page.locator('#connection-status');
     await expect(connectionStatus).toBeVisible();
-    
-    // Default should be disconnected
+
+    // v4.0.0-beta: app data is stored in embedded Couchbase Lite, not an
+    // external CB Server. The indicator next to Settings reflects this.
     const statusText = await connectionStatus.textContent();
-    expect(statusText).toContain('Disconnected');
+    expect(statusText).toContain('Couchbase Lite');
   });
 
   test('should load and parse sample JSON data', async ({ page }) => {
