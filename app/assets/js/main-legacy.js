@@ -23478,6 +23478,40 @@ const LAST_UPDATED = "2025-11-06";
         }
 
         // Parse and process index JSON data
+        // Build the legacy "indexString" (CREATE INDEX ...) and shape from a raw
+        // system:indexes row. Mirrors the original N1QL query logic:
+        //   k  = bucket_id ? CONCAT2(".", bucket_id, scope_id, keyspace_id) : keyspace_id
+        //   ks = is_primary ? "" : "(" + index_key.join(",") + ")"
+        //   p  = partition  ? " PARTITION BY " + partition : ""
+        //   w  = condition  ? " WHERE " + condition.replace(/"/g, "'") : ""
+        //   indexString = `CREATE INDEX ${name} ON ${k}${ks}${p}${w};`
+        function normalizeRawIndexRow(idx) {
+            const bid = idx.bucket_id || "";
+            const sid = idx.scope_id || "";
+            const kid = idx.keyspace_id || "";
+            let k;
+            if (bid) {
+                k = [bid, sid, kid].filter((x) => x !== null && x !== undefined && x !== "").join(".");
+            } else {
+                k = kid;
+            }
+            const ks = idx.is_primary
+                ? ""
+                : "(" + (Array.isArray(idx.index_key) ? idx.index_key.join(",") : "") + ")";
+            const p = idx.partition ? " PARTITION BY " + idx.partition : "";
+            const w = idx.condition ? " WHERE " + String(idx.condition).replace(/"/g, "'") : "";
+            const indexString = `CREATE INDEX ${idx.name} ON ${k}${ks}${p}${w};`;
+            return {
+                name: idx.name,
+                id: idx.id,
+                metadata: idx.metadata,
+                state: idx.state,
+                num_replica: (idx.metadata && idx.metadata.num_replica) || 0,
+                indexType: idx.using,
+                indexString: indexString,
+            };
+        }
+
         function parseIndexJSON() {
             // Prefer uploaded file content (in-memory) over textarea to avoid DOM bloat
             const uploadedIndexRaw = (window._uploadedIndexesJsonRaw && typeof window._uploadedIndexesJsonRaw === 'string') ? window._uploadedIndexesJsonRaw.trim() : "";
@@ -23492,7 +23526,17 @@ const LAST_UPDATED = "2025-11-06";
 
             try {
                 const parsedData = JSON.parse(sourceJson);
-                indexData = Array.isArray(parsedData) ? parsedData : [parsedData];
+                let rawArr = Array.isArray(parsedData) ? parsedData : [parsedData];
+                // Normalize raw `SELECT *, meta() FROM system:indexes` rows
+                // (each row has an `indexes` sub-object) into the legacy shape
+                // with a synthesized `indexString` (CREATE INDEX ...).
+                indexData = rawArr.map((row) => {
+                    if (row && row.indexes && typeof row.indexes === "object" &&
+                        (row.indexes.name || row.indexes.keyspace_id)) {
+                        return normalizeRawIndexRow(row.indexes);
+                    }
+                    return row;
+                });
 
                 // Extract unique buckets, scopes, collections
                 updateFilterDropdowns();
@@ -23748,22 +23792,7 @@ const LAST_UPDATED = "2025-11-06";
                             <div style="display: flex; justify-content: center;">
                                 <div class="sql-query-box" style="text-align: left; max-width: fit-content;">
                                     <button class="btn-standard sql-copy-btn" onclick="copyIndexQuery(event)">Copy Query</button>
-                                    <pre>SELECT 
-    s.name,
-    s.id,
-    s.metadata,
-    s.state,
-    s.num_replica,
-    s.\`using\` AS indexType,
-    CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
-FROM system:indexes AS s
-LET bid = CONCAT("", s.bucket_id, ""),
-    sid = CONCAT("", s.scope_id, ""),
-    kid = CONCAT("", s.keyspace_id, ""),
-    k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
-    ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
-    w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
-    p = CASE WHEN s.\`partition\` IS NOT NULL THEN " PARTITION BY " || s.\`partition\` ELSE "" END;</pre>
+                                    <pre>SELECT *, meta() FROM system:indexes;</pre>
                                 </div>
                             </div>
                             <p style="color: #666; font-size: 13px; margin-top: 15px;">
@@ -23951,23 +23980,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
         // Copy index query to clipboard
         function copyIndexQuery(event) {
-            const query = `SELECT 
-            s.name,
-            s.id,
-            s.metadata,
-            s.state,
-            s.num_replica,
-            s.\`using\` AS indexType,
-            CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
-            FROM system:indexes AS s
-            LET bid = CONCAT("", s.bucket_id, ""),
-            sid = CONCAT("", s.scope_id, ""),
-            kid = CONCAT("", s.keyspace_id, ""),
-            k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
-            ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
-            w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
-                p = CASE WHEN s.\`partition\` IS NOT NULL THEN " PARTITION BY " || s.\`partition\` ELSE "" END
- ;`;
+            const query = `SELECT *, meta() FROM system:indexes;`;
 
             navigator.clipboard
                 .writeText(query)

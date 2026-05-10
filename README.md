@@ -120,21 +120,7 @@ Date fields auto-populate with the data's full time range. Adjust **From**/**To*
 Run the index query, paste the result into the second input box, and click **Parse JSON**:
 
 ```sql
-SELECT
- s.name,
- s.id,
- s.metadata,
- s.state,
- s.num_replica,
- CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
-FROM system:indexes AS s
-LET bid = CONCAT("", s.bucket_id, ""),
-    sid = CONCAT("", s.scope_id, ""),
-    kid = CONCAT("", s.keyspace_id, ""),
-    k   = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
-    ks  = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
-    w   = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
-    p   = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;
+SELECT *, meta() FROM system:indexes;
 ```
 
 ---

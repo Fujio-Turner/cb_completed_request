@@ -275,22 +275,7 @@
                     <strong>5) Add Indexes JSON </strong><i>(Optional but Recommended)</i></strong>
                     <p>Run this separate query for <code>system:indexes</code> and paste/upload to the upper-right input to enrich Indexes and Flow views.</p>
                     <div class="sql-query-box">
-<pre>SELECT 
-    s.name,
-    s.id,
-    s.metadata,
-    s.state,
-    s.num_replica,
-    s.`using` AS indexType,
-    CONCAT("CREATE INDEX ", s.name, " ON ", k, ks, p, w, ";") AS indexString
-FROM system:indexes AS s
-LET bid = CONCAT("", s.bucket_id, ""),
-    sid = CONCAT("", s.scope_id, ""),
-    kid = CONCAT("", s.keyspace_id, ""),
-    k = NVL2(bid, CONCAT2(".", bid, sid, kid), kid),
-    ks = CASE WHEN s.is_primary THEN "" ELSE "(" || CONCAT2(",", s.index_key) || ")" END,
-    w = CASE WHEN s.condition IS NOT NULL THEN " WHERE " || REPLACE(s.condition, '"', "'") ELSE "" END,
-    p = CASE WHEN s.`partition` IS NOT NULL THEN " PARTITION BY " || s.`partition` ELSE "" END;</pre>
+<pre>SELECT *, meta() FROM system:indexes;</pre>
                         <button class="sql-copy-btn">Copy</button>
                     </div>
                     <p><a href="sample/test_system_indexes.json" target="_blank" rel="noopener noreferrer">Sample system:indexes JSON</a></p>
