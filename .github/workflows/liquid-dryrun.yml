@@ -1,0 +1,316 @@
+name: Liquid Dry-Run (Private Pre-Release Build)
+
+# PRIVATE / DRY-RUN pipeline for the `liquid` branch.
+#
+# What this does:
+#   1. Builds the Server Edition Docker image but DOES NOT push to Docker Hub
+#      (verifies the Dockerfile + /app context produce a working image).
+#   2. Builds the macOS .dmg with PyInstaller and uploads it as a GitHub
+#      Actions artifact (private — only repository collaborators can download
+#      it; never published to a public Release).
+#   3. Builds the Windows .exe with PyInstaller and uploads it as a GitHub
+#      Actions artifact (private, same as above).
+#
+# What this DOES NOT do (intentional):
+#   - Push to Docker Hub
+#   - Create a public GitHub Release
+#   - Tag the repository
+#
+# When you are happy with the dry-run, merge `liquid` -> `main` and push a
+# `v4.0.0-beta` (or `v4.0.0`) tag — that triggers `release.yml` which DOES
+# publish publicly to Docker Hub and GitHub Releases.
+
+on:
+  push:
+    branches:
+      - liquid
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Build label (e.g., 4.0.0-beta, 4.0.0-liquid.1)'
+        required: true
+        default: '4.0.0-beta'
+
+jobs:
+  # ==========================================================================
+  # Determine version label for artifact naming
+  # ==========================================================================
+  version:
+    name: Determine Version Label
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="4.0.0-beta.$(date +%Y%m%d).${GITHUB_SHA::7}"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Liquid dry-run version: $VERSION"
+
+  # ==========================================================================
+  # Docker dry-run (build only — DO NOT PUSH)
+  # ==========================================================================
+  docker-dryrun:
+    name: Docker Build (No Push)
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Server Edition image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          # Dockerfile uses `COPY . .` — context MUST be /app
+          context: ./app
+          file: ./app/Dockerfile
+          push: false
+          load: true
+          tags: |
+            couchbase-query-analyzer:${{ needs.version.outputs.version }}
+            couchbase-query-analyzer:liquid-dryrun
+          # Single platform for fast load+smoke; release.yml does multi-arch
+          platforms: linux/amd64
+
+      - name: Smoke test the image
+        run: |
+          docker run --rm -d --name qa-smoke -p 8080:8080 \
+            couchbase-query-analyzer:liquid-dryrun
+          # Give Flask/gunicorn a moment to come up
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/ > /dev/null 2>&1; then
+              echo "✅ Container is responding on :8080"
+              docker logs qa-smoke | tail -50
+              docker stop qa-smoke
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "❌ Container did not respond within 60s"
+          docker logs qa-smoke
+          docker stop qa-smoke || true
+          exit 1
+
+  # ==========================================================================
+  # macOS app — private artifact only
+  # ==========================================================================
+  build-macos:
+    name: Build macOS App (Private Artifact)
+    needs: version
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: ./app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller rumps
+
+      - name: Create PyInstaller spec
+        working-directory: ./app
+        run: |
+          cat > QueryAnalyzer.spec << 'SPEC_EOF'
+          # -*- mode: python ; coding: utf-8 -*-
+
+          block_cipher = None
+
+          a = Analysis(
+              ['app.py'],
+              pathex=[],
+              binaries=[],
+              datas=[
+                  ('index.html', '.'),
+                  ('assets', 'assets'),
+                  ('docs', 'docs'),
+                  ('config.json', '.'),
+                  ('ai_analyzer.py', '.'),
+                  ('ai_models_list.json.template', '.'),
+                  ('payload_reference.json.template', '.'),
+              ],
+              hiddenimports=[
+                  'flask', 'flask_cors', 'couchbase', 'couchbase.cluster',
+                  'couchbase.auth', 'couchbase.options', 'couchbase.exceptions',
+                  'requests', 'openai', 'icecream', 'webbrowser', 'rumps',
+              ],
+              hookspath=[],
+              hooksconfig={},
+              runtime_hooks=[],
+              excludes=[],
+              win_no_prefer_redirects=False,
+              win_private_assemblies=False,
+              cipher=block_cipher,
+              noarchive=False,
+          )
+
+          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+          exe = EXE(
+              pyz, a.scripts, [],
+              exclude_binaries=True,
+              name='QueryAnalyzer',
+              debug=False,
+              bootloader_ignore_signals=False,
+              strip=False,
+              upx=True,
+              console=False,
+              disable_windowed_traceback=False,
+              argv_emulation=False,
+              target_arch=None,
+              codesign_identity=None,
+              entitlements_file=None,
+          )
+
+          coll = COLLECT(exe, a.binaries, a.zipfiles, a.datas,
+              strip=False, upx=True, upx_exclude=[], name='QueryAnalyzer')
+
+          app = BUNDLE(
+              coll,
+              name='QueryAnalyzer.app',
+              icon='assets/img/QueryAnalyzer.icns',
+              bundle_identifier='io.fuj.cb.queryanalyzer',
+              info_plist={
+                  'CFBundleName': 'CB Query Analyzer (Beta)',
+                  'CFBundleDisplayName': 'CB Query Analyzer (Beta)',
+                  'CFBundleShortVersionString': '4.0.0',
+                  'CFBundleVersion': '4.0.0',
+                  'NSHighResolutionCapable': True,
+                  'LSBackgroundOnly': False,
+                  'LSUIElement': False,
+              },
+          )
+          SPEC_EOF
+
+      - name: Build with PyInstaller
+        working-directory: ./app
+        run: pyinstaller QueryAnalyzer.spec --clean --noconfirm
+
+      - name: Create DMG
+        working-directory: ./app
+        run: |
+          mkdir -p dist/dmg
+          cp -R dist/QueryAnalyzer.app dist/dmg/
+          hdiutil create -volname "QueryAnalyzer-Beta" \
+            -srcfolder dist/dmg \
+            -ov -format UDZO \
+            dist/QueryAnalyzer-${{ needs.version.outputs.version }}-macos.dmg
+
+      - name: Upload artifact (private to repo collaborators)
+        uses: actions/upload-artifact@v4
+        with:
+          name: QueryAnalyzer-${{ needs.version.outputs.version }}-macos
+          path: app/dist/QueryAnalyzer-${{ needs.version.outputs.version }}-macos.dmg
+          retention-days: 14
+
+  # ==========================================================================
+  # Windows exe — private artifact only
+  # ==========================================================================
+  build-windows:
+    name: Build Windows Executable (Private Artifact)
+    needs: version
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: ./app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        working-directory: ./app
+        run: |
+          pyinstaller --name QueryAnalyzer `
+            --onefile `
+            --windowed `
+            --icon "assets/img/app_icon.ico" `
+            --add-data "index.html;." `
+            --add-data "assets;assets" `
+            --add-data "docs;docs" `
+            --add-data "config.json;." `
+            --add-data "ai_analyzer.py;." `
+            --add-data "ai_models_list.json.template;." `
+            --add-data "payload_reference.json.template;." `
+            --hidden-import flask `
+            --hidden-import flask_cors `
+            --hidden-import couchbase `
+            --hidden-import couchbase.cluster `
+            --hidden-import couchbase.auth `
+            --hidden-import couchbase.options `
+            --hidden-import couchbase.exceptions `
+            --hidden-import requests `
+            --hidden-import openai `
+            --hidden-import icecream `
+            --hidden-import webbrowser `
+            --hidden-import pystray `
+            --hidden-import PIL `
+            app.py
+
+      - name: Create ZIP
+        working-directory: ./app
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist\QueryAnalyzer.exe" `
+            -DestinationPath "dist\QueryAnalyzer-${{ needs.version.outputs.version }}-windows.zip"
+
+      - name: Upload artifact (private to repo collaborators)
+        uses: actions/upload-artifact@v4
+        with:
+          name: QueryAnalyzer-${{ needs.version.outputs.version }}-windows
+          path: app/dist/QueryAnalyzer-${{ needs.version.outputs.version }}-windows.zip
+          retention-days: 14
+
+  # ==========================================================================
+  # Summary
+  # ==========================================================================
+  summary:
+    name: Dry-Run Summary
+    needs: [version, docker-dryrun, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Print summary
+        run: |
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          ## 🧪 Liquid Dry-Run Build — ${{ needs.version.outputs.version }}
+
+          | Stage | Status |
+          |-------|--------|
+          | Docker build (no push) | ${{ needs.docker-dryrun.result }} |
+          | macOS .dmg | ${{ needs.build-macos.result }} |
+          | Windows .exe | ${{ needs.build-windows.result }} |
+
+          ### Where to find the builds
+          - Go to **Actions** → this run → **Artifacts** at the bottom of the page
+          - Artifacts are private to repo collaborators and expire in 14 days
+          - **Nothing was pushed to Docker Hub or published to a public Release**
+
+          ### Going public
+          When this dry-run looks good:
+          1. Merge \`liquid\` → \`main\`
+          2. Push tag \`v4.0.0-beta\` (or \`v4.0.0\`)
+          3. \`release.yml\` + \`docker-build-push.yml\` will publish publicly
+          EOF

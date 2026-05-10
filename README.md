@@ -1,4 +1,4 @@
-# Couchbase Query Analyzer v5.0.0
+# Couchbase Query Analyzer v4.0.0-Beta
 
 A web-based tool for analyzing Couchbase N1QL query performance and execution plans from `system:completed_requests`. Visualize query patterns, identify bottlenecks, and optimize database performance with advanced index usage tracking, execution-plan analysis, and AI-powered insights.
 
@@ -11,15 +11,15 @@ A web-based tool for analyzing Couchbase N1QL query performance and execution pl
 | Edition | Version | Best For | How to Run |
 |---|---|---|---|
 | **Static** | 3.29.3 | Quick one-off analysis, no install | Open [`en/index.html`](en/index.html) in a browser |
-| **Server** | 5.0.0 | Persistent analyses, AI insights, team use, **zero-config storage** | Docker / macOS app / Windows exe |
+| **Server** | 4.0.0-Beta | Persistent analyses, AI insights, team use, **zero-config storage** | Docker / macOS app / Windows exe |
 
 🚀 **Hosted Static Edition:** https://cb.fuj.io/en/
 
-> **What's new in v5.0.0:** the Server Edition no longer requires an external Couchbase Server for app persistence. It ships with an **embedded Couchbase Lite (CE)** datastore — the user's external Couchbase Server is now used **only** for read-only N1QL on `system:completed_requests`. See [`app/docs/work/00_OVERVIEW.md`](app/docs/work/00_OVERVIEW.md) for the migration design.
+> **What's new in v4.0.0-Beta:** the Server Edition no longer requires an external Couchbase Server for app persistence. It ships with an **embedded Couchbase Lite (CE)** datastore — the user's external Couchbase Server is now used **only** for read-only N1QL on `system:completed_requests`. See [`app/docs/work/00_OVERVIEW.md`](app/docs/work/00_OVERVIEW.md) for the migration design.
 
 ---
 
-## Server Edition (v5.0.0) — Quick Start
+## Server Edition (v4.0.0-Beta) — Quick Start
 
 The Server Edition is a Flask backend with **embedded Couchbase Lite** persistence and AI-powered query analysis (OpenAI / Anthropic Claude / xAI Grok). No external Couchbase Server is needed for the app's own data.
 
@@ -71,8 +71,8 @@ See [`app/docs/work/02_CBL_STORE_MODULE.md`](app/docs/work/02_CBL_STORE_MODULE.m
 
 Built via GitHub Actions with PyInstaller (specs at the project root: [`build_mac.spec`](build_mac.spec), [`build_win.spec`](build_win.spec)). Download from the **Releases** page:
 
-- `QueryAnalyzer-5.0.0.dmg` (macOS)
-- `QueryAnalyzer-5.0.0-Setup.exe` (Windows)
+- `QueryAnalyzer-4.0.0-Beta.dmg` (macOS)
+- `QueryAnalyzer-4.0.0-Beta-Setup.exe` (Windows)
 
 Both bundle `libcblite.dylib` / `cblite.dll` — no external Couchbase Server is needed. They run as a tray/menu-bar app and open the analyzer in your default browser.
 
@@ -198,7 +198,7 @@ Pick sections (Dashboard, Timeline, Query Groups, etc.), include filters/header 
 
 ```
 cb_completed_request/
-├── app.py                # Server Edition v5.0.0 entry (Flask + CBL routing)
+├── app.py                # Server Edition v4.0.0-Beta entry (Flask + CBL routing)
 ├── app_base.py           # v4.x Flask app, imported & extended by app.py
 ├── cbl_store.py          # Embedded Couchbase Lite storage layer
 ├── ai_analyzer.py        # AI provider integrations (OpenAI/Claude/Grok)
@@ -265,5 +265,5 @@ See [`release_notes.md`](release_notes.md).
 - Modern web browser with JavaScript enabled
 - A Couchbase Server cluster (any recent version) **with query logging enabled** — this is the source of `system:completed_requests` data; the analyzer queries it read-only
 - Read access to `system:completed_requests` (admin privileges)
-- For Server Edition v5.0.0: Docker, **or** Python 3.11+, **or** the macOS/Windows native installer
+- For Server Edition v4.0.0-Beta: Docker, **or** Python 3.11+, **or** the macOS/Windows native installer
   - **No external Couchbase Server is needed for app persistence** — the Server Edition embeds Couchbase Lite (CE)

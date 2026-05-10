@@ -292,23 +292,24 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Determine Dockerfile
-        id: dockerfile
+      - name: Determine tags
+        id: dockertags
         run: |
           VERSION="${{ needs.create-release.outputs.version }}"
-          if [[ "$VERSION" == 4.* ]]; then
-            echo "FILE=./app/Dockerfile" >> $GITHUB_OUTPUT
-            echo "TAGS=${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:$VERSION,${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:latest" >> $GITHUB_OUTPUT
+          # Pre-releases (e.g. 4.0.0-beta, 4.0.0-rc1) MUST NOT move :latest
+          if [[ "$VERSION" == *-* ]]; then
+            echo "TAGS=${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:$VERSION" >> $GITHUB_OUTPUT
           else
-            echo "FILE=./Dockerfile" >> $GITHUB_OUTPUT
-            echo "TAGS=${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:$VERSION,${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:static-latest" >> $GITHUB_OUTPUT
+            echo "TAGS=${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:$VERSION,${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:latest" >> $GITHUB_OUTPUT
           fi
-          
+
       - name: Build and push
+        if: startsWith(github.ref, 'refs/tags/v4')
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ${{ steps.dockerfile.outputs.FILE }}
+          # Dockerfile expects /app as build context (uses `COPY . .`)
+          context: ./app
+          file: ./app/Dockerfile
           push: true
-          tags: ${{ steps.dockerfile.outputs.TAGS }}
+          tags: ${{ steps.dockertags.outputs.TAGS }}
           platforms: linux/amd64,linux/arm64
