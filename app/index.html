@@ -2,7 +2,7 @@
 <html lang="en">
 <!--
     Couchbase Query Analyzer
-    Version: 4.0.0-beta
+    Version: 4.0.0-Beta
     Last Updated: 2025-11-06
     
     🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
@@ -19,9 +19,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="4.0.0-beta" />
+    <meta name="version" content="4.0.0-Beta" />
     <meta name="last-updated" content="2025-11-06" />
-    <title>Query Analyzer v4.0.0-beta</title>
+    <title>Query Analyzer v4.0.0-Beta</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="assets/css/jquery-ui.min.css">
     
@@ -143,8 +143,8 @@
     <script type="module" src="assets/js/report.js"></script>
     <script type="module" src="assets/js/utils.js"></script>
     
-    <!-- Couchbase Integration (Issue #231) -->
-    <script type="module" src="assets/js/couchbase-connector.js"></script>
+    <!-- Storage / settings — couchbase-connector.js is loaded as an ES module
+         dependency of settings.js / ai-client.js, no separate script tag needed. -->
     <script type="module" src="assets/js/settings.js"></script>
     
     <!-- Legacy app code (temporary - will be modularized) -->
@@ -155,7 +155,7 @@
 <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v4.0.0-beta
+        v4.0.0-Beta
     </div>
 
     <!-- Settings button (top-right) - Issue #231 -->
@@ -166,7 +166,7 @@
         </svg>
     </button>
 
-    <!-- Storage backend indicator (next to settings) - Issue #231 / v4.0.0-beta CBL migration -->
+    <!-- Storage backend indicator (next to settings) - Issue #231 / v4.0.0-Beta CBL migration -->
     <div id="connection-status" class="connection-status" title="Embedded Couchbase Lite database">
         <span class="status-dot status-connected"></span>
         <span class="status-text">Couchbase Lite</span>
@@ -2187,11 +2187,11 @@
                         <li><a href="#settings-tab-ai-admin">AI Admin</a></li>
                     </ul>
                     
-                    <!-- Tab 1: App Data Storage (Couchbase Lite, embedded — v4.0.0-beta is CBL-only) -->
+                    <!-- Tab 1: App Data Storage (Couchbase Lite, embedded — v4.0.0-Beta is CBL-only) -->
                     <div id="settings-tab-storage">
                         <div id="storage-cbl-view">
                             <p style="color: #666; font-size: 0.9em; margin: 0 0 20px 0; padding: 10px; background: #f0f9ff; border-left: 3px solid #3b82f6; border-radius: 4px;">
-                                <strong>Note:</strong> Server Edition v4.0.0-beta stores your Query Analyzer preferences,
+                                <strong>Note:</strong> Server Edition v4.0.0-Beta stores your Query Analyzer preferences,
                                 saved analyses, and AI history in an <strong>embedded Couchbase Lite</strong> database
                                 that lives inside this app — no external Couchbase Server or Capella cluster is required
                                 for app data.

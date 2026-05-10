@@ -1,54 +1,54 @@
 #!/usr/bin/env python3
 """
-Flask HTTP server for Couchbase Query Analyzer v5.0.0
+Flask HTTP server for Couchbase Query Analyzer v4.0.0-Beta (Liquid)
 
-Embedded Couchbase Lite (CE) replaces the external Couchbase Server cb_tools
-bucket for all *app* persistence. The user's external Couchbase Server is
-still used for read-only N1QL on system:completed_requests.
+Embedded Couchbase Lite (CE) is now the only persistence layer for the app;
+the external Couchbase Server SDK has been removed. Source data is provided
+by JSON upload only — the app no longer connects out to a user cluster.
 
 Architecture:
-- ``app_base.py`` provides the original v4.x Flask app with every endpoint
-  wired to an external Couchbase Server cb_tools bucket. We import that app
-  as the foundation so we don't duplicate code.
-- This module ("app.py") **overrides** the endpoints that used to write/read
-  cb_tools so that, when ``STORAGE_BACKEND`` resolves to ``cbl``, they go
-  through ``CBLStore`` instead. Endpoints that talk to the user's PRODUCTION
-  cluster (``/api/couchbase/test``, ``/api/couchbase/check-indexes``,
-  ``/api/couchbase/query``) are intentionally **not** overridden — they keep
-  hitting the user's external Couchbase Server cluster regardless of backend.
-- New ``/api/storage/*`` endpoints expose CBL-only maintenance, info, export,
-  import.
+- ``app_base.py`` provides the Flask app object plus endpoints that don't
+  touch storage (preview, AI provider test, etc.). All cluster-backed
+  endpoints have been deleted.
+- This module ("app.py") **overrides** the cb_tools endpoints with CBL-backed
+  implementations using ``CBLStore`` and adds new ``/api/storage/*`` endpoints
+  for CBL-only maintenance, info, export and import.
 
 See app/docs/work/03_APP_PY_REFACTOR.md for the endpoint mapping.
 """
 
 import os
-import sys
 import time
 import json
 from typing import Optional
 from icecream import ic
 
-from flask import jsonify, request, send_file, send_from_directory
+from flask import jsonify, request, send_file
 
-# Import the base app (registers all the v4.x Couchbase Server endpoints).
-# We then override only the ones that need CBL routing.
-from app_base import app, get_couchbase_connection, DIRECTORY  # noqa: F401
+# ----------------------------------------------------------------------------
+# Global version constant — single source of truth for the running app.
+# Bump this in every release per app/guides/RELEASE.md. The startup banner
+# below reads from __version__, and downstream modules / endpoints can
+# `from app import __version__` if they need to surface it.
+# ----------------------------------------------------------------------------
+__version__ = "4.0.0-Beta"
 
-import ai_analyzer
+# Import the base app (registers Flask app + endpoints that don't depend on
+# the external Couchbase Server SDK). All app data persistence now flows
+# through the embedded Couchbase Lite (CBL) store; the cluster-backed code
+# paths have been deleted.
+from app_base import app, DIRECTORY  # noqa: F401
+
 import blob_storage
 
 # Try to import CBL store
 try:
-    from cbl_store import CBLStore, USE_CBL, storage_backend
+    from cbl_store import CBLStore, USE_CBL
     CBL_AVAILABLE = True
 except ImportError as e:
     CBL_AVAILABLE = False
     USE_CBL = False
     ic(f"⚠️ CBL store not available: {e}")
-
-    def storage_backend() -> str:  # type: ignore[no-redef]
-        return "server"
 
 
 # ============================================================================
@@ -145,13 +145,6 @@ def get_blobs() -> Optional[blob_storage.BlobStorage]:
     return _cbl_blobs
 
 
-def backend() -> str:
-    """Return the active storage backend: 'cbl' or 'server'."""
-    if not CBL_AVAILABLE:
-        return "server"
-    return storage_backend()
-
-
 # ============================================================================
 # Route override helper
 # ============================================================================
@@ -190,7 +183,7 @@ def _override_route(rule: str, view_func, methods=None):
 
 # ── 4: save-analyzer ────────────────────────────────────────────────────────
 def save_analyzer():
-    """Save analyzer report. CBL when STORAGE_BACKEND=cbl, else CB Server."""
+    """Save analyzer report to embedded Couchbase Lite."""
     try:
         data = request.json or {}
         request_id = data.get('requestId')
@@ -198,25 +191,11 @@ def save_analyzer():
         analyzer_data = data.get('analyzerData') or data.get('data') or {}
         name = data.get('name') or 'Untitled'
 
-        if backend() == "cbl":
-            store = storage()
-            if not store:
-                return jsonify({'success': False, 'error': 'CBL not available'}), 500
-            store.save_analyzer(request_id, name, analyzer_data)
-            return jsonify({'success': True, 'requestId': request_id, 'backend': 'cbl'})
-
-        # Fallback: external Couchbase Server (legacy v4.x path)
-        cluster = get_couchbase_connection(data.get('config', {}))
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        bucket_config = data.get('bucketConfig', {})
-        bucket = cluster.bucket(bucket_config['bucket'])
-        coll = bucket.scope(
-            bucket_config.get('analyzerScope', 'query')
-        ).collection(bucket_config.get('analyzerCollection', 'analyzer'))
-        analyzer_data['createdAt'] = time.time()
-        coll.upsert(request_id, analyzer_data)
-        return jsonify({'success': True, 'requestId': request_id, 'backend': 'server'})
+        store = storage()
+        if not store:
+            return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        store.save_analyzer(request_id, name, analyzer_data)
+        return jsonify({'success': True, 'requestId': request_id, 'backend': 'cbl'})
 
     except Exception as e:
         ic("❌ save_analyzer", e)
@@ -226,33 +205,13 @@ def save_analyzer():
 # ── 5: load-analyzer ────────────────────────────────────────────────────────
 def load_analyzer(request_id):
     try:
-        if backend() == "cbl":
-            store = storage()
-            if not store:
-                return jsonify({'success': False, 'error': 'CBL not available'}), 500
-            doc = store.load_analyzer(request_id)
-            if not doc:
-                return jsonify({'success': False, 'error': 'Not found'}), 404
-            return jsonify({'success': True, 'data': doc, 'backend': 'cbl'})
-
-        data = request.json or {}
-        cluster = get_couchbase_connection(data.get('config', {}))
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        bucket_config = data.get('bucketConfig', {})
-        bucket = cluster.bucket(bucket_config['bucket'])
-        coll = bucket.scope(
-            bucket_config.get('analyzerScope', 'query')
-        ).collection(bucket_config.get('analyzerCollection', 'analyzer'))
-        try:
-            result = coll.get(request_id)
-            return jsonify({
-                'success': True,
-                'data': result.content_as[dict],
-                'backend': 'server',
-            })
-        except Exception:
+        store = storage()
+        if not store:
+            return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        doc = store.load_analyzer(request_id)
+        if not doc:
             return jsonify({'success': False, 'error': 'Not found'}), 404
+        return jsonify({'success': True, 'data': doc, 'backend': 'cbl'})
 
     except Exception as e:
         ic("❌ load_analyzer", e)
@@ -265,28 +224,13 @@ def delete_analyzer():
         data = request.json or {}
         request_id = data.get('requestId')
 
-        if backend() == "cbl":
-            store = storage()
-            if not store:
-                return jsonify({'success': False, 'error': 'CBL not available'}), 500
-            ok = store.delete_analyzer(request_id)
-            if not ok:
-                return jsonify({'success': False, 'error': 'Not found'}), 404
-            return jsonify({'success': True, 'backend': 'cbl'})
-
-        cluster = get_couchbase_connection(data.get('config', {}))
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        bucket_config = data.get('bucketConfig', {})
-        bucket = cluster.bucket(bucket_config['bucket'])
-        coll = bucket.scope(
-            bucket_config.get('analyzerScope', 'query')
-        ).collection(bucket_config.get('analyzerCollection', 'analyzer'))
-        try:
-            coll.remove(request_id)
-            return jsonify({'success': True, 'backend': 'server'})
-        except Exception:
+        store = storage()
+        if not store:
+            return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        ok = store.delete_analyzer(request_id)
+        if not ok:
             return jsonify({'success': False, 'error': 'Not found'}), 404
+        return jsonify({'success': True, 'backend': 'cbl'})
 
     except Exception as e:
         ic("❌ delete_analyzer", e)
@@ -300,29 +244,11 @@ def save_preferences():
         user_id = data.get('userId')
         prefs = data.get('preferences', {})
 
-        if backend() == "cbl":
-            store = storage()
-            if not store:
-                return jsonify({'success': False, 'error': 'CBL not available'}), 500
-            store.save_preferences(user_id, prefs)
-            return jsonify({'success': True, 'userId': user_id, 'backend': 'cbl'})
-
-        cluster = get_couchbase_connection(data.get('config', {}))
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        bucket_config = data.get('bucketConfig', {})
-        bucket = cluster.bucket(bucket_config['bucket'])
-        coll = bucket.scope(
-            bucket_config.get('preferencesScope', '_default')
-        ).collection(bucket_config.get('preferencesCollection', '_default'))
-        prefs['updatedAt'] = time.time()
-        result = coll.upsert(user_id, prefs)
-        return jsonify({
-            'success': True,
-            'userId': user_id,
-            'cas': getattr(result, 'cas', None),
-            'backend': 'server',
-        })
+        store = storage()
+        if not store:
+            return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        store.save_preferences(user_id, prefs)
+        return jsonify({'success': True, 'userId': user_id, 'backend': 'cbl'})
 
     except Exception as e:
         ic("❌ save_preferences", e)
@@ -332,45 +258,19 @@ def save_preferences():
 # ── 8: load-preferences ─────────────────────────────────────────────────────
 def load_preferences(user_id):
     try:
-        if backend() == "cbl":
-            store = storage()
-            if not store:
-                return jsonify({'success': False, 'error': 'CBL not available'}), 500
-            prefs = store.load_preferences(user_id)
-            if prefs is None:
-                # First-time user: empty config
-                return jsonify({
-                    'success': True,
-                    'data': {'docType': 'config'},
-                    'firstTime': True,
-                    'backend': 'cbl',
-                })
-            return jsonify({'success': True, 'data': prefs, 'backend': 'cbl'})
-
-        data = request.json or {}
-        cluster = get_couchbase_connection(data.get('config', {}))
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        bucket_config = data.get('bucketConfig', {})
-        bucket = cluster.bucket(bucket_config['bucket'])
-        coll = bucket.scope(
-            bucket_config.get('preferencesScope', '_default')
-        ).collection(bucket_config.get('preferencesCollection', '_default'))
-        try:
-            result = coll.get(user_id)
-            return jsonify({
-                'success': True,
-                'data': result.content_as[dict],
-                'cas': getattr(result, 'cas', None),
-                'backend': 'server',
-            })
-        except Exception:
+        store = storage()
+        if not store:
+            return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        prefs = store.load_preferences(user_id)
+        if prefs is None:
+            # First-time user: empty config
             return jsonify({
                 'success': True,
                 'data': {'docType': 'config'},
                 'firstTime': True,
-                'backend': 'server',
+                'backend': 'cbl',
             })
+        return jsonify({'success': True, 'data': prefs, 'backend': 'cbl'})
 
     except Exception as e:
         ic("❌ load_preferences", e)
@@ -379,14 +279,6 @@ def load_preferences(user_id):
 
 # ── 13: ai/status — poll AI analysis status from analyzer collection ────────
 def ai_status(document_id):
-    if backend() != "cbl":
-        # Legacy CB-Server path stays in app_base; we don't override.
-        # But since we registered an override here, also delegate to it on
-        # server backend for consistency: just return a not-implemented marker.
-        return jsonify({
-            'success': False,
-            'error': 'ai_status with server backend handled by app_base',
-        }), 501
     store = storage()
     if not store:
         return jsonify({'success': False, 'error': 'CBL not available'}), 500
@@ -421,59 +313,52 @@ def ai_history():
         limit = int(data.get('limit', 50))
         offset = int(data.get('offset', 0))
 
-        if backend() == "cbl":
-            store = storage()
-            if not store:
-                return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        store = storage()
+        if not store:
+            return jsonify({'success': False, 'error': 'CBL not available'}), 500
 
-            # AI analyses are stored in COLL_ANALYZER (via save_analyzer) with
-            # docType='ai_analysis' inside the blob. Scan and project the
-            # fields the frontend needs.
-            listing = store.list_analyzers(limit=limit * 4 + 10, offset=offset)
-            shells = listing.get('rows', []) if isinstance(listing, dict) else []
-            rows = []
-            for shell in shells:
-                doc_id = shell.get('id')
-                if not doc_id:
-                    continue
-                blob = store.load_analyzer(doc_id)
-                if not blob or blob.get('docType') != 'ai_analysis':
-                    continue
-                if cluster_name and blob.get('sourceCluster') != cluster_name:
-                    continue
-                rows.append({
-                    'documentId': doc_id,
-                    'createdAt': blob.get('createdAt'),
-                    'provider': blob.get('provider'),
-                    'status': blob.get('status'),
-                    'prompt': blob.get('prompt'),
-                    'sourceCluster': blob.get('sourceCluster'),
-                    'metadata': blob.get('metadata'),
-                    'filters': (blob.get('parseJson') or {}).get('filters'),
-                })
-                if len(rows) >= limit:
-                    break
-            return jsonify({
-                'success': True,
-                'backend': 'cbl',
-                'results': rows,
-                'count': len(rows),
-                'limit': limit,
-                'offset': offset,
+        # AI analyses are stored in COLL_ANALYZER (via save_analyzer) with
+        # docType='ai_analysis' inside the blob. Scan and project the
+        # fields the frontend needs.
+        listing = store.list_analyzers(limit=limit * 4 + 10, offset=offset)
+        shells = listing.get('rows', []) if isinstance(listing, dict) else []
+        rows = []
+        for shell in shells:
+            doc_id = shell.get('id')
+            if not doc_id:
+                continue
+            blob = store.load_analyzer(doc_id)
+            if not blob or blob.get('docType') != 'ai_analysis':
+                continue
+            if cluster_name and blob.get('sourceCluster') != cluster_name:
+                continue
+            rows.append({
+                'documentId': doc_id,
+                'createdAt': blob.get('createdAt'),
+                'provider': blob.get('provider'),
+                'status': blob.get('status'),
+                'prompt': blob.get('prompt'),
+                'sourceCluster': blob.get('sourceCluster'),
+                'metadata': blob.get('metadata'),
+                'filters': (blob.get('parseJson') or {}).get('filters'),
             })
-
-        # Server backend: not re-implemented here; defer to legacy.
+            if len(rows) >= limit:
+                break
         return jsonify({
-            'success': False,
-            'error': 'ai_history with server backend handled by app_base',
-        }), 501
+            'success': True,
+            'backend': 'cbl',
+            'results': rows,
+            'count': len(rows),
+            'limit': limit,
+            'offset': offset,
+        })
 
     except Exception as e:
         ic("❌ ai_history", e)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# ── ai/cancel — cancel a running AI analysis (CBL-aware) ────────────────────
+# ── ai/cancel — cancel a running AI analysis (CBL-only) ────────────────────
 def ai_cancel():
     try:
         from datetime import datetime
@@ -482,30 +367,23 @@ def ai_cancel():
         if not doc_id:
             return jsonify({'success': False, 'error': 'Missing document_id'}), 400
 
-        if backend() == "cbl":
-            store = storage()
-            if not store:
-                return jsonify({'success': False, 'error': 'CBL not available'}), 500
-            doc = store.load_analyzer(doc_id)
-            if not doc:
-                return jsonify({'success': False, 'error': 'Document not found'}), 404
-            current_status = doc.get('status')
-            if current_status not in ('pending', 'submitted', 'processing'):
-                return jsonify({
-                    'success': False,
-                    'error': f'Cannot cancel status: {current_status}',
-                })
-            doc['status'] = 'cancelled'
-            doc['cancelledAt'] = datetime.utcnow().isoformat() + 'Z'
-            store.save_analyzer(doc_id, doc.get('prompt') or 'AI Analysis', doc)
-            ic(f"🚫 [cbl] Cancelled analysis: {doc_id}")
-            return jsonify({'success': True, 'status': 'cancelled', 'backend': 'cbl'})
-
-        # Server backend: defer to legacy app_base implementation.
-        return jsonify({
-            'success': False,
-            'error': 'ai_cancel with server backend handled by app_base',
-        }), 501
+        store = storage()
+        if not store:
+            return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        doc = store.load_analyzer(doc_id)
+        if not doc:
+            return jsonify({'success': False, 'error': 'Document not found'}), 404
+        current_status = doc.get('status')
+        if current_status not in ('pending', 'submitted', 'processing'):
+            return jsonify({
+                'success': False,
+                'error': f'Cannot cancel status: {current_status}',
+            })
+        doc['status'] = 'cancelled'
+        doc['cancelledAt'] = datetime.utcnow().isoformat() + 'Z'
+        store.save_analyzer(doc_id, doc.get('prompt') or 'AI Analysis', doc)
+        ic(f"🚫 [cbl] Cancelled analysis: {doc_id}")
+        return jsonify({'success': True, 'status': 'cancelled', 'backend': 'cbl'})
     except Exception as e:
         ic("❌ ai_cancel", e)
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -514,44 +392,39 @@ def ai_cancel():
 # ── 28: ai/clusters — list distinct sourceCluster from analyzer collection ──
 def ai_clusters():
     try:
-        if backend() == "cbl":
-            store = storage()
-            if not store:
-                return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        store = storage()
+        if not store:
+            return jsonify({'success': False, 'error': 'CBL not available'}), 500
 
-            data = request.json or {}
-            term = (data.get('term') or '').lower()
+        data = request.json or {}
+        term = (data.get('term') or '').lower()
 
-            listing = store.list_analyzers(limit=500, offset=0)
-            shells = listing.get('rows', []) if isinstance(listing, dict) else []
-            seen = []
-            for shell in shells:
-                doc_id = shell.get('id')
-                if not doc_id:
-                    continue
-                blob = store.load_analyzer(doc_id)
-                if not blob or blob.get('docType') != 'ai_analysis':
-                    continue
-                src = blob.get('sourceCluster')
-                if not src:
-                    continue
-                if term and term not in src.lower():
-                    continue
-                if src not in seen:
-                    seen.append(src)
-                if len(seen) >= 10:
-                    break
-            seen.sort()
-            return jsonify({
-                'success': True,
-                'results': seen,
-                'clusters': seen,
-                'backend': 'cbl',
-            })
+        listing = store.list_analyzers(limit=500, offset=0)
+        shells = listing.get('rows', []) if isinstance(listing, dict) else []
+        seen = []
+        for shell in shells:
+            doc_id = shell.get('id')
+            if not doc_id:
+                continue
+            blob = store.load_analyzer(doc_id)
+            if not blob or blob.get('docType') != 'ai_analysis':
+                continue
+            src = blob.get('sourceCluster')
+            if not src:
+                continue
+            if term and term not in src.lower():
+                continue
+            if src not in seen:
+                seen.append(src)
+            if len(seen) >= 10:
+                break
+        seen.sort()
         return jsonify({
-            'success': False,
-            'error': 'ai_clusters with server backend handled by app_base',
-        }), 501
+            'success': True,
+            'results': seen,
+            'clusters': seen,
+            'backend': 'cbl',
+        })
     except Exception as e:
         ic("❌ ai_clusters", e)
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -559,11 +432,6 @@ def ai_clusters():
 
 # ── 14: ai/stats — aggregate over ai_history ────────────────────────────────
 def ai_stats():
-    if backend() != "cbl":
-        return jsonify({
-            'success': False,
-            'error': 'ai_stats with server backend handled by app_base',
-        }), 501
     store = storage()
     if not store:
         return jsonify({'success': False, 'error': 'CBL not available'}), 500
@@ -579,11 +447,6 @@ def ai_stats():
 
 # ── 15-18: payload-reference ─────────────────────────────────────────────────
 def payload_reference_get():
-    if backend() != "cbl":
-        return jsonify({
-            'success': False,
-            'error': 'payload_reference with server backend handled by app_base',
-        }), 501
     store = storage()
     if not store:
         return jsonify({'success': False, 'error': 'CBL not available'}), 500
@@ -598,11 +461,6 @@ def payload_reference_load():
 
 
 def payload_reference_seed():
-    if backend() != "cbl":
-        return jsonify({
-            'success': False,
-            'error': 'payload_reference seed handled by app_base for server',
-        }), 501
     store = storage()
     if not store:
         return jsonify({'success': False, 'error': 'CBL not available'}), 500
@@ -612,11 +470,6 @@ def payload_reference_seed():
 
 
 def payload_reference_save():
-    if backend() != "cbl":
-        return jsonify({
-            'success': False,
-            'error': 'payload_reference save handled by app_base for server',
-        }), 501
     data = request.json or {}
     body = data.get('data', data)
     store = storage()
@@ -628,11 +481,6 @@ def payload_reference_save():
 
 # ── 20-23: models ────────────────────────────────────────────────────────────
 def models_get():
-    if backend() != "cbl":
-        return jsonify({
-            'success': False,
-            'error': 'models with server backend handled by app_base',
-        }), 501
     store = storage()
     if not store:
         return jsonify({'success': False, 'error': 'CBL not available'}), 500
@@ -647,11 +495,6 @@ def models_load():
 
 
 def models_seed():
-    if backend() != "cbl":
-        return jsonify({
-            'success': False,
-            'error': 'models seed handled by app_base for server',
-        }), 501
     store = storage()
     if not store:
         return jsonify({'success': False, 'error': 'CBL not available'}), 500
@@ -661,11 +504,6 @@ def models_seed():
 
 
 def models_save():
-    if backend() != "cbl":
-        return jsonify({
-            'success': False,
-            'error': 'models save handled by app_base for server',
-        }), 501
     data = request.json or {}
     body = data.get('data', data)
     store = storage()
@@ -680,11 +518,6 @@ def models_save():
 # ============================================================================
 
 def storage_info():
-    if backend() != "cbl":
-        return jsonify({
-            'success': False,
-            'error': 'Storage info only available for CBL backend',
-        }), 400
     store = storage()
     if not store:
         return jsonify({'success': False, 'error': 'CBL not available'}), 500
@@ -692,11 +525,6 @@ def storage_info():
 
 
 def storage_maintenance():
-    if backend() != "cbl":
-        return jsonify({
-            'success': False,
-            'error': 'Maintenance only available for CBL backend',
-        }), 400
     store = storage()
     if not store:
         return jsonify({'success': False, 'error': 'CBL not available'}), 500
@@ -705,11 +533,6 @@ def storage_maintenance():
 
 
 def storage_export():
-    if backend() != "cbl":
-        return jsonify({
-            'success': False,
-            'error': 'Export only available for CBL backend',
-        }), 400
     store = storage()
     if not store:
         return jsonify({'success': False, 'error': 'CBL not available'}), 500
@@ -723,11 +546,6 @@ def storage_export():
 
 
 def storage_import():
-    if backend() != "cbl":
-        return jsonify({
-            'success': False,
-            'error': 'Import only available for CBL backend',
-        }), 400
     if 'file' not in request.files:
         return jsonify({'success': False, 'error': 'No file provided'}), 400
     store = storage()
@@ -767,7 +585,7 @@ _override_route('/api/ai/models/load', models_load, methods=['POST'])
 _override_route('/api/ai/models/seed', models_seed, methods=['POST'])
 _override_route('/api/ai/models/save', models_save, methods=['POST'])
 
-# Server Edition v5.0.0: the analyzer index.html lives directly at
+# Server Edition (v4.0.0-Beta): the analyzer index.html lives directly at
 # DIRECTORY/index.html (/app/index.html in the container), so app_base's
 # default `/` route already serves it. No override needed.
 
@@ -796,8 +614,8 @@ app.add_url_rule(
 
 if __name__ == '__main__':
     PORT = get_server_port(default=8080)
-    ic("🚀 Starting Couchbase Query Analyzer v5.0.0")
-    ic(f"📊 Backend: {backend()}")
+    ic(f"🚀 Starting Couchbase Query Analyzer v{__version__}")
+    ic("📊 Backend: cbl (embedded Couchbase Lite)")
     ic(f"🔌 Listening on http://localhost:{PORT}")
     app.run(
         host='0.0.0.0',

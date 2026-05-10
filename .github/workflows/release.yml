@@ -115,11 +115,6 @@ jobs:
               hiddenimports=[
                   'flask',
                   'flask_cors',
-                  'couchbase',
-                  'couchbase.cluster',
-                  'couchbase.auth',
-                  'couchbase.options',
-                  'couchbase.exceptions',
                   'requests',
                   'openai',
                   'icecream',
@@ -244,11 +239,6 @@ jobs:
             --add-data "payload_reference.json.template;." `
             --hidden-import flask `
             --hidden-import flask_cors `
-            --hidden-import couchbase `
-            --hidden-import couchbase.cluster `
-            --hidden-import couchbase.auth `
-            --hidden-import couchbase.options `
-            --hidden-import couchbase.exceptions `
             --hidden-import requests `
             --hidden-import openai `
             --hidden-import icecream `

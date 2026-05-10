@@ -5,9 +5,8 @@ Tests endpoint routing, request/response handling, error responses.
 Does NOT require Couchbase Server or CBL bindings.
 """
 
-import json
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import sys
 import os
@@ -15,6 +14,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 
 import app_base
 from app_base import app as base_app
+# Import `app` so it can register CBL-backed overrides on top of base_app.
+import app  # noqa: F401
 
 
 @pytest.fixture
@@ -89,36 +90,11 @@ class TestAPIEndpoints:
         assert post_resp.status_code in (404, 405)
 
 
-class TestCouchbaseConnection:
-    """Test Couchbase connection endpoints"""
-
-    def test_couchbase_test_endpoint_accepts_post(self, client):
-        """POST /api/couchbase/test is allowed (not 405)"""
-        response = client.post('/api/couchbase/test',
-                               json={},
-                               content_type='application/json')
-        assert response.status_code != 405
-
-    def test_couchbase_test_rejects_get(self, client):
-        """GET /api/couchbase/test returns an error status (not 200)"""
-        # Route is POST-only; GET falls through to the catch-all static
-        # handler which returns 404 because no such file exists.
-        response = client.get('/api/couchbase/test')
-        assert response.status_code in (404, 405)
-
-    def test_couchbase_test_handles_invalid_json(self, client):
-        """POST /api/couchbase/test with invalid JSON returns an error"""
-        response = client.post('/api/couchbase/test',
-                               data='{invalid json',
-                               content_type='application/json')
-        assert response.status_code >= 400
-
-
 class TestAnalyzerEndpoints:
     """Test analyzer endpoints accept requests"""
 
     def test_load_analyzer_endpoint_registered(self, client):
-        """The /api/couchbase/load-analyzer route is registered"""
+        """The /api/couchbase/load-analyzer route is registered (via app.py override)."""
         rules = [str(r) for r in base_app.url_map.iter_rules()]
         assert any('/api/couchbase/load-analyzer' in r for r in rules)
 
@@ -127,7 +103,7 @@ class TestPreferencesEndpoints:
     """Test user preferences endpoints"""
 
     def test_load_preferences_endpoint_registered(self):
-        """The /api/couchbase/load-preferences route is registered"""
+        """The /api/couchbase/load-preferences route is registered (via app.py override)."""
         rules = [str(r) for r in base_app.url_map.iter_rules()]
         assert any('/api/couchbase/load-preferences' in r for r in rules)
 
@@ -135,29 +111,10 @@ class TestPreferencesEndpoints:
 class TestErrorHandling:
     """Test error handling and responses"""
 
-    def test_malformed_json_returns_error(self, client):
-        """Malformed JSON body returns an error status (>=400)"""
-        response = client.post('/api/couchbase/test',
-                               data='{invalid json}',
-                               content_type='application/json')
-        assert response.status_code >= 400
-
     def test_nonexistent_endpoint_returns_404(self, client):
         """Nonexistent endpoint returns 404"""
         response = client.get('/api/nonexistent/endpoint')
         assert response.status_code == 404
-
-
-class TestContentNegotiation:
-    """Test content type handling"""
-
-    def test_json_request_accepted(self, client):
-        """POST with application/json body is processed (not 415/405)"""
-        payload = {"test": "data"}
-        response = client.post('/api/couchbase/test',
-                               json=payload,
-                               content_type='application/json')
-        assert response.status_code not in (405, 415)
 
 
 class TestHTTPMethods:
@@ -189,15 +146,3 @@ class TestCORSHeaders:
         """Access-Control-Allow-Origin appears when an Origin header is sent"""
         response = client.get('/', headers={'Origin': 'http://example.com'})
         assert 'Access-Control-Allow-Origin' in response.headers
-
-
-class TestRequestValidation:
-    """Test request validation"""
-
-    def test_empty_request_body_returns_error(self, client):
-        """Empty POST body to /api/couchbase/test returns an error (>=400)"""
-        response = client.post('/api/couchbase/test',
-                               data='',
-                               content_type='application/json')
-        # Server rejects the empty/missing-credentials payload
-        assert response.status_code >= 400

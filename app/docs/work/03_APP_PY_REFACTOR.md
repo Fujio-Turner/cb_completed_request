@@ -1,10 +1,18 @@
 # 03 — `app.py` Endpoint Refactor
 
-**Status:** ✅ COMPLETE
+**Status:** ✅ COMPLETE — **CBL-only cutover landed 2026-05-09** (see §6 below). The dual-branch shim, the `backend()` resolver, and the production-cluster endpoints have all been deleted.
 
-This file maps every existing endpoint that talks to **Couchbase Server's `cb_tools` bucket** to a **`CBLStore`** call. Endpoints that talk to the user's *production* cluster (the read-only N1QL on `system:completed_requests`) **do not change**.
+> Sections 1–5 below are preserved as the **historical** record of the staged
+> migration. The **current** behaviour is described in §6. When the two
+> conflict, §6 wins.
 
-The `couchbase` Python SDK is **still required** — it stays the only way we hit the user's production cluster.
+This file originally mapped every existing endpoint that talked to **Couchbase
+Server's `cb_tools` bucket** to a **`CBLStore`** call, while leaving the user's
+*production* cluster endpoints (the read-only N1QL on
+`system:completed_requests`) untouched. That second class of endpoints has
+since been removed entirely — source data now arrives via JSON upload only.
+
+The `couchbase` Python SDK is **no longer a dependency.**
 
 ---
 
@@ -325,3 +333,99 @@ $ cd app && source venv/bin/activate && pytest ../tests/python/
 - `STORAGE_BACKEND=auto` (no bindings) → `backend() == "server"`
 - `STORAGE_BACKEND=cbl` (no bindings) → clear `RuntimeError`
 - `/api/couchbase/test` and `/api/couchbase/query` reach the production cluster path (not overridden).
+
+> **Outdated as of §6 below.** The bullets above describe the dual-backend
+> middle state. They no longer hold — `STORAGE_BACKEND` is unread,
+> `backend()` is gone, and `/api/couchbase/test`/`/query`/`/check-indexes`
+> have been deleted from `app_base.py`.
+
+---
+
+## 6. CBL-only cutover (2026-05-09 — **current state**)
+
+Once the CBL path was verified in production-shaped containers, the
+dual-branch design was removed. This is the live behaviour today.
+
+### 6.1 Wiring (current)
+
+```python
+# app/app.py — top of file
+from app_base import app, DIRECTORY      # `get_couchbase_connection` no longer exists
+from cbl_store import CBLStore           # USE_CBL / STORAGE_BACKEND removed
+
+def storage() -> CBLStore:
+    return CBLStore()
+```
+
+There is no `backend()` shim and no `if backend() == "cbl":` branches anywhere
+in [`app/app.py`](../../app.py). Each overridden view function calls
+`storage().<method>(...)` unconditionally.
+
+### 6.2 Endpoint table (current)
+
+> ❌ = **deleted** · ✅ = CBL-routed via `_override_route` · 🆕 = added in this
+> migration · 🟢 = unchanged (no Couchbase Server dependency)
+
+| # | Endpoint | Status | Notes |
+|---|---|---|---|
+| 1 | `POST /api/couchbase/test` | ❌ deleted | Required a live cluster connection |
+| 2 | `POST /api/couchbase/check-indexes` | ❌ deleted | Required a live cluster connection |
+| 3 | `POST /api/couchbase/query` | ❌ deleted | Live N1QL is gone; data arrives via JSON upload |
+| 4 | `POST /api/couchbase/save-analyzer` | ✅ CBL | `store.save_analyzer()` |
+| 5 | `POST /api/couchbase/load-analyzer/<id>` | ✅ CBL | `store.load_analyzer()` |
+| 6 | `POST /api/couchbase/delete-analyzer` | ✅ CBL | `store.delete_analyzer()` |
+| 7 | `POST /api/couchbase/save-preferences` | ✅ CBL | `store.save_preferences()` |
+| 8 | `POST /api/couchbase/load-preferences/<userId>` | ✅ CBL | `store.load_preferences()` |
+| 9 | `POST /api/ai/cache` | 🟢 unchanged | In-memory + `store.add_ai_history()` |
+| 10 | `POST /api/ai/preview` | 🟢 unchanged | |
+| 11 | `POST /api/ai/analyze` | ✅ CBL | Logs to `ai_history` collection |
+| 12 | `POST /api/ai/cancel` | 🟢 unchanged | |
+| 13 | `POST /api/ai/status/<doc_id>` | ✅ CBL | `store.get_ai_history()` |
+| 14 | `GET /api/ai/stats` | ✅ CBL | N1QL aggregate on `ai_history` |
+| 15-18 | `GET/POST /api/ai/payload-reference[/load|/seed|/save]` | ✅ CBL | `store.{get,save,seed}_payload_reference()` |
+| 19 | `POST /api/ai/payload-reference/invalidate-cache` | 🟢 unchanged | |
+| 20-23 | `GET/POST /api/ai/models[/load|/seed|/save]` | ✅ CBL | `store.{get,save,seed}_models_list()` |
+| 24 | `POST /api/ai/models/provider/<id>` | ✅ CBL | Read-modify-write |
+| 25 | `POST /api/ai/models/invalidate-cache` | 🟢 unchanged | |
+| 26 | `POST /api/ai/test` | 🟢 unchanged | Calls AI provider only |
+| 27 | `POST /api/ai/history` | ✅ CBL | `store.list_ai_history()` |
+| 28 | `POST /api/ai/clusters` | ✅ CBL | `store.list_clusters()` |
+| 29 | `POST /api/ai/debug` | 🟢 unchanged | |
+| 30 | `POST /api/ai/call` | 🟢 unchanged | Calls AI provider only |
+| 31 | `GET /api/storage/info` | 🆕 CBL | DB path, doc counts, size |
+| 32 | `POST /api/storage/maintenance` | 🆕 CBL | `compact / reindex / optimize` |
+| 33 | `GET /api/storage/export` | 🆕 CBL | Streams `.tar.gz` of `*.cblite2/` |
+| 34 | `POST /api/storage/import` | 🆕 CBL | Replaces DB from a `.tar.gz` |
+
+### 6.3 Source data: JSON upload only
+
+The deletion of #1–#3 means there is no longer a way for the server to fetch
+`system:completed_requests` directly from a cluster. Users instead:
+
+1. Run the SQL++ statement (documented in [`getting_started.html`](../../../getting_started.html)) against their cluster from any client (`cbq`, the Capella UI, Workbench, etc.)
+2. Save the output as JSON
+3. Paste / drag-drop / file-pick the JSON in the analyzer UI
+
+The `app/assets/js/couchbase-connector.js` module formerly used to issue live
+N1QL is now a **CBL-only** health-check helper; its `testConnection()`
+function pings `/api/storage/info` and reports the embedded DB's status.
+
+### 6.4 Code that still references `couchbase.*`
+
+[`app/ai_analyzer.py`](../../ai_analyzer.py) lines 144 and 394 still
+`from couchbase.exceptions import ...`. Removing those is the last blocker
+for running on a Python environment where the SDK isn't installed at all
+(today the SDK is uninstalled but the imports happen to work because of a
+local cache). Tracked as a follow-up in
+[`00_OVERVIEW.md §8.3`](./00_OVERVIEW.md#83-known-follow-ups).
+
+### 6.5 Verification
+
+```
+$ cd app && source venv/bin/activate && pytest ../tests/python/
+```
+
+After the cleanup, all `_couchbase_server_*` test fixtures and dual-backend
+parametrize cases were removed. The remaining suite is CBL-only and runs in
+both "bindings present" (full coverage) and "bindings missing"
+(`importorskip`) modes.

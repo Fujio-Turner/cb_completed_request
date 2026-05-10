@@ -9,7 +9,6 @@ app/docs/work/02_CBL_STORE_MODULE.md.
 """
 
 import os
-import io
 import json
 import time
 import base64
@@ -62,9 +61,6 @@ ALL_COLLECTIONS = [
     COLL_AI_HISTORY, COLL_AI_REFERENCE, COLL_BLOBS,
 ]
 
-# auto | cbl | server
-STORAGE_BACKEND = os.environ.get("STORAGE_BACKEND", "auto")
-
 # Soft size warnings for blobs
 WARN_BYTES = 16 * 1024 * 1024
 HARD_BYTES = 64 * 1024 * 1024
@@ -81,22 +77,16 @@ _coll_cache: Dict[str, Any] = {}  # name -> raw CBLCollection*
 
 def storage_backend() -> str:
     """
-    Return the active storage backend: 'cbl' or 'server'.
+    Return the active storage backend.
 
-    Honors STORAGE_BACKEND env var:
-      - 'cbl'    -> force CBL (raise if bindings missing)
-      - 'server' -> force external Couchbase Server
-      - 'auto'   -> CBL if bindings available, else 'server'
+    Couchbase Lite is now the only supported backend. This always returns
+    'cbl' (and raises if the CBL bindings are missing).
     """
-    if STORAGE_BACKEND == "cbl":
-        if not USE_CBL:
-            raise RuntimeError(
-                f"STORAGE_BACKEND=cbl but CBL bindings missing: {_IMPORT_ERR}"
-            )
-        return "cbl"
-    if STORAGE_BACKEND == "server":
-        return "server"
-    return "cbl" if USE_CBL else "server"
+    if not USE_CBL:
+        raise RuntimeError(
+            f"Couchbase Lite bindings missing: {_IMPORT_ERR}"
+        )
+    return "cbl"
 
 
 # ============================================================================

@@ -1,5 +1,9 @@
 # Development/Testing dependencies
 # Install with: pip install -r tests/requirements-dev.txt
+#
+# IMPORTANT: ruff is PINNED so local checks and CI use the exact same version.
+# If you bump it here, also bump it in .github/workflows/lint.yml.
 
 pytest>=7.0.0
 pytest-cov>=4.0.0  # Optional: for code coverage reports
+ruff==0.15.12      # Lint + format (config in /pyproject.toml)

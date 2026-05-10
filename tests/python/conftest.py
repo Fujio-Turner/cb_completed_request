@@ -1,15 +1,14 @@
 """
-Pytest configuration and fixtures for CBL migration tests.
-Provides test database, Flask client, and mock Couchbase Server cluster.
+Pytest configuration and fixtures for the Liquid (v5.0.0) test suite.
+
+Provides a test CBL database and Flask client. The Couchbase Server SDK has
+been removed, so there are no remote-cluster fixtures here.
 """
 
 import os
 import sys
-import json
-import tempfile
 from pathlib import Path
-from typing import Generator, Any, Dict, Optional
-from unittest.mock import MagicMock, patch
+from typing import Any, Dict
 
 import pytest
 
@@ -22,7 +21,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "app"))
 @pytest.fixture(autouse=True)
 def setup_cbl_env(tmp_path: Path) -> None:
     """Configure CBL environment for tests (runs before each test)."""
-    os.environ["STORAGE_BACKEND"] = "cbl"
     os.environ["CBL_DB_DIR"] = str(tmp_path / "cbl_data")
     os.environ["CBL_DB_NAME"] = "test_db"
     Path(os.environ["CBL_DB_DIR"]).mkdir(parents=True, exist_ok=True)
@@ -76,7 +74,6 @@ def blob_store(cbl_store):
 @pytest.fixture
 def app_with_cbl(tmp_path: Path):
     """Provide Flask test client with CBL backend."""
-    os.environ["STORAGE_BACKEND"] = "cbl"
     os.environ["CBL_DB_DIR"] = str(tmp_path / "flask_db")
     os.environ["CBL_DB_NAME"] = "test_app_db"
     Path(os.environ["CBL_DB_DIR"]).mkdir(parents=True, exist_ok=True)
@@ -103,36 +100,6 @@ def app_with_cbl(tmp_path: Path):
 def client(app_with_cbl):
     """Alias for app_with_cbl for convenience."""
     return app_with_cbl
-
-
-@pytest.fixture
-def mock_cb_cluster():
-    """Provide a mock Couchbase Server cluster for migration tests."""
-    cluster = MagicMock()
-    bucket = MagicMock()
-    
-    # Mock bucket methods
-    bucket.name = "cb_tools"
-    bucket.cluster = cluster
-    
-    # Mock scope/collection
-    def mock_scope(name):
-        scope = MagicMock()
-        scope.collection = MagicMock(return_value=MagicMock())
-        return scope
-    
-    bucket.scope = mock_scope
-    
-    # Mock N1QL queries
-    def mock_query(sql: str):
-        results = MagicMock()
-        results.__iter__ = lambda self: iter([])
-        return results
-    
-    cluster.query = mock_query
-    cluster.wait_until_ready = MagicMock()
-    
-    yield cluster, bucket
 
 
 @pytest.fixture

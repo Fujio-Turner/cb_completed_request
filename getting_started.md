@@ -4,7 +4,7 @@ This guide will help you get the Couchbase Query Analyzer up and running and con
 
 > **Note on Versions**:
 > *   **Classic Static HTML (v3.x)**: Browser-only, no installation required. Available online at https://cb.fuj.io/en/. No AI analysis or settings persistence.
-> *   **New Desktop App (v4.0.0+)**: Local app with AI analysis, embedded **Couchbase Lite** storage for analysis history/preferences, and optional direct connection to your Couchbase cluster.
+> *   **New Desktop App (v4.0.0+)**: Local app with AI analysis and embedded **Couchbase Lite** storage for analysis history and preferences. Source data is provided by pasting or uploading the JSON output of `system:completed_requests`.
 
 ---
 
@@ -17,7 +17,7 @@ Choose between the **New Desktop App** (with AI analysis) or the simple **Classi
 [Pull from Docker Hub](https://hub.docker.com/r/fujioturner/couchbase-query-analyzer/tags)
 
 ```bash
-# New Desktop App (with AI analysis, Couchbase integration)
+# New Desktop App (with AI analysis, embedded Couchbase Lite storage)
 docker pull fujioturner/couchbase-query-analyzer:4.0.0
 docker run -p 8888:8888 fujioturner/couchbase-query-analyzer:4.0.0
 
@@ -53,16 +53,16 @@ No installation required — just open in your browser:
 
 **[→ Open cb.fuj.io/en/](https://cb.fuj.io/en/)**
 
-> **Note:** The Classic Static HTML does not include AI analysis, Couchbase integration, or settings persistence. For those features, use the New Desktop App above.
+> **Note:** The Classic Static HTML does not include AI analysis or settings persistence. For those features, use the New Desktop App above.
 
 ---
 
 ## 2. Setup AI Analysis *(New Desktop App only)*
 
-> **📦 No Couchbase setup required.**
-> Starting in **v4.0.0**, the New Desktop App stores all analysis data, preferences, and AI history locally using embedded **Couchbase Lite**. No `cb_tools` bucket, no scope, no separate credential setup.
+> **📦 No external database setup required.**
+> Starting in **v4.0.0**, the New Desktop App stores all analysis data, preferences, and AI history locally using embedded **Couchbase Lite**. There is nothing to install, no bucket to create, and no credentials to configure for storage.
 >
-> *(If you later want the app to pull queries directly from your cluster's `system:completed_requests`, you can add cluster credentials anytime under Settings.)*
+> *To analyze queries, run `SELECT *, meta().plan FROM system:completed_requests` against your cluster from any client (cbq, Capella UI, Workbench, etc.) and paste or upload the JSON output into the analyzer.*
 
 Get an API Key from xAI Grok, Anthropic Claude, or OpenAI for AI-powered query analysis.
 

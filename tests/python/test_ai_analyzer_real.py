@@ -5,10 +5,7 @@ Tests functions that exist and don't require Couchbase Server or CBL bindings.
 """
 
 import json
-import pytest
-import time
-from unittest.mock import patch, MagicMock, Mock
-from typing import Dict, Any
+from unittest.mock import patch, MagicMock
 
 import sys
 import os

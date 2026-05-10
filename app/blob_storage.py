@@ -13,8 +13,6 @@ Features:
 
 import gzip
 import json
-import time
-from datetime import datetime
 from typing import Any, Dict, Tuple, Union, Optional
 from icecream import ic
 
@@ -212,7 +210,7 @@ class BlobStorage:
             except Exception as e:
                 ic(f"❌ CBL blob deletion failed: {e}")
         
-        ic(f"❌ Blob deletion failed (legacy)")
+        ic("❌ Blob deletion failed (legacy)")
         return {'success': False, 'error': f'Failed to delete blob: {key}'}
 
 

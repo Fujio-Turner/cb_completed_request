@@ -1,0 +1,913 @@
+openapi: 3.1.0
+
+info:
+  title: Couchbase Query Analyzer API
+  version: 4.0.0-Beta
+  description: |
+    REST API for the **Couchbase Query Analyzer Server Edition**.
+
+    All persistence is handled by the embedded **Couchbase Lite (CE)** store
+    (`cbl_store.py`) — there is no external Couchbase Server dependency.
+    Source data (`system:completed_requests` JSON) is provided by the user
+    via paste / file upload in the UI; there is no live N1QL fetch.
+
+    Versioning follows the Flask app's `__version__` constant in
+    `app/app.py` — bump them in lockstep per
+    `app/guides/RELEASE.md`.
+  contact:
+    name: Couchbase Query Analyzer
+    url: https://github.com/Fujio-Turner/cb_completed_request
+  license:
+    name: See LICENSE file in repo root
+    url: https://github.com/Fujio-Turner/cb_completed_request/blob/main/LICENSE
+
+servers:
+  - url: http://localhost:8888
+    description: Local development (default Flask port)
+  - url: http://localhost:5555
+    description: Playwright E2E test port
+
+tags:
+  - name: Static
+    description: Serve the analyzer UI and other static assets.
+  - name: Meta
+    description: Spec download, version info, Swagger UI.
+  - name: Analyzer
+    description: Save / load / delete analyzer reports (CBL-backed).
+  - name: Preferences
+    description: Per-user UI preferences (CBL-backed).
+  - name: AI
+    description: AI analysis runs, history, payload reference, models, providers.
+  - name: Storage
+    description: Embedded CBL admin — info, maintenance, export, import.
+
+# ===========================================================================
+# Paths
+# ===========================================================================
+
+paths:
+
+  # ── Static ────────────────────────────────────────────────────────────────
+
+  /:
+    get:
+      operationId: serveIndex
+      tags: [Static]
+      summary: Serve the analyzer UI (app/index.html)
+      responses:
+        "200":
+          description: HTML page
+          content:
+            text/html:
+              schema: { type: string }
+
+  /{path}:
+    get:
+      operationId: serveStatic
+      tags: [Static]
+      summary: Serve a static asset under app/
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema: { type: string }
+          description: Relative path under app/ (e.g. assets/js/charts.js).
+      responses:
+        "200":
+          description: Static file
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Meta ──────────────────────────────────────────────────────────────────
+
+  /openapi.yaml:
+    get:
+      operationId: getOpenApiSpec
+      tags: [Meta]
+      summary: Download the raw OpenAPI 3.1 spec
+      responses:
+        "200":
+          description: OpenAPI YAML document
+          content:
+            application/yaml:
+              schema: { type: string }
+
+  /api-docs/:
+    get:
+      operationId: swaggerUi
+      tags: [Meta]
+      summary: Swagger UI — interactive explorer for this spec
+      description: |
+        Vendored Swagger UI rendered against `/openapi.yaml`. Open in a
+        browser; not intended for programmatic use. Every endpoint in the
+        UI has a "Try it out" button that fires a real request against the
+        running server.
+      responses:
+        "200":
+          description: HTML page
+          content:
+            text/html:
+              schema: { type: string }
+
+  /api/version:
+    get:
+      operationId: getVersion
+      tags: [Meta]
+      summary: Return the running app version
+      description: |
+        Returns the Flask app's `__version__` constant. Useful for the UI
+        to confirm what binary it's talking to and for release smoke tests.
+      responses:
+        "200":
+          description: Version info
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version]
+                properties:
+                  version:
+                    type: string
+                    example: 4.0.0-Beta
+                  backend:
+                    type: string
+                    example: cbl
+
+  # ── Analyzer ──────────────────────────────────────────────────────────────
+
+  /api/couchbase/save-analyzer:
+    post:
+      operationId: saveAnalyzer
+      tags: [Analyzer]
+      summary: Save an analyzer report to CBL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requestId, analyzerData]
+              properties:
+                requestId:
+                  type: string
+                  description: Unique ID for the report (typically a UUID).
+                name:
+                  type: string
+                  default: Untitled
+                analyzerData:
+                  type: object
+                  description: Full analyzer report payload.
+                  additionalProperties: true
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+
+  /api/couchbase/load-analyzer/{request_id}:
+    post:
+      operationId: loadAnalyzer
+      tags: [Analyzer]
+      summary: Load an analyzer report by request ID
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Loaded report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzerReport"
+        "404": { $ref: "#/components/responses/NotFound" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+
+  /api/couchbase/delete-analyzer:
+    post:
+      operationId: deleteAnalyzer
+      tags: [Analyzer]
+      summary: Delete a saved analyzer report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requestId]
+              properties:
+                requestId: { type: string }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+
+  # ── Preferences ───────────────────────────────────────────────────────────
+
+  /api/couchbase/save-preferences:
+    post:
+      operationId: savePreferences
+      tags: [Preferences]
+      summary: Save per-user UI preferences to CBL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, preferences]
+              properties:
+                userId:
+                  type: string
+                  description: User identifier (typically "default" for single-user installs).
+                preferences:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+
+  /api/couchbase/load-preferences/{user_id}:
+    post:
+      operationId: loadPreferences
+      tags: [Preferences]
+      summary: Load per-user UI preferences
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Preferences object (may be empty for new users)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+
+  # ── AI ────────────────────────────────────────────────────────────────────
+
+  /api/ai/cache:
+    post:
+      operationId: aiCache
+      tags: [AI]
+      summary: Cache analyzer data in memory for the current session
+      description: |
+        Stores the latest parsed analyzer data in an in-memory cache so
+        subsequent AI calls can reference it by ID without re-uploading.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Cached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /api/ai/preview:
+    post:
+      operationId: aiPreview
+      tags: [AI]
+      summary: Preview the AI prompt payload without sending it
+      description: |
+        Builds the exact prompt that would be sent to the AI provider and
+        returns it for inspection / debugging. No external API call is made.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Preview of the prompt + payload
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/ai/analyze:
+    post:
+      operationId: aiAnalyze
+      tags: [AI]
+      summary: Run AI analysis on cached analyzer data
+      description: |
+        Kicks off an AI analysis run in a background thread. Returns
+        immediately with a `document_id`. Poll
+        `POST /api/ai/status/{document_id}` until `status` is `completed`,
+        `failed`, or `cancelled`.
+
+        See `app/ai_analyzer.py` for the provider integrations
+        (OpenAI, Anthropic Claude, xAI Grok, custom).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider, model]
+              properties:
+                provider:
+                  type: string
+                  enum: [openai, anthropic, grok, custom]
+                model: { type: string }
+                apiKey: { type: string }
+                apiUrl: { type: string }
+                endpoint: { type: string }
+                prompt: { type: string }
+                clusterName: { type: string }
+                requestIdRef:
+                  type: string
+                  description: Reference to the analyzer report this AI run is about.
+              additionalProperties: true
+      responses:
+        "202":
+          description: Accepted, AI analysis started in background
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [document_id, status]
+                properties:
+                  document_id: { type: string }
+                  status:
+                    type: string
+                    enum: [pending, running]
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+
+  /api/ai/status/{document_id}:
+    post:
+      operationId: aiStatus
+      tags: [AI]
+      summary: Poll the status of a running AI analysis
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Current status of the AI run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIHistoryEntry"
+        "404": { $ref: "#/components/responses/NotFound" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
+  /api/ai/cancel:
+    post:
+      operationId: aiCancel
+      tags: [AI]
+      summary: Cancel a running AI analysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [document_id]
+              properties:
+                document_id: { type: string }
+      responses:
+        "200":
+          description: Cancellation requested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /api/ai/history:
+    post:
+      operationId: aiHistory
+      tags: [AI]
+      summary: List AI analysis history (paginated)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clusterName: { type: string }
+                limit:  { type: integer, default: 50 }
+                offset: { type: integer, default: 0  }
+      responses:
+        "200":
+          description: Paginated history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/AIHistoryEntry" }
+                  total:  { type: integer }
+                  limit:  { type: integer }
+                  offset: { type: integer }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
+  /api/ai/clusters:
+    post:
+      operationId: aiClusters
+      tags: [AI]
+      summary: List distinct cluster names that appear in AI history
+      responses:
+        "200":
+          description: Cluster names
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clusters:
+                    type: array
+                    items: { type: string }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
+  /api/ai/stats:
+    get:
+      operationId: aiStats
+      tags: [AI]
+      summary: Aggregate AI usage stats from CBL ai_history
+      responses:
+        "200":
+          description: Stats summary
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
+  /api/ai/payload-reference:
+    get:
+      operationId: getPayloadReference
+      tags: [AI]
+      summary: Read the current AI payload-reference document from CBL
+      responses:
+        "200":
+          description: Payload reference
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
+  /api/ai/payload-reference/load:
+    post:
+      operationId: loadPayloadReference
+      tags: [AI]
+      summary: Load the payload-reference document explicitly into memory
+      responses:
+        "200":
+          description: Loaded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
+  /api/ai/payload-reference/seed:
+    post:
+      operationId: seedPayloadReference
+      tags: [AI]
+      summary: Seed the payload-reference doc from payload_reference.json.template
+      responses:
+        "200":
+          description: Seeded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+
+  /api/ai/payload-reference/save:
+    post:
+      operationId: savePayloadReference
+      tags: [AI]
+      summary: Persist the payload-reference document to CBL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
+  /api/ai/payload-reference/invalidate-cache:
+    post:
+      operationId: invalidatePayloadReferenceCache
+      tags: [AI]
+      summary: Drop the in-memory cache for payload-reference (forces re-load on next read)
+      responses:
+        "200":
+          description: Invalidated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+
+  /api/ai/models:
+    get:
+      operationId: getAiModels
+      tags: [AI]
+      summary: Read the AI provider/model registry from CBL
+      responses:
+        "200":
+          description: Models list
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
+  /api/ai/models/load:
+    post:
+      operationId: loadAiModels
+      tags: [AI]
+      summary: Load the models list explicitly
+      responses:
+        "200":
+          description: Loaded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+
+  /api/ai/models/seed:
+    post:
+      operationId: seedAiModels
+      tags: [AI]
+      summary: Seed the models list from ai_models_list.json.template
+      responses:
+        "200":
+          description: Seeded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+
+  /api/ai/models/save:
+    post:
+      operationId: saveAiModels
+      tags: [AI]
+      summary: Persist the models list to CBL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+
+  /api/ai/models/invalidate-cache:
+    post:
+      operationId: invalidateAiModelsCache
+      tags: [AI]
+      summary: Drop the in-memory cache for the models list
+      responses:
+        "200":
+          description: Invalidated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+
+  /api/ai/test:
+    post:
+      operationId: aiTest
+      tags: [AI]
+      summary: Test connectivity to an AI provider with a given API key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider, apiKey]
+              properties:
+                provider:
+                  type: string
+                  enum: [openai, anthropic, grok, custom]
+                model:  { type: string }
+                apiKey: { type: string }
+                apiUrl: { type: string }
+      responses:
+        "200":
+          description: Provider responded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:  { type: boolean }
+                  provider: { type: string }
+                  model:    { type: string }
+                  latency_ms: { type: integer }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
+  /api/ai/debug:
+    post:
+      operationId: aiDebug
+      tags: [AI]
+      summary: Toggle verbose AI logging at runtime
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled: { type: boolean }
+      responses:
+        "200":
+          description: Debug flag updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled: { type: boolean }
+
+  /api/ai/call:
+    post:
+      operationId: aiCall
+      tags: [AI]
+      summary: Generic proxy to an AI provider (one-shot, no history write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Provider response
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+
+  # ── Storage (CBL admin) ───────────────────────────────────────────────────
+
+  /api/storage/info:
+    get:
+      operationId: storageInfo
+      tags: [Storage]
+      summary: Embedded CBL database info (path, size, doc counts)
+      responses:
+        "200":
+          description: CBL info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  backend: { type: string, enum: [cbl] }
+                  db_path: { type: string }
+                  db_size_bytes: { type: integer }
+                  collections:
+                    type: object
+                    additionalProperties: { type: integer }
+                  version: { type: string }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
+  /api/storage/maintenance:
+    post:
+      operationId: storageMaintenance
+      tags: [Storage]
+      summary: Run a CBL maintenance operation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [op]
+              properties:
+                op:
+                  type: string
+                  enum: [compact, reindex, optimize, integrity, gc_blobs]
+      responses:
+        "200":
+          description: Result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  op:      { type: string }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+
+  /api/storage/export:
+    get:
+      operationId: storageExport
+      tags: [Storage]
+      summary: Stream a tar.gz backup of the CBL database
+      responses:
+        "200":
+          description: Tarball download
+          content:
+            application/gzip:
+              schema:
+                type: string
+                format: binary
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+
+  /api/storage/import:
+    post:
+      operationId: storageImport
+      tags: [Storage]
+      summary: Replace the CBL database from an uploaded tar.gz backup
+      description: |
+        Stops accepting writes, replaces the on-disk `*.cblite2/` directory
+        atomically (rename old, extract new), and reopens the DB. The
+        request must be `multipart/form-data` with a single `file` field.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: A tar.gz produced by `GET /api/storage/export`.
+      responses:
+        "200":
+          description: Imported
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuccessResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+
+# ===========================================================================
+# Reusable components
+# ===========================================================================
+
+components:
+
+  # ── Schemas ───────────────────────────────────────────────────────────────
+
+  schemas:
+
+    # Common envelopes
+    SuccessResponse:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean, example: true }
+      additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      required: [success, error]
+      properties:
+        success: { type: boolean, example: false }
+        error:   { type: string,  example: "Document not found" }
+        code:    { type: integer, example: 404 }
+
+    # Domain
+    AnalyzerReport:
+      type: object
+      required: [request_id, name, saved_at]
+      properties:
+        request_id: { type: string }
+        name:       { type: string }
+        saved_at:
+          type: integer
+          description: Unix epoch seconds.
+        size_bytes: { type: integer }
+        preview:
+          type: object
+          additionalProperties: true
+        blob_ref:
+          type: string
+          description: Pointer into the CBL blobs collection.
+
+    AIHistoryEntry:
+      type: object
+      required: [document_id, status]
+      properties:
+        document_id:  { type: string }
+        cluster_name: { type: string }
+        provider:     { type: string }
+        model:        { type: string }
+        request_id_ref: { type: string }
+        created_at:   { type: integer }
+        tokens_in:    { type: integer }
+        tokens_out:   { type: integer }
+        status:
+          type: string
+          enum: [pending, running, completed, failed, cancelled]
+        prompt_blob_ref:   { type: string }
+        response_blob_ref: { type: string }
+
+  # ── Reusable error responses ──────────────────────────────────────────────
+
+  responses:
+
+    BadRequest:
+      description: Invalid request (missing field, bad JSON, bad path parameter)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+          example:
+            success: false
+            error: "name is required"
+            code: 400
+
+    NotFound:
+      description: Document, blob, or resource not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+          example:
+            success: false
+            error: "Document not found"
+            code: 404
+
+    UnsupportedOperation:
+      description: Endpoint exists but is not implemented in this build
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+          example:
+            success: false
+            error: "Not implemented"
+            code: 501
+
+    ServiceUnavailable:
+      description: |
+        A required dependency is unavailable — typically the CBL bindings
+        are missing or an AI provider has not been configured.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+          example:
+            success: false
+            error: "CBL not available"
+            code: 503
+
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+          example:
+            success: false
+            error: "Internal server error"
+            code: 500

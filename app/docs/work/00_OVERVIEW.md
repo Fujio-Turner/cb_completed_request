@@ -1,6 +1,6 @@
 # Couchbase Server → Couchbase Lite Migration — Overview
 
-**Status:** ✅ COMPLETE (All 12 docs done) — Post-review fixes applied (see §7 below)
+**Status:** ✅ COMPLETE — **Couchbase Server SDK fully removed** (2026-05-09, see §8). All persistence is now CBL-only and source data is JSON-upload-only.
 **Target version:** **v4.0.0-beta** — pre-release of v4.0.0 (Server Edition). See [`12_RELEASE_PROCESS_COMPLIANCE.md §1`](./12_RELEASE_PROCESS_COMPLIANCE.md) and [`settings/VERSION_CALCULATION_GUIDE.md`](../../../settings/VERSION_CALCULATION_GUIDE.md).
 **Release branch:** `release-otacon` (per [`settings/BRANCHING_STRATEGY.md`](../../../settings/BRANCHING_STRATEGY.md))
 **Owners:** Backend / Packaging
@@ -44,11 +44,18 @@ The user's external Couchbase Server connection becomes **only** the source of c
 
 | In scope | Out of scope |
 |---|---|
-| Replace all `cb_tools.*` writes/reads with CBL | The user-supplied production cluster connection (read-only N1QL on `system:completed_requests`) |
-| New `cbl_store.py` module | Replacing `couchbase` SDK in `app.py` query path |
-| Dockerfile rebuild with `libcblite` | Sync Gateway / replication |
-| PyInstaller spec changes for Mac & Windows | Vector search (CBL EE feature) |
-| One-time data migration tool (CB Server → CBL) | Multi-process write coordination beyond a single Flask worker |
+| Replace all `cb_tools.*` writes/reads with CBL | Sync Gateway / replication |
+| New `cbl_store.py` module | Vector search (CBL EE feature) |
+| **Removal of the `couchbase` Python SDK from `requirements.txt`** | Multi-process write coordination beyond a single Flask worker |
+| Dockerfile rebuild with `libcblite` | |
+| PyInstaller spec changes for Mac & Windows | |
+| **Source data: JSON upload / paste only** (no live cluster fetch) | |
+
+> **Update (2026-05-09):** the original plan kept the user's *production* cluster
+> connection alive for read-only N1QL on `system:completed_requests`. That has
+> been removed as well — the `couchbase` SDK is no longer a dependency, and the
+> only way to feed `system:completed_requests` data into the analyzer is by
+> pasting / uploading JSON in the UI.
 
 ## 4. High-level architecture change
 
@@ -69,7 +76,14 @@ BEFORE (v4.0.0):
 │  Couchbase Server         │
 ╰───────────────────────────╯
 
-AFTER (v4.0.0-beta):
+AFTER (v4.0.0-beta, CBL-only):
+╭───────────────────────────╮
+│  User pastes / uploads    │
+│  system:completed_requests│
+│  JSON in the UI           │
+╰────────────┬──────────────╯
+             │ HTTP POST (JSON body)
+             ▼
 ╭─────────────────────────────────────────╮
 │  Flask app.py                           │
 │  (Docker/.app/.exe)                     │
@@ -85,13 +99,10 @@ AFTER (v4.0.0-beta):
 │  │  - ai_reference                   │  │
 │  │  - blobs                          │  │
 │  └───────────────────────────────────┘  │
-╰────────────────┬────────────────────────╯
-                 │ N1QL (read-only)
-                 ▼
-╭───────────────────────────╮
-│  User's PRODUCTION        │
-│  Couchbase Server         │
-╰───────────────────────────╯
+│                                         │
+│  NO `couchbase` Python SDK              │
+│  NO live cluster connection             │
+╰─────────────────────────────────────────╯
 ```
 
 ## 5. Documents in this folder
@@ -116,14 +127,14 @@ AFTER (v4.0.0-beta):
 
 All work happens on per-issue branches off `release-otacon`, fast-forwarded into `liquid`, then promoted via `liquid` → `QA` → `main` per [`settings/BRANCHING_STRATEGY.md`](../../../settings/BRANCHING_STRATEGY.md). See [`12_RELEASE_PROCESS_COMPLIANCE.md §2`](./12_RELEASE_PROCESS_COMPLIANCE.md) for the per-issue branch table.
 
-1. **Doc 01 + 02** — Lock data model, build `app/cbl_store.py` with `USE_CBL` fallback.
+1. **Doc 01 + 02** — Lock data model, build `app/cbl_store.py`.
 2. **Doc 06** — Get CBL working in the Linux Docker image first (easiest); `docker compose up` runs from `/app/`.
-3. **Doc 03 + 04 + 05** — Migrate endpoints behind a `STORAGE_BACKEND=cbl|server` flag.
-4. **Doc 09** — Ship a one-shot migration script (`python migrate_to_cbl.py` from `/app/`).
+3. **Doc 03 + 04 + 05** — Move all `cb_tools.*` endpoints to CBL.
+4. **Doc 09** — One-shot migration script (CB Server → CBL) for users upgrading from v4.0.0; the app itself no longer reads CB Server.
 5. **Doc 07 + 08** — Bundle `libcblite` into PyInstaller for Mac and Windows; PyInstaller is invoked from `/app/` against `/app/build_mac.spec` and `/app/build_win.spec`.
-6. **Doc 10** — End-to-end tests on all three distributions, then flip default to `cbl`.
+6. **Doc 10** — End-to-end tests on all three distributions.
 7. **Doc 12** — Run [`settings/RELEASE_GUIDE.md`](../../../settings/RELEASE_GUIDE.md) sequence; tag `v4.0.0-beta` from `main`.
-8. Remove the `STORAGE_BACKEND=server` path in a future release.
+8. ~~Remove the `STORAGE_BACKEND=server` path in a future release.~~ **Done in §8 below — the dual-backend flag and the entire CB Server SDK have been deleted in this release.**
 
 ## 7. Post-review fixes (2026-05-09)
 
@@ -143,7 +154,8 @@ prevented the CBL path from working end-to-end. All fixes land **inside `/app/`*
 
 **Verification:** `pytest tests/python/` → 12 passed, 97 skipped (CBL bindings
 not installed locally). 37 routes registered, 18 CBL-routed/new. Production-
-cluster routes confirmed unchanged.
+cluster routes confirmed unchanged **at the time of that pass — they have
+since been removed entirely (see §8).**
 
 > **Scope note (2026-05-09):** an earlier draft of this plan staged the CBL
 > migration at the **repo root** and even deleted `app/__init__.py` so that
@@ -151,3 +163,42 @@ cluster routes confirmed unchanged.
 > reverted. The shipping code lives in `/app/` exactly as it does in v4.0.0
 > today, and `gunicorn app:app` is run **from inside `/app/`** against
 > [`app/app.py`](../../app.py).
+
+---
+
+## 8. CBL-only cutover (2026-05-09 — **current state**)
+
+The dual-backend strategy described in §6 step 3 and §7 has been retired. The
+Couchbase Server SDK has been removed from the project entirely. The app is now
+**CBL-only for persistence and JSON-upload-only for source data.**
+
+### 8.1 What was removed
+
+| Area | File(s) | What changed |
+|---|---|---|
+| Dependency | [`app/requirements.txt`](../../requirements.txt) | `couchbase` SDK removed |
+| Hidden imports | GitHub Actions workflows, [`app/build_mac.spec`](../../build_mac.spec), [`app/build_win.spec`](../../build_win.spec) | All `couchbase.*` PyInstaller hidden imports stripped |
+| Endpoints | [`app/app_base.py`](../../app_base.py) | Deleted `POST /api/couchbase/test`, `POST /api/couchbase/check-indexes`, `POST /api/couchbase/query` (they required a live cluster) |
+| Backend selector | [`app/app.py`](../../app.py) | `backend()` shim deleted; CBL is the sole backend |
+| Backend selector | [`app/cbl_store.py`](../../cbl_store.py) | `STORAGE_BACKEND` env var, `USE_CBL` fallback, and `storage_backend()` resolver deleted; CBL is the default and bindings missing → hard error |
+| Frontend | `app/assets/js/couchbase-connector.js` | No more live N1QL; `testConnection()` now health-checks the local CBL store |
+| Tests | `tests/python/` | All mock-Couchbase-Server fixtures and dual-backend test cases removed |
+| Docker | [`app/Dockerfile`](../../Dockerfile) | `STORAGE_BACKEND=cbl` env var deleted (no longer meaningful) |
+
+### 8.2 What survived
+
+- The `_override_route()` mechanism in [`app/app.py`](../../app.py) is still
+  used to shadow base endpoints with CBL implementations. With the production-
+  cluster routes gone, every override now points at a `CBLStore` method.
+- The CBL data model (Doc 01) is unchanged.
+- The `CBLStore` public API (Doc 02) is unchanged; only the fallback flag
+  section has been removed.
+
+### 8.3 Known follow-ups
+
+- [`app/ai_analyzer.py`](../../ai_analyzer.py) still imports
+  `couchbase.exceptions` at lines 144 and 394; those usages must be removed or
+  swapped for stdlib / CBL-native exceptions before tagging `v4.0.0-beta`.
+- The historical "dual-backend" content in Docs 03, 04, 05, 09 should be read
+  as background; the **current** behaviour is described in the post-cutover
+  sections at the end of each file.

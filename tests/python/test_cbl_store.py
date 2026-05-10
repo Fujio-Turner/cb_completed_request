@@ -8,14 +8,11 @@ import json
 import time
 import pytest
 from pathlib import Path
-from typing import Dict, Any
 
 # Import under test
 from cbl_store import (
     CBLStore, get_db, close_db, USE_CBL,
-    COLL_CONFIG, COLL_ANALYZER, COLL_PREFERENCES,
-    COLL_AI_HISTORY, COLL_AI_REFERENCE, COLL_BLOBS,
-    ALL_COLLECTIONS
+    COLL_CONFIG, COLL_ANALYZER, ALL_COLLECTIONS
 )
 
 

@@ -258,7 +258,7 @@
                         <a href="https://hub.docker.com/r/fujioturner/couchbase-query-analyzer/tags" target="_blank">Pull from Docker Hub</a>
                         <span class="edition-badge server">New Desktop App v4.0.0</span>
                     </div>
-<pre># New Desktop App (with AI analysis, Couchbase integration)
+<pre># New Desktop App (with AI analysis, embedded Couchbase Lite storage)
 docker pull fujioturner/couchbase-query-analyzer:4.0.0
 docker run -p 8888:8888 fujioturner/couchbase-query-analyzer:4.0.0
 
@@ -303,7 +303,7 @@ docker run -p 8888:8888 fujioturner/couchbase-query-analyzer:latest</pre>
                     </div>
                     <p style="margin:8px 0">Just open in your browser - no server, no installation required:</p>
                     <p style="margin:12px 0"><a href="https://cb.fuj.io/en/" target="_blank" style="font-size:1.2em;font-weight:600;background:#28a745;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">→ Open cb.fuj.io/en/</a></p>
-                    <p style="margin-top:12px;color:#666;font-size:0.85em"><strong>Note:</strong> The Classic Static HTML does not include AI analysis, Couchbase integration, or settings persistence. For those features, use the New Desktop App above.</p>
+                    <p style="margin-top:12px;color:#666;font-size:0.85em"><strong>Note:</strong> The Classic Static HTML does not include AI analysis or settings persistence. For those features, use the New Desktop App above.</p>
                 </div>
             </div>
         </section>
@@ -312,8 +312,8 @@ docker run -p 8888:8888 fujioturner/couchbase-query-analyzer:latest</pre>
             <h2>2. Setup AI Analysis <span style="font-size:0.7em;color:#666">(New Desktop App only)</span></h2>
 
             <div class="callout" style="background:#e8f4fd;border-left:4px solid #007acc;padding:10px 14px;margin:0 0 14px;border-radius:4px;font-size:0.92em">
-                <strong>📦 No Couchbase setup required.</strong>
-                Starting in <strong>v4.0.0</strong>, the New Desktop App stores all analysis data, preferences, and AI history locally using embedded <strong>Couchbase Lite</strong>. No <code>cb_tools</code> bucket, no scope, no separate credential setup. <em>(If you later want the app to pull queries directly from your cluster's <code>system:completed_requests</code>, you can add cluster credentials anytime under Settings.)</em>
+                <strong>📦 No external database setup required.</strong>
+                Starting in <strong>v4.0.0</strong>, the New Desktop App stores all analysis data, preferences, and AI history locally using embedded <strong>Couchbase Lite</strong>. There is nothing to install, no bucket to create, and no credentials to configure for storage. <em>To analyze queries, run <code>SELECT *, meta().plan FROM system:completed_requests</code> against your cluster from any client (cbq, Capella UI, Workbench, etc.) and paste or upload the JSON output into the analyzer.</em>
             </div>
 
             <p style="margin-bottom:8px">Get an API Key from xAI Grok, Anthropic Claude, or OpenAI for AI-powered query analysis.</p>

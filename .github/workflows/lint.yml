@@ -1,0 +1,51 @@
+name: Lint (Python)
+
+# Fast linting check that runs on every push & PR.
+#
+# IMPORTANT: This installs the EXACT same ruff version pinned in
+# tests/requirements-dev.txt and uses the EXACT same config (pyproject.toml).
+# Run `bash tests/lint.sh` locally before pushing — if that's clean, this
+# job is guaranteed to be clean too.
+
+on:
+  push:
+    branches:
+      - main
+      - liquid
+      - QA
+  pull_request:
+    branches:
+      - main
+      - liquid
+
+jobs:
+  ruff:
+    name: Ruff Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: tests/requirements-dev.txt
+
+      - name: Install pinned ruff (matches local dev)
+        run: pip install -r tests/requirements-dev.txt
+
+      - name: Show ruff version
+        run: ruff --version
+
+      - name: Run lint check (uses /pyproject.toml config)
+        run: ruff check app/ tests/python/
+
+      - name: Hint on failure
+        if: failure()
+        run: |
+          echo "::error::Lint failed. Run locally to reproduce + auto-fix:"
+          echo "::error::    pip install -r tests/requirements-dev.txt"
+          echo "::error::    bash tests/lint.sh --fix"
+          echo "::error::Then commit the fixes and push again."

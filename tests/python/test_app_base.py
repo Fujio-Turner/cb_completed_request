@@ -5,10 +5,7 @@ Tests resource path resolution, config loading, connection handling.
 Does NOT require Couchbase Server or CBL bindings.
 """
 
-import json
-import pytest
-from unittest.mock import patch, MagicMock, mock_open
-from pathlib import Path
+from unittest.mock import patch
 
 import sys
 import os
@@ -123,29 +120,8 @@ class TestCORSConfiguration:
             assert 'Access-Control-Allow-Origin' in resp.headers
 
 
-class TestCouchbaseConnectionHelper:
-    """Test Couchbase connection management"""
-
-    def test_get_couchbase_connection_exists(self):
-        """get_couchbase_connection function exists and is callable"""
-        assert callable(app_base.get_couchbase_connection)
-
-    def test_get_couchbase_connection_rejects_missing_credentials(self):
-        """get_couchbase_connection returns None when username/password missing"""
-        # Empty config should return None per the validation in app_base.py
-        assert app_base.get_couchbase_connection({}) is None
-        assert app_base.get_couchbase_connection({'username': '', 'password': ''}) is None
-        assert app_base.get_couchbase_connection({'username': 'u'}) is None  # missing password
-
-
 class TestCBLAwareness:
     """Test CBL (Couchbase Lite) backend awareness"""
-
-    def test_storage_backend_function_exists(self):
-        """storage_backend function exists and returns a string"""
-        assert callable(app_base.storage_backend)
-        result = app_base.storage_backend()
-        assert isinstance(result, str)
 
     def test_use_cbl_flag_is_boolean(self):
         """USE_CBL flag exists and is boolean"""
@@ -166,11 +142,6 @@ class TestEndpointRegistration:
         api_routes = [r for r in routes if r.startswith('/api/')]
         assert len(api_routes) > 0
 
-    def test_couchbase_test_endpoint_registered(self):
-        """The /api/couchbase/test endpoint is present"""
-        routes = [str(rule) for rule in app_base.app.url_map.iter_rules()]
-        assert any('/api/couchbase/test' in r for r in routes)
-
 
 class TestIcereamConfiguration:
     """Test icecream debug logging configuration"""
@@ -187,11 +158,6 @@ class TestModuleImports:
         """Flask is properly imported"""
         from flask import Flask
         assert app_base.Flask is Flask
-
-    def test_couchbase_cluster_imported(self):
-        """Couchbase Cluster class is imported"""
-        assert hasattr(app_base, 'Cluster')
-        assert callable(app_base.Cluster)
 
     def test_ai_analyzer_imported(self):
         """AI analyzer module is imported"""

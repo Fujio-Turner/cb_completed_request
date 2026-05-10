@@ -13,7 +13,6 @@ Run: python create_icon.py
 
 from PIL import Image, ImageDraw, ImageFont
 import os
-import io
 
 def create_cb_icon_from_scratch(size=1024):
     """
@@ -166,5 +165,5 @@ if __name__ == "__main__":
     
     print("\n📦 Next steps:")
     print(f"   macOS: iconutil -c icns {iconset_dir}")
-    print(f"   This creates: QueryAnalyzer.icns")
+    print("   This creates: QueryAnalyzer.icns")
     print("\n   Or run: iconutil -c icns QueryAnalyzer.iconset -o QueryAnalyzer.icns")

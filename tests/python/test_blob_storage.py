@@ -3,10 +3,7 @@ Unit tests for blob_storage.py - Binary object storage with compression.
 Tests compression, decompression, deduplication, and size limits.
 """
 
-import gzip
-import json
 import pytest
-from typing import Dict, Any
 
 from blob_storage import BlobStorage, WARN_BYTES, HARD_BYTES
 from cbl_store import USE_CBL

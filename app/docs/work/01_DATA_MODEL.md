@@ -1,12 +1,12 @@
 # 01 — CBL Data Model
 
-**Status:** ✅ COMPLETE
+**Status:** ✅ COMPLETE — **CBL is now the only persistence layer** (CB Server SDK removed 2026-05-09; see [`00_OVERVIEW.md §8`](./00_OVERVIEW.md#8-cbl-only-cutover-2026-05-09--current-state)).
 
-This file freezes the on-disk Couchbase Lite layout so every other doc (`cbl_store.py`, endpoint refactor, migration tool) can refer back to it.
+This file freezes the on-disk Couchbase Lite layout so every other doc (`cbl_store.py`, endpoint refactor) can refer back to it.
 
-**Completed:** [`app/cbl_store.py`](../../cbl_store.py) module created with full CBLStore class API, fallback flags, singleton database handler, and all collection/blob operations.
+**Completed:** [`app/cbl_store.py`](../../cbl_store.py) module created with full `CBLStore` class API, singleton database handler, and all collection/blob operations. The original `USE_CBL`/`STORAGE_BACKEND` fallback flags have been **removed** — CBL is the only supported backend and missing bindings raise a hard error.
 
-The model is intentionally a near-1:1 mapping of the existing Couchbase Server layout (`cb_tools` bucket, `query.analyzer` collection, etc.) so we can move endpoints one at a time, and so the data migration script (Doc 09) is a straight document copy.
+The model was originally drawn as a near-1:1 mapping of the legacy Couchbase Server layout (`cb_tools` bucket, `query.analyzer` collection, etc.) so endpoints could be moved one at a time and the migration script (Doc 09) could be a straight document copy. Now that the dual-backend phase is over, the schema below is simply **the** schema — there is no other.
 
 ---
 

@@ -13,8 +13,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     CBL_VERSION=3.2.1 \
     CBL_DB_DIR=/app/data \
     CBL_DB_NAME=cb_tools_db \
-    STORAGE_BACKEND=cbl \
     PORT=8080
+# Note: STORAGE_BACKEND is no longer needed — Couchbase Lite is the only
+# supported storage backend. The Couchbase Server SDK has been removed.
 # Note: SKIP_TOON_INSTALL is intentionally NOT set. `python-toon` is now
 # pulled in via requirements.txt and surfaced as `toon_python` by the
 # /app/toon_python.py shim, so `import toon_python` succeeds at startup

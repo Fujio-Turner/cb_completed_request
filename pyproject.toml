@@ -1,0 +1,51 @@
+# Project-wide Python tooling config.
+# Ruff is the single source of truth for lint + format (replaces flake8/black/isort).
+# Same config drives local checks (`tests/lint.sh`) and CI (.github/workflows/lint.yml),
+# so a clean local run = a clean CI run.
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+extend-exclude = [
+    "venv",
+    ".venv",
+    "build",
+    "dist",
+    "__pycache__",
+    ".pytest_cache",
+    "old_pre_4_0",
+    "node_modules",
+    "app/venv",
+    "app/build",
+    "app/__pycache__",
+    "app/.pytest_cache",
+]
+
+[tool.ruff.lint]
+# Rule families enabled:
+#   E9 = pycodestyle SyntaxError-equivalents only (E901/E902/E999 — real parse errors)
+#   F  = pyflakes (undefined names, redefinitions, etc. — these are REAL bugs)
+#   B  = flake8-bugbear (likely-bug patterns — mutable defaults, etc.)
+#
+# We deliberately do NOT enable W (whitespace) or UP (style modernization).
+# Those are auto-fixable cosmetics and would create thousands of churn lines.
+# Run `ruff format` separately if you want consistent formatting.
+select = ["E9", "F", "B"]
+
+# Pragmatic ignores — common, intentional patterns in this codebase:
+#   F401  unused import                     (try/except availability checks are common)
+#   F841  unused local variable             (often intentional in tests / debug code)
+#   B008  function call in argument default (Flask/Click decorators use this idiom)
+#   B904  raise from ...                    (verbose for trivial re-raises)
+ignore = ["F401", "F841", "B008", "B904"]
+
+[tool.ruff.lint.per-file-ignores]
+# Shims re-export symbols on purpose
+"app/toon_python.py" = ["F401", "F403"]
+# Test files can use star imports / unused fixtures freely
+"tests/**/*.py" = ["F403", "F405"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

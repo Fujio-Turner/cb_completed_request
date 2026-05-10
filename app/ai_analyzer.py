@@ -20,7 +20,7 @@ import json
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from typing import Dict, Any, Optional, List
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from icecream import ic
 
 # Try to import CBL storage
@@ -116,7 +116,7 @@ def get_payload_reference_template() -> Dict[str, Any]:
     try:
         with open(template_path, 'r') as f:
             template = json.load(f)
-            ic(f"📄 Loaded payload_reference.json.template")
+            ic("📄 Loaded payload_reference.json.template")
             return template
     except FileNotFoundError:
         ic(f"⚠️ Template file not found: {template_path}")
@@ -366,7 +366,7 @@ def get_ai_models_template() -> Dict[str, Any]:
     try:
         with open(template_path, 'r') as f:
             template = json.load(f)
-            ic(f"📄 Loaded ai_models_list.json.template")
+            ic("📄 Loaded ai_models_list.json.template")
             return template
     except FileNotFoundError:
         ic(f"⚠️ Template file not found: {template_path}")
@@ -649,7 +649,7 @@ class AIHttpClient:
                  max_retries=3, 
                  backoff_factor=5.0,  # 5 second wait before retry
                  timeout=300,  # 5 minutes - AI models need time for complex analysis
-                 retry_on_status=[429, 500, 502, 503, 504]):
+                 retry_on_status=None):
         """
         Initialize HTTP client with retry configuration
         
@@ -657,12 +657,13 @@ class AIHttpClient:
             max_retries (int): Maximum number of retry attempts
             backoff_factor (float): Exponential backoff multiplier (delay = {backoff_factor} * (2 ** retry_count))
             timeout (int): Request timeout in seconds
-            retry_on_status (list): HTTP status codes to retry on
+            retry_on_status (list): HTTP status codes to retry on (default: [429, 500, 502, 503, 504])
         """
         self.max_retries = max_retries
         self.backoff_factor = backoff_factor
         self.timeout = timeout
-        self.retry_on_status = retry_on_status
+        # Use a fresh list each call — never share a mutable default across instances
+        self.retry_on_status = retry_on_status if retry_on_status is not None else [429, 500, 502, 503, 504]
         
         ic("🔧 AIHttpClient initialized", max_retries, backoff_factor, timeout, retry_on_status)
     
@@ -1124,7 +1125,6 @@ class DataObfuscator:
             
             # Check if token contains special characters (operators, punctuation)
             # Need to handle cases like "users(name," -> "users" "(" "name" ","
-            import re
             
             # Split token by special characters while keeping them
             parts = re.split(r'([(),;=<>!*+\-/])', token)
@@ -1248,7 +1248,7 @@ class AIPayloadBuilder:
         Returns:
             Complete payload dict
         """
-        ic(f"🔨 Building payload from raw data")
+        ic("🔨 Building payload from raw data")
         
         # Initialize payload with context
         full_prompt = user_prompt

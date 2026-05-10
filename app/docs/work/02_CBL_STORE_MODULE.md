@@ -1,6 +1,6 @@
 # 02 — `cbl_store.py` Module Design
 
-**Status:** ✅ COMPLETE (post-review fixes 2026-05-09 — see end of file)
+**Status:** ✅ COMPLETE — **CBL-only** (post-review fixes 2026-05-09; CB Server SDK removed in the same window — see [`00_OVERVIEW.md §8`](./00_OVERVIEW.md#8-cbl-only-cutover-2026-05-09--current-state) and §10 below).
 
 A single new module inside `/app/` at [`app/cbl_store.py`](../../cbl_store.py) that wraps every CBL operation. Every other change in this plan imports from here.
 
@@ -31,16 +31,13 @@ from typing import Any, Dict, List, Optional
 from icecream import ic
 from platformdirs import user_data_dir
 
-# ---- CBL availability ----
-try:
-    from CouchbaseLite.Database import Database, DatabaseConfiguration
-    from CouchbaseLite.Document import MutableDocument
-    from CouchbaseLite._PyCBL import ffi, lib
-    from CouchbaseLite.common import stringParam, sliceToString
-    USE_CBL = True
-except ImportError as e:
-    USE_CBL = False
-    ic(f"⚠️ Couchbase Lite bindings not available: {e}")
+# ---- CBL bindings (required) ----
+# CBL is the only supported backend. Missing bindings = hard error at import
+# time; there is no fallback.
+from CouchbaseLite.Database import Database, DatabaseConfiguration
+from CouchbaseLite.Document import MutableDocument
+from CouchbaseLite._PyCBL import ffi, lib
+from CouchbaseLite.common import stringParam, sliceToString
 
 # ---- Constants ----
 CBL_DB_NAME = os.environ.get(
@@ -284,29 +281,21 @@ The 20 MB Couchbase Server K/V limit no longer applies (CBL is local), but we st
 
 ---
 
-## 7. Fallback flag
+## 7. ~~Fallback flag~~ — **REMOVED (CBL-only)**
 
-```python
-STORAGE_BACKEND = os.environ.get("STORAGE_BACKEND", "auto")
-# auto -> cbl if USE_CBL else server
-# cbl  -> force CBL (raise if bindings missing)
-# server -> force the existing external Couchbase Server path
-```
-
-`app.py` uses this flag:
-
-```python
-def storage_backend() -> str:
-    if STORAGE_BACKEND == "cbl":
-        if not USE_CBL:
-            raise RuntimeError("STORAGE_BACKEND=cbl but CBL bindings missing")
-        return "cbl"
-    if STORAGE_BACKEND == "server":
-        return "server"
-    return "cbl" if USE_CBL else "server"
-```
-
-This lets us ship v4.0.0-beta with **`auto`** as the default and merge the migration in stages — Doc 03 wraps every CB Server endpoint with an `if storage_backend() == 'cbl': ...`.
+> The original design shipped with a `STORAGE_BACKEND=auto|cbl|server` env var
+> and a `USE_CBL` import-time boolean so endpoints could fall back to the
+> external Couchbase Server SDK. **All of that is gone as of 2026-05-09.**
+>
+> - `STORAGE_BACKEND` is no longer read.
+> - `USE_CBL` no longer exists; CBL imports are unconditional and missing
+>   bindings raise `ImportError` at module load.
+> - `storage_backend()` has been deleted; callers do not need to choose.
+>
+> `app.py` no longer wraps endpoints with `if storage_backend() == 'cbl': ...`
+> — the CBL implementation is the only implementation. See
+> [`03_APP_PY_REFACTOR.md §6`](./03_APP_PY_REFACTOR.md) for the post-cutover
+> endpoint table.
 
 ---
 
@@ -330,7 +319,11 @@ Run with:
 pytest ../tests/python/test_cbl_store.py -v
 ```
 
-These tests **only** run when `USE_CBL` is true; otherwise they are skipped via `pytestmark = pytest.mark.skipif(not USE_CBL, reason="CBL bindings missing")`.
+These tests require the CBL bindings to be importable. Since `USE_CBL` no
+longer exists, the previous skip pattern (`pytest.mark.skipif(not USE_CBL,
+...)`) has been replaced with a module-level `importorskip("CouchbaseLite")`
+in [`tests/python/`](../../../tests/python/), which surfaces the same skip
+behaviour without re-introducing a fallback flag in shipping code.
 
 ---
 
@@ -361,3 +354,34 @@ New / fixed public methods on `CBLStore`:
 - `list_clusters()` — `SELECT DISTINCT cluster_name FROM cb_tools.ai_history` for the `/api/ai/clusters` endpoint.
 
 Backend selector: `storage_backend()` (function, not raw env value) resolves `auto`→`cbl`/`server`. `STORAGE_BACKEND=cbl` raises a clear `RuntimeError` if the bindings are missing instead of silently falling back.
+
+> **Superseded by §10 below:** the `storage_backend()` function described in
+> the previous paragraph has since been deleted along with the rest of the
+> CB-Server fallback path.
+
+---
+
+## 10. CBL-only cleanup (2026-05-09)
+
+After confirming the CBL path was working end-to-end, the dual-backend
+plumbing was removed. Net diff in [`app/cbl_store.py`](../../cbl_store.py):
+
+| Removed | Reason |
+|---|---|
+| `STORAGE_BACKEND` env var read | One backend ⇒ no selector |
+| `USE_CBL` boolean and the `try/except ImportError` around CBL imports | CBL is required; missing bindings should fail fast |
+| `storage_backend()` function | All callers in [`app/app.py`](../../app.py) deleted |
+| Any `if USE_CBL:` / `if backend() == "server"` branches | Dead code |
+
+`storage_backend()` is replaced by an unconditional return in the same module
+(retained only as a no-op string for any external script that imports it):
+
+```python
+def storage_backend() -> str:
+    """Always returns 'cbl'. Kept for backwards-compatible imports."""
+    return "cbl"
+```
+
+If a downstream script still passes `STORAGE_BACKEND=server`, the value is
+ignored — the app boots into CBL regardless and logs a one-line warning at
+startup. This will be removed entirely in v5.1.

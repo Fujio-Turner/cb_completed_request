@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-Flask HTTP server for Liquid Snake with ES6 modules
-Runs on http://localhost:5000
+Flask HTTP server base — Liquid (v5.0.0) edition.
 
-Includes Couchbase REST API endpoints for Issue #231:
-- POST /api/couchbase/test - Test connection
-- POST /api/couchbase/query - Execute N1QL query
-- POST /api/couchbase/save-analyzer - Save analyzer data
-- GET /api/couchbase/load-analyzer/<requestId> - Load analyzer data
-- POST /api/couchbase/save-preferences - Save user preferences
-- GET /api/couchbase/load-preferences/<userId> - Load user preferences
+This module hosts the Flask app object plus the endpoints that don't depend
+on the (now removed) external Couchbase Server SDK. The Couchbase Server
+``test``/``query``/``check-indexes`` endpoints have been deleted; the
+``save-analyzer``/``load-analyzer``/``save-preferences``/``load-preferences``
+endpoints are re-registered by ``app.py`` against the embedded
+Couchbase Lite store.
+
+All persistent app state now lives in the embedded CBL database
+(``cbl_store.py``); source data is provided by JSON upload only.
 """
 
 from flask import Flask, request, jsonify, send_from_directory
@@ -17,17 +18,6 @@ from flask_cors import CORS
 import os
 import time
 from icecream import ic
-from couchbase.cluster import Cluster
-from couchbase.options import ClusterOptions, QueryOptions
-import couchbase.subdocument as SD
-from couchbase.auth import PasswordAuthenticator
-from couchbase.exceptions import (
-    DocumentExistsException,
-    DocumentNotFoundException,
-    TimeoutException, 
-    CouchbaseException,
-    PathNotFoundException
-)
 
 # Import AI Analyzer module
 import ai_analyzer
@@ -90,428 +80,92 @@ ic(f"📁 Resource directory: {DIRECTORY}")
 app = Flask(__name__, static_folder=DIRECTORY, static_url_path='')
 CORS(app)  # Enable CORS for all routes
 
-# ── CBL backend awareness ─────────────────────────────────────────────────
-# When STORAGE_BACKEND=cbl the app uses an embedded Couchbase Lite database
-# (see cbl_store.py) instead of an external Couchbase Server. Endpoints that
-# read/write app-state (preferences, AI history, etc.) must route through the
-# CBLStore singleton rather than opening a CB Server connection.
+# ── Embedded Couchbase Lite (the only persistence layer) ────────────────
 try:
-    from cbl_store import CBLStore, USE_CBL, storage_backend  # type: ignore
-except Exception as _cbl_err:  # noqa: BLE001 — CBL is optional
+    from cbl_store import CBLStore, USE_CBL  # type: ignore
+except Exception as _cbl_err:  # noqa: BLE001 — CBL bindings might not be present in tests
     CBLStore = None  # type: ignore
     USE_CBL = False
-    def storage_backend() -> str:  # type: ignore[no-redef]
-        return os.environ.get('STORAGE_BACKEND', 'server').lower() or 'server'
 
 _cbl_store_singleton = None
 
+
 def _get_cbl_store():
-    """Return the CBLStore singleton when CBL is the active backend, else None."""
+    """Return the CBLStore singleton, or None if the bindings aren't available."""
     global _cbl_store_singleton
     if not USE_CBL or CBLStore is None:
-        return None
-    if storage_backend() != 'cbl':
         return None
     if _cbl_store_singleton is None:
         _cbl_store_singleton = CBLStore()
     return _cbl_store_singleton
 
 
-# Couchbase connection cache
-_cluster = None
-_config = None
-
-def get_couchbase_connection(config):
-    """Get or create Couchbase cluster connection"""
-    global _cluster, _config
-    
-    # Validate credentials before attempting connection
-    if not config.get('username') or not config.get('password'):
-        ic("⚠️ Missing credentials - username or password is empty")
-        return None
-    
-    # If config changed or no connection, create new one
-    if _config != config or _cluster is None:
-        if _cluster:
-            try:
-                _cluster.close()
-            except:
-                pass
-        
-        try:
-            # Parse URL to extract hostname/IP (strip protocol and port since Couchbase SDK uses its own ports)
-            url_cleaned = config['url'].replace('http://', '').replace('https://', '')
-            hostname = url_cleaned.split(':')[0]  # Get hostname/IP only
-            connection_string = f"couchbase://{hostname}"
-            
-            ic(f"🔌 Connecting to Couchbase: {connection_string}", config['username'])
-            
-            _cluster = Cluster(
-                connection_string,
-                ClusterOptions(PasswordAuthenticator(config['username'], config['password']))
-            )
-            
-            # Wait for cluster to be ready (this will raise exception if auth fails)
-            from datetime import timedelta
-            _cluster.wait_until_ready(timedelta(seconds=10))
-            
-            _config = config
-            ic("✅ Cluster connection established successfully")
-            return _cluster
-        except Exception as e:
-            ic("❌ Failed to connect to Couchbase", connection_string, e)
-            return None
-    
-    return _cluster
-
 # Static file serving
 @app.route('/')
 def index():
     return send_from_directory(DIRECTORY, 'index.html')
+
+
+# Serve the OpenAPI spec from app/docs/openapi.yaml. Defined before the
+# `<path:path>` catch-all so the explicit rule wins. See
+# `app/guides/API_OPENAPI.md` for how to extend the spec.
+@app.route('/openapi.yaml')
+def openapi_spec():
+    return send_from_directory(
+        os.path.join(DIRECTORY, 'docs'),
+        'openapi.yaml',
+        mimetype='application/yaml',
+    )
+
+
+# Lightweight version probe — reads the single source of truth in app.py.
+# Lazy-imported so importing app_base in isolation doesn't pull app.py.
+@app.route('/api/version', methods=['GET'])
+def get_version():
+    try:
+        from app import __version__ as app_version
+    except Exception:
+        app_version = 'unknown'
+    return jsonify({'version': app_version, 'backend': 'cbl'})
+
+
+# Swagger UI at /api-docs — vendored, no runtime CDN dependency.
+# Renders /openapi.yaml as an interactive API explorer with "Try it out".
+# See app/guides/API_OPENAPI.md §11.
+try:
+    from flask_swagger_ui import get_swaggerui_blueprint
+    _SWAGGER_URL = '/api-docs'
+    app.register_blueprint(
+        get_swaggerui_blueprint(
+            _SWAGGER_URL,
+            '/openapi.yaml',
+            config={
+                'app_name': 'Couchbase Query Analyzer API',
+                'docExpansion': 'list',
+                'defaultModelsExpandDepth': 1,
+                'displayRequestDuration': True,
+            },
+        ),
+        url_prefix=_SWAGGER_URL,
+    )
+    ic(f"📘 Swagger UI mounted at {_SWAGGER_URL}")
+except ImportError:
+    ic("ℹ️ flask-swagger-ui not installed; /api-docs will 404")
+
 
 @app.route('/<path:path>')
 def serve_static(path):
     return send_from_directory(DIRECTORY, path)
 
 # API Routes
-@app.route('/api/couchbase/test', methods=['POST'])
-def test_connection():
-    """Test Couchbase connection"""
-    try:
-        data = request.json
-        ic(data)  # Log input
-        cluster_config = data.get('config', {})
-        cluster = get_couchbase_connection(cluster_config)
-        
-        if cluster:
-            # Try to ping the cluster
-            bucket_name = data.get('bucketConfig', {}).get('bucket', 'cb_tools')
-            bucket = cluster.bucket(bucket_name)
-            bucket.ping()
-            
-            response = {
-                'success': True,
-                'message': f'Connected to Couchbase cluster at {cluster_config["url"]}'
-            }
-            ic(response)  # Log output
-            return jsonify(response)
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to connect'
-            }), 500
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/couchbase/check-indexes', methods=['POST'])
-def check_indexes():
-    """Check if required indexes exist for the analyzer"""
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        # Extract bucket, scope, collection from config
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        analyzer_scope = bucket_config.get('analyzerScope', 'query')
-        analyzer_collection = bucket_config.get('analyzerCollection', 'analyzer')
-        keyspace = f"`{bucket_name}`.`{analyzer_scope}`.`{analyzer_collection}`"
-        
-        # Required indexes for the analyzer (dynamic keyspace)
-        required_indexes = [
-            {
-                'name': 'analysis_old_table_v2',
-                'scope': analyzer_scope,
-                'collection': analyzer_collection,
-                'ddl': f'CREATE INDEX `analysis_old_table_v2` ON {keyspace}(`createdAt` DESC INCLUDE MISSING,`metadata`,`status`,`prompt`,`provider`,`sourceCluster`,(`parseJson`.`filters`)) WHERE (`docType` = "ai_analysis")'
-            }
-        ]
-        
-        # Query system:indexes to check which indexes exist
-        query = f"""
-            SELECT name, keyspace_id, bucket_id, scope_id 
-            FROM system:indexes 
-            WHERE bucket_id = '{bucket_name}'
-              AND scope_id = '{analyzer_scope}'
-        """
-        
-        result = cluster.query(query)
-        existing_indexes = {row.get('name'): row for row in result}
-        
-        missing_indexes = []
-        found_indexes = []
-        
-        for req_idx in required_indexes:
-            if req_idx['name'] in existing_indexes:
-                found_indexes.append(req_idx['name'])
-            else:
-                missing_indexes.append({
-                    'name': req_idx['name'],
-                    'ddl': req_idx['ddl']
-                })
-        
-        return jsonify({
-            'success': True,
-            'allIndexesExist': len(missing_indexes) == 0,
-            'foundIndexes': found_indexes,
-            'missingIndexes': missing_indexes
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error checking indexes: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/couchbase/query', methods=['POST'])
-def execute_query():
-    """Execute N1QL query"""
-    try:
-        data = request.json
-        ic(data)  # Log input
-        cluster_config = data.get('config', {})
-        query = data.get('query', '')
-        params = data.get('params', {})
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        # Execute query
-        result = cluster.query(query, **params)
-        rows = [row for row in result]
-        
-        response = {
-            'success': True,
-            'results': rows
-        }
-        ic(response)  # Log output
-        return jsonify(response)
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/couchbase/save-analyzer', methods=['POST'])
-def save_analyzer_data():
-    """Save query analyzer data"""
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        request_id = data.get('requestId')
-        analyzer_data = data.get('data', {})
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        bucket = cluster.bucket(bucket_config['bucket'])
-        collection = bucket.scope(bucket_config['analyzerScope']).collection(bucket_config['analyzerCollection'])
-        
-        # Upsert document
-        result = collection.upsert(request_id, analyzer_data)
-        
-        return jsonify({
-            'success': True,
-            'cas': result.cas
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/couchbase/load-analyzer/<request_id>', methods=['POST'])
-def load_analyzer_data(request_id):
-    """Load query analyzer data"""
-    try:
-        data = request.json or {}
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-
-        # CBL backend: load from the embedded analyzer collection.
-        cbl_store_inst = _get_cbl_store()
-        if cbl_store_inst is not None:
-            doc = cbl_store_inst.load_analyzer(request_id)
-            if not doc:
-                return jsonify({'success': False, 'error': 'Document not found'}), 404
-            return jsonify({'success': True, 'data': doc})
-
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        bucket = cluster.bucket(bucket_config['bucket'])
-        collection = bucket.scope(bucket_config['analyzerScope']).collection(bucket_config['analyzerCollection'])
-        
-        # Get document
-        result = collection.get(request_id)
-        
-        return jsonify({
-            'success': True,
-            'data': result.content_as[dict]
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/couchbase/delete-analyzer', methods=['POST'])
-def delete_analyzer_data():
-    """Delete query analyzer data"""
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        request_id = data.get('requestId')
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        bucket = cluster.bucket(bucket_config['bucket'])
-        collection = bucket.scope(bucket_config['analyzerScope']).collection(bucket_config['analyzerCollection'])
-        
-        # Delete document
-        collection.remove(request_id)
-        
-        return jsonify({
-            'success': True
-        })
-    except DocumentNotFoundException:
-        return jsonify({
-            'success': False,
-            'error': 'Document not found'
-        }), 404
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/couchbase/save-preferences', methods=['POST'])
-def save_user_preferences():
-    """Save user preferences using K/V upsert with automatic backup"""
-    try:
-        import hashlib
-        import json
-        from datetime import timedelta
-        from couchbase.options import UpsertOptions
-        
-        data = request.json
-        ic(data)  # Log input
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        user_id = data.get('userId')  # Should be 'user_config'
-        preferences = data.get('preferences', {})
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        bucket = cluster.bucket(bucket_config['bucket'])
-        collection = bucket.scope(bucket_config['preferencesScope']).collection(bucket_config['preferencesCollection'])
-        
-        # K/V UPSERT main document
-        result = collection.upsert(user_id, preferences)
-        
-        # Create backup with MD5 hash and 7-day TTL
-        try:
-            # Generate MD5 hash of JSON
-            json_str = json.dumps(preferences, sort_keys=True)
-            hash_md5 = hashlib.md5(json_str.encode()).hexdigest()
-            backup_id = f"{user_id}::{hash_md5}"
-            
-            # Add backup metadata
-            backup_doc = {
-                **preferences,
-                '_backup_metadata': {
-                    'original_doc_id': user_id,
-                    'backup_timestamp': preferences.get('updatedAt'),
-                    'hash': hash_md5
-                }
-            }
-            
-            # Upsert backup with 7-day TTL (604800 seconds)
-            collection.upsert(
-                backup_id, 
-                backup_doc,
-                UpsertOptions(expiry=timedelta(days=7))
-            )
-            
-            ic(f"✅ Backup saved: {backup_id} (expires in 7 days)")
-        except Exception as backup_error:
-            ic(f"⚠️ Backup failed (non-critical): {backup_error}")
-            # Don't fail the main save if backup fails
-        
-        response = {
-            'success': True,
-            'cas': result.cas
-        }
-        ic(user_id, result.cas, response)  # Log output
-        return jsonify(response)
-    except Exception as e:
-        ic("❌ Error saving preferences", e)
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/couchbase/load-preferences/<user_id>', methods=['POST'])
-def load_user_preferences(user_id):
-    """Load user preferences using K/V get"""
-    try:
-        data = request.json
-        ic(user_id, data)  # Log input
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        bucket = cluster.bucket(bucket_config['bucket'])
-        collection = bucket.scope(bucket_config['preferencesScope']).collection(bucket_config['preferencesCollection'])
-        
-        # K/V GET operation (no query needed!)
-        result = collection.get(user_id)
-        content = result.content_as[dict]
-        
-        response = {
-            'success': True,
-            'data': content,
-            'cas': result.cas
-        }
-        ic(user_id, result.cas, response)  # Log output
-        return jsonify(response)
-    except DocumentNotFoundException:
-        response = {
-            'success': True,
-            'data': {
-                'docType': 'config'
-            },
-            'cas': None,
-            'firstTime': True
-        }
-        ic(user_id, "NOT_FOUND", response)  # Log output (first time user)
-        return jsonify(response)
-    except Exception as e:
-        ic("❌ Error loading preferences", e)
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+# Note: /api/couchbase/test, /api/couchbase/check-indexes and
+# /api/couchbase/query are gone — the app no longer connects to an external
+# Couchbase Server cluster. Source data is JSON-uploaded by the user.
+# Note: /api/couchbase/save-analyzer, /api/couchbase/load-analyzer/<id>,
+# /api/couchbase/delete-analyzer, /api/couchbase/save-preferences and
+# /api/couchbase/load-preferences/<id> used to be defined here against an
+# external Couchbase Server cluster. They are now registered by app.py
+# against the embedded Couchbase Lite store.
 
 # ============================================================================
 # AI Analyzer Endpoints
@@ -770,13 +424,17 @@ def _extract_by_path(data: dict, path: str):
 
 
 def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prompt, ai_payload_data, cb_config, initial_doc, obfuscation_mapping, language=None, custom_config=None):
-    """Background thread to process AI request and update Couchbase document"""
+    """Background thread to process AI request and update the CBL document.
+
+    ``cb_config`` is accepted for backwards compatibility but ignored — all
+    persistence now flows through the embedded Couchbase Lite store.
+    """
     try:
         import json
         from datetime import datetime
-        
+
         ic(f"🧵 Starting background AI task for doc {doc_id}")
-        
+
         # Check if this is a custom AI provider
         if custom_config and custom_config.get('isCustom'):
             ic(f"🔧 Using custom AI provider: {custom_config.get('name')}")
@@ -798,34 +456,21 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
                 payload_data=ai_payload_data,
                 language=language
             )
-        
+
         ic(f"📥 AI response received for {doc_id}", result.get('success'))
 
-        # Resolve the storage backend once. CBL gives us a lightweight load/save
-        # via CBLStore; CB Server requires a full cluster + bucket + collection.
+        # Persist via the embedded CBL store — the only supported backend.
         cbl_store_inst = _get_cbl_store()
-        collection = None
         if cbl_store_inst is None:
-            cluster = get_couchbase_connection(cb_config['cluster'])
-            if not cluster:
-                ic(f"❌ Failed to connect to Couchbase for background update of {doc_id}")
-                return
-            bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
-            collection = bucket.scope(cb_config['bucketConfig']['analyzerScope']).collection(
-                cb_config['bucketConfig']['analyzerCollection']
-            )
+            ic(f"❌ CBL store unavailable; cannot update {doc_id}")
+            return
 
         def _load_doc(_id):
-            if cbl_store_inst is not None:
-                return cbl_store_inst.load_analyzer(_id) or {}
-            return collection.get(_id).content_as[dict]
+            return cbl_store_inst.load_analyzer(_id) or {}
 
         def _save_doc(_id, _doc):
-            if cbl_store_inst is not None:
-                cbl_store_inst.save_analyzer(_id, _doc.get('prompt') or 'AI Analysis', _doc)
-            else:
-                collection.upsert(_id, _doc)
-        
+            cbl_store_inst.save_analyzer(_id, _doc.get('prompt') or 'AI Analysis', _doc)
+
         if result['success']:
             analysis_data = result['data']
             
@@ -998,9 +643,6 @@ def analyze_with_ai():
         ic(f"  Options: {options}")
         ic(f"  Custom config: {bool(custom_config)}")
         
-        # Initialize cluster to None — only set when using legacy CB Server lookup
-        cluster = None
-        
         # Check if this is a custom AI provider
         if custom_config and custom_config.get('isCustom'):
             ic("🔧 Using custom AI provider from request")
@@ -1008,45 +650,22 @@ def analyze_with_ai():
             api_url = custom_config.get('url')
             model = custom_config.get('model')
             endpoint = ''  # Custom providers use full URL
-            
+
             ic(f"✅ Custom provider: {custom_config.get('name')}")
             ic(f"  API URL: {api_url}")
             ic(f"  Model: {model}")
         else:
-            # Load API credentials from user_config preferences.
-            # When STORAGE_BACKEND=cbl, read from the embedded CBL database
-            # (cb_tools_db) — there is no external Couchbase Server to talk to.
-            # Otherwise fall back to the legacy CB Server lookup.
+            # Load API credentials from user_config preferences in CBL.
             cbl_store_inst = _get_cbl_store()
-            if cbl_store_inst is not None:
-                ic("🔑 Loading AI API credentials from CBL preferences (user_config)")
-                user_prefs = cbl_store_inst.load_preferences('user_config') or {}
-                ai_apis = user_prefs.get('aiApis', [])
-            else:
-                ic("🔑 Loading AI API credentials from Couchbase user::config")
+            if cbl_store_inst is None:
+                return jsonify({
+                    'success': False,
+                    'error': 'CBL store not available — cannot load AI credentials',
+                }), 500
+            ic("🔑 Loading AI API credentials from CBL preferences (user_config)")
+            user_prefs = cbl_store_inst.load_preferences('user_config') or {}
+            ai_apis = user_prefs.get('aiApis', [])
 
-                if not cb_config or not cb_config.get('cluster'):
-                    return jsonify({
-                        'success': False,
-                        'error': 'Couchbase configuration required'
-                    }), 400
-
-                cluster = get_couchbase_connection(cb_config['cluster'])
-                if not cluster:
-                    return jsonify({
-                        'success': False,
-                        'error': 'Failed to connect to Couchbase'
-                    }), 500
-
-                # Load user::config document
-                bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
-                prefs_collection = bucket.scope(cb_config['bucketConfig']['preferencesScope']).collection(
-                    cb_config['bucketConfig']['preferencesCollection']
-                )
-
-                user_prefs = prefs_collection.get('user_config').content_as[dict]
-                ai_apis = user_prefs.get('aiApis', [])
-            
             # Find the requested provider
             api_config = next((api for api in ai_apis if api['id'] == provider), None)
             
@@ -1095,15 +714,16 @@ def analyze_with_ai():
                 'error': 'API key is required'
             }), 400
         
-        # Build AI payload from raw data (with dynamic payload references from Couchbase)
+        # Build AI payload from raw data. No cluster parameter — payload
+        # references come from the local template file (or future CBL store).
         ai_payload_data = ai_analyzer.payload_builder.build_payload_from_data(
             raw_data=raw_data,
             user_prompt=prompt,
             selections=selections,
             options=options,
             extra_instructions=extra_instructions,
-            cluster=cluster if cluster else None,
-            bucket_name=cb_config.get('bucketConfig', {}).get('bucket', 'cb_tools') if cb_config else None
+            cluster=None,
+            bucket_name=None,
         )
         
         # Extract mapping table if obfuscated (for de-obfuscation later)
@@ -1175,23 +795,11 @@ def analyze_with_ai():
                 
                 cbl_store_inst = _get_cbl_store()
                 if cbl_store_inst is not None:
-                    # CBL backend: persist via the embedded analyzer collection.
                     cbl_store_inst.save_analyzer(doc_id, prompt or 'AI Analysis', initial_doc)
                     saved_doc_id = doc_id
                     ic(f"✅ Saved initial request to CBL: {doc_id} (status: pending)")
                 else:
-                    cluster = get_couchbase_connection(cb_config['cluster'])
-                    if cluster:
-                        bucket_name = cb_config['bucketConfig']['bucket']
-                        scope_name = cb_config['bucketConfig']['analyzerScope']
-                        collection_name = cb_config['bucketConfig']['analyzerCollection']
-
-                        bucket = cluster.bucket(bucket_name)
-                        collection = bucket.scope(scope_name).collection(collection_name)
-                        collection.upsert(doc_id, initial_doc)
-                        saved_doc_id = doc_id
-
-                        ic(f"✅ Saved initial request: {doc_id} (status: pending)")
+                    ic("⚠️ CBL store unavailable; cannot persist initial request")
             except Exception as e:
                 ic(f"⚠️ Failed to save initial request: {str(e)}")
         
@@ -1207,13 +815,12 @@ def analyze_with_ai():
                 }
             }
             
-            # Wait, we still need to save this placeholder data if doc exists
+            # Persist the placeholder result via CBL when we have a doc id.
             if saved_doc_id:
                 try:
                     from datetime import datetime
                     cbl_store_inst = _get_cbl_store()
                     if cbl_store_inst is not None:
-                        # CBL backend: load → merge → re-save via the analyzer collection.
                         current_doc = cbl_store_inst.load_analyzer(saved_doc_id) or {}
                         current_doc.update({
                             'completedAt': datetime.utcnow().isoformat() + 'Z',
@@ -1227,21 +834,7 @@ def analyze_with_ai():
                         )
                         ic(f"✅ Updated placeholder doc {saved_doc_id} in CBL")
                     else:
-                        cluster = get_couchbase_connection(cb_config['cluster'])
-                        if cluster:
-                            bucket = cluster.bucket(cb_config['bucketConfig']['bucket'])
-                            collection = bucket.scope(cb_config['bucketConfig']['analyzerScope']).collection(
-                                cb_config['bucketConfig']['analyzerCollection']
-                            )
-
-                            current_doc = collection.get(saved_doc_id).content_as[dict]
-                            current_doc.update({
-                                'completedAt': datetime.utcnow().isoformat() + 'Z',
-                                'status': 'completed',
-                                'aiResponse': analysis_data
-                            })
-                            collection.upsert(saved_doc_id, current_doc)
-                            ic(f"✅ Updated placeholder doc {saved_doc_id}")
+                        ic("⚠️ CBL store unavailable; cannot update placeholder doc")
                 except Exception as e:
                     ic(f"⚠️ Failed to update placeholder doc: {str(e)}")
 
@@ -1308,142 +901,9 @@ def analyze_with_ai():
             'traceback': traceback.format_exc()
         }), 500
 
-@app.route('/api/ai/cancel', methods=['POST'])
-def cancel_ai_analysis():
-    """Cancel a running AI analysis"""
-    try:
-        from datetime import datetime
-        
-        data = request.json
-        doc_id = data.get('document_id')
-        cb_config = data.get('config')
-        bucket_config = data.get('bucketConfig')
-        
-        if not doc_id or not cb_config:
-            return jsonify({'success': False, 'error': 'Missing document_id or config'}), 400
-            
-        cluster = get_couchbase_connection(cb_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-            
-        bucket = cluster.bucket(bucket_config['bucket'])
-        collection = bucket.scope(bucket_config['analyzerScope']).collection(
-            bucket_config['analyzerCollection']
-        )
-        
-        # Update status to cancelled
-        try:
-            current_doc = collection.get(doc_id).content_as[dict]
-            # Allow cancelling pending, submitted, or even processing states
-            if current_doc.get('status') in ['pending', 'submitted', 'processing']:
-                current_doc['status'] = 'cancelled'
-                current_doc['cancelledAt'] = datetime.utcnow().isoformat() + 'Z'
-                collection.upsert(doc_id, current_doc)
-                ic(f"🚫 Cancelled analysis: {doc_id}")
-                return jsonify({'success': True, 'status': 'cancelled'})
-            else:
-                return jsonify({'success': False, 'error': f'Cannot cancel status: {current_doc.get("status")}'})
-        except DocumentNotFoundException:
-            return jsonify({'success': False, 'error': 'Document not found'}), 404
-            
-    except Exception as e:
-        ic(f"❌ Error cancelling analysis: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/ai/status/<document_id>', methods=['POST'])
-def check_ai_status(document_id):
-    """
-    Check status of AI analysis document
-    Request body: {"config": {...}, "bucketConfig": {...}}
-    """
-    try:
-        data = request.json or {}
-        cb_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-
-        ic(f"🔎 [status] poll request for {document_id}")
-        ic(f"🔎 [status] USE_CBL={USE_CBL}, storage_backend={storage_backend()}")
-
-        # CBL backend: read the analysis doc from the embedded CBL store.
-        cbl_store_inst = _get_cbl_store()
-        ic(f"🔎 [status] cbl_store_inst={cbl_store_inst is not None}")
-        if cbl_store_inst is not None:
-            doc = cbl_store_inst.load_analyzer(document_id)
-            ic(f"🔎 [status] CBL load_analyzer returned: {bool(doc)}; keys={list(doc.keys()) if doc else None}")
-            if not doc:
-                ic(f"❌ [status] CBL doc not found for {document_id}")
-                return jsonify({'success': False, 'status': 'not_found'}), 404
-
-            status = doc.get('status', 'unknown')
-            ic(f"✅ [status] CBL doc status={status}")
-            response = {
-                'success': True,
-                'status': status,
-                'document_id': document_id
-            }
-
-            if status == 'completed':
-                response['elapsed_ms'] = (doc.get('metadata') or {}).get('elapsed_ms', 0)
-            elif status == 'failed':
-                response['error'] = doc.get('error') or {'message': 'Unknown error'}
-
-            return jsonify(response)
-
-        cluster = get_couchbase_connection(cb_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-            
-        bucket = cluster.bucket(bucket_config.get('bucket'))
-        collection = bucket.scope(bucket_config.get('analyzerScope')).collection(
-            bucket_config.get('analyzerCollection')
-        )
-        
-        # Use Sub-Document API to fetch only status and minimal metadata
-        try:
-            # Lookup status, error, and metadata.elapsed_ms
-            # Path "status" -> index 0
-            # Path "error" -> index 1
-            # Path "metadata.elapsed_ms" -> index 2
-            result = collection.lookup_in(document_id, [
-                SD.get("status"),
-                SD.get("error"),
-                SD.get("metadata.elapsed_ms")
-            ])
-            
-            status = result.content_as[str](0)
-            
-            response = {
-                'success': True,
-                'status': status,
-                'document_id': document_id
-            }
-            
-            if status == 'completed':
-                # We don't need the full analysis for polling check
-                try:
-                    response['elapsed_ms'] = result.content_as[int](2)
-                except:
-                    response['elapsed_ms'] = 0
-            elif status == 'failed':
-                try:
-                    response['error'] = result.content_as[dict](1)
-                except:
-                    response['error'] = {'message': 'Unknown error'}
-                    
-            return jsonify(response)
-            
-        except PathNotFoundException:
-            # Status field might not exist yet? Should unlikely happen if doc exists
-            return jsonify({'success': True, 'status': 'unknown', 'document_id': document_id})
-            
-    except DocumentNotFoundException:
-        ic(f"❌ [status] DocumentNotFoundException for {document_id}")
-        return jsonify({'success': False, 'status': 'not_found'}), 404
-    except Exception as e:
-        import traceback
-        ic(f"💥 [status] Unhandled exception: {str(e)}")
-        ic(traceback.format_exc())
-        return jsonify({'success': False, 'error': str(e)}), 500
+# Note: /api/ai/cancel and /api/ai/status/<document_id> used to be defined
+# here against an external Couchbase Server cluster. They are now
+# registered by app.py against the embedded Couchbase Lite store.
 
 @app.route('/api/ai/stats', methods=['GET'])
 def get_ai_cache_stats():
@@ -1503,195 +963,9 @@ def get_payload_reference():
             'error': str(e)
         }), 500
 
-@app.route('/api/ai/payload-reference/load', methods=['POST'])
-def load_payload_reference_endpoint():
-    """
-    Load payload_reference from Couchbase bucket._default._default
-    Falls back to template if not found
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {"bucket": "cb_tools"}
-    }
-    
-    Response:
-    {
-        "success": true,
-        "payload_reference": {...},
-        "source": "couchbase" | "template"
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            # No cluster, return template
-            template = ai_analyzer.get_payload_reference_template()
-            return jsonify({
-                'success': True,
-                'payload_reference': template,
-                'source': 'template',
-                'note': 'Not connected to Couchbase, using template file'
-            })
-        
-        # Try to load from Couchbase
-        payload_ref = ai_analyzer.load_payload_reference(cluster, bucket_name)
-        
-        # Determine source
-        source = 'couchbase' if payload_ref.get('_seededAt') or payload_ref.get('_lastUpdated') else 'template'
-        
-        return jsonify({
-            'success': True,
-            'payload_reference': payload_ref,
-            'source': source
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error loading payload_reference: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/payload-reference/seed', methods=['POST'])
-def seed_payload_reference_endpoint():
-    """
-    Seed payload_reference document to Couchbase from template
-    Creates the document in bucket._default._default with key "payload_reference"
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {"bucket": "cb_tools"},
-        "force": false  // Set to true to overwrite existing
-    }
-    
-    Response:
-    {
-        "success": true,
-        "payload_reference": {...},
-        "action": "created" | "exists" | "overwritten"
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        force = data.get('force', False)
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({
-                'success': False,
-                'error': 'Not connected to Couchbase'
-            }), 500
-        
-        # Check if document exists first
-        doc_exists = False
-        try:
-            bucket = cluster.bucket(bucket_name)
-            collection = bucket.scope('_default').collection('_default')
-            collection.get('payload_reference')
-            doc_exists = True
-        except DocumentNotFoundException:
-            pass
-        
-        # Seed the document
-        payload_ref = ai_analyzer.seed_payload_reference(cluster, bucket_name, force=force)
-        
-        if not payload_ref:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to seed payload_reference - template file may be missing or invalid'
-            }), 500
-        
-        # Determine action taken
-        if force and doc_exists:
-            action = 'overwritten'
-        elif doc_exists:
-            action = 'exists'
-        else:
-            action = 'created'
-        
-        ic(f"🌱 Payload reference seeded: {action}")
-        
-        return jsonify({
-            'success': True,
-            'payload_reference': payload_ref,
-            'action': action
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error seeding payload_reference: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/payload-reference/save', methods=['POST'])
-def save_payload_reference_endpoint():
-    """
-    Save/update payload_reference document to Couchbase
-    Allows editing the reference URLs and context without modifying template file
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {"bucket": "cb_tools"},
-        "payload_reference": {...}  // The updated payload reference
-    }
-    
-    Response:
-    {
-        "success": true,
-        "message": "Saved successfully"
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        payload_ref = data.get('payload_reference', {})
-        
-        if not payload_ref:
-            return jsonify({
-                'success': False,
-                'error': 'No payload_reference data provided'
-            }), 400
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({
-                'success': False,
-                'error': 'Not connected to Couchbase'
-            }), 500
-        
-        success = ai_analyzer.save_payload_reference(cluster, payload_ref, bucket_name)
-        
-        if success:
-            return jsonify({
-                'success': True,
-                'message': 'Payload reference saved successfully'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to save payload_reference'
-            }), 500
-        
-    except Exception as e:
-        ic(f"❌ Error saving payload_reference: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+# Note: /api/ai/payload-reference/load|seed|save used to talk to an external
+# Couchbase Server cluster. They are now registered by app.py against the
+# embedded Couchbase Lite store.
 
 @app.route('/api/ai/payload-reference/invalidate-cache', methods=['POST'])
 def invalidate_payload_reference_cache_endpoint():
@@ -1746,247 +1020,11 @@ def get_ai_models_template_endpoint():
             'error': str(e)
         }), 500
 
-@app.route('/api/ai/models/load', methods=['POST'])
-def load_ai_models_endpoint():
-    """
-    Load ai_models_list from Couchbase bucket._default._default
-    Falls back to template and auto-seeds if not found
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {"bucket": "cb_tools"}
-    }
-    
-    Response:
-    {
-        "success": true,
-        "models": {...},
-        "source": "couchbase" | "template"
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            template = ai_analyzer.get_ai_models_template()
-            return jsonify({
-                'success': True,
-                'models': template,
-                'source': 'template',
-                'note': 'Not connected to Couchbase, using template file'
-            })
-        
-        models_list = ai_analyzer.load_ai_models_list(cluster, bucket_name)
-        source = 'couchbase' if models_list.get('_seededAt') or models_list.get('_lastUpdated') else 'template'
-        
-        return jsonify({
-            'success': True,
-            'models': models_list,
-            'source': source
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error loading ai_models_list: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/models/seed', methods=['POST'])
-def seed_ai_models_endpoint():
-    """
-    Seed ai_models_list document to Couchbase from template
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {"bucket": "cb_tools"},
-        "force": false
-    }
-    
-    Response:
-    {
-        "success": true,
-        "models": {...},
-        "action": "created" | "exists" | "overwritten"
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        force = data.get('force', False)
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({
-                'success': False,
-                'error': 'Not connected to Couchbase'
-            }), 500
-        
-        # Check if document exists first
-        doc_exists = False
-        try:
-            bucket = cluster.bucket(bucket_name)
-            collection = bucket.scope('_default').collection('_default')
-            collection.get('ai_models_list')
-            doc_exists = True
-        except DocumentNotFoundException:
-            pass
-        
-        models_list = ai_analyzer.seed_ai_models_list(cluster, bucket_name, force=force)
-        
-        if not models_list:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to seed ai_models_list - template file may be missing'
-            }), 500
-        
-        if force and doc_exists:
-            action = 'overwritten'
-        elif doc_exists:
-            action = 'exists'
-        else:
-            action = 'created'
-        
-        ic(f"🌱 AI models list seeded: {action}")
-        
-        return jsonify({
-            'success': True,
-            'models': models_list,
-            'action': action
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error seeding ai_models_list: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/models/save', methods=['POST'])
-def save_ai_models_endpoint():
-    """
-    Save/update ai_models_list document to Couchbase
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {"bucket": "cb_tools"},
-        "models": {...}
-    }
-    
-    Response:
-    {
-        "success": true,
-        "message": "Saved successfully"
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        models_list = data.get('models', {})
-        
-        if not models_list:
-            return jsonify({
-                'success': False,
-                'error': 'No models data provided'
-            }), 400
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({
-                'success': False,
-                'error': 'Not connected to Couchbase'
-            }), 500
-        
-        success = ai_analyzer.save_ai_models_list(cluster, models_list, bucket_name)
-        
-        if success:
-            return jsonify({
-                'success': True,
-                'message': 'AI models list saved successfully'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to save ai_models_list'
-            }), 500
-        
-    except Exception as e:
-        ic(f"❌ Error saving ai_models_list: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/models/provider/<provider_id>', methods=['POST'])
-def get_provider_models_endpoint(provider_id):
-    """
-    Get models for a specific provider
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {"bucket": "cb_tools"},
-        "activeOnly": true
-    }
-    
-    Response:
-    {
-        "success": true,
-        "provider": "openai",
-        "models": [...]
-    }
-    """
-    try:
-        data = request.json
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        bucket_name = bucket_config.get('bucket', 'cb_tools')
-        active_only = data.get('activeOnly', False)
-        
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            # Fall back to template
-            template = ai_analyzer.get_ai_models_template()
-            providers = template.get('providers', {})
-            provider = providers.get(provider_id, {})
-            models = provider.get('models', [])
-            if active_only:
-                models = [m for m in models if m.get('status') == 'active']
-            return jsonify({
-                'success': True,
-                'provider': provider_id,
-                'models': models,
-                'source': 'template'
-            })
-        
-        if active_only:
-            models = ai_analyzer.get_active_models_for_provider(cluster, provider_id, bucket_name)
-        else:
-            models = ai_analyzer.get_models_for_provider(cluster, provider_id, bucket_name)
-        
-        return jsonify({
-            'success': True,
-            'provider': provider_id,
-            'models': models
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error getting provider models: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+# Note: /api/ai/models/load|seed|save and /api/ai/models/provider/<id> used
+# to talk to an external Couchbase Server cluster. The load|seed|save
+# endpoints are now registered by app.py against the embedded Couchbase Lite
+# store; the provider endpoint has been removed (the frontend reads the
+# template/CBL data directly via /api/ai/models).
 
 @app.route('/api/ai/models/invalidate-cache', methods=['POST'])
 def invalidate_ai_models_cache_endpoint():
@@ -2039,7 +1077,6 @@ def test_ai_api():
     }
     """
     try:
-        import json
         
         data = request.json
         provider = data.get('provider', '')
@@ -2151,202 +1188,9 @@ def test_ai_api():
             'error': str(e)
         }), 500
 
-@app.route('/api/ai/history', methods=['POST'])
-def get_ai_analysis_history():
-    """
-    Get AI analysis history from Couchbase
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {...},
-        "limit": 10,
-        "offset": 0
-    }
-    
-    Response:
-    {
-        "success": true,
-        "results": [...],
-        "count": 10
-    }
-    """
-    try:
-        data = request.json or {}
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        limit = data.get('limit', 10)
-        offset = data.get('offset', 0)
-
-        # CBL backend: list analyzer docs and project AI-analysis fields.
-        cbl_store_inst = _get_cbl_store()
-        if cbl_store_inst is not None:
-            ic(f"📋 [CBL] Fetching AI analysis history: limit={limit}, offset={offset}")
-            # Over-fetch to allow filtering to docType=ai_analysis only.
-            listing = cbl_store_inst.list_analyzers(limit=limit * 4 + 10, offset=offset)
-            shells = listing.get('rows', []) if isinstance(listing, dict) else []
-
-            rows = []
-            for shell in shells:
-                doc_id = shell.get('id')
-                if not doc_id:
-                    continue
-                blob = cbl_store_inst.load_analyzer(doc_id)
-                if not blob or blob.get('docType') != 'ai_analysis':
-                    continue
-                rows.append({
-                    'documentId': doc_id,
-                    'createdAt': blob.get('createdAt'),
-                    'provider': blob.get('provider'),
-                    'status': blob.get('status'),
-                    'prompt': blob.get('prompt'),
-                    'sourceCluster': blob.get('sourceCluster'),
-                    'metadata': blob.get('metadata'),
-                    'filters': (blob.get('parseJson') or {}).get('filters'),
-                })
-                if len(rows) >= limit:
-                    break
-
-            ic(f"✅ [CBL] Retrieved {len(rows)} analysis records")
-            return jsonify({'success': True, 'results': rows, 'count': len(rows)})
-
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        # Build N1QL query
-        bucket = bucket_config.get('bucket', 'cb_tools')
-        scope = bucket_config.get('analyzerScope', 'query')
-        collection = bucket_config.get('analyzerCollection', 'analyzer')
-        
-        query = f'''
-            SELECT `createdAt`,
-                   `provider`,
-                   `status`,
-                   `prompt`,
-                   `sourceCluster`,
-                   `metadata`,
-                   `parseJson`.`filters`,
-                   META().id as documentId
-            FROM `{bucket}`.`{scope}`.`{collection}`
-            WHERE docType = "ai_analysis"
-            ORDER BY `createdAt` DESC
-            LIMIT $limit
-            OFFSET $offset
-        '''
-        
-        ic(f"📋 Fetching AI analysis history: limit={limit}, offset={offset}")
-        
-        # Execute query
-        result = cluster.query(query, limit=limit, offset=offset)
-        rows = [row for row in result]
-        
-        ic(f"✅ Retrieved {len(rows)} analysis records")
-        
-        return jsonify({
-            'success': True,
-            'results': rows,
-            'count': len(rows)
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error fetching analysis history: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/ai/clusters', methods=['POST'])
-def get_ai_clusters():
-    """
-    Get unique source cluster names for autocomplete
-    Uses index: analysis_old_table_v1
-    
-    Request body:
-    {
-        "config": {...},
-        "bucketConfig": {...},
-        "term": "qa" (optional)
-    }
-    """
-    try:
-        data = request.json or {}
-        cluster_config = data.get('config', {})
-        bucket_config = data.get('bucketConfig', {})
-        term = data.get('term', '')
-
-        # CBL backend: scan recent analyzer docs and extract sourceCluster.
-        cbl_store_inst = _get_cbl_store()
-        if cbl_store_inst is not None:
-            ic(f"🔎 [CBL] Searching clusters with term prefix: '{term}'")
-            listing = cbl_store_inst.list_analyzers(limit=500, offset=0)
-            shells = listing.get('rows', []) if isinstance(listing, dict) else []
-            term_lower = (term or '').lower()
-            seen = []
-            for shell in shells:
-                doc_id = shell.get('id')
-                if not doc_id:
-                    continue
-                blob = cbl_store_inst.load_analyzer(doc_id)
-                if not blob or blob.get('docType') != 'ai_analysis':
-                    continue
-                src = blob.get('sourceCluster')
-                if not src:
-                    continue
-                if term_lower and term_lower not in src.lower():
-                    continue
-                if src not in seen:
-                    seen.append(src)
-                if len(seen) >= 10:
-                    break
-            seen.sort()
-            return jsonify({'success': True, 'results': seen})
-
-        cluster = get_couchbase_connection(cluster_config)
-        if not cluster:
-            return jsonify({'success': False, 'error': 'Not connected'}), 500
-        
-        bucket = bucket_config.get('bucket', 'cb_tools')
-        scope = bucket_config.get('analyzerScope', 'query')
-        collection = bucket_config.get('analyzerCollection', 'analyzer')
-        
-        # Query for recent distinct source clusters using CTE + FTS SEARCH function
-        search_term = f"{term.lower()}*" if term else "*"
-        ic(f"🔎 Searching clusters with SEARCH term: '{search_term}'")
-        
-        query = f'''
-            WITH allCluster AS (
-                SELECT RAW sourceCluster
-                FROM `{bucket}`.`{scope}`.`{collection}`
-                WHERE docType = "ai_analysis"
-                  AND sourceCluster IS NOT MISSING
-                  AND sourceCluster != ""
-                GROUP BY sourceCluster
-            )
-            SELECT RAW allCluster 
-            FROM allCluster 
-            WHERE SEARCH(allCluster, {{"query": $term}})
-            ORDER BY allCluster
-            LIMIT 10
-        '''
-        
-        result = cluster.query(
-            query, 
-            QueryOptions(adhoc=False, named_parameters={'term': search_term})
-        )
-        clusters = [row for row in result]
-        
-        return jsonify({
-            'success': True,
-            'results': clusters
-        })
-        
-    except Exception as e:
-        ic(f"❌ Error fetching clusters: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+# Note: /api/ai/history and /api/ai/clusters used to talk to an external
+# Couchbase Server cluster. They are now registered by app.py against the
+# embedded Couchbase Lite store.
 
 @app.route('/api/ai/debug', methods=['POST'])
 def set_ai_debug():
@@ -2486,7 +1330,6 @@ def ai_api_call():
 
 def open_browser_at_port(port):
     """Open the browser after a short delay to ensure server is ready"""
-    import time
     import webbrowser
     time.sleep(1.5)
     webbrowser.open(f"http://localhost:{port}/index.html")
