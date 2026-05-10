@@ -13,10 +13,12 @@ on:
       - main
       - liquid
       - QA
+      - release-4.0.0-beta
   pull_request:
     branches:
       - main
       - liquid
+      - release-4.0.0-beta
 
 jobs:
   ruff:

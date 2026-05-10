@@ -1,0 +1,353 @@
+name: Release 4.0.0-beta (Public Pre-Release)
+
+# PUBLIC publishing pipeline for the `release-4.0.0-beta` branch.
+#
+# What this does on every push to `release-4.0.0-beta`:
+#   1. Builds the Server Edition Docker image and PUSHES to Docker Hub as
+#      `4.0.0-beta` (moving) and `4.0.0-beta.<short-sha>` (immutable).
+#      It does NOT touch the `:latest` tag (pre-releases never move :latest).
+#   2. Builds the macOS .dmg with PyInstaller (tray icon + console window).
+#   3. Builds the Windows .exe with PyInstaller (tray icon + console window).
+#   4. Creates / updates the GitHub Release `v4.0.0-beta` (prerelease=true)
+#      and attaches the .dmg and .exe.zip as downloadable assets.
+#
+# Notes:
+#   - The `liquid` branch still uses `liquid-dryrun.yml` (build-only, no
+#     publish). This workflow is the public-facing counterpart for the
+#     specific 4.0.0-beta release branch.
+#   - Pushing the same branch multiple times overwrites assets on the same
+#     `v4.0.0-beta` release tag (softprops/action-gh-release is idempotent).
+#   - When promoting to a final 4.0.0 release: merge to `main` and push tag
+#     `v4.0.0` — `release.yml` handles that path.
+
+on:
+  push:
+    branches:
+      - release-4.0.0-beta
+  workflow_dispatch: {}
+
+env:
+  RELEASE_VERSION: 4.0.0-beta
+  RELEASE_TAG: v4.0.0-beta
+
+jobs:
+  # ==========================================================================
+  # Docker — build + push to Docker Hub (multi-arch)
+  # ==========================================================================
+  publish-docker:
+    name: Publish Docker (4.0.0-beta)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute short SHA
+        id: sha
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Server Edition (multi-arch, NO :latest)
+        uses: docker/build-push-action@v6
+        with:
+          # Dockerfile uses `COPY . .` — context MUST be /app
+          context: ./app
+          file: ./app/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:${{ env.RELEASE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:${{ env.RELEASE_VERSION }}.${{ steps.sha.outputs.SHORT_SHA }}
+
+  # ==========================================================================
+  # macOS app (.dmg) — published to GitHub Release
+  # ==========================================================================
+  build-macos:
+    name: Build macOS .dmg
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: ./app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # rumps powers the macOS menubar tray icon (tray.py).
+          pip install pyinstaller rumps
+
+      - name: Create PyInstaller spec
+        working-directory: ./app
+        run: |
+          cat > QueryAnalyzer.spec << 'SPEC_EOF'
+          # -*- mode: python ; coding: utf-8 -*-
+
+          block_cipher = None
+
+          a = Analysis(
+              ['app.py'],
+              pathex=[],
+              binaries=[],
+              datas=[
+                  ('index.html', '.'),
+                  ('assets', 'assets'),
+                  ('docs', 'docs'),
+                  ('config.json', '.'),
+                  ('ai_analyzer.py', '.'),
+                  ('ai_models_list.json.template', '.'),
+                  ('payload_reference.json.template', '.'),
+                  ('tray.py', '.'),
+              ],
+              hiddenimports=[
+                  'flask', 'flask_cors',
+                  'requests', 'openai', 'icecream', 'webbrowser', 'rumps',
+                  'tray',
+              ],
+              hookspath=[],
+              hooksconfig={},
+              runtime_hooks=[],
+              excludes=[],
+              win_no_prefer_redirects=False,
+              win_private_assemblies=False,
+              cipher=block_cipher,
+              noarchive=False,
+          )
+
+          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+          exe = EXE(
+              pyz, a.scripts, [],
+              exclude_binaries=True,
+              name='QueryAnalyzer',
+              debug=False,
+              bootloader_ignore_signals=False,
+              strip=False,
+              upx=True,
+              # console=True so users see live stdout/stderr (startup banner,
+              # "Opening browser…", tracebacks). Tray icon lets them Quit.
+              console=True,
+              disable_windowed_traceback=False,
+              argv_emulation=False,
+              target_arch=None,
+              codesign_identity=None,
+              entitlements_file=None,
+          )
+
+          coll = COLLECT(exe, a.binaries, a.zipfiles, a.datas,
+              strip=False, upx=True, upx_exclude=[], name='QueryAnalyzer')
+
+          app = BUNDLE(
+              coll,
+              name='QueryAnalyzer.app',
+              icon='assets/img/QueryAnalyzer.icns',
+              bundle_identifier='io.fuj.cb.queryanalyzer',
+              info_plist={
+                  'CFBundleName': 'CB Query Analyzer (Beta)',
+                  'CFBundleDisplayName': 'CB Query Analyzer (Beta)',
+                  'CFBundleShortVersionString': '4.0.0',
+                  'CFBundleVersion': '4.0.0',
+                  'NSHighResolutionCapable': True,
+                  'LSBackgroundOnly': False,
+                  'LSUIElement': False,
+              },
+          )
+          SPEC_EOF
+
+      - name: Build with PyInstaller
+        working-directory: ./app
+        run: pyinstaller QueryAnalyzer.spec --clean --noconfirm
+
+      - name: Create DMG
+        working-directory: ./app
+        run: |
+          mkdir -p dist/dmg
+          cp -R dist/QueryAnalyzer.app dist/dmg/
+          hdiutil create -volname "QueryAnalyzer-Beta" \
+            -srcfolder dist/dmg \
+            -ov -format UDZO \
+            "dist/QueryAnalyzer-${RELEASE_VERSION}-macos.dmg"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: app/dist/QueryAnalyzer-${{ env.RELEASE_VERSION }}-macos.dmg
+          retention-days: 14
+
+  # ==========================================================================
+  # Windows .exe — published to GitHub Release
+  # ==========================================================================
+  build-windows:
+    name: Build Windows .exe
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: ./app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # pystray + Pillow power the system-tray icon (tray.py).
+          pip install pyinstaller pystray Pillow
+
+      - name: Build with PyInstaller
+        working-directory: ./app
+        run: |
+          pyinstaller --name QueryAnalyzer `
+            --onefile `
+            --console `
+            --icon "assets/img/app_icon.ico" `
+            --add-data "index.html;." `
+            --add-data "assets;assets" `
+            --add-data "docs;docs" `
+            --add-data "config.json;." `
+            --add-data "ai_analyzer.py;." `
+            --add-data "ai_models_list.json.template;." `
+            --add-data "payload_reference.json.template;." `
+            --add-data "tray.py;." `
+            --hidden-import flask `
+            --hidden-import flask_cors `
+            --hidden-import requests `
+            --hidden-import openai `
+            --hidden-import icecream `
+            --hidden-import webbrowser `
+            --hidden-import pystray `
+            --hidden-import PIL `
+            --hidden-import tray `
+            app.py
+
+      - name: Create ZIP
+        working-directory: ./app
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist\QueryAnalyzer.exe" `
+            -DestinationPath "dist\QueryAnalyzer-${{ env.RELEASE_VERSION }}-windows.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-zip
+          path: app/dist/QueryAnalyzer-${{ env.RELEASE_VERSION }}-windows.zip
+          retention-days: 14
+
+  # ==========================================================================
+  # GitHub Release — create / update v4.0.0-beta and attach assets
+  # ==========================================================================
+  publish-release:
+    name: Publish GitHub Release
+    needs: [publish-docker, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to create / update releases
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-dmg
+          path: ./artifacts
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-zip
+          path: ./artifacts
+
+      - name: List artifacts
+        run: ls -la ./artifacts/
+
+      - name: Create / update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          target_commitish: ${{ github.sha }}
+          name: "Couchbase Query Analyzer 4.0.0-beta"
+          prerelease: true
+          draft: false
+          body: |
+            ## 🧪 Couchbase Query Analyzer 4.0.0-beta
+
+            **This is a public pre-release** — feedback welcome on
+            [GitHub Issues](https://github.com/${{ github.repository }}/issues).
+
+            ### Downloads
+
+            | Platform | File / Command |
+            |----------|----------------|
+            | Docker   | `docker pull ${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:4.0.0-beta` |
+            | macOS    | `QueryAnalyzer-4.0.0-beta-macos.dmg` (see Assets below) |
+            | Windows  | `QueryAnalyzer-4.0.0-beta-windows.zip` (see Assets below) |
+
+            ### macOS first-run
+
+            Builds are not yet code-signed, so macOS Gatekeeper will block
+            the first launch. After dragging the app into `/Applications`:
+
+            ```bash
+            xattr -dr com.apple.quarantine /Applications/QueryAnalyzer.app
+            ```
+
+            Then double-click. A Terminal window will show live logs and
+            your default browser will open `http://localhost:8080`. Use the
+            🔍 menubar icon → **Quit** to stop the server.
+
+            ### Windows
+
+            Unzip and run `QueryAnalyzer.exe`. A console window appears with
+            live logs; the system-tray icon (bottom-right) → **Quit** stops
+            the server.
+
+            ---
+
+            **Branch**: `release-4.0.0-beta`
+            **Commit**: `${{ github.sha }}`
+            **Workflow run**: ${{ github.run_id }}
+          files: |
+            ./artifacts/QueryAnalyzer-${{ env.RELEASE_VERSION }}-macos.dmg
+            ./artifacts/QueryAnalyzer-${{ env.RELEASE_VERSION }}-windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ==========================================================================
+  # Summary
+  # ==========================================================================
+  summary:
+    name: Release Summary
+    needs: [publish-docker, build-macos, build-windows, publish-release]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Print summary
+        run: |
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          ## 🚀 4.0.0-beta — Public Pre-Release
+
+          | Stage | Status |
+          |-------|--------|
+          | Docker (Hub push) | ${{ needs.publish-docker.result }} |
+          | macOS .dmg        | ${{ needs.build-macos.result }} |
+          | Windows .exe      | ${{ needs.build-windows.result }} |
+          | GitHub Release    | ${{ needs.publish-release.result }} |
+
+          - Docker Hub: \`${{ secrets.DOCKERHUB_USERNAME }}/couchbase-query-analyzer:4.0.0-beta\`
+          - GitHub Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}
+          EOF
