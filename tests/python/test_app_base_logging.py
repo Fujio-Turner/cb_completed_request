@@ -85,7 +85,6 @@ class TestAiAnalyzerImportLogging:
         already cached we re-trigger the same log line manually so we
         validate the message format, not Python's import semantics.
         """
-        import sys
         import app_base
         with caplog.at_level(logging.INFO, logger="app_base"):
             app_base.logger.info("Python executable: %s", sys.executable)
@@ -145,7 +144,6 @@ class TestServerStartupBanner:
         """Startup banner contains version, backend, and port."""
         from app import _startup_banner
         import io
-        import sys
         
         # Capture stdout
         old_stdout = sys.stdout

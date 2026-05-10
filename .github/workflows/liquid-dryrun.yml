@@ -169,7 +169,10 @@ jobs:
               bootloader_ignore_signals=False,
               strip=False,
               upx=True,
-              console=False,
+              # console=True so the .app launches a Terminal window with
+              # live stdout/stderr (startup banner, "Opening browser…",
+              # tracebacks). Easier debugging for unsigned beta builds.
+              console=True,
               disable_windowed_traceback=False,
               argv_emulation=False,
               target_arch=None,
@@ -244,7 +247,7 @@ jobs:
         run: |
           pyinstaller --name QueryAnalyzer `
             --onefile `
-            --windowed `
+            --console `
             --icon "assets/img/app_icon.ico" `
             --add-data "index.html;." `
             --add-data "assets;assets" `

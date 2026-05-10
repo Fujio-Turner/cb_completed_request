@@ -51,7 +51,7 @@ import blob_storage
 # Print startup banner on module import (works with gunicorn + development)
 # This runs once when the app is initialized, before any requests arrive.
 print(f"🚀 Starting Couchbase Query Analyzer v{__version__}")
-print(f"📊 Backend: cbl (embedded Couchbase Lite)")
+print("📊 Backend: cbl (embedded Couchbase Lite)")
 print(f"🌐 Open http://localhost:{PORT} in your browser")
 print()
 logger.info("startup version=%s port=%d", __version__, PORT)
@@ -767,6 +767,26 @@ def _startup_banner(port: int) -> None:
 if __name__ == '__main__':
     PORT = get_server_port(default=8080)
     _startup_banner(PORT)
+
+    # When launched as a standalone desktop app (PyInstaller .app / .exe),
+    # this `__main__` block runs. Under gunicorn/Docker the module is
+    # *imported* and this block is skipped, so the auto-open is safe.
+    # Skip it explicitly with CBQA_NO_BROWSER=1 (useful for headless test runs).
+    if os.environ.get('CBQA_NO_BROWSER', '').lower() not in ('1', 'true', 'yes'):
+        import threading
+        import webbrowser
+
+        def _open_browser():
+            url = f"http://localhost:{PORT}"
+            print(f"🌐 Opening {url} in your default browser…")
+            try:
+                webbrowser.open(url)
+            except Exception as e:  # pragma: no cover — best-effort UX
+                logger.warning("could not auto-open browser: %s", e)
+
+        # Give Flask ~1.2s to bind the port before the browser hits it.
+        threading.Timer(1.2, _open_browser).start()
+
     app.run(
         host='0.0.0.0',
         port=PORT,

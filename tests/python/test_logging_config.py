@@ -128,7 +128,7 @@ class TestJsonFormatter:
         formatter = _JsonFormatter()
         
         try:
-            1 / 0
+            _ = 1 / 0
         except ZeroDivisionError:
             import sys
             record = logging.LogRecord(
