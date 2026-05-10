@@ -765,17 +765,22 @@ def _startup_banner(port: int) -> None:
 
 
 if __name__ == '__main__':
+    import sys
+    import threading
+    import webbrowser
+
     PORT = get_server_port(default=8080)
     _startup_banner(PORT)
 
+    # ------------------------------------------------------------------
     # When launched as a standalone desktop app (PyInstaller .app / .exe),
     # this `__main__` block runs. Under gunicorn/Docker the module is
-    # *imported* and this block is skipped, so the auto-open is safe.
-    # Skip it explicitly with CBQA_NO_BROWSER=1 (useful for headless test runs).
-    if os.environ.get('CBQA_NO_BROWSER', '').lower() not in ('1', 'true', 'yes'):
-        import threading
-        import webbrowser
+    # *imported* and this block is skipped, so the desktop UX (auto-open
+    # browser + tray icon) is safe.
+    # ------------------------------------------------------------------
 
+    # Auto-open browser on launch. Disable with CBQA_NO_BROWSER=1.
+    if os.environ.get('CBQA_NO_BROWSER', '').lower() not in ('1', 'true', 'yes'):
         def _open_browser():
             url = f"http://localhost:{PORT}"
             print(f"🌐 Opening {url} in your default browser…")
@@ -787,9 +792,66 @@ if __name__ == '__main__':
         # Give Flask ~1.2s to bind the port before the browser hits it.
         threading.Timer(1.2, _open_browser).start()
 
-    app.run(
-        host='0.0.0.0',
-        port=PORT,
-        debug=False,
-        use_reloader=False,
-    )
+    # ------------------------------------------------------------------
+    # Tray icon (menubar on macOS, system tray on Windows).
+    # Enabled by default for PyInstaller-frozen builds (sys.frozen=True),
+    # off by default for source runs (devs use Ctrl+C).
+    # Force on/off with CBQA_TRAY=1 / CBQA_NO_TRAY=1.
+    # ------------------------------------------------------------------
+    _tray_env = os.environ.get('CBQA_TRAY', '').lower()
+    _no_tray_env = os.environ.get('CBQA_NO_TRAY', '').lower()
+    if _no_tray_env in ('1', 'true', 'yes'):
+        _use_tray = False
+    elif _tray_env in ('1', 'true', 'yes'):
+        _use_tray = True
+    else:
+        _use_tray = bool(getattr(sys, 'frozen', False))  # PyInstaller bundle
+
+    if _use_tray:
+        try:
+            from tray import run_tray, is_supported
+        except Exception as e:  # pragma: no cover
+            logger.warning("tray module unavailable: %s", e)
+            run_tray = None
+            is_supported = lambda: False  # noqa: E731
+
+        if is_supported():
+            print("🧭 Launching menubar/tray icon — use it to Quit cleanly.")
+            # Flask runs on a daemon thread so the tray library can own the
+            # main thread (NSApplication requirement on macOS).
+            flask_thread = threading.Thread(
+                target=lambda: app.run(
+                    host='0.0.0.0',
+                    port=PORT,
+                    debug=False,
+                    use_reloader=False,
+                ),
+                daemon=True,
+                name='flask-server',
+            )
+            flask_thread.start()
+
+            tray_ok = run_tray(PORT) if run_tray else False
+            if not tray_ok:
+                # Tray failed to start — fall back to blocking on Flask so
+                # the process doesn't exit immediately when daemon thread
+                # is the only thing running.
+                logger.warning("tray failed; blocking on Flask thread")
+                flask_thread.join()
+            # Tray exited cleanly → process is shutting down; nothing else
+            # to do. (run_tray's Quit handler already calls os._exit.)
+        else:
+            # Unsupported platform (e.g. Linux desktop) — just run Flask.
+            app.run(
+                host='0.0.0.0',
+                port=PORT,
+                debug=False,
+                use_reloader=False,
+            )
+    else:
+        app.run(
+            host='0.0.0.0',
+            port=PORT,
+            debug=False,
+            use_reloader=False,
+        )
