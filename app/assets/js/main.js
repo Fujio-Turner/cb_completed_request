@@ -82,14 +82,14 @@ window.getPreparedSample = getPreparedSample;
 // INITIALIZATION LOG
 // ============================================================
 
-console.log('✅ Main.js loaded with modular architecture');
-console.log('📦 Imported from base.js:', { TEXT_CONSTANTS: !!TEXT_CONSTANTS, Logger: !!Logger });
-console.log('📦 Imported from data-layer.js:', { 
+Logger.debug('[main]', 'Main.js loaded with modular architecture');
+Logger.debug('[main]', 'Imported from base.js:', { TEXT_CONSTANTS: !!TEXT_CONSTANTS, Logger: !!Logger });
+Logger.debug('[main]', 'Imported from data-layer.js:', { 
     caches: !!parseTimeCache,
     stores: !!originalRequests,
     helpers: !!parseTime 
 });
-console.log('📦 Imported from ui-helpers.js:', {
+Logger.debug('[main]', 'Imported from ui-helpers.js:', {
     dom: !!$,
     toast: !!showToast,
     clipboard: !!ClipboardUtils,

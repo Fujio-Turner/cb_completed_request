@@ -553,4 +553,4 @@ window.toggleQueryText = toggleQueryText;
 window.toggleUseKeys = toggleUseKeys;
 window.toggleSectionsVisibility = toggleSectionsVisibility;
 
-console.log('✅ modals.js module loaded');
+

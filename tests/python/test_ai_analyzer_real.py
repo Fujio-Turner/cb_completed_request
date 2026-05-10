@@ -85,19 +85,10 @@ class TestCacheStats:
         assert isinstance(stats, dict)
 
 
-class TestDebugLogging:
-    """Test debug logging configuration"""
-    
-    def test_configure_debug_enabled(self):
-        """configure_debug enables logging"""
-        ai_analyzer.configure_debug(True)
-        assert ai_analyzer.DEBUG is True
-    
-    def test_configure_debug_disabled(self):
-        """configure_debug disables logging"""
-        ai_analyzer.configure_debug(False)
-        assert ai_analyzer.DEBUG is False
-        ai_analyzer.configure_debug(True)  # Reset
+# NOTE: The legacy `configure_debug()` / `DEBUG` flag toggle was removed
+# in the Logging 4.0.0 migration (see app/docs/work/LOGGING_4_0_0/).
+# Verbosity is now controlled by `CBQA_LOG_LEVEL` and standard Python
+# `logging`. The corresponding `TestDebugLogging` class has been deleted.
 
 
 class TestResourcePath:

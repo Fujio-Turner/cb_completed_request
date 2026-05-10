@@ -91,7 +91,7 @@ import {
                         
                         // Debug: log when BSC is default
                         if (bucketScopeCollection === "_default._default._default" && statement.includes("conversations")) {
-                            console.warn("[BSC DEBUG] Failed to parse BSC from statement containing 'conversations':", statement.substring(0, 200));
+                            Logger.warn('[flow] Failed to parse BSC from statement containing conversations:', statement.substring(0, 200));
                         }
 
                         extractIndexUsage(
@@ -209,18 +209,18 @@ import {
 
             // Convert to sorted arrays and filter out indexes with no real usage data
             const allIndexesArray = Array.from(allIndexes.values());
-            console.log(`[BUILD DEBUG] Total indexes before filter: ${allIndexesArray.length}`);
+            Logger.debug(`[flow] Total indexes before filter: ${allIndexesArray.length}`);
             
             const sortedIndexes = allIndexesArray
                 .filter(index => {
                     // Show indexes that have usage count OR performance data
-                    // Removed strict stats requirement to handle JOINs where extractIndexScanDataFromPlan may not find all index details
-                    const hasUsage = index.totalUsage > 0;
-                    const hasStats = index.scanTimes.length > 0 || index.itemsScanned.length > 0 || index.itemsFetched.length > 0;
-                    
-                    if (!hasUsage && !hasStats) {
-                        console.log(`[BUILD DEBUG] Filtered OUT ${hashCompositeKey(index.name + '::' + index.bucketScopeCollection)}: no usage or stats`);
-                    }
+                     // Removed strict stats requirement to handle JOINs where extractIndexScanDataFromPlan may not find all index details
+                     const hasUsage = index.totalUsage > 0;
+                     const hasStats = index.scanTimes.length > 0 || index.itemsScanned.length > 0 || index.itemsFetched.length > 0;
+                     
+                     if (!hasUsage && !hasStats) {
+                         Logger.debug(`[flow] Filtered OUT ${hashCompositeKey(index.name + '::' + index.bucketScopeCollection)}: no usage or stats`);
+                     }
                     
                     return hasUsage || hasStats;
                 })
@@ -230,12 +230,12 @@ import {
             );
             
             // Debug: Show all indexes passed to renderIndexQueryFlow
-            console.log(`[BUILD DEBUG] Total sortedIndexes passed to renderIndexQueryFlow: ${sortedIndexes.length}`);
+            Logger.debug(`[flow] Total sortedIndexes passed to renderIndexQueryFlow: ${sortedIndexes.length}`);
             const joinRelatedIndexes = sortedIndexes.filter(idx => 
-                idx.bucketScopeCollection && idx.bucketScopeCollection.split('.')[0] === 'HASH6'
+               idx.bucketScopeCollection && idx.bucketScopeCollection.split('.')[0] === 'HASH6'
             );
-            console.log(`[BUILD DEBUG] Indexes for HASH6 bucket:`, joinRelatedIndexes.map(idx => 
-                `${hashCompositeKey(idx.name + '::' + idx.bucketScopeCollection)} (scanned: ${idx.totalUsage})`
+            Logger.debug(`[flow] Indexes for HASH6 bucket:`, joinRelatedIndexes.map(idx => 
+               `${hashCompositeKey(idx.name + '::' + idx.bucketScopeCollection)} (scanned: ${idx.totalUsage})`
             ));
 
 
@@ -258,8 +258,6 @@ export {
 
 // Expose globally for backward compatibility
 window.buildIndexQueryFlow = buildIndexQueryFlow_Force;
-
-console.log('✅ flow-diagram.js module loaded');
 
 // Note: Additional flow diagram generation functions:
 // - generateFlowDiagram (line 2020)

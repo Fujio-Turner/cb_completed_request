@@ -29,4 +29,4 @@ export default {
     getVersionInfo
 };
 
-console.log('✅ utils.js module loaded');
+

@@ -149,13 +149,17 @@ docker compose logs query-analyzer | head -20
 docker compose down
 ```
 
-The startup log must include the line:
+The startup log must include the lines:
 
 ```
 🚀 Starting Couchbase Query Analyzer vx.x.x
+📊 Backend: cbl (embedded Couchbase Lite)
+🌐 Open http://localhost:PORT in your browser
 ```
 
-If it doesn't, `__version__` was not updated in [`app/app.py`](../app.py).
+If the version line is missing, `__version__` was not updated in [`app/app.py`](../app.py).
+
+**Docker URL**: When using `docker compose up`, the app runs on the container port (default 8080). Access it at `http://localhost:8080` in your browser (or `http://localhost:PORT` if you override `PORT` in the compose environment).
 
 ---
 

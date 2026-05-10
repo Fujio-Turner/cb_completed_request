@@ -21,7 +21,17 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
-from icecream import ic
+
+from logging_config import mask_api_key
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+# _safe_headers() is defined further down, near the AI HTTP client that
+# uses it (search "Header Redaction Helper" in this file). Keeping a
+# single definition prevents the older shadowing bug.
+
 
 # Try to import CBL storage
 try:
@@ -30,7 +40,7 @@ try:
     CBL_AVAILABLE = True
 except ImportError:
     CBL_AVAILABLE = False
-    ic("⚠️ CBL storage not available, analysis history will not be persisted")
+    logger.warning("CBL storage not available, analysis history will not be persisted")
 
 # Try to import OpenAI SDK
 try:
@@ -38,36 +48,7 @@ try:
     OPENAI_SDK_AVAILABLE = True
 except ImportError:
     OPENAI_SDK_AVAILABLE = False
-    ic("⚠️ OpenAI SDK not installed. Please run: pip install openai")
-
-# ============================================================================
-# Global Debug Configuration
-# ============================================================================
-
-DEBUG = True  # Set to False to disable all icecream logs
-
-def configure_debug(enabled: bool = True):
-    """
-    Enable or disable debug logging globally
-    
-    Args:
-        enabled: If True, icecream logs are shown. If False, they're disabled.
-    """
-    global DEBUG
-    DEBUG = enabled
-    
-    if not DEBUG:
-        ic.disable()
-    else:
-        ic.enable()
-    
-    ic(f"🐛 AI Analyzer debug logging: {'ENABLED' if DEBUG else 'DISABLED'}")
-
-# Configure icecream output
-ic.configureOutput(prefix='[ai_analyzer] ')
-
-# Enable debug by default
-configure_debug(DEBUG)
+    logger.warning("OpenAI SDK not installed. Please run: pip install openai")
 
 # ============================================================================
 # PyInstaller Resource Path Helper
@@ -116,13 +97,13 @@ def get_payload_reference_template() -> Dict[str, Any]:
     try:
         with open(template_path, 'r') as f:
             template = json.load(f)
-            ic("📄 Loaded payload_reference.json.template")
+            logger.info("loaded_payload_reference_template")
             return template
     except FileNotFoundError:
-        ic(f"⚠️ Template file not found: {template_path}")
+        logger.warning("template_file_not_found path=%s", template_path)
         return {}
     except json.JSONDecodeError as e:
-        ic(f"❌ Invalid JSON in template: {e}")
+        logger.error("invalid_json_in_template error=%s", e)
         return {}
 
 def load_payload_reference(cluster, bucket_name: str = None) -> Dict[str, Any]:
@@ -154,7 +135,7 @@ def load_payload_reference(cluster, bucket_name: str = None) -> Dict[str, Any]:
     
     # Check cache first
     if _payload_reference_cache and (time.time() - _payload_reference_cache_time) < PAYLOAD_REFERENCE_CACHE_TTL:
-        ic("📦 Using cached payload_reference")
+        logger.debug("using_cached_payload_reference")
         return _payload_reference_cache
     
     bucket_name = bucket_name or 'cb_tools'
@@ -169,39 +150,39 @@ def load_payload_reference(cluster, bucket_name: str = None) -> Dict[str, Any]:
         
         # Validate document is not empty or malformed (must have key fields)
         if not payload_ref or not payload_ref.get('couchbase_index_creation'):
-            ic("⚠️ payload_reference document is empty or malformed, re-seeding from template")
+            logger.warning("payload_reference_empty_or_malformed_reseeding")
             raise ValueError("Document empty or missing required fields")
         
         # Update cache
         _payload_reference_cache = payload_ref
         _payload_reference_cache_time = time.time()
         
-        ic(f"✅ Loaded payload_reference from Couchbase {bucket_name}._default._default")
+        logger.info("payload_reference_loaded bucket=%s", bucket_name)
         return payload_ref
         
     except DocumentNotFoundException:
         # Document doesn't exist - auto-seed from template
-        ic(f"📄 payload_reference not found in {bucket_name}._default._default, auto-seeding from template")
+        logger.info("payload_reference_not_found_auto_seeding bucket=%s", bucket_name)
         return _auto_seed_payload_reference(cluster, bucket_name)
         
     except TimeoutException as e:
-        ic(f"⏰ Timeout loading payload_reference: {e}")
-        ic("📄 Falling back to template file (not seeding due to timeout)")
+        logger.warning("timeout_loading_payload_reference error=%s", e)
+        logger.info("falling_back_to_template_file_timeout")
         return _fallback_to_template()
         
     except ValueError as e:
         # Empty or malformed document - re-seed from template
-        ic(f"⚠️ Invalid payload_reference: {e}")
+        logger.warning("invalid_payload_reference error=%s", e)
         return _auto_seed_payload_reference(cluster, bucket_name)
         
     except CouchbaseException as e:
-        ic(f"❌ Couchbase error loading payload_reference: {e}")
-        ic("📄 Falling back to template file")
+        logger.error("couchbase_error_loading_payload_reference error=%s", e)
+        logger.info("falling_back_to_template_file")
         return _fallback_to_template()
         
     except Exception as e:
-        ic(f"💥 Unexpected error loading payload_reference: {e}")
-        ic("📄 Falling back to template file")
+        logger.exception("unexpected_error_loading_payload_reference")
+        logger.info("falling_back_to_template_file")
         return _fallback_to_template()
 
 
@@ -215,7 +196,7 @@ def _auto_seed_payload_reference(cluster, bucket_name: str) -> Dict[str, Any]:
     template = get_payload_reference_template()
     
     if not template:
-        ic("❌ Template file missing or invalid, using empty defaults")
+        logger.error("template_file_missing_invalid")
         return {}
     
     try:
@@ -233,12 +214,12 @@ def _auto_seed_payload_reference(cluster, bucket_name: str) -> Dict[str, Any]:
         _payload_reference_cache = template
         _payload_reference_cache_time = time.time()
         
-        ic(f"🌱 Auto-seeded payload_reference to {bucket_name}._default._default")
+        logger.info("auto_seeded_payload_reference bucket=%s", bucket_name)
         return template
         
     except Exception as e:
-        ic(f"❌ Failed to auto-seed payload_reference: {e}")
-        ic("📄 Using template without saving to Couchbase")
+        logger.exception("failed_to_auto_seed_payload_reference")
+        logger.info("using_template_without_saving")
         
         # Still cache and return template even if save failed
         _payload_reference_cache = template
@@ -288,11 +269,11 @@ def save_payload_reference(cluster, payload_ref: Dict[str, Any], bucket_name: st
         _payload_reference_cache = payload_ref
         _payload_reference_cache_time = time.time()
         
-        ic(f"✅ Saved payload_reference to Couchbase {bucket_name}._default._default")
+        logger.info("saved_payload_reference bucket=%s", bucket_name)
         return True
         
     except Exception as e:
-        ic(f"❌ Failed to save payload_reference: {e}")
+        logger.exception("failed_to_save_payload_reference")
         return False
 
 def seed_payload_reference(cluster, bucket_name: str = None, force: bool = False) -> Dict[str, Any]:
@@ -318,7 +299,7 @@ def seed_payload_reference(cluster, bucket_name: str = None, force: bool = False
             # Check if document exists
             try:
                 result = collection.get(doc_key)
-                ic(f"ℹ️ payload_reference already exists in {bucket_name}._default._default")
+                logger.debug("payload_reference_already_exists bucket=%s", bucket_name)
                 return result.content_as[dict]
             except Exception:
                 pass  # Document doesn't exist, proceed to seed
@@ -328,14 +309,14 @@ def seed_payload_reference(cluster, bucket_name: str = None, force: bool = False
         if template:
             template['_seededAt'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
             collection.upsert(doc_key, template)
-            ic(f"🌱 Seeded payload_reference to {bucket_name}._default._default")
+            logger.info("seeded_payload_reference bucket=%s", bucket_name)
             return template
         else:
-            ic("❌ Cannot seed: template file not found or invalid")
+            logger.error("cannot_seed_template_invalid")
             return {}
             
     except Exception as e:
-        ic(f"❌ Failed to seed payload_reference: {e}")
+        logger.exception("failed_to_seed_payload_reference")
         return {}
 
 def invalidate_payload_reference_cache():
@@ -343,7 +324,7 @@ def invalidate_payload_reference_cache():
     global _payload_reference_cache, _payload_reference_cache_time
     _payload_reference_cache = None
     _payload_reference_cache_time = 0
-    ic("🗑️ Invalidated payload_reference cache")
+    logger.info("invalidated_payload_reference_cache")
 
 # ============================================================================
 # AI Models List Manager
@@ -366,13 +347,13 @@ def get_ai_models_template() -> Dict[str, Any]:
     try:
         with open(template_path, 'r') as f:
             template = json.load(f)
-            ic("📄 Loaded ai_models_list.json.template")
+            logger.info("loaded_ai_models_list_template")
             return template
     except FileNotFoundError:
-        ic(f"⚠️ Template file not found: {template_path}")
+        logger.warning("template_file_not_found path=%s", template_path)
         return {}
     except json.JSONDecodeError as e:
-        ic(f"❌ Invalid JSON in template: {e}")
+        logger.error("invalid_json_in_template error=%s", e)
         return {}
 
 def load_ai_models_list(cluster, bucket_name: str = None) -> Dict[str, Any]:
@@ -403,7 +384,7 @@ def load_ai_models_list(cluster, bucket_name: str = None) -> Dict[str, Any]:
     
     # Check cache first
     if _ai_models_cache and (time.time() - _ai_models_cache_time) < AI_MODELS_CACHE_TTL:
-        ic("📦 Using cached ai_models_list")
+        logger.debug("using_cached_ai_models_list")
         return _ai_models_cache
     
     bucket_name = bucket_name or 'cb_tools'
@@ -418,35 +399,35 @@ def load_ai_models_list(cluster, bucket_name: str = None) -> Dict[str, Any]:
         
         # Validate document has required structure
         if not models_list or not models_list.get('providers'):
-            ic("⚠️ ai_models_list document is empty or malformed, re-seeding from template")
+            logger.warning("ai_models_list_empty_or_malformed_reseeding")
             raise ValueError("Document empty or missing required fields")
         
         # Update cache
         _ai_models_cache = models_list
         _ai_models_cache_time = time.time()
         
-        ic(f"✅ Loaded ai_models_list from Couchbase {bucket_name}._default._default")
+        logger.info("ai_models_list_loaded bucket=%s", bucket_name)
         return models_list
         
     except DocumentNotFoundException:
-        ic(f"📄 ai_models_list not found in {bucket_name}._default._default, auto-seeding from template")
+        logger.info("ai_models_list_not_found_auto_seeding bucket=%s", bucket_name)
         return _auto_seed_ai_models(cluster, bucket_name)
         
     except TimeoutException as e:
-        ic(f"⏰ Timeout loading ai_models_list: {e}")
-        ic("📄 Falling back to template file")
+        logger.warning("timeout_loading_ai_models_list error=%s", e)
+        logger.info("falling_back_to_template_file")
         return _fallback_to_ai_models_template()
         
     except ValueError as e:
-        ic(f"⚠️ Invalid ai_models_list: {e}")
+        logger.warning("invalid_ai_models_list error=%s", e)
         return _auto_seed_ai_models(cluster, bucket_name)
         
     except CouchbaseException as e:
-        ic(f"❌ Couchbase error loading ai_models_list: {e}")
+        logger.error("couchbase_error_loading_ai_models_list error=%s", e)
         return _fallback_to_ai_models_template()
         
     except Exception as e:
-        ic(f"💥 Unexpected error loading ai_models_list: {e}")
+        logger.exception("unexpected_error_loading_ai_models_list")
         return _fallback_to_ai_models_template()
 
 
@@ -459,7 +440,7 @@ def _auto_seed_ai_models(cluster, bucket_name: str) -> Dict[str, Any]:
     template = get_ai_models_template()
     
     if not template:
-        ic("❌ Template file missing or invalid, using empty defaults")
+        logger.error("template_file_missing_invalid")
         return {}
     
     try:
@@ -477,11 +458,11 @@ def _auto_seed_ai_models(cluster, bucket_name: str) -> Dict[str, Any]:
         _ai_models_cache = template
         _ai_models_cache_time = time.time()
         
-        ic(f"🌱 Auto-seeded ai_models_list to {bucket_name}._default._default")
+        logger.info("auto_seeded_ai_models_list bucket=%s", bucket_name)
         return template
         
     except Exception as e:
-        ic(f"❌ Failed to auto-seed ai_models_list: {e}")
+        logger.exception("failed_to_auto_seed_ai_models_list")
         _ai_models_cache = template
         _ai_models_cache_time = time.time()
         return template
@@ -525,11 +506,11 @@ def save_ai_models_list(cluster, models_list: Dict[str, Any], bucket_name: str =
         _ai_models_cache = models_list
         _ai_models_cache_time = time.time()
         
-        ic(f"✅ Saved ai_models_list to Couchbase {bucket_name}._default._default")
+        logger.info("saved_ai_models_list bucket=%s", bucket_name)
         return True
         
     except Exception as e:
-        ic(f"❌ Failed to save ai_models_list: {e}")
+        logger.exception("failed_to_save_ai_models_list")
         return False
 
 
@@ -555,7 +536,7 @@ def seed_ai_models_list(cluster, bucket_name: str = None, force: bool = False) -
         if not force:
             try:
                 result = collection.get(doc_key)
-                ic(f"ℹ️ ai_models_list already exists in {bucket_name}._default._default")
+                logger.debug("ai_models_list_already_exists bucket=%s", bucket_name)
                 return result.content_as[dict]
             except Exception:
                 pass
@@ -564,14 +545,14 @@ def seed_ai_models_list(cluster, bucket_name: str = None, force: bool = False) -
         if template:
             template['_seededAt'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
             collection.upsert(doc_key, template)
-            ic(f"🌱 Seeded ai_models_list to {bucket_name}._default._default")
+            logger.info("seeded_ai_models_list bucket=%s", bucket_name)
             return template
         else:
-            ic("❌ Cannot seed: template file not found or invalid")
+            logger.error("cannot_seed_template_invalid")
             return {}
             
     except Exception as e:
-        ic(f"❌ Failed to seed ai_models_list: {e}")
+        logger.exception("failed_to_seed_ai_models_list")
         return {}
 
 
@@ -580,7 +561,7 @@ def invalidate_ai_models_cache():
     global _ai_models_cache, _ai_models_cache_time
     _ai_models_cache = None
     _ai_models_cache_time = 0
-    ic("🗑️ Invalidated ai_models_list cache")
+    logger.info("invalidated_ai_models_list_cache")
 
 
 def get_models_for_provider(cluster, provider_id: str, bucket_name: str = None) -> List[Dict[str, Any]]:
@@ -637,6 +618,27 @@ def get_model_info(cluster, provider_id: str, model_id: str, bucket_name: str = 
     return None
 
 # ============================================================================
+# Header Redaction Helper
+# ============================================================================
+
+def _safe_headers(headers: dict) -> dict:
+    """Return a copy of headers with sensitive values masked."""
+    SENSITIVE = {"authorization", "x-api-key", "api-key", "apikey", "x-goog-api-key"}
+    out = {}
+    for k, v in headers.items():
+        if k.lower() in SENSITIVE:
+            # "Bearer sk-proj-..XYZ" → "Bearer sk-proj-......XYZ"
+            sval = str(v)
+            if sval.startswith("Bearer "):
+                out[k] = "Bearer " + mask_api_key(sval[7:])
+            else:
+                out[k] = mask_api_key(sval)
+        else:
+            out[k] = v
+    return out
+
+
+# ============================================================================
 # AI HTTP Client
 # ============================================================================
 
@@ -665,7 +667,7 @@ class AIHttpClient:
         # Use a fresh list each call — never share a mutable default across instances
         self.retry_on_status = retry_on_status if retry_on_status is not None else [429, 500, 502, 503, 504]
         
-        ic("🔧 AIHttpClient initialized", max_retries, backoff_factor, timeout, retry_on_status)
+        logger.debug("http_client_initialized max_retries=%d backoff_factor=%s timeout=%s", max_retries, backoff_factor, timeout)
     
     def _create_session(self):
         """Create requests session with retry strategy"""
@@ -703,9 +705,9 @@ class AIHttpClient:
         start_time = time.time()
         attempt = 0
         
-        ic("🚀 API Call Starting", method, url)
-        ic("📤 Headers", headers)
-        ic(f"📤 Payload size: {len(str(json_data))} bytes")
+        logger.debug("api_call_starting method=%s url=%s", method, url)
+        logger.debug("api_request_headers %s", _safe_headers(headers))
+        logger.debug("api_payload_bytes=%d", len(str(json_data)))
         
         session = self._create_session()
         
@@ -722,7 +724,7 @@ class AIHttpClient:
             attempt += 1
             
             try:
-                ic(f"🔄 Attempt {attempt}/{self.max_retries}")
+                logger.debug("api_attempt attempt=%d max=%d", attempt, self.max_retries)
                 
                 # Make the request
                 response = session.request(
@@ -736,13 +738,13 @@ class AIHttpClient:
                 
                 elapsed_ms = int((time.time() - start_time) * 1000)
                 
-                ic("📥 Response Status", response.status_code, f"{elapsed_ms}ms")
+                logger.debug("api_response_status=%d elapsed_ms=%d", response.status_code, elapsed_ms)
                 
                 # Success case
                 if 200 <= response.status_code < 300:
                     try:
                         response_data = response.json()
-                        ic("✅ Success", response_data)
+                        logger.debug("api_call_success")
                         
                         return {
                             'success': True,
@@ -753,7 +755,7 @@ class AIHttpClient:
                         }
                     except ValueError:
                         # Response is not JSON
-                        ic("✅ Success (non-JSON response)", response.text[:200])
+                        logger.debug("api_call_success_non_json")
                         
                         return {
                             'success': True,
@@ -765,7 +767,7 @@ class AIHttpClient:
                 
                 # Retry on specific status codes
                 if response.status_code in self.retry_on_status:
-                    ic(f"⚠️ Retryable error {response.status_code}, will retry...")
+                    logger.warning("api_retryable_error status=%d", response.status_code)
                     
                     # Exponential backoff
                     if attempt < self.max_retries:
@@ -776,7 +778,7 @@ class AIHttpClient:
                         if retry_after:
                             try:
                                 delay = max(delay, float(retry_after))
-                                ic(f"🛑 Server requested wait (header): {retry_after}s")
+                                logger.warning("api_retry_after_header seconds=%s", retry_after)
                             except ValueError:
                                 pass
                                 
@@ -798,16 +800,16 @@ class AIHttpClient:
                                     
                                     if wait_s > delay:
                                         delay = wait_s
-                                        ic(f"🛑 Error message requested wait: {delay}s")
+                                        logger.warning("api_error_message_wait seconds=%d", delay)
                             except Exception as e:
-                                ic(f"⚠️ Failed to parse wait time: {e}")
+                                logger.warning("api_parse_wait_time_failed error=%s", e)
                         
-                        ic(f"⏳ Waiting {delay}s before retry")
+                        logger.debug("api_waiting_before_retry seconds=%d", delay)
                         time.sleep(delay)
                         continue
                 
                 # Non-retryable error
-                ic("❌ API Error (non-retryable)", response.status_code, response.text[:500])
+                logger.error("api_error_non_retryable status=%d", response.status_code)
                 
                 return {
                     'success': False,
@@ -819,7 +821,7 @@ class AIHttpClient:
                 }
                 
             except requests.exceptions.Timeout:
-                ic(f"⏰ Timeout on attempt {attempt}")
+                logger.warning("api_timeout attempt=%d", attempt)
                 
                 if attempt >= self.max_retries:
                     elapsed_ms = int((time.time() - start_time) * 1000)
@@ -832,11 +834,11 @@ class AIHttpClient:
                 
                 # Wait before retry
                 delay = self.backoff_factor * (2 ** (attempt - 1))
-                ic(f"⏳ Waiting {delay}s before retry")
+                logger.debug("api_waiting_before_retry seconds=%d", delay)
                 time.sleep(delay)
                 
             except requests.exceptions.ConnectionError as e:
-                ic(f"🔌 Connection error on attempt {attempt}", str(e))
+                logger.warning("api_connection_error attempt=%d error=%s", attempt, str(e))
                 
                 if attempt >= self.max_retries:
                     elapsed_ms = int((time.time() - start_time) * 1000)
@@ -849,11 +851,11 @@ class AIHttpClient:
                 
                 # Wait before retry
                 delay = self.backoff_factor * (2 ** (attempt - 1))
-                ic(f"⏳ Waiting {delay}s before retry")
+                logger.debug("api_waiting_before_retry seconds=%d", delay)
                 time.sleep(delay)
                 
             except Exception as e:
-                ic("💥 Unexpected error", type(e).__name__, str(e))
+                logger.error("api_unexpected_error type=%s error=%s", type(e).__name__, str(e))
                 elapsed_ms = int((time.time() - start_time) * 1000)
                 
                 return {
@@ -865,7 +867,7 @@ class AIHttpClient:
         
         # Max retries exceeded
         elapsed_ms = int((time.time() - start_time) * 1000)
-        ic("❌ Max retries exceeded", attempt)
+        logger.error("api_max_retries_exceeded attempt=%d", attempt)
         
         return {
             'success': False,
@@ -906,7 +908,7 @@ class SessionCache:
         # Start background cleanup thread
         self._start_cleanup_thread()
         
-        ic("🗄️ SessionCache initialized", ttl_minutes, cleanup_interval_seconds)
+        logger.debug("session_cache_initialized ttl_minutes=%d cleanup_interval=%d", ttl_minutes, cleanup_interval_seconds)
     
     def _start_cleanup_thread(self):
         """Start background thread for automatic cleanup"""
@@ -917,7 +919,7 @@ class SessionCache:
         
         thread = threading.Thread(target=cleanup_worker, daemon=True)
         thread.start()
-        ic("🧹 Cleanup thread started")
+        logger.debug("cleanup_thread_started")
     
     def _cleanup_expired(self):
         """Remove expired sessions from cache"""
@@ -933,7 +935,7 @@ class SessionCache:
                 del self._cache[key]
         
         if expired_keys:
-            ic(f"🗑️ Cleaned up {len(expired_keys)} expired sessions", expired_keys)
+            logger.debug("cleanup_sessions expired_count=%d", len(expired_keys))
     
     def set(self, session_id: str, data: Dict[str, Any]) -> None:
         """Store data in cache"""
@@ -942,7 +944,7 @@ class SessionCache:
                 'data': data,
                 'timestamp': time.time()
             }
-        ic(f"💾 Cached session {session_id}", f"size={len(str(data))} bytes")
+        logger.debug("session_cached session_id=%s size_bytes=%d", session_id, len(str(data)))
     
     def get(self, session_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve data from cache"""
@@ -950,16 +952,16 @@ class SessionCache:
             session = self._cache.get(session_id)
             
             if not session:
-                ic(f"❌ Session {session_id} not found")
+                logger.warning("session_not_found session_id=%s", session_id)
                 return None
             
             # Check if expired
             if time.time() - session['timestamp'] > self.ttl_seconds:
                 del self._cache[session_id]
-                ic(f"⏰ Session {session_id} expired")
+                logger.warning("session_expired session_id=%s", session_id)
                 return None
             
-            ic(f"✅ Retrieved session {session_id}")
+            logger.debug("session_retrieved session_id=%s", session_id)
             return session['data']
     
     def delete(self, session_id: str) -> bool:
@@ -967,7 +969,7 @@ class SessionCache:
         with self._lock:
             if session_id in self._cache:
                 del self._cache[session_id]
-                ic(f"🗑️ Deleted session {session_id}")
+                logger.debug("session_deleted session_id=%s", session_id)
                 return True
             return False
     
@@ -1008,7 +1010,7 @@ class DataObfuscator:
         self.seed = seed or "couchbase-query-analyzer"
         self._token_cache: Dict[str, str] = {}  # original -> token
         self._reverse_map: Dict[str, str] = {}  # token -> original
-        ic("🔒 DataObfuscator initialized")
+        logger.debug("data_obfuscator_initialized")
     
     def _generate_token(self, original: str) -> str:
         """
@@ -1223,7 +1225,7 @@ class AIPayloadBuilder:
         """
         self._store = store
         self._blobs = blobs
-        ic(f"🔨 AIPayloadBuilder initialized (CBL: {store is not None})")
+        logger.debug("payload_builder_initialized cbl_available=%s", store is not None)
     
     def build_payload_from_data(self,
                                 raw_data: Dict[str, Any],
@@ -1248,7 +1250,7 @@ class AIPayloadBuilder:
         Returns:
             Complete payload dict
         """
-        ic("🔨 Building payload from raw data")
+        logger.debug("building_payload_from_raw_data")
         
         # Initialize payload with context
         full_prompt = user_prompt
@@ -1581,7 +1583,7 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
             # Store mapping table separately (returned to caller, not sent to AI)
             payload['_obfuscation_mapping'] = mapping_table
         
-        ic(f"✅ Payload built from raw data, size={len(str(payload))} bytes")
+        logger.info("payload_built_from_raw_data size_bytes=%d", len(str(payload)))
         return payload
     
     def _persist_run(self, prompt: str, response: str, metadata: Dict[str, Any] = None) -> bool:
@@ -1597,7 +1599,7 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
             True if persisted, False if not available or failed
         """
         if not self._store:
-            ic("ℹ️ CBL store not available, analysis run not persisted (legacy path)")
+            logger.info("cbl_store_not_available_legacy_path")
             return False
         
         try:
@@ -1621,11 +1623,11 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
             # Store analysis document
             self._store.add_ai_history(doc_id, doc)
             
-            ic(f"✅ AI analysis run persisted to CBL: {doc_id}")
+            logger.info("ai_analysis_persisted_to_cbl doc_id=%s", doc_id)
             return True
             
         except Exception as e:
-            ic(f"❌ Failed to persist AI run: {e}")
+            logger.exception("failed_to_persist_ai_run")
             return False
     
     def _load_payload_reference(self, cluster=None, bucket_name: str = None) -> Dict[str, Any]:
@@ -1643,10 +1645,10 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
             try:
                 result = self._store.get_payload_reference()
                 if result:
-                    ic("✅ Loaded payload_reference from CBL")
+                    logger.info("loaded_payload_reference_from_cbl")
                     return result
             except Exception as e:
-                ic(f"⚠️ Failed to load from CBL: {e}")
+                logger.warning("failed_to_load_from_cbl error=%s", e)
         
         # Fallback to Couchbase Server or template
         if cluster:
@@ -1669,10 +1671,10 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
             try:
                 result = self._store.get_ai_models_list()
                 if result:
-                    ic("✅ Loaded ai_models_list from CBL")
+                    logger.info("loaded_ai_models_list_from_cbl")
                     return result
             except Exception as e:
-                ic(f"⚠️ Failed to load from CBL: {e}")
+                logger.warning("failed_to_load_from_cbl error=%s", e)
         
         # Fallback to Couchbase Server or template
         if cluster:
@@ -1697,12 +1699,12 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
         Returns:
             Complete payload dict or None if session not found
         """
-        ic(f"🔨 Building payload for session {session_id}")
+        logger.debug("building_payload_for_session session_id=%s", session_id)
         
         # Retrieve cached data
         cached_data = session_cache.get(session_id)
         if not cached_data:
-            ic("❌ Session not found in cache")
+            logger.warning("session_not_found_in_cache")
             return None
         
         # Initialize payload
@@ -1743,7 +1745,7 @@ CRITICAL: Do NOT skip analysis of the stake timestamp. The user specifically wan
             payload['data'] = obfuscator.obfuscate_dict(payload['data'])
             payload['metadata']['obfuscated'] = True
         
-        ic(f"✅ Payload built, size={len(str(payload))} bytes")
+        logger.info("payload_built size_bytes=%d", len(str(payload)))
         return payload
     
     def _build_dashboard_metrics(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -2133,7 +2135,7 @@ def get_cache_stats() -> Dict[str, Any]:
 # ============================================================================
 
 if __name__ == "__main__":
-    ic("🧪 Testing AI Analyzer Module")
+    logger.debug("testing_ai_analyzer_module")
     
     # Test session cache
     test_data = {
@@ -2142,10 +2144,10 @@ if __name__ == "__main__":
     }
     
     session_id = cache_analyzer_data(test_data)
-    ic(f"Created session: {session_id}")
+    logger.debug("created_session session_id=%s", session_id)
     
     retrieved = get_cached_data(session_id)
-    ic(f"Retrieved data: {retrieved}")
+    logger.debug("retrieved_session_data")
     
     # Test payload building
     payload = build_ai_payload(
@@ -2154,18 +2156,18 @@ if __name__ == "__main__":
         selections={'dashboard': True, 'insights': True},
         options={'obfuscated': True}
     )
-    ic(f"Built payload: {payload}")
+    logger.debug("built_payload")
     
     # Test stats
     stats = get_cache_stats()
-    ic(f"Cache stats: {stats}")
+    logger.debug("cache_stats")
     
     # Test obfuscator
     obfuscator = DataObfuscator()
     test_query = 'SELECT fName, lName FROM bucket.scope.collection WHERE customerId = "1234"'
     obfuscated_query = obfuscator.obfuscate_query(test_query)
-    ic(f"Original: {test_query}")
-    ic(f"Obfuscated: {obfuscated_query}")
+    logger.debug("original_query")
+    logger.debug("obfuscated_query")
 
 # ============================================================================
 # Model Token Limits Configuration
@@ -2263,7 +2265,7 @@ def get_max_output_tokens(provider: str, model: str) -> int:
         if model.startswith(model_prefix):
             return tokens
     
-    ic(f"⚠️ Unknown model '{model}' for {provider}, using default {default}")
+    logger.warning("unknown_model model=%s provider=%s using_default=%s", model, provider, default)
     return default
 
 
@@ -2297,11 +2299,11 @@ def call_ai_provider(provider: str,
     """
     import json
     
-    ic(f"🤖 Calling AI provider: {provider}, model: {model}, language: {language}")
+    logger.info("calling_ai_provider provider=%s model=%s language=%s", provider, model, language)
     
     # Get dynamic max_tokens based on model
     max_tokens = get_max_output_tokens(provider, model)
-    ic(f"📊 Max output tokens for {model}: {max_tokens}")
+    logger.debug("ai_max_output_tokens model=%s tokens=%d", model, max_tokens)
     
     # Get system prompt
     system_prompt = get_ai_system_prompt(language)
@@ -2311,7 +2313,7 @@ def call_ai_provider(provider: str,
     # ---------------------------------------------------------
     if (provider == 'openai' or provider == 'grok') and OPENAI_SDK_AVAILABLE:
         try:
-            ic(f"🚀 Using OpenAI SDK for {provider}")
+            logger.debug("using_openai_sdk provider=%s", provider)
             start_time = time.time()
             
             # Clean base_url for SDK (it expects base, not chat/completions)
@@ -2355,7 +2357,7 @@ def call_ai_provider(provider: str,
             # Convert Pydantic model to dict
             response_data = json.loads(response.model_dump_json())
             
-            ic(f"✅ {provider.upper()} SDK Success ({elapsed_ms}ms)")
+            logger.info("ai_sdk_success provider=%s elapsed_ms=%d", provider.upper(), elapsed_ms)
             
             return {
                 'success': True,
@@ -2367,7 +2369,7 @@ def call_ai_provider(provider: str,
             
         except Exception as e:
             elapsed_ms = int((time.time() - start_time) * 1000) if 'start_time' in locals() else 0
-            ic(f"❌ {provider.upper()} SDK Error: {str(e)}")
+            logger.exception("ai_sdk_error provider=%s", provider.upper())
             # Don't fall back to HTTP if SDK fails (likely auth or logic error), return error
             return {
                 'success': False,
@@ -2446,7 +2448,7 @@ def _execute_ai_request(full_url: str, headers: dict, ai_request_payload: dict) 
     """Execute the AI API request and return result."""
     http_client = AIHttpClient()
     
-    ic(f"📤 Full URL: {full_url}")
+    logger.debug("ai_full_url %s", full_url)
     
     # Make API call using AIHttpClient
     result = http_client.call_api(
@@ -2456,7 +2458,7 @@ def _execute_ai_request(full_url: str, headers: dict, ai_request_payload: dict) 
         json_data=ai_request_payload
     )
     
-    ic(f"📥 Response received: success={result.get('success')}, elapsed={result.get('elapsed_ms')}ms")
+    logger.debug("ai_response_received success=%s elapsed_ms=%d", result.get("success"), result.get("elapsed_ms"))
     
     return result
 
@@ -2491,9 +2493,9 @@ def call_custom_ai_provider(
     Returns:
         API response dict with success/data/error
     """
-    ic("🔧 Calling custom AI provider")
-    ic(f"📤 Custom API Name: {custom_config.get('name')}")
-    ic(f"📤 Custom API URL: {custom_config.get('url')}")
+    logger.debug("calling_custom_ai_provider")
+    logger.debug("custom_api_name %s", custom_config.get("name"))
+    logger.debug("custom_api_url_configured")
     
     url = custom_config.get('url', '')
     model = custom_config.get('model', 'default')
@@ -2537,7 +2539,7 @@ def call_custom_ai_provider(
         password = custom_config.get('digestPassword', '')
         if username and password:
             digest_auth = (username, password)
-            ic(f"🔐 Digest auth configured for user: {username}")
+            logger.debug("digest_auth_configured user=%s", username)
     
     # Add custom headers
     custom_headers = custom_config.get('customHeaders', [])
@@ -2577,7 +2579,7 @@ def call_custom_ai_provider(
             'max_tokens': 4096
         }
     
-    ic(f"📤 Request payload keys: {list(ai_request_payload.keys())}")
+    logger.debug("ai_request_payload_keys %s", list(ai_request_payload.keys()))
     
     # Execute the request
     if digest_auth:
@@ -2599,7 +2601,7 @@ def _execute_ai_request_with_digest(full_url: str, headers: dict, ai_request_pay
     import requests
     from requests.auth import HTTPDigestAuth
     
-    ic(f"📤 Full URL (Digest Auth): {full_url}")
+    logger.debug("ai_full_url_digest_auth")
     
     start_time = time.time()
     
@@ -2614,12 +2616,12 @@ def _execute_ai_request_with_digest(full_url: str, headers: dict, ai_request_pay
         
         elapsed_ms = int((time.time() - start_time) * 1000)
         
-        ic(f"📥 Response Status (Digest): {response.status_code}, {elapsed_ms}ms")
+        logger.debug("api_response_status_digest status=%d elapsed_ms=%d", response.status_code, elapsed_ms)
         
         if 200 <= response.status_code < 300:
             try:
                 response_data = response.json()
-                ic("✅ Success (Digest Auth)")
+                logger.debug("api_call_success_digest_auth")
                 
                 return {
                     'success': True,
@@ -2637,7 +2639,7 @@ def _execute_ai_request_with_digest(full_url: str, headers: dict, ai_request_pay
                     'attempts': 1
                 }
         else:
-            ic(f"❌ Request failed (Digest): {response.status_code}")
+            logger.error("request_failed_digest status=%d", response.status_code)
             return {
                 'success': False,
                 'status_code': response.status_code,
@@ -2654,7 +2656,7 @@ def _execute_ai_request_with_digest(full_url: str, headers: dict, ai_request_pay
         }
     except Exception as e:
         elapsed_ms = int((time.time() - start_time) * 1000)
-        ic(f"💥 Exception (Digest Auth): {str(e)}")
+        logger.exception("exception_digest_auth")
         return {
             'success': False,
             'error': str(e),

@@ -134,3 +134,11 @@ coverage.xml
 # ------------------------------------------------------------------------------
 _apollo/
 _apollo_web/
+
+# ------------------------------------------------------------------------------
+# Server Edition: Couchbase Lite embedded database
+# Database grows dynamically; recreated on startup. Keep out of repo.
+# Persisted via Docker volume in production.
+# ------------------------------------------------------------------------------
+app/data/
+app/logs/*.log

@@ -26,7 +26,7 @@ import {
 // ============================================================
 
         function updateInsights(requests) {
-            Logger.debug(`[updateInsights] Called with ${requests.length} requests, currentTimezone=${currentTimezone}`);
+             Logger.debug(`[insights] Called with ${requests.length} requests, currentTimezone=${currentTimezone}`);
             
             // Reset metrics tracking
             window.inefficientScanMetrics = [];
@@ -283,7 +283,7 @@ import {
                             }
                         }
                     } catch (e) {
-                        console.error("Error parsing plan for kernel time analysis:", e);
+                        Logger.error('[insights]', 'Error parsing plan for kernel time analysis:', e);
                     }
                 }
                 
@@ -538,7 +538,7 @@ import {
                                 }
                             }
                         } catch (e) {
-                            console.error("Error analyzing large payload streaming:", e);
+                            Logger.error('[insights]', 'Error analyzing large payload streaming:', e);
                         }
                     }
                 }
@@ -1114,9 +1114,6 @@ import {
             // Reset metrics for next parse
             window.inefficientScanMetrics = [];
 
-            // Update slow index scan times insight
-            updateSlowIndexScanTimes(requests);
-
             // Update slow parse/plan times insight
             const slowParsePlanCountElement = document.getElementById("slow-parse-plan-count");
             const slowParsePlanPercentElement = document.getElementById("slow-parse-plan-percent");
@@ -1144,7 +1141,7 @@ import {
             }
 
             // Update sample queries for each insight
-            Logger.debug(`[updateInsights] About to update insight sample queries, sampleQueries.length=${sampleQueries.length}`);
+            Logger.debug(`[insights] About to update insight sample queries, sampleQueries.length=${sampleQueries.length}`);
             
             updateInsightSampleQueries('missing-where-clauses', missingWhereClausesSamples);
             updateInsightSampleQueries('slow-use-key-queries', slowUseKeyQueriesSamples);
@@ -1427,7 +1424,7 @@ import {
             const statement = insightSampleQueries[insightId]?.[index]?.statement;
             
             if (!statement) {
-                console.error(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
+                Logger.error('[insights]', TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
                 showToast(TEXT_CONSTANTS.STATEMENT_NOT_FOUND, "error");
                 return;
             }
@@ -1444,7 +1441,7 @@ import {
                     }, 1000);
                 })
                 .catch((err) => {
-                    console.error(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, err);
+                    Logger.error('[insights]', TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, err);
                     showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
                 });
         }
@@ -1474,4 +1471,4 @@ window.updateInsightSampleQueries = updateInsightSampleQueries;
 window.toggleInsightStatement = toggleInsightStatement;
 window.copyInsightStatement = copyInsightStatement;
 
-console.log('✅ insights.js module loaded');
+

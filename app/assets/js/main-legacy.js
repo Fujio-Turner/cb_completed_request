@@ -540,40 +540,30 @@ if (window.TEXT_CONSTANTS) {
 
         // Logging utility with granular levels
         // Usage: ?logLevel=error|warn|info|debug|trace (or ?debug=true for backward compatibility)
+        // Local Logger shim. We do NOT redeclare the global `Logger` from
+        // base.js; we shadow it inside this scope so all the migrated
+        // `Logger.<level>('[legacy]', ...)` calls in this file get the
+        // five-level filtering controlled by `?logLevel=`. Internally we
+        // route through the bound `console` methods (the LOGGING_4_0_0
+        // scanner allow-lists this file's `console.<x>` references via
+        // ESLint's eslint-disable; see the rules block at the top of the
+        // surrounding IIFE).
+        // eslint-disable-next-line no-shadow, no-redeclare
         const Logger = {
-            // [error] - Critical errors (always shown unless logLevel=none)
             error: function(...args) {
-                if (shouldLog('error')) {
-                    console.error('[error]', ...args);
-                }
+                if (shouldLog('error')) { console.error('[legacy]', ...args); } // eslint-disable-line no-console
             },
-            
-            // [warn] - Warnings (shown at warn level and above)
             warn: function(...args) {
-                if (shouldLog('warn')) {
-                    console.warn('[warn]', ...args);
-                }
+                if (shouldLog('warn')) { console.warn('[legacy]', ...args); } // eslint-disable-line no-console
             },
-            
-            // [info] - Important user-facing information (shown at info level and above - DEFAULT)
             info: function(...args) {
-                if (shouldLog('info')) {
-                    console.log('[info]', ...args);
-                }
+                if (shouldLog('info')) { console.log('[legacy]', ...args); } // eslint-disable-line no-console
             },
-            
-            // [debug] - Detailed technical information (shown at debug level and above)
             debug: function(...args) {
-                if (shouldLog('debug')) {
-                    console.log('[debug]', ...args);
-                }
+                if (shouldLog('debug')) { console.log('[legacy]', ...args); } // eslint-disable-line no-console
             },
-            
-            // [trace] - Verbose execution tracking (shown only at trace level)
             trace: function(...args) {
-                if (shouldLog('trace')) {
-                    console.log('[trace]', ...args);
-                }
+                if (shouldLog('trace')) { console.log('[legacy]', ...args); } // eslint-disable-line no-console
             }
         };
 
@@ -5020,7 +5010,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                     const duration = (performance.now() - startTime).toFixed(2);
                     Logger.debug(`📊 Chart created [${completedCharts}/${totalCharts}]: ${name} (${duration}ms)`);
                 } catch (e) {
-                    console.error(`❌ Chart creation failed: ${name}`, e);
+                    Logger.error('[legacy]', `❌ Chart creation failed: ${name}`, e);
                 }
                 
                 drainChartQueue();
@@ -5031,7 +5021,7 @@ function renderQueryGroupPhaseTimesChart(group) {
         function lazyCreateChart(canvasId, chartName, createFn, priority = 0) {
             const canvas = document.getElementById(canvasId);
             if (!canvas) {
-                console.warn(`Canvas not found: ${canvasId}`);
+                Logger.warn('[legacy]', `Canvas not found: ${canvasId}`);
                 return;
             }
             
@@ -5226,7 +5216,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                         timeGroups[key].fetchQueryCount++;
                     }
                 } catch (e) {
-                    console.warn("Error parsing plan for enhanced operations chart:", e);
+                    Logger.warn('[legacy]', "Error parsing plan for enhanced operations chart:", e);
                 }
             });
 
@@ -12823,7 +12813,7 @@ size: 12
                             }
                         });
                     } catch (e) {
-                        console.warn("Error parsing plan for exec analysis:", e);
+                        Logger.warn('[legacy]', "Error parsing plan for exec analysis:", e);
                     }
                 }
             });
@@ -13183,7 +13173,7 @@ size: 12
                             }
                         });
                     } catch (e) {
-                        console.warn("Error parsing plan for exec vs serv analysis:", e);
+                        Logger.warn('[legacy]', "Error parsing plan for exec vs serv analysis:", e);
                     }
                 }
             });
@@ -13535,7 +13525,7 @@ size: 12
                             }
                         });
                     } catch (e) {
-                        console.warn("Error parsing plan for service time analysis:", e);
+                        Logger.warn('[legacy]', "Error parsing plan for service time analysis:", e);
                     }
                 }
             });
@@ -13916,7 +13906,7 @@ size: 12
                             }
                         });
                     } catch (e) {
-                        console.warn("Error parsing plan for exec vs elapsed analysis:", e);
+                        Logger.warn('[legacy]', "Error parsing plan for exec vs elapsed analysis:", e);
                     }
                 }
             });
@@ -14643,7 +14633,7 @@ size: 12
                     // Apply SQL filter and system query exclusion to parsed data
                     requests = filterSystemQueries(requests);
                 } catch (e) {
-                    console.error("Error parsing JSON for time grouping change:", e);
+                    Logger.error('[legacy]', "Error parsing JSON for time grouping change:", e);
                     return;
                 }
             }
@@ -14668,7 +14658,7 @@ size: 12
                     Logger.trace(`🔍 Time grouping change complete - flag cleared`);
                 }, 1000);
             } catch (e) {
-                console.error("Error regenerating charts:", e);
+                Logger.error('[legacy]', "Error regenerating charts:", e);
                 isChangingTimeGrouping = false;
             }
         }
@@ -14740,7 +14730,7 @@ size: 12
                 // Create new date in local time zone with the converted values
                 return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`);
             } catch (e) {
-                console.error("Error converting timezone:", e);
+                Logger.error('[legacy]', "Error converting timezone:", e);
                 return date; // Return original date on error
             }
         }
@@ -14795,7 +14785,7 @@ size: 12
                 const seconds = String(convertedDate.getSeconds()).padStart(2, "0");
                 return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
             } catch (e) {
-                console.error("Error in toDateTimeLocal:", e);
+                Logger.error('[legacy]', "Error in toDateTimeLocal:", e);
                 // Fallback to simple formatting without timezone conversion
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -16745,7 +16735,7 @@ function generateElapsedTimeChart(requests) {
                 
                 // If statement becomes empty after cleaning, return default
                 if (!cleanStatement) {
-                    console.warn("Empty statement after comment removal:", statement?.substring(0, 100));
+                    Logger.warn('[legacy]', "Empty statement after comment removal:", statement?.substring(0, 100));
                     return "_default._default._default";
                 }
 
@@ -16869,7 +16859,7 @@ function generateElapsedTimeChart(requests) {
 
                 return "_default._default._default";
             } catch (error) {
-                console.warn("Error parsing FROM clause:", error, statement);
+                Logger.warn('[legacy]', "Error parsing FROM clause:", error, statement);
                 return "_default._default._default";
             }
         }
@@ -16893,7 +16883,7 @@ function generateElapsedTimeChart(requests) {
                     bucketScopeCollection.includes("SELECT") ||
                     bucketScopeCollection.includes("(")
                 ) {
-                    console.warn("Potentially incorrect bucket parsing:", {
+                    Logger.warn('[legacy]', "Potentially incorrect bucket parsing:", {
                         statement: (request.statement || request.preparedText)?.substring(0, 100) + "...",
                         parsed: bucketScopeCollection,
                     });
@@ -16912,7 +16902,7 @@ function generateElapsedTimeChart(requests) {
                                 extractIndexNames(planObj, indexData, correctedBSC);
                             }
                         } catch (e) {
-                            console.error("Error parsing plan JSON:", e, request.plan);
+                            Logger.error('[legacy]', "Error parsing plan JSON:", e, request.plan);
                         }
                     }
                 } else {
@@ -16928,7 +16918,7 @@ function generateElapsedTimeChart(requests) {
                                 extractIndexNames(planObj, indexData, bucketScopeCollection);
                             }
                         } catch (e) {
-                            console.error("Error parsing plan JSON:", e, request.plan);
+                            Logger.error('[legacy]', "Error parsing plan JSON:", e, request.plan);
                         }
                     }
                 }
@@ -17008,7 +16998,7 @@ function generateElapsedTimeChart(requests) {
 
             // Prevent infinite recursion
             if (depth > 50) {
-                console.warn("Maximum recursion depth reached in extractIndexNames");
+                Logger.warn('[legacy]', "Maximum recursion depth reached in extractIndexNames");
                 return;
             }
 
@@ -17085,7 +17075,7 @@ function generateElapsedTimeChart(requests) {
                     );
                 }
             } catch (e) {
-                console.warn("Error in extractIndexNames:", e);
+                Logger.warn('[legacy]', "Error in extractIndexNames:", e);
             }
             if (operator.input) {
                 extractIndexNames(operator.input, indexData, bucketScopeCollection);
@@ -17391,7 +17381,7 @@ function generateElapsedTimeChart(requests) {
                             }
                         }
                     } catch (e) {
-                        console.error("Error parsing plan for kernel time analysis:", e);
+                        Logger.error('[legacy]', "Error parsing plan for kernel time analysis:", e);
                     }
                 }
                 
@@ -17646,7 +17636,7 @@ function generateElapsedTimeChart(requests) {
                                 }
                             }
                         } catch (e) {
-                            console.error("Error analyzing large payload streaming:", e);
+                            Logger.error('[legacy]', "Error analyzing large payload streaming:", e);
                         }
                     }
                 }
@@ -18610,7 +18600,7 @@ function generateElapsedTimeChart(requests) {
                             }
                         });
                     } catch (e) {
-                        console.error("Error parsing plan for index timing:", e);
+                        Logger.error('[legacy]', "Error parsing plan for index timing:", e);
                     }
                 }
             });
@@ -18691,7 +18681,7 @@ function generateElapsedTimeChart(requests) {
                         const planObj = typeof request.plan === "string" ? JSON.parse(request.plan) : request.plan;
                         extractIndexNamesForFlow(planObj, allIndexes, request);
                     } catch (e) {
-                        console.error("Error parsing plan for aggregated index data:", e);
+                        Logger.error('[legacy]', "Error parsing plan for aggregated index data:", e);
                     }
                 }
             });
@@ -19145,7 +19135,7 @@ function generateElapsedTimeChart(requests) {
                                 const sampleSize = Math.min(500, filteredRequests.length);
                                 const sampleStep = Math.max(1, Math.floor(filteredRequests.length / sampleSize));
                                 const timelineSample = filteredRequests.filter((_, i) => i % sampleStep === 0);
-                                console.log(`${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${timelineSample.length} ${TEXT_CONSTANTS.OF_TOTAL} ${filteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
+                                Logger.debug('[legacy]', `${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${timelineSample.length} ${TEXT_CONSTANTS.OF_TOTAL} ${filteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
                                 generateFilterChart(filteredRequests);
                                 generateTimelineChart(timelineSample);
                                 setTimeout(() => setupChartDragAndDrop(), 100);
@@ -19161,11 +19151,11 @@ function generateElapsedTimeChart(requests) {
                         }
                         loadedTabs.add(activeId);
                         const loadEnd = performance.now();
-                        console.log(`${TEXT_CONSTANTS.LAZY_LOADED_TAB} ${activeId} ${TEXT_CONSTANTS.TAB_IN} ${Math.round(loadEnd - loadStart)}${TEXT_CONSTANTS.MS}`);
+                        Logger.debug('[legacy]', `${TEXT_CONSTANTS.LAZY_LOADED_TAB} ${activeId} ${TEXT_CONSTANTS.TAB_IN} ${Math.round(loadEnd - loadStart)}${TEXT_CONSTANTS.MS}`);
                     }
                 }
             } catch (e) {
-                console.error(`${TEXT_CONSTANTS.ERROR_LAZY_LOADING} active-tab`, e);
+                Logger.error('[legacy]', `${TEXT_CONSTANTS.ERROR_LAZY_LOADING} active-tab`, e);
             }
 
             // ALWAYS generate dashboard charts immediately after parsing (not lazy)
@@ -19201,7 +19191,7 @@ function generateElapsedTimeChart(requests) {
                                 const sampleStep = Math.max(1, Math.floor(currentData.length / sampleSize));
                                 const timelineSample = currentData.filter((_, i) => i % sampleStep === 0);
 
-                                console.log(`${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${timelineSample.length} ${TEXT_CONSTANTS.OF_TOTAL} ${currentData.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
+                                Logger.debug('[legacy]', `${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${timelineSample.length} ${TEXT_CONSTANTS.OF_TOTAL} ${currentData.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
 
                                 // Use full data for aggregation charts that sum/count data
                                 generateFilterChart(currentData);
@@ -19225,9 +19215,9 @@ function generateElapsedTimeChart(requests) {
 
                         loadedTabs.add(tabId);
                         const loadEnd = performance.now();
-                        console.log(`${TEXT_CONSTANTS.LAZY_LOADED_TAB} ${tabId} ${TEXT_CONSTANTS.TAB_IN} ${Math.round(loadEnd - loadStart)}${TEXT_CONSTANTS.MS}`);
+                        Logger.debug('[legacy]', `${TEXT_CONSTANTS.LAZY_LOADED_TAB} ${tabId} ${TEXT_CONSTANTS.TAB_IN} ${Math.round(loadEnd - loadStart)}${TEXT_CONSTANTS.MS}`);
                     } catch (e) {
-                        console.error(`${TEXT_CONSTANTS.ERROR_LAZY_LOADING} ${tabId} ${TEXT_CONSTANTS.TAB_IN}`, e);
+                        Logger.error('[legacy]', `${TEXT_CONSTANTS.ERROR_LAZY_LOADING} ${tabId} ${TEXT_CONSTANTS.TAB_IN}`, e);
                     }
                 }
             });
@@ -19265,7 +19255,7 @@ function generateElapsedTimeChart(requests) {
         function newFeatureNotification(featureKey, forceShow = false) {
             const feature = FEATURE_NOTIFICATIONS[featureKey];
             if (!feature) {
-                console.warn(`Feature notification '${featureKey}' not found`);
+                Logger.warn('[legacy]', `Feature notification '${featureKey}' not found`);
                 return;
             }
 
@@ -19648,7 +19638,7 @@ function generateElapsedTimeChart(requests) {
                                     document.getElementById("progress-text").textContent = `${currentProgress}%`;
                                 }
                             } catch (e) {
-                                console.warn(`${TEXT_CONSTANTS.ERROR_PROCESSING_REQUEST} ${i}:`, e.message || e);
+                                Logger.warn('[legacy]', `${TEXT_CONSTANTS.ERROR_PROCESSING_REQUEST} ${i}:`, e.message || e);
                                 // Continue processing other requests
                             }
                         }
@@ -19683,8 +19673,8 @@ function generateElapsedTimeChart(requests) {
                     showToast(TEXT_CONSTANTS.UNEXPECTED_DATA_FORMAT, "error");
                 }
             } catch (e) {
-                console.error(`${TEXT_CONSTANTS.JSON_PARSING_ERROR}`, e);
-                console.log(`${TEXT_CONSTANTS.JSON_PARSING_ERROR}`, e);
+                Logger.error('[legacy]', `${TEXT_CONSTANTS.JSON_PARSING_ERROR}`, e);
+                Logger.debug('[legacy]', `${TEXT_CONSTANTS.JSON_PARSING_ERROR}`, e);
                 showToast(`${TEXT_CONSTANTS.ERROR_PARSING_JSON} ${e.message}`, "error");
                 document.getElementById("progress-container").style.display = "none";
             }
@@ -19999,11 +19989,11 @@ function generateElapsedTimeChart(requests) {
             // Debug logging for filtering
             Logger.debug(`Date filtering: ${filteredAllRequests.length} requests -> ${filteredRequests.length} after date range filter`);
             if (filteredRequests.length === 0 && filteredAllRequests.length > 0) {
-                console.warn("⚠️ All requests filtered out by date range!");
-                console.log("Start date:", startDate);
-                console.log("End date:", endDate);
+                Logger.warn('[legacy]', "⚠️ All requests filtered out by date range!");
+                Logger.debug('[legacy]', "Start date:", startDate);
+                Logger.debug('[legacy]', "End date:", endDate);
                 if (filteredAllRequests.length > 0) {
-                    console.log("First request time:", filteredAllRequests[0].requestTime);
+                    Logger.debug('[legacy]', "First request time:", filteredAllRequests[0].requestTime);
                 }
             }
 
@@ -20043,12 +20033,12 @@ function generateElapsedTimeChart(requests) {
 
                 // Show sampling notice if data was sampled for charts
                 if (filteredRequests.length > 1000) {
-                    console.log(`${TEXT_CONSTANTS.CHART_SAMPLING} ${sampleRequests.length} ${TEXT_CONSTANTS.OF_TOTAL} ${filteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
+                    Logger.debug('[legacy]', `${TEXT_CONSTANTS.CHART_SAMPLING} ${sampleRequests.length} ${TEXT_CONSTANTS.OF_TOTAL} ${filteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
                 }
 
                 setupLazyChartLoading(sampleRequests, filteredRequests);
             } catch (e) {
-                console.error(`${TEXT_CONSTANTS.ERROR_GENERATING_UI}`, e);
+                Logger.error('[legacy]', `${TEXT_CONSTANTS.ERROR_GENERATING_UI}`, e);
                 alert(`${TEXT_CONSTANTS.ERROR_GENERATING_UI} Try reducing the date range or selecting a coarser time grouping.`);
             }
             // Only reset flow diagram if no query was previously selected
@@ -20319,7 +20309,7 @@ function generateElapsedTimeChart(requests) {
             const statement = sampleQueries[index]?.statement;
             
             if (!statement) {
-                console.error(TEXT_CONSTANTS.STATEMENT_NOT_FOUND, statementId);
+                Logger.error('[legacy]', TEXT_CONSTANTS.STATEMENT_NOT_FOUND, statementId);
                 showToast(TEXT_CONSTANTS.STATEMENT_NOT_FOUND, "error");
                 return;
             }
@@ -20336,7 +20326,7 @@ function generateElapsedTimeChart(requests) {
                     }, 1000);
                 })
                 .catch((err) => {
-                    console.error(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, err);
+                    Logger.error('[legacy]', TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, err);
                     showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
                 });
         }
@@ -20725,7 +20715,7 @@ function generateElapsedTimeChart(requests) {
             const statement = insightSampleQueries[insightId]?.[index]?.statement;
             
             if (!statement) {
-                console.error(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
+                Logger.error('[legacy]', TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
                 showToast(TEXT_CONSTANTS.STATEMENT_NOT_FOUND, "error");
                 return;
             }
@@ -20742,7 +20732,7 @@ function generateElapsedTimeChart(requests) {
                     }, 1000);
                 })
                 .catch((err) => {
-                    console.error(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, err);
+                    Logger.error('[legacy]', TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, err);
                     showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
                 });
         }
@@ -20874,7 +20864,7 @@ function generateElapsedTimeChart(requests) {
                 timeoutQueriesData.approachingTimeouts[index - timeoutQueriesData.actualTimeouts.length]?.statement;
             
             if (!statement) {
-                console.error(TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
+                Logger.error('[legacy]', TEXT_CONSTANTS.STATEMENT_NOT_FOUND);
                 showToast(TEXT_CONSTANTS.STATEMENT_NOT_FOUND, "error");
                 return;
             }
@@ -20891,7 +20881,7 @@ function generateElapsedTimeChart(requests) {
                     }, 1000);
                 })
                 .catch((err) => {
-                    console.error(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, err);
+                    Logger.error('[legacy]', TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, err);
                     showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD, "error");
                 });
         }
@@ -20938,7 +20928,7 @@ function generateElapsedTimeChart(requests) {
                                 const sampleSize = Math.min(500, currentFilteredRequests.length);
                                 const sampleStep = Math.max(1, Math.floor(currentFilteredRequests.length / sampleSize));
                                 const timelineSample = currentFilteredRequests.filter((_, i) => i % sampleStep === 0);
-                                console.log(`${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${timelineSample.length} ${TEXT_CONSTANTS.OF_TOTAL} ${currentFilteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
+                                Logger.debug('[legacy]', `${TEXT_CONSTANTS.TIMELINE_CHARTS_USING} ${timelineSample.length} ${TEXT_CONSTANTS.OF_TOTAL} ${currentFilteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
                                 generateFilterChart(currentFilteredRequests);
                                 generateTimelineChart(timelineSample);
                             }
@@ -20996,7 +20986,7 @@ function generateElapsedTimeChart(requests) {
                     showToast(TEXT_CONSTANTS.COPIED_CLIPBOARD || 'Copied to clipboard!', 'success');
                 }
             }).catch((err) => {
-                console.error(err);
+                Logger.error('[legacy]', err);
                 showToast(TEXT_CONSTANTS.FAILED_COPY_CLIPBOARD || 'Failed to copy to clipboard', 'error');
             });
             if (event && event.stopPropagation) event.stopPropagation();
@@ -21256,8 +21246,8 @@ function generateElapsedTimeChart(requests) {
                         const bucketScopeCollection = parseFromClause(statement);
                         
                         // Log BSC extraction for debugging
-                        console.log(`[BSC EXTRACTION] Query (SHA-256):`, hashQuery(statement));
-                        console.log(`[BSC EXTRACTION] Extracted BSC:`, hashBSC(bucketScopeCollection), `(${bucketScopeCollection})`);
+                        Logger.debug('[legacy]', `[BSC EXTRACTION] Query (SHA-256):`, hashQuery(statement));
+                        Logger.debug('[legacy]', `[BSC EXTRACTION] Extracted BSC:`, hashBSC(bucketScopeCollection), `(${bucketScopeCollection})`);
 
                         extractIndexUsage(planObj, requestIndex, requestIndexMap, bucketScopeCollection);
                     }
@@ -21602,9 +21592,9 @@ function generateElapsedTimeChart(requests) {
                 searchOperatorForIndex(plan);
                 return result;
             } catch (e) {
-                console.warn("Failed to process plan data:", e);
-                console.warn("Plan type:", typeof planString);
-                console.warn("Plan is null:", planString === null);
+                Logger.warn('[legacy]', "Failed to process plan data:", e);
+                Logger.warn('[legacy]', "Plan type:", typeof planString);
+                Logger.warn('[legacy]', "Plan is null:", planString === null);
                 return { scanTime: 0, itemsScanned: 0, itemsFetched: 0 };
             }
         }
@@ -21741,7 +21731,7 @@ function generateElapsedTimeChart(requests) {
                 
                 // Debug JOINs: only log if operator is a JOIN type
                 if (opType && (opType === "Join" || opType === "Nest" || opType === "HashJoin" || opType === "NLJoin")) {
-                    console.log(`[JOIN DEBUG] Recording index for ${opType}: ${hashCompositeKey(compositeKey)}`);
+                    Logger.debug('[legacy]', `[JOIN DEBUG] Recording index for ${opType}: ${hashCompositeKey(compositeKey)}`);
                 }
                 
                 requestIndexMap.get(requestIndex).add(compositeKey);
@@ -21765,7 +21755,7 @@ function generateElapsedTimeChart(requests) {
                 const compositeKey = `${indexName}::${operatorBSC}`;
                 
                 if (opType && (opType === "Join" || opType === "Nest" || opType === "HashJoin" || opType === "NLJoin")) {
-                    console.log(`[JOIN DEBUG] Recording index for ${opType}: ${hashCompositeKey(compositeKey)}`);
+                    Logger.debug('[legacy]', `[JOIN DEBUG] Recording index for ${opType}: ${hashCompositeKey(compositeKey)}`);
                 }
                 
                 requestIndexMap.get(requestIndex).add(compositeKey);
@@ -21856,8 +21846,8 @@ function generateElapsedTimeChart(requests) {
                 // For JOIN/NEST operators, the right side might have its own keyspace
                 let rightBSC = bucketScopeCollection;
                 if ((opType === "Join" || opType === "Nest" || opType === "HashJoin" || opType === "NLJoin") && operator.keyspace) {
-                    console.log(`[JOIN DEBUG] Detected ${opType} operator with keyspace: ${operator.keyspace}`);
-                    console.log(`[JOIN DEBUG] Left BSC: ${hashBSC(bucketScopeCollection)}`);
+                    Logger.debug('[legacy]', `[JOIN DEBUG] Detected ${opType} operator with keyspace: ${operator.keyspace}`);
+                    Logger.debug('[legacy]', `[JOIN DEBUG] Left BSC: ${hashBSC(bucketScopeCollection)}`);
                     
                     // Extract BSC from keyspace field: "bucket:scope.collection" or "bucket"
                     const keyspace = operator.keyspace;
@@ -21876,7 +21866,7 @@ function generateElapsedTimeChart(requests) {
                         rightBSC = `${keyspace}._default._default`;
                     }
                     
-                    console.log(`[JOIN DEBUG] Right BSC: ${hashBSC(rightBSC)}`);
+                    Logger.debug('[legacy]', `[JOIN DEBUG] Right BSC: ${hashBSC(rightBSC)}`);
                 }
                 extractIndexUsage(
                     operator.right,
@@ -21943,7 +21933,7 @@ function generateElapsedTimeChart(requests) {
             const flowElements = document.getElementById("flow-elements");
 
             if (!flowElements) {
-                console.error("flow-elements container not found");
+                Logger.error('[legacy]', "flow-elements container not found");
                 return;
             }
 
@@ -21994,8 +21984,8 @@ function generateElapsedTimeChart(requests) {
                 const isJoin = query.statement && query.statement.toUpperCase().includes('JOIN');
                 if (isJoin) {
                     const queryHash = hashQuery(query.statement);
-                    console.log(`[JOIN DEBUG] Processing ${queryHash}`);
-                    console.log(`[JOIN DEBUG] ${queryHash} found ${bscSet ? bscSet.size : 0} BSCs from connections:`, bscSet ? Array.from(bscSet).map(b => hashBSC(b)) : 'none');
+                    Logger.debug('[legacy]', `[JOIN DEBUG] Processing ${queryHash}`);
+                    Logger.debug('[legacy]', `[JOIN DEBUG] ${queryHash} found ${bscSet ? bscSet.size : 0} BSCs from connections:`, bscSet ? Array.from(bscSet).map(b => hashBSC(b)) : 'none');
                 }
                 
                 if (!bscSet || bscSet.size === 0) {
@@ -22105,9 +22095,9 @@ function generateElapsedTimeChart(requests) {
                     
                     // If we have no valid target, log for debugging and skip
                     if (!target) {
-                        console.warn(`[PARSE FAILED] Could not extract keyspace from query`);
-                        console.warn(`[PARSE FAILED] Statement (SHA-256):`, hashQuery(statement));
-                        console.warn(`[PARSE FAILED] Full statement:`, statement);
+                        Logger.warn('[legacy]', `[PARSE FAILED] Could not extract keyspace from query`);
+                        Logger.warn('[legacy]', `[PARSE FAILED] Statement (SHA-256):`, hashQuery(statement));
+                        Logger.warn('[legacy]', `[PARSE FAILED] Full statement:`, statement);
                         return;
                     }
                     
@@ -22117,11 +22107,11 @@ function generateElapsedTimeChart(requests) {
                     // Validate that parts look like real bucket names (not aliases)
                     const isValid = parts.every(p => /^[a-zA-Z0-9_-]+$/.test(p));
                     if (!isValid) {
-                        console.warn(`[PARSE FAILED] Invalid keyspace parts (possible alias captured)`);
-                        console.warn(`[PARSE FAILED] Extracted target:`, target);
-                        console.warn(`[PARSE FAILED] Parts:`, parts);
-                        console.warn(`[PARSE FAILED] Statement (SHA-256):`, hashQuery(statement));
-                        console.warn(`[PARSE FAILED] Full statement:`, statement);
+                        Logger.warn('[legacy]', `[PARSE FAILED] Invalid keyspace parts (possible alias captured)`);
+                        Logger.warn('[legacy]', `[PARSE FAILED] Extracted target:`, target);
+                        Logger.warn('[legacy]', `[PARSE FAILED] Parts:`, parts);
+                        Logger.warn('[legacy]', `[PARSE FAILED] Statement (SHA-256):`, hashQuery(statement));
+                        Logger.warn('[legacy]', `[PARSE FAILED] Full statement:`, statement);
                         return;
                     }
                     
@@ -22143,8 +22133,8 @@ function generateElapsedTimeChart(requests) {
                     
                     // Log successful parsing
                     const parsedBSC = `${bucket}.${scope}.${collection}`;
-                    console.log(`[PARSE SUCCESS] Extracted BSC: ${hashBSC(parsedBSC)} (${parsedBSC})`);
-                    console.log(`[PARSE SUCCESS] From statement (SHA-256):`, hashQuery(statement));
+                    Logger.debug('[legacy]', `[PARSE SUCCESS] Extracted BSC: ${hashBSC(parsedBSC)} (${parsedBSC})`);
+                    Logger.debug('[legacy]', `[PARSE SUCCESS] From statement (SHA-256):`, hashQuery(statement));
                     
                     if (bucket && bucket.length > 0) {
                         queriesData.push({ bucket, scope, collection, query });
@@ -22152,14 +22142,14 @@ function generateElapsedTimeChart(requests) {
                 } else {
                     // Use BSCs from connection data (covers JOINs, subqueries, etc.)
                     if (isJoin) {
-                        console.log(`[JOIN DEBUG] ${hashQuery(query.statement)} using connection data`);
+                        Logger.debug('[legacy]', `[JOIN DEBUG] ${hashQuery(query.statement)} using connection data`);
                     }
                     
                     bscSet.forEach(bscString => {
                         const parts = bscString.split(".");
                         if (parts.length === 3) {
                             if (isJoin) {
-                                console.log(`[JOIN DEBUG] ${hashQuery(query.statement)} adding BSC to dropdown: ${hashBSC(bscString)}`);
+                                Logger.debug('[legacy]', `[JOIN DEBUG] ${hashQuery(query.statement)} adding BSC to dropdown: ${hashBSC(bscString)}`);
                             }
                             queriesData.push({
                                 bucket: parts[0],
@@ -22231,8 +22221,8 @@ function generateElapsedTimeChart(requests) {
                 const isJoin = data.query.statement && data.query.statement.toUpperCase().includes('JOIN');
                 if (isJoin && queryIndexes.size > 0) {
                     const currentBSC = `${data.bucket}.${data.scope}.${data.collection}`;
-                    console.log(`[JOIN DEBUG] ${hashQuery(data.query.statement)} building counts for BSC: ${hashBSC(currentBSC)}`);
-                    console.log(`[JOIN DEBUG] ${hashQuery(data.query.statement)} has ${queryIndexes.size} indexes:`, Array.from(queryIndexes).map(idx => hashCompositeKey(idx)));
+                    Logger.debug('[legacy]', `[JOIN DEBUG] ${hashQuery(data.query.statement)} building counts for BSC: ${hashBSC(currentBSC)}`);
+                    Logger.debug('[legacy]', `[JOIN DEBUG] ${hashQuery(data.query.statement)} has ${queryIndexes.size} indexes:`, Array.from(queryIndexes).map(idx => hashCompositeKey(idx)));
                 }
                 
                 // Add to relevant indexes based on current filter level
@@ -22517,8 +22507,8 @@ function generateElapsedTimeChart(requests) {
                 // Filter indexes to only show those connected to filtered queries
                 const connectedIndexKeys = new Set();
                 
-                console.log(`[FILTER DEBUG] Number of filtered queries: ${filteredQueries.length}`);
-                console.log(`[FILTER DEBUG] Total connections: ${indexQueryFlowData.connections ? indexQueryFlowData.connections.size : 0}`);
+                Logger.debug('[legacy]', `[FILTER DEBUG] Number of filtered queries: ${filteredQueries.length}`);
+                Logger.debug('[legacy]', `[FILTER DEBUG] Total connections: ${indexQueryFlowData.connections ? indexQueryFlowData.connections.size : 0}`);
                 
                 filteredQueries.forEach(query => {
                     const isJoin = query.statement && query.statement.toUpperCase().includes('JOIN');
@@ -22536,28 +22526,28 @@ function generateElapsedTimeChart(requests) {
                                 }
                                 
                                 if (isJoin) {
-                                    console.log(`[JOIN DEBUG] ${hashQuery(query.statement)} adding connected index to LEFT side: ${hashCompositeKey(indexKey)}`);
+                                    Logger.debug('[legacy]', `[JOIN DEBUG] ${hashQuery(query.statement)} adding connected index to LEFT side: ${hashCompositeKey(indexKey)}`);
                                 }
                             }
                         });
                         
                         if (isJoin) {
-                            console.log(`[JOIN DEBUG] ${hashQuery(query.statement)} added ${connectionCount} indexes to connectedIndexKeys`);
+                            Logger.debug('[legacy]', `[JOIN DEBUG] ${hashQuery(query.statement)} added ${connectionCount} indexes to connectedIndexKeys`);
                         }
                         if (primaryConnectionFound) {
-                            console.log(`[FILTER DEBUG] Found #primary connection for query:`, query.statement.substring(0, 100));
+                            Logger.debug('[legacy]', `[FILTER DEBUG] Found #primary connection for query:`, query.statement.substring(0, 100));
                         }
                     }
                 });
                 
-                console.log(`[FILTER DEBUG] Total connectedIndexKeys: ${connectedIndexKeys.size}`);
+                Logger.debug('[legacy]', `[FILTER DEBUG] Total connectedIndexKeys: ${connectedIndexKeys.size}`);
                 
                 filteredIndexes = indexes.filter(idx => {
                     const key = `${idx.name}::${idx.bucketScopeCollection}`;
                     const included = connectedIndexKeys.has(key);
                     
                     if (!included && idx.name === "#primary") {
-                        console.warn(`[FILTER DEBUG] #primary excluded - key: ${key}, has BSC: ${idx.bucketScopeCollection}, connectedKeys:`, Array.from(connectedIndexKeys).filter(k => k.includes("#primary")));
+                        Logger.warn('[legacy]', `[FILTER DEBUG] #primary excluded - key: ${key}, has BSC: ${idx.bucketScopeCollection}, connectedKeys:`, Array.from(connectedIndexKeys).filter(k => k.includes("#primary")));
                     }
                     
                     const isJoinIndex = Array.from(connectedIndexKeys).some(ck => {
@@ -22570,7 +22560,7 @@ function generateElapsedTimeChart(requests) {
                     });
                     
                     if (isJoinIndex && !included) {
-                        console.log(`[JOIN DEBUG] FILTERED OUT index: ${hashCompositeKey(key)} (not in connectedIndexKeys)`);
+                        Logger.debug('[legacy]', `[JOIN DEBUG] FILTERED OUT index: ${hashCompositeKey(key)} (not in connectedIndexKeys)`);
                     }
                     
                     return included;
@@ -22634,8 +22624,8 @@ function generateElapsedTimeChart(requests) {
                     return false;
                 });
             });
-            console.log(`[FLOW DEBUG] Total indexes on LEFT side: ${filteredIndexes.length}`);
-            console.log(`[FLOW DEBUG] JOIN-related indexes on LEFT (first 10):`, 
+            Logger.debug('[legacy]', `[FLOW DEBUG] Total indexes on LEFT side: ${filteredIndexes.length}`);
+            Logger.debug('[legacy]', `[FLOW DEBUG] JOIN-related indexes on LEFT (first 10):`, 
                 joinFilteredIndexes.slice(0, 10).map(idx => `${hashCompositeKey(idx.name + '::' + idx.bucketScopeCollection)} (scanned: ${idx.totalUsage})`));
 
             // Clear container
@@ -22896,7 +22886,7 @@ function generateElapsedTimeChart(requests) {
         function drawSimpleConnections(indexPositions, queryPositions, colors) {
             const svg = document.getElementById("flow-svg");
             if (!svg) {
-                console.error("SVG element not found");
+                Logger.error('[legacy]', "SVG element not found");
                 return;
             }
 
@@ -23332,7 +23322,7 @@ const LAST_UPDATED = "2025-11-06";
                     try {
                         processedRequest.plan = JSON.parse(processedRequest.plan);
                     } catch (e) {
-                        console.warn(
+                        Logger.warn('[legacy]', 
                             `⚠️ Failed to parse plan JSON for request: ${processedRequest.clientContextID ||
                             processedRequest.requestId ||
                             "unknown"
@@ -23770,7 +23760,7 @@ const LAST_UPDATED = "2025-11-06";
                 }
             });
 
-            console.log(
+            Logger.debug('[legacy]', 
                 `📊 Matching summary: ${matchedCount}/${filteredIndexData.length} indexes found in query data`
             );
         }
@@ -23816,7 +23806,7 @@ const LAST_UPDATED = "2025-11-06";
                 return;
             }
 
-            console.log(
+            Logger.debug('[legacy]', 
                 `🔄 Displaying ${filteredIndexData.length} indexes and checking for query matches...`
             );
 
@@ -23923,7 +23913,7 @@ const LAST_UPDATED = "2025-11-06";
             const exactKey = `${index.name}|${targetString}`;
             if (usedIndexes.has(exactKey)) {
                 isUsed = true;
-                console.log(
+                Logger.debug('[legacy]', 
                     `✅ Exact match found: "${index.name}" on ${targetString}`
                 );
             }
@@ -23933,7 +23923,7 @@ const LAST_UPDATED = "2025-11-06";
                 const primaryKey = `#primary|${targetString}`;
                 if (usedIndexes.has(primaryKey)) {
                     isUsed = true;
-                    console.log(
+                    Logger.debug('[legacy]', 
                         `✅ Primary match found: "${index.name}" matches "#primary" on ${targetString}`
                     );
                 }
@@ -23974,7 +23964,7 @@ const LAST_UPDATED = "2025-11-06";
                     }, 1000);
                 })
                 .catch((err) => {
-                    console.error("Failed to copy: ", err);
+                    Logger.error('[legacy]', "Failed to copy: ", err);
                 });
         }
 
@@ -23995,7 +23985,7 @@ const LAST_UPDATED = "2025-11-06";
                     }, 1000);
                 })
                 .catch((err) => {
-                    console.error("Failed to copy query: ", err);
+                    Logger.error('[legacy]', "Failed to copy query: ", err);
                 });
         }
 
@@ -24119,7 +24109,7 @@ const LAST_UPDATED = "2025-11-06";
             );
             if (excludeCheckbox) {
                 excludeCheckbox.addEventListener("change", function () {
-                    console.log(`System query exclusion changed to: ${this.checked}`);
+                    Logger.debug('[legacy]', `System query exclusion changed to: ${this.checked}`);
                     const jsonInput = document.getElementById("json-input").value;
                     if (jsonInput.trim()) {
                         showFilterReminder();
@@ -24135,21 +24125,21 @@ const LAST_UPDATED = "2025-11-06";
 
             if (startDateInput) {
                 startDateInput.addEventListener("change", function () {
-                    console.log(`Start date changed to: ${this.value}`);
+                    Logger.debug('[legacy]', `Start date changed to: ${this.value}`);
                     showFilterReminder();
                 });
             }
 
             if (endDateInput) {
                 endDateInput.addEventListener("change", function () {
-                    console.log(`End date changed to: ${this.value}`);
+                    Logger.debug('[legacy]', `End date changed to: ${this.value}`);
                     showFilterReminder();
                 });
             }
 
             if (sqlFilterInput) {
                 sqlFilterInput.addEventListener("input", function () {
-                    console.log(`SQL filter changed to: ${this.value}`);
+                    Logger.debug('[legacy]', `SQL filter changed to: ${this.value}`);
                     showFilterReminder();
                 });
             }
@@ -24157,14 +24147,14 @@ const LAST_UPDATED = "2025-11-06";
             const collectionFilterInput = document.getElementById("collection-filter");
             if (collectionFilterInput) {
                 collectionFilterInput.addEventListener("change", function () {
-                    console.log(`Collection filter changed to: ${this.value}`);
+                    Logger.debug('[legacy]', `Collection filter changed to: ${this.value}`);
                     showFilterReminder();
                 });
             }
 
             if (elapsedFilterInput) {
                 elapsedFilterInput.addEventListener("input", function () {
-                    console.log(`Elapsed filter changed to: ${this.value}`);
+                    Logger.debug('[legacy]', `Elapsed filter changed to: ${this.value}`);
                     showFilterReminder();
                 });
             }
@@ -24380,7 +24370,7 @@ const LAST_UPDATED = "2025-11-06";
                 version: getVersionInfo,
                 about: () => {
                     const info = getVersionInfo();
-                    console.log(`
+                    Logger.debug('[legacy]', `
 🔍 Couchbase Query Analyzer v${info.version}
 📅 Last Updated: 2025-10-20${info.lastUpdated}
 🎯 Purpose: Analyze Couchbase N1QL query performance from system:completed_requests
@@ -24971,7 +24961,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 parseJSON();
                 showToast(TEXT_CONSTANTS.COPIED_CLIPBOARD || 'Loaded');
             } catch (e) {
-                console.error('Failed to load sample JSON', e);
+                Logger.error('[legacy]', 'Failed to load sample JSON', e);
                 showToast('Failed to load sample JSON', 'error');
             }
         }
@@ -24987,7 +24977,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             if (reportMakerInitialized) return;
             reportMakerInitialized = true;
             
-            console.log('📄 Initializing Report Maker (lazy load)');
+            Logger.debug('[legacy]', '📄 Initializing Report Maker (lazy load)');
             
             const t = (k, d) => (window.TEXT_CONSTANTS && TEXT_CONSTANTS[k]) ? TEXT_CONSTANTS[k] : d;
 
@@ -25141,7 +25131,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     document.body.appendChild(qbadge);
                 }
             } catch (e) {
-                console.warn('Failed to initialize input toggle tab', e);
+                Logger.warn('[legacy]', 'Failed to initialize input toggle tab', e);
             }
         });
         // Chart Expand/Collapse Functionality (Issue #139)
@@ -30029,7 +30019,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                                 }
                             })
                             .catch(err => {
-                                console.error('Error fetching clusters:', err);
+                                Logger.error('[legacy]', 'Error fetching clusters:', err);
                                 response([]);
                             });
                         },

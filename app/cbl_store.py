@@ -18,10 +18,12 @@ import shutil
 import tarfile
 import tempfile
 import threading
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from icecream import ic
 from platformdirs import user_data_dir
+
+logger = logging.getLogger(__name__)
 
 # ---- CBL availability ----
 USE_CBL = False
@@ -38,7 +40,7 @@ try:
     USE_CBL = True
 except ImportError as e:
     _IMPORT_ERR = str(e)
-    ic(f"⚠️ Couchbase Lite bindings not available: {e}")
+    logger.warning(f"Couchbase Lite bindings not available: {e}")
 
 # ---- Constants ----
 CBL_DB_NAME = os.environ.get("CBL_DB_NAME", "cb_tools_db")
@@ -110,7 +112,7 @@ def get_db() -> "Database":
         _db = Database(CBL_DB_NAME, cfg)
         _ensure_collections(_db)
         _ensure_indexes(_db)
-        ic(f"✅ CBL opened: {CBL_DB_DIR}/{CBL_DB_NAME}.cblite2")
+        logger.info(f"CBL initialized: {CBL_DB_DIR}/{CBL_DB_NAME}.cblite2")
     return _db
 
 
@@ -123,7 +125,7 @@ def close_db() -> None:
             try:
                 _db.close()
             except Exception as e:
-                ic(f"⚠️ close_db: {e}")
+                logger.exception(f"close_db failed: {e}")
             _db = None
 
 
@@ -155,7 +157,7 @@ def _ensure_indexes(db: "Database") -> None:
         try:
             _create_value_index(db, coll, name, cols)
         except Exception as e:
-            ic(f"⚠️ Index {name} creation skipped: {e}")
+            logger.exception(f"Index {name} creation skipped: {e}")
 
 
 def _create_value_index(db: "Database", coll_name: str, index_name: str,
@@ -193,7 +195,7 @@ def _create_value_index(db: "Database", coll_name: str, index_name: str,
         err,
     )
     if not ok and err.code != 0:
-        ic(f"⚠️ Index {index_name} create result: code={err.code}")
+        logger.warning(f"Index {index_name} create result: code={err.code}")
 
 
 # ============================================================================
@@ -237,13 +239,13 @@ def _doc_to_dict(doc_ref) -> Dict[str, Any]:
     try:
         return decodeFleeceDict(fl_dict)
     except Exception as e:
-        ic(f"⚠️ _doc_to_dict failed, falling back to JSON: {e}")
+        logger.debug(f"_doc_to_dict: fleece decode failed, falling back to JSON: {e}")
         try:
             json_slice = lib.CBLDocument_CreateJSON(doc_ref)
             json_str = sliceResultToString(json_slice)
             return json.loads(json_str) if json_str else {}
         except Exception as e2:
-            ic(f"⚠️ JSON fallback failed: {e2}")
+            logger.exception(f"_doc_to_dict: JSON fallback failed: {e2}")
             return {}
 
 
@@ -310,11 +312,11 @@ def _n1ql(db: "Database", sql: str, params: Optional[Dict[str, Any]] = None) -> 
             rows.append(row.asDictionary())
         return rows
     except Exception as e:
-        ic(f"⚠️ _n1ql failed: {e} sql={sql}")
+        logger.exception(f"_n1ql failed sql={sql}")
         return []
 
 
-# ============================================================================
+    # ============================================================================
 # Public API
 # ============================================================================
 
@@ -360,7 +362,7 @@ class CBLStore:
                 f"analyzer payload {len(payload)} bytes exceeds hard limit {HARD_BYTES}"
             )
         if len(payload) > WARN_BYTES:
-            ic(f"⚠️ analyzer payload {len(payload)} bytes exceeds warn limit {WARN_BYTES}")
+            logger.warning(f"analyzer payload {len(payload)} bytes exceeds warn limit {WARN_BYTES}")
 
         blob_ref = self.put_blob(payload, content_type="application/json")
 
@@ -555,7 +557,7 @@ class CBLStore:
                 return False
             return True
         except Exception as e:
-            ic(f"⚠️ Failed to seed {doc_id}: {e}")
+            logger.exception(f"seed_from_template {doc_id} failed")
             return False
 
     # ── Blobs ─────────────────────────────────────────────────
@@ -599,7 +601,7 @@ class CBLStore:
                 raw = gzip.decompress(raw)
             return raw
         except Exception as e:
-            ic(f"⚠️ Failed to decompress {blob_ref}: {e}")
+            logger.exception(f"get_blob decompression failed blob_ref={blob_ref}")
             return None
 
     def delete_blob(self, blob_ref: str) -> bool:
@@ -775,7 +777,7 @@ class CBLStore:
                     f.stat().st_size for f in db_path.rglob("*") if f.is_file()
                 )
         except Exception as e:
-            ic(f"⚠️ stats: size walk failed: {e}")
+            logger.exception("stats: size walk failed")
 
         out["db_path"] = str(Path(CBL_DB_DIR) / f"{CBL_DB_NAME}.cblite2")
         return out

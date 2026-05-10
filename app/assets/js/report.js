@@ -331,7 +331,7 @@ import { formatNumber, formatDuration } from './ui-helpers.js';
             if (reportMakerInitialized) return;
             reportMakerInitialized = true;
             
-            console.log('📄 Initializing Report Maker (lazy load)');
+            Logger.debug('[report]', 'Initializing Report Maker (lazy load)');
             
             const t = (k, d) => (window.TEXT_CONSTANTS && TEXT_CONSTANTS[k]) ? TEXT_CONSTANTS[k] : d;
 
@@ -395,4 +395,4 @@ window.exitReportMode = exitReportMode;
 window.printReport = printReport;
 window.initializeReportMaker = initializeReportMaker;
 
-console.log('✅ report.js module loaded');
+

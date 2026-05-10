@@ -681,7 +681,7 @@ export function drainChartQueue() {
             const duration = (performance.now() - startTime).toFixed(2);
             Logger.debug(`📊 Chart created [${completedCharts}/${totalCharts}]: ${name} (${duration}ms)`);
         } catch (e) {
-            console.error(`❌ Chart creation failed: ${name}`, e);
+            Logger.error(`[charts] Chart creation failed: ${name}`, e);
         }
         
         drainChartQueue();
@@ -692,11 +692,11 @@ export function drainChartQueue() {
  * Lazy chart creation with IntersectionObserver and priority
  */
 export function lazyCreateChart(canvasId, chartName, createFn, priority = 0) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) {
-        console.warn(`Canvas not found: ${canvasId}`);
-        return;
-    }
+     const canvas = document.getElementById(canvasId);
+     if (!canvas) {
+         Logger.warn(`[charts] Canvas not found: ${canvasId}`);
+         return;
+     }
     
     const container = canvas.closest('.chart-container');
     if (!container) {
@@ -1882,7 +1882,7 @@ function generateElapsedTimeChart(requests) {
                         timeGroups[key].fetchQueryCount++;
                     }
                 } catch (e) {
-                    console.warn("Error parsing plan for enhanced operations chart:", e);
+                    Logger.warn(`[charts] Error parsing plan for enhanced operations chart:`, e);
                 }
             });
 
@@ -7518,7 +7518,7 @@ size: 12
                             }
                         });
                     } catch (e) {
-                        console.warn("Error parsing plan for exec analysis:", e);
+                        Logger.warn(`[charts] Error parsing plan for exec analysis:`, e);
                     }
                 }
             });
@@ -7886,7 +7886,7 @@ size: 12
                             }
                         });
                     } catch (e) {
-                        console.warn("Error parsing plan for exec vs serv analysis:", e);
+                        Logger.warn(`[charts] Error parsing plan for exec vs serv analysis:`, e);
                     }
                 }
             });
@@ -8246,7 +8246,7 @@ size: 12
                             }
                         });
                     } catch (e) {
-                        console.warn("Error parsing plan for service time analysis:", e);
+                        Logger.warn(`[charts] Error parsing plan for service time analysis:`, e);
                     }
                 }
             });
@@ -8538,7 +8538,7 @@ size: 12
                             }
                         });
                     } catch (e) {
-                        console.warn("Error parsing plan for exec vs elapsed analysis:", e);
+                        Logger.warn(`[charts] Error parsing plan for exec vs elapsed analysis:`, e);
                     }
                 }
             });

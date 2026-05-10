@@ -17,6 +17,13 @@ Architecture:
 See app/docs/work/03_APP_PY_REFACTOR.md for the endpoint mapping.
 """
 
+# Configure logging FIRST, before any other imports (must be first non-stdlib)
+from logging_config import configure_logging
+configure_logging()
+
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 import time
 import json
@@ -31,15 +38,23 @@ from flask import jsonify, request, send_file
 # below reads from __version__, and downstream modules / endpoints can
 # `from app import __version__` if they need to surface it.
 # ----------------------------------------------------------------------------
-__version__ = "4.0.0-Beta"
+__version__ = "4.0.0-Beta.2"
 
 # Import the base app (registers Flask app + endpoints that don't depend on
 # the external Couchbase Server SDK). All app data persistence now flows
 # through the embedded Couchbase Lite (CBL) store; the cluster-backed code
 # paths have been deleted.
-from app_base import app, DIRECTORY  # noqa: F401
+from app_base import app, DIRECTORY, PORT  # noqa: F401
 
 import blob_storage
+
+# Print startup banner on module import (works with gunicorn + development)
+# This runs once when the app is initialized, before any requests arrive.
+print(f"🚀 Starting Couchbase Query Analyzer v{__version__}")
+print(f"📊 Backend: cbl (embedded Couchbase Lite)")
+print(f"🌐 Open http://localhost:{PORT} in your browser")
+print()
+logger.info("startup version=%s port=%d", __version__, PORT)
 
 # Try to import CBL store
 try:
@@ -48,7 +63,7 @@ try:
 except ImportError as e:
     CBL_AVAILABLE = False
     USE_CBL = False
-    ic(f"⚠️ CBL store not available: {e}")
+    logger.warning("cbl store unavailable: %s", e)
 
 
 # ============================================================================
@@ -82,10 +97,10 @@ def _load_server_config() -> dict:
         try:
             with open(path, 'r') as f:
                 data = json.load(f)
-            ic(f"⚙️  Loaded server config from {path}")
+            logger.info("loaded server config path=%s", path)
             return data if isinstance(data, dict) else {}
         except Exception as e:
-            ic(f"⚠️  Failed to read {path}: {e}")
+            logger.warning("failed to read config path=%s: %s", path, e)
     return {}
 
 
@@ -105,7 +120,7 @@ def get_server_port(default: int = 8080) -> int:
         try:
             return int(env)
         except ValueError:
-            ic(f"⚠️  Ignoring invalid PORT={env!r}; falling back to config.json")
+            logger.warning("ignoring invalid PORT env var=%s", env)
     cfg = _load_server_config().get('server') or {}
     val = cfg.get('port')
     if isinstance(val, int) and val > 0:
@@ -130,7 +145,7 @@ def storage() -> Optional["CBLStore"]:
         return None
     if _cbl_store is None:
         _cbl_store = CBLStore()
-        ic("✅ CBL storage initialized")
+        logger.info("cbl storage initialized")
     return _cbl_store
 
 
@@ -141,7 +156,7 @@ def get_blobs() -> Optional[blob_storage.BlobStorage]:
         return None
     if _cbl_blobs is None:
         _cbl_blobs = blob_storage.BlobStorage(storage())
-        ic("✅ Blob storage initialized")
+        logger.info("blob storage initialized")
     return _cbl_blobs
 
 
@@ -198,7 +213,7 @@ def save_analyzer():
         return jsonify({'success': True, 'requestId': request_id, 'backend': 'cbl'})
 
     except Exception as e:
-        ic("❌ save_analyzer", e)
+        logger.exception("save_analyzer failed")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -214,7 +229,7 @@ def load_analyzer(request_id):
         return jsonify({'success': True, 'data': doc, 'backend': 'cbl'})
 
     except Exception as e:
-        ic("❌ load_analyzer", e)
+        logger.exception("load_analyzer failed")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -233,7 +248,7 @@ def delete_analyzer():
         return jsonify({'success': True, 'backend': 'cbl'})
 
     except Exception as e:
-        ic("❌ delete_analyzer", e)
+        logger.exception("delete_analyzer failed")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -251,7 +266,7 @@ def save_preferences():
         return jsonify({'success': True, 'userId': user_id, 'backend': 'cbl'})
 
     except Exception as e:
-        ic("❌ save_preferences", e)
+        logger.exception("save_preferences failed")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -273,7 +288,7 @@ def load_preferences(user_id):
         return jsonify({'success': True, 'data': prefs, 'backend': 'cbl'})
 
     except Exception as e:
-        ic("❌ load_preferences", e)
+        logger.exception("load_preferences failed")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -286,8 +301,7 @@ def ai_status(document_id):
     # AI analysis docs are written by background_ai_task via store.save_analyzer
     # into COLL_ANALYZER, not COLL_AI_HISTORY. Read from there.
     doc = store.load_analyzer(document_id)
-    ic(f"🔎 [ai_status] load_analyzer({document_id}) → {bool(doc)}; "
-       f"keys={list(doc.keys()) if doc else None}")
+    logger.debug("ai_status loaded doc=%s keys=%s", bool(doc), list(doc.keys()) if doc else None)
     if not doc:
         return jsonify({'success': False, 'status': 'not_found'}), 404
 
@@ -354,7 +368,7 @@ def ai_history():
         })
 
     except Exception as e:
-        ic("❌ ai_history", e)
+        logger.exception("ai_history failed")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -382,10 +396,10 @@ def ai_cancel():
         doc['status'] = 'cancelled'
         doc['cancelledAt'] = datetime.utcnow().isoformat() + 'Z'
         store.save_analyzer(doc_id, doc.get('prompt') or 'AI Analysis', doc)
-        ic(f"🚫 [cbl] Cancelled analysis: {doc_id}")
+        logger.info("cancelled analysis doc_id=%s", doc_id)
         return jsonify({'success': True, 'status': 'cancelled', 'backend': 'cbl'})
     except Exception as e:
-        ic("❌ ai_cancel", e)
+        logger.exception("ai_cancel failed")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -426,7 +440,7 @@ def ai_clusters():
             'backend': 'cbl',
         })
     except Exception as e:
-        ic("❌ ai_clusters", e)
+        logger.exception("ai_clusters failed")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -556,6 +570,117 @@ def storage_import():
 
 
 # ============================================================================
+# Logging admin (log file info + download) — new endpoints
+# ============================================================================
+
+import pathlib
+import datetime
+
+def _human_bytes(size_bytes: int) -> str:
+    """Convert bytes to human-readable format (B, KB, MB, GB)."""
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size_bytes < 1024:
+            num = f"{size_bytes:.1f}".rstrip('0').rstrip('.')
+            return f"{num} {unit}"
+        size_bytes /= 1024
+    num = f"{size_bytes:.1f}".rstrip('0').rstrip('.')
+    return f"{num} PB"
+
+
+def _caps_from_env() -> dict:
+    """Read logging configuration from environment variables."""
+    return {
+        'max_size_mb': int(os.environ.get('CBQA_LOG_MAX_SIZE_MB', 50)),
+        'max_age_days': int(os.environ.get('CBQA_LOG_MAX_AGE_DAYS', 7)),
+        'rotated_total_mb': int(os.environ.get('CBQA_LOG_ROTATED_TOTAL_MB', 500)),
+    }
+
+
+def logging_info():
+    """Get logging configuration and rotated file inventory."""
+    from logging_config import _default_log_file
+    
+    path = os.environ.get('CBQA_LOG_FILE', _default_log_file())
+    if not path or path.lower() in ('off', 'none', '0'):
+        return jsonify({
+            'level': logging.getLevelName(logging.getLogger().level),
+            'json_mode': os.environ.get('CBQA_LOG_JSON') == '1',
+            'active_file': None,
+            'rotated_files': [],
+            'rotated_total_bytes': 0,
+            'caps': _caps_from_env(),
+        })
+    
+    base = pathlib.Path(path)
+    
+    # Find rotated files matching the pattern *.YYYYMMDD-HHMMSS.log
+    try:
+        rotated = sorted(
+            base.parent.glob(f"{base.name}.*"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True
+        )
+    except (OSError, PermissionError) as e:
+        logger.warning("failed to list rotated logs: %s", e)
+        rotated = []
+    
+    rotated_info = []
+    for p in rotated:
+        try:
+            rotated_info.append({
+                'path': str(p),
+                'size_bytes': p.stat().st_size,
+                'size_human': _human_bytes(p.stat().st_size),
+                'mtime': datetime.datetime.fromtimestamp(
+                    p.stat().st_mtime,
+                    tz=datetime.timezone.utc
+                ).isoformat(),
+            })
+        except (OSError, PermissionError) as e:
+            logger.warning("failed to stat rotated log %s: %s", p, e)
+    
+    # Get active file stats
+    active = None
+    try:
+        if base.exists():
+            active = {
+                'path': str(base),
+                'size_bytes': base.stat().st_size,
+                'size_human': _human_bytes(base.stat().st_size),
+            }
+    except (OSError, PermissionError) as e:
+        logger.warning("failed to stat active log: %s", e)
+    
+    return jsonify({
+        'level': logging.getLevelName(logging.getLogger().level),
+        'json_mode': os.environ.get('CBQA_LOG_JSON') == '1',
+        'active_file': active,
+        'rotated_files': rotated_info,
+        'rotated_total_bytes': sum(r['size_bytes'] for r in rotated_info),
+        'caps': _caps_from_env(),
+    })
+
+
+def logging_active_log():
+    """Download the active log file."""
+    from logging_config import _default_log_file
+    
+    path = os.environ.get('CBQA_LOG_FILE', _default_log_file())
+    if not path or not pathlib.Path(path).exists():
+        return jsonify({
+            'success': False,
+            'error': 'logging is disabled or no active file'
+        }), 404
+    
+    return send_file(
+        path,
+        mimetype='text/plain',
+        as_attachment=True,
+        download_name='cbqa.log'
+    )
+
+
+# ============================================================================
 # Wire overrides into the imported app
 # ============================================================================
 
@@ -607,16 +732,41 @@ app.add_url_rule(
     view_func=storage_import, methods=['POST']
 )
 
+# 35-36: logging admin (NEW endpoints)
+app.add_url_rule(
+    '/api/logging/info', endpoint='logging_info',
+    view_func=logging_info, methods=['GET']
+)
+app.add_url_rule(
+    '/api/logging/active-log', endpoint='logging_active_log',
+    view_func=logging_active_log, methods=['GET']
+)
+
 
 # ============================================================================
 # Server startup
 # ============================================================================
 
+def _startup_banner(port: int) -> None:
+    """Print and log the startup banner."""
+    msg_version = f"🚀 Starting Couchbase Query Analyzer v{__version__}"
+    msg_backend = "📊 Backend: cbl (embedded Couchbase Lite)"
+    msg_listen = f"🔌 Listening on http://localhost:{port}"
+
+    # User-facing banner (always visible on the controlling terminal).
+    print(msg_version)
+    print(msg_backend)
+    print(msg_listen)
+
+    # Same events into the structured log (file/JSON shipper).
+    logger.info("starting cbqa version=%s", __version__)
+    logger.info("backend=%s", "cbl")
+    logger.info("listening port=%d", port)
+
+
 if __name__ == '__main__':
     PORT = get_server_port(default=8080)
-    ic(f"🚀 Starting Couchbase Query Analyzer v{__version__}")
-    ic("📊 Backend: cbl (embedded Couchbase Lite)")
-    ic(f"🔌 Listening on http://localhost:{PORT}")
+    _startup_banner(PORT)
     app.run(
         host='0.0.0.0',
         port=PORT,

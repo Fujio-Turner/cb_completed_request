@@ -225,11 +225,14 @@ Download from GitHub Releases:
 # All tests
 npm run test:e2e                    # E2E: All (both editions, all browsers)
 npm test                            # Jest: Unit tests (40 tests)
-cd app && source venv/bin/activate && pytest ../tests/python/ -v  # Python: 76 tests
+cd app && source venv/bin/activate && pytest ../tests/python/ -v  # Python: ~100 tests (logging 4.0.0 phase 9)
 
 # Fast E2E (Chromium only)
 npm run test:e2e:static:chromium    # Static Edition (36 tests)
-npm run test:e2e:server:chromium    # Server Edition (53 tests)
+npm run test:e2e:server:chromium    # Server Edition + logging specs (55+ tests)
+
+# Critical CI gate (scanner — must pass for release)
+pytest tests/python/test_no_unredacted_logging.py -v  # Credential leak prevention gate
 ```
 
 ### Playwright E2E Tests
@@ -256,14 +259,39 @@ npm run test:e2e:report             # View last test report
 **Test Locations:**
 - Static Edition: `playwright/e2e/*.spec.js` (tests /en/index.html)
 - Server Edition: `playwright/e2e/server/*.spec.js` (tests Flask at localhost:5555)
+  - `console-leak.spec.js` — Verifies no API keys leak to browser console
+  - `logging-panel.spec.js` — Tests `/api/logging/*` endpoints and UI
 
 ### Python Unit Tests (Server Edition)
+
+**Phase 9: Logging 4.0.0 Migration Tests** (~100 tests total across 7 files + scanner)
+
+Comprehensive testing for credential redaction and logging:
+- `tests/python/test_logging_config.py` — Core logging setup (17 tests)
+- `tests/python/test_api_key_redaction.py` — API key masking and leak detection (18 tests)
+- `tests/python/test_logging_api.py` — `/api/logging/*` endpoints (25 tests)
+- `tests/python/test_app_base_logging.py` — Flask app initialization logging (~15 tests)
+- `tests/python/test_ai_analyzer_logging.py` — AI analyzer logging (~15 tests)
+- `tests/python/test_cbl_store_blob_logging.py` — Storage logging (~15 tests)
+- **`tests/python/test_no_unredacted_logging.py` — CRITICAL CI GATE** (2 tests, must pass)
+
 ```bash
-cd app
-source venv/bin/activate
-pytest ../tests/python/ -v          # Run all 76 tests
-pytest ../tests/python/test_ai_analyzer.py -v  # Specific file
+cd app && source venv/bin/activate
+
+# All logging tests
+pytest ../tests/python/ -v
+
+# Just the scanner gate (prevents credential leaks)
+pytest ../tests/python/test_no_unredacted_logging.py -v
+
+# Specific module tests
+pytest ../tests/python/test_logging_config.py -v
+pytest ../tests/python/test_api_key_redaction.py::TestLeakScanCanary -v
 ```
+
+**Shared Helpers:**
+- `tests/python/conftest.py` — Autouse fixture setting `CBQA_LOG_FILE=off`, `CBQA_LOG_LEVEL=DEBUG`
+- `tests/python/_log_helpers.py` — `assert_no_secrets()` canary detector with `SECRET_TOKENS`
 
 ### Jest Unit Tests
 ```bash
@@ -279,7 +307,7 @@ npm test -- --watch                 # Watch mode
 | Edition | Version | Location |
 |---------|---------|----------|
 | Static | 3.29.3 | `/en/index.html` |
-| Server | 4.0.0-Beta | `/app/` |
+| Server | 4.0.0-Beta.2 | `/app/` |
 
 ### Version Update Locations (Server Edition)
 - `app/app.py`: `__version__` constant (single source of truth — startup banner reads from this)
@@ -334,6 +362,8 @@ npm test -- --watch                 # Watch mode
 | `/api/storage/maintenance` | POST | Run `compact / reindex / optimize / integrity / gc_blobs` |
 | `/api/storage/export` | GET | Stream `tar.gz` backup of CBL |
 | `/api/storage/import` | POST | Replace CBL from uploaded backup |
+| `/api/logging/info` | GET | Read active log configuration and rotated-file inventory |
+| `/api/logging/active-log` | GET | Download the active log file |
 
 > **Removed in v4.0.0-Beta** (do not re-add): `POST /api/couchbase/test`,
 > `POST /api/couchbase/check-indexes`, `POST /api/couchbase/query`. The

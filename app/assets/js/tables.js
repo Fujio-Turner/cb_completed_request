@@ -330,7 +330,7 @@ import {
                     bucketScopeCollection.includes("SELECT") ||
                     bucketScopeCollection.includes("(")
                 ) {
-                    console.warn("Potentially incorrect bucket parsing:", {
+                    Logger.warn('[tables]', 'Potentially incorrect bucket parsing:', {
                         statement: (request.statement || request.preparedText)?.substring(0, 100) + "...",
                         parsed: bucketScopeCollection,
                     });
@@ -349,7 +349,7 @@ import {
                                 extractIndexNames(planObj, indexData, correctedBSC);
                             }
                         } catch (e) {
-                            console.error("Error parsing plan JSON:", e, request.plan);
+                            Logger.error('[tables]', 'Error parsing plan JSON:', e, request.plan);
                         }
                     }
                 } else {
@@ -365,7 +365,7 @@ import {
                                 extractIndexNames(planObj, indexData, bucketScopeCollection);
                             }
                         } catch (e) {
-                            console.error("Error parsing plan JSON:", e, request.plan);
+                            Logger.error('[tables]', 'Error parsing plan JSON:', e, request.plan);
                         }
                     }
                 }
@@ -560,7 +560,7 @@ import {
             
             tbody.innerHTML = '';
             
-            Logger.debug(`[updateSampleQueriesTable] Updating inefficient-index-scans with ${sampleQueries.length} queries, currentTimezone=${currentTimezone}`);
+            Logger.debug(`[tables] Updating inefficient-index-scans with ${sampleQueries.length} queries, currentTimezone=${currentTimezone}`);
             
             sampleQueries.forEach((query, index) => {
                 // Apply timezone conversion to requestTime
@@ -568,7 +568,7 @@ import {
                 const convertedDate = getChartDate(originalTime);
                 const formattedDate = convertedDate ? convertedDate.toISOString().replace('T', ' ').substring(0, 23) + 'Z' : originalTime;
                 
-                Logger.trace(`[updateSampleQueriesTable] Query ${index}: Original=${originalTime}, Converted=${formattedDate}`);
+                Logger.trace(`[tables] Query ${index}: Original=${originalTime}, Converted=${formattedDate}`);
                 
                 const statementId = `sample-statement-${index}`;
                 const isLongStatement = query.statement.length > 500;
@@ -675,4 +675,4 @@ window.populateEveryQueryTable = populateEveryQueryTable;
 window.updateSampleQueriesTable = updateSampleQueriesTable;
 window.updateTimeoutQueriesTable = updateTimeoutQueriesTable;
 
-console.log('✅ tables.js module loaded');
+

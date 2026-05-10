@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Flask HTTP server base — Liquid (v5.0.0) edition.
+Flask HTTP server base — Server Edition (v4.0.0-Beta.2).
 
 This module hosts the Flask app object plus the endpoints that don't depend
 on the (now removed) external Couchbase Server SDK. The Couchbase Server
@@ -17,12 +17,22 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
 import time
-from icecream import ic
+
+import logging
+logger = logging.getLogger(__name__)
+
+from logging_config import mask_api_key
+
+# icecream stays as a developer probe (LOGGING.md §6.2). All shipping
+# `ic(...)` calls have been migrated to logger.* per
+# app/docs/work/LOGGING_4_0_0/04_APP_BASE_MIGRATION.md, but the binding
+# remains so devs can drop a one-off probe during a bug hunt.
+from icecream import ic  # noqa: F401
 
 # Import AI Analyzer module
 import ai_analyzer
 import sys
-ic(sys.executable)
+logger.info("Python executable: %s", sys.executable)
 
 # Import TOON converter
 # toon-python lives in a private GitLab repo (not on PyPI). When unavailable
@@ -35,14 +45,14 @@ try:
 except ImportError:
     if os.environ.get('SKIP_TOON_INSTALL', '').lower() in ('1', 'true', 'yes'):
         TOON_AVAILABLE = False
-        ic("ℹ️ toon-python not installed (SKIP_TOON_INSTALL set); using JSON fallback")
+        logger.info("toon-python not installed (SKIP_TOON_INSTALL set); using JSON fallback")
     else:
         # The original `toon_python` lives in a private GitLab repo and is not
         # publicly installable. The functional public equivalent is the
         # `python-toon` PyPI package, which exposes its API as `import toon`.
         # Install it and alias `toon` -> `toon_python` so the rest of the file
         # can keep using `toon_python` unchanged.
-        ic("⚠️ toon-python not installed, attempting runtime install of python-toon...")
+        logger.warning("toon-python not installed, attempting runtime install of python-toon...")
         try:
             import subprocess
             subprocess.check_call([sys.executable, "-m", "pip", "install", "python-toon"])
@@ -52,13 +62,12 @@ except ImportError:
             sys.modules['toon_python.decoder'] = _toon_pkg.decoder
             import toon_python  # noqa: F401  (now resolves via the alias above)
             TOON_AVAILABLE = True
-            ic("✅ python-toon installed and aliased as toon_python at runtime")
+            logger.info("python-toon installed and aliased as toon_python at runtime")
         except Exception as e:
             TOON_AVAILABLE = False
-            ic(f"❌ Runtime install failed: {e}")
+            logger.error("Runtime install failed: %s", e)
 
 # Configure icecream
-ic.configureOutput(includeContext=True)
 
 # Use port 8888 by default (port 5000 is used by macOS AirPlay Receiver)
 # Playwright tests use PORT=5555
@@ -75,7 +84,7 @@ def get_resource_path():
         return os.path.dirname(os.path.abspath(__file__))
 
 DIRECTORY = get_resource_path()
-ic(f"📁 Resource directory: {DIRECTORY}")
+logger.info("Resource directory: %s", DIRECTORY)
 
 app = Flask(__name__, static_folder=DIRECTORY, static_url_path='')
 CORS(app)  # Enable CORS for all routes
@@ -148,9 +157,9 @@ try:
         ),
         url_prefix=_SWAGGER_URL,
     )
-    ic(f"📘 Swagger UI mounted at {_SWAGGER_URL}")
+    logger.info("Swagger UI mounted at %s", _SWAGGER_URL)
 except ImportError:
-    ic("ℹ️ flask-swagger-ui not installed; /api-docs will 404")
+    logger.info("flask-swagger-ui not installed; /api-docs will 404")
 
 
 @app.route('/<path:path>')
@@ -194,7 +203,7 @@ def cache_analyzer_data_endpoint():
     """
     try:
         data = request.json
-        ic("💾 Caching analyzer data")
+        logger.debug("Caching analyzer data")
         
         analyzer_data = data.get('data', {})
         
@@ -207,7 +216,7 @@ def cache_analyzer_data_endpoint():
         # Cache the data and get session ID
         session_id = ai_analyzer.cache_analyzer_data(analyzer_data)
         
-        ic(f"✅ Data cached with session_id: {session_id}")
+        logger.info("Data cached with session_id: %s", session_id)
         
         return jsonify({
             'success': True,
@@ -215,7 +224,7 @@ def cache_analyzer_data_endpoint():
         })
         
     except Exception as e:
-        ic("💥 Error caching data", str(e))
+        logger.error("Error caching data: %s", str(e))
         return jsonify({
             'success': False,
             'error': str(e)
@@ -260,7 +269,7 @@ def preview_ai_payload():
     global TOON_AVAILABLE
     try:
         request_data = request.json
-        ic("👁️ Preview AI payload request received")
+        logger.debug("Preview AI payload request received")
         
         # Extract request parameters
         raw_data = request_data.get('data', {})
@@ -276,10 +285,10 @@ def preview_ai_payload():
                 'error': 'No data provided'
             }), 400
         
-        ic(f"📊 Data size: {len(str(raw_data))} bytes")
-        ic(f"🎯 Selections: {selections}")
-        ic(f"📝 Format: {output_format}")
-        ic(f"📦 TOON Available: {TOON_AVAILABLE}")
+        logger.debug("Data size: %d bytes", len(str(raw_data)))
+        logger.debug("Selections: %s", selections)
+        logger.debug("Format: %s", output_format)
+        logger.debug("TOON Available: %s", TOON_AVAILABLE)
         
         # Build payload from raw data (no caching)
         payload = ai_analyzer.payload_builder.build_payload_from_data(
@@ -304,7 +313,7 @@ def preview_ai_payload():
         # The functional public equivalent is `python-toon` (module name `toon`),
         # which we install and alias as `toon_python` to keep call sites unchanged.
         if output_format == 'toon' and not TOON_AVAILABLE:
-            ic("⚠️ TOON not loaded, attempting lazy install of python-toon...")
+            logger.warning("TOON not loaded, attempting lazy install of python-toon...")
             try:
                 import subprocess
                 import sys
@@ -318,9 +327,9 @@ def preview_ai_payload():
                 # Inject into global scope
                 globals()['toon_python'] = toon_python
                 globals()['TOON_AVAILABLE'] = True
-                ic("✅ python-toon installed and aliased as toon_python lazily")
+                logger.info("python-toon installed and aliased as toon_python lazily")
             except Exception as e:
-                ic(f"❌ Lazy install failed: {e}")
+                logger.error("Lazy install failed: %s", e)
 
         if output_format == 'toon' and TOON_AVAILABLE:
             try:
@@ -339,9 +348,9 @@ def preview_ai_payload():
                     from toon_python.encoder import encode
                     payload_str = encode(payload)
                     
-                ic("✅ Converted payload to TOON")
+                logger.debug("Converted payload to TOON")
             except Exception as e:
-                ic(f"❌ TOON conversion failed: {e}")
+                logger.error("TOON conversion failed: %s", e)
                 payload_str = json.dumps(payload, indent=2)
                 output_format = 'json (fallback)'
         else:
@@ -349,7 +358,7 @@ def preview_ai_payload():
             
         size_bytes = len(payload_str.encode('utf-8'))
         
-        ic(f"✅ Payload preview ready, size={size_bytes} bytes")
+        logger.debug("Payload preview ready, size=%d bytes", size_bytes)
         
         response_data = {
             'success': True,
@@ -365,12 +374,12 @@ def preview_ai_payload():
         if obfuscation_mapping:
             response_data['obfuscation_mapping'] = obfuscation_mapping
             response_data['mapping_count'] = len(obfuscation_mapping)
-            ic(f"🔑 Obfuscation mapping: {len(obfuscation_mapping)} tokens")
+            logger.debug("Obfuscation mapping: %d tokens", len(obfuscation_mapping))
         
         return jsonify(response_data)
         
     except Exception as e:
-        ic("💥 Error previewing payload", str(e))
+        logger.error("Error previewing payload: %s", str(e))
         return jsonify({
             'success': False,
             'error': str(e)
@@ -423,6 +432,23 @@ def _extract_by_path(data: dict, path: str):
         return None
 
 
+def _safe_headers(headers: dict) -> dict:
+    """Return a copy of headers with sensitive values masked."""
+    SENSITIVE = {"authorization", "x-api-key", "api-key", "apikey", "x-goog-api-key"}
+    out = {}
+    for k, v in headers.items():
+        if k.lower() in SENSITIVE:
+            # "Bearer sk-proj-..XYZ" → "Bearer sk-proj-......XYZ"
+            sval = str(v)
+            if sval.startswith("Bearer "):
+                out[k] = "Bearer " + mask_api_key(sval[7:])
+            else:
+                out[k] = mask_api_key(sval)
+        else:
+            out[k] = v
+    return out
+
+
 def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prompt, ai_payload_data, cb_config, initial_doc, obfuscation_mapping, language=None, custom_config=None):
     """Background thread to process AI request and update the CBL document.
 
@@ -433,11 +459,11 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
         import json
         from datetime import datetime
 
-        ic(f"🧵 Starting background AI task for doc {doc_id}")
+        logger.debug("Starting background AI task for doc %s", doc_id)
 
         # Check if this is a custom AI provider
         if custom_config and custom_config.get('isCustom'):
-            ic(f"🔧 Using custom AI provider: {custom_config.get('name')}")
+            logger.debug("Using custom AI provider: %s", custom_config.get('name'))
             result = ai_analyzer.call_custom_ai_provider(
                 custom_config=custom_config,
                 prompt=prompt,
@@ -457,12 +483,12 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
                 language=language
             )
 
-        ic(f"📥 AI response received for {doc_id}", result.get('success'))
+        logger.debug("AI response received for %s: success=%s", doc_id, result.get('success'))
 
         # Persist via the embedded CBL store — the only supported backend.
         cbl_store_inst = _get_cbl_store()
         if cbl_store_inst is None:
-            ic(f"❌ CBL store unavailable; cannot update {doc_id}")
+            logger.error("CBL store unavailable; cannot update %s", doc_id)
             return
 
         def _load_doc(_id):
@@ -483,7 +509,7 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
                         # Parse JSON string to object
                         parsed_content = json.loads(content)
                         analysis_data['choices'][0]['message']['content_parsed'] = parsed_content
-                        ic("✅ Parsed OpenAI/Grok AI response JSON content to object")
+                        logger.info("Parsed OpenAI/Grok AI response JSON content to object")
                 elif 'content' in analysis_data and isinstance(analysis_data['content'], list):
                     # Anthropic/Claude format: content[0].text
                     if len(analysis_data['content']) > 0 and 'text' in analysis_data['content'][0]:
@@ -495,11 +521,11 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
                             json_content = content[json_start:json_end + 1]
                             parsed_content = json.loads(json_content)
                             analysis_data['content_parsed'] = parsed_content
-                            ic("✅ Parsed Anthropic/Claude AI response JSON content to object")
+                            logger.debug("Parsed Anthropic/Claude AI response JSON content to object")
                 elif result.get('isCustomProvider') and result.get('responsePath'):
                     # Custom AI provider - use configured response path
                     response_path = result.get('responsePath')
-                    ic(f"🔧 Parsing custom AI response using path: {response_path}")
+                    logger.debug("Parsing custom AI response using path: %s", response_path)
                     
                     # Parse the response path to extract content
                     content = _extract_by_path(analysis_data, response_path)
@@ -510,13 +536,13 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
                             json_content = content[json_start:json_end + 1]
                             parsed_content = json.loads(json_content)
                             analysis_data['content_parsed'] = parsed_content
-                            ic("✅ Parsed custom AI response JSON content to object")
+                            logger.debug("Parsed custom AI response JSON content to object")
             except Exception as e:
-                ic(f"⚠️ Could not parse AI content as JSON: {str(e)}")
+                logger.warning("Could not parse AI content as JSON: %s", str(e))
             
             # De-obfuscate AI response if we have mapping
             if obfuscation_mapping:
-                ic("🔓 De-obfuscating AI response")
+                logger.debug("De-obfuscating AI response")
                 obfuscator = ai_analyzer.DataObfuscator()
                 
                 # Convert analysis to JSON string, de-obfuscate, convert back
@@ -524,7 +550,7 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
                 deobfuscated_json = obfuscator.deobfuscate_text(analysis_json, obfuscation_mapping)
                 analysis_data = json.loads(deobfuscated_json)
                 
-                ic(f"✅ De-obfuscation complete, restored {len(obfuscation_mapping)} tokens")
+                logger.debug("De-obfuscation complete, restored %d tokens", len(obfuscation_mapping))
             
             # Update doc with success results (CBL or CB Server, via helpers)
             try:
@@ -534,7 +560,7 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
 
                 # Check if cancelled
                 if current_doc.get('status') == 'cancelled':
-                    ic(f"🛑 Task was cancelled, aborting update for {doc_id}")
+                    logger.debug("Task was cancelled, aborting update for %s", doc_id)
                     return
 
                 current_doc.update({
@@ -549,9 +575,9 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
                 })
 
                 _save_doc(doc_id, current_doc)
-                ic(f"✅ Updated doc {doc_id} with success results")
+                logger.info("Updated doc %s with success results", doc_id)
             except Exception as e:
-                ic(f"⚠️ Failed to update doc with results: {str(e)}")
+                logger.warning("Failed to update doc with results: %s", str(e))
 
         else:
             # Update doc with failure (CBL or CB Server, via helpers)
@@ -571,14 +597,14 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
                 })
 
                 _save_doc(doc_id, current_doc)
-                ic(f"✅ Updated doc {doc_id} with failure status")
+                logger.info("Updated doc %s with failure status", doc_id)
             except Exception as e:
-                ic(f"⚠️ Failed to update doc with error: {str(e)}")
+                logger.warning("Failed to update doc with error: %s", str(e))
                 
     except Exception as e:
         import traceback
-        ic(f"💥 Unhandled error in background task for {doc_id}", str(e))
-        ic(traceback.format_exc())
+        logger.error("Unhandled error in background task for %s: %s", doc_id, str(e))
+        logger.error("Traceback:\n%s", traceback.format_exc())
 
 @app.route('/api/ai/analyze', methods=['POST'])
 def analyze_with_ai():
@@ -620,9 +646,9 @@ def analyze_with_ai():
         import json
         
         request_data = request.json
-        ic("=" * 80)
-        ic("🤖 AI Analysis request received")
-        ic("=" * 80)
+        logger.debug("=" * 80)
+        logger.debug("AI Analysis request received")
+        logger.debug("=" * 80)
         
         # Extract parameters
         raw_data = request_data.get('data', {})
@@ -635,25 +661,25 @@ def analyze_with_ai():
         cb_config = request_data.get('couchbaseConfig', {})
         custom_config = request_data.get('customConfig')  # Custom AI provider config
         
-        ic("📋 Request parameters:")
-        ic(f"  Provider: {provider}")
-        ic(f"  Language: {language}")
-        ic(f"  Prompt length: {len(prompt)} chars")
-        ic(f"  Selections: {selections}")
-        ic(f"  Options: {options}")
-        ic(f"  Custom config: {bool(custom_config)}")
+        logger.debug("Request parameters")
+        logger.debug("  Provider: %s", provider)
+        logger.debug("  Language: %s", language)
+        logger.debug("  Prompt length: %d chars", len(prompt))
+        logger.debug("  Selections: %s", selections)
+        logger.debug("  Options: %s", options)
+        logger.debug("  Custom config: %s", bool(custom_config))
         
         # Check if this is a custom AI provider
         if custom_config and custom_config.get('isCustom'):
-            ic("🔧 Using custom AI provider from request")
+            logger.debug("Using custom AI provider from request")
             api_key = None  # Custom providers use their own auth
             api_url = custom_config.get('url')
             model = custom_config.get('model')
             endpoint = ''  # Custom providers use full URL
 
-            ic(f"✅ Custom provider: {custom_config.get('name')}")
-            ic(f"  API URL: {api_url}")
-            ic(f"  Model: {model}")
+            logger.info("Custom provider: %s", custom_config.get('name'))
+            logger.debug("  API URL: %s", api_url)
+            logger.debug("  Model: %s", model)
         else:
             # Load API credentials from user_config preferences in CBL.
             cbl_store_inst = _get_cbl_store()
@@ -662,7 +688,7 @@ def analyze_with_ai():
                     'success': False,
                     'error': 'CBL store not available — cannot load AI credentials',
                 }), 500
-            ic("🔑 Loading AI API credentials from CBL preferences (user_config)")
+            logger.debug("Loading AI API credentials from CBL preferences (user_config)")
             user_prefs = cbl_store_inst.load_preferences('user_config') or {}
             ai_apis = user_prefs.get('aiApis', [])
 
@@ -670,7 +696,7 @@ def analyze_with_ai():
             api_config = next((api for api in ai_apis if api['id'] == provider), None)
             
             if not api_config:
-                ic(f"❌ Provider '{provider}' not found in user::config")
+                logger.error("Provider '%s' not found in user::config", provider)
                 return jsonify({
                     'success': False,
                     'error': f'Provider {provider} not configured'
@@ -686,13 +712,13 @@ def analyze_with_ai():
             else:
                 endpoint = '/chat/completions'
             
-            ic(f"✅ Loaded credentials for provider: {provider}")
-            ic(f"  API URL: {api_url}")
-            ic(f"  Model: {model}")
-            ic(f"  Has API Key: {bool(api_key)}")
+            logger.info("Loaded credentials for provider: %s", provider)
+            logger.debug("  API URL: %s", api_url)
+            logger.debug("  Model: %s", model)
+            logger.debug("  Has API Key: %s", bool(api_key))
             
             if not api_key:
-                ic(f"❌ No API key configured for provider: {provider}")
+                logger.error("No API key configured for provider: %s", provider)
                 return jsonify({
                     'success': False,
                     'error': f'No API key configured for {provider}. Please add in Settings.'
@@ -729,9 +755,9 @@ def analyze_with_ai():
         # Extract mapping table if obfuscated (for de-obfuscation later)
         obfuscation_mapping = ai_payload_data.pop('_obfuscation_mapping', None)
         
-        ic(f"📊 Payload built: {len(str(ai_payload_data))} bytes")
+        logger.debug("Payload built: %d bytes", len(str(ai_payload_data)))
         if obfuscation_mapping:
-            ic(f"🔑 Obfuscation mapping: {len(obfuscation_mapping)} tokens")
+            logger.debug("Obfuscation mapping: %d tokens", len(obfuscation_mapping))
         
         # Convert to TOON format if requested and available
         use_toon = options.get('use_toon', False)
@@ -754,10 +780,10 @@ def analyze_with_ai():
                     from toon_python.encoder import encode
                     ai_request_payload = encode(ai_payload_data)
                     
-                ic("✅ Converted payload to TOON for AI request")
-                ic(f"TOON Size: {len(ai_request_payload)} bytes vs JSON: {len(json.dumps(ai_payload_data))} bytes")
+                logger.info("Converted payload to TOON for AI request")
+                logger.debug("TOON Size: %d bytes vs JSON: %d bytes", len(ai_request_payload), len(json.dumps(ai_payload_data)))
             except Exception as e:
-                ic(f"❌ TOON conversion failed for request: {e}")
+                logger.error("TOON conversion failed for request: %s", e)
                 # Fallback to JSON object (ai_payload_data is already dict)
         
         # Save initial request to Couchbase if requested (before AI call)
@@ -797,15 +823,15 @@ def analyze_with_ai():
                 if cbl_store_inst is not None:
                     cbl_store_inst.save_analyzer(doc_id, prompt or 'AI Analysis', initial_doc)
                     saved_doc_id = doc_id
-                    ic(f"✅ Saved initial request to CBL: {doc_id} (status: pending)")
+                    logger.info("Saved initial request to CBL: %s (status: pending)", doc_id)
                 else:
-                    ic("⚠️ CBL store unavailable; cannot persist initial request")
+                    logger.warning("CBL store unavailable; cannot persist initial request")
             except Exception as e:
-                ic(f"⚠️ Failed to save initial request: {str(e)}")
+                logger.warning("Failed to save initial request: %s", str(e))
         
         # If save_only mode (no real AI call), create placeholder response and save
         if save_only:
-            ic("💾 Save-only mode: Skipping AI call, saving payload with placeholder response")
+            logger.info("Save-only mode: Skipping AI call, saving payload with placeholder response")
             
             analysis_data = {
                 'summary': {
@@ -832,11 +858,11 @@ def analyze_with_ai():
                             current_doc.get('prompt') or 'AI Analysis',
                             current_doc,
                         )
-                        ic(f"✅ Updated placeholder doc {saved_doc_id} in CBL")
+                        logger.info("Updated placeholder doc %s in CBL", saved_doc_id)
                     else:
-                        ic("⚠️ CBL store unavailable; cannot update placeholder doc")
+                        logger.warning("CBL store unavailable; cannot update placeholder doc")
                 except Exception as e:
-                    ic(f"⚠️ Failed to update placeholder doc: {str(e)}")
+                    logger.warning("Failed to update placeholder doc: %s", str(e))
 
             return jsonify({
                 'success': True,
@@ -848,7 +874,7 @@ def analyze_with_ai():
         else:
             # Launch background task for real AI call
             if saved_doc_id:
-                ic(f"🚀 Launching background AI task for {saved_doc_id}")
+                logger.info("Launching background AI task for %s", saved_doc_id)
                 thread = threading.Thread(target=background_ai_task, args=(
                     saved_doc_id, provider, model, api_key, api_url, endpoint, prompt, 
                     ai_payload_data, cb_config, initial_doc, obfuscation_mapping, language, custom_config
@@ -863,7 +889,7 @@ def analyze_with_ai():
                 })
             else:
                 # Fallback for no storage (synchronous, discouraged)
-                ic("⚠️ Storage disabled, running synchronously (may timeout)")
+                logger.warning("Storage disabled, running synchronously (may timeout)")
                 
                 if custom_config and custom_config.get('isCustom'):
                     result = ai_analyzer.call_custom_ai_provider(
@@ -893,8 +919,8 @@ def analyze_with_ai():
 
     except Exception as e:
         import traceback
-        ic("💥 Error in AI analysis", str(e))
-        ic(traceback.format_exc())
+        logger.error("Error in AI analysis: %s", str(e))
+        logger.error("Traceback:\n%s", traceback.format_exc())
         return jsonify({
             'success': False,
             'error': str(e),
@@ -1085,11 +1111,11 @@ def test_ai_api():
         api_url = data.get('apiUrl', '')
         custom_config = data.get('customConfig')
         
-        ic("🧪 Testing AI API configuration")
-        ic(f"  Provider: {provider}")
-        ic(f"  Model: {model}")
-        ic(f"  API URL: {api_url}")
-        ic(f"  Custom: {bool(custom_config)}")
+        logger.debug("Testing AI API configuration")
+        logger.debug("  Provider: %s", provider)
+        logger.debug("  Model: %s", model)
+        logger.debug("  API URL: %s", api_url)
+        logger.debug("  Custom: %s", bool(custom_config))
         
         # Simple test prompt
         test_prompt = "Respond with exactly this JSON: {\"status\": \"ok\", \"message\": \"API connection successful\"}"
@@ -1097,7 +1123,7 @@ def test_ai_api():
         
         if custom_config and custom_config.get('isCustom'):
             # Test custom AI provider
-            ic("🔧 Testing custom AI provider")
+            logger.debug("Testing custom AI provider")
             result = ai_analyzer.call_custom_ai_provider(
                 custom_config=custom_config,
                 prompt=test_prompt,
@@ -1159,7 +1185,7 @@ def test_ai_api():
                 if len(response_data['content']) > 0:
                     response_text = response_data['content'][0].get('text', '')
             
-            ic(f"✅ API test successful! Response: {response_text[:100]}...")
+            logger.info("API test successful! Response: %s...", response_text[:100])
             
             return jsonify({
                 'success': True,
@@ -1170,7 +1196,7 @@ def test_ai_api():
                 'model': model
             })
         else:
-            ic(f"❌ API test failed: {result.get('error')}")
+            logger.error("API test failed: %s", result.get('error'))
             return jsonify({
                 'success': False,
                 'error': result.get('error', 'Unknown error'),
@@ -1180,9 +1206,9 @@ def test_ai_api():
             }), 400
             
     except Exception as e:
-        ic(f"💥 API test error: {str(e)}")
+        logger.error("API test error: %s", str(e))
         import traceback
-        ic(traceback.format_exc())
+        logger.error("Traceback:\n%s", traceback.format_exc())
         return jsonify({
             'success': False,
             'error': str(e)
@@ -1250,7 +1276,7 @@ def ai_api_call():
     """
     try:
         data = request.json
-        ic("🎯 AI API Call Request", data.get('provider'), data.get('model'))
+        logger.debug("AI API Call Request: provider=%s, model=%s", data.get('provider'), data.get('model'))
         
         # Extract parameters
         provider = data.get('provider', 'unknown')
@@ -1279,7 +1305,7 @@ def ai_api_call():
         
         # Build full URL
         full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
-        ic("🌐 Full URL", full_url)
+        logger.debug("Full URL: %s", full_url)
         
         # Prepare headers
         headers = {
@@ -1299,8 +1325,8 @@ def ai_api_call():
         if model and 'model' not in payload:
             payload['model'] = model
         
-        ic("📋 Final Headers", {k: v[:20] + '...' if len(str(v)) > 20 else v for k, v in headers.items()})
-        ic("📋 Final Payload", payload)
+        logger.debug("Final Headers: %s", _safe_headers(headers))
+        logger.debug("Final Payload: %s", payload)
         
         # Create custom HTTP client with request-specific settings
         custom_client = ai_analyzer.AIHttpClient(
@@ -1317,12 +1343,12 @@ def ai_api_call():
             json_data=payload
         )
         
-        ic("📨 API Call Result", result.get('success'), result.get('elapsed_ms'))
+        logger.debug("API Call Result: success=%s, elapsed_ms=%s", result.get('success'), result.get('elapsed_ms'))
         
         return jsonify(result)
         
     except Exception as e:
-        ic("💥 Error in AI API call endpoint", str(e))
+        logger.error("Error in AI API call endpoint: %s", str(e))
         return jsonify({
             'success': False,
             'error': str(e)
@@ -1367,8 +1393,7 @@ def setup_file_logging(log_dir=None):
             _log_file.write(f"[{timestamp}] {s}\n")
         print(s)  # Also print to console
     
-    ic.configureOutput(outputFunction=log_to_file)
-    ic(f"📝 Logging to: {log_path}")
+        logger.info("Logging to: %s", log_path)
     return log_path
 
 def stop_file_logging():
@@ -1376,11 +1401,10 @@ def stop_file_logging():
     global _log_file, _log_enabled
     _log_enabled = False
     if _log_file:
-        ic("📝 Stopping file logging")
+        logger.info("Stopping file logging")
         _log_file.close()
         _log_file = None
-    ic.configureOutput(outputFunction=lambda s: print(s))
-
+    
 def run_with_menubar():
     """Run Flask server with macOS menu bar icon for easy quit"""
     import rumps
@@ -1435,7 +1459,7 @@ def run_with_menubar():
                         old_port = self.current_port
                         self.current_port = new_port
                         self.menu["Port: " + str(old_port)].title = f"Port: {new_port}"
-                        ic(f"🔄 Port changed: {old_port} → {new_port}")
+                        logger.info("Port changed: %d → %d", old_port, new_port)
                         self.restart_server(None)
                     else:
                         rumps.alert("Invalid Port", "Port must be between 1024 and 65535")
@@ -1483,7 +1507,7 @@ def run_with_menubar():
                 new_dir = os.path.expanduser(response.text.strip())
                 if new_dir:
                     _log_dir = new_dir
-                    ic(f"📁 Log folder set to: {_log_dir}")
+                    logger.info("Log folder set to: %s", _log_dir)
                     rumps.notification(
                         "CB Query Analyzer",
                         "Log Folder Updated",
@@ -1491,7 +1515,7 @@ def run_with_menubar():
                     )
         
         def restart_server(self, _):
-            ic(f"🔄 Restarting server on port {self.current_port}...")
+            logger.info("Restarting server on port %d...", self.current_port)
             rumps.notification(
                 "CB Query Analyzer",
                 "Restarting...",
@@ -1502,7 +1526,7 @@ def run_with_menubar():
             os._exit(0)  # Exit and let user relaunch
             
         def quit_app(self, _):
-            ic("👋 Shutting down via menu bar...")
+            logger.info("Shutting down via menu bar...")
             stop_file_logging()
             rumps.quit_application()
             os._exit(0)
@@ -1539,7 +1563,7 @@ def run_with_systray_windows():
             return img
         
         def on_quit(icon, item):
-            ic("👋 Shutting down via system tray...")
+            logger.info("Shutting down via system tray...")
             stop_file_logging()
             icon.stop()
             os._exit(0)
@@ -1594,41 +1618,41 @@ def run_with_systray_windows():
         icon.run()
         
     except ImportError:
-        ic("⚠️ pystray not available, running without system tray")
+        logger.warning("pystray not available, running without system tray")
         app.run(host='0.0.0.0', port=PORT, debug=False)
 
 if __name__ == '__main__':
     try:
-        ic("🚀 Liquid Snake Server (Flask)")
-        ic(f"📡 Serving at http://localhost:{PORT}")
-        ic(f"📂 Directory: {DIRECTORY}")
-        ic(f"🌐 Open: http://localhost:{PORT}/index.html")
+        logger.info("Liquid Snake Server (Flask)")
+        logger.info("Serving at http://localhost:%d", PORT)
+        logger.info("Directory: %s", DIRECTORY)
+        logger.info("Open: http://localhost:%d/index.html", PORT)
         
         # Check if running as PyInstaller bundle
         is_frozen = getattr(sys, 'frozen', False)
-        ic(f"🧊 Frozen (PyInstaller): {is_frozen}")
+        logger.info("Frozen (PyInstaller): %s", is_frozen)
         
         if is_frozen:
             # Running as packaged app - use menu bar/system tray
             if sys.platform == 'darwin':
                 try:
                     import rumps
-                    ic("🍎 Starting with macOS menu bar...")
+                    logger.info("Starting with macOS menu bar...")
                     run_with_menubar()
                 except ImportError:
-                    ic("⚠️ rumps not available, running without menu bar")
+                    logger.warning("rumps not available, running without menu bar")
                     browser_thread = threading.Thread(target=open_browser, daemon=True)
                     browser_thread.start()
                     app.run(host='0.0.0.0', port=PORT, debug=False)
             elif sys.platform == 'win32':
-                ic("🪟 Starting with Windows system tray...")
+                logger.info("Starting with Windows system tray...")
                 run_with_systray_windows()
             else:
                 browser_thread = threading.Thread(target=open_browser, daemon=True)
                 browser_thread.start()
                 app.run(host='0.0.0.0', port=PORT, debug=False)
         else:
-            ic("🛑 Press Ctrl+C to stop")
+            logger.info("Press Ctrl+C to stop")
             # Honor FLASK_DEBUG env var (default: enabled for local dev).
             # Containers/production should set FLASK_DEBUG=0 to disable
             # the auto-reloader and debugger.
@@ -1636,7 +1660,7 @@ if __name__ == '__main__':
             app.run(host='0.0.0.0', port=PORT, debug=debug_mode)
         
     except Exception as e:
-        ic(f"💥 FATAL ERROR: {e}")
+        logger.exception("FATAL ERROR: %s", e)
         import traceback
         traceback.print_exc()
         # Keep window open on crash so user can see error

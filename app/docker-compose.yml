@@ -1,4 +1,4 @@
-# Couchbase Query Analyzer - Server Edition v5.0.0 (CBL)
+# Couchbase Query Analyzer - Server Edition v4.0.0-Beta.2 (CBL)
 #
 # Usage:
 #   docker compose up --build       # build & start
@@ -17,7 +17,7 @@
 # Receiver / Control Center and is a common conflict source.
 #
 # Notes:
-# - Server Edition v5.0.0 uses embedded Couchbase Lite (no external DB needed).
+# - Server Edition v4.0.0-Beta.2 uses embedded Couchbase Lite (no external DB needed).
 # - The Flask server uses STORAGE_BACKEND=cbl by default.
 # - User preferences and analyzer data stored in CBL at /app/data/cb_tools_db.cblite2/
 # - gunicorn -w 1 is REQUIRED — CBL is single-writer.
@@ -27,7 +27,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: couchbase-query-analyzer:5.0.0
+    image: couchbase-query-analyzer:4.0.0-Beta.2
     container_name: cb-query-analyzer-cbl
     ports:
       - "${HOST_PORT:-8080}:${PORT:-8080}"

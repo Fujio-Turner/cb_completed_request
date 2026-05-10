@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1.7
-# Couchbase Query Analyzer - Server Edition v5.0.0 (CBL)
+# Couchbase Query Analyzer - Server Edition v4.0.0-Beta.2 (CBL)
 #
-# Build:  docker build -t couchbase-query-analyzer:5.0.0 .
-# Run:    docker run -p 8080:8080 couchbase-query-analyzer:5.0.0
+# Build:  docker build -t couchbase-query-analyzer:4.0.0-Beta.2 .
+# Run:    docker run -p 8080:8080 couchbase-query-analyzer:4.0.0-Beta.2
 # Compose: docker compose up --build
 #
 # Build CONTEXT must be the /app directory (where this Dockerfile lives).
@@ -13,7 +13,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     CBL_VERSION=3.2.1 \
     CBL_DB_DIR=/app/data \
     CBL_DB_NAME=cb_tools_db \
-    PORT=8080
+    PORT=8080 \
+    CBQA_LOG_FILE=/app/logs/cbqa.log
 # Note: STORAGE_BACKEND is no longer needed — Couchbase Lite is the only
 # supported storage backend. The Couchbase Server SDK has been removed.
 # Note: SKIP_TOON_INSTALL is intentionally NOT set. `python-toon` is now
@@ -24,7 +25,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Required by RELEASE_WORK_CHECK.py — verifies LABEL version=
-LABEL version="5.0.0"
+LABEL version="4.0.0-Beta.2"
 LABEL maintainer="Couchbase Query Analyzer"
 
 # ---- 1. System dependencies for CBL-C and the CFFI build ----
@@ -67,7 +68,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-RUN mkdir -p /app/data
+RUN mkdir -p /app/data /app/logs
 
 # ---- 5. Healthcheck ----
 # Uses python (always available) instead of curl, and honors $PORT.
@@ -77,4 +78,5 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
 EXPOSE 8080
 # Use sh -c so $PORT expands at container start. Override with -e PORT=xxxx
 # or via docker-compose.yml `environment.PORT`.
-CMD ["sh", "-c", "exec gunicorn -w 1 -b 0.0.0.0:${PORT:-8080} app:app"]
+# Use gunicorn_config.py to align gunicorn logs with CBQA logging standard.
+CMD ["sh", "-c", "exec gunicorn -w 1 -b 0.0.0.0:${PORT:-8080} -c gunicorn_config.py app:app"]

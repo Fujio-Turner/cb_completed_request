@@ -292,15 +292,15 @@ const updateInsights = window.updateInsights;
             );
             
             // Debug logging for filtering
-            Logger.debug(`Date filtering: ${filteredAllRequests.length} requests -> ${filteredRequests.length} after date range filter`);
-            if (filteredRequests.length === 0 && filteredAllRequests.length > 0) {
-                console.warn("⚠️ All requests filtered out by date range!");
-                console.log("Start date:", startDate);
-                console.log("End date:", endDate);
-                if (filteredAllRequests.length > 0) {
-                    console.log("First request time:", filteredAllRequests[0].requestTime);
-                }
-            }
+             Logger.debug(`Date filtering: ${filteredAllRequests.length} requests -> ${filteredRequests.length} after date range filter`);
+             if (filteredRequests.length === 0 && filteredAllRequests.length > 0) {
+                 Logger.warn('[parsers]', "⚠️ All requests filtered out by date range!");
+                 Logger.debug('[parsers]', "Start date:", startDate);
+                 Logger.debug('[parsers]', "End date:", endDate);
+                 if (filteredAllRequests.length > 0) {
+                     Logger.debug('[parsers]', "First request time:", filteredAllRequests[0].requestTime);
+                 }
+             }
 
             // Store filtered requests globally for Index/Query Flow tab activation
             window.filteredRequests = filteredRequests;
@@ -334,14 +334,14 @@ const updateInsights = window.updateInsights;
                     filteredRequests;
 
                 // Show sampling notice if data was sampled for charts
-                if (filteredRequests.length > 1000) {
-                    console.log(`${TEXT_CONSTANTS.CHART_SAMPLING} ${sampleRequests.length} ${TEXT_CONSTANTS.OF_TOTAL} ${filteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
-                }
+                 if (filteredRequests.length > 1000) {
+                     Logger.info('[parsers]', `${TEXT_CONSTANTS.CHART_SAMPLING} ${sampleRequests.length} ${TEXT_CONSTANTS.OF_TOTAL} ${filteredRequests.length} ${TEXT_CONSTANTS.REQUESTS_FOR_PERFORMANCE}`);
+                 }
 
                 setupLazyChartLoading(sampleRequests, filteredRequests);
-            } catch (e) {
-                console.error(`${TEXT_CONSTANTS.ERROR_GENERATING_UI}`, e);
-                alert(`${TEXT_CONSTANTS.ERROR_GENERATING_UI} Try reducing the date range or selecting a coarser time grouping.`);
+                } catch (e) {
+                 Logger.error('[parsers]', `${TEXT_CONSTANTS.ERROR_GENERATING_UI}`, e);
+                 alert(`${TEXT_CONSTANTS.ERROR_GENERATING_UI} Try reducing the date range or selecting a coarser time grouping.`);
             }
             // Only reset flow diagram if no query was previously selected
             const flowDiagram = document.getElementById("flow-diagram");
@@ -557,9 +557,9 @@ const updateInsights = window.updateInsights;
                                     document.getElementById("progress-text").textContent = `${currentProgress}%`;
                                 }
                             } catch (e) {
-                                console.warn(`${TEXT_CONSTANTS.ERROR_PROCESSING_REQUEST} ${i}:`, e.message || e);
-                                // Continue processing other requests
-                            }
+                                 Logger.warn('[parsers]', `${TEXT_CONSTANTS.ERROR_PROCESSING_REQUEST} ${i}:`, e.message || e);
+                                 // Continue processing other requests
+                             }
                         }
 
                         // Update progress bar
@@ -593,8 +593,7 @@ const updateInsights = window.updateInsights;
                     showToast(TEXT_CONSTANTS.UNEXPECTED_DATA_FORMAT, "error");
                 }
             } catch (e) {
-                console.error(`${TEXT_CONSTANTS.JSON_PARSING_ERROR}`, e);
-                console.log(`${TEXT_CONSTANTS.JSON_PARSING_ERROR}`, e);
+                Logger.error('[parsers]', `${TEXT_CONSTANTS.JSON_PARSING_ERROR}`, e);
                 showToast(`${TEXT_CONSTANTS.ERROR_PARSING_JSON} ${e.message}`, "error");
                 document.getElementById("progress-container").style.display = "none";
             }
@@ -752,6 +751,3 @@ window.finishProcessing = finishProcessing;
 window.parseJSON = parseJSON;
 window.parseIndexJSON = parseIndexJSON;
 window.parseSchemaInference = parseSchemaInference;
-
-console.log('✅ parsers.js module loaded');
-console.log('⚠️ Note: parseJSON is UI-coupled and will need refactoring in future');

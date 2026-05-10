@@ -287,6 +287,37 @@ export const Logger = {
 };
 
 // ============================================================
+// API-KEY REDACTION HELPERS
+// ============================================================
+
+// API-key redaction helper for logging
+export function maskApiKey(key) {
+  if (!key) return '<none>';
+  const s = String(key);
+  if (s.length < 12) return '<redacted>';
+  const last4 = s.slice(-4);
+  if (s.slice(0, 12).includes('-')) {
+    let head = s.split('-').slice(0, -1).slice(0, 2).join('-');
+    head = head.slice(0, 12).replace(/-+$/, '');
+    return `${head}-......${last4}`;
+  }
+  return `${s.slice(0, 4)}......${last4}`;
+}
+
+// Safe headers for logging (redacts Authorization header)
+export function safeHeaders(h) {
+  if (!h || typeof h !== 'object') return h;
+  const safe = { ...h };
+  if (safe.Authorization) {
+    safe.Authorization = maskApiKey(safe.Authorization);
+  }
+  if (safe['X-API-Key']) {
+    safe['X-API-Key'] = maskApiKey(safe['X-API-Key']);
+  }
+  return safe;
+}
+
+// ============================================================
 // URL PARAMETER UTILITIES
 // ============================================================
 
@@ -481,6 +512,9 @@ Logger.info(`⚙️ URL Flags: dev=${flagsStatus.dev}, debug=${flagsStatus.debug
 // Expose utilities globally for backward compatibility
 window.DebugRedactor = DebugRedactor;
 window.formatTimestamp = formatTimestamp;
+// Expose Logger so non-module scripts (e.g. main-legacy.js) can use it
+// instead of plain console.* calls. See app/docs/work/LOGGING_4_0_0/.
+window.Logger = Logger;
 
 Logger.info(TEXT_CONSTANTS.ANALYZER_INITIALIZED);
 Logger.info(TEXT_CONSTANTS.TIP_ABOUT);

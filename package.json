@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "test": "jest",
+    "lint": "npx eslint app/assets/js/",
+    "test": "npm run lint && jest",
     "test:e2e": "cd playwright && npx playwright test",
     "test:e2e:static": "cd playwright && npx playwright test --project=static-chromium --project=static-firefox --project=static-webkit",
     "test:e2e:server": "cd playwright && npx playwright test --project=server-chromium --project=server-firefox --project=server-webkit",
@@ -16,6 +17,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
+    "eslint": "^10.3.0",
     "http-server": "^14.1.1",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0"

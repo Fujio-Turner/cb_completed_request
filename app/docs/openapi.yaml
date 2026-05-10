@@ -40,6 +40,8 @@ tags:
     description: AI analysis runs, history, payload reference, models, providers.
   - name: Storage
     description: Embedded CBL admin — info, maintenance, export, import.
+  - name: Logging
+    description: Log file configuration, rotation, and download.
 
 # ===========================================================================
 # Paths
@@ -794,6 +796,49 @@ paths:
         "503": { $ref: "#/components/responses/ServiceUnavailable" }
         "500": { $ref: "#/components/responses/InternalServerError" }
 
+  /api/logging/info:
+    get:
+      operationId: loggingInfo
+      tags: [Logging]
+      summary: Read the active log configuration and rotated-file inventory.
+      description: |
+        Returns the current logging configuration, the path and size of the
+        active log file (if logging-to-file is enabled), and a list of all
+        rotated archives with their modification times and sizes.
+      responses:
+        "200":
+          description: Logging state and file inventory.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LoggingInfo" }
+        "500": { $ref: "#/components/responses/InternalServerError" }
+
+  /api/logging/active-log:
+    get:
+      operationId: loggingActiveLog
+      tags: [Logging]
+      summary: Download the active log file.
+      description: |
+        Streams the currently-active log file as `text/plain` with
+        `Content-Disposition: attachment`. No filtering or tailing.
+      responses:
+        "200":
+          description: The active log file (text/plain download).
+          content:
+            text/plain:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Logging is disabled or no active file exists.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+              example:
+                success: false
+                error: "logging is disabled or no active file"
+        "500": { $ref: "#/components/responses/InternalServerError" }
+
 # ===========================================================================
 # Reusable components
 # ===========================================================================
@@ -855,6 +900,55 @@ components:
           enum: [pending, running, completed, failed, cancelled]
         prompt_blob_ref:   { type: string }
         response_blob_ref: { type: string }
+
+    LoggingFileEntry:
+      type: object
+      required: [path, size_bytes, size_human]
+      properties:
+        path: { type: string, description: "Absolute file path" }
+        size_bytes: { type: integer, description: "File size in bytes" }
+        size_human: { type: string, description: "Human-readable size (e.g., '4.6 MB')" }
+        mtime:
+          type: string
+          format: date-time
+          description: "Modification time (ISO 8601)"
+
+    LoggingInfo:
+      type: object
+      required: [level, json_mode, active_file, rotated_files, rotated_total_bytes, caps]
+      properties:
+        level:
+          type: string
+          enum: [DEBUG, INFO, WARNING, ERROR, CRITICAL]
+          description: "Current logging level"
+        json_mode:
+          type: boolean
+          description: "Whether structured JSON logging is enabled"
+        active_file:
+          oneOf:
+            - { type: 'null' }
+            - { $ref: "#/components/schemas/LoggingFileEntry" }
+          description: "Active log file info, or null if logging-to-file is disabled"
+        rotated_files:
+          type: array
+          items: { $ref: "#/components/schemas/LoggingFileEntry" }
+          description: "List of rotated archive files (newest first)"
+        rotated_total_bytes:
+          type: integer
+          description: "Total size of all rotated archives combined"
+        caps:
+          type: object
+          required: [max_size_mb, max_age_days, rotated_total_mb]
+          properties:
+            max_size_mb:
+              type: integer
+              description: "Max single log file size before rotation (MB)"
+            max_age_days:
+              type: integer
+              description: "Max age of rotated files (days)"
+            rotated_total_mb:
+              type: integer
+              description: "Max combined size of rotated archives (MB)"
 
   # ── Reusable error responses ──────────────────────────────────────────────
 

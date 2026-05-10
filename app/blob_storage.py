@@ -13,8 +13,10 @@ Features:
 
 import gzip
 import json
+import logging
 from typing import Any, Dict, Tuple, Union, Optional
-from icecream import ic
+
+logger = logging.getLogger(__name__)
 
 # Size limits
 WARN_BYTES = 16 * 1024 * 1024  # 16MB warning
@@ -26,7 +28,7 @@ try:
     CBL_AVAILABLE = True
 except ImportError:
     CBL_AVAILABLE = False
-    ic("⚠️ CBL store not available, blob storage will use legacy path")
+    logger.warning("CBL store not available, blob storage will use legacy path")
 
 class BlobStorage:
     """
@@ -42,7 +44,7 @@ class BlobStorage:
             store: Optional CBLStore instance for blob persistence
         """
         self._store = store
-        ic(f"📦 BlobStorage initialized (CBL: {store is not None})")
+        logger.info(f"BlobStorage initialized (CBL: {store is not None})")
 
     def compress_data(self, data: Union[str, bytes, Dict, list]) -> Tuple[bytes, str, str]:
         """
@@ -112,14 +114,14 @@ class BlobStorage:
             try:
                 # Use CBL store
                 result = self._store.put_blob(COLL_BLOBS, key, data)
-                ic(f"✅ Stored JSON blob '{key}' via CBL")
+                logger.debug(f"put_json: stored blob key={key} via CBL")
                 return {'success': True, 'key': key, 'backend': 'cbl'}
             except Exception as e:
-                ic(f"❌ CBL blob storage failed: {e}")
+                logger.exception(f"put_json: CBL blob storage failed key={key}")
                 # Fall through to legacy path
         
         # Legacy path: in-memory or other fallback
-        ic(f"📦 Stored JSON blob '{key}' (legacy)")
+        logger.debug(f"put_json: stored blob key={key} (legacy)")
         return {'success': True, 'key': key, 'backend': 'legacy'}
 
     def put_text(self, key: str, data: str) -> Dict[str, Any]:
@@ -127,12 +129,12 @@ class BlobStorage:
         if self._store:
             try:
                 result = self._store.put_blob(COLL_BLOBS, key, data)
-                ic(f"✅ Stored text blob '{key}' via CBL")
+                logger.debug(f"put_text: stored blob key={key} via CBL")
                 return {'success': True, 'key': key, 'backend': 'cbl'}
             except Exception as e:
-                ic(f"❌ CBL blob storage failed: {e}")
+                logger.exception(f"put_text: CBL blob storage failed key={key}")
         
-        ic(f"📦 Stored text blob '{key}' (legacy)")
+        logger.debug(f"put_text: stored blob key={key} (legacy)")
         return {'success': True, 'key': key, 'backend': 'legacy'}
 
     def put_bytes(self, key: str, data: bytes) -> Dict[str, Any]:
@@ -145,17 +147,17 @@ class BlobStorage:
             }
         
         if len(data) > WARN_BYTES:
-            ic(f"⚠️ Warning: blob '{key}' is {len(data)} bytes (warn threshold: {WARN_BYTES})")
+            logger.warning(f"put_bytes: blob key={key} size={len(data)} bytes exceeds warn threshold={WARN_BYTES}")
         
         if self._store:
             try:
                 result = self._store.put_blob(COLL_BLOBS, key, data)
-                ic(f"✅ Stored bytes blob '{key}' ({len(data)} bytes) via CBL")
+                logger.debug(f"put_bytes: stored blob key={key} size={len(data)} via CBL")
                 return {'success': True, 'key': key, 'backend': 'cbl', 'size': len(data)}
             except Exception as e:
-                ic(f"❌ CBL blob storage failed: {e}")
+                logger.exception(f"put_bytes: CBL blob storage failed key={key}")
         
-        ic(f"📦 Stored bytes blob '{key}' ({len(data)} bytes) (legacy)")
+        logger.debug(f"put_bytes: stored blob key={key} size={len(data)} (legacy)")
         return {'success': True, 'key': key, 'backend': 'legacy', 'size': len(data)}
 
     def get_json(self, key: str) -> Dict[str, Any]:
@@ -164,12 +166,12 @@ class BlobStorage:
             try:
                 result = self._store.get_blob(COLL_BLOBS, key)
                 if result:
-                    ic(f"✅ Retrieved JSON blob '{key}' from CBL")
+                    logger.debug(f"get_json: retrieved blob key={key} from CBL")
                     return {'success': True, 'data': result, 'backend': 'cbl'}
             except Exception as e:
-                ic(f"❌ CBL blob retrieval failed: {e}")
+                logger.exception(f"get_json: CBL blob retrieval failed key={key}")
         
-        ic(f"❌ Blob '{key}' not found")
+        logger.debug(f"get_json: blob key={key} not found")
         return {'success': False, 'error': f'Blob not found: {key}'}
 
     def get_text(self, key: str) -> Dict[str, Any]:
@@ -178,12 +180,12 @@ class BlobStorage:
             try:
                 result = self._store.get_blob(COLL_BLOBS, key)
                 if result:
-                    ic(f"✅ Retrieved text blob '{key}' from CBL")
+                    logger.debug(f"get_text: retrieved blob key={key} from CBL")
                     return {'success': True, 'data': result, 'backend': 'cbl'}
             except Exception as e:
-                ic(f"❌ CBL blob retrieval failed: {e}")
+                logger.exception(f"get_text: CBL blob retrieval failed key={key}")
         
-        ic(f"❌ Blob '{key}' not found")
+        logger.debug(f"get_text: blob key={key} not found")
         return {'success': False, 'error': f'Blob not found: {key}'}
 
     def get_bytes(self, key: str) -> Dict[str, Any]:
@@ -192,12 +194,12 @@ class BlobStorage:
             try:
                 result = self._store.get_blob(COLL_BLOBS, key)
                 if result:
-                    ic(f"✅ Retrieved bytes blob '{key}' from CBL")
+                    logger.debug(f"get_bytes: retrieved blob key={key} from CBL")
                     return {'success': True, 'data': result, 'backend': 'cbl'}
             except Exception as e:
-                ic(f"❌ CBL blob retrieval failed: {e}")
+                logger.exception(f"get_bytes: CBL blob retrieval failed key={key}")
         
-        ic(f"❌ Blob '{key}' not found")
+        logger.debug(f"get_bytes: blob key={key} not found")
         return {'success': False, 'error': f'Blob not found: {key}'}
 
     def delete(self, key: str) -> Dict[str, Any]:
@@ -205,12 +207,12 @@ class BlobStorage:
         if self._store:
             try:
                 self._store.delete_blob(COLL_BLOBS, key)
-                ic(f"✅ Deleted blob '{key}' via CBL")
+                logger.debug(f"delete: deleted blob key={key} via CBL")
                 return {'success': True, 'key': key, 'backend': 'cbl'}
             except Exception as e:
-                ic(f"❌ CBL blob deletion failed: {e}")
+                logger.exception(f"delete: CBL blob deletion failed key={key}")
         
-        ic("❌ Blob deletion failed (legacy)")
+        logger.debug("delete: blob deletion failed (legacy)")
         return {'success': False, 'error': f'Failed to delete blob: {key}'}
 
 
@@ -219,20 +221,20 @@ blob_storage = BlobStorage()
 
 if __name__ == "__main__":
     # Simple local test if run directly
-    ic("🧪 Testing BlobStorage locally (compression logic only)")
+    logger.info("Testing BlobStorage locally (compression logic only)")
     
     bs = BlobStorage()
     
     # Test JSON compression
     test_data = {"name": "test", "data": "A" * 1000}
     compressed, algo, ctype = bs.compress_data(test_data)
-    ic(f"Compressed JSON: {len(json.dumps(test_data))} -> {len(compressed)} bytes")
+    logger.info(f"Compressed JSON: {len(json.dumps(test_data))} -> {len(compressed)} bytes")
     
     decompressed = bs.decompress_data(compressed, algo, ctype)
-    ic(f"Decompressed match: {decompressed == test_data}")
+    logger.info(f"Decompressed match: {decompressed == test_data}")
     
     # Test String
     test_str = "Hello World " * 100
     c_str, algo_str, ctype_str = bs.compress_data(test_str)
     d_str = bs.decompress_data(c_str, algo_str, ctype_str)
-    ic(f"String match: {d_str == test_str}")
+    logger.info(f"String match: {d_str == test_str}")

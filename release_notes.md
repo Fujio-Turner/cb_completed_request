@@ -1,3 +1,40 @@
+## v4.0.0-Beta.2 — 2026-05-10
+
+### Security
+- **Fixed:** AI provider API keys are no longer logged in clear text.
+  Previously, `Authorization: Bearer …` headers and OpenAI/Anthropic
+  request payloads could leak the full key into server logs (or into
+  any log file the user shared in a bug report).
+  All logging of headers and credentials now passes through the new
+  `mask_api_key()` helper, which shows the provider prefix
+  (e.g. `sk-proj-`, `sk-ant-`, `xai-`) and the last 4 characters with
+  the rest redacted: `sk-proj-......9876`.
+
+### Logging
+- New centralised logging configuration (`app/logging_config.py`):
+  - `CBQA_LOG_LEVEL` (default `INFO`) — per-subsystem severity.
+  - `CBQA_LOG_FILE` (default `./logs/cbqa.log` or platform-specific
+    `~/Library/Logs/CouchbaseQueryAnalyzer/cbqa.log` on macOS,
+    `%LOCALAPPDATA%\CouchbaseQueryAnalyzer\logs\cbqa.log` on Windows)
+    — set to `off` to disable file logging.
+  - `CBQA_LOG_JSON=1` — one-line JSON records for log shippers.
+  - `CBQA_LOG_MAX_SIZE_MB` / `CBQA_LOG_MAX_AGE_DAYS` /
+    `CBQA_LOG_ROTATED_TOTAL_MB` — rotation caps.
+- Server logs are now structured (`%(asctime)s %(levelname)s %(name)s: %(message)s`) with one logger per module
+  (`app.ai_analyzer`, `app.cbl_store`, `app.blob_storage`, …).
+- Hot-path log lines (AI status polling, per-doc CBL save, blob compress) are now `DEBUG` instead of always-on. Default-level logs are lifecycle-only.
+- New `GET /api/logging/info` endpoint and Settings → Logging panel show the active log path, file size, rotated archive, and a download link.
+
+### Frontend
+- The browser `Logger` (`app/assets/js/base.js`) is now mandatory; the remaining direct `console.log/warn/error` calls in older modules have been replaced with `Logger.<level>('[<subsystem>]', …)`.
+- `?logLevel=trace|debug|info|warn|error` controls verbosity. `?debug=true` is kept as a legacy alias for `?logLevel=debug`.
+
+### Documentation
+- New: [`app/guides/LOGGING.md`](app/guides/LOGGING.md) — the project logging standard.
+- New: [`app/docs/work/LOGGING_4_0_0/`](app/docs/work/LOGGING_4_0_0/) — implementation plan.
+
+---
+
 ### Version 3.29.3 (December 2, 2025)
 - **Fix: Parse JSON Visibility on Load** - Keep Parse JSON input section visible on initial page load to avoid confusing new users (closes #242)
 
