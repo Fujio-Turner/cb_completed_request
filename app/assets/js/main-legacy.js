@@ -23516,14 +23516,31 @@ const LAST_UPDATED = "2025-11-06";
 
             try {
                 const parsedData = JSON.parse(sourceJson);
-                let rawArr = Array.isArray(parsedData) ? parsedData : [parsedData];
+                // Unwrap a full Couchbase query response object that contains
+                // `{ requestID, signature, results: [...], status, metrics }`.
+                // This is what users get when they paste the raw output of
+                // `SELECT *, meta() FROM system:indexes;` directly.
+                let rawArr;
+                if (parsedData && !Array.isArray(parsedData) &&
+                    Array.isArray(parsedData.results)) {
+                    rawArr = parsedData.results;
+                } else {
+                    rawArr = Array.isArray(parsedData) ? parsedData : [parsedData];
+                }
                 // Normalize raw `SELECT *, meta() FROM system:indexes` rows
                 // (each row has an `indexes` sub-object) into the legacy shape
-                // with a synthesized `indexString` (CREATE INDEX ...).
+                // with a synthesized `indexString` (CREATE INDEX ...). Also
+                // handle rows that ARE the index object directly (from
+                // `SELECT i.* FROM system:indexes i;`).
                 indexData = rawArr.map((row) => {
                     if (row && row.indexes && typeof row.indexes === "object" &&
                         (row.indexes.name || row.indexes.keyspace_id)) {
                         return normalizeRawIndexRow(row.indexes);
+                    }
+                    // Row is the raw index object itself (no `indexes` wrapper)
+                    if (row && typeof row === "object" && !row.indexString &&
+                        row.name && (row.keyspace_id || row.index_key !== undefined)) {
+                        return normalizeRawIndexRow(row);
                     }
                     return row;
                 });
