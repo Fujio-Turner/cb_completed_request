@@ -5,7 +5,7 @@ Handles session management, payload building, and AI provider interactions
 
 Architecture:
 - In-memory session cache with TTL expiry
-- Multi-provider support (OpenAI, Anthropic, Grok)
+- Multi-provider support (OpenAI, Anthropic, Grok, Google Gemini)
 - Data obfuscation for privacy
 - CBL storage integration for analysis persistence
 - Automatic garbage collection
@@ -2178,7 +2178,7 @@ def get_max_output_tokens(provider: str, model: str) -> int:
     Get the maximum output tokens for a given provider and model.
     
     Args:
-        provider: AI provider name ('openai', 'anthropic', 'claude', 'grok')
+        provider: AI provider name ('openai', 'anthropic', 'claude', 'grok', 'gemini')
         model: Model ID string
         
     Returns:
@@ -2243,6 +2243,21 @@ def get_max_output_tokens(provider: str, model: str) -> int:
         'grok-2-vision-latest': 8192,
     }
     
+    # Google Gemini models
+    GEMINI_LIMITS = {
+        # Gemini 2.5 series
+        'gemini-2.5-pro': 65536,
+        'gemini-2.5-flash': 65536,
+        'gemini-2.5-flash-lite': 65536,
+        # Gemini 2.0 series
+        'gemini-2.0-flash': 8192,
+        'gemini-2.0-flash-lite': 8192,
+        # Gemini 1.5 series
+        'gemini-1.5-pro': 8192,
+        'gemini-1.5-flash': 8192,
+        'gemini-1.5-flash-8b': 8192,
+    }
+    
     # Select the right limits based on provider
     if provider == 'openai':
         limits = OPENAI_LIMITS
@@ -2253,6 +2268,9 @@ def get_max_output_tokens(provider: str, model: str) -> int:
     elif provider == 'grok':
         limits = GROK_LIMITS
         default = 32768
+    elif provider in ('gemini', 'google'):
+        limits = GEMINI_LIMITS
+        default = 8192
     else:
         return 8192  # Safe default for unknown providers
     
@@ -2285,7 +2303,7 @@ def call_ai_provider(provider: str,
     Call AI provider with formatted request
     
     Args:
-        provider: AI provider name ('openai', 'anthropic', 'grok')
+        provider: AI provider name ('openai', 'anthropic', 'grok', 'gemini')
         model: Model name/ID
         api_key: API authentication key
         api_url: Base API URL
@@ -2427,6 +2445,36 @@ def call_ai_provider(provider: str,
             'anthropic-version': '2023-06-01'
         }
         
+    elif provider in ('gemini', 'google'):
+        # Google Gemini uses a different request shape:
+        # - systemInstruction holds the system prompt
+        # - contents is an array of {role, parts: [{text}]}
+        # - generationConfig holds maxOutputTokens, temperature, responseMimeType
+        # - model is embedded in the URL path, not the payload
+        ai_request_payload = {
+            'systemInstruction': {
+                'parts': [{'text': system_prompt}]
+            },
+            'contents': [
+                {
+                    'role': 'user',
+                    'parts': [{
+                        'text': f"{prompt}\n\nQuery Data:\n{json.dumps(payload_data['data'], indent=2)}"
+                    }]
+                }
+            ],
+            'generationConfig': {
+                'temperature': 0.5,
+                'maxOutputTokens': max_tokens,
+                'responseMimeType': 'application/json'
+            }
+        }
+        
+        # Gemini auth via header (x-goog-api-key); query string ?key= also works
+        headers = {
+            'x-goog-api-key': api_key
+        }
+        
     else:
         # Generic format for unknown providers
         ai_request_payload = {
@@ -2438,8 +2486,13 @@ def call_ai_provider(provider: str,
             'Authorization': f'Bearer {api_key}'
         }
     
-    # Build full URL
-    full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
+    # Build full URL — Gemini embeds the model and the action in the path:
+    #   {apiUrl}/models/{model}:generateContent
+    if provider in ('gemini', 'google'):
+        base = api_url.rstrip('/')
+        full_url = f"{base}/models/{model}:generateContent"
+    else:
+        full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
     
     return _execute_ai_request(full_url, headers, ai_request_payload)
 

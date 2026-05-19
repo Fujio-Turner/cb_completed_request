@@ -522,6 +522,18 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
                             parsed_content = json.loads(json_content)
                             analysis_data['content_parsed'] = parsed_content
                             logger.debug("Parsed Anthropic/Claude AI response JSON content to object")
+                elif 'candidates' in analysis_data and len(analysis_data['candidates']) > 0:
+                    # Google Gemini format: candidates[0].content.parts[0].text
+                    parts = analysis_data['candidates'][0].get('content', {}).get('parts', [])
+                    if parts and 'text' in parts[0]:
+                        content = parts[0].get('text', '')
+                        json_start = content.find('{')
+                        json_end = content.rfind('}')
+                        if json_start != -1 and json_end != -1:
+                            json_content = content[json_start:json_end + 1]
+                            parsed_content = json.loads(json_content)
+                            analysis_data['content_parsed'] = parsed_content
+                            logger.debug("Parsed Google Gemini AI response JSON content to object")
                 elif result.get('isCustomProvider') and result.get('responsePath'):
                     # Custom AI provider - use configured response path
                     response_path = result.get('responsePath')
@@ -1146,6 +1158,8 @@ def test_ai_api():
                     api_url = 'https://api.anthropic.com'
                 elif provider == 'grok':
                     api_url = 'https://api.x.ai/v1'
+                elif provider in ('gemini', 'google'):
+                    api_url = 'https://generativelanguage.googleapis.com/v1beta'
             
             # Set default models if not provided
             if not model:
@@ -1155,11 +1169,18 @@ def test_ai_api():
                     model = 'claude-3-5-haiku-20241022'
                 elif provider == 'grok':
                     model = 'grok-3-mini'
+                elif provider in ('gemini', 'google'):
+                    model = 'gemini-2.5-flash'
             
             # Determine endpoint
             endpoint = '/chat/completions'
             if provider == 'claude':
                 endpoint = '/v1/messages'
+            elif provider in ('gemini', 'google'):
+                # Gemini embeds {model}:generateContent in the URL; the call
+                # path is built inside ai_analyzer.call_ai_provider, so the
+                # endpoint value here is effectively ignored for Gemini.
+                endpoint = ''
             
             result = ai_analyzer.call_ai_provider(
                 provider=provider,
@@ -1184,6 +1205,11 @@ def test_ai_api():
                 # Anthropic format
                 if len(response_data['content']) > 0:
                     response_text = response_data['content'][0].get('text', '')
+            elif 'candidates' in response_data and len(response_data['candidates']) > 0:
+                # Google Gemini format: candidates[0].content.parts[0].text
+                parts = response_data['candidates'][0].get('content', {}).get('parts', [])
+                if parts:
+                    response_text = parts[0].get('text', '')
             
             logger.info("API test successful! Response: %s...", response_text[:100])
             
@@ -1303,8 +1329,16 @@ def ai_api_call():
                 'error': 'API URL is required'
             }), 400
         
-        # Build full URL
-        full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
+        # Build full URL — Gemini embeds {model}:generateContent in the path
+        if provider in ('gemini', 'google') and model:
+            # Allow caller to pre-build endpoint (e.g. ai-client.js does so),
+            # otherwise construct it from the model name.
+            if endpoint and ':generate' in endpoint:
+                full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
+            else:
+                full_url = f"{api_url.rstrip('/')}/models/{model}:generateContent"
+        else:
+            full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
         logger.debug("Full URL: %s", full_url)
         
         # Prepare headers
@@ -1320,9 +1354,15 @@ def ai_api_call():
             del headers['Authorization']  # Claude doesn't use Bearer
         elif provider == 'cohere':
             headers['Authorization'] = f'Bearer {api_key}'  # Cohere uses Bearer
+        elif provider in ('gemini', 'google'):
+            # Gemini auths via x-goog-api-key header, not Bearer
+            headers['x-goog-api-key'] = api_key
+            if 'Authorization' in headers:
+                del headers['Authorization']
         
-        # Add model to payload if not already present
-        if model and 'model' not in payload:
+        # Add model to payload if not already present.
+        # Gemini does NOT include `model` in the payload — it's in the URL.
+        if model and 'model' not in payload and provider not in ('gemini', 'google'):
             payload['model'] = model
         
         logger.debug("Final Headers: %s", _safe_headers(headers))

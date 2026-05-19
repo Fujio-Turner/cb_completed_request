@@ -92,6 +92,26 @@ const AI_PROVIDERS = [
             { id: 'grok-2-latest', name: 'Grok 2 Latest (Legacy)' },
             { id: 'grok-2-vision-latest', name: 'Grok 2 Vision (Multimodal)' }
         ]
+    },
+    {
+        id: 'gemini',
+        name: 'Google Gemini',
+        logo: 'img/ai-logos/gemini.svg',
+        keyPlaceholder: 'AIza...',
+        defaultUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        models: [
+            // Gemini 2.5 Series (Latest)
+            { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Most Capable) - 2M ctx' },
+            { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Fast & Smart) - 1M ctx' },
+            { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite (Cheapest) - 1M ctx' },
+            // Gemini 2.0 Series
+            { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Multimodal) - 1M ctx' },
+            { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite - 1M ctx' },
+            // Gemini 1.5 Series
+            { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro - 2M ctx' },
+            { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash - 1M ctx' },
+            { id: 'gemini-1.5-flash-8b', name: 'Gemini 1.5 Flash 8B (Fastest) - 1M ctx' }
+        ]
     }
 ];
 

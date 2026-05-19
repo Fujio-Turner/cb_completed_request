@@ -2342,6 +2342,7 @@
                                         <option value="openai">OpenAI</option>
                                         <option value="claude">Anthropic Claude</option>
                                         <option value="grok">xAI Grok</option>
+                                        <option value="gemini">Google Gemini</option>
                                     </select>
                                 </div>
                                 <div class="settings-row">
@@ -2489,6 +2490,7 @@
                         <strong>Common Response Paths:</strong><br>
                         <code>choices[0].message.content</code> - OpenAI/Grok format<br>
                         <code>content[0].text</code> - Anthropic/Claude format<br>
+                        <code>candidates[0].content.parts[0].text</code> - Google Gemini format<br>
                         <code>response</code> - Simple text response<br>
                         <code>message.content</code> - Ollama format
                     </div>

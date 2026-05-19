@@ -6,7 +6,8 @@
   "_refreshUrls": {
     "openai_models_api": "https://api.openai.com/v1/models",
     "anthropic_docs": "https://docs.anthropic.com/en/docs/about-claude/models",
-    "xai_docs": "https://docs.x.ai/docs/models"
+    "xai_docs": "https://docs.x.ai/docs/models",
+    "google_gemini_docs": "https://ai.google.dev/gemini-api/docs/models"
   },
   
   "providers": {
@@ -566,6 +567,137 @@
           "notes": "Vision capabilities"
         }
       ]
+    },
+
+    "gemini": {
+      "id": "gemini",
+      "name": "Google Gemini",
+      "logo": "img/ai-logos/gemini.svg",
+      "keyPlaceholder": "AIza...",
+      "defaultUrl": "https://generativelanguage.googleapis.com/v1beta",
+      "modelsApiEndpoint": "/models",
+      "models": [
+        {
+          "id": "gemini-2.5-pro",
+          "name": "Gemini 2.5 Pro (Most Capable)",
+          "contextWindow": 2000000,
+          "maxOutputTokens": 65536,
+          "tokensPerMinute": null,
+          "inputPricePerMillion": 1.25,
+          "outputPricePerMillion": 10.00,
+          "supportsVision": true,
+          "supportsTools": true,
+          "supportsJson": true,
+          "status": "active",
+          "releaseDate": "2025-03-01",
+          "notes": "Top reasoning, 2M context"
+        },
+        {
+          "id": "gemini-2.5-flash",
+          "name": "Gemini 2.5 Flash (Fast & Smart)",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 65536,
+          "tokensPerMinute": null,
+          "inputPricePerMillion": 0.30,
+          "outputPricePerMillion": 2.50,
+          "supportsVision": true,
+          "supportsTools": true,
+          "supportsJson": true,
+          "status": "active",
+          "releaseDate": "2025-03-01",
+          "notes": "Balanced speed/quality, 1M context"
+        },
+        {
+          "id": "gemini-2.5-flash-lite",
+          "name": "Gemini 2.5 Flash Lite (Cheapest)",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 65536,
+          "tokensPerMinute": null,
+          "inputPricePerMillion": 0.10,
+          "outputPricePerMillion": 0.40,
+          "supportsVision": true,
+          "supportsTools": true,
+          "supportsJson": true,
+          "status": "active",
+          "releaseDate": "2025-06-01",
+          "notes": "Lowest cost variant"
+        },
+        {
+          "id": "gemini-2.0-flash",
+          "name": "Gemini 2.0 Flash (Multimodal)",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 8192,
+          "tokensPerMinute": null,
+          "inputPricePerMillion": 0.10,
+          "outputPricePerMillion": 0.40,
+          "supportsVision": true,
+          "supportsTools": true,
+          "supportsJson": true,
+          "status": "active",
+          "releaseDate": "2024-12-11",
+          "notes": "Next-gen multimodal"
+        },
+        {
+          "id": "gemini-2.0-flash-lite",
+          "name": "Gemini 2.0 Flash Lite",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 8192,
+          "tokensPerMinute": null,
+          "inputPricePerMillion": 0.075,
+          "outputPricePerMillion": 0.30,
+          "supportsVision": true,
+          "supportsTools": true,
+          "supportsJson": true,
+          "status": "active",
+          "releaseDate": "2025-02-01",
+          "notes": "Cost-efficient 2.0 variant"
+        },
+        {
+          "id": "gemini-1.5-pro",
+          "name": "Gemini 1.5 Pro",
+          "contextWindow": 2000000,
+          "maxOutputTokens": 8192,
+          "tokensPerMinute": null,
+          "inputPricePerMillion": 1.25,
+          "outputPricePerMillion": 5.00,
+          "supportsVision": true,
+          "supportsTools": true,
+          "supportsJson": true,
+          "status": "active",
+          "releaseDate": "2024-05-14",
+          "notes": "2M context, previous flagship"
+        },
+        {
+          "id": "gemini-1.5-flash",
+          "name": "Gemini 1.5 Flash",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 8192,
+          "tokensPerMinute": null,
+          "inputPricePerMillion": 0.075,
+          "outputPricePerMillion": 0.30,
+          "supportsVision": true,
+          "supportsTools": true,
+          "supportsJson": true,
+          "status": "active",
+          "releaseDate": "2024-05-14",
+          "notes": "Fast, affordable"
+        },
+        {
+          "id": "gemini-1.5-flash-8b",
+          "name": "Gemini 1.5 Flash 8B (Fastest)",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 8192,
+          "tokensPerMinute": null,
+          "inputPricePerMillion": 0.0375,
+          "outputPricePerMillion": 0.15,
+          "supportsVision": true,
+          "supportsTools": true,
+          "supportsJson": true,
+          "status": "active",
+          "releaseDate": "2024-10-03",
+          "notes": "Smallest, fastest 1.5 variant"
+        }
+      ]
     }
   },
   
@@ -590,13 +722,17 @@
     "grok-4-fast-reasoning",
     "gpt-5.1",
     "gpt-4.1",
-    "claude-opus-4-20250514"
+    "claude-opus-4-20250514",
+    "gemini-2.5-pro",
+    "gemini-1.5-pro"
   ],
   
   "recommendedForCostEfficiency": [
     "gpt-4o-mini",
     "gpt-4.1-nano",
     "claude-3-5-haiku-20241022",
-    "grok-3-mini"
+    "grok-3-mini",
+    "gemini-2.5-flash-lite",
+    "gemini-1.5-flash-8b"
   ]
 }
