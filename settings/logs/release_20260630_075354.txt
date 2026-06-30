@@ -1,0 +1,49 @@
+# Release Log - Version 3.29.4
+**Release Date:** 2026-06-30
+**Previous Version:** 3.29.3
+**New Version:** 3.29.4
+**Version Type:** PATCH - bug fix (statement-field unwrapping for aliased keyspaces)
+
+## Branch & Issue Information
+- Branch: issue/245 (based on main @ d5fe26e "release 3.29.3")
+- Issues Resolved: #245
+
+## Step 0 - Pre-release E2E (MANDATORY, run first)
+- npx playwright test --project=chromium -> 36 passed (Static Edition, en/index.html)
+
+## Version Updates (Static Edition only)
+- en/index.html: header comment Version+Last Updated, <meta version>, <meta last-updated>,
+  <title>, footer version-info, APP_VERSION, LAST_UPDATED -> 3.29.4 / 2026-06-30
+- index.html (root): <meta version>, <meta last-updated>, <title>, og:title, version-info -> 3.29.4 / 2026-06-30
+- AGENT.md: H1 + Current Version line -> 3.29.4 / 2026-06-30
+- README.md: H1 -> 3.29.4
+- release_notes.md: new 3.29.4 section at top
+- Dockerfile: LABEL version -> 3.29.4
+- .github/workflows/docker-build-push.yml: raw tags 3.29.4 / v3.29.4
+
+## Code Changes
+- en/index.html: added unwrapCompletedRequest() helper; wired into processRequestData,
+  processBatch, detectTimezoneFromData, time-grouping fallback parser, extractUsedIndexes.
+  Root cause: rows wrapped under `request` alias (SELECT *, meta().plan FROM
+  system:completed_requests AS request) were not unwrapped; only `completed_requests` was.
+- en/index.html: removed stray hardcoded date in QueryAnalyzer.about() output.
+- en/index.html: added ?debug=true-gated statement-field diagnostics in query grouping
+  and populateCollectionFilter.
+
+## Verification
+- python3 python/validate_js_syntax.py -> PASS (index.html, en/index.html)
+- python3 python/RELEASE_WORK_CHECK.py -> ALL CHECKS PASSED (0 issues)
+- npx playwright test --project=chromium (post-bump) -> 36 passed
+
+## Files Modified
+- en/index.html
+- index.html
+- AGENT.md
+- README.md
+- release_notes.md
+- Dockerfile
+- .github/workflows/docker-build-push.yml
+
+## Notes
+- Static Edition (v3.29.x) release only; Server Edition (4.0.0-beta) untouched.
+- Normalized inconsistent dates (header said 2025-12-02, meta said 2025-11-15) to 2026-06-30.

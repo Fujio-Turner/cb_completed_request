@@ -1,3 +1,8 @@
+### Version 3.29.4 (June 30, 2026)
+- **Fix: Statement Field Not Parsed When Keyspace Is Aliased** - The analyzer only unwrapped rows wrapped under `completed_requests`. Exports produced by `SELECT *, meta().plan FROM system:completed_requests AS request` (or any keyspace alias) wrap each row under the alias instead, so `statement` was unreachable and nearly all queries collapsed into a single group with empty insights. Added a robust `unwrapCompletedRequest()` helper that unwraps `completed_requests`, `request`, or any single-alias wrapper (closes #245)
+- **Fix: Duplicate Date in `QueryAnalyzer.about()`** - Removed a stray hardcoded date that was concatenated before the real "Last Updated" value in the console about output
+- **Dev: Statement-Field Diagnostics** - Added `?debug=true`-gated diagnostics in query grouping and collection-filter population to surface statement-field/wrapper issues
+
 ### Version 3.29.3 (December 2, 2025)
 - **Fix: Parse JSON Visibility on Load** - Keep Parse JSON input section visible on initial page load to avoid confusing new users (closes #242)
 

@@ -2,8 +2,8 @@
 <html lang="en">
 <!--
     Couchbase Query Analyzer
-    Version: 3.29.3
-    Last Updated: 2025-12-02
+    Version: 3.29.4
+    Last Updated: 2026-06-30
     
     🤖 AI AGENT NOTE: When updating versions, follow the detailed guide in settings/VERSION_UPDATE_GUIDE.md
     This guide covers all HTML elements, JavaScript variables, and documentation files that need updating.
@@ -18,9 +18,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="version" content="3.29.3" />
-    <meta name="last-updated" content="2025-11-15" />
-    <title>Query Analyzer v3.29.3</title>
+    <meta name="version" content="3.29.4" />
+    <meta name="last-updated" content="2026-06-30" />
+    <title>Query Analyzer v3.29.4</title>
     <!-- Include jQuery UI CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/themes/base/jquery-ui.min.css" integrity="sha512-TFee0335YRJoyiqz8hA8KV3P0tXa5CpRBSoM0Wnkn7JoJx1kaq1yXL/rb8YFpWXkMOjRcv5txv+C6UluttluCQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -617,7 +617,7 @@ if (window.TEXT_CONSTANTS) {
 <body>
     <!-- Version info -->
     <div class="version-info" title="Couchbase Query Analyzer Version">
-        v3.29.3
+        v3.29.4
     </div>
 
     <!-- Bug report link (bottom-right) -->
@@ -6183,9 +6183,10 @@ LET bid = CONCAT("", s.bucket_id, ""),
 
             // Group requests by normalized_statement
             const groups = {};
+            let _grpSkippedNoStmt = 0;
             requests.forEach((request) => {
                 const stmt = request.statement || request.preparedText;
-                if (!stmt) return;
+                if (!stmt) { _grpSkippedNoStmt++; return; }
                 // Note: System query filtering is now handled globally in parseJSON()
                 const normalized = normalizeStatement(stmt);
                 if (!groups[normalized]) {
@@ -6193,6 +6194,26 @@ LET bid = CONCAT("", s.bucket_id, ""),
                 }
                 groups[normalized].push(request);
             });
+
+            if (isDebugMode()) {
+                const groupKeys = Object.keys(groups);
+                Logger.debug('[Query Groups] Grouping diagnostics:', {
+                    inputRequests: requests.length,
+                    skippedNoStatement: _grpSkippedNoStmt,
+                    uniqueNormalizedGroups: groupKeys.length
+                });
+                // Show the largest groups so we can spot over-normalization collapsing distinct queries
+                const topGroups = groupKeys
+                    .map(k => ({ count: groups[k].length, normalized: k.slice(0, 200) }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 5);
+                Logger.debug('[Query Groups] Top normalized groups (count + normalized statement preview):', topGroups);
+                if (groupKeys.length <= 1 && requests.length > 1) {
+                    Logger.warn('[Query Groups] All requests collapsed into a single normalized group — check raw statement variety below:');
+                    Logger.debug('[Query Groups] First 5 raw statements:',
+                        requests.slice(0, 5).map(r => String(r.statement || r.preparedText || '').slice(0, 200)));
+                }
+            }
 
             // Calculate stats for each group
             const groupData = Object.keys(groups)
@@ -16053,7 +16074,7 @@ size: 12
                     const data = JSON.parse(jsonInput);
                     if (Array.isArray(data)) {
                         requests = data.map((item) => ({
-                            ...item.completed_requests,
+                            ...unwrapCompletedRequest(item),
                             plan: item.plan
                                 ? typeof item.plan === "string"
                                     ? JSON.parse(item.plan)
@@ -20358,8 +20379,43 @@ function generateElapsedTimeChart(requests) {
         }
 
         // Centralized request data processor with single-pass optimization
+        // Unwrap a single completed_requests row regardless of the SELECT * wrapper key.
+        // `SELECT *, meta().plan FROM system:completed_requests` wraps the row under
+        // `completed_requests`, but a keyspace alias (e.g. `... FROM system:completed_requests request`)
+        // wraps it under that alias instead (commonly `request`). This handles both, plus any
+        // single-alias wrapper, and falls back to the item itself when already unwrapped.
+        function unwrapCompletedRequest(item) {
+            if (!item || typeof item !== "object") return item;
+
+            // Known wrapper keys first (fast path)
+            if (item.completed_requests && typeof item.completed_requests === "object") {
+                return item.completed_requests;
+            }
+            if (item.request && typeof item.request === "object") {
+                return item.request;
+            }
+
+            // Generic fallback: a single non-plan wrapper whose value looks like a
+            // completed_requests row (has statement/requestId/elapsedTime).
+            const keys = Object.keys(item).filter((k) => k !== "plan");
+            if (keys.length === 1) {
+                const inner = item[keys[0]];
+                if (
+                    inner &&
+                    typeof inner === "object" &&
+                    (inner.statement !== undefined ||
+                        inner.requestId !== undefined ||
+                        inner.elapsedTime !== undefined)
+                ) {
+                    return inner;
+                }
+            }
+
+            return item;
+        }
+
         function processRequestData(item) {
-            const request = item.completed_requests || item;
+            const request = unwrapCompletedRequest(item);
 
             // Parse and cache plan data immediately
             let plan = null;
@@ -21098,7 +21154,7 @@ function generateElapsedTimeChart(requests) {
                         for (let i = startIndex; i < endIndex; i++) {
                             try {
                                 const item = processData[i];
-                                const request = item.completed_requests || item;
+                                const request = unwrapCompletedRequest(item);
 
                                 // Combined filter check (Step 5 optimization)
                                 if (!shouldProcessRequest(request)) {
@@ -21543,11 +21599,64 @@ function generateElapsedTimeChart(requests) {
 
             // Collect all unique collections from requests
             const collectionsSet = new Set();
+
+            // --- Diagnostics (only computed in debug mode) ---
+            const diag = isDebugMode() ? {
+                total: 0,
+                hasStatement: 0,
+                hasPreparedText: 0,
+                hasNeither: 0,
+                emptyAfterTrim: 0,
+                zeroCollections: 0,
+                noStatementKeySamples: [],
+                zeroCollectionSamples: []
+            } : null;
+
             requests.forEach(request => {
                 const sql = request.statement || request.preparedText || "";
                 const collections = extractCollectionsFromSQL(sql);
                 collections.forEach(collection => collectionsSet.add(collection));
+
+                if (diag) {
+                    diag.total++;
+                    if (request.statement) diag.hasStatement++;
+                    if (request.preparedText) diag.hasPreparedText++;
+                    if (!request.statement && !request.preparedText) {
+                        diag.hasNeither++;
+                        if (diag.noStatementKeySamples.length < 3) {
+                            // Print keys inline (stringified) so the console shows them without expansion
+                            diag.noStatementKeySamples.push(JSON.stringify(Object.keys(request).slice(0, 40)));
+                        }
+                    }
+                    if (!String(sql).trim()) diag.emptyAfterTrim++;
+                    if (String(sql).trim() && collections.length === 0) {
+                        diag.zeroCollections++;
+                        if (diag.zeroCollectionSamples.length < 5) {
+                            diag.zeroCollectionSamples.push(String(sql).slice(0, 160));
+                        }
+                    }
+                }
             });
+
+            if (diag) {
+                Logger.debug('[populateCollectionFilter] Statement-field diagnostics:', {
+                    totalRequests: diag.total,
+                    hasStatement: diag.hasStatement,
+                    hasPreparedTextOnly: diag.hasPreparedText,
+                    hasNeitherStatementNorPreparedText: diag.hasNeither,
+                    emptySqlAfterTrim: diag.emptyAfterTrim,
+                    sqlPresentButZeroCollectionsExtracted: diag.zeroCollections,
+                    uniqueCollectionsFound: collectionsSet.size
+                });
+                if (diag.noStatementKeySamples.length) {
+                    diag.noStatementKeySamples.forEach((keys, i) => {
+                        Logger.debug(`[populateCollectionFilter] Missing-statement record #${i} top-level keys:`, keys);
+                    });
+                }
+                if (diag.zeroCollectionSamples.length) {
+                    Logger.debug('[populateCollectionFilter] Sample SQL where extractCollectionsFromSQL() returned 0 collections (regex may not match FROM clause):', diag.zeroCollectionSamples);
+                }
+            }
 
             // Sort collections alphabetically
             const sortedCollections = Array.from(collectionsSet).sort();
@@ -24772,8 +24881,8 @@ function generateElapsedTimeChart(requests) {
         // Hook removed - buildIndexQueryFlow will be called directly after data processing
 
         // Version management
-        const APP_VERSION = "3.29.3";
-        const LAST_UPDATED = "2025-11-15";
+        const APP_VERSION = "3.29.4";
+        const LAST_UPDATED = "2026-06-30";
 
         // Timezone management - initialize early to avoid undefined errors
         let detectedTimezone = "UTC"; // Timezone detected from data
@@ -24790,7 +24899,7 @@ function generateElapsedTimeChart(requests) {
             // Get first requestTime that exists
             for (let i = 0; i < Math.min(processData.length, 10); i++) {
                 const item = processData[i];
-                const request = item.completed_requests || item;
+                const request = unwrapCompletedRequest(item);
                 if (request.requestTime) {
                     const requestTime = request.requestTime;
                     // Check for timezone offset (e.g., "2025-01-15T10:30:00-05:00" or "2025-01-15T10:30:00+00:00")
@@ -24920,16 +25029,12 @@ function generateElapsedTimeChart(requests) {
             let totalIndexReferences = 0;
 
             requests.forEach((request, index) => {
-                // Handle different JSON structures
-                let actualRequest = request;
-                if (request.completed_requests) {
-                    // User's format: { completed_requests: {...}, plan: "..." }
-                    actualRequest = {
-                        ...request.completed_requests,
-                        plan: request.plan,
-                    };
-                } else {
-                }
+                // Handle different JSON structures (raw wrapped rows vs already-processed rows).
+                // Wrapper key may be `completed_requests` or a keyspace alias like `request`.
+                const inner = unwrapCompletedRequest(request);
+                let actualRequest = inner === request
+                    ? request
+                    : { ...inner, plan: request.plan };
 
                 if (actualRequest.plan) {
                 }
@@ -25977,7 +26082,7 @@ LET bid = CONCAT("", s.bucket_id, ""),
                     const info = getVersionInfo();
                     console.log(`
 🔍 Couchbase Query Analyzer v${info.version}
-📅 Last Updated: 2025-10-20${info.lastUpdated}
+📅 Last Updated: ${info.lastUpdated}
 🎯 Purpose: Analyze Couchbase N1QL query performance from system:completed_requests
                     
 🚀 Features:
