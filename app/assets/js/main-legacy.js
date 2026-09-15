@@ -878,63 +878,11 @@ if (window.TEXT_CONSTANTS) {
             return totalMs;
         }
 
-        // Format time in standardized mm:ss.sss format
-        // ============================================================
-        // FORMATTERS MODULE (Optimization Step 2b)
-        // Consolidated formatting helper functions
-        // ============================================================
-        const Formatters = {
-            // Format milliseconds to MM:SS.mmm
-            formatTime(milliseconds) {
-                if (!milliseconds || isNaN(milliseconds) || milliseconds <= 0) {
-                    return "00:00.000";
-                }
-
-                // Handle very small values (less than 1ms) by rounding to nearest millisecond
-                // but ensuring they show as at least 0.001 if they're greater than 0
-                if (milliseconds < 1) {
-                    milliseconds = Math.max(0.001, Math.round(milliseconds * 1000) / 1000);
-                }
-
-                const totalSeconds = Math.floor(milliseconds / 1000);
-                const remainingMs = milliseconds % 1000;
-                const minutes = Math.floor(totalSeconds / 60);
-                const seconds = totalSeconds % 60;
-
-                // Format with leading zeros
-                const formattedMinutes = minutes.toString().padStart(2, "0");
-                const formattedSeconds = seconds.toString().padStart(2, "0");
-
-                // Format milliseconds as 3-digit integer (rounded)
-                const formattedMs = Math.round(remainingMs).toString().padStart(3, "0");
-
-                return `${formattedMinutes}:${formattedSeconds}.${formattedMs}`;
-            },
-
-            // Format original time value for tooltip display
-            formatTimeTooltip(timeStr, milliseconds) {
-                if (!timeStr || timeStr === "N/A") {
-                    return "";
-                }
-
-                // If it's a very small value, show the original string for precision
-                if (milliseconds < 1) {
-                    return `Original: ${timeStr}`;
-                }
-
-                // For larger values, show both formatted time and original
-                const formatted = this.formatTime(milliseconds);
-                if (timeStr !== formatted) {
-                    return `Original: ${timeStr}`;
-                }
-
-                return "";
-            }
-        };
-
-        // Backward compatibility - keep original function names as aliases
-        const formatTime = (milliseconds) => Formatters.formatTime(milliseconds);
-        const formatTimeTooltip = (timeStr, milliseconds) => Formatters.formatTimeTooltip(timeStr, milliseconds);
+        // Duration + timestamp display — live implementations are in
+        // ui-helpers.js / base.js and exposed on window by those modules.
+        const formatTime = (milliseconds) => window.formatTime(milliseconds);
+        const formatTimeTooltip = (timeStr, milliseconds) => window.formatTimeTooltip(timeStr, milliseconds);
+        const formatTimestamp = (dateInput, format) => window.formatTimestamp(dateInput, format);
 
 
 
@@ -12098,7 +12046,7 @@ size: 12
                             lineData.push({
                                 value: [timestamp.getTime(), collIdx, avgValue],
                                 collection: collection,
-                                time: timestamp.toISOString().substring(0, 19).replace('T', ' '),
+                                time: formatTimestamp(timestamp, "YYYY-MM-DD HH:MM:SS"),
                                 actualValue: avgValue,
                                 count: bucket.count
                             });
@@ -12374,7 +12322,7 @@ size: 12
                             const value = params.data[2];
                             
                             const timeStr = tIdx >= 0 && tIdx < data.timeBuckets.length 
-                                ? data.timeBuckets[tIdx].toISOString().substring(0, 19).replace('T', ' ')
+                                ? formatTimestamp(data.timeBuckets[tIdx], "YYYY-MM-DD HH:MM:SS")
                                 : 'N/A';
                             const collection = cIdx >= 0 && cIdx < data.collections.length 
                                 ? data.collections[cIdx]
@@ -20232,7 +20180,7 @@ function generateElapsedTimeChart(requests) {
                 // Apply timezone conversion to requestTime
                 const originalTime = query.requestTime || "";
                 const convertedDate = getChartDate(originalTime);
-                const formattedDate = convertedDate ? convertedDate.toISOString().replace('T', ' ').substring(0, 23) + 'Z' : originalTime;
+                const formattedDate = convertedDate ? formatTimestamp(convertedDate, "YYYY-MM-DD HH:MM:SS.sssZ") : originalTime;
                 
                 Logger.trace(`[updateSampleQueriesTable] Query ${index}: Original=${originalTime}, Converted=${formattedDate}`);
                 
@@ -20368,7 +20316,7 @@ function generateElapsedTimeChart(requests) {
                 // Apply timezone conversion to requestTime
                 const originalTime = query.requestTime || "";
                 const convertedDate = getChartDate(originalTime);
-                const formattedDate = convertedDate ? convertedDate.toISOString().replace('T', ' ').substring(0, 23) + 'Z' : originalTime;
+                const formattedDate = convertedDate ? formatTimestamp(convertedDate, "YYYY-MM-DD HH:MM:SS.sssZ") : originalTime;
                 
                 Logger.trace(`[Insights] Query ${index}: Original=${originalTime}, Converted=${formattedDate}`);
                 
@@ -20439,7 +20387,7 @@ function generateElapsedTimeChart(requests) {
                 // Apply timezone conversion to requestTime
                 const originalTime = query.requestTime || "";
                 const convertedDate = getChartDate(originalTime);
-                const formattedDate = convertedDate ? convertedDate.toISOString().replace('T', ' ').substring(0, 23) + 'Z' : originalTime;
+                const formattedDate = convertedDate ? formatTimestamp(convertedDate, "YYYY-MM-DD HH:MM:SS.sssZ") : originalTime;
                 
                 Logger.trace(`[Insights] JOIN Query ${index}: Original=${originalTime}, Converted=${formattedDate}`);
                 const flags = query.flags || [];
@@ -29234,19 +29182,6 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
         }
         
         /**
-         * Format ISO timestamp to readable format
-         */
-        function formatTimestamp(isoStr) {
-            if (!isoStr) return '';
-            try {
-                const d = new Date(isoStr);
-                return d.toISOString().replace('T', ' ').substring(0, 19);
-            } catch (e) {
-                return isoStr;
-            }
-        }
-        
-        /**
          * Render vis.js Timeline for AI Chart Trends insights
          * @param {Array} insights - Array of insight objects with start, end, group, severity, title, content
          * @param {Object} stakeFocus - Optional stake focus object with { enabled: boolean, datetime: string }
@@ -29327,7 +29262,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     title: `<div style="max-width: 500px; max-height: 400px; padding: 10px; font-size: 12px; line-height: 1.5; overflow-y: auto;">
                         <div style="font-weight: bold; font-size: 13px; margin-bottom: 8px; color: ${colors.color};">${insight.title || 'Insight'}</div>
                         <div style="background: #f8f9fa; padding: 6px 8px; border-radius: 4px; margin-bottom: 8px; font-family: monospace; font-size: 11px;">
-                            <div><strong>FROM:</strong> ${formatTimestamp(insight.start)} → <strong>TO:</strong> ${formatTimestamp(insight.end || insight.start)} <span style="color: #666;">(${duration})</span></div>
+                            <div><strong>FROM:</strong> ${formatTimestamp(insight.start, "YYYY-MM-DD HH:MM:SS")} → <strong>TO:</strong> ${formatTimestamp(insight.end || insight.start, "YYYY-MM-DD HH:MM:SS")} <span style="color: #666;">(${duration})</span></div>
                         </div>
                         <div style="color: #333; word-wrap: break-word; white-space: pre-wrap;">${insight.content || ''}</div>
                     </div>`,
@@ -29338,7 +29273,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Add stake focus item if enabled
             if (stakeFocus && stakeFocus.enabled && stakeFocus.datetime) {
                 const stakeColors = severityColors.stake;
-                const stakeTime = formatTimestamp(stakeFocus.datetime);
+                const stakeTime = formatTimestamp(stakeFocus.datetime, "YYYY-MM-DD HH:MM:SS");
                 
                 itemsData.push({
                     id: 'stake-point',
@@ -29401,7 +29336,7 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                 if (stakeFocus && stakeFocus.enabled && stakeFocus.datetime) {
                     const stakeDate = new Date(stakeFocus.datetime);
                     window._aiInsightsTimeline.addCustomTime(stakeDate, 'stake-focus-line');
-                    window._aiInsightsTimeline.setCustomTimeTitle('📍 Stake Focus: ' + formatTimestamp(stakeFocus.datetime), 'stake-focus-line');
+                    window._aiInsightsTimeline.setCustomTimeTitle('📍 Stake Focus: ' + formatTimestamp(stakeFocus.datetime, "YYYY-MM-DD HH:MM:SS"), 'stake-focus-line');
                     Logger.info('[AI] 📍 Added stake focus vertical line at: ' + stakeFocus.datetime);
                 }
                 
@@ -29462,8 +29397,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             
             sortedInsights.forEach((insight, idx) => {
                 const duration = formatDuration(insight.start, insight.end);
-                const startTime = formatTimestamp(insight.start).substring(5); // Remove year
-                const endTime = formatTimestamp(insight.end || insight.start).substring(5);
+                const startTime = formatTimestamp(insight.start, "YYYY-MM-DD HH:MM:SS").substring(5); // Remove year
+                const endTime = formatTimestamp(insight.end || insight.start, "YYYY-MM-DD HH:MM:SS").substring(5);
                 const rowBg = idx % 2 === 0 ? '#fff' : '#f8f9fa';
                 
                 html += `

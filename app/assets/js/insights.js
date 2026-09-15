@@ -4,7 +4,7 @@
 // This module handles the Insights tab logic and automated analysis.
 // ============================================================
 
-import { Logger, TEXT_CONSTANTS } from './base.js';
+import { Logger, TEXT_CONSTANTS, formatTimestamp } from './base.js';
 import { 
     originalRequests,
     parseTime,
@@ -13,6 +13,7 @@ import {
 import { 
     formatNumber,
     formatDuration,
+    formatTime,
     copyToClipboard
 } from './ui-helpers.js';
 
@@ -1342,7 +1343,7 @@ import {
                 // Apply timezone conversion to requestTime
                 const originalTime = query.requestTime || "";
                 const convertedDate = getChartDate(originalTime);
-                const formattedDate = convertedDate ? convertedDate.toISOString().replace('T', ' ').substring(0, 23) + 'Z' : originalTime;
+                const formattedDate = convertedDate ? formatTimestamp(convertedDate, "YYYY-MM-DD HH:MM:SS.sssZ") : originalTime;
                 
                 Logger.trace(`[Insights] Query ${index}: Original=${originalTime}, Converted=${formattedDate}`);
                 

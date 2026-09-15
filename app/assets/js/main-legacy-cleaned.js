@@ -553,63 +553,11 @@ if (window.TEXT_CONSTANTS) {
             return totalMs;
         }
 
-        // Format time in standardized mm:ss.sss format
-        // ============================================================
-        // FORMATTERS MODULE (Optimization Step 2b)
-        // Consolidated formatting helper functions
-        // ============================================================
-        const Formatters = {
-            // Format milliseconds to MM:SS.mmm
-            formatTime(milliseconds) {
-                if (!milliseconds || isNaN(milliseconds) || milliseconds <= 0) {
-                    return "00:00.000";
-                }
-
-                // Handle very small values (less than 1ms) by rounding to nearest millisecond
-                // but ensuring they show as at least 0.001 if they're greater than 0
-                if (milliseconds < 1) {
-                    milliseconds = Math.max(0.001, Math.round(milliseconds * 1000) / 1000);
-                }
-
-                const totalSeconds = Math.floor(milliseconds / 1000);
-                const remainingMs = milliseconds % 1000;
-                const minutes = Math.floor(totalSeconds / 60);
-                const seconds = totalSeconds % 60;
-
-                // Format with leading zeros
-                const formattedMinutes = minutes.toString().padStart(2, "0");
-                const formattedSeconds = seconds.toString().padStart(2, "0");
-
-                // Format milliseconds as 3-digit integer (rounded)
-                const formattedMs = Math.round(remainingMs).toString().padStart(3, "0");
-
-                return `${formattedMinutes}:${formattedSeconds}.${formattedMs}`;
-            },
-
-            // Format original time value for tooltip display
-            formatTimeTooltip(timeStr, milliseconds) {
-                if (!timeStr || timeStr === "N/A") {
-                    return "";
-                }
-
-                // If it's a very small value, show the original string for precision
-                if (milliseconds < 1) {
-                    return `Original: ${timeStr}`;
-                }
-
-                // For larger values, show both formatted time and original
-                const formatted = this.formatTime(milliseconds);
-                if (timeStr !== formatted) {
-                    return `Original: ${timeStr}`;
-                }
-
-                return "";
-            }
-        };
-
-        // Backward compatibility - keep original function names as aliases
-        const formatTime = (milliseconds) => Formatters.formatTime(milliseconds);
-        const formatTimeTooltip = (timeStr, milliseconds) => Formatters.formatTimeTooltip(timeStr, milliseconds);
+        // Duration + timestamp display — live implementations are in
+        // ui-helpers.js / base.js and exposed on window by those modules.
+        const formatTime = (milliseconds) => window.formatTime(milliseconds);
+        const formatTimeTooltip = (timeStr, milliseconds) => window.formatTimeTooltip(timeStr, milliseconds);
+        const formatTimestamp = (dateInput, format) => window.formatTimestamp(dateInput, format);
 
 
 
@@ -2585,7 +2533,7 @@ if (window.TEXT_CONSTANTS) {
                     
                     // Apply timezone conversion
                     const convertedDate = getChartDate(originalTime);
-                    return convertedDate ? convertedDate.toISOString().replace('T', ' ').substring(0, 23) + 'Z' : originalTime;
+                    return convertedDate ? formatTimestamp(convertedDate, "YYYY-MM-DD HH:MM:SS.sssZ") : originalTime;
                 },
                 render: (value) => value
             },
@@ -5759,7 +5707,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                             const d = params.data;
                             if (!d.value) return '';
                             const timestamp = new Date(d.value[0]);
-                            const timeStr = timestamp.toISOString().substring(0, 19).replace('T', ' ');
+                            const timeStr = formatTimestamp(timestamp, "YYYY-MM-DD HH:MM:SS");
                             const collectionIdx = d.value[1];
                             const collection = data.collections[collectionIdx];
                             const timeValue = d.value[2];
@@ -9188,7 +9136,7 @@ function renderQueryGroupPhaseTimesChart(group) {
                 // Apply timezone conversion to requestTime
                 const originalTime = query.requestTime || "";
                 const convertedDate = getChartDate(originalTime);
-                const formattedDate = convertedDate ? convertedDate.toISOString().replace('T', ' ').substring(0, 23) + 'Z' : originalTime;
+                const formattedDate = convertedDate ? formatTimestamp(convertedDate, "YYYY-MM-DD HH:MM:SS.sssZ") : originalTime;
                 
                 Logger.trace(`[Insights] JOIN Query ${index}: Original=${originalTime}, Converted=${formattedDate}`);
                 const flags = query.flags || [];

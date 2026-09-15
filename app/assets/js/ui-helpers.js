@@ -6,11 +6,27 @@
 // - Toast notifications
 // - Modal helpers
 // - Clipboard utilities
-// - Formatters (number, duration, bytes)
+// - Formatters (number, duration, MM:SS.mmm, timestamps)
 // - Debounce/throttle
 // ============================================================
 
-import { TEXT_CONSTANTS, Logger } from './base.js';
+import { TEXT_CONSTANTS, Logger, formatTimestamp } from './base.js';
+import './time-format.js';
+
+export { formatTimestamp };
+
+// Captured from time-format.js (UMD) so we re-export a stable ESM binding
+// and so later window.formatTime = formatTime does not recurse.
+const _formatTime = globalThis.formatTime;
+const _formatTimeTooltip = globalThis.formatTimeTooltip;
+
+export function formatTime(milliseconds) {
+    return _formatTime(milliseconds);
+}
+
+export function formatTimeTooltip(timeStr, milliseconds) {
+    return _formatTimeTooltip(timeStr, milliseconds);
+}
 
 // ============================================================
 // DOM UTILITIES
@@ -368,3 +384,6 @@ export const PerformanceUtils = {
 
 // Expose globally
 window.PerformanceUtils = PerformanceUtils;
+window.formatTime = formatTime;
+window.formatTimeTooltip = formatTimeTooltip;
+window.formatTimestamp = formatTimestamp;
