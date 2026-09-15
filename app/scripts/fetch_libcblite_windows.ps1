@@ -1,109 +1,95 @@
 #
-# Fetch CouchbaseLite native DLL for Windows
+# Fetch Couchbase Lite C (community) for Windows and place cblite.dll
+# plus headers under app/vendor/windows/.
 #
-# Downloads cblite.dll from the official Couchbase repository
-# and places it in vendor/windows/
-#
+# URL tree matches app/Dockerfile (releases/couchbase-lite-c/<ver>/...).
 # Usage: .\scripts\fetch_libcblite_windows.ps1 [-Clean]
-
+#
 param(
     [switch]$Clean
 )
 
-# Configuration
-$CBL_VERSION = "3.1.0"
-$DOWNLOAD_URL = "https://packages.couchbase.com/couchbase-lite/cpp/windows/cblite-${CBL_VERSION}-windows-x64.zip"
-$VENDOR_DIR = "vendor\windows"
-$DLL_NAME = "cblite.dll"
-$EXPECTED_FILE = Join-Path $VENDOR_DIR $DLL_NAME
+$ErrorActionPreference = "Stop"
 
-function Write-Info {
-    param([string]$Message)
-    Write-Host "[INFO] $Message" -ForegroundColor Green
-}
+$AppDir = Split-Path -Parent $PSScriptRoot
+$CblVersion = if ($env:CBL_VERSION) { $env:CBL_VERSION } else { "3.2.4" }
+$Dest = Join-Path $AppDir "vendor\windows"
+$Url = "https://packages.couchbase.com/releases/couchbase-lite-c/$CblVersion/couchbase-lite-c-community-$CblVersion-windows-x86_64.zip"
+$DllName = "cblite.dll"
+$ExpectedFile = Join-Path $Dest $DllName
 
-function Write-Warn {
-    param([string]$Message)
-    Write-Host "[WARN] $Message" -ForegroundColor Yellow
-}
+function Write-Info([string]$Message) { Write-Host "[INFO] $Message" -ForegroundColor Green }
+function Write-Warn([string]$Message) { Write-Host "[WARN] $Message" -ForegroundColor Yellow }
+function Write-Err([string]$Message)  { Write-Host "[ERROR] $Message" -ForegroundColor Red }
 
-function Write-Error {
-    param([string]$Message)
-    Write-Host "[ERROR] $Message" -ForegroundColor Red
-}
+New-Item -ItemType Directory -Path (Join-Path $Dest "include") -Force | Out-Null
 
-# Create vendor directory
-if (-not (Test-Path $VENDOR_DIR)) {
-    New-Item -ItemType Directory -Path $VENDOR_DIR -Force | Out-Null
-}
-
-# Clean if requested
 if ($Clean) {
-    Write-Info "Cleaning existing DLL..."
-    if (Test-Path $EXPECTED_FILE) {
-        Remove-Item $EXPECTED_FILE -Force
-    }
+    Write-Info "Cleaning existing DLL and headers..."
+    if (Test-Path $ExpectedFile) { Remove-Item $ExpectedFile -Force }
+    $inc = Join-Path $Dest "include"
+    if (Test-Path $inc) { Remove-Item $inc -Recurse -Force }
+    New-Item -ItemType Directory -Path $inc -Force | Out-Null
 }
 
-# Check if DLL already exists
-if (Test-Path $EXPECTED_FILE) {
-    Write-Info "✓ cblite.dll already exists at $EXPECTED_FILE"
-    exit 0
-}
+Write-Info "Downloading Couchbase Lite C $CblVersion for Windows..."
+Write-Info "URL: $Url"
 
-Write-Info "Downloading cblite v$CBL_VERSION for Windows..."
-
-# Create temporary directory
-$TEMP_DIR = New-TemporaryFile | ForEach-Object { Remove-Item $_; New-Item -ItemType Directory -Path $_ }
-
+$TempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("cbl-fetch-" + [guid]::NewGuid().ToString())
+New-Item -ItemType Directory -Path $TempDir -Force | Out-Null
 try {
-    # Download
-    $ZipFile = Join-Path $TEMP_DIR "cblite.zip"
+    $ZipFile = Join-Path $TempDir "cbl.zip"
     try {
-        Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile $ZipFile -ErrorAction Stop
-    }
-    catch {
-        Write-Error "Failed to download cblite from $DOWNLOAD_URL"
-        exit 1
-    }
-
-    Write-Info "Extracting DLL..."
-    try {
-        Expand-Archive -Path $ZipFile -DestinationPath $TEMP_DIR -Force -ErrorAction Stop
-    }
-    catch {
-        Write-Error "Failed to extract DLL"
-        exit 1
-    }
-
-    # Find and copy the DLL
-    $DllFound = $false
-    $PossiblePaths = @(
-        (Join-Path $TEMP_DIR $DLL_NAME),
-        (Join-Path $TEMP_DIR "bin" $DLL_NAME),
-        (Join-Path $TEMP_DIR "cblite" $DLL_NAME),
-        (Join-Path $TEMP_DIR "cblite" "bin" $DLL_NAME),
-        (Get-ChildItem -Path $TEMP_DIR -Filter $DLL_NAME -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName)
-    )
-
-    foreach ($Path in $PossiblePaths) {
-        if ($Path -and (Test-Path $Path)) {
-            Copy-Item -Path $Path -Destination $EXPECTED_FILE -Force
-            $DllFound = $true
-            break
+        $response = Invoke-WebRequest -Uri $Url -OutFile $ZipFile -PassThru
+        if ($response.StatusCode -ne 200) {
+            Write-Err "Download failed HTTP $($response.StatusCode) from $Url"
+            exit 1
         }
     }
-
-    if (-not $DllFound) {
-        Write-Error "cblite.dll not found in downloaded archive"
+    catch {
+        Write-Err "Failed to download cblite from $Url"
+        Write-Err $_.Exception.Message
         exit 1
     }
 
-    $FileSize = (Get-Item $EXPECTED_FILE).Length
-    Write-Info "✓ cblite.dll downloaded and placed at $EXPECTED_FILE"
+    Write-Info "Extracting archive..."
+    Expand-Archive -Path $ZipFile -DestinationPath (Join-Path $TempDir "extract") -Force
+
+    $dll = Get-ChildItem -Path (Join-Path $TempDir "extract") -Filter $DllName -Recurse -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if (-not $dll) {
+        Write-Err "$DllName not found in downloaded archive"
+        exit 1
+    }
+    Copy-Item -Path $dll.FullName -Destination $ExpectedFile -Force
+
+    Get-ChildItem -Path $dll.DirectoryName -Filter "cblite*.dll" | ForEach-Object {
+        Copy-Item $_.FullName -Destination $Dest -Force
+    }
+
+    # Import lib is required to compile the CFFI bindings (runtime still uses the DLL).
+    $lib = Get-ChildItem -Path (Join-Path $TempDir "extract") -Filter "cblite.lib" -Recurse -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($lib) {
+        Copy-Item -Path $lib.FullName -Destination (Join-Path $Dest "cblite.lib") -Force
+    }
+    else {
+        Write-Warn "cblite.lib not found in archive — CFFI build may fail"
+    }
+
+    $incDir = Get-ChildItem -Path (Join-Path $TempDir "extract") -Directory -Recurse -Filter "include" |
+        Select-Object -First 1
+    if ($incDir) {
+        Copy-Item -Path (Join-Path $incDir.FullName "*") -Destination (Join-Path $Dest "include") -Recurse -Force
+    }
+    else {
+        Write-Warn "No include/ directory in archive — CFFI build may fail"
+    }
+
+    $FileSize = (Get-Item $ExpectedFile).Length
+    Write-Info "✓ $DllName placed at $ExpectedFile"
     Write-Info "File size: $FileSize bytes"
 }
 finally {
-    # Cleanup
-    Remove-Item -Path $TEMP_DIR -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path $TempDir -Recurse -Force -ErrorAction SilentlyContinue
 }

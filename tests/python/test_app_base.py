@@ -5,7 +5,7 @@ Tests resource path resolution, config loading, connection handling.
 Does NOT require Couchbase Server or CBL bindings.
 """
 
-from unittest.mock import patch
+from unittest.mock import patch  # noqa: F401 — still used by other classes
 
 import sys
 import os
@@ -78,17 +78,16 @@ class TestPortConfiguration:
         """PORT is in valid range"""
         assert 0 < app_base.PORT < 65536
 
-    def test_port_default_is_8888_when_env_missing(self):
-        """When PORT env var is unset, default is 8888"""
-        with patch.dict('os.environ', {}, clear=True):
-            port = int(os.environ.get('PORT', 8888))
-            assert port == 8888
+    def test_port_default_is_8080_when_env_missing(self):
+        """When PORT env var is unset, default is 8080"""
+        from ports import DEFAULT_PORT
+        assert DEFAULT_PORT == 8080
 
     def test_port_respects_environment_override(self):
         """PORT env var is honored"""
+        from ports import get_server_port
         with patch.dict('os.environ', {'PORT': '9999'}):
-            port = int(os.environ.get('PORT', 8888))
-            assert port == 9999
+            assert get_server_port() == 9999
 
 
 class TestFlaskAppObject:

@@ -62,8 +62,9 @@ __pycache__/
 # Distribution / packaging
 *.egg
 *.egg-info/
-dist/
-build/
+/dist/
+/build/
+app/dist/
 eggs/
 parts/
 var/
@@ -142,3 +143,6 @@ _apollo_web/
 # ------------------------------------------------------------------------------
 app/data/
 app/logs/*.log
+
+# Downloaded Couchbase Lite C artifacts (fetch_libcblite_*.sh/ps1)
+app/vendor/

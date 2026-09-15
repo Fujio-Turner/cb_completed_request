@@ -31,17 +31,16 @@ def client():
 class TestServerConfiguration:
     """Test server startup and configuration"""
 
-    def test_port_default_is_8888(self):
-        """Default PORT (no env override) is 8888"""
-        with patch.dict('os.environ', {}, clear=True):
-            port = int(os.environ.get('PORT', 8888))
-            assert port == 8888
+    def test_port_default_is_8080(self):
+        """Default listen port is 8080 (see ports.DEFAULT_PORT)."""
+        from ports import DEFAULT_PORT
+        assert DEFAULT_PORT == 8080
 
     def test_port_env_variable_used(self):
         """PORT environment variable is honored"""
+        from ports import get_server_port
         with patch.dict('os.environ', {'PORT': '7777'}):
-            port = int(os.environ.get('PORT', 8888))
-            assert port == 7777
+            assert get_server_port() == 7777
 
 
 class TestFlaskAppInitialization:

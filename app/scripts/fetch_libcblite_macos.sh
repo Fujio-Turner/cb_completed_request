@@ -1,96 +1,77 @@
 #!/bin/bash
 #
-# Fetch CouchbaseLite native dylib for macOS
+# Fetch Couchbase Lite C (community) for macOS and place libcblite.3.dylib
+# plus headers under app/vendor/macos/.
 #
-# Downloads the universal binary (Intel + Apple Silicon) libcblite.3.dylib
-# from the official Couchbase repository and places it in vendor/macos/
-#
+# URL tree matches app/Dockerfile (releases/couchbase-lite-c/<ver>/...).
 # Usage: ./scripts/fetch_libcblite_macos.sh [--clean]
+#
+set -euo pipefail
 
-set -e
-
-# Configuration
-CBLITE_VERSION="3.1.0"
-DOWNLOAD_URL="https://packages.couchbase.com/couchbase-lite/swift/macos/libcblite-${CBLITE_VERSION}-macos-universal.zip"
-VENDOR_DIR="vendor/macos"
+APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+CBL_VERSION="${CBL_VERSION:-3.2.4}"
+DEST="${APP_DIR}/vendor/macos"
+URL="https://packages.couchbase.com/releases/couchbase-lite-c/${CBL_VERSION}/couchbase-lite-c-community-${CBL_VERSION}-macos.zip"
 DYLIB_NAME="libcblite.3.dylib"
-EXPECTED_FILE="${VENDOR_DIR}/${DYLIB_NAME}"
 
-# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-log_info() {
-    echo -e "${GREEN}[INFO]${NC} $1"
-}
+log_info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
+log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# Parse command line arguments
 CLEAN_MODE=false
 while [[ $# -gt 0 ]]; do
-    case $1 in
-        --clean)
-            CLEAN_MODE=true
-            shift
-            ;;
-        *)
-            log_error "Unknown argument: $1"
-            exit 1
-            ;;
+    case "$1" in
+        --clean) CLEAN_MODE=true; shift ;;
+        *) log_error "Unknown argument: $1"; exit 1 ;;
     esac
 done
 
-# Create vendor directory
-mkdir -p "$VENDOR_DIR"
+mkdir -p "${DEST}/include"
 
-# Clean if requested
 if [ "$CLEAN_MODE" = true ]; then
-    log_info "Cleaning existing dylib..."
-    rm -f "$EXPECTED_FILE"
+    log_info "Cleaning existing dylib and headers..."
+    rm -f "${DEST}/${DYLIB_NAME}"
+    rm -rf "${DEST}/include"
+    mkdir -p "${DEST}/include"
 fi
 
-# Check if dylib already exists
-if [ -f "$EXPECTED_FILE" ]; then
-    log_info "✓ libcblite.3.dylib already exists at $EXPECTED_FILE"
-    exit 0
-fi
+log_info "Downloading Couchbase Lite C ${CBL_VERSION} for macOS..."
+log_info "URL: ${URL}"
 
-log_info "Downloading libcblite v$CBLITE_VERSION for macOS..."
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
 
-# Create temporary directory
-TEMP_DIR=$(mktemp -d)
-trap "rm -rf $TEMP_DIR" EXIT
-
-# Download and extract
-if ! curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_DIR/libcblite.zip"; then
-    log_error "Failed to download libcblite from $DOWNLOAD_URL"
+HTTP_CODE="$(curl -sS -L -o "${TMP}/cbl.zip" -w "%{http_code}" "${URL}")"
+if [ "${HTTP_CODE}" != "200" ]; then
+    log_error "Download failed HTTP ${HTTP_CODE} from ${URL}"
     exit 1
 fi
 
-log_info "Extracting dylib..."
-if ! unzip -q "$TEMP_DIR/libcblite.zip" -d "$TEMP_DIR"; then
-    log_error "Failed to extract dylib"
+log_info "Extracting archive..."
+unzip -q "${TMP}/cbl.zip" -d "${TMP}/extract"
+
+DYLIB="$(find "${TMP}/extract" -name "${DYLIB_NAME}" | head -1 || true)"
+if [ -z "${DYLIB}" ]; then
+    log_error "${DYLIB_NAME} not found in downloaded archive"
+    find "${TMP}/extract" -type f | head -50 >&2
     exit 1
 fi
+cp "${DYLIB}" "${DEST}/${DYLIB_NAME}"
 
-# Find and copy the dylib
-if [ -f "$TEMP_DIR/libcblite.3.dylib" ]; then
-    cp "$TEMP_DIR/libcblite.3.dylib" "$EXPECTED_FILE"
-elif [ -f "$TEMP_DIR/libcblite/libcblite.3.dylib" ]; then
-    cp "$TEMP_DIR/libcblite/libcblite.3.dylib" "$EXPECTED_FILE"
+# Also copy unversioned / sibling dylibs if present (loader sometimes wants them).
+find "$(dirname "${DYLIB}")" -name 'libcblite*.dylib' -exec cp {} "${DEST}/" \;
+
+INC="$(find "${TMP}/extract" -type d -name include | head -1 || true)"
+if [ -n "${INC}" ]; then
+    cp -R "${INC}/." "${DEST}/include/"
 else
-    log_error "libcblite.3.dylib not found in downloaded archive"
-    exit 1
+    log_warn "No include/ directory in archive — CFFI build may fail"
 fi
 
-log_info "✓ libcblite.3.dylib downloaded and placed at $EXPECTED_FILE"
-log_info "File size: $(ls -lh $EXPECTED_FILE | awk '{print $5}')"
+log_info "✓ ${DYLIB_NAME} placed at ${DEST}/${DYLIB_NAME}"
+log_info "File size: $(ls -lh "${DEST}/${DYLIB_NAME}" | awk '{print $5}')"
