@@ -26853,10 +26853,11 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     return;
                 }
             } else {
-                // Standard provider - check API key
+                // Standard provider - check API key (local Ollama/LM Studio need none)
+                const localCompat = ['local-openai', 'ollama', 'lmstudio', 'vllm'].includes(provider);
                 const hasApiKey = selectedOption?.dataset.apiKey && selectedOption.dataset.apiKey.length > 0;
                 
-                if (!hasApiKey) {
+                if (!hasApiKey && !localCompat) {
                     showToast('No API key configured for this provider. Please add in Settings.', 'error');
                     Logger.error('[AI] No API key for provider:', provider);
                     return;
@@ -27650,7 +27651,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                     // Store full API config as data attribute
                     option.dataset.apiUrl = api.apiUrl;
                     option.dataset.model = api.model;
-                    option.dataset.apiKey = api.apiKey;
+                    option.dataset.apiKey = api.apiKey || (localCompat ? 'ollama' : '');
+                    option.dataset.apiKeyOptional = localCompat ? 'true' : 'false';
 
                     if (hasApiKey) {
                         hasUsableProvider = true;

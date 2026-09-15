@@ -651,7 +651,7 @@ async function saveCurrentPreferences() {
         
         // Only update if field has value, otherwise keep existing (skip redaction markers)
         const existingKey = (existing?.apiKey && !existing.apiKey.startsWith('[REDACTED:')) ? existing.apiKey : '';
-        const apiKey = apiKeyField || existingKey || '';
+        const apiKey = apiKeyField || existingKey || (provider.apiKeyOptional ? 'ollama' : '');
         const apiUrl = apiUrlField || existing?.apiUrl || provider.defaultUrl;
         
         return {
