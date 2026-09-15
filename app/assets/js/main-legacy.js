@@ -27636,7 +27636,8 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
 
                 // Add standard AI providers
                 aiApis.forEach((api, index) => {
-                    const hasApiKey = api.apiKey && api.apiKey.length > 0;
+                    const localCompat = ['local-openai', 'ollama', 'lmstudio', 'vllm'].includes(api.id);
+                    const hasApiKey = localCompat || (api.apiKey && api.apiKey.length > 0);
                     const status = hasApiKey ? '✅' : '❌';
                     const defaultTag = index === 0 ? ' (Default)' : '';
                     const modelInfo = api.model ? ` - ${api.model}` : '';

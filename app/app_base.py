@@ -727,7 +727,7 @@ def analyze_with_ai():
             logger.debug("  Model: %s", model)
             logger.debug("  Has API Key: %s", bool(api_key))
             
-            if not api_key:
+            if not api_key and not ai_analyzer.is_local_openai_compat(provider):
                 logger.error("No API key configured for provider: %s", provider)
                 return jsonify({
                     'success': False,
@@ -1142,7 +1142,7 @@ def test_ai_api():
             )
         else:
             # Test built-in provider
-            if not api_key:
+            if not api_key and not ai_analyzer.is_local_openai_compat(provider):
                 return jsonify({
                     'success': False,
                     'error': 'API key is required'
@@ -1158,6 +1158,8 @@ def test_ai_api():
                     api_url = 'https://api.x.ai/v1'
                 elif provider in ('gemini', 'google'):
                     api_url = 'https://generativelanguage.googleapis.com/v1beta'
+                elif ai_analyzer.is_local_openai_compat(provider):
+                    api_url = 'http://localhost:11434/v1'
             
             # Set default models if not provided
             if not model:
@@ -1169,6 +1171,8 @@ def test_ai_api():
                     model = 'grok-3-mini'
                 elif provider in ('gemini', 'google'):
                     model = 'gemini-2.5-flash'
+                elif ai_analyzer.is_local_openai_compat(provider):
+                    model = 'llama3.2'
             
             # Determine endpoint
             endpoint = '/chat/completions'
@@ -1315,17 +1319,20 @@ def ai_api_call():
         max_retries = data.get('maxRetries', 3)
         
         # Validation
-        if not api_key:
+        if not api_key and not ai_analyzer.is_local_openai_compat(provider):
             return jsonify({
                 'success': False,
                 'error': 'API key is required'
             }), 400
+        if ai_analyzer.is_local_openai_compat(provider):
+            api_key = ai_analyzer.dummy_key_for_local(api_key)
         
         if not api_url:
             return jsonify({
                 'success': False,
                 'error': 'API URL is required'
             }), 400
+        api_url = ai_analyzer.rewrite_ai_url_for_runtime(api_url)
         
         # Build full URL — Gemini embeds {model}:generateContent in the path
         if provider in ('gemini', 'google') and model:

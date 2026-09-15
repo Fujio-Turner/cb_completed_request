@@ -11,6 +11,7 @@ Architecture:
 - Automatic garbage collection
 """
 
+import os
 import time
 import hashlib
 import secrets
@@ -50,12 +51,52 @@ except ImportError:
     OPENAI_SDK_AVAILABLE = False
     logger.warning("OpenAI SDK not installed. Please run: pip install openai")
 
+# Local OpenAI-compatible servers (Ollama, LM Studio, vLLM, llama.cpp).
+# These speak the OpenAI Chat Completions API and typically need no real key.
+LOCAL_OPENAI_COMPAT_IDS = frozenset({"local-openai", "ollama", "lmstudio", "vllm"})
+
+
+def is_local_openai_compat(provider: str) -> bool:
+    return (provider or "").lower() in LOCAL_OPENAI_COMPAT_IDS
+
+
+def running_in_docker() -> bool:
+    """True when Flask is inside a container (cannot use localhost for host services)."""
+    flag = os.environ.get("CBQA_IN_DOCKER", "").lower()
+    if flag in ("1", "true", "yes"):
+        return True
+    return os.path.exists("/.dockerenv")
+
+
+def rewrite_ai_url_for_runtime(url: str) -> str:
+    """Rewrite localhost/127.0.0.1 to host.docker.internal when running in Docker.
+
+    Ollama/LM Studio run on the laptop, not in the container. Docker Desktop
+    exposes the host as host.docker.internal; compose also sets extra_hosts.
+    """
+    if not url:
+        return url
+    if not running_in_docker():
+        return url
+    rewritten = url
+    for host in ("localhost", "127.0.0.1", "0.0.0.0"):
+        rewritten = rewritten.replace(f"://{host}", "://host.docker.internal")
+    if rewritten != url:
+        logger.info("rewrote AI URL for Docker host access")
+        logger.debug("ai_url_rewrite from=%s to=%s", url, rewritten)
+    return rewritten
+
+
+def dummy_key_for_local(api_key: Optional[str]) -> str:
+    """Ollama accepts any Bearer token; the proxy still sends Authorization."""
+    key = (api_key or "").strip()
+    return key if key else "ollama"
+
 # ============================================================================
 # PyInstaller Resource Path Helper
 # ============================================================================
 
 import sys
-import os
 
 def get_resource_path(filename: str) -> str:
     """
@@ -2318,6 +2359,12 @@ def call_ai_provider(provider: str,
     import json
     
     logger.info("calling_ai_provider provider=%s model=%s language=%s", provider, model, language)
+
+    api_url = rewrite_ai_url_for_runtime(api_url or "")
+    if is_local_openai_compat(provider):
+        api_key = dummy_key_for_local(api_key)
+        if not api_url:
+            api_url = "http://localhost:11434/v1"
     
     # Get dynamic max_tokens based on model
     max_tokens = get_max_output_tokens(provider, model)
@@ -2329,7 +2376,7 @@ def call_ai_provider(provider: str,
     # ---------------------------------------------------------
     # Option 1: Use OpenAI SDK (Preferred for OpenAI/Grok)
     # ---------------------------------------------------------
-    if (provider == 'openai' or provider == 'grok') and OPENAI_SDK_AVAILABLE:
+    if (provider == 'openai' or provider == 'grok') and OPENAI_SDK_AVAILABLE and not is_local_openai_compat(provider):
         try:
             logger.debug("using_openai_sdk provider=%s", provider)
             start_time = time.time()
@@ -2401,7 +2448,7 @@ def call_ai_provider(provider: str,
     # ---------------------------------------------------------
     
     # Format request payload for specific provider
-    if provider == 'openai' or provider == 'grok':
+    if provider == 'openai' or provider == 'grok' or is_local_openai_compat(provider):
         ai_request_payload = {
             'model': model,
             'messages': [
@@ -2416,8 +2463,10 @@ def call_ai_provider(provider: str,
             ]
         }
         
-        # OpenAI uses max_completion_tokens, Grok uses max_tokens
-        if provider == 'openai':
+        # OpenAI cloud uses max_completion_tokens + JSON mode.
+        # Grok and local OpenAI-compatible servers (Ollama, LM Studio) use max_tokens
+        # and often reject response_format=json_object.
+        if provider == 'openai' and not is_local_openai_compat(provider):
             ai_request_payload['max_completion_tokens'] = max_tokens
             ai_request_payload['response_format'] = {'type': 'json_object'}
         else:
@@ -2550,7 +2599,7 @@ def call_custom_ai_provider(
     logger.debug("custom_api_name %s", custom_config.get("name"))
     logger.debug("custom_api_url_configured")
     
-    url = custom_config.get('url', '')
+    url = rewrite_ai_url_for_runtime(custom_config.get('url', ''))
     model = custom_config.get('model', 'default')
     auth_type = custom_config.get('authType', 'none')
     request_template = custom_config.get('requestTemplate', '')

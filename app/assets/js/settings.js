@@ -112,6 +112,27 @@ const AI_PROVIDERS = [
             { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash - 1M ctx' },
             { id: 'gemini-1.5-flash-8b', name: 'Gemini 1.5 Flash 8B (Fastest) - 1M ctx' }
         ]
+    },
+    {
+        id: 'local-openai',
+        name: 'Local OpenAI-compatible',
+        logo: 'img/ai-logos/local-openai.svg',
+        keyPlaceholder: 'optional — Ollama ignores this',
+        defaultUrl: 'http://localhost:11434/v1',
+        apiKeyOptional: true,
+        allowCustomModel: true,
+        helpHtml: 'Talks to Ollama, LM Studio, vLLM, or llama.cpp on <em>your laptop</em> (not inside Docker). From Docker Desktop, <code>localhost</code> is rewritten to <code>host.docker.internal</code>. Ollama default port is <code>11434</code>; LM Studio is usually <code>1234</code>.',
+        models: [
+            { id: 'llama3.2', name: 'llama3.2' },
+            { id: 'llama3.1', name: 'llama3.1' },
+            { id: 'llama3', name: 'llama3' },
+            { id: 'mistral', name: 'mistral' },
+            { id: 'qwen2.5', name: 'qwen2.5' },
+            { id: 'codellama', name: 'codellama' },
+            { id: 'deepseek-r1', name: 'deepseek-r1' },
+            { id: 'phi4', name: 'phi4' },
+            { id: 'gemma3', name: 'gemma3' }
+        ]
     }
 ];
 
@@ -145,6 +166,16 @@ function renderAiProviders() {
         const modelOptions = provider.models.map(model => 
             `<option value="${model.id}">${model.name}</option>`
         ).join('');
+
+        const modelControl = provider.allowCustomModel
+            ? `<input type="text" id="${provider.id}-model" list="${provider.id}-model-list" class="ai-model-select" placeholder="e.g. llama3.2" value="${provider.models[0]?.id || ''}" style="width: 300px;" />
+                <datalist id="${provider.id}-model-list">${modelOptions}</datalist>`
+            : `<select id="${provider.id}-model" class="ai-model-select" style="width: 300px;">
+                    ${modelOptions}
+                </select>`;
+
+        const keyLabel = provider.apiKeyOptional ? 'API Key (optional):' : 'API Key:';
+        const urlLabel = provider.apiKeyOptional ? 'API URL:' : `API URL ${provider.id !== 'custom' ? '(optional)' : ''}:`;
         
         providerDiv.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -158,18 +189,17 @@ function renderAiProviders() {
             </div>
             <div class="settings-row">
                 <label>Model:</label>
-                <select id="${provider.id}-model" class="ai-model-select" style="width: 300px;">
-                    ${modelOptions}
-                </select>
+                ${modelControl}
             </div>
             <div class="settings-row">
-                <label>API Key:</label>
+                <label>${keyLabel}</label>
                 <input type="password" id="${provider.id}-api-key" placeholder="${provider.keyPlaceholder}" style="width: 300px;" />
             </div>
             <div class="settings-row">
-                <label>API URL ${provider.id !== 'custom' ? '(optional)' : ''}:</label>
+                <label>${urlLabel}</label>
                 <input type="text" id="${provider.id}-api-url" placeholder="${provider.defaultUrl}" style="width: 300px;" />
             </div>
+            ${provider.helpHtml ? `<p class="ai-provider-help">${provider.helpHtml}</p>` : ''}
             <div class="settings-row" style="margin-top: 10px;">
                 <button class="btn-standard" onclick="testBuiltInProvider('${provider.id}')" id="${provider.id}-test-btn" style="background: #17a2b8; color: white; font-size: 12px; padding: 6px 14px;">
                     🧪 Test API
@@ -858,6 +888,90 @@ document.addEventListener('DOMContentLoaded', () => {
 /**
  * Open custom AI modal for adding a new API
  */
+const CUSTOM_AI_FORMAT_PRESETS = {
+    openai: {
+        name: 'Ollama (OpenAI-compatible)',
+        url: 'http://localhost:11434/v1/chat/completions',
+        model: 'llama3.2',
+        authType: 'none',
+        responsePath: 'choices[0].message.content',
+        requestTemplate: `{
+  "model": "{{MODEL}}",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a Couchbase query performance analyst. Analyze the provided query data and return a JSON response with analysis_summary, critical_issues, and recommendations."
+    },
+    {
+      "role": "user",
+      "content": "{{PAYLOAD}}"
+    }
+  ],
+  "max_tokens": 4096,
+  "temperature": 0.2
+}`
+    },
+    anthropic: {
+        name: 'Anthropic Claude',
+        url: 'https://api.anthropic.com/v1/messages',
+        model: 'claude-3-5-haiku-20241022',
+        authType: 'api-key-header',
+        apiKeyHeaderName: 'x-api-key',
+        extraHeaders: [{ name: 'anthropic-version', value: '2023-06-01' }],
+        responsePath: 'content[0].text',
+        requestTemplate: `{
+  "model": "{{MODEL}}",
+  "max_tokens": 4096,
+  "messages": [
+    {
+      "role": "user",
+      "content": "{{PAYLOAD}}"
+    }
+  ]
+}`
+    },
+    gemini: {
+        name: 'Google Gemini',
+        url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        model: 'gemini-2.5-flash',
+        authType: 'api-key-header',
+        apiKeyHeaderName: 'x-goog-api-key',
+        responsePath: 'candidates[0].content.parts[0].text',
+        requestTemplate: `{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [{ "text": "{{PAYLOAD}}" }]
+    }
+  ]
+}`
+    }
+};
+
+window.applyCustomAIFormatPreset = function() {
+    const format = document.getElementById('custom-ai-format')?.value;
+    const preset = CUSTOM_AI_FORMAT_PRESETS[format];
+    if (!preset) return;
+
+    const nameEl = document.getElementById('custom-ai-name');
+    if (nameEl && !nameEl.value.trim()) nameEl.value = preset.name;
+    document.getElementById('custom-ai-url').value = preset.url;
+    document.getElementById('custom-ai-model').value = preset.model;
+    document.getElementById('custom-ai-auth-type').value = preset.authType;
+    document.getElementById('custom-ai-request-template').value = preset.requestTemplate;
+    document.getElementById('custom-ai-response-path').value = preset.responsePath;
+    document.getElementById('custom-ai-headers-list').innerHTML = '';
+    updateCustomAIAuthFields();
+    if (preset.apiKeyHeaderName) {
+        const headerNameField = document.getElementById('custom-ai-api-key-header-name');
+        if (headerNameField) headerNameField.value = preset.apiKeyHeaderName;
+    }
+    if (preset.extraHeaders) {
+        preset.extraHeaders.forEach(h => addCustomAIHeader(h.name, h.value));
+    }
+    showToast(`Filled ${preset.name} fields — edit the URL/model if needed`, 'success');
+};
+
 window.openCustomAIModal = function(customApiId = null) {
     editingCustomAiId = customApiId;
     const modal = document.getElementById('custom-ai-modal');
@@ -866,6 +980,8 @@ window.openCustomAIModal = function(customApiId = null) {
     if (!modal) return;
     
     // Clear form
+    const formatEl = document.getElementById('custom-ai-format');
+    if (formatEl) formatEl.value = '';
     document.getElementById('custom-ai-name').value = '';
     document.getElementById('custom-ai-url').value = '';
     document.getElementById('custom-ai-model').value = '';
@@ -880,6 +996,8 @@ window.openCustomAIModal = function(customApiId = null) {
         titleEl.textContent = 'Edit Custom AI API';
         const existing = customAiApis.find(api => api.id === customApiId);
         if (existing) {
+            const formatEl = document.getElementById('custom-ai-format');
+            if (formatEl) formatEl.value = existing.apiFormat || '';
             document.getElementById('custom-ai-name').value = existing.name || '';
             document.getElementById('custom-ai-url').value = existing.url || '';
             document.getElementById('custom-ai-model').value = existing.model || '';
@@ -1099,6 +1217,7 @@ window.saveCustomAI = async function() {
         url,
         model: model || 'default',
         authType,
+        apiFormat: document.getElementById('custom-ai-format')?.value || '',
         requestTemplate: requestTemplate || '',
         responsePath: responsePath || 'choices[0].message.content',
         customHeaders: getCustomHeaders(),
@@ -1219,8 +1338,10 @@ window.testBuiltInProvider = async function(providerId) {
     const model = modelSelect?.value || '';
     const apiKey = apiKeyInput?.value?.trim() || '';
     const apiUrl = apiUrlInput?.value?.trim() || '';
+    const providerDef = AI_PROVIDERS.find(p => p.id === providerId);
+    const keyOptional = !!providerDef?.apiKeyOptional;
     
-    if (!apiKey) {
+    if (!apiKey && !keyOptional) {
         showToast(`Please enter an API key for ${providerId.toUpperCase()} first`, 'error');
         statusSpan.innerHTML = '<span style="color: #dc3545;">❌ Missing API key</span>';
         return;

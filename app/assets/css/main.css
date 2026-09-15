@@ -762,6 +762,19 @@ body { display: block !important; height: auto !important; overflow: visible !im
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
 }
 
+.ai-provider-help {
+  font-size: 12px;
+  color: #666;
+  margin: 6px 0 0 0;
+  line-height: 1.45;
+}
+.ai-provider-help code {
+  background: #f0f0f0;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
 /* Default badge */
 .default-badge {
   background: #007bff;
