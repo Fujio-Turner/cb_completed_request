@@ -142,3 +142,6 @@ _apollo_web/
 # ------------------------------------------------------------------------------
 app/data/
 app/logs/*.log
+
+# Downloaded Couchbase Lite C artifacts (fetch_libcblite_*.sh/ps1)
+app/vendor/
