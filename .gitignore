@@ -62,8 +62,9 @@ __pycache__/
 # Distribution / packaging
 *.egg
 *.egg-info/
-dist/
-build/
+/dist/
+/build/
+app/dist/
 eggs/
 parts/
 var/

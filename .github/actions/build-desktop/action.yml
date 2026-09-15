@@ -1,0 +1,138 @@
+name: Build desktop
+description: Fetch Couchbase Lite C, build Python bindings, PyInstaller, package unsigned artifacts.
+
+inputs:
+  os:
+    description: "macos or windows"
+    required: true
+  version:
+    description: "Version string used in artifact filenames (e.g. 4.0.0-beta)"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Fetch libcblite (macOS)
+      if: inputs.os == 'macos'
+      working-directory: ${{ github.workspace }}/app
+      shell: bash
+      env:
+        CBL_VERSION: "3.2.4"
+      run: |
+        chmod +x scripts/fetch_libcblite_macos.sh
+        ./scripts/fetch_libcblite_macos.sh
+        echo "CBL_MACOS_DYLIB=${{ github.workspace }}/app/vendor/macos/libcblite.3.dylib" >> "$GITHUB_ENV"
+
+    - name: Fetch libcblite (Windows)
+      if: inputs.os == 'windows'
+      working-directory: ${{ github.workspace }}/app
+      shell: pwsh
+      env:
+        CBL_VERSION: "3.2.4"
+      run: |
+        powershell -File .\scripts\fetch_libcblite_windows.ps1
+        "CBL_WINDOWS_DLL=$env:GITHUB_WORKSPACE\app\vendor\windows\cblite.dll" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+    - name: Build Couchbase Lite Python bindings (macOS)
+      if: inputs.os == 'macos'
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install cffi setuptools
+        git clone https://github.com/couchbaselabs/couchbase-lite-python.git "${RUNNER_TEMP}/cbl-py"
+        git -C "${RUNNER_TEMP}/cbl-py" checkout 2d1c79041de30a26a8b7f632d52a89fc031f1600
+        # Same recipe as app/Dockerfile: run build.py from CouchbaseLite/.
+        (
+          cd "${RUNNER_TEMP}/cbl-py/CouchbaseLite"
+          python ../build.py \
+            --include "${{ github.workspace }}/app/vendor/macos/include" \
+            --library "${{ github.workspace }}/app/vendor/macos/libcblite.3.dylib"
+        )
+        echo "PYTHONPATH=${RUNNER_TEMP}/cbl-py${PYTHONPATH:+:${PYTHONPATH}}" >> "$GITHUB_ENV"
+
+    - name: Build Couchbase Lite Python bindings (Windows)
+      if: inputs.os == 'windows'
+      shell: pwsh
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install cffi setuptools
+        $clone = Join-Path $env:RUNNER_TEMP "cbl-py"
+        git clone https://github.com/couchbaselabs/couchbase-lite-python.git $clone
+        git -C $clone checkout 2d1c79041de30a26a8b7f632d52a89fc031f1600
+        $include = Join-Path $env:GITHUB_WORKSPACE "app\vendor\windows\include"
+        $library = Join-Path $env:GITHUB_WORKSPACE "app\vendor\windows\cblite.lib"
+        if (-not (Test-Path $library)) {
+          $library = Join-Path $env:GITHUB_WORKSPACE "app\vendor\windows\cblite.dll"
+        }
+        Push-Location (Join-Path $clone "CouchbaseLite")
+        python ..\build.py --include $include --library $library
+        Pop-Location
+        "PYTHONPATH=$clone;$env:PYTHONPATH" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+    - name: Install desktop Python deps
+      working-directory: ${{ github.workspace }}/app
+      shell: bash
+      run: |
+        python -m pip install -r requirements-desktop.txt
+
+    - name: PyInstaller (macOS)
+      if: inputs.os == 'macos'
+      working-directory: ${{ github.workspace }}/app
+      shell: bash
+      run: |
+        pyinstaller build_mac.spec --clean --noconfirm
+        test -d dist/QueryAnalyzer.app
+
+    - name: Package UNSIGNED arm64 DMG (macOS)
+      if: inputs.os == 'macos'
+      working-directory: ${{ github.workspace }}/app
+      shell: bash
+      run: |
+        ARCH="$(uname -m)"
+        case "$ARCH" in
+          arm64) ARCH_LABEL=arm64 ;;
+          x86_64) ARCH_LABEL=x86_64 ;;
+          *) ARCH_LABEL="$ARCH" ;;
+        esac
+        mkdir -p dist/dmg
+        cp -R dist/QueryAnalyzer.app dist/dmg/
+        ln -s /Applications dist/dmg/Applications
+        cat > dist/dmg/README.txt << 'EOF'
+Couchbase Query Analyzer — unsigned beta
+
+This build is NOT code-signed or notarized. Gatekeeper will block the
+first launch. After dragging QueryAnalyzer.app into Applications:
+
+    xattr -dr com.apple.quarantine /Applications/QueryAnalyzer.app
+
+Then double-click. A Terminal window shows live logs and your browser
+opens http://localhost:8080. Use the menubar icon (🔍) → Quit to stop.
+
+This artifact is Apple Silicon (arm64) when built on macos-latest.
+Intel Macs need a separate x86_64 build.
+EOF
+        hdiutil create -volname "QueryAnalyzer-Beta" \
+          -srcfolder dist/dmg \
+          -ov -format UDZO \
+          "dist/QueryAnalyzer-${{ inputs.version }}-UNSIGNED-${ARCH_LABEL}.dmg"
+        echo "DESKTOP_ARTIFACT=app/dist/QueryAnalyzer-${{ inputs.version }}-UNSIGNED-${ARCH_LABEL}.dmg" >> "$GITHUB_ENV"
+
+    - name: PyInstaller (Windows, onedir)
+      if: inputs.os == 'windows'
+      working-directory: ${{ github.workspace }}/app
+      shell: pwsh
+      run: |
+        pyinstaller build_win.spec --clean --noconfirm
+        if (-not (Test-Path "dist\QueryAnalyzer\QueryAnalyzer.exe")) {
+          throw "PyInstaller did not produce dist\QueryAnalyzer\QueryAnalyzer.exe"
+        }
+
+    - name: Package UNSIGNED x64 zip (Windows)
+      if: inputs.os == 'windows'
+      working-directory: ${{ github.workspace }}/app
+      shell: pwsh
+      run: |
+        $zip = "dist\QueryAnalyzer-${{ inputs.version }}-UNSIGNED-x64.zip"
+        if (Test-Path $zip) { Remove-Item $zip -Force }
+        Compress-Archive -Path "dist\QueryAnalyzer\*" -DestinationPath $zip
+        "DESKTOP_ARTIFACT=app/dist/QueryAnalyzer-${{ inputs.version }}-UNSIGNED-x64.zip" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8

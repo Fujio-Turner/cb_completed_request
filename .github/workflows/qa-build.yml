@@ -41,7 +41,7 @@ jobs:
           echo "📦 Building QA version: $VERSION"
 
   # ==========================================================================
-  # Build macOS App
+  # Build macOS App (CBL via build-desktop)
   # ==========================================================================
   build-macos:
     name: Build macOS App
@@ -49,135 +49,22 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          
-      - name: Install dependencies
-        working-directory: ./app
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller rumps
-          
-      - name: Create PyInstaller spec
-        working-directory: ./app
-        run: |
-          cat > QueryAnalyzer.spec << 'SPEC_EOF'
-          # -*- mode: python ; coding: utf-8 -*-
-          
-          block_cipher = None
-          
-          a = Analysis(
-              ['app.py'],
-              pathex=[],
-              binaries=[],
-              datas=[
-                  ('index.html', '.'),
-                  ('assets', 'assets'),
-                  ('docs', 'docs'),
-                  ('config.json', '.'),
-                  ('ai_analyzer.py', '.'),
-                  ('ai_models_list.json.template', '.'),
-                  ('payload_reference.json.template', '.'),
-                  ('tray.py', '.'),
-              ],
-              hiddenimports=[
-                  'flask',
-                  'flask_cors',
-                  'requests',
-                  'openai',
-                  'icecream',
-                  'webbrowser',
-                  'rumps',
-                  'tray',
-              ],
-              hookspath=[],
-              hooksconfig={},
-              runtime_hooks=[],
-              excludes=[],
-              win_no_prefer_redirects=False,
-              win_private_assemblies=False,
-              cipher=block_cipher,
-              noarchive=False,
-          )
-          
-          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-          
-          exe = EXE(
-              pyz,
-              a.scripts,
-              [],
-              exclude_binaries=True,
-              name='QueryAnalyzer',
-              debug=False,
-              bootloader_ignore_signals=False,
-              strip=False,
-              upx=True,
-              # console=True so the .app launches a Terminal window with
-              # live stdout/stderr (startup banner, "Opening browser…",
-              # tracebacks). Easier debugging for unsigned QA builds.
-              console=True,
-              disable_windowed_traceback=False,
-              argv_emulation=False,
-              target_arch=None,
-              codesign_identity=None,
-              entitlements_file=None,
-          )
-          
-          coll = COLLECT(
-              exe,
-              a.binaries,
-              a.zipfiles,
-              a.datas,
-              strip=False,
-              upx=True,
-              upx_exclude=[],
-              name='QueryAnalyzer',
-          )
-          
-          app = BUNDLE(
-              coll,
-              name='QueryAnalyzer.app',
-              icon='assets/img/QueryAnalyzer.icns',
-              bundle_identifier='io.fuj.cb.queryanalyzer',
-              info_plist={
-                  'CFBundleName': 'CB Query Analyzer',
-                  'CFBundleDisplayName': 'CB Query Analyzer',
-                  'CFBundleShortVersionString': '4.0.0',
-                  'CFBundleVersion': '4.0.0',
-                  'NSHighResolutionCapable': True,
-                  'LSBackgroundOnly': False,
-                  'LSUIElement': False,
-              },
-          )
-          SPEC_EOF
-          
-      - name: Build with PyInstaller
-        working-directory: ./app
-        run: |
-          pyinstaller QueryAnalyzer.spec --clean --noconfirm
-            
-      - name: Create DMG
-        working-directory: ./app
-        run: |
-          mkdir -p dist/dmg
-          cp -R dist/QueryAnalyzer.app dist/dmg/
-          hdiutil create -volname "QueryAnalyzer-QA" \
-            -srcfolder dist/dmg \
-            -ov -format UDZO \
-            dist/QueryAnalyzer-${{ needs.version.outputs.version }}-macos.dmg
-            
+          python-version-file: '.python-version'
+      - uses: ./.github/actions/build-desktop
+        with:
+          os: macos
+          version: ${{ needs.version.outputs.version }}
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: QueryAnalyzer-${{ needs.version.outputs.version }}-macos
-          path: app/dist/QueryAnalyzer-${{ needs.version.outputs.version }}-macos.dmg
+          path: app/dist/QueryAnalyzer-${{ needs.version.outputs.version }}-UNSIGNED-arm64.dmg
           retention-days: 14
 
   # ==========================================================================
-  # Build Windows Executable
+  # Build Windows onedir zip (CBL via build-desktop)
   # ==========================================================================
   build-windows:
     name: Build Windows Executable
@@ -185,56 +72,18 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          
-      - name: Install dependencies
-        working-directory: ./app
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          # pystray + Pillow power the system-tray icon (tray.py).
-          pip install pyinstaller pystray Pillow
-          
-      - name: Build with PyInstaller
-        working-directory: ./app
-        run: |
-          pyinstaller --name QueryAnalyzer `
-            --onefile `
-            --console `
-            --icon "assets/img/app_icon.ico" `
-            --add-data "index.html;." `
-            --add-data "assets;assets" `
-            --add-data "docs;docs" `
-            --add-data "config.json;." `
-            --add-data "ai_analyzer.py;." `
-            --add-data "ai_models_list.json.template;." `
-            --add-data "payload_reference.json.template;." `
-            --add-data "tray.py;." `
-            --hidden-import flask `
-            --hidden-import flask_cors `
-            --hidden-import requests `
-            --hidden-import openai `
-            --hidden-import icecream `
-            --hidden-import webbrowser `
-            --hidden-import pystray `
-            --hidden-import PIL `
-            --hidden-import tray `
-            app.py
-            
-      - name: Create ZIP
-        working-directory: ./app
-        shell: pwsh
-        run: |
-          Compress-Archive -Path "dist\QueryAnalyzer.exe" -DestinationPath "dist\QueryAnalyzer-${{ needs.version.outputs.version }}-windows.zip"
-          
+          python-version-file: '.python-version'
+      - uses: ./.github/actions/build-desktop
+        with:
+          os: windows
+          version: ${{ needs.version.outputs.version }}
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: QueryAnalyzer-${{ needs.version.outputs.version }}-windows
-          path: app/dist/QueryAnalyzer-${{ needs.version.outputs.version }}-windows.zip
+          path: app/dist/QueryAnalyzer-${{ needs.version.outputs.version }}-UNSIGNED-x64.zip
           retention-days: 14
 
   # ==========================================================================
@@ -263,7 +112,7 @@ jobs:
         run: ls -la ./artifacts/
           
       - name: Create Pre-Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.version.outputs.tag }}
           name: "🧪 QA Build - ${{ needs.version.outputs.version }}"
@@ -276,8 +125,8 @@ jobs:
             
             | Platform | File |
             |----------|------|
-            | macOS | `QueryAnalyzer-${{ needs.version.outputs.version }}-macos.dmg` |
-            | Windows | `QueryAnalyzer-${{ needs.version.outputs.version }}-windows.zip` |
+            | macOS | `QueryAnalyzer-${{ needs.version.outputs.version }}-UNSIGNED-arm64.dmg` |
+            | Windows | `QueryAnalyzer-${{ needs.version.outputs.version }}-UNSIGNED-x64.zip` |
             
             ### Testing Checklist
             
@@ -298,7 +147,7 @@ jobs:
           draft: false
           prerelease: true
           files: |
-            ./artifacts/QueryAnalyzer-${{ needs.version.outputs.version }}-macos.dmg
-            ./artifacts/QueryAnalyzer-${{ needs.version.outputs.version }}-windows.zip
+            ./artifacts/QueryAnalyzer-${{ needs.version.outputs.version }}-UNSIGNED-arm64.dmg
+            ./artifacts/QueryAnalyzer-${{ needs.version.outputs.version }}-UNSIGNED-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

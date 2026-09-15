@@ -10,11 +10,12 @@ The Couchbase Query Analyzer is a tool for analyzing N1QL query performance from
 - Single-page HTML application with embedded CSS/JS
 - Input: JSON from `SELECT *, meta().plan FROM system:completed_requests`
 
-### Server Edition (v4.0.0) - `/app/*`
-- **Flask web server** with Couchbase integration
-- Stores analysis data, user preferences, and AI analysis results in Couchbase Server
-- AI-powered query analysis via OpenAI, Anthropic Claude, or Grok APIs
-- Distributed as: **Docker Image**, **macOS App**, **Windows Executable**
+### Server Edition (v4.0.0-Beta.2) - `/app/*`
+- **Flask web server** with **embedded Couchbase Lite** persistence (the Server SDK is gone)
+- Stores analysis data, user preferences, and AI analysis results in CBL
+- AI-powered query analysis via OpenAI, Anthropic Claude, xAI Grok, or Google Gemini
+- Distributed as: **Docker Image**, **unsigned macOS .app / DMG**, **unsigned Windows onedir zip**
+- Default URL: **http://localhost:8080** (`PORT` env var overrides)
 
 ---
 
@@ -197,8 +198,8 @@ No installation needed - just open `/en/index.html` in browser.
 
 #### Option A: Docker
 ```bash
-docker run -p 5000:5000 couchbase-query-analyzer:4.0.0
-# Open http://localhost:5000
+cd app && docker compose up --build
+# Open http://localhost:8080
 ```
 
 #### Option B: Local Development
@@ -208,13 +209,13 @@ cd app
 source venv/bin/activate
 pip install -r requirements.txt
 python app.py
-# Open http://localhost:5000
+# Open http://localhost:8080
 ```
 
 #### Option C: Standalone Executables
-Download from GitHub Releases:
-- `QueryAnalyzer-4.0.0.dmg` (macOS)
-- `QueryAnalyzer-4.0.0-Setup.exe` (Windows)
+Download from GitHub Releases (unsigned beta):
+- `QueryAnalyzer-4.0.0-beta-UNSIGNED-arm64.dmg` (macOS, Apple Silicon)
+- `QueryAnalyzer-4.0.0-beta-UNSIGNED-x64.zip` (Windows onedir)
 
 ---
 

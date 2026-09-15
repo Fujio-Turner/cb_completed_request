@@ -19,62 +19,72 @@ A web-based tool for analyzing Couchbase N1QL query performance and execution pl
 
 ---
 
-## Server Edition (v4.0.0-Beta) — Quick Start
+## Server Edition (v4.0.0-Beta.2) — Quick Start
 
-The Server Edition is a Flask backend with **embedded Couchbase Lite** persistence and AI-powered query analysis (OpenAI / Anthropic Claude / xAI Grok). No external Couchbase Server is needed for the app's own data.
+The Server Edition is a Flask backend with **embedded Couchbase Lite** persistence and AI-powered query analysis (OpenAI / Anthropic Claude / xAI Grok / Google Gemini). No external Couchbase Server is needed for the app's own data. **Couchbase Lite is the only storage backend** — the Couchbase Server SDK has been removed.
+
+Docker, local Python, and the desktop builds all listen on **http://localhost:8080** by default (`PORT` env var overrides).
 
 ### Option A — Docker (recommended)
 
-From the project root:
+From `app/` (compose + Dockerfile live there):
 
 ```bash
+cd app
 docker compose up --build      # build & run (foreground)
 docker compose up -d           # detached
 docker compose logs -f         # tail logs
 docker compose down            # stop
 ```
 
-Open **http://localhost:5000**.
+Open **http://localhost:8080**.
 
 The compose stack runs `gunicorn -w 1` inside the container (single worker is **required** — embedded Couchbase Lite is single-writer per process). The CBL database lives in the named volume `cbl-data` and persists across container rebuilds.
 
-Environment knobs (defaults shown, overridable in [`docker-compose.yml`](docker-compose.yml)):
+Environment knobs (defaults shown, overridable in [`app/docker-compose.yml`](app/docker-compose.yml)):
 
 | Var | Default | Purpose |
 |---|---|---|
-| `STORAGE_BACKEND` | `cbl` | `cbl` = embedded Couchbase Lite, `server` = legacy external Couchbase Server |
 | `CBL_DB_DIR` | `/app/data` | Where the `.cblite2` directory lives |
 | `CBL_DB_NAME` | `cb_tools_db` | Database name |
+| `PORT` | `8080` | Container listen port (map host with `HOST_PORT`) |
 
 > **Note for macOS/Windows users:** if your **production** Couchbase Server (the one holding `system:completed_requests`) runs on the host machine, use `host.docker.internal` instead of `localhost` in the connection URL. The Server Edition itself no longer needs an external Couchbase Server.
 
 ### Option B — Local Python (development)
 
-From the project root:
-
 ```bash
+cd app
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python app.py
+# CBL bindings are not on PyPI — without them the app starts but
+# persistence endpoints return 503. Use Docker for a batteries-included run.
+python app.py   # http://localhost:8080
 ```
-
-Open **http://localhost:8888** (port 8888 is the default for `python app.py`; Docker uses 5000).
 
 The CBL database is created on first run under your OS's user-data directory (`~/Library/Application Support/CouchbaseQueryAnalyzer/data/cb_tools_db.cblite2/` on macOS, `%LOCALAPPDATA%\Couchbase\CouchbaseQueryAnalyzer\data\` on Windows, `~/.local/share/CouchbaseQueryAnalyzer/data/` on Linux). Override with `CBL_DB_DIR`.
 
-> **CBL bindings:** the [`CouchbaseLite`](https://github.com/couchbaselabs/couchbase-lite-python) Python package is **not** on PyPI. The Dockerfile and PyInstaller specs build it from source against `libcblite`. If you run locally without it, the Server Edition falls back to `STORAGE_BACKEND=server` (external Couchbase Server) automatically. Set `STORAGE_BACKEND=cbl` to force CBL and get a clear error if the bindings are missing.
+> **CBL bindings:** the [`CouchbaseLite`](https://github.com/couchbaselabs/couchbase-lite-python) Python package is **not** on PyPI. The Dockerfile and PyInstaller specs build it from source against `libcblite`. There is no fallback to an external Couchbase Server.
 
-See [`app/docs/work/02_CBL_STORE_MODULE.md`](app/docs/work/02_CBL_STORE_MODULE.md) for the storage layer design and [`app/docs/work/03_APP_PY_REFACTOR.md`](app/docs/work/03_APP_PY_REFACTOR.md) for the endpoint mapping.
+See [`app/docs/work/CB_TO_CBL/02_CBL_STORE_MODULE.md`](app/docs/work/CB_TO_CBL/02_CBL_STORE_MODULE.md) for the storage layer design.
 
 ### Option C — Native macOS / Windows binary
 
-Built via GitHub Actions with PyInstaller (specs at the project root: [`build_mac.spec`](build_mac.spec), [`build_win.spec`](build_win.spec)). Download from the **Releases** page:
+Built via GitHub Actions with PyInstaller (specs in `app/`: [`app/build_mac.spec`](app/build_mac.spec), [`app/build_win.spec`](app/build_win.spec)). Download from the **Releases** page:
 
-- `QueryAnalyzer-4.0.0-Beta.dmg` (macOS)
-- `QueryAnalyzer-4.0.0-Beta-Setup.exe` (Windows)
+- `QueryAnalyzer-4.0.0-beta-UNSIGNED-arm64.dmg` (macOS, Apple Silicon, **unsigned**)
+- `QueryAnalyzer-4.0.0-beta-UNSIGNED-x64.zip` (Windows onedir zip, **unsigned** — not an MSI installer)
 
-Both bundle `libcblite.dylib` / `cblite.dll` — no external Couchbase Server is needed. They run as a tray/menu-bar app and open the analyzer in your default browser.
+Both bundle `libcblite.dylib` / `cblite.dll` — no external Couchbase Server is needed. They run as a tray/menu-bar app and open the analyzer at **http://localhost:8080**.
+
+**macOS first launch:** Gatekeeper blocks unsigned apps. After dragging into `/Applications`:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/QueryAnalyzer.app
+```
+
+The same command is in `README.txt` inside the DMG.
 
 ### Server Edition AI Provider Support
 
@@ -83,6 +93,7 @@ Both bundle `libcblite.dylib` / `cblite.dll` — no external Couchbase Server is
 | OpenAI | GPT-4o, GPT-4o-mini, o3, o4-mini |
 | Anthropic Claude | Claude 3.5 Sonnet, Claude 3.5 Haiku, Claude 4 |
 | xAI Grok | Grok-3, Grok-4 |
+| Google Gemini | Gemini 2.5 / 2.0 / 1.5 |
 | Custom | Any OpenAI-compatible endpoint |
 
 ---
@@ -198,24 +209,22 @@ Pick sections (Dashboard, Timeline, Query Groups, etc.), include filters/header 
 
 ```
 cb_completed_request/
-├── app.py                # Server Edition v4.0.0-Beta entry (Flask + CBL routing)
-├── app_base.py           # v4.x Flask app, imported & extended by app.py
-├── cbl_store.py          # Embedded Couchbase Lite storage layer
-├── ai_analyzer.py        # AI provider integrations (OpenAI/Claude/Grok)
-├── blob_storage.py       # Compressed blob facade backed by CBLStore
-├── migrate_to_cbl.py     # One-shot CB-Server → CBL migration tool
-├── Dockerfile            # Builds libcblite + CBL Python bindings + Flask app
-├── docker-compose.yml    # `docker compose up` to run Server Edition
-├── build_mac.spec        # PyInstaller spec — macOS .app
-├── build_win.spec        # PyInstaller spec — Windows .exe
-├── requirements.txt      # Python deps (CBL bindings come from build pipeline)
-├── app/                  # Reference / legacy + design docs (`docs/work/*.md`)
-├── en/                   # Static Edition v3.29.3 (single-file HTML)
-├── old_pre_4_0/          # Archived pre-4.0 files (de/es/pt + legacy assets)
-├── playwright/           # E2E tests (both editions)
-├── tests/                # Python unit tests + Jest specs
-├── sample/               # Sample JSON data
-└── README.md             # You are here
+├── app/                          # Server Edition v4.0.0-Beta.2
+│   ├── app.py                    # Flask entry (CBL-backed routes)
+│   ├── app_base.py               # Flask app object + non-storage endpoints
+│   ├── cbl_store.py              # Embedded Couchbase Lite storage layer
+│   ├── ai_analyzer.py            # AI provider integrations
+│   ├── Dockerfile                # libcblite + CBL Python bindings + Flask
+│   ├── docker-compose.yml        # `cd app && docker compose up --build`
+│   ├── build_mac.spec            # PyInstaller spec — macOS .app
+│   ├── build_win.spec            # PyInstaller spec — Windows onedir
+│   └── requirements.txt          # Python deps (CBL bindings from the build)
+├── en/                           # Static Edition v3.29.3 (single-file HTML)
+├── old_pre_4_0/                  # Archived pre-4.0 files
+├── playwright/                   # E2E tests (both editions)
+├── tests/                        # Python unit tests + Jest specs
+├── sample/                       # Sample JSON data
+└── README.md                     # You are here
 ```
 
 See [`AGENT.md`](AGENT.md) for the full architecture overview, [`BIG_MOVE_4_0_0.md`](BIG_MOVE_4_0_0.md) for the v3 → v4 migration history, and [`app/docs/work/`](app/docs/work/) (12 numbered docs) for the v4 → v5 CBL migration design and post-review fixes.
@@ -265,5 +274,5 @@ See [`release_notes.md`](release_notes.md).
 - Modern web browser with JavaScript enabled
 - A Couchbase Server cluster (any recent version) **with query logging enabled** — this is the source of `system:completed_requests` data; the analyzer queries it read-only
 - Read access to `system:completed_requests` (admin privileges)
-- For Server Edition v4.0.0-Beta: Docker, **or** Python 3.11+, **or** the macOS/Windows native installer
+- For Server Edition v4.0.0-Beta: Docker, **or** Python 3.12+, **or** the unsigned macOS/Windows desktop build
   - **No external Couchbase Server is needed for app persistence** — the Server Edition embeds Couchbase Lite (CE)
