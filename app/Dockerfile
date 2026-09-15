@@ -15,7 +15,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     CBL_DB_DIR=/app/data \
     CBL_DB_NAME=cb_tools_db \
     PORT=8080 \
-    CBQA_LOG_FILE=/app/logs/cbqa.log
+    CBQA_LOG_FILE=/app/logs/cbqa.log \
+    CBQA_IN_DOCKER=1
 # Note: STORAGE_BACKEND is no longer needed — Couchbase Lite is the only
 # supported storage backend. The Couchbase Server SDK has been removed.
 # Note: SKIP_TOON_INSTALL is intentionally NOT set. `python-toon` is now

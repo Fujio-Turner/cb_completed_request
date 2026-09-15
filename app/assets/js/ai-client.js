@@ -16,7 +16,8 @@ export async function getDefaultAIProvider() {
         if (preferences && preferences.aiApis && Array.isArray(preferences.aiApis)) {
             const defaultProvider = preferences.aiApis[0]; // First is default
             
-            if (defaultProvider && defaultProvider.apiKey) {
+            const localCompat = defaultProvider && ['local-openai', 'ollama', 'lmstudio', 'vllm'].includes(defaultProvider.id);
+            if (defaultProvider && (defaultProvider.apiKey || localCompat)) {
                 Logger.info('Using default AI provider:', defaultProvider.name);
                 return defaultProvider;
             }
@@ -64,10 +65,12 @@ export async function callAI(options) {
     Logger.info('🤖 AI API Call:', { provider, model, endpoint });
     
     // Validation
-    if (!apiKey) {
+    const localCompat = ['local-openai', 'ollama', 'lmstudio', 'vllm'].includes(provider);
+    if (!apiKey && !localCompat) {
         Logger.error('API key is required');
         return { success: false, error: 'API key is required' };
     }
+    const resolvedKey = apiKey || (localCompat ? 'ollama' : apiKey);
     
     if (!apiUrl) {
         Logger.error('API URL is required');
@@ -83,7 +86,7 @@ export async function callAI(options) {
             body: JSON.stringify({
                 provider,
                 model,
-                apiKey,
+                apiKey: resolvedKey,
                 apiUrl,
                 endpoint,
                 method,
@@ -142,6 +145,10 @@ export async function callDefaultAI(userMessage, options = {}) {
         case 'deepseek':
         case 'openrouter':
         case 'together':
+        case 'local-openai':
+        case 'ollama':
+        case 'lmstudio':
+        case 'vllm':
             // OpenAI-compatible format
             endpoint = '/chat/completions';
             payload = {
@@ -204,7 +211,7 @@ export async function callDefaultAI(userMessage, options = {}) {
     return callAI({
         provider: provider.id,
         model: provider.model,
-        apiKey: provider.apiKey,
+        apiKey: provider.apiKey || (['local-openai', 'ollama', 'lmstudio', 'vllm'].includes(provider.id) ? 'ollama' : provider.apiKey),
         apiUrl: provider.apiUrl,
         endpoint,
         payload
@@ -233,6 +240,10 @@ export function extractAIResponse(result, provider) {
             case 'deepseek':
             case 'openrouter':
             case 'together':
+            case 'local-openai':
+            case 'ollama':
+            case 'lmstudio':
+            case 'vllm':
                 // OpenAI format: data.choices[0].message.content
                 return data.choices?.[0]?.message?.content || null;
                 

@@ -2343,6 +2343,7 @@
                                         <option value="claude">Anthropic Claude</option>
                                         <option value="grok">xAI Grok</option>
                                         <option value="gemini">Google Gemini</option>
+                                        <option value="local-openai">Local OpenAI-compatible</option>
                                     </select>
                                 </div>
                                 <div class="settings-row">
@@ -2407,6 +2408,19 @@
                 <!-- Basic Info -->
                 <div class="settings-section">
                     <h3>Basic Configuration</h3>
+                    <div class="settings-row">
+                        <label>API format:</label>
+                        <select id="custom-ai-format" onchange="applyCustomAIFormatPreset()" style="width: 380px;">
+                            <option value="">Start blank</option>
+                            <option value="openai">OpenAI-compatible (Ollama, LM Studio, vLLM, OpenAI)</option>
+                            <option value="anthropic">Anthropic Claude</option>
+                            <option value="gemini">Google Gemini</option>
+                        </select>
+                    </div>
+                    <p style="color: #666; font-size: 0.85em; margin: 0 0 12px 0;">
+                        Pick <strong>OpenAI-compatible</strong> to pre-fill URL, request body, and response path.
+                        From Docker Desktop, <code>localhost</code> is rewritten to <code>host.docker.internal</code> so Ollama on your laptop is reachable.
+                    </p>
                     <div class="settings-row">
                         <label>API Name: <span style="color: red;">*</span></label>
                         <input type="text" id="custom-ai-name" placeholder="e.g., My Local LLM, Ollama, etc." style="width: 300px;" />
