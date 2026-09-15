@@ -87,6 +87,22 @@ def rewrite_ai_url_for_runtime(url: str) -> str:
     return rewritten
 
 
+def openai_compat_base_url(url: str, endpoint: str = "/chat/completions") -> str:
+    """Return the OpenAI-compatible *base* URL (scheme+host+optional /v1).
+
+    Users often paste the full chat URL (…/v1/chat/completions) into the
+    Settings base-URL field. Built-in providers then append ``endpoint``
+    again and Ollama returns 404. Strip a trailing copy of ``endpoint``.
+    """
+    if not url:
+        return url
+    base = url.rstrip("/")
+    ep = "/" + (endpoint or "").lstrip("/")
+    if ep not in ("", "/") and base.lower().endswith(ep.lower()):
+        base = base[: -len(ep)].rstrip("/")
+    return base
+
+
 def dummy_key_for_local(api_key: Optional[str]) -> str:
     """Ollama accepts any Bearer token; the proxy still sends Authorization."""
     key = (api_key or "").strip()
@@ -2541,7 +2557,8 @@ def call_ai_provider(provider: str,
         base = api_url.rstrip('/')
         full_url = f"{base}/models/{model}:generateContent"
     else:
-        full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
+        base = openai_compat_base_url(api_url, endpoint)
+        full_url = base.rstrip('/') + '/' + endpoint.lstrip('/')
     
     return _execute_ai_request(full_url, headers, ai_request_payload)
 

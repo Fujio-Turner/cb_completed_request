@@ -2,6 +2,7 @@
 from ai_analyzer import (
     dummy_key_for_local,
     is_local_openai_compat,
+    openai_compat_base_url,
     rewrite_ai_url_for_runtime,
     running_in_docker,
 )
@@ -37,6 +38,18 @@ def test_rewrite_localhost_inside_docker(monkeypatch):
     assert (
         rewrite_ai_url_for_runtime("http://127.0.0.1:1234/v1/chat/completions")
         == "http://host.docker.internal:1234/v1/chat/completions"
+    )
+
+
+def test_openai_compat_base_url_strips_chat_completions():
+    assert openai_compat_base_url("http://localhost:11434/v1") == "http://localhost:11434/v1"
+    assert (
+        openai_compat_base_url("http://host.docker.internal:11434/v1/chat/completions")
+        == "http://host.docker.internal:11434/v1"
+    )
+    assert (
+        openai_compat_base_url("http://localhost:11434/v1/chat/completions/")
+        == "http://localhost:11434/v1"
     )
 
 

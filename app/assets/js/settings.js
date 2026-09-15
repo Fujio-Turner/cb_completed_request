@@ -121,7 +121,7 @@ const AI_PROVIDERS = [
         defaultUrl: 'http://localhost:11434/v1',
         apiKeyOptional: true,
         allowCustomModel: true,
-        helpHtml: 'Talks to Ollama, LM Studio, vLLM, or llama.cpp on <em>your laptop</em> (not inside Docker). From Docker Desktop, <code>localhost</code> is rewritten to <code>host.docker.internal</code>. Ollama default port is <code>11434</code>; LM Studio is usually <code>1234</code>.',
+        helpHtml: 'Use the <strong>base URL only</strong> — <code>http://localhost:11434/v1</code>. Do <em>not</em> add <code>/chat/completions</code> (the app appends it). From Docker Desktop, <code>localhost</code> is rewritten to <code>host.docker.internal</code>. Ollama port <code>11434</code>; LM Studio is usually <code>1234</code>.',
         models: [
             { id: 'llama3.2', name: 'llama3.2' },
             { id: 'llama3.1', name: 'llama3.1' },

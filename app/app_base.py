@@ -1343,7 +1343,8 @@ def ai_api_call():
             else:
                 full_url = f"{api_url.rstrip('/')}/models/{model}:generateContent"
         else:
-            full_url = api_url.rstrip('/') + '/' + endpoint.lstrip('/')
+            base = ai_analyzer.openai_compat_base_url(api_url, endpoint)
+            full_url = base.rstrip('/') + '/' + endpoint.lstrip('/')
         logger.debug("Full URL: %s", full_url)
         
         # Prepare headers
