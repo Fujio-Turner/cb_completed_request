@@ -459,6 +459,17 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
 
         logger.debug("Starting background AI task for doc %s", doc_id)
 
+        # Flip pending → processing so the history table reflects the live call.
+        cbl_store_inst = _get_cbl_store()
+        if cbl_store_inst is not None:
+            try:
+                current = cbl_store_inst.load_analyzer(doc_id) or {}
+                current['status'] = 'processing'
+                current['startedAt'] = datetime.utcnow().isoformat() + 'Z'
+                cbl_store_inst.save_analyzer(doc_id, current.get('prompt') or 'AI Analysis', current)
+            except Exception as e:
+                logger.warning("Could not mark %s as processing: %s", doc_id, e)
+
         # Check if this is a custom AI provider
         if custom_config and custom_config.get('isCustom'):
             logger.debug("Using custom AI provider: %s", custom_config.get('name'))

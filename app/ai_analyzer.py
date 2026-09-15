@@ -730,14 +730,20 @@ class AIHttpClient:
         """Create requests session with retry strategy"""
         session = requests.Session()
         
-        # Configure retry strategy
-        retry_strategy = Retry(
+        # Never retry a *read* timeout — that restarts an LLM generation that
+        # is still running (Ollama 27B + a large payload easily exceeds 5 min).
+        # Still retry connection refused / 429 / 5xx.
+        retry_kwargs = dict(
             total=self.max_retries,
             backoff_factor=self.backoff_factor,
             status_forcelist=self.retry_on_status,
             allowed_methods=["POST", "PUT", "GET"],
-            raise_on_status=False
+            raise_on_status=False,
         )
+        try:
+            retry_strategy = Retry(read=0, connect=self.max_retries, **retry_kwargs)
+        except TypeError:
+            retry_strategy = Retry(**retry_kwargs)
         
         adapter = HTTPAdapter(max_retries=retry_strategy)
         session.mount("http://", adapter)
@@ -2560,12 +2566,25 @@ def call_ai_provider(provider: str,
         base = openai_compat_base_url(api_url, endpoint)
         full_url = base.rstrip('/') + '/' + endpoint.lstrip('/')
     
+    if is_local_openai_compat(provider):
+        # Local 27B models routinely take 10–30+ minutes on a large payload.
+        # One attempt, 30-minute read timeout, no generation-restart retries.
+        return _execute_ai_request(
+            full_url, headers, ai_request_payload,
+            timeout=(30, 1800), max_retries=1,
+        )
     return _execute_ai_request(full_url, headers, ai_request_payload)
 
 
-def _execute_ai_request(full_url: str, headers: dict, ai_request_payload: dict) -> dict:
+def _execute_ai_request(full_url: str, headers: dict, ai_request_payload: dict,
+                        timeout=None, max_retries=None) -> dict:
     """Execute the AI API request and return result."""
-    http_client = AIHttpClient()
+    kwargs = {}
+    if timeout is not None:
+        kwargs["timeout"] = timeout
+    if max_retries is not None:
+        kwargs["max_retries"] = max_retries
+    http_client = AIHttpClient(**kwargs)
     
     logger.debug("ai_full_url %s", full_url)
     
@@ -2705,7 +2724,16 @@ def call_custom_ai_provider(
         # Use digest auth - need to make request directly with requests library
         result = _execute_ai_request_with_digest(url, headers, ai_request_payload, digest_auth)
     else:
-        result = _execute_ai_request(url, headers, ai_request_payload)
+        localish = any(s in (url or "") for s in (
+            "11434", "host.docker.internal", "localhost", "127.0.0.1",
+        ))
+        if localish:
+            result = _execute_ai_request(
+                url, headers, ai_request_payload,
+                timeout=(30, 1800), max_retries=1,
+            )
+        else:
+            result = _execute_ai_request(url, headers, ai_request_payload)
     
     # If successful, add the response path for frontend processing
     if result.get('success') and result.get('data'):
