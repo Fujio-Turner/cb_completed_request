@@ -27068,7 +27068,11 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
                             // Polling loop
                             const pollInterval = 3000; // 3 seconds
                             let attempts = 0;
-                            const maxAttempts = 200; // ~10 minutes timeout
+                            const localCompat = ['local-openai', 'ollama', 'lmstudio', 'vllm'].includes(provider);
+                            const maxAttempts = localCompat ? 600 : 200; // 30 min local / 10 min cloud
+                            if (localCompat) {
+                                showToast('Local model is generating. A 27B model on a large payload can take 10–30+ minutes — leave Ollama running.', 'info');
+                            }
                             let consecutiveErrors = 0;
                             const maxConsecutiveErrors = 5; // Stop after 5 consecutive errors
                             

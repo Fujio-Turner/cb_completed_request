@@ -41,6 +41,13 @@ def test_rewrite_localhost_inside_docker(monkeypatch):
     )
 
 
+def test_http_client_accepts_connect_read_timeout_tuple():
+    from ai_analyzer import AIHttpClient
+    client = AIHttpClient(timeout=(30, 1800), max_retries=1)
+    assert client.timeout == (30, 1800)
+    assert client.max_retries == 1
+
+
 def test_openai_compat_base_url_strips_chat_completions():
     assert openai_compat_base_url("http://localhost:11434/v1") == "http://localhost:11434/v1"
     assert (
