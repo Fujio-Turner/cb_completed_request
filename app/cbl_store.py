@@ -71,6 +71,8 @@ HARD_BYTES = 64 * 1024 * 1024
 _db_lock = threading.Lock()
 _db: Optional["Database"] = None
 _coll_cache: Dict[str, Any] = {}  # name -> raw CBLCollection*
+_store_instance: Optional["CBLStore"] = None
+_store_lock = threading.Lock()
 
 
 # ============================================================================
@@ -118,9 +120,10 @@ def get_db() -> "Database":
 
 def close_db() -> None:
     """Close the singleton database and clear caches."""
-    global _db
+    global _db, _store_instance
     with _db_lock:
         _coll_cache.clear()
+        _store_instance = None
         if _db is not None:
             try:
                 _db.close()
@@ -781,3 +784,25 @@ class CBLStore:
 
         out["db_path"] = str(Path(CBL_DB_DIR) / f"{CBL_DB_NAME}.cblite2")
         return out
+
+
+def get_store() -> Optional["CBLStore"]:
+    """Process-wide CBLStore singleton. Returns None if bindings are missing."""
+    global _store_instance
+    if not USE_CBL:
+        return None
+    with _store_lock:
+        if _store_instance is None:
+            try:
+                _store_instance = CBLStore()
+            except Exception:
+                logger.exception("cbl storage failed to initialize")
+                return None
+        return _store_instance
+
+
+def reset_store() -> None:
+    """Drop the cached CBLStore wrapper (e.g. after close_db / import)."""
+    global _store_instance
+    with _store_lock:
+        _store_instance = None

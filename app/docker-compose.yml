@@ -18,7 +18,8 @@
 #
 # Notes:
 # - Server Edition v4.0.0-Beta.2 uses embedded Couchbase Lite (no external DB needed).
-# - The Flask server uses STORAGE_BACKEND=cbl by default.
+# - Couchbase Lite is the only storage backend. The Server SDK is gone;
+#   STORAGE_BACKEND is ignored if set.
 # - User preferences and analyzer data stored in CBL at /app/data/cb_tools_db.cblite2/
 # - gunicorn -w 1 is REQUIRED — CBL is single-writer.
 
@@ -32,7 +33,6 @@ services:
     ports:
       - "${HOST_PORT:-8080}:${PORT:-8080}"
     environment:
-      STORAGE_BACKEND: cbl
       CBL_DB_DIR: /app/data
       CBL_DB_NAME: cb_tools_db
       PORT: "${PORT:-8080}"

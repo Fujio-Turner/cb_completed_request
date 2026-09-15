@@ -69,20 +69,12 @@ except ImportError:
 
 # Configure icecream
 
-# Use port 8888 by default (port 5000 is used by macOS AirPlay Receiver)
-# Playwright tests use PORT=5555
-PORT = int(os.environ.get('PORT', 8888))
+# Default listen port is 8080 (port 5000 is used by macOS AirPlay Receiver).
+# Playwright sets PORT=5555. Docker / desktop bind whatever get_server_port()
+# resolves (env PORT, then config.json server.port, then 8080).
+from ports import DEFAULT_PORT, get_resource_path, get_server_port  # noqa: E402
 
-# Handle PyInstaller bundled resources
-def get_resource_path():
-    """Get the correct resource path for both development and PyInstaller builds"""
-    if getattr(sys, 'frozen', False):
-        # Running as PyInstaller bundle
-        return sys._MEIPASS
-    else:
-        # Running in development
-        return os.path.dirname(os.path.abspath(__file__))
-
+PORT = get_server_port()
 DIRECTORY = get_resource_path()
 logger.info("Resource directory: %s", DIRECTORY)
 
@@ -90,23 +82,29 @@ app = Flask(__name__, static_folder=DIRECTORY, static_url_path='')
 CORS(app)  # Enable CORS for all routes
 
 # ── Embedded Couchbase Lite (the only persistence layer) ────────────────
+# One process-wide CBLStore lives in cbl_store.get_store(). Do not construct
+# a second CBLStore here — CBL is single-writer and close_db() would leave
+# a stale wrapper.
 try:
-    from cbl_store import CBLStore, USE_CBL  # type: ignore
+    from cbl_store import CBLStore, USE_CBL, get_store as _cbl_get_store  # type: ignore
 except Exception as _cbl_err:  # noqa: BLE001 — CBL bindings might not be present in tests
     CBLStore = None  # type: ignore
     USE_CBL = False
-
-_cbl_store_singleton = None
+    _cbl_get_store = lambda: None  # noqa: E731
 
 
 def _get_cbl_store():
-    """Return the CBLStore singleton, or None if the bindings aren't available."""
-    global _cbl_store_singleton
-    if not USE_CBL or CBLStore is None:
-        return None
-    if _cbl_store_singleton is None:
-        _cbl_store_singleton = CBLStore()
-    return _cbl_store_singleton
+    """Return the process-wide CBLStore, or None if bindings aren't available.
+
+    Always go through ``app.storage()`` so there is a single owner. Fallback
+    to ``cbl_store.get_store()`` only if app.py has not been imported yet
+    (unit tests that import app_base in isolation).
+    """
+    try:
+        from app import storage as _app_storage
+        return _app_storage()
+    except Exception:
+        return _cbl_get_store()
 
 
 # Static file serving

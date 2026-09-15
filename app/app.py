@@ -32,13 +32,13 @@ from icecream import ic
 
 from flask import jsonify, request, send_file
 
-# ----------------------------------------------------------------------------
-# Global version constant — single source of truth for the running app.
-# Bump this in every release per app/guides/RELEASE.md. The startup banner
-# below reads from __version__, and downstream modules / endpoints can
-# `from app import __version__` if they need to surface it.
-# ----------------------------------------------------------------------------
-__version__ = "4.0.0-Beta.2"
+from version import __version__
+from ports import (  # noqa: F401 — re-exported for tests / __main__
+    DEFAULT_PORT,
+    get_resource_path,
+    get_server_port,
+    _load_server_config,
+)
 
 # Import the base app (registers Flask app + endpoints that don't depend on
 # the external Couchbase Server SDK). All app data persistence now flows
@@ -48,86 +48,27 @@ from app_base import app, DIRECTORY, PORT  # noqa: F401
 
 import blob_storage
 
-# Print startup banner on module import (works with gunicorn + development)
-# This runs once when the app is initialized, before any requests arrive.
+# Print startup banner on module import (works with gunicorn + development).
+# Use the resolved port (env / config / 8080) — never a hard-coded 8888.
 print(f"🚀 Starting Couchbase Query Analyzer v{__version__}")
 print("📊 Backend: cbl (embedded Couchbase Lite)")
 print(f"🌐 Open http://localhost:{PORT} in your browser")
 print()
 logger.info("startup version=%s port=%d", __version__, PORT)
 
-# Try to import CBL store
+# Try to import CBL store. cbl_store.py always imports even when the native
+# bindings are missing (it sets USE_CBL = False). CBL_AVAILABLE must follow
+# that flag, not "did the .py file import".
 try:
-    from cbl_store import CBLStore, USE_CBL
-    CBL_AVAILABLE = True
+    from cbl_store import CBLStore, USE_CBL, get_store, reset_store
+    CBL_AVAILABLE = bool(USE_CBL)
 except ImportError as e:
+    CBLStore = None  # type: ignore
     CBL_AVAILABLE = False
     USE_CBL = False
+    get_store = lambda: None  # noqa: E731
+    reset_store = lambda: None  # noqa: E731
     logger.warning("cbl store unavailable: %s", e)
-
-
-# ============================================================================
-# Server config (port + future server-side options)
-# ============================================================================
-
-def _load_server_config() -> dict:
-    """
-    Load server-side config from the first existing JSON file in:
-      1. $APP_CONFIG_FILE
-      2. ./config.json         (sibling of app.py)
-      3. ./config.default.json (sibling of app.py)
-
-    Only the top-level `server` key is consumed here (e.g. `server.port`).
-    Everything else in config.json is consumed by the frontend.
-
-    Errors loading the file are logged and ignored; defaults apply.
-    """
-    candidates = []
-    env_path = os.environ.get('APP_CONFIG_FILE')
-    if env_path:
-        candidates.append(env_path)
-    here = os.path.dirname(os.path.abspath(__file__))
-    candidates.extend([
-        os.path.join(here, 'config.json'),
-        os.path.join(here, 'config.default.json'),
-    ])
-    for path in candidates:
-        if not path or not os.path.isfile(path):
-            continue
-        try:
-            with open(path, 'r') as f:
-                data = json.load(f)
-            logger.info("loaded server config path=%s", path)
-            return data if isinstance(data, dict) else {}
-        except Exception as e:
-            logger.warning("failed to read config path=%s: %s", path, e)
-    return {}
-
-
-def get_server_port(default: int = 8080) -> int:
-    """
-    Resolve the HTTP listen port. Priority:
-      1. $PORT env var (set by Docker / start scripts)
-      2. config.json `server.port`
-      3. `default` (8080)
-
-    Note: When running in Docker the gunicorn CMD reads $PORT directly via
-    shell expansion, so this helper is mainly used by the __main__ block
-    and is also exposed for tests.
-    """
-    env = os.environ.get('PORT')
-    if env:
-        try:
-            return int(env)
-        except ValueError:
-            logger.warning("ignoring invalid PORT env var=%s", env)
-    cfg = _load_server_config().get('server') or {}
-    val = cfg.get('port')
-    if isinstance(val, int) and val > 0:
-        return val
-    if isinstance(val, str) and val.isdigit():
-        return int(val)
-    return default
 
 
 # ============================================================================
@@ -141,12 +82,27 @@ _cbl_blobs: Optional[blob_storage.BlobStorage] = None
 def storage() -> Optional["CBLStore"]:
     """Return the singleton CBLStore (creates it on first call)."""
     global _cbl_store
-    if not CBL_AVAILABLE:
+    if not CBL_AVAILABLE or CBLStore is None:
         return None
     if _cbl_store is None:
-        _cbl_store = CBLStore()
-        logger.info("cbl storage initialized")
+        try:
+            _cbl_store = CBLStore()
+            logger.info("cbl storage initialized")
+        except Exception:
+            logger.exception("cbl storage failed to initialize")
+            return None
     return _cbl_store
+
+
+def _reset_storage_cache() -> None:
+    """Drop cached wrappers after close_db() / import so the next call reopens."""
+    global _cbl_store, _cbl_blobs
+    _cbl_store = None
+    _cbl_blobs = None
+    try:
+        reset_store()
+    except Exception:
+        pass
 
 
 def get_blobs() -> Optional[blob_storage.BlobStorage]:
@@ -155,7 +111,10 @@ def get_blobs() -> Optional[blob_storage.BlobStorage]:
     if not CBL_AVAILABLE:
         return None
     if _cbl_blobs is None:
-        _cbl_blobs = blob_storage.BlobStorage(storage())
+        store = storage()
+        if not store:
+            return None
+        _cbl_blobs = blob_storage.BlobStorage(store)
         logger.info("blob storage initialized")
     return _cbl_blobs
 
@@ -208,7 +167,7 @@ def save_analyzer():
 
         store = storage()
         if not store:
-            return jsonify({'success': False, 'error': 'CBL not available'}), 500
+            return jsonify({'success': False, 'error': 'CBL not available'}), 503
         store.save_analyzer(request_id, name, analyzer_data)
         return jsonify({'success': True, 'requestId': request_id, 'backend': 'cbl'})
 
@@ -222,7 +181,7 @@ def load_analyzer(request_id):
     try:
         store = storage()
         if not store:
-            return jsonify({'success': False, 'error': 'CBL not available'}), 500
+            return jsonify({'success': False, 'error': 'CBL not available'}), 503
         doc = store.load_analyzer(request_id)
         if not doc:
             return jsonify({'success': False, 'error': 'Not found'}), 404
@@ -241,7 +200,7 @@ def delete_analyzer():
 
         store = storage()
         if not store:
-            return jsonify({'success': False, 'error': 'CBL not available'}), 500
+            return jsonify({'success': False, 'error': 'CBL not available'}), 503
         ok = store.delete_analyzer(request_id)
         if not ok:
             return jsonify({'success': False, 'error': 'Not found'}), 404
@@ -261,7 +220,7 @@ def save_preferences():
 
         store = storage()
         if not store:
-            return jsonify({'success': False, 'error': 'CBL not available'}), 500
+            return jsonify({'success': False, 'error': 'CBL not available'}), 503
         store.save_preferences(user_id, prefs)
         return jsonify({'success': True, 'userId': user_id, 'backend': 'cbl'})
 
@@ -275,7 +234,7 @@ def load_preferences(user_id):
     try:
         store = storage()
         if not store:
-            return jsonify({'success': False, 'error': 'CBL not available'}), 500
+            return jsonify({'success': False, 'error': 'CBL not available'}), 503
         prefs = store.load_preferences(user_id)
         if prefs is None:
             # First-time user: empty config
@@ -296,7 +255,7 @@ def load_preferences(user_id):
 def ai_status(document_id):
     store = storage()
     if not store:
-        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        return jsonify({'success': False, 'error': 'CBL not available'}), 503
 
     # AI analysis docs are written by background_ai_task via store.save_analyzer
     # into COLL_ANALYZER, not COLL_AI_HISTORY. Read from there.
@@ -329,7 +288,7 @@ def ai_history():
 
         store = storage()
         if not store:
-            return jsonify({'success': False, 'error': 'CBL not available'}), 500
+            return jsonify({'success': False, 'error': 'CBL not available'}), 503
 
         # AI analyses are stored in COLL_ANALYZER (via save_analyzer) with
         # docType='ai_analysis' inside the blob. Scan and project the
@@ -383,7 +342,7 @@ def ai_cancel():
 
         store = storage()
         if not store:
-            return jsonify({'success': False, 'error': 'CBL not available'}), 500
+            return jsonify({'success': False, 'error': 'CBL not available'}), 503
         doc = store.load_analyzer(doc_id)
         if not doc:
             return jsonify({'success': False, 'error': 'Document not found'}), 404
@@ -408,7 +367,7 @@ def ai_clusters():
     try:
         store = storage()
         if not store:
-            return jsonify({'success': False, 'error': 'CBL not available'}), 500
+            return jsonify({'success': False, 'error': 'CBL not available'}), 503
 
         data = request.json or {}
         term = (data.get('term') or '').lower()
@@ -448,7 +407,7 @@ def ai_clusters():
 def ai_stats():
     store = storage()
     if not store:
-        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        return jsonify({'success': False, 'error': 'CBL not available'}), 503
     rows = store.query(
         "SELECT provider, COUNT(*) AS runs, "
         "SUM(tokens_in) AS tokens_in, SUM(tokens_out) AS tokens_out "
@@ -463,7 +422,7 @@ def ai_stats():
 def payload_reference_get():
     store = storage()
     if not store:
-        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        return jsonify({'success': False, 'error': 'CBL not available'}), 503
     data = store.get_payload_reference()
     if data is None:
         return jsonify({'success': False, 'error': 'Not found'}), 404
@@ -477,7 +436,7 @@ def payload_reference_load():
 def payload_reference_seed():
     store = storage()
     if not store:
-        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        return jsonify({'success': False, 'error': 'CBL not available'}), 503
     template = os.path.join(DIRECTORY, 'payload_reference.json.template')
     ok = store.seed_from_template('payload_reference', template)
     return jsonify({'success': ok, 'backend': 'cbl'})
@@ -488,7 +447,7 @@ def payload_reference_save():
     body = data.get('data', data)
     store = storage()
     if not store:
-        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        return jsonify({'success': False, 'error': 'CBL not available'}), 503
     store.save_payload_reference(body)
     return jsonify({'success': True, 'backend': 'cbl'})
 
@@ -497,7 +456,7 @@ def payload_reference_save():
 def models_get():
     store = storage()
     if not store:
-        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        return jsonify({'success': False, 'error': 'CBL not available'}), 503
     data = store.get_models_list()
     if data is None:
         return jsonify({'success': False, 'error': 'Not found'}), 404
@@ -511,7 +470,7 @@ def models_load():
 def models_seed():
     store = storage()
     if not store:
-        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        return jsonify({'success': False, 'error': 'CBL not available'}), 503
     template = os.path.join(DIRECTORY, 'ai_models_list.json.template')
     ok = store.seed_from_template('models_list', template)
     return jsonify({'success': ok, 'backend': 'cbl'})
@@ -522,7 +481,7 @@ def models_save():
     body = data.get('data', data)
     store = storage()
     if not store:
-        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        return jsonify({'success': False, 'error': 'CBL not available'}), 503
     store.save_models_list(body)
     return jsonify({'success': True, 'backend': 'cbl'})
 
@@ -534,14 +493,14 @@ def models_save():
 def storage_info():
     store = storage()
     if not store:
-        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        return jsonify({'success': False, 'error': 'CBL not available'}), 503
     return jsonify({'success': True, 'stats': store.stats(), 'backend': 'cbl'})
 
 
 def storage_maintenance():
     store = storage()
     if not store:
-        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        return jsonify({'success': False, 'error': 'CBL not available'}), 503
     op = (request.json or {}).get('operation', 'compact')
     return jsonify({'success': True, 'result': store.maintenance(op), 'backend': 'cbl'})
 
@@ -549,7 +508,7 @@ def storage_maintenance():
 def storage_export():
     store = storage()
     if not store:
-        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        return jsonify({'success': False, 'error': 'CBL not available'}), 503
     path = store.export()
     return send_file(
         path,
@@ -564,8 +523,10 @@ def storage_import():
         return jsonify({'success': False, 'error': 'No file provided'}), 400
     store = storage()
     if not store:
-        return jsonify({'success': False, 'error': 'CBL not available'}), 500
+        return jsonify({'success': False, 'error': 'CBL not available'}), 503
     result = store.import_from(request.files['file'])
+    # import_from() closes the DB; drop cached wrappers so the next request reopens.
+    _reset_storage_cache()
     return jsonify({'success': True, 'result': result, 'backend': 'cbl'})
 
 
@@ -769,7 +730,7 @@ if __name__ == '__main__':
     import threading
     import webbrowser
 
-    PORT = get_server_port(default=8080)
+    PORT = get_server_port()
     _startup_banner(PORT)
 
     # ------------------------------------------------------------------
@@ -817,40 +778,36 @@ if __name__ == '__main__':
 
         if is_supported():
             print("🧭 Launching menubar/tray icon — use it to Quit cleanly.")
-            # Flask runs on a daemon thread so the tray library can own the
-            # main thread (NSApplication requirement on macOS).
+            # Flask on a non-daemon thread so a tray failure cannot kill the
+            # process. The tray library still owns the main thread (required
+            # by NSApplication on macOS). Bind 127.0.0.1 — this is a local
+            # helper, not a LAN server.
             flask_thread = threading.Thread(
                 target=lambda: app.run(
-                    host='0.0.0.0',
+                    host='127.0.0.1',
                     port=PORT,
                     debug=False,
                     use_reloader=False,
                 ),
-                daemon=True,
+                daemon=False,
                 name='flask-server',
             )
             flask_thread.start()
 
             tray_ok = run_tray(PORT) if run_tray else False
             if not tray_ok:
-                # Tray failed to start — fall back to blocking on Flask so
-                # the process doesn't exit immediately when daemon thread
-                # is the only thing running.
                 logger.warning("tray failed; blocking on Flask thread")
                 flask_thread.join()
-            # Tray exited cleanly → process is shutting down; nothing else
-            # to do. (run_tray's Quit handler already calls os._exit.)
         else:
-            # Unsupported platform (e.g. Linux desktop) — just run Flask.
             app.run(
-                host='0.0.0.0',
+                host='127.0.0.1',
                 port=PORT,
                 debug=False,
                 use_reloader=False,
             )
     else:
         app.run(
-            host='0.0.0.0',
+            host='127.0.0.1',
             port=PORT,
             debug=False,
             use_reloader=False,
