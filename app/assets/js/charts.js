@@ -15,7 +15,7 @@
 // IMPORTS
 // ============================================================
 
-import { Logger, TEXT_CONSTANTS } from './base.js';
+import { Logger, TEXT_CONSTANTS, formatTimestamp } from './base.js';
 import { 
     originalRequests,
     parseTime,
@@ -7171,7 +7171,7 @@ size: 12
                             lineData.push({
                                 value: [timestamp.getTime(), collIdx, avgValue],
                                 collection: collection,
-                                time: timestamp.toISOString().substring(0, 19).replace('T', ' '),
+                                time: formatTimestamp(timestamp, "YYYY-MM-DD HH:MM:SS"),
                                 actualValue: avgValue,
                                 count: bucket.count
                             });

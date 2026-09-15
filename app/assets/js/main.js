@@ -49,6 +49,9 @@ import {
     formatNumber,
     formatBytes,
     formatDuration,
+    formatTime,
+    formatTimeTooltip,
+    formatTimestamp,
     escapeHtml,
     openModal,
     closeModal,
@@ -68,6 +71,9 @@ window.throttle = throttle;
 window.formatNumber = formatNumber;
 window.formatBytes = formatBytes;
 window.formatDuration = formatDuration;
+window.formatTime = formatTime;
+window.formatTimeTooltip = formatTimeTooltip;
+window.formatTimestamp = formatTimestamp;
 
 // Data Layer Helpers
 window.detectTimezoneFromData = detectTimezoneFromData;
