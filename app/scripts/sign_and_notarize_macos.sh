@@ -50,11 +50,10 @@ if [ -z "$APPLE_DEV_ID" ]; then
     exit 1
 fi
 
-# Check for dylib
-DYLIB_PATH="$APP_BUNDLE/Contents/MacOS/libcblite.3.dylib"
-if [ ! -f "$DYLIB_PATH" ]; then
-    log_warn "libcblite.3.dylib not found at $DYLIB_PATH"
-    DYLIB_PATH=""
+# PyInstaller puts dylibs under Contents/Frameworks or Contents/Resources.
+DYLIB_PATH="$(find "$APP_BUNDLE/Contents" -name 'libcblite*.dylib' 2>/dev/null | head -1 || true)"
+if [ -z "$DYLIB_PATH" ]; then
+    log_warn "libcblite*.dylib not found anywhere under $APP_BUNDLE/Contents"
 fi
 
 # ============================================================================

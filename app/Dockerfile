@@ -10,7 +10,8 @@ FROM python:3.12-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    CBL_VERSION=3.2.1 \
+    CBL_VERSION=3.2.4 \
+    CBL_PYTHON_SHA=2d1c79041de30a26a8b7f632d52a89fc031f1600 \
     CBL_DB_DIR=/app/data \
     CBL_DB_NAME=cb_tools_db \
     PORT=8080 \
@@ -54,7 +55,8 @@ RUN ARCH="$(dpkg --print-architecture)" && \
 
 # ---- 3. Build the Python CFFI bindings ----
 RUN pip install --no-cache-dir cffi setuptools && \
-    git clone --depth 1 https://github.com/couchbaselabs/couchbase-lite-python.git /opt/cbl-python && \
+    git clone https://github.com/couchbaselabs/couchbase-lite-python.git /opt/cbl-python && \
+    git -C /opt/cbl-python checkout "${CBL_PYTHON_SHA}" && \
     cd /opt/cbl-python/CouchbaseLite && \
     python3 ../build.py \
         --include /usr/local/include \

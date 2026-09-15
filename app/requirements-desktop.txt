@@ -1,0 +1,7 @@
+# Desktop (PyInstaller) extras on top of the Server Edition requirements.
+# Install with: pip install -r requirements-desktop.txt
+-r requirements.txt
+pyinstaller>=6,<7
+rumps>=0.4.0; sys_platform == "darwin"
+pystray>=0.19.0; sys_platform == "win32"
+Pillow>=10,<12

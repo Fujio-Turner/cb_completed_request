@@ -144,17 +144,11 @@ $WxsContent = @"
         
         <!-- Main executable component -->
         <DirectoryRef Id="INSTALLFOLDER">
-            <Component Id="MainExeComponent" Guid="$(var.WixUIWIChangedGuid)">
+            <Component Id="MainExeComponent" Guid="*">
                 <File Id="MainExeFile"
                       Name="$([System.IO.Path]::GetFileName($ExePath))"
                       Source="$ExePath"
                       KeyPath="yes" />
-                <Shortcut Id="DesktopShortcut"
-                          Directory="DesktopFolder"
-                          Name="$ProductName"
-                          WorkingDirectory="INSTALLFOLDER"
-                          Icon="AppIcon.ico"
-                          IconIndex="0" />
             </Component>
         </DirectoryRef>
         
@@ -212,6 +206,7 @@ $WxsContent = @"
         <UIRef Id="WixUI_ErrorProgressText" />
         
         <!-- Properties -->
+        <Icon Id="AppIcon.ico" SourceFile="$PSScriptRoot\..\assets\img\app_icon.ico" />
         <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
         <Property Id="ARPNOMODIFY" Value="1" />
         <Property Id="ARPNOREPAIR" Value="1" />
@@ -238,7 +233,7 @@ $WxsContent = @"
 
 $WxsContent | Out-File -FilePath $WxsFile -Encoding UTF8
 
-log_info "✓ WiX source created: $WxsFile"
+Write-Info "WiX source created: $WxsFile"
 
 # ============================================================================
 # Compile WiX source

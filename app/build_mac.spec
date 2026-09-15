@@ -1,95 +1,78 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-PyInstaller spec file for Couchbase Query Analyzer - macOS Edition (v5.0.0)
+PyInstaller spec for Couchbase Query Analyzer — macOS (onedir .app).
 
-Builds a self-contained macOS application bundle with:
-- Flask web server backend
-- Couchbase Lite integration
-- Code signing and notarization support
-- Universal binary (Intel + Apple Silicon)
-
-Usage:
-    pyinstaller build_mac.spec --clean
+cwd must be app/. Native libcblite is fetched by scripts/fetch_libcblite_macos.sh.
 """
 
 import os
 import sys
 from pathlib import Path
 
-# PyInstaller build helpers
 from PyInstaller.utils.hooks import collect_all
 
-# Spec lives at project root (post v5.0.0 migration)
-project_root = Path(__file__).parent
+project_root = Path(SPECPATH)
 sys.path.insert(0, str(project_root))
 
-# ============================================================================
-# CONFIGURATION
-# ============================================================================
+from packaging_manifest import desktop_hiddenimports  # noqa: E402
+from version import __version__ as APP_VERSION  # noqa: E402
 
-APP_NAME = 'QueryAnalyzer'
-APP_VERSION = '5.0.0'
-BUNDLE_ID = 'io.fuj.queryanalyzer'
+APP_NAME = "QueryAnalyzer"
+BUNDLE_ID = "io.fuj.queryanalyzer"
 
-# CouchbaseLite binary paths — bundled libcblite.dylib for the .app
-# Set CBL_MACOS_DYLIB env var if your dylib lives elsewhere.
 CBL_MACOS_DYLIB = os.environ.get(
-    'CBL_MACOS_DYLIB',
-    str(project_root / 'vendor' / 'macos' / 'libcblite.3.dylib')
+    "CBL_MACOS_DYLIB",
+    str(project_root / "vendor" / "macos" / "libcblite.3.dylib"),
 )
-
-# ============================================================================
-# COLLECT COUCHBASELITE RESOURCES
-# ============================================================================
+if not os.path.isfile(CBL_MACOS_DYLIB):
+    raise SystemExit(
+        f"missing CBL dylib: {CBL_MACOS_DYLIB}\n"
+        "Run: ./scripts/fetch_libcblite_macos.sh"
+    )
 
 try:
-    cbl_all = collect_all('CouchbaseLite')
-    cbl_binaries = cbl_all[0]  # binaries
-    cbl_datas = cbl_all[1]      # datas
-    cbl_hidden = cbl_all[2]     # hiddenimports
-except Exception as e:
-    print(f"Warning: Could not collect CouchbaseLite resources: {e}")
-    cbl_binaries = []
-    cbl_datas = []
-    cbl_hidden = []
+    cbl_all = collect_all("CouchbaseLite")
+    cbl_binaries, cbl_datas, cbl_hidden = cbl_all[0], cbl_all[1], cbl_all[2]
+except Exception as exc:  # noqa: BLE001
+    print(f"Warning: Could not collect CouchbaseLite resources: {exc}")
+    cbl_binaries, cbl_datas, cbl_hidden = [], [], []
 
-# ============================================================================
-# BLOCK ANALYSIS
-# ============================================================================
+icns = project_root / "assets" / "img" / "QueryAnalyzer.icns"
+entitlements = project_root / "build" / "macos" / "entitlements.plist"
+runtime_hook = project_root / "build" / "hooks" / "rt_set_cbl_path.py"
 
 block_cipher = None
 
-# ============================================================================
-# SPEC CONFIGURATION
-# ============================================================================
-
 a = Analysis(
-    ['app.py'],
-    pathex=[],
-    binaries=cbl_binaries + [
-        (CBL_MACOS_DYLIB, '.') if os.path.exists(CBL_MACOS_DYLIB) else None
-    ] if os.path.exists(CBL_MACOS_DYLIB) else cbl_binaries,
+    ["app.py"],
+    pathex=[str(project_root)],
+    binaries=cbl_binaries + [(CBL_MACOS_DYLIB, ".")],
     datas=cbl_datas + [
-        ('ai_analyzer.py', '.'),
-        ('blob_storage.py', '.'),
-        ('payload_reference.json.template', '.'),
-        ('ai_models_list.json.template', '.'),
-        ('index.html', '.'),
-        ('assets', 'assets'),
-        ('docs', 'docs'),
+        ("config.default.json", "."),
+        ("ai_analyzer.py", "."),
+        ("blob_storage.py", "."),
+        ("cbl_store.py", "."),
+        ("app_base.py", "."),
+        ("logging_config.py", "."),
+        ("tray.py", "."),
+        ("ports.py", "."),
+        ("version.py", "."),
+        ("toon_python.py", "."),
+        ("payload_reference.json.template", "."),
+        ("ai_models_list.json.template", "."),
+        ("index.html", "."),
+        ("assets", "assets"),
+        ("docs", "docs"),
     ],
-    hiddenimports=cbl_hidden + [
-        'platformdirs',
-        'CouchbaseLite._PyCBL',
-        'flask',
-        'flask_cors',
+    hiddenimports=cbl_hidden + desktop_hiddenimports() + [
+        "CouchbaseLite._PyCBL",
+        "rumps",
+        "tray",
     ],
-    hookspath=[os.path.join(project_root, 'build', 'hooks')],
+    hookspath=[],
     hooksconfig={},
-    runtime_hooks=[os.path.join(project_root, 'build', 'hooks', 'rt_set_cbl_path.py')],
+    runtime_hooks=[str(runtime_hook)],
     excludedimports=[],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
     cipher=block_cipher,
     noarchive=False,
 )
@@ -107,13 +90,12 @@ exe = EXE(
     strip=False,
     upx=True,
     upx_exclude=[],
-    runtime_tmpdir=None,
-    console=False,  # GUI app, no console window
+    console=True,  # unsigned beta: Terminal shows the bind URL / tracebacks
     disable_windowed_traceback=False,
-    target_arch='universal2',  # Intel + Apple Silicon
-    codesign_identity=os.environ.get('APPLE_DEV_ID'),
-    entitlements_file=os.path.join(project_root, 'build', 'macos', 'entitlements.plist'),
-    icon=None,
+    target_arch=None,  # native arch of the build Python (arm64 on macos-latest)
+    codesign_identity=os.environ.get("APPLE_DEV_ID") or None,
+    entitlements_file=str(entitlements) if entitlements.is_file() else None,
+    icon=str(icns) if icns.is_file() else None,
 )
 
 coll = COLLECT(
@@ -129,15 +111,18 @@ coll = COLLECT(
 
 app = BUNDLE(
     coll,
-    name=f'{APP_NAME}.app',
-    icon=None,
+    name=f"{APP_NAME}.app",
+    icon=str(icns) if icns.is_file() else None,
     bundle_identifier=BUNDLE_ID,
     info_plist={
-        'NSPrincipalClass': 'NSApplication',
-        'NSHighResolutionCapable': 'True',
-        'CFBundleVersion': APP_VERSION,
-        'CFBundleShortVersionString': APP_VERSION,
-        'NSRequiresIPhoneOS': False,
-        'LSMinimumSystemVersion': '11.0',  # macOS Big Sur minimum
+        "NSPrincipalClass": "NSApplication",
+        "NSHighResolutionCapable": True,
+        "CFBundleName": "CB Query Analyzer (Beta)",
+        "CFBundleDisplayName": "CB Query Analyzer (Beta)",
+        "CFBundleVersion": APP_VERSION,
+        "CFBundleShortVersionString": APP_VERSION,
+        "LSMinimumSystemVersion": "11.0",
+        "LSBackgroundOnly": False,
+        "LSUIElement": False,
     },
 )
