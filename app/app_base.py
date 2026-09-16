@@ -509,55 +509,31 @@ def background_ai_task(doc_id, provider, model, api_key, api_url, endpoint, prom
         if result['success']:
             analysis_data = result['data']
             
-            # Parse JSON content from AI response if it's a string
+            # Parse JSON content from AI response (repairs malformed local-model JSON)
             try:
+                content = None
+                set_on_openai_message = False
                 if 'choices' in analysis_data and len(analysis_data['choices']) > 0:
-                    # OpenAI/Grok format
                     content = analysis_data['choices'][0].get('message', {}).get('content', '')
-                    if isinstance(content, str) and content.strip().startswith('{'):
-                        # Parse JSON string to object
-                        parsed_content = json.loads(content)
-                        analysis_data['choices'][0]['message']['content_parsed'] = parsed_content
-                        logger.info("Parsed OpenAI/Grok AI response JSON content to object")
+                    set_on_openai_message = True
                 elif 'content' in analysis_data and isinstance(analysis_data['content'], list):
-                    # Anthropic/Claude format: content[0].text
                     if len(analysis_data['content']) > 0 and 'text' in analysis_data['content'][0]:
                         content = analysis_data['content'][0].get('text', '')
-                        # Extract JSON from potential markdown code blocks or preamble
-                        json_start = content.find('{')
-                        json_end = content.rfind('}')
-                        if json_start != -1 and json_end != -1:
-                            json_content = content[json_start:json_end + 1]
-                            parsed_content = json.loads(json_content)
-                            analysis_data['content_parsed'] = parsed_content
-                            logger.debug("Parsed Anthropic/Claude AI response JSON content to object")
                 elif 'candidates' in analysis_data and len(analysis_data['candidates']) > 0:
-                    # Google Gemini format: candidates[0].content.parts[0].text
                     parts = analysis_data['candidates'][0].get('content', {}).get('parts', [])
                     if parts and 'text' in parts[0]:
                         content = parts[0].get('text', '')
-                        json_start = content.find('{')
-                        json_end = content.rfind('}')
-                        if json_start != -1 and json_end != -1:
-                            json_content = content[json_start:json_end + 1]
-                            parsed_content = json.loads(json_content)
-                            analysis_data['content_parsed'] = parsed_content
-                            logger.debug("Parsed Google Gemini AI response JSON content to object")
                 elif result.get('isCustomProvider') and result.get('responsePath'):
-                    # Custom AI provider - use configured response path
-                    response_path = result.get('responsePath')
-                    logger.debug("Parsing custom AI response using path: %s", response_path)
-                    
-                    # Parse the response path to extract content
-                    content = _extract_by_path(analysis_data, response_path)
-                    if content and isinstance(content, str):
-                        json_start = content.find('{')
-                        json_end = content.rfind('}')
-                        if json_start != -1 and json_end != -1:
-                            json_content = content[json_start:json_end + 1]
-                            parsed_content = json.loads(json_content)
-                            analysis_data['content_parsed'] = parsed_content
-                            logger.debug("Parsed custom AI response JSON content to object")
+                    logger.debug("Parsing custom AI response using path: %s", result.get('responsePath'))
+                    content = _extract_by_path(analysis_data, result.get('responsePath'))
+
+                parsed_content = ai_analyzer.parse_ai_json_content(content)
+                if parsed_content:
+                    if set_on_openai_message:
+                        analysis_data['choices'][0].setdefault('message', {})['content_parsed'] = parsed_content
+                    else:
+                        analysis_data['content_parsed'] = parsed_content
+                    logger.info("Parsed AI response JSON content to object")
             except Exception as e:
                 logger.warning("Could not parse AI content as JSON: %s", str(e))
             

@@ -12,6 +12,8 @@ Architecture:
 """
 
 import os
+import re
+import html
 import time
 import hashlib
 import secrets
@@ -2119,6 +2121,7 @@ If the user provided a specific request or question in their prompt, you MUST an
 
 **IMPORTANT**: 
 - Your ENTIRE response must be valid JSON (no markdown, no explanations outside JSON)
+- **CRITICAL JSON ENCODING**: Every string value must be valid JSON. Escape newlines as \\n, double quotes as \\", and backslashes as \\\\. Do NOT put raw line breaks inside strings. HTML attributes MUST use single quotes (class='severity-critical') so they do not terminate the JSON string. Do NOT wrap the JSON in markdown fences. Do NOT emit <think> tags or reasoning.
 - Use the exact field names shown above
 - Include ALL sections even if empty (use [] or {} for empty sections)
 - Be specific and actionable in recommendations
@@ -2351,6 +2354,431 @@ def get_max_output_tokens(provider: str, model: str) -> int:
 
 
 # ============================================================================
+# AI JSON repair (local models often emit invalid JSON)
+# ============================================================================
+#
+# Qwen / Ollama / LM Studio frequently return an object that *looks* like
+# JSON but is not parseable: raw newlines inside overview_html, HTML
+# attributes with unescaped double quotes, <think> wrappers, markdown
+# fences, unquoted keys, trailing commas, or a truncated closing brace.
+# Cloud providers (OpenAI JSON mode, Gemini responseMimeType) usually
+# emit strict JSON; this path is a no-op for those.
+
+_THINK_BLOCK_RE = re.compile(
+    r"<(think|thinking|reasoning)\b[^>]*>.*?</\1>",
+    re.DOTALL | re.IGNORECASE,
+)
+_THINK_OPEN_RE = re.compile(r"<(think|thinking|reasoning)\b[^>]*>", re.IGNORECASE)
+_FENCE_WHOLE_RE = re.compile(
+    r"^```(?:json)?\s*\n(.*)\n```\s*$",
+    re.DOTALL | re.IGNORECASE,
+)
+_OVERVIEW_KEY_RE = re.compile(r'"overview_html"\s*:\s*"')
+_NEXT_JSON_KEY_RE = re.compile(
+    r'"\s*,\s*"(chart_trends|summary|critical_issues|recommendations|'
+    r'index_analysis|query_patterns|next_steps|charts)"'
+)
+_HAS_HTML_TAG_RE = re.compile(r"<[a-zA-Z][a-zA-Z0-9]*\b")
+_OVERVIEW_HEADERS = frozenset({
+    "overall health",
+    "key bottlenecks",
+    "main findings",
+    "user specific request",
+    "user specific requests",
+    "recommendations",
+    "critical issues",
+    "next steps",
+    "chart trends",
+})
+_JSON_KEYWORDS = frozenset({"true", "false", "null"})
+
+LOCAL_MODEL_JSON_RULES = (
+    "\n\n**LOCAL MODEL STRICT JSON**: Reply with ONLY a JSON object. "
+    "No reasoning, no <think> tags, no markdown fences, no preamble. "
+    "Escape every newline inside a string as \\n and every double quote as \\\". "
+    "Use HTML tags (<h3>, <p>, <ul>, <li>) inside overview_html, not markdown headings. "
+    "HTML attributes must use single quotes (class='severity-critical')."
+)
+
+
+def strip_reasoning_wrappers(text: str) -> str:
+    """Remove <think>/<thinking> blocks local reasoning models emit before JSON."""
+    if not text:
+        return text
+    text = _THINK_BLOCK_RE.sub("", text)
+    text = _THINK_OPEN_RE.sub("", text)
+    text = re.sub(r"</(?:think|thinking|reasoning)>", "", text, flags=re.IGNORECASE)
+    return text.strip()
+
+
+def strip_markdown_fences(text: str) -> str:
+    """Strip ```json ... ``` wrappers around the payload."""
+    if not text:
+        return text
+    text = text.strip()
+    whole = _FENCE_WHOLE_RE.match(text)
+    if whole:
+        return whole.group(1).strip()
+    text = re.sub(r"^```(?:json)?\s*\n", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\n```\s*$", "", text)
+    return text.strip()
+
+
+def _repair_json_strings(s: str) -> str:
+    """Escape raw control characters and inner quotes that belong in string values.
+
+    A double quote inside a string is treated as a terminator only when the
+    next non-whitespace character is one of `, } ] :` (or end of input).
+    HTML such as <span class="severity-critical"> therefore stays inside the
+    string instead of exploding JSON.parse.
+    """
+    out = []
+    i = 0
+    n = len(s)
+    in_string = False
+    while i < n:
+        ch = s[i]
+        if not in_string:
+            if ch == '"':
+                in_string = True
+            out.append(ch)
+            i += 1
+            continue
+        if ch == "\\" and i + 1 < n:
+            out.append(ch)
+            out.append(s[i + 1])
+            i += 2
+            continue
+        if ch == '"':
+            j = i + 1
+            while j < n and s[j] in " \t\r\n":
+                j += 1
+            if j >= n or s[j] in ",}]:":
+                in_string = False
+                out.append(ch)
+            else:
+                out.append('\\"')
+            i += 1
+            continue
+        if ch == "\n":
+            out.append("\\n")
+        elif ch == "\r":
+            out.append("\\r")
+        elif ch == "\t":
+            out.append("\\t")
+        elif ord(ch) < 32:
+            out.append(f"\\u{ord(ch):04x}")
+        else:
+            out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _fix_invalid_escapes(s: str) -> str:
+    """Turn illegal JSON escapes such as \\_ into \\\\ _."""
+    return re.sub(r'\\([^"\\/bfnrtu])', r"\\\\\1", s)
+
+
+def _quote_unquoted_keys(s: str) -> str:
+    """Quote bare identifiers used as keys: {overview_html: "..."} -> JSON."""
+    out = []
+    i = 0
+    n = len(s)
+    in_string = False
+    while i < n:
+        ch = s[i]
+        if in_string:
+            out.append(ch)
+            if ch == "\\" and i + 1 < n:
+                out.append(s[i + 1])
+                i += 2
+                continue
+            if ch == '"':
+                in_string = False
+            i += 1
+            continue
+        if ch == '"':
+            in_string = True
+            out.append(ch)
+            i += 1
+            continue
+        if ch.isalpha() or ch == "_":
+            j = i + 1
+            while j < n and (s[j].isalnum() or s[j] == "_"):
+                j += 1
+            ident = s[i:j]
+            k = j
+            while k < n and s[k] in " \t\r\n":
+                k += 1
+            if k < n and s[k] == ":" and ident not in _JSON_KEYWORDS:
+                out.append(f'"{ident}"')
+                i = j
+                continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _strip_trailing_commas(s: str) -> str:
+    """Remove trailing commas before } or ] (outside of strings)."""
+    out = []
+    i = 0
+    n = len(s)
+    in_string = False
+    while i < n:
+        ch = s[i]
+        if in_string:
+            out.append(ch)
+            if ch == "\\" and i + 1 < n:
+                out.append(s[i + 1])
+                i += 2
+                continue
+            if ch == '"':
+                in_string = False
+            i += 1
+            continue
+        if ch == '"':
+            in_string = True
+            out.append(ch)
+            i += 1
+            continue
+        if ch == ",":
+            j = i + 1
+            while j < n and s[j] in " \t\r\n":
+                j += 1
+            if j < n and s[j] in "}]":
+                i += 1
+                continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _close_incomplete_json(s: str) -> str:
+    """Close an unclosed string and any unclosed { [ so truncated output can parse."""
+    in_string = False
+    escaped = False
+    stack = []
+    for ch in s:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+            continue
+        if ch == '"':
+            in_string = True
+        elif ch == "{":
+            stack.append("}")
+        elif ch == "[":
+            stack.append("]")
+        elif ch in "}]" and stack and stack[-1] == ch:
+            stack.pop()
+    out = s
+    if in_string:
+        out += '"'
+    while stack:
+        out += stack.pop()
+    return out
+
+
+def _inline_format(escaped_text: str) -> str:
+    """Apply **bold** and `code` after html.escape."""
+    text = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", escaped_text)
+    text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
+    return text
+
+
+def _is_overview_header(line: str) -> bool:
+    stripped = line.strip().rstrip(":").lower()
+    if stripped in _OVERVIEW_HEADERS:
+        return True
+    return bool(re.match(r"#{1,3}\s+\S", line.strip()))
+
+
+def overview_text_to_html(text: str) -> str:
+    """Turn markdown-ish local-model overview text into the HTML the UI expects.
+
+    If the string already contains block HTML tags, it is returned unchanged.
+    """
+    if not text:
+        return ""
+    stripped = text.strip()
+    if _HAS_HTML_TAG_RE.search(stripped):
+        return stripped
+
+    lines = stripped.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    out = []
+    in_list = False
+
+    def close_list():
+        nonlocal in_list
+        if in_list:
+            out.append("</ul>")
+            in_list = False
+
+    i = 0
+    while i < len(lines):
+        raw = lines[i]
+        line = raw.strip()
+        if not line:
+            close_list()
+            i += 1
+            continue
+
+        heading_match = re.match(r"^(#{1,3})\s+(.+)$", line)
+        header_text = None
+        if heading_match:
+            header_text = heading_match.group(2).strip()
+        elif line.rstrip(":").lower() in _OVERVIEW_HEADERS:
+            header_text = line.rstrip(":")
+
+        if header_text is not None:
+            close_list()
+            out.append(f"<h3>{html.escape(header_text)}</h3>")
+            i += 1
+            continue
+
+        is_list_item = (
+            raw.startswith("    ")
+            or raw.startswith("\t")
+            or bool(re.match(r"^[-*•]\s+", line))
+            or bool(re.match(r"^\d+[.)]\s+", line))
+        )
+        if is_list_item:
+            item = re.sub(r"^[-*•]\s+", "", line)
+            item = re.sub(r"^\d+[.)]\s+", "", item)
+            if not in_list:
+                out.append("<ul>")
+                in_list = True
+            out.append(f"<li>{_inline_format(html.escape(item))}</li>")
+            i += 1
+            continue
+
+        close_list()
+        para_parts = [line]
+        i += 1
+        while i < len(lines):
+            nxt_raw = lines[i]
+            nxt = nxt_raw.strip()
+            if not nxt:
+                break
+            if _is_overview_header(nxt):
+                break
+            if (
+                nxt_raw.startswith("    ")
+                or nxt_raw.startswith("\t")
+                or re.match(r"^[-*•]\s+", nxt)
+                or re.match(r"^\d+[.)]\s+", nxt)
+            ):
+                break
+            para_parts.append(nxt)
+            i += 1
+        joined = " ".join(html.escape(p) for p in para_parts)
+        out.append(f"<p>{_inline_format(joined)}</p>")
+
+    close_list()
+    return "\n".join(out)
+
+
+def _normalize_parsed_analysis(data: Dict[str, Any]) -> Dict[str, Any]:
+    summary = data.get("analysis_summary")
+    if isinstance(summary, dict):
+        overview = summary.get("overview_html")
+        if isinstance(overview, str):
+            summary["overview_html"] = overview_text_to_html(overview)
+    return data
+
+
+def _salvage_as_analysis(text: str) -> Dict[str, Any]:
+    """Last-resort: show whatever the model wrote as the analysis summary."""
+    html_body = None
+    match = _OVERVIEW_KEY_RE.search(text)
+    if match:
+        rest = text[match.end():]
+        nxt = _NEXT_JSON_KEY_RE.search(rest)
+        if nxt:
+            rest = rest[: nxt.start()]
+        rest = (
+            rest.replace("\\n", "\n")
+            .replace('\\"', '"')
+            .replace("\\\\", "\\")
+        )
+        html_body = rest.strip().rstrip('}" \t\n,')
+    if not html_body:
+        html_body = text
+    return {
+        "analysis_summary": {
+            "overview_html": overview_text_to_html(html_body),
+        }
+    }
+
+
+def _try_parse_json_candidate(candidate: str) -> Optional[Dict[str, Any]]:
+    repaired = _repair_json_strings(candidate)
+    variants = [
+        candidate,
+        repaired,
+        _fix_invalid_escapes(repaired),
+        _quote_unquoted_keys(_fix_invalid_escapes(repaired)),
+        _strip_trailing_commas(_quote_unquoted_keys(_fix_invalid_escapes(repaired))),
+    ]
+    seen = set()
+    for variant in variants:
+        if variant in seen:
+            continue
+        seen.add(variant)
+        for attempt in (variant, _close_incomplete_json(variant)):
+            try:
+                obj = json.loads(attempt)
+            except (json.JSONDecodeError, ValueError, TypeError):
+                continue
+            if isinstance(obj, dict):
+                return obj
+    return None
+
+
+def parse_ai_json_content(content: Any) -> Optional[Dict[str, Any]]:
+    """Parse an AI analysis payload, repairing the malformed JSON local models emit.
+
+    Always returns a dict with at least analysis_summary.overview_html when
+    *content* has any text, so the UI can render instead of showing a parse error.
+    """
+    if content is None:
+        return None
+    if isinstance(content, dict):
+        return _normalize_parsed_analysis(content)
+    if not isinstance(content, str):
+        content = str(content)
+
+    raw = content.strip()
+    if not raw:
+        return None
+
+    stripped = strip_markdown_fences(strip_reasoning_wrappers(raw))
+    candidates = []
+    start = stripped.find("{")
+    if start != -1:
+        end = stripped.rfind("}")
+        chunk = stripped[start:end + 1] if end > start else stripped[start:]
+        candidates.append(chunk)
+    candidates.append(stripped)
+
+    seen = set()
+    for candidate in candidates:
+        if not candidate or candidate in seen:
+            continue
+        seen.add(candidate)
+        parsed = _try_parse_json_candidate(candidate)
+        if parsed is not None:
+            return _normalize_parsed_analysis(parsed)
+
+    return _salvage_as_analysis(stripped)
+
+
+# ============================================================================
 # AI Provider API Call
 # ============================================================================
 
@@ -2394,6 +2822,8 @@ def call_ai_provider(provider: str,
     
     # Get system prompt
     system_prompt = get_ai_system_prompt(language)
+    if is_local_openai_compat(provider):
+        system_prompt += LOCAL_MODEL_JSON_RULES
     
     # ---------------------------------------------------------
     # Option 1: Use OpenAI SDK (Preferred for OpenAI/Grok)

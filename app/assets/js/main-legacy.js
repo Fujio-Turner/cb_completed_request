@@ -27975,80 +27975,47 @@ ${info.features.map((f) => `   • ${f}`).join("\n")}
             // Parse and display AI response
             const aiResponse = doc.aiResponse;
             let analysisData;
+            let rawContent = '';
             
             if (typeof aiResponse === 'object' && aiResponse.choices) {
-                // OpenAI/Grok format - try content_parsed first
+                // OpenAI / Grok / local-openai format
                 const message = aiResponse.choices[0]?.message || {};
-                
-                if (message.content_parsed) {
+                rawContent = message.content || '';
+                if (message.content_parsed && typeof message.content_parsed === 'object') {
                     analysisData = message.content_parsed;
-                } else {
-                    let rawContent = message.content || '';
-                    try {
-                        let content = rawContent;
-                        
-                        // Strip markdown code fences if present (common with Grok/some models)
-                        content = content.replace(/^```json\s*\n?/i, '').replace(/\n?```\s*$/i, '');
-                        content = content.trim();
-                        
-                        // Robust JSON extraction: Find first '{' and last '}'
-                        const jsonStart = content.indexOf('{');
-                        const jsonEnd = content.lastIndexOf('}');
-                        
-                        if (jsonStart !== -1 && jsonEnd !== -1) {
-                            // Extract just the JSON part, ignoring preamble/postscript/markdown
-                            content = content.substring(jsonStart, jsonEnd + 1);
-                        }
-                        
-                        // Fix common JSON escape issues from AI responses
-                        // Replace invalid escape sequences (e.g., \_ which is not valid JSON)
-                        content = content.replace(/\\([^"\\\/bfnrtu])/g, '\\\\$1');
-                        
-                        analysisData = JSON.parse(content);
-                    } catch (e) {
-                        Logger.error('[AI] JSON parse error:', e.message);
-                        Logger.debug('[AI] Content type:', typeof rawContent);
-                        Logger.debug('[AI] Content length:', rawContent?.length);
-                        Logger.debug('[AI] First 200 chars:', rawContent?.substring(0, 200));
-                        responseDiv.innerHTML = `<div style="color: #dc3545;">Error parsing AI response: ${e.message}</div><pre style="max-height: 400px; overflow: auto;">${DOMPurify.sanitize(rawContent)}</pre>`;
-                        overlay.style.display = 'block';
-                        return;
+                    if (typeof parseAIJsonContent === 'function') {
+                        analysisData = parseAIJsonContent(analysisData);
                     }
+                } else if (typeof parseAIJsonContent === 'function') {
+                    analysisData = parseAIJsonContent(rawContent);
                 }
             } else if (typeof aiResponse === 'object' && aiResponse.content && Array.isArray(aiResponse.content)) {
-                // Anthropic/Claude format - try content_parsed first (set by backend)
-                if (aiResponse.content_parsed) {
+                // Anthropic/Claude format
+                rawContent = aiResponse.content[0]?.text || '';
+                if (aiResponse.content_parsed && typeof aiResponse.content_parsed === 'object') {
                     analysisData = aiResponse.content_parsed;
-                } else {
-                    let rawContent = aiResponse.content[0]?.text || '';
-                    try {
-                        let content = rawContent;
-                        
-                        // Strip markdown code fences if present
-                        content = content.replace(/^```json\s*\n?/i, '').replace(/\n?```\s*$/i, '');
-                        content = content.trim();
-                        
-                        // Robust JSON extraction: Find first '{' and last '}'
-                        const jsonStart = content.indexOf('{');
-                        const jsonEnd = content.lastIndexOf('}');
-                        
-                        if (jsonStart !== -1 && jsonEnd !== -1) {
-                            content = content.substring(jsonStart, jsonEnd + 1);
-                        }
-                        
-                        // Fix common JSON escape issues from AI responses
-                        content = content.replace(/\\([^"\\\/bfnrtu])/g, '\\\\$1');
-                        
-                        analysisData = JSON.parse(content);
-                    } catch (e) {
-                        Logger.error('[AI] Claude JSON parse error:', e.message);
-                        responseDiv.innerHTML = `<div style="color: #dc3545;">Error parsing Claude AI response: ${e.message}</div><pre style="max-height: 400px; overflow: auto;">${DOMPurify.sanitize(rawContent)}</pre>`;
-                        overlay.style.display = 'block';
-                        return;
+                    if (typeof parseAIJsonContent === 'function') {
+                        analysisData = parseAIJsonContent(analysisData);
                     }
+                } else if (typeof parseAIJsonContent === 'function') {
+                    analysisData = parseAIJsonContent(rawContent);
                 }
+            } else if (typeof aiResponse === 'object' && aiResponse.content_parsed && typeof aiResponse.content_parsed === 'object') {
+                analysisData = typeof parseAIJsonContent === 'function'
+                    ? parseAIJsonContent(aiResponse.content_parsed)
+                    : aiResponse.content_parsed;
             } else {
                 analysisData = aiResponse;
+            }
+
+            if (!analysisData || typeof analysisData !== 'object') {
+                Logger.error('[AI] JSON parse error: no analysis object');
+                Logger.debug('[AI] Content length:', rawContent?.length);
+                Logger.debug('[AI] First 200 chars:', rawContent?.substring(0, 200));
+                const preview = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(rawContent) : rawContent;
+                responseDiv.innerHTML = `<div style="color: #dc3545;">Error parsing AI response: the model did not return usable analysis JSON.</div><pre style="max-height: 400px; overflow: auto;">${preview}</pre>`;
+                overlay.style.display = 'block';
+                return;
             }
             
             // Extract stake_focus from the saved document's options (original request)

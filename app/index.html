@@ -147,8 +147,10 @@
          dependency of settings.js / ai-client.js, no separate script tag needed. -->
     <script type="module" src="assets/js/settings.js"></script>
     
+    <!-- AI JSON repair (local models) — must load before main-legacy.js -->
+    <script src="assets/js/ai-json-parse.js?v=ai-json-repair" defer></script>
     <!-- Legacy app code (temporary - will be modularized) -->
-    <script src="assets/js/main-legacy.js?v=local-openai-long-timeout" defer></script>
+    <script src="assets/js/main-legacy.js?v=ai-json-repair" defer></script>
 
 </head>
 
